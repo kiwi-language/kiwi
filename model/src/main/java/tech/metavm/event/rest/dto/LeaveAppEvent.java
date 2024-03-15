@@ -6,14 +6,14 @@ import java.util.Objects;
 
 public class LeaveAppEvent extends UserEvent{
 
-    private final long appId;
+    private final String appId;
 
-    public LeaveAppEvent(long userId, long appId) {
+    public LeaveAppEvent(String userId, String appId) {
         super(UserEventKind.LEAVE_APP.code(), userId);
         this.appId = appId;
     }
 
-    public long getAppId() {
+    public String getAppId() {
         return appId;
     }
 
@@ -22,7 +22,7 @@ public class LeaveAppEvent extends UserEvent{
         if (this == object) return true;
         if (!(object instanceof LeaveAppEvent that)) return false;
         if (!super.equals(object)) return false;
-        return appId == that.appId;
+        return Objects.equals(appId, that.appId);
     }
 
     @Override

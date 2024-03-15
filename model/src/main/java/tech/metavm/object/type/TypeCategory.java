@@ -171,6 +171,10 @@ public enum TypeCategory {
         return this == UNION;
     }
 
+    public boolean isVariable() {
+        return this == VARIABLE;
+    }
+
     public boolean isTime() {
         return this == TIME;
     }

@@ -2,6 +2,7 @@ package tech.metavm.util;
 
 import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.expression.Func;
 import tech.metavm.object.type.*;
@@ -150,7 +151,7 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.INVALID_SYMBOL_NAME, name);
     }
 
-    public static BusinessException flowNotFound(long id) {
+    public static BusinessException flowNotFound(String id) {
         return new BusinessException(ErrorCode.FLOW_NOT_FOUND, id);
     }
 
@@ -158,7 +159,7 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.BRANCH_NOT_FOUND, id);
     }
 
-    public static BusinessException nodeNotFound(long id) {
+    public static BusinessException nodeNotFound(String id) {
         return new BusinessException(ErrorCode.NODE_NOT_FOUND, id);
     }
 
@@ -188,7 +189,7 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.FUNCTION_ARGUMENTS_INVALID, function.name());
     }
 
-    public static BusinessException duplicateKey(ClassInstance instance, long constraintId) {
+    public static BusinessException duplicateKey(ClassInstance instance, Id constraintId) {
         Index constraint = instance.getType().getUniqueConstraint(constraintId);
         return new BusinessException(
                 ErrorCode.DUPLICATE_KEY,
@@ -205,7 +206,7 @@ public class BusinessException extends RuntimeException {
         );
     }
 
-    public static BusinessException constraintNotFound(long id) {
+    public static BusinessException constraintNotFound(String id) {
         throw new BusinessException(ErrorCode.CONSTRAINT_NOT_FOUND, id);
     }
 
@@ -214,11 +215,11 @@ public class BusinessException extends RuntimeException {
     }
 
 
-    public static BusinessException userNotFound(long id) {
+    public static BusinessException userNotFound(String id) {
         throw new BusinessException(ErrorCode.USER_NOT_FOUND, id);
     }
 
-    public static BusinessException roleNotFound(long id) {
+    public static BusinessException roleNotFound(String id) {
         throw new BusinessException(ErrorCode.ROLE_NOT_FOUND, id);
     }
 

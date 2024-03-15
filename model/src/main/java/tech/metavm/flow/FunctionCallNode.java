@@ -8,6 +8,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.FunctionCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -19,9 +20,9 @@ public class FunctionCallNode extends CallNode {
 
     public static FunctionCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var param = (FunctionCallNodeParam) nodeDTO.param();
-        var node = (FunctionCallNode) context.getNode(nodeDTO.getRef());
+        var node = (FunctionCallNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var function = context.getFunction(param.getFlowRef());
+        var function = context.getFunction(Id.parse(param.getFlowId()));
         List<Argument> arguments = NncUtils.biMap(
                 function.getParameters(),
                 param.getArguments(),

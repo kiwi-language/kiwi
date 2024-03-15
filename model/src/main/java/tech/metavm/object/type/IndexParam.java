@@ -13,7 +13,7 @@ public record IndexParam(
 
     public static IndexParam create(boolean unique, String name, ValueDTO value) {
         return new IndexParam(
-                unique, List.of(new IndexFieldDTO(null, null, name, null, value))
+                unique, List.of(new IndexFieldDTO(null, name, null, value))
         );
     }
 

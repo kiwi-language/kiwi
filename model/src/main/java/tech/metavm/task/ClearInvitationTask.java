@@ -9,9 +9,9 @@ import tech.metavm.message.Message;
 @EntityType("删除邀请任务")
 public class ClearInvitationTask extends Task {
 
-    private final long appId;
+    private final String appId;
 
-    public ClearInvitationTask(String title, long appId) {
+    public ClearInvitationTask(String title, String appId) {
         super(title);
         this.appId = appId;
     }

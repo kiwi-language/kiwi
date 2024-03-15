@@ -5,8 +5,7 @@ import tech.metavm.common.BaseDTO;
 import java.util.List;
 
 public record ScopeDTO(
-        Long id,
-        Long tmpId,
+        String id,
         List<NodeDTO> nodes
 ) implements BaseDTO {
 

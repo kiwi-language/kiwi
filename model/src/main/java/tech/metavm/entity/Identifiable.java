@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -7,10 +8,14 @@ import javax.annotation.Nullable;
 public interface Identifiable {
 
     @Nullable
-    Long tryGetId();
+    Id tryGetId();
 
-    default long getId() {
+    default Id getId() {
         return NncUtils.requireNonNull(tryGetId());
+    }
+
+    default long getPhysicalId() {
+        return getId().getPhysicalId();
     }
 
 }

@@ -24,7 +24,7 @@ public class ExpressionController {
 
     @GetMapping("/parse-search-expression")
     public Result<List<InstanceSearchItemDTO>> parseSearchText(
-            @RequestParam("typeId") long typeId,
+            @RequestParam("typeId") String typeId,
             @RequestParam("searchExpression") String searchText
     ) {
         return Result.success(expressionService.parseSearchText(typeId, searchText));

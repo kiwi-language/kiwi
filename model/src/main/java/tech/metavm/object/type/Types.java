@@ -8,6 +8,7 @@ import tech.metavm.expression.PropertyExpression;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.instance.core.FunctionInstance;
+import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.type.generic.TypeArgumentMap;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.object.type.rest.dto.PTypeDTO;
@@ -123,6 +124,48 @@ public class Types {
 //            case ClassType classType ->
 //        }
 //    }
+
+
+    public static ClassType getTypeType(TypeTag tag) {
+        return switch (tag) {
+            case Class -> StandardTypes.getClassType(ClassType.class);
+            case Array -> StandardTypes.getClassType(ArrayType.class);
+        };
+    }
+
+    public static Type getType(Object entity) {
+        if(entity instanceof ReadonlyArray<?> array) {
+            var elementType = getType(array.getElementType());
+            var arrayKind = switch (entity) {
+                case ChildArray<?> childArray -> ArrayKind.CHILD;
+                case ReadWriteArray<?> readWriteArray -> ArrayKind.READ_WRITE;
+                default -> ArrayKind.READ_ONLY;
+            };
+            return ModelDefRegistry.getDefContext().getArrayType(elementType, arrayKind);
+        }
+        else
+            return ModelDefRegistry.getType(EntityUtils.getRealType(entity.getClass()));
+    }
+
+    public static ClassType getTypeType(TypeCategory typeCategory) {
+        if(typeCategory.isPojo())
+            return StandardTypes.getClassType(ClassType.class);
+        else if(typeCategory.isPrimitive())
+            return StandardTypes.getClassType(PrimitiveType.class);
+        else if(typeCategory.isArray())
+            return StandardTypes.getClassType(ArrayType.class);
+        else if(typeCategory.isVariable())
+            return StandardTypes.getClassType(TypeVariable.class);
+        else if(typeCategory.isUnion())
+            return StandardTypes.getClassType(UnionType.class);
+        else if(typeCategory.isUncertain())
+            return StandardTypes.getClassType(UncertainType.class);
+        else if(typeCategory.isFunction())
+            return StandardTypes.getClassType(FunctionType.class);
+        else
+            throw new InternalException("Invalid type category: " + typeCategory);
+
+    }
 
     public static @NotNull Type getLeastUpperBound(Collection<Type> types) {
         Type lub = StandardTypes.getNeverType();
@@ -322,8 +365,8 @@ public class Types {
     }
 
     public static String getParameterizedKey(Element template, List<? extends Type> typeArguments) {
-        return encodeBase64(template.getId()) + "-"
-                + NncUtils.join(typeArguments, typeArg -> encodeBase64(typeArg.getId()), "-");
+        return template.getStringId() + "-"
+                + NncUtils.join(typeArguments, Entity::getStringId, "-");
     }
 
     public static boolean isNullable(Type type) {

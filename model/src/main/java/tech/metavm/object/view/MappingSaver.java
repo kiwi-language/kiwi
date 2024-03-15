@@ -7,6 +7,7 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.TypeParsingContext;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.InstanceProvider;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.SubstitutorV2;
@@ -83,17 +84,17 @@ public class MappingSaver {
     }
 
     private FieldsObjectMapping saveFieldsObjectMapping(ObjectMappingDTO mappingDTO) {
-        var sourceType = typeProvider.getClassType(mappingDTO.sourceTypeRef());
-        FieldsObjectMapping mapping = (FieldsObjectMapping) sourceType.findMapping(mappingDTO.getRef());
+        var sourceType = typeProvider.getClassType(Id.parse(mappingDTO.sourceTypeId()));
+        FieldsObjectMapping mapping = (FieldsObjectMapping) sourceType.findMapping(Id.parse(mappingDTO.id()));
         if (mapping == null) {
             var targetType = createTargetType(sourceType, "预设视图", "builtin");
             mapping = new FieldsObjectMapping(mappingDTO.tmpId(), mappingDTO.name(), mappingDTO.code(), sourceType, false,
-                    targetType, NncUtils.map(mappingDTO.overriddenRefs(), sourceType::getMappingInAncestors));
+                    targetType, NncUtils.map(mappingDTO.overriddenIds(), id -> sourceType.getMappingInAncestors(Id.parse(id))));
             mapping.generateDeclarations(compositeTypeFacade);
         } else {
             mapping.setName(mappingDTO.name());
             mapping.setCode(mappingDTO.code());
-            mapping.setOverridden(NncUtils.map(mappingDTO.overriddenRefs(), sourceType::getMappingInAncestors));
+            mapping.setOverridden(NncUtils.map(mappingDTO.overriddenIds(), id -> sourceType.getMappingInAncestors(Id.parse(id))));
         }
         if (mappingDTO.isDefault())
             mapping.setDefault();
@@ -122,15 +123,15 @@ public class MappingSaver {
     }
 
     private FieldMapping saveFieldMapping(FieldMappingDTO fieldMappingDTO, FieldsObjectMapping containingMapping) {
-        var nestedMapping = NncUtils.get(fieldMappingDTO.nestedMappingRef(), mappingProvider::getObjectMapping);
+        var nestedMapping = NncUtils.get(fieldMappingDTO.nestedMappingId(), id -> mappingProvider.getObjectMapping(Id.parse(id)));
         var codeGenerator = nestedMapping != null ? new ObjectNestedMapping(nestedMapping) :
-                new IdentityNestedMapping(typeProvider.getType(fieldMappingDTO.targetFieldRef()));
-        var fieldMapping = containingMapping.findFieldMapping(fieldMappingDTO.getRef());
+                new IdentityNestedMapping(entityRepository.getEntity(Field.class, Id.parse(fieldMappingDTO.targetFieldId())).getType());
+        var fieldMapping = containingMapping.findFieldMapping(Id.parse(fieldMappingDTO.id()));
         var sourceType = containingMapping.getSourceType();
         if (fieldMapping == null) {
             return switch (fieldMappingDTO.param()) {
                 case DirectFieldMappingParam directParam -> {
-                    var sourceField = sourceType.getField(requireNonNull(fieldMappingDTO.sourceFieldRef()));
+                    var sourceField = sourceType.getField(Id.parse(requireNonNull(fieldMappingDTO.sourceFieldId())));
                     yield new DirectFieldMapping(
                             fieldMappingDTO.tmpId(),
                             createTargetField(
@@ -147,8 +148,8 @@ public class MappingSaver {
                             sourceField);
                 }
                 case FlowFieldMappingParam flowParam -> {
-                    var getter = sourceType.getMethod(flowParam.getterRef());
-                    var setter = NncUtils.get(flowParam.setterRef(), sourceType::getMethod);
+                    var getter = sourceType.getMethod(Id.parse(flowParam.getterId()));
+                    var setter = NncUtils.get(flowParam.setterId(), id -> sourceType.getMethod(Id.parse(id)));
                     yield new FlowFieldMapping(
                             fieldMappingDTO.tmpId(),
                             containingMapping,
@@ -193,14 +194,14 @@ public class MappingSaver {
             var param = fieldMappingDTO.param();
             switch (fieldMapping) {
                 case DirectFieldMapping directFieldMapping -> directFieldMapping.update(
-                        sourceType.getField(requireNonNull(fieldMappingDTO.sourceFieldRef())),
+                        sourceType.getField(Id.parse(requireNonNull(fieldMappingDTO.sourceFieldId()))),
                         fieldMappingDTO.readonly(), compositeTypeFacade);
                 case FlowFieldMapping flowFieldMapping -> {
                     var flowParam = (FlowFieldMappingParam) param;
-                    var getter = sourceType.getMethod(flowParam.getterRef());
+                    var getter = sourceType.getMethod(Id.parse(flowParam.getterId()));
                     flowFieldMapping.setFlows(
                             getter,
-                            NncUtils.get(flowParam.setterRef(), sourceType::getMethod),
+                            NncUtils.get(flowParam.setterId(), id -> sourceType.getMethod(Id.parse(id))),
                             getTargetFieldType(getter.getReturnType(), nestedMapping),
                             compositeTypeFacade);
                 }

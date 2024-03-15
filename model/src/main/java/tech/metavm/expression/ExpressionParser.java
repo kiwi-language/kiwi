@@ -5,7 +5,6 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.antlr.MetaVMLexer;
@@ -137,7 +136,7 @@ public class ExpressionParser {
         var type = (ClassType) parseTypeType(expression.typeType(0));
         String identifier = expression.identifier().IDENTIFIER().getText();
         Field field = identifier.startsWith(Constants.CONSTANT_ID_PREFIX) ?
-                type.getField(Long.parseLong(identifier.substring(Constants.CONSTANT_ID_PREFIX.length()))) :
+                type.getField(Id.parse(identifier.substring(Constants.CONSTANT_ID_PREFIX.length()))) :
                 type.getFieldByName(identifier);
         return new StaticPropertyExpression(field);
     }
@@ -202,11 +201,7 @@ public class ExpressionParser {
                 String name = identifier.IDENTIFIER().getText();
                 if (name.startsWith(Constants.CONSTANT_ID_PREFIX)) {
                     return context.getTypeProvider().getType(
-                            Long.parseLong(name.substring(Constants.CONSTANT_ID_PREFIX.length()))
-                    );
-                } else if (name.startsWith(Constants.CONSTANT_TMP_ID_PREFIX)) {
-                    return context.getTypeProvider().getType(
-                            RefDTO.fromTmpId(Long.parseLong(name.substring(Constants.CONSTANT_TMP_ID_PREFIX.length())))
+                            Id.parse(name.substring(Constants.CONSTANT_ID_PREFIX.length()))
                     );
                 } else {
                     String className = classType.typeArguments().isEmpty() ? name :

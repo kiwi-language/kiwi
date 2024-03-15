@@ -319,9 +319,9 @@ public class Method extends Flow implements Property, GenericElement {
     public FlowSummaryDTO toSummaryDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new FlowSummaryDTO(
-                    id,
+                    serContext.getRef(this),
                     getName(),
-                    getDeclaringType().tryGetId(),
+                    serContext.getRef(getDeclaringType()),
                     NncUtils.map(getParameters(), Parameter::toDTO),
                     serContext.getRef(getReturnType()),
                     !getParameterTypes().isEmpty(),

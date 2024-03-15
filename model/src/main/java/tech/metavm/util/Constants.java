@@ -1,5 +1,10 @@
 package tech.metavm.util;
 
+import tech.metavm.application.Application;
+import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+
 public class Constants {
 
     public static final long ROOT_APP_ID = 1L;
@@ -30,5 +35,17 @@ public class Constants {
     public static final int BATCH_SIZE = 3000;
 
     private Constants() {}
+
+    public static Id getRootAppId() {
+        return PhysicalId.of(ROOT_APP_ID, ModelDefRegistry.getType(Application.class));
+    }
+
+    public static Id getPlatformAppId() {
+        return PhysicalId.of(PLATFORM_APP_ID, ModelDefRegistry.getType(Application.class));
+    }
+
+    public static Id getAppId(long id) {
+        return PhysicalId.of(id, ModelDefRegistry.getType(Application.class));
+    }
 
 }

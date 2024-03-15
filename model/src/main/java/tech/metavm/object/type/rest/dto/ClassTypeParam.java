@@ -1,7 +1,6 @@
 package tech.metavm.object.type.rest.dto;
 
 import tech.metavm.common.ErrorDTO;
-import tech.metavm.common.RefDTO;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.FlowSignatureDTO;
 import tech.metavm.object.instance.rest.InstanceDTO;
@@ -12,26 +11,26 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record ClassTypeParam(
-        RefDTO superClassRef,
-        List<RefDTO> interfaceRefs,
+        String superClassId,
+        List<String> interfaceIds,
         int source,
         List<FieldDTO> fields,
         List<FieldDTO> staticFields,
-        @Nullable RefDTO titleFieldRef,
+        @Nullable String titleFieldId,
         List<ConstraintDTO> constraints,
         List<FlowDTO> flows,
         List<ObjectMappingDTO> mappings,
-        @Nullable RefDTO defaultMappingRef,
+        @Nullable String defaultMappingId,
         String desc,
         Object extra,
         List<InstanceDTO> enumConstants,
         boolean isAbstract,
         boolean isTemplate,
-        List<RefDTO> typeParameterRefs,
+        List<String> typeParameterIds,
         @Nullable List<TypeDTO> typeParameters,
-        RefDTO templateRef,
-        List<RefDTO> typeArgumentRefs,
-        List<RefDTO> dependencyRefs,
+        String templateId,
+        List<String> typeArgumentIds,
+        List<String> dependencyIds,
         boolean hasSubTypes,
         boolean struct,
         List<ErrorDTO> errors
@@ -45,7 +44,7 @@ public record ClassTypeParam(
     @org.jetbrains.annotations.Nullable
     @Override
     public TypeKey getTypeKey() {
-        return templateRef != null ? new ParameterizedTypeKey(templateRef, typeArgumentRefs) : null;
+        return templateId != null ? new ParameterizedTypeKey(templateId, typeArgumentIds) : null;
     }
 
     public FieldDTO findFieldByName(String name) {

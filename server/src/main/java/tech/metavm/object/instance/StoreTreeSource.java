@@ -2,8 +2,10 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.Tree;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.util.InstanceOutput;
+import tech.metavm.util.NncUtils;
 import tech.metavm.util.StreamCopier;
 import tech.metavm.util.WireTypes;
 
@@ -26,13 +28,13 @@ public class StoreTreeSource implements TreeSource {
     }
 
     @Override
-    public List<Tree> load(Collection<Long> ids, IInstanceContext context) {
-        var instancePOs = new HashMap<Long, InstancePO>();
-        for (InstancePO instancePO : instanceStore.loadForest(ids, context)) {
-            instancePOs.put(instancePO.getId(), instancePO);
+    public List<Tree> load(Collection<Id> ids, IInstanceContext context) {
+        var instancePOs = new HashMap<Id, InstancePO>();
+        for (InstancePO instancePO : instanceStore.loadForest(NncUtils.map(ids, Id::getPhysicalId), context)) {
+            instancePOs.put(instancePO.getInstanceId(), instancePO);
         }
         List<Tree> trees = new ArrayList<>();
-        for (Long id : ids) {
+        for (var id : ids) {
             var root = instancePOs.get(id);
             if (root != null)
                 trees.add(buildTree(root, instancePOs));
@@ -41,22 +43,22 @@ public class StoreTreeSource implements TreeSource {
     }
 
     @Override
-    public void remove(List<Long> ids) {
+    public void remove(List<Id> ids) {
     }
 
-    private Tree buildTree(InstancePO root, Map<Long, InstancePO> instancePOs) {
+    private Tree buildTree(InstancePO root, Map<Id, InstancePO> instancePOs) {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         new MessageWriter(bout, instancePOs).writeMessage(root);
-        return new Tree(root.getId(), root.getVersion(), bout.toByteArray());
+        return new Tree(root.getInstanceId(), root.getVersion(), bout.toByteArray());
     }
 
     private static class MessageWriter extends InstanceOutput {
 
         private long parentId;
         private long parentFieldId;
-        private final Map<Long, InstancePO> instancePOs;
+        private final Map<Id, InstancePO> instancePOs;
 
-        public MessageWriter(OutputStream outputStream, Map<Long, InstancePO> instancePOs) {
+        public MessageWriter(OutputStream outputStream, Map<Id, InstancePO> instancePOs) {
             super(outputStream);
             this.instancePOs = instancePOs;
         }
@@ -81,7 +83,7 @@ public class StoreTreeSource implements TreeSource {
 
                 @Override
                 public void visitReference() {
-                    long id = readLong();
+                    var id = readId();
                     var instancePO = instancePOs.get(id);
                     if (instancePO != null
                             && instancePO.getParentId() == parentId
@@ -89,7 +91,7 @@ public class StoreTreeSource implements TreeSource {
                         writeInstancePO(instancePO);
                     else {
                         write(WireTypes.REFERENCE);
-                        writeLong(id);
+                        writeId(id);
                     }
                 }
 

@@ -1,6 +1,6 @@
 package tech.metavm.object.type.rest.dto;
 
-import tech.metavm.common.RefDTO;
+import tech.metavm.object.instance.core.Id;
 
-public record ClassTypeKey(RefDTO ref) implements TypeKey {
+public record ClassTypeKey(Id id) implements TypeKey {
 }

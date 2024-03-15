@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.object.instance.InstanceManager;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.GetTreesRequest;
 import tech.metavm.object.instance.rest.InstanceVersionDTO;
 import tech.metavm.object.instance.rest.InstanceVersionsRequest;
@@ -43,13 +44,13 @@ public class MockTypeClient implements TypeClient {
     }
 
     @Override
-    public long getAppId() {
-        return submit(ContextUtil::getAppId, "getAppId");
+    public String getAppId() {
+        return submit((() -> ContextUtil.getAppId().toString()), "getAppId");
     }
 
     @Override
-    public void setAppId(long appId) {
-        submit(() -> ContextUtil.setAppId(appId));
+    public void setAppId(String appId) {
+        submit(() -> ContextUtil.setAppId(Id.parse(appId)));
     }
 
     @Override
@@ -58,8 +59,8 @@ public class MockTypeClient implements TypeClient {
     }
 
     @Override
-    public void login(long appId, String loginName, String password) {
-        submit(() -> ContextUtil.setAppId(appId));
+    public void login(String appId, String loginName, String password) {
+        submit(() -> ContextUtil.setAppId(Id.parse(appId)));
     }
 
     @Override

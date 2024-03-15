@@ -13,6 +13,7 @@ import tech.metavm.entity.ChildList;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.ResolutionStage;
 import tech.metavm.object.type.Type;
@@ -141,7 +142,7 @@ public class Compiler {
             }
             var typeDTOs = new ArrayList<TypeDTO>();
             serContext.forEachType(
-                    (t -> (t.isIdNull() || !RegionConstants.isSystemId(t.getId()))),
+                    (t -> (t.isIdNull() || !RegionConstants.isSystemId(t.getId().getPhysicalId()))),
                     t -> {
                         if (t instanceof ClassType classType && classType.isParameterized())
                             typeDTOs.add(classType.toPTypeDTO(serContext));
@@ -169,7 +170,7 @@ public class Compiler {
     }
 
     private IEntityContext newContext() {
-        return contextFactory.newEntityContext(typeClient.getAppId());
+        return contextFactory.newEntityContext(Id.parse(typeClient.getAppId()));
     }
 
 }

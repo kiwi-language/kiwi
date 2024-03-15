@@ -11,6 +11,7 @@ import tech.metavm.common.Page;
 import tech.metavm.entity.*;
 import tech.metavm.event.EventQueue;
 import tech.metavm.event.rest.dto.JoinAppEvent;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.user.rest.dto.*;
 import tech.metavm.util.*;
 
@@ -36,14 +37,14 @@ public class PlatformUserManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public long register(RegisterRequest request) {
+    public String register(RegisterRequest request) {
         EmailUtils.ensureEmailAddress(request.loginName());
         try (var platformCtx = newPlatformContext()) {
             verificationCodeService.checkVerificationCode(request.loginName(), request.verificationCode(), platformCtx);
             var user = save(new UserDTO(null, request.loginName(), request.name(), request.password(), List.of()),
                     platformCtx);
             platformCtx.finish();
-            return user.getId();
+            return user.getStringId();
         }
     }
 
@@ -79,11 +80,11 @@ public class PlatformUserManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public long save(UserDTO userDTO) {
+    public String save(UserDTO userDTO) {
         try (var platformContext = newPlatformContext()) {
             User user = save(userDTO, platformContext);
             platformContext.finish();
-            return user.getId();
+            return user.getStringId();
         }
     }
 
@@ -94,7 +95,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
                     userDTO.loginName(),
                     userDTO.password(),
                     userDTO.name(),
-                    NncUtils.map(userDTO.roleRefs(), ref -> platformContext.getEntity(Role.class, ref))
+                    NncUtils.map(userDTO.roleIds(), ref -> platformContext.getEntity(Role.class, ref))
             );
             platformContext.bind(user);
         } else {
@@ -103,14 +104,14 @@ public class PlatformUserManager extends EntityContextFactoryBean {
                 user.setName(userDTO.name());
             if (userDTO.password() != null)
                 user.setPassword(userDTO.password());
-            if (userDTO.roleRefs() != null)
-                user.setRoles(NncUtils.map(userDTO.roleRefs(), ref -> platformContext.getEntity(Role.class, ref)));
+            if (userDTO.roleIds() != null)
+                user.setRoles(NncUtils.map(userDTO.roleIds(), ref -> platformContext.getEntity(Role.class, ref)));
         }
         return user;
     }
 
     @Transactional
-    public void delete(long userId) {
+    public void delete(String userId) {
         try (var context = newPlatformContext()) {
             User user = context.getEntity(User.class, userId);
             if (user == null) {
@@ -122,7 +123,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
     }
 
     @Transactional(readOnly = true)
-    public List<ApplicationDTO> getApplications(long userId) {
+    public List<ApplicationDTO> getApplications(String userId) {
         try (var context = newPlatformContext()) {
             var user = context.getEntity(PlatformUser.class, userId);
             return NncUtils.filterAndMap(user.getApplications(), Application::isActive, Application::toDTO);
@@ -130,17 +131,17 @@ public class PlatformUserManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public LoginResult enterApp(long id) {
+    public LoginResult enterApp(String id) {
         try (var platformCtx = newPlatformContext()) {
             var app = platformCtx.getEntity(Application.class, id);
             var user = platformCtx.getEntity(PlatformUser.class, ContextUtil.getUserId());
             if (user.hasJoinedApplication(app)) {
-                ContextUtil.enterApp(app.getId(), -1L);
+                ContextUtil.enterApp(app.getId(), null);
                 try (var ctx = newContext(app.getId())) {
                     var appUser = ctx.selectFirstByKey(User.IDX_PLATFORM_USER_ID, user.tryGetId());
-                    var token = loginService.directLogin(id, appUser, ctx);
+                    var token = loginService.directLogin(Id.parse(id), appUser, ctx);
                     ctx.finish();
-                    return new LoginResult(token, user.getId());
+                    return new LoginResult(token, user.getStringId());
                 } finally {
                     ContextUtil.exitApp();
                 }
@@ -150,7 +151,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public void joinApplication(long userId, long appId) {
+    public void joinApplication(String userId, String appId) {
         try (var platformContext = newPlatformContext()) {
             joinApplication(platformContext.getEntity(PlatformUser.class, userId), platformContext.getEntity(Application.class, appId), platformContext);
             platformContext.finish();
@@ -162,13 +163,13 @@ public class PlatformUserManager extends EntityContextFactoryBean {
         if (!app.idEquals(platformContext.getAppId())) {
             if (app.isIdNull())
                 platformContext.initIds();
-            ContextUtil.enterApp(app.getId(), -1L);
+            ContextUtil.enterApp(app.getId(), null);
             try (var context = newContext(app.getId())) {
                 var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
                 if (user == null) {
                     user = new User(generateLoginName(platformUser.getLoginName(), context),
                             NncUtils.randomPassword(), platformUser.getName(), List.of());
-                    user.setPlatformUserId(platformUser.tryGetId());
+                    user.setPlatformUserId(platformUser.getStringId());
                     context.bind(user);
                 } else {
                     user.setState(UserState.ACTIVE);
@@ -179,12 +180,12 @@ public class PlatformUserManager extends EntityContextFactoryBean {
             }
         }
         if (TransactionSynchronizationManager.isSynchronizationActive()
-                && app.getId() != Constants.PLATFORM_APP_ID
-                && app.getId() != Constants.ROOT_APP_ID) {
+                && app.getId().getPhysicalId() != Constants.PLATFORM_APP_ID
+                && app.getId().getPhysicalId() != Constants.ROOT_APP_ID) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    eventQueue.publishUserEvent(new JoinAppEvent(platformUser.getId(), app.getId()));
+                    eventQueue.publishUserEvent(new JoinAppEvent(platformUser.getStringId(), app.getStringId()));
                 }
             });
         }
@@ -202,7 +203,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public void leaveApplication(List<Long> userIds, long appId) {
+    public void leaveApplication(List<String> userIds, String appId) {
         try (var platformCtx = newPlatformContext()) {
             PlatformUsers.leaveApp(
                     NncUtils.map(userIds, userId -> platformCtx.getEntity(PlatformUser.class, userId)),
@@ -242,7 +243,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
     }
 
     @Transactional(readOnly = true)
-    public UserDTO get(long id) {
+    public UserDTO get(String id) {
         try (var context = newPlatformContext()) {
             return NncUtils.get(context.getEntity(User.class, id), User::toDTO);
         }

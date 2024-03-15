@@ -1,8 +1,8 @@
 package tech.metavm.object.type.rest.dto;
 
 public record EnumConstantDTO (
-        Long id,
-        Long ownerId,
+        String id,
+        String ownerId,
         int ordinal,
         String name
 ) {

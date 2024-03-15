@@ -1,15 +1,16 @@
 package tech.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.TreeDTO;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-public record Tree(long id, long version, byte[] data) implements Comparable<Tree> {
+public record Tree(Id id, long version, byte[] data) implements Comparable<Tree> {
 
     public static Tree fromDTO(TreeDTO treeDTO) {
-        return new Tree(treeDTO.id(), treeDTO.version(), treeDTO.bytes());
+        return new Tree(Id.parse(treeDTO.id()), treeDTO.version(), treeDTO.bytes());
     }
 
     public InputStream openInput() {
@@ -18,11 +19,11 @@ public record Tree(long id, long version, byte[] data) implements Comparable<Tre
 
     @Override
     public int compareTo(@NotNull Tree o) {
-        return Long.compare(id, o.id);
+        return id.compareTo(o.id);
     }
 
     public TreeDTO toDTO() {
-        return new TreeDTO(id, version, data);
+        return new TreeDTO(id.toString(), version, data);
     }
 
 }

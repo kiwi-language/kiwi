@@ -1,17 +1,13 @@
 package tech.metavm.object.view;
 
-import tech.metavm.common.RefDTO;
+import tech.metavm.object.instance.core.Id;
 
 public interface MappingProvider {
 
-    Mapping getMapping(RefDTO ref);
+    Mapping getMapping(Id id);
 
-    default ObjectMapping getObjectMapping(RefDTO ref) {
-        return (ObjectMapping) getMapping(ref);
-    }
-
-    default Mapping getMapping(long id) {
-        return getMapping(RefDTO.fromId(id));
+    default ObjectMapping getObjectMapping(Id id) {
+        return (ObjectMapping) getMapping(id);
     }
 
 }

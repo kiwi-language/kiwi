@@ -8,7 +8,6 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
-import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.profile.Profiler;
 
@@ -19,7 +18,7 @@ import java.util.function.Consumer;
 
 public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository {
 
-    IInstanceContext createSame(long appId);
+    IInstanceContext createSame(Id appId);
 
     void setLockMode(LockMode mode);
 
@@ -28,15 +27,11 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     /*
      * Used to filter out dead ids from search result arsing from index rebuild delay
      */
-    List<Long> filterAlive(List<Long> ids);
+    List<Id> filterAlive(List<Id> ids);
 
-    boolean isAlive(long id);
+    boolean isAlive(Id id);
 
     DurableInstance get(Id id);
-
-    default DurableInstance get(long id) {
-        return get(PhysicalId.of(id));
-    }
 
 //    Instance get(RefDTO ref);
 
@@ -71,7 +66,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     boolean containsInstance(DurableInstance instance);
 
-    boolean containsId(long id);
+    boolean containsId(Id id);
 
     List<DurableInstance> getByReferenceTargetId(long targetId, DurableInstance startExclusive, long limit);
 
@@ -89,11 +84,11 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void initIds();
 
-    long getAppId();
+    Id getAppId();
 
-    Type getType(long id);
+    Type getType(Id id);
 
-    default ClassType getClassType(long id) {
+    default ClassType getClassType(Id id) {
         return (ClassType) getType(id);
     }
 
@@ -121,7 +116,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     <E> E getAttribute(ContextAttributeKey<E> key);
 
-    void initIdManually(DurableInstance instance, long id);
+    void initIdManually(DurableInstance instance, Id id);
 
     void increaseVersionsForAll();
 
@@ -129,7 +124,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     @Nullable Consumer<Object> getBindHook();
 
-    DurableInstance getRemoved(long id);
+    DurableInstance getRemoved(Id id);
 
     void invalidateCache(DurableInstance instance);
 

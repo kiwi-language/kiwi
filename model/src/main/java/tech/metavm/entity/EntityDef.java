@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 
 import javax.annotation.Nullable;
@@ -17,7 +18,7 @@ public class EntityDef<T extends Entity> extends PojoDef<T> {
     }
 
     @Override
-    protected Long getId(T model) {
+    protected Id getId(T model) {
         return model.tryGetId();
     }
 }

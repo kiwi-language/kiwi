@@ -7,6 +7,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NewArrayNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.NncUtils;
 
@@ -18,11 +19,11 @@ public class NewArrayNode extends NodeRT implements NewNode {
     public static NewArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         NewArrayNodeParam param = nodeDTO.getParam();
-        var type = (ArrayType) context.getType(nodeDTO.outputTypeRef());
+        var type = (ArrayType) context.getType(Id.parse(nodeDTO.outputTypeId()));
         var value = NncUtils.get(param.value(), v -> ValueFactory.create(v, parsingContext));
         var parentRef = param.parentRef() != null ?
                 ParentRef.create(param.parentRef(), parsingContext, context, type) : null;
-        NewArrayNode node = (NewArrayNode) context.getNode(nodeDTO.getRef());
+        NewArrayNode node = (NewArrayNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null) {
             node.setValue(value);
             node.setParentRef(parentRef);

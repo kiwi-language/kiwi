@@ -14,16 +14,16 @@ public class CodeRepoManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public long create(CodeRepoDTO codeRepoDTO) {
+    public String create(CodeRepoDTO codeRepoDTO) {
         try(var context = newContext()) {
             var repo = CodeRepo.create(codeRepoDTO, context);
             context.finish();
-            return repo.getId();
+            return repo.getStringId();
         }
     }
 
     @Transactional
-    public void remove(long id) {
+    public void remove(String id) {
         try(var context = newContext()) {
             var repo = context.getEntity(CodeRepo.class, id);
             context.remove(repo);

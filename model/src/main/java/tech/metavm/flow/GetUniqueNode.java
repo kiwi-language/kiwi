@@ -5,6 +5,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.GetUniqueNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.IndexKeyRT;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.UnionType;
@@ -19,11 +20,11 @@ public class GetUniqueNode extends NodeRT {
 
     public static GetUniqueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         GetUniqueNodeParam param = nodeDTO.getParam();
-        Index index = context.getEntity(Index.class, param.indexId());
+        Index index = context.getEntity(Index.class, Id.parse(param.indexId()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var type = context.getNullableType(index.getDeclaringType());
         var values = NncUtils.map(param.values(), v -> ValueFactory.create(v, parsingContext));
-        GetUniqueNode node = (GetUniqueNode) context.getNode(nodeDTO.getRef());
+        GetUniqueNode node = (GetUniqueNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null) {
             node.setIndex(index);
             node.setValues(values);
@@ -46,7 +47,7 @@ public class GetUniqueNode extends NodeRT {
     @Override
     protected GetUniqueNodeParam getParam(SerializeContext serializeContext) {
         return new GetUniqueNodeParam(
-                index.getId(),
+                index.getStringId(),
                 NncUtils.map(values, Value::toDTO)
         );
     }

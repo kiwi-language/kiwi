@@ -7,6 +7,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.GetElementNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.LongInstance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.AssertUtils;
@@ -22,7 +23,7 @@ public class GetElementNode extends NodeRT {
         GetElementNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.array(), parsingContext);
         var index = ValueFactory.create(param.index(), parsingContext);
-        GetElementNode node = (GetElementNode) context.getNode(nodeDTO.getRef());
+        GetElementNode node = (GetElementNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null) {
             node.setArray(array);
             node.setIndex(index);

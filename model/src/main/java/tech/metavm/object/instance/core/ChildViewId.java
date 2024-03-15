@@ -10,7 +10,7 @@ public class ChildViewId extends DefaultViewId {
 
     private final ViewId rootId;
 
-    public ChildViewId(long mappingId, Id sourceId, ViewId rootId) {
+    public ChildViewId(Id mappingId, Id sourceId, ViewId rootId) {
         super(mappingId, sourceId);
         this.rootId = rootId;
     }
@@ -18,7 +18,7 @@ public class ChildViewId extends DefaultViewId {
     @Override
     public void write(InstanceOutput output) {
         output.write(TAG);
-        output.writeLong(getMappingId());
+        getMappingId().write(output);
         getSourceId().write(output);
         rootId.write(output);
     }

@@ -5,6 +5,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.ParameterizedTypeProvider;
 import tech.metavm.util.ContextUtil;
@@ -22,7 +23,7 @@ public class SelfNode extends NodeRT {
     }
 
     public static SelfNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var node = (SelfNode) context.getNode(nodeDTO.getRef());
+        var node = (SelfNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
             node = new SelfNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), getSelfType((Method) scope.getFlow(), context.getGenericContext()), prev, scope);
         return node;

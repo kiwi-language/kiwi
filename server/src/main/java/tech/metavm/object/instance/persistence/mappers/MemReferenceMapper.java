@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.persistence.mappers;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.persistence.TargetPO;
 import tech.metavm.util.DiffUtils;

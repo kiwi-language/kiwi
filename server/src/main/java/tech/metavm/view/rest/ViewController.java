@@ -17,28 +17,28 @@ public class ViewController {
     }
 
     @GetMapping("/get-list-view-type-id")
-    public Result<Long> getListViewTypeId() {
+    public Result<String> getListViewTypeId() {
         return Result.success(viewManager.getListViewTypeId());
     }
 
     @GetMapping("/get-default-list-view")
-    public Result<ListViewDTO> getListView(@RequestParam("typeId") long typeId) {
+    public Result<ListViewDTO> getListView(@RequestParam("typeId") String typeId) {
         return Result.success(viewManager.getDefaultListView(typeId));
     }
 
     @PostMapping("/mapping")
-    public Result<Long> saveViewMapping(@RequestBody ObjectMappingDTO viewMapping) {
+    public Result<String> saveViewMapping(@RequestBody ObjectMappingDTO viewMapping) {
         return Result.success(viewManager.saveMapping(viewMapping));
     }
 
     @DeleteMapping("/mapping/{id:[0-9]+}")
-    public Result<Void> removeViewMapping(@PathVariable("id") long id) {
+    public Result<Void> removeViewMapping(@PathVariable("id") String id) {
         viewManager.removeMapping(id);
         return Result.voidSuccess();
     }
 
     @PostMapping("/mapping/{id:[0-9]+}/set-default")
-    public Result<Void> saveViewMapping(@PathVariable("id") long id) {
+    public Result<Void> saveViewMapping(@PathVariable("id") String id) {
         viewManager.setDefaultMapping(id);
         return Result.voidSuccess();
     }

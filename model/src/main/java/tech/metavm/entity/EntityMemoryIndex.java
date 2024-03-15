@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -135,7 +136,7 @@ public class EntityMemoryIndex {
         private int compareObject(Object o1, Object o2) {
             if (o1 instanceof Entity e1 && o2 instanceof Entity e2) {
                 if (e1.tryGetId() != null && e2.tryGetId() != null)
-                    return Long.compare(e1.tryGetId(), e2.tryGetId());
+                    return Objects.compare(e1.tryGetId(), e2.tryGetId(), Id::compareTo);
                 if (e1.getTmpId() != null && e2.getTmpId() != null)
                     return Long.compare(e1.getTmpId(), e2.getTmpId());
             }

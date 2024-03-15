@@ -1,13 +1,15 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TypeId;
 
 import java.util.Collection;
 
 public interface IdInitializer {
 
-    long getTypeId(long id);
+    TypeId getTypeId(Id id);
 
-    void initializeIds(long appId, Collection<? extends DurableInstance> instances);
+    void initializeIds(Id appId, Collection<? extends DurableInstance> instances);
 
 }

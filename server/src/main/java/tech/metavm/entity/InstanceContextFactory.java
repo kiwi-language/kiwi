@@ -8,6 +8,7 @@ import tech.metavm.event.EventQueue;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
@@ -43,7 +44,7 @@ public class InstanceContextFactory {
                 || TransactionSynchronizationManager.isCurrentTransactionReadOnly();
     }
 
-    public InstanceContextBuilder newBuilder(long appId,
+    public InstanceContextBuilder newBuilder(Id appId,
                                              TypeProvider typeProvider,
                                              MappingProvider mappingProvider,
                                              ParameterizedFlowProvider parameterizedFlowProvider) {

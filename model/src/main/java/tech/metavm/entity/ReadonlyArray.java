@@ -164,6 +164,16 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         return table.iterator();
     }
 
+    @Override
+    public void forEach(Consumer<? super T> action) {
+        table.forEach(action);
+    }
+
+    @Override
+    public Spliterator<T> spliterator() {
+        return table.spliterator();
+    }
+
     public int size() {
         return table.size();
     }

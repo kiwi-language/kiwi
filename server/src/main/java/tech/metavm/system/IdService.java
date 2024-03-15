@@ -4,6 +4,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityIdProvider;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.system.persistence.BlockMapper;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeCategory;
@@ -27,11 +29,11 @@ public class IdService extends BaseIdService implements EntityIdProvider {
         this.regionManager = regionManager;
     }
 
-    private Map<Long, BlockRT> getActiveBlockMap(long appId, Collection<Type> types) {
+    private Map<TypeId, BlockRT> getActiveBlockMap(Id appId, Collection<Type> types) {
         try (var ignored = ContextUtil.getProfiler().enter("IdService.getActiveBlockMap")) {
-            List<BlockRT> blocks = blockSource.getActive(NncUtils.map(types, Entity::tryGetId));
-            Map<Long, BlockRT> result = NncUtils.toMap(blocks, BlockRT::getTypeId);
-            List<Type> residualTypes = NncUtils.exclude(types, t -> result.containsKey(t.tryGetId()));
+            List<BlockRT> blocks = blockSource.getActive(NncUtils.map(types, Entity::getPhysicalId));
+            Map<TypeId, BlockRT> result = NncUtils.toMap(blocks, BlockRT::getTypeId);
+            List<Type> residualTypes = NncUtils.exclude(types, t -> result.containsKey(t.getTypeId()));
             if (!residualTypes.isEmpty()) {
                 createBlocks(appId, residualTypes).forEach(block -> result.put(block.getTypeId(), block));
             }
@@ -39,8 +41,8 @@ public class IdService extends BaseIdService implements EntityIdProvider {
         }
     }
 
-    private List<BlockRT> createBlocks(long appId, List<Type> types) {
-        Map<TypeCategory, List<Long>> category2types = NncUtils.toMultiMap(types, Type::getCategory, Entity::tryGetId);
+    private List<BlockRT> createBlocks(Id appId, List<Type> types) {
+        Map<TypeCategory, List<TypeId>> category2types = NncUtils.toMultiMap(types, Type::getCategory, Type::getTypeId);
         List<BlockRT> blocks = new ArrayList<>();
         category2types.forEach(((typeCategory, typeIds) ->
                 blocks.addAll(createBlocks(appId, typeCategory, typeIds))
@@ -48,7 +50,7 @@ public class IdService extends BaseIdService implements EntityIdProvider {
         return blocks;
     }
 
-    private List<BlockRT> createBlocks(long appId, TypeCategory typeCategory, Collection<Long> typeIds) {
+    private List<BlockRT> createBlocks(Id appId, TypeCategory typeCategory, Collection<TypeId> typeIds) {
         try (var ignored = ContextUtil.getProfiler().enter("IdService.createBlocks")) {
             RegionRT region = regionManager.get(typeCategory);
             if (region == null) {
@@ -56,7 +58,7 @@ public class IdService extends BaseIdService implements EntityIdProvider {
             }
             long id = region.getNext();
             List<BlockRT> blocks = new ArrayList<>();
-            for (Long typeId : typeIds) {
+            for (var typeId : typeIds) {
                 BlockRT block = newBlock(id++, appId, typeId, id++);
                 id += block.getSize();
                 blocks.add(block);
@@ -67,7 +69,7 @@ public class IdService extends BaseIdService implements EntityIdProvider {
         }
     }
 
-    private BlockRT newBlock(long id, long appId, long typeId, long start) {
+    private BlockRT newBlock(long id, Id appId, TypeId typeId, long start) {
         return new BlockRT(
                 id,
                 appId,
@@ -85,28 +87,28 @@ public class IdService extends BaseIdService implements EntityIdProvider {
     }
 
     @Transactional
-    public Long allocate(long appId, Type type) {
+    public Long allocate(Id appId, Type type) {
         Map<Type, List<Long>> result =
                 allocate(appId, Map.of(type, 1));
         return result.values().iterator().next().get(0);
     }
 
     @Transactional
-    public Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count) {
+    public Map<Type, List<Long>> allocate(Id appId, Map<Type, Integer> typeId2count) {
         return allocate0(appId, typeId2count, 0);
     }
 
-    private Map<Type, List<Long>> allocate0(long appId, Map<Type, Integer> typeId2count, int depth) {
+    private Map<Type, List<Long>> allocate0(Id appId, Map<Type, Integer> typeId2count, int depth) {
         if (depth > MAX_ALLOCATION_RECURSION_DEPTH) {
             throw new InternalException("Allocation recursion depth exceeds maximum: "
                     + MAX_ALLOCATION_RECURSION_DEPTH);
         }
-        Map<Long, BlockRT> activeBlockMap = getActiveBlockMap(appId, typeId2count.keySet());
+        Map<TypeId, BlockRT> activeBlockMap = getActiveBlockMap(appId, typeId2count.keySet());
         Map<Type, List<Long>> result = new HashMap<>();
         Map<Type, Integer> residual = new HashMap<>();
 
         typeId2count.forEach((type, count) -> {
-            BlockRT block = activeBlockMap.get(type.tryGetId());
+            BlockRT block = activeBlockMap.get(type.getTypeId());
             NncUtils.requireNonNull(block, "Active block not found for type: " + type);
             Integer allocateCount = Math.min(count, block.available());
             result.put(type, block.allocate(count));

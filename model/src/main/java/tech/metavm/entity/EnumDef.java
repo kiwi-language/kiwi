@@ -6,6 +6,7 @@ import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Function;
 
@@ -59,7 +60,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
     }
 
     @Override
-    public ClassInstance createInstance(T model, ObjectInstanceMap instanceMap, Long id) {
+    public ClassInstance createInstance(T model, ObjectInstanceMap instanceMap, Id id) {
         return NncUtils.findRequired(
                 enumConstantDefList,
                 def -> def.getValue() == model
@@ -90,12 +91,12 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
         return enumType;
     }
 
-    EnumConstantRT createEnumConstant(Enum<?> value, java.lang.reflect.Field javaField, Function<Object, Long> getId) {
+    EnumConstantRT createEnumConstant(Enum<?> value, Field javaField, Function<Object, Id> getId) {
         var id = getId.apply(value);
         ClassInstance instance;
         if(id == null) {
             instance = new ClassInstance(
-                    NncUtils.get(getId.apply(value), PhysicalId::new),
+                    getId.apply(value),
                     parentDef.getInstanceFields(value, defContext.getObjectInstanceMap()),
                     type
             );

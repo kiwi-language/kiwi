@@ -1,6 +1,7 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.EntityChange;
+import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.PhysicalId;
@@ -39,19 +40,19 @@ public class IndexConstraintPlugin implements ContextPlugin {
         Map<Long, ClassInstance> instanceMap = new HashMap<>();
         List<IndexEntryPO> currentEntries = new ArrayList<>();
         change.forEachInsertOrUpdate(instancePO -> {
-            var instance = context.get(PhysicalId.of(instancePO.getId()));
+            var instance = context.get(instancePO.getInstanceId());
             if (instance instanceof ClassInstance classInstance) {
                 instanceMap.put(classInstance.getPhysicalId(), classInstance);
-                currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.getParameterizedFlowProvider(),context.getAppId() ));
+                currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.getParameterizedFlowProvider(), context.getAppId().getPhysicalId()));
             }
         });
         List<InstancePO> oldInstances = NncUtils.union(change.updates(), change.deletes());
         Set<Long> oldInstanceIds = NncUtils.mapUnique(oldInstances, InstancePO::getId);
         Set<IndexEntryPO> relatedEntries = new HashSet<>();
         NncUtils.doInBatch(NncUtils.map(oldInstances, InstancePO::getId),
-                ids -> relatedEntries.addAll(indexEntryMapper.selectByInstanceIds(context.getAppId(), ids)));
+                ids -> relatedEntries.addAll(indexEntryMapper.selectByInstanceIds(context.getAppId().getPhysicalId(), ids)));
         NncUtils.doInBatch(NncUtils.map(currentEntries, IndexEntryPO::getKey),
-                keys -> relatedEntries.addAll(indexEntryMapper.selectByKeys(context.getAppId(), keys)));
+                keys -> relatedEntries.addAll(indexEntryMapper.selectByKeys(context.getAppId().getPhysicalId(), keys)));
 
         List<IndexEntryPO> oldEntries = NncUtils.filter(
                 relatedEntries,
@@ -68,7 +69,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         );
         Map<IndexKeyPO, Long> conflictingKeyMap = NncUtils.toMap(conflictingEntries, IndexEntryPO::getKey, IndexEntryPO::getInstanceId);
         for (IndexEntryPO currentItem : currentEntries) {
-            Index constraint = indexProvider.getIndex(currentItem.getIndexId());
+            Index constraint = indexProvider.getIndex(PhysicalId.of(currentItem.getIndexId(), ModelDefRegistry.getType(Index.class)));
             if (!constraint.isUnique() || PersistenceUtils.containsNull(constraint, currentItem.getKey())) {
                 continue;
             }

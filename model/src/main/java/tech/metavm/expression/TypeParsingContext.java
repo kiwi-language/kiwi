@@ -1,9 +1,9 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceProvider;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.*;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
@@ -26,7 +26,7 @@ public class TypeParsingContext extends BaseParsingContext {
 
     private final ClassType type;
     private final ThisExpression thisExpression;
-    private final java.util.function.Function<Long, Instance> getInstanceFunc;
+    private final java.util.function.Function<Id, Instance> getInstanceFunc;
 
     public TypeParsingContext(InstanceProvider instanceProvider,
                               IndexedTypeProvider typeProvider,
@@ -36,7 +36,7 @@ public class TypeParsingContext extends BaseParsingContext {
         super(instanceProvider, typeProvider, arrayTypeProvider, unionTypeProvider);
         this.type = type;
         thisExpression = new ThisExpression(type);
-        this.getInstanceFunc = id -> instanceProvider.get(new PhysicalId(id));
+        this.getInstanceFunc = instanceProvider::get;
     }
 
     public ClassType getType() {
@@ -44,7 +44,7 @@ public class TypeParsingContext extends BaseParsingContext {
     }
 
     @Override
-    public Instance getInstance(long id) {
+    public Instance getInstance(Id id) {
         return getInstanceFunc.apply(id);
     }
 

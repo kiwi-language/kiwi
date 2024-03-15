@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.CompositeTypeFactory;
 import tech.metavm.object.type.DefaultTypeFactory;
 import tech.metavm.object.type.Type;
@@ -36,7 +37,12 @@ public class EntityContext extends BaseEntityContext implements CompositeTypeFac
     }
 
     @Override
-    public IEntityContext createSame(long appId) {
+    public IEntityContext createSame(Id appId) {
         return new EntityContext(getInstanceContext().createSame(appId), getParent());
+    }
+
+    @Override
+    public TypeRegistry getTypeRegistry() {
+        return defContext;
     }
 }

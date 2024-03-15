@@ -1,6 +1,7 @@
 package tech.metavm.object.view.mocks;
 
 import tech.metavm.common.RefDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingRepository;
 
@@ -9,15 +10,15 @@ import java.util.Map;
 
 public class MockMappingRepository implements MappingRepository {
 
-    private final Map<RefDTO, Mapping> map = new HashMap<>();
+    private final Map<Id, Mapping> map = new HashMap<>();
 
     @Override
-    public Mapping getMapping(RefDTO ref) {
-        return map.get(ref);
+    public Mapping getMapping(Id id) {
+        return map.get(id);
     }
 
     @Override
     public void save(Mapping mapping) {
-        map.put(mapping.getRef(), mapping);
+        map.put(mapping.getId(), mapping);
     }
 }

@@ -2,6 +2,8 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
@@ -25,12 +27,12 @@ public class BootIdProvider implements EntityIdProvider  {
     }
 
     @Override
-    public long getTypeId(long id) {
-        return allocators.getTypeId(id);
+    public TypeId getTypeId(Id id) {
+        return allocators.getTypeId(id.getPhysicalId());
     }
 
     @Override
-    public Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count) {
+    public Map<Type, List<Long>> allocate(Id appId, Map<Type, Integer> typeId2count) {
         Map<java.lang.reflect.Type, Integer> javaType2count = new HashMap<>();
         Map<java.lang.reflect.Type, Type> javaType2type = new HashMap<>();
         typeId2count.forEach((type, count) -> {

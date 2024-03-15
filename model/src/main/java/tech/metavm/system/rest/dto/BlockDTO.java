@@ -2,7 +2,8 @@ package tech.metavm.system.rest.dto;
 
 public record BlockDTO(
         long id,
-        long appId,
+        String appId,
+        int typeTag,
         long typeId,
         long start,
         long end,

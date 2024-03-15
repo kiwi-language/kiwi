@@ -4,10 +4,10 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record PlatformUserQuery(
-        @Nullable Long appId,
+        @Nullable String appId,
         @Nullable String searchText,
         @Nullable String loginName,
-        @Nullable List<Long> excluded,
+        @Nullable List<String> excluded,
         int page,
         int pageSize
 ) {

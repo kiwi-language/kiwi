@@ -308,13 +308,13 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     public FieldDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new FieldDTO(
-                    id, serContext.getTmpId(this),
+                    serContext.getRef(this),
                     getName(),
                     getCode(),
                     getAccess().code(),
                     defaultValue.toFieldValueDTO(),
                     isUnique(),
-                    declaringType.tryGetId(),
+                    declaringType.getStringId(),
                     serContext.getRef(getType()),
                     isChild,
                     isStatic(),

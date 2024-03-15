@@ -1,4 +1,4 @@
 package tech.metavm.object.instance.core;
 
-public record InstanceVersion(long id, long version) {
+public record InstanceVersion(PhysicalId id, long version) {
 }

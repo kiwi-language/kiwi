@@ -25,7 +25,7 @@ public class TableController {
     }
 
     @GetMapping("/{id:[0-9]+}")
-    public Result<TableDTO> get(@PathVariable("id") long id) {
+    public Result<TableDTO> get(@PathVariable("id") String id) {
         return Result.success(tableManager.get(id));
     }
 
@@ -35,12 +35,12 @@ public class TableController {
     }
 
     @GetMapping("/column/{id:[0-9]+}")
-    public Result<ColumnDTO> getColumn(@PathVariable("id") long id) {
+    public Result<ColumnDTO> getColumn(@PathVariable("id") String id) {
         return Result.success(tableManager.getColumn(id));
     }
 
     @PostMapping("/column")
-    public Result<Long> saveColumn(@RequestBody ColumnDTO field) {
+    public Result<String> saveColumn(@RequestBody ColumnDTO field) {
         return Result.success(tableManager.saveColumn(field));
     }
 

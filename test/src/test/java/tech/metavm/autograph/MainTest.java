@@ -5,10 +5,10 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.application.rest.dto.ApplicationCreateRequest;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.flow.rest.GetFlowRequest;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.PrimitiveKind;
@@ -45,7 +45,7 @@ public class MainTest extends CompilerTestBase {
     public void test() throws ExecutionException, InterruptedException {
         compile(SOURCE_ROOT);
         var ref = new Object() {
-            long productTypeId;
+            String productTypeId;
         };
         submit(() -> {
             var productType = queryClassType("商品");
@@ -54,13 +54,13 @@ public class MainTest extends CompilerTestBase {
             var skuType = queryClassType("SKU");
             var skuListType = typeManager.getParameterizedType(
                     new GetParameterizedTypeRequest(
-                            StandardTypes.getChildListType().getRef(),
-                            List.of(skuType.getRef()),
+                            StandardTypes.getChildListType().getStringId(),
+                            List.of(skuType.id()),
                             List.of()
                     )
             ).type().id();
             var product = InstanceDTO.createClassInstance(
-                    productType.getRef(),
+                    productType.id(),
                     List.of(
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(productType, "title"),
@@ -70,12 +70,12 @@ public class MainTest extends CompilerTestBase {
                                     getFieldIdByCode(productType, "skus"),
                                     InstanceFieldValue.of(
                                             InstanceDTO.createListInstance(
-                                                    RefDTO.fromId(skuListType),
+                                                    skuListType,
                                                     true,
                                                     List.of(
                                                             InstanceFieldValue.of(
                                                                     InstanceDTO.createClassInstance(
-                                                                            skuType.getRef(),
+                                                                            skuType.id(),
                                                                             List.of(
                                                                                     InstanceFieldDTO.create(
                                                                                             getFieldIdByCode(skuType, "title"),
@@ -94,7 +94,7 @@ public class MainTest extends CompilerTestBase {
                                                             ),
                                                             InstanceFieldValue.of(
                                                                     InstanceDTO.createClassInstance(
-                                                                            skuType.getRef(),
+                                                                            skuType.id(),
                                                                             List.of(
                                                                                     InstanceFieldDTO.create(
                                                                                             getFieldIdByCode(skuType, "title"),
@@ -121,7 +121,7 @@ public class MainTest extends CompilerTestBase {
             var loadedProduct = instanceManager.get(productId, 1).instance();
             MatcherAssert.assertThat(loadedProduct, new InstanceDTOMatcher(product, TestUtils.extractDescendantIds(loadedProduct)));
             var productMapping = TestUtils.getDefaultMapping(productType);
-            var productViewType = typeManager.getType(new GetTypeRequest(productMapping.targetTypeRef().id(), false)).type();
+            var productViewType = typeManager.getType(new GetTypeRequest(productMapping.targetTypeId(), false)).type();
             var productViews = instanceManager.query(
                     new InstanceQueryDTO(
                             productViewType.id(),
@@ -157,7 +157,7 @@ public class MainTest extends CompilerTestBase {
             var productNormalState = TestUtils.getEnumConstantByName(productStateType, "正常");
             var productType = queryClassType("AST产品");
             var product = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
-                    productType.getRef(),
+                    productType.id(),
                     List.of(
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(productType, "title"),
@@ -185,7 +185,7 @@ public class MainTest extends CompilerTestBase {
             var couponStateType = queryClassType("优惠券状态");
             var couponNormalState = TestUtils.getEnumConstantByName(couponStateType, "未使用");
             var coupon = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
-                    directCouponType.getRef(),
+                    directCouponType.id(),
                     List.of(
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(directCouponType, "discount"),
@@ -210,7 +210,7 @@ public class MainTest extends CompilerTestBase {
                     List.of(
                             PrimitiveFieldValue.createLong(1L),
                             InstanceFieldValue.of(InstanceDTO.createArrayInstance(
-                                    couponArrayType.getRef(),
+                                    couponArrayType.id(),
                                     false,
                                     List.of(ReferenceFieldValue.create(coupon))
                             ))
@@ -300,7 +300,7 @@ public class MainTest extends CompilerTestBase {
     public void testMetavm() {
         compile(METAVM_SOURCE_ROOT);
         var ref = new Object() {
-            long getCodeMethodId;
+            String getCodeMethodId;
             int numNodes;
         };
         submit(() -> {
@@ -330,12 +330,12 @@ public class MainTest extends CompilerTestBase {
         submit(() -> {
             var sysApp = doInTransaction(() -> applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser("test", "admin", "123456")));
             var sysLoginResult = doInTransaction(() -> loginService.login(new LoginRequest(
-                    Constants.PLATFORM_APP_ID,
+                    Constants.getPlatformAppId().toString(),
                     "admin",
                     "123456"
             ), "127.0.0.1"));
-            ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
-            ContextUtil.setUserId(sysLoginResult.userId());
+            ContextUtil.setAppId(Constants.getPlatformAppId());
+            ContextUtil.setUserId(Id.parse(sysLoginResult.userId()));
             var sysLoginResult2 = doInTransaction(() -> platformUserManager.enterApp(sysApp.appId()));
             LOGGER.info(sysLoginResult2.toString());
             var loginInfo = loginService.verify(requireNonNull(sysLoginResult2.token()));
@@ -348,13 +348,13 @@ public class MainTest extends CompilerTestBase {
             var roleType = queryClassType("LabRole");
             var roleReadWriteListType = typeManager.getParameterizedType(
                     new GetParameterizedTypeRequest(
-                            StandardTypes.getReadWriteListType().getRef(),
-                            List.of(roleType.getRef()),
+                            StandardTypes.getReadWriteListType().getStringId(),
+                            List.of(roleType.id()),
                             List.of()
                     )
             ).type();
             var roleNameFieldId = getFieldIdByCode(roleType, "name");
-            var roleConstructorId = TestUtils.getMethodId(roleType, "LabRole", StandardTypes.getStringType().getId());
+            var roleConstructorId = TestUtils.getMethodId(roleType, "LabRole", StandardTypes.getStringType().getStringId());
             var role = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             roleConstructorId,
@@ -392,7 +392,7 @@ public class MainTest extends CompilerTestBase {
                             List.of(
                                     InstanceFieldValue.of(
                                             InstanceDTO.createClassInstance(
-                                                    registerRequestType.getRef(),
+                                                    registerRequestType.id(),
                                                     List.of(
                                                             InstanceFieldDTO.create(
                                                                     getFieldIdByCode(registerRequestType, "loginName"),
@@ -432,7 +432,7 @@ public class MainTest extends CompilerTestBase {
 
             // test platform user view list
             var platformUserMapping = TestUtils.getDefaultMapping(platformUserType);
-            var platformUserViewType = typeManager.getType(new GetTypeRequest(platformUserMapping.targetTypeRef().id(), false)).type();
+            var platformUserViewType = typeManager.getType(new GetTypeRequest(platformUserMapping.targetTypeId(), false)).type();
             var platformUserViewList = instanceManager.query(
                     new InstanceQueryDTO(
                             platformUserViewType.id(),
@@ -493,7 +493,7 @@ public class MainTest extends CompilerTestBase {
 
             // enter application
             var enterApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "enterApp",
-                    platformUserType.getRef(), userApplicationType.getRef());
+                    platformUserType.id(), userApplicationType.id());
             var loginResult = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             enterApplicationMethodId,
@@ -510,20 +510,20 @@ public class MainTest extends CompilerTestBase {
             // test leave application
             var platformUserListType = typeManager.getParameterizedType(
                     new GetParameterizedTypeRequest(
-                            StandardTypes.getListType().getRef(),
-                            List.of(platformUserType.getRef()),
+                            StandardTypes.getListType().getStringId(),
+                            List.of(platformUserType.id()),
                             List.of()
                     )
             ).type();
             var platformUserReadWriteListType = typeManager.getParameterizedType(
                     new GetParameterizedTypeRequest(
-                            StandardTypes.getReadWriteListType().getRef(),
-                            List.of(platformUserType.getRef()),
+                            StandardTypes.getReadWriteListType().getStringId(),
+                            List.of(platformUserType.id()),
                             List.of()
                     )
             ).type();
             var leaveApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "leaveApp",
-                    platformUserListType.getRef(), userApplicationType.getRef());
+                    platformUserListType.id(), userApplicationType.id());
             try {
                 doInTransaction(() -> flowExecutionService.execute(
                         new FlowExecutionRequest(
@@ -533,7 +533,7 @@ public class MainTest extends CompilerTestBase {
                                         new InstanceFieldValue(
                                                 null,
                                                 InstanceDTO.createListInstance(
-                                                        platformUserReadWriteListType.getRef(),
+                                                        platformUserReadWriteListType.id(),
                                                         false,
                                                         List.of(ReferenceFieldValue.create(platformUser))
                                                 )
@@ -558,7 +558,7 @@ public class MainTest extends CompilerTestBase {
                                     new InstanceFieldValue(
                                             null,
                                             InstanceDTO.createListInstance(
-                                                    roleReadWriteListType.getRef(),
+                                                    roleReadWriteListType.id(),
                                                     false,
                                                     List.of(ReferenceFieldValue.create(role))
                                             )
@@ -577,7 +577,7 @@ public class MainTest extends CompilerTestBase {
                             List.of(
                                     InstanceFieldValue.of(
                                             InstanceDTO.createClassInstance(
-                                                    appInvitationRequestType.getRef(),
+                                                    appInvitationRequestType.id(),
                                                     List.of(
                                                             InstanceFieldDTO.create(
                                                                     getFieldIdByCode(appInvitationRequestType, "application"),
@@ -673,7 +673,7 @@ public class MainTest extends CompilerTestBase {
                             List.of(
                                     InstanceFieldValue.of(
                                             InstanceDTO.createListInstance(
-                                                    platformUserReadWriteListType.getRef(),
+                                                    platformUserReadWriteListType.id(),
                                                     false,
                                                     List.of(ReferenceFieldValue.create(anotherPlatformUser))
                                             )
@@ -705,7 +705,7 @@ public class MainTest extends CompilerTestBase {
 
             // test application view list
             var applicationMapping = TestUtils.getDefaultMapping(userApplicationType);
-            var applicationViewType = typeManager.getType(new GetTypeRequest(applicationMapping.targetTypeRef().id(), false)).type();
+            var applicationViewType = typeManager.getType(new GetTypeRequest(applicationMapping.targetTypeId(), false)).type();
             var applicationViewList = instanceManager.query(
                     new InstanceQueryDTO(
                             applicationViewType.id(),
@@ -730,8 +730,8 @@ public class MainTest extends CompilerTestBase {
             var tokenType = queryClassType("LabToken");
             var tokenReadWriteListType = typeManager.getParameterizedType(
                     new GetParameterizedTypeRequest(
-                            StandardTypes.getReadWriteListType().getRef(),
-                            List.of(tokenType.getRef()),
+                            StandardTypes.getReadWriteListType().getStringId(),
+                            List.of(tokenType.id()),
                             List.of()
                     )
             ).type();
@@ -749,7 +749,7 @@ public class MainTest extends CompilerTestBase {
                                     PrimitiveFieldValue.createString("leen"),
                                     InstanceFieldValue.of(
                                             InstanceDTO.createListInstance(
-                                                    roleReadWriteListType.getRef(),
+                                                    roleReadWriteListType.id(),
                                                     false,
                                                     List.of(ReferenceFieldValue.create(role))
                                             )
@@ -807,7 +807,7 @@ public class MainTest extends CompilerTestBase {
                             List.of(
                                     InstanceFieldValue.of(
                                             InstanceDTO.createListInstance(
-                                                    tokenReadWriteListType.getRef(),
+                                                    tokenReadWriteListType.id(),
                                                     false,
                                                     List.of(tokenValue)
                                             )
@@ -841,7 +841,7 @@ public class MainTest extends CompilerTestBase {
                             List.of(
                                     InstanceFieldValue.of(
                                             InstanceDTO.createClassInstance(
-                                                    changePasswordRequestType.getRef(),
+                                                    changePasswordRequestType.id(),
                                                     List.of(
                                                             InstanceFieldDTO.create(
                                                                     getFieldIdByCode(changePasswordRequestType, "verificationCode"),
@@ -897,7 +897,7 @@ public class MainTest extends CompilerTestBase {
         ));
     }
 
-    private void assertTokenInvalidated(TypeDTO userType, FieldValue tokenValue, long applicationFieldId) {
+    private void assertTokenInvalidated(TypeDTO userType, FieldValue tokenValue, String applicationFieldId) {
         var loginInfo = verify(userType, tokenValue);
         Assert.assertNull(((PrimitiveFieldValue) loginInfo.getFieldValue(applicationFieldId)).getValue());
     }
@@ -939,7 +939,7 @@ public class MainTest extends CompilerTestBase {
 
     private FieldValue createTokenValue(TypeDTO tokenType, InstanceDTO application, String token) {
         return InstanceFieldValue.of(InstanceDTO.createClassInstance(
-                tokenType.getRef(),
+                tokenType.id(),
                 List.of(
                         InstanceFieldDTO.create(
                                 getFieldIdByCode(tokenType, "application"),

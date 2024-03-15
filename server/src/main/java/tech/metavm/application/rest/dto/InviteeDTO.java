@@ -1,7 +1,7 @@
 package tech.metavm.application.rest.dto;
 
 public record InviteeDTO(
-        long id,
+        String id,
         String loginName,
         boolean inApp
 ) {

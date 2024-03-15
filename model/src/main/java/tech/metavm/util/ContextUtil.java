@@ -2,6 +2,7 @@ package tech.metavm.util;
 
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
@@ -11,9 +12,9 @@ public class ContextUtil {
     private static class ContextInfo {
         private Long metaVersion;
         @Nullable String clientId;
-        long platformUserId = -1L;
-        long userId = -1L;
-        long appId = -1L;
+        Id platformUserId;
+        Id userId;
+        Id appId;
         long nextTmpId = 1L;
         String token;
         private Profiler profiler = new Profiler();
@@ -23,10 +24,10 @@ public class ContextUtil {
             return nextTmpId++;
         }
 
-        void enterApp(long appId, long appUserId) {
-            if(this.appId == -1L)
+        void enterApp(Id appId, Id appUserId) {
+            if(this.appId == null)
                 throw new BusinessException(ErrorCode.INVALID_TOKEN);
-            if(this.appId != Constants.PLATFORM_APP_ID)
+            if(this.appId.getPhysicalId() == Constants.PLATFORM_APP_ID)
                 throw new BusinessException(ErrorCode.REENTERING_APP);
             platformUserId = this.userId;
             this.appId = appId;
@@ -34,11 +35,11 @@ public class ContextUtil {
         }
 
         void exitApp() {
-            if(this.appId == -1L || this.appId == Constants.PLATFORM_APP_ID)
+            if(this.appId == null || this.appId.getPhysicalId() == Constants.PLATFORM_APP_ID)
                 throw new BusinessException(ErrorCode.NOT_IN_APP);
-            this.appId = Constants.PLATFORM_APP_ID;
+            this.appId = Constants.getPlatformAppId();
             this.userId = platformUserId;
-            this.platformUserId = -1L;
+            this.platformUserId = null;
         }
 
         public IEntityContext getEntityContext() {
@@ -53,11 +54,11 @@ public class ContextUtil {
 
     private static final ThreadLocal<ContextInfo> THREAD_LOCAL = new ThreadLocal<>();
 
-    public static long getAppId() {
+    public static Id getAppId() {
         return getContextInfo().appId;
     }
 
-    public static long getUserId() {
+    public static Id getUserId() {
         return getContextInfo().userId;
     }
 
@@ -78,7 +79,7 @@ public class ContextUtil {
     }
 
     public static boolean isLoggedIn() {
-        return getContextInfo().userId != -1L;
+        return getContextInfo().userId != null;
     }
 
     private static ContextInfo getContextInfo() {
@@ -90,7 +91,7 @@ public class ContextUtil {
         return contextInfo;
     }
 
-    public static void enterApp(long appId, long appUserId) {
+    public static void enterApp(Id appId, Id appUserId) {
         getContextInfo().enterApp(appId, appUserId);
     }
 
@@ -110,11 +111,11 @@ public class ContextUtil {
         THREAD_LOCAL.set(new ContextInfo());
     }
 
-    public static void setUserId(long userId) {
+    public static void setUserId(Id userId) {
         getContextInfo().userId = userId;
     }
 
-    public static void setAppId(long appId) {
+    public static void setAppId(Id appId) {
         getContextInfo().appId = appId;
     }
 
@@ -124,9 +125,9 @@ public class ContextUtil {
 
     public static void resetLoginInfo() {
         var clientInfo = getContextInfo();
-        clientInfo.userId = -1L;
+        clientInfo.userId = null;
         clientInfo.clientId = null;
-        clientInfo.appId = -1L;
+        clientInfo.appId = null;
     }
 
     public static void resetProfiler() {

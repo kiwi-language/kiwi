@@ -8,6 +8,6 @@ public record MessageQuery(
         Boolean read,
         int page,
         int pageSize,
-        @Nullable List<Long> newlyCreated
+        @Nullable List<String> newlyCreated
         ) {
 }

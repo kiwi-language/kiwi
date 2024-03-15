@@ -8,6 +8,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UnmapNodeParam;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.util.AssertUtils;
@@ -16,9 +17,9 @@ import tech.metavm.util.AssertUtils;
 public class UnmapNode extends NodeRT {
 
     public static UnmapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var node = (UnmapNode) context.getNode(nodeDTO.getRef());
+        var node = (UnmapNode) context.getNode(Id.parse(nodeDTO.id()));
         var param = (UnmapNodeParam) nodeDTO.param();
-        var mapping = context.getMapping(param.mappingRef());
+        var mapping = context.getMapping(Id.parse(param.mappingId()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var view = ValueFactory.create(param.view(), parsingContext);
         if (node == null)

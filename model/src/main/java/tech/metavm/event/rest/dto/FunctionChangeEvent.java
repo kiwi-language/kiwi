@@ -8,11 +8,11 @@ import java.util.List;
 public class FunctionChangeEvent extends AppEvent {
 
     private final long version;
-    private final List<Long> functionIds;
+    private final List<String> functionIds;
     @Nullable
     private final String triggerClientId;
 
-    public FunctionChangeEvent(long appId, long version, List<Long> functionIds, @Nullable String triggerClientId) {
+    public FunctionChangeEvent(String appId, long version, List<String> functionIds, @Nullable String triggerClientId) {
         super(appId, AppEventKind.FUNCTION_CHANGE.code());
         this.functionIds = functionIds;
         this.version = version;
@@ -23,7 +23,7 @@ public class FunctionChangeEvent extends AppEvent {
         return version;
     }
 
-    public List<Long> getFunctionIds() {
+    public List<String> getFunctionIds() {
         return functionIds;
     }
 

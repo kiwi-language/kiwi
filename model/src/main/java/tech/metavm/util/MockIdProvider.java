@@ -1,6 +1,10 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.EntityIdProvider;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.TypeId;
+import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeCategory;
 
@@ -15,16 +19,16 @@ public class MockIdProvider implements EntityIdProvider {
 
     public static final long INITIAL_NEXT_ID = 1000000L;
     private final Map<TypeCategory, Long> nextIdMap = new HashMap<>();
-    private final Map<Long, Long> id2typeId = new HashMap<>();
+    private final Map<Id, TypeId> id2typeId = new HashMap<>();
 
     @Override
-    public long getTypeId(long id) {
+    public TypeId getTypeId(Id id) {
         return NncUtils.requireNonNull(id2typeId.get(id),
                 () -> new InternalException("Can not find a type for id: " + id));
     }
 
     @Override
-    public Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count) {
+    public Map<Type, List<Long>> allocate(Id appId, Map<Type, Integer> typeId2count) {
         Map<Type, List<Long>> result = new HashMap<>();
         typeId2count.forEach((type, count) -> {
             List<Long> ids = new ArrayList<>();
@@ -44,7 +48,8 @@ public class MockIdProvider implements EntityIdProvider {
                 requireNonNull(category.getIdRegion(), "region not found for category " + category).start() + INITIAL_NEXT_ID :
                 id + 1
         );
-        id2typeId.put(resultId, type.getId());
+        var id = PhysicalId.of(resultId, type);
+        id2typeId.put(id, new TypeId(TypeTag.fromCategory(type.getCategory()), type.getId().getPhysicalId()));
         return resultId;
     }
 

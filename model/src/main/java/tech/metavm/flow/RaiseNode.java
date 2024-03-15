@@ -8,6 +8,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.RaiseNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -23,7 +24,7 @@ public class RaiseNode extends NodeRT {
         var paramKind = RaiseParameterKind.getByCode(param.parameterKind());
         var exception = param.exception() != null ? ValueFactory.create(param.exception(), parsingContext) : null;
         var message = param.message() != null ? ValueFactory.create(param.message(), parsingContext) : null;
-        RaiseNode node = (RaiseNode) entityContext.getNode(nodeDTO.getRef());
+        RaiseNode node = (RaiseNode) entityContext.getNode(Id.parse(nodeDTO.id()));
         if (node != null)
             node.update(paramKind, exception, message);
         else

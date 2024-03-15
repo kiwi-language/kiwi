@@ -8,6 +8,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.MapNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.util.AssertUtils;
@@ -16,9 +17,9 @@ import tech.metavm.util.AssertUtils;
 public class MapNode extends NodeRT {
 
     public static MapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var node = (MapNode) context.getNode(nodeDTO.getRef());
+        var node = (MapNode) context.getNode(Id.parse(nodeDTO.id()));
         var param = (MapNodeParam) nodeDTO.param();
-        var mapping = context.getMapping(param.mappingRef());
+        var mapping = context.getMapping(Id.parse(param.mappingId()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var source = ValueFactory.create(param.source(), parsingContext);
         if (node == null)

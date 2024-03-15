@@ -34,7 +34,7 @@ public class DefContextTest extends TestCase {
     protected void setUp() {
         idProvider = new MockIdProvider();
         var bridge = new EntityInstanceContextBridge();
-        var instanceContext = InstanceContextBuilder.newBuilder(Constants.ROOT_APP_ID,
+        var instanceContext = InstanceContextBuilder.newBuilder(Constants.getRootAppId(),
                         new MemInstanceStore(), new DefaultIdInitializer(idProvider), bridge, bridge, bridge)
                 .readonly(false)
                 .build();
@@ -100,13 +100,13 @@ public class DefContextTest extends TestCase {
     public void test_field_with_instance_type() {
         PojoDef<ConstantExpression> def = defContext.getPojoDef(ConstantExpression.class);
         ClassType quxType = defContext.getClassType(Qux.class);
-        quxType.initId(1000000L);
+        quxType.initId(PhysicalId.ofClass(1000000L, 1L));
         Field quxAmountField = defContext.getField(Qux.class, "amount");
         var qux = ClassInstance.create(
                 Map.of(quxAmountField, Instances.longInstance(100L)),
                 quxType
         );
-        qux.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.APP_ID, quxType)));
+        qux.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.getAppId(), quxType), quxType));
         ConstantExpression model = new ConstantExpression(qux);
         Instance instance = def.createInstance(model, objectInstanceMap, null);
         ConstantExpression recoveredModel = def.createModelHelper(instance, objectInstanceMap);

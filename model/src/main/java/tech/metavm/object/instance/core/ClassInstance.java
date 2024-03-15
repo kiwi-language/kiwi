@@ -143,12 +143,12 @@ public class ClassInstance extends DurableInstance {
         return titleField != null ? field(titleField).getDisplayValue() : tryGetPhysicalId() + "";
     }
 
-    public Object getField(List<Long> fieldPath) {
+    public Object getField(List<Id> fieldPath) {
         ensureLoaded();
-        long fieldId = fieldPath.get(0);
+        var fieldId = fieldPath.get(0);
         InstanceField field = field(fieldId);
         if (fieldPath.size() > 1) {
-            List<Long> subFieldPath = fieldPath.subList(1, fieldPath.size());
+            var subFieldPath = fieldPath.subList(1, fieldPath.size());
             return NncUtils.get((ClassInstance) field.getValue(), inst -> inst.getField(subFieldPath));
         } else {
             return field.getValue();
@@ -210,12 +210,12 @@ public class ClassInstance extends DurableInstance {
             if (!field.shouldSkipWrite())
                 numFields++;
         }
-        fields.sort(Comparator.comparingLong(InstanceField::getId));
+        fields.sort(Comparator.comparingLong(f -> f.getId().getPhysicalId()));
         output.writeInt(numFields);
         for (InstanceField field : fields) {
             if (field.shouldSkipWrite())
                 continue;
-            output.writeLong(field.getId());
+            output.writeLong(field.getId().getPhysicalId());
             if (includeChildren && field.getField().isChild() && !field.getField().isLazy())
                 output.writeValue(field.getValue());
             else
@@ -235,12 +235,12 @@ public class ClassInstance extends DurableInstance {
         int j = 0;
         for (int i = 0; i < numFields; i++) {
             var fieldId = input.readLong();
-            while (j < fields.size() && fields.get(j).getId() < fieldId) {
+            while (j < fields.size() && fields.get(j).getId().getPhysicalId() < fieldId) {
                 instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
                 j++;
             }
             Field field;
-            if (j < fields.size() && (field = fields.get(j)).getId() == fieldId) {
+            if (j < fields.size() && (field = fields.get(j)).getId().getPhysicalId() == fieldId) {
                 input.setParent(this, field);
                 var value = input.readInstance();
                 instFields.add(new InstanceField(this, field, value, false));
@@ -392,7 +392,7 @@ public class ClassInstance extends DurableInstance {
         throw new InternalException("Can not find instance field for '" + field + "'");
     }
 
-    protected InstanceField field(long fieldId) {
+    protected InstanceField field(Id fieldId) {
         return field(getType().getField(fieldId));
     }
 
@@ -456,8 +456,7 @@ public class ClassInstance extends DurableInstance {
             try(var serContext = SerializeContext.enter()) {
                 return new ReferenceFieldValue(
                         getTitle(),
-                        Objects.requireNonNull(getInstanceIdString(), "Id required"),
-                        serContext.getRef(getType())
+                        Objects.requireNonNull(getInstanceIdString(), "Id required")
                 );
             }
         }

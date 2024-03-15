@@ -94,7 +94,7 @@ public class ShoppingTest extends TestCase {
         var arguments = List.of(PrimitiveFieldValue.createLong(1L),
                 InstanceFieldValue.of(
                         InstanceDTO.createArrayInstance(
-                                RefDTO.fromId(shoppingTypeIds.couponArrayTypeId()),
+                                shoppingTypeIds.couponArrayTypeId(),
                                 false,
                                 NncUtils.map(couponsDTOs, ReferenceFieldValue::create)
                         ))

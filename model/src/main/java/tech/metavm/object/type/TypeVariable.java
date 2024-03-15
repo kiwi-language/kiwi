@@ -81,7 +81,7 @@ public class TypeVariable extends Type implements LocalKey, GenericElement {
     @Override
     public TypeKey getTypeKey() {
         return new TypeVariableKey(
-                genericDeclaration.getRef(),
+                genericDeclaration.getStringId(),
                 genericDeclaration.getTypeParameters().indexOf(this)
         );
     }

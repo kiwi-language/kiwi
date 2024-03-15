@@ -3,6 +3,7 @@ package tech.metavm.task;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.util.NncUtils;
@@ -16,7 +17,7 @@ public class ReferenceCleanupTask extends Task {
 
     private final long targetId;
     @Nullable
-    private Long nextReferenceId;
+    private String nextReferenceId;
 
     public ReferenceCleanupTask(long targetId, String typeName, String instanceTitle) {
         super("Reference cleanup " + instanceTitle + "/" + typeName);
@@ -30,7 +31,7 @@ public class ReferenceCleanupTask extends Task {
     @Override
     public boolean run0(IEntityContext context) {
         var instanceContext = context.getInstanceContext();
-        var next = NncUtils.get(nextReferenceId, id -> instanceContext.get(new PhysicalId(id)));
+        var next = NncUtils.get(nextReferenceId, id -> instanceContext.get(Id.parse(nextReferenceId)));
         var instances = instanceContext.getByReferenceTargetId(targetId, next, BATCH_SIZE);
         for (Instance instance : instances) {
             EntityUtils.ensureProxyInitialized(instance);
@@ -38,7 +39,7 @@ public class ReferenceCleanupTask extends Task {
         if(instances.size() < BATCH_SIZE) {
             return true;
         }
-        nextReferenceId = instances.get(instances.size() - 1).tryGetPhysicalId();
+        nextReferenceId = NncUtils.get(instances.get(instances.size() - 1).getId(), Id::toString);
         return false;
     }
     

@@ -1,19 +1,17 @@
 package tech.metavm.user.rest.dto;
 
-import tech.metavm.common.RefDTO;
-
 import java.util.List;
 
 public record UserDTO (
-        Long id,
+        String id,
         String loginName,
         String name,
         String password,
-        List<RefDTO> roleRefs
+        List<String> roleIds
 ) {
 
-    public static UserDTO create(Long id, String loginName, String name, String password, long roleId) {
-        return new UserDTO(id, loginName, name, password, List.of(RefDTO.fromId(roleId)));
+    public static UserDTO create(String id, String loginName, String name, String password, String roleId) {
+        return new UserDTO(id, loginName, name, password, List.of(roleId));
     }
 
 }

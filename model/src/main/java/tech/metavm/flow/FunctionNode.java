@@ -6,6 +6,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.FunctionNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.FunctionInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.FunctionType;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
@@ -21,7 +22,7 @@ public class FunctionNode extends NodeRT {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var func = ValueFactory.create(param.func(), parsingContext);
         var args = NncUtils.map(param.arguments(), arg -> ValueFactory.create(arg, parsingContext));
-        FunctionNode node = (FunctionNode) context.getNode(nodeDTO.getRef());
+        FunctionNode node = (FunctionNode) context.getNode(Id.parse(nodeDTO.id()));
         if (nodeDTO.id() != null)
             node.update(func, args);
         else

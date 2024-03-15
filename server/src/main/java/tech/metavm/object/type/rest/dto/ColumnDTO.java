@@ -8,13 +8,12 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record ColumnDTO(
-        Long id,
-        Long tmpId,
+        String id,
         String name,
         int type,
         int access,
-        Long ownerId,
-        @Nullable Long targetId,
+        String ownerId,
+        @Nullable String targetId,
         String targetName,
         boolean required,
         boolean multiValued,
@@ -29,7 +28,7 @@ public record ColumnDTO(
                                             boolean required,
                                             boolean unique) {
         return new ColumnDTO(
-                null, tmpId, name, type, Access.PUBLIC.code(), null, null,
+                null, name, type, Access.PUBLIC.code(), null, null,
                 null, required, false, unique,
                 null, null
         );

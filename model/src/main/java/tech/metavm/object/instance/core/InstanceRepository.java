@@ -24,15 +24,6 @@ public interface InstanceRepository extends InstanceProvider {
 
     boolean remove(DurableInstance instance);
 
-    List<Long> filterAlive(List<Long> ids);
-
-    default DurableInstance get(RefDTO ref) {
-        if (ref.isEmpty())
-            return null;
-        var id = ref.toId();
-        if (id.tryGetPhysicalId() == null && !contains(id))
-            return null;
-        return get(id);
-    }
+    List<Id> filterAlive(List<Id> ids);
 
 }

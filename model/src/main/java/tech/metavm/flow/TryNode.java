@@ -7,6 +7,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.TryNodeParam;
+import tech.metavm.object.instance.core.Id;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.Objects;
 public class TryNode extends ScopeNode {
 
     public static TryNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var node = (TryNode) context.getNode(nodeDTO.getRef());
+        var node = (TryNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
             node = new TryNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope);
         return node;

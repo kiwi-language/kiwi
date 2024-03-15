@@ -7,6 +7,7 @@ import tech.metavm.entity.SerializeContext;
 import tech.metavm.expression.Expressions;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.WhileNodeParam;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.util.NncUtils;
 
@@ -16,12 +17,12 @@ import javax.annotation.Nullable;
 public class WhileNode extends LoopNode {
 
     public static WhileNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var outputType = context.getClassType(nodeDTO.outputTypeRef());
+        var outputType = context.getClassType(Id.parse(nodeDTO.outputTypeId()));
         var condition = Values.expression(Expressions.trueExpression());
         // IMPORTANT COMMENT DON"T REMOVE:
         // DO NOT call setLoopParam here. setLoopParam should be called after the loop body has been constructed.
         // See FlowManager.saveLoopNodeContent
-        WhileNode node = (WhileNode) context.getNode(nodeDTO.getRef());
+        WhileNode node = (WhileNode) context.getNode(Id.parse(nodeDTO.id()));
         if (nodeDTO.id() == null)
             node = new WhileNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, condition);
         return node;

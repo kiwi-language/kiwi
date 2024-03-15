@@ -41,7 +41,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var elementType = type.getElementType().accept(this);
         return compositeTypeFacade.getArrayType(
                 elementType, type.getKind(),
-                dtoProvider.getTmpId(new ArrayTypeKey(type.getKind().code(), elementType.getRef()))
+                dtoProvider.getTmpId(new ArrayTypeKey(type.getKind().code(), elementType.getStringId()))
         );
     }
 
@@ -53,7 +53,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var lb = uncertainType.getLowerBound().accept(this);
         var ub = uncertainType.getUpperBound().accept(this);
         return compositeTypeFacade.getUncertainType(
-                lb, ub, dtoProvider.getTmpId(new UncertainTypeKey(lb.getRef(), ub.getRef()))
+                lb, ub, dtoProvider.getTmpId(new UncertainTypeKey(lb.getStringId(), ub.getStringId()))
         );
     }
 
@@ -64,7 +64,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
             return subst;
         var types = NncUtils.mapUnique(type.getTypes(), t -> t.accept(this));
         return compositeTypeFacade.getIntersectionType(
-                types, dtoProvider.getTmpId(new IntersectionTypeKey(NncUtils.mapUnique(types, Type::getRef)))
+                types, dtoProvider.getTmpId(new IntersectionTypeKey(NncUtils.mapUnique(types, Type::getStringId)))
         );
     }
 
@@ -77,7 +77,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var returnType = functionType.getReturnType().accept(this);
         return compositeTypeFacade.getFunctionType(
                 paramTypes, returnType,
-                dtoProvider.getTmpId(new FunctionTypeKey(NncUtils.map(paramTypes, Entity::getRef), returnType.getRef()))
+                dtoProvider.getTmpId(new FunctionTypeKey(NncUtils.map(paramTypes, Entity::getStringId), returnType.getStringId()))
         );
     }
 
@@ -88,7 +88,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
             return subst;
         var members = NncUtils.mapUnique(type.getMembers(), t -> t.accept(this));
         return compositeTypeFacade.getUnionType(
-                members, dtoProvider.getTmpId(new UnionTypeKey(NncUtils.mapUnique(members, Entity::getRef)))
+                members, dtoProvider.getTmpId(new UnionTypeKey(NncUtils.mapUnique(members, Entity::getStringId)))
         );
     }
 

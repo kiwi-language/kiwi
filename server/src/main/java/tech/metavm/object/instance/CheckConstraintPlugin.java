@@ -1,12 +1,9 @@
 package tech.metavm.object.instance;
 
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.type.CheckConstraint;
 import tech.metavm.util.BusinessException;
@@ -18,7 +15,7 @@ public class CheckConstraintPlugin implements ContextPlugin {
     @Override
     public boolean beforeSaving(EntityChange<InstancePO> change, IInstanceContext context) {
         change.forEachInsertOrUpdate(instancePO -> {
-            var instance = context.get(new PhysicalId(instancePO.getId()));
+            var instance = context.get(instancePO.getInstanceId());
             if(instance instanceof ClassInstance classInstance)
                 checkConstraints(classInstance, context.getParameterizedFlowProvider());
         });

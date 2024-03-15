@@ -13,8 +13,8 @@ public record SourceRef(
 ) {
 
     @JsonIgnore
-    public @Nullable Long getMappingId() {
-        return NncUtils.get(mapping, Entity::getId);
+    public @Nullable String getMappingId() {
+        return NncUtils.get(mapping, Entity::getStringId);
     }
 
 }

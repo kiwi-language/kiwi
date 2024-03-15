@@ -2,6 +2,8 @@ package tech.metavm.system;
 
 import com.sun.jdi.InternalException;
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.system.rest.dto.BlockDTO;
 import tech.metavm.util.NncUtils;
 
@@ -9,15 +11,15 @@ import java.util.List;
 import java.util.Objects;
 
 public class BlockRT implements Comparable<BlockRT> {
-    private final long appId;
+    private final Id appId;
     private final long id;
-    private final long typeId;
+    private final TypeId typeId;
     private final long start;
     private final long end;
     private boolean active;
     private long next;
 
-    public BlockRT(long id, long appId, long typeId, long start, long end, long next) {
+    public BlockRT(long id, Id appId, TypeId typeId, long start, long end, long next) {
         this.id = id;
         this.appId = appId;
         this.typeId = typeId;
@@ -43,7 +45,7 @@ public class BlockRT implements Comparable<BlockRT> {
         return (int) (end - next);
     }
 
-    public long getTypeId() {
+    public TypeId getTypeId() {
         return typeId;
     }
 
@@ -71,7 +73,7 @@ public class BlockRT implements Comparable<BlockRT> {
         return active;
     }
 
-    public long getAppId() {
+    public Id getAppId() {
         return appId;
     }
 
@@ -80,7 +82,7 @@ public class BlockRT implements Comparable<BlockRT> {
     }
 
     public BlockDTO toDTO() {
-        return new BlockDTO(id, appId, typeId, start, end, next, active);
+        return new BlockDTO(id, appId.toString(), typeId.tag().code(), typeId.id(), start, end, next, active);
     }
 
     @Override

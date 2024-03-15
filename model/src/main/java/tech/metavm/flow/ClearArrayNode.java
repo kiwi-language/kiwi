@@ -7,6 +7,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.ClearArrayNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
@@ -18,7 +19,7 @@ public class ClearArrayNode extends NodeRT {
         var param = (ClearArrayNodeParam) nodeDTO.param();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var array = ValueFactory.create(param.array(), parsingContext);
-        var node = (ClearArrayNode) context.getNode(nodeDTO.getRef());
+        var node = (ClearArrayNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
             node = new ClearArrayNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, array);
         else

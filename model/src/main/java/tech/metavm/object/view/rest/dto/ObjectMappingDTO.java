@@ -1,20 +1,17 @@
 package tech.metavm.object.view.rest.dto;
 
-import tech.metavm.common.RefDTO;
-
 import javax.annotation.Nullable;
 import java.util.List;
 
 public record ObjectMappingDTO(
-        Long id,
-        Long tmpId,
+        String id,
         String name,
         @Nullable String code,
-        RefDTO sourceTypeRef,
-        RefDTO targetTypeRef,
+        String sourceTypeId,
+        String targetTypeId,
         boolean isDefault,
         boolean builtin,
-        List<RefDTO> overriddenRefs,
+        List<String> overriddenIds,
         ObjectMappingParam param
 ) implements MappingDTO {
     @Override

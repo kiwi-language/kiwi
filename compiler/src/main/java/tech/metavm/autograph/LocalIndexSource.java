@@ -7,13 +7,10 @@ import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
-import tech.metavm.object.type.Index;
 import tech.metavm.object.type.IndexField;
 import tech.metavm.util.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,18 +35,18 @@ public class LocalIndexSource implements IndexSource {
         try (var context = newContext()) {
             var ids = treeStore.getAllInstanceIds();
             var instanceContext = context.getInstanceContext();
-            Map<IndexKeyPO, Long> indexMap = new HashMap<>();
+            Map<IndexKeyPO, String> indexMap = new HashMap<>();
             Map<Long, List<Long>> typeId2ids = new HashMap<>();
-            for (Long id : ids) {
-                instanceContext.get(PhysicalId.of(id)).accept(new StructuralVisitor() {
+            for (var id : ids) {
+                instanceContext.get(id).accept(new StructuralVisitor() {
                     @Override
                     public Void visitClassInstance(ClassInstance instance) {
                         if (instance.isEphemeral())
                             return null;
-                        typeId2ids.computeIfAbsent(instance.getType().tryGetId(), k -> new ArrayList<>()).add(instance.getPhysicalId());
+                        typeId2ids.computeIfAbsent(instance.getType().getPhysicalId(), k -> new ArrayList<>()).add(instance.getPhysicalId());
                         var keys = instance.getIndexKeys(context.getGenericContext());
                         for (IndexKeyRT key : keys) {
-                            indexMap.put(convertKey(key), instance.getPhysicalId());
+                            indexMap.put(convertKey(key), instance.getStringId());
                         }
                         return super.visitClassInstance(instance);
                     }
@@ -71,26 +68,11 @@ public class LocalIndexSource implements IndexSource {
                 value = Instances.nullInstance();
             bytes[i] = BytesUtils.toIndexBytes(value);
         }
-        return new IndexKeyPO(indexKeyRT.getIndex().getId(), bytes);
-    }
-
-    private IndexKeyRT convertFromKey(IndexKeyPO key, IEntityContext context) {
-        var index = context.getEntity(Index.class, key.getIndexId());
-        var fields = index.getFields();
-        var fieldMap = new HashMap<IndexField, Instance>();
-        int i = 0;
-        for (IndexField field : fields) {
-            try (var input = new IndexKeyReader(new ByteArrayInputStream(key.getColumn(i)), context.getInstanceContext()::get)) {
-                fieldMap.put(field, input.readInstance());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return new IndexKeyRT(index, fieldMap);
+        return new IndexKeyPO(indexKeyRT.getIndex().getPhysicalId(), bytes);
     }
 
     public IEntityContext newContext() {
-        return contextFactory.newEntityContext(CompilerHttpUtils.getAppId());
+        return contextFactory.newEntityContext(Constants.getAppId(CompilerHttpUtils.getAppId()));
     }
 
     public LocalIndex.Query convertQuery(InstanceIndexQuery query) {
@@ -100,7 +82,7 @@ public class LocalIndexSource implements IndexSource {
             var queryItem = itemMap.get(field);
             items.add(convertQueryItem(queryItem));
         }
-        return new LocalIndex.Query(query.index().getId(), items, query.desc(), query.limit());
+        return new LocalIndex.Query(query.index().getPhysicalId(), items, query.desc(), query.limit());
     }
 
     public LocalIndex.QueryItem convertQueryItem(InstanceIndexQueryItem queryItem) {
@@ -111,8 +93,8 @@ public class LocalIndexSource implements IndexSource {
     }
 
     @Override
-    public List<Long> query(InstanceIndexQuery query, IInstanceContext context) {
-        return index.query(convertQuery(query)).ids();
+    public List<Id> query(InstanceIndexQuery query, IInstanceContext context) {
+        return NncUtils.map(index.query(convertQuery(query)).ids(), Id::parse);
     }
 
     @Override
@@ -126,13 +108,8 @@ public class LocalIndexSource implements IndexSource {
     }
 
     @Override
-    public List<Long> scan(IndexKeyRT from, IndexKeyRT to, IInstanceContext context) {
-        return index.scan(from.toPO(), to.toPO());
-    }
-
-    @Override
-    public List<Long> queryByType(long typeId, long startId, long limit, IInstanceContext context) {
-        return typeIndex.query(typeId, startId, limit);
+    public List<Id> scan(IndexKeyRT from, IndexKeyRT to, IInstanceContext context) {
+        return NncUtils.map(index.scan(from.toPO(), to.toPO()), Id::parse);
     }
 
     public void setContextFactory(CompilerInstanceContextFactory contextFactory) {

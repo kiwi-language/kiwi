@@ -1,4 +1,4 @@
 package tech.metavm.object.instance.rest;
 
-public record InstanceVersionDTO(long id, long version) {
+public record InstanceVersionDTO(String id, long version) {
 }

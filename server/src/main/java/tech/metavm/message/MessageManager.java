@@ -51,7 +51,7 @@ public class MessageManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public void read(long messageId) {
+    public void read(String messageId) {
         try (var context = newContext()) {
             var user = context.getEntity(User.class, ContextUtil.getUserId());
             var message = context.getEntity(Message.class, messageId);
@@ -63,7 +63,7 @@ public class MessageManager extends EntityContextFactoryBean {
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        eventQueue.publishUserEvent(new ReadMessageEvent(ContextUtil.getUserId(), messageId));
+                        eventQueue.publishUserEvent(new ReadMessageEvent(ContextUtil.getUserId().toString(), messageId));
                     }
                 });
             }

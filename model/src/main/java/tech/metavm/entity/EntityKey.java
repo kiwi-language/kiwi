@@ -1,11 +1,13 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.Id;
+
 public record EntityKey(
         Class<?> type,
-        long id
+        Id id
 ) {
 
-    public static EntityKey create(Class<?> type, long id) {
+    public static EntityKey create(Class<?> type, Id id) {
         return new EntityKey(EntityUtils.getEntityType(type), id);
     }
 

@@ -1,8 +1,7 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.VersionSource;
-import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.InstanceVersion;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -16,10 +15,10 @@ public class StoreVersionSource implements VersionSource {
     }
 
     @Override
-    public List<InstanceVersion> getRootVersions(List<Long> ids, IInstanceContext context) {
+    public List<InstanceVersion> getRootVersions(List<String> ids, IInstanceContext context) {
         return NncUtils.map(
-                instanceStore.getRootVersions(ids, context),
-                v -> new InstanceVersion(v.getId(), v.getVersion())
+                instanceStore.getRootVersions(NncUtils.map(ids, id -> Id.parse(id).getPhysicalId()), context),
+                v -> new InstanceVersion(PhysicalId.of(v.getId(), TypeTag.fromCode(v.getTypeTag()), v.getTypeId()), v.getVersion())
         );
     }
 }

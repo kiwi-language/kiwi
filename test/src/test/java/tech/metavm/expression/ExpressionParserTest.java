@@ -1,9 +1,9 @@
 package tech.metavm.expression;
 
 import junit.framework.TestCase;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceProvider;
 import tech.metavm.object.type.*;
@@ -23,7 +23,7 @@ public class ExpressionParserTest extends TestCase {
                 new ParsingContext() {
 
                     @Override
-                    public Instance getInstance(long id) {
+                    public Instance getInstance(Id id) {
                         return null;
                     }
 
@@ -62,7 +62,7 @@ public class ExpressionParserTest extends TestCase {
                             }
 
                             @Override
-                            public Type getType(RefDTO ref) {
+                            public Type getType(Id id) {
                                 return StandardTypes.getEnumType();
                             }
                         };

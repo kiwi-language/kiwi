@@ -4,6 +4,7 @@ import javassist.util.proxy.ProxyObject;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 import tech.metavm.flow.Function;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.EnumConstantRT;
@@ -134,7 +135,7 @@ public class EntityUtils {
             return false;
         }
         if (entity1.tryGetId() != null && entity2.tryGetId() != null) {
-            return entity1.tryGetId().equals(entity2.tryGetId());
+            return Objects.equals(entity1.tryGetId(), entity2.tryGetId());
         }
         return false;
     }
@@ -372,7 +373,7 @@ public class EntityUtils {
         return Enum.class.isAssignableFrom(klass);
     }
 
-    public static Long tryGetId(Object object) {
+    public static Id tryGetId(Object object) {
         if (object instanceof Identifiable identifiable) {
             return identifiable.tryGetId();
         }
@@ -415,7 +416,7 @@ public class EntityUtils {
         }
     }
 
-    public static <T extends Entity> T makeDummyRef(Class<T> entityType, long id) {
+    public static <T extends Entity> T makeDummyRef(Class<T> entityType, Id id) {
         return EntityProxyFactory.makeEntityDummy(entityType, id);
     }
 

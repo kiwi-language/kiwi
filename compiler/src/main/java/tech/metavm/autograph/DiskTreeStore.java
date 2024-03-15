@@ -3,6 +3,8 @@ package tech.metavm.autograph;
 import tech.metavm.entity.Tree;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.NncUtils;
@@ -13,14 +15,14 @@ import java.util.*;
 public class DiskTreeStore implements TreeSource {
 
     private final String path;
-    private Map<Long, Tree> trees = new HashMap<>();
+    private Map<Id, Tree> trees = new HashMap<>();
 
     DiskTreeStore(String path) {
         this.path = path;
         loadFromDisk();
     }
 
-    public Collection<Long> getAllInstanceIds() {
+    public Collection<Id> getAllInstanceIds() {
         return Collections.unmodifiableSet(trees.keySet());
     }
 
@@ -32,12 +34,12 @@ public class DiskTreeStore implements TreeSource {
     }
 
     @Override
-    public List<Tree> load(Collection<Long> ids, IInstanceContext context) {
+    public List<Tree> load(Collection<Id> ids, IInstanceContext context) {
         return NncUtils.mapAndFilter(ids, trees::get, Objects::nonNull);
     }
 
     @Override
-    public void remove(List<Long> ids) {
+    public void remove(List<Id> ids) {
         NncUtils.forEach(ids, trees::remove);
     }
 
@@ -58,7 +60,7 @@ public class DiskTreeStore implements TreeSource {
         if(file.exists()) {
             try (var input = new InstanceInput(new FileInputStream(file))) {
                 int numTrees = input.readInt();
-                var trees = new HashMap<Long, Tree>(numTrees);
+                var trees = new HashMap<Id, Tree>(numTrees);
                 for (int i = 0; i < numTrees; i++) {
                     int len = input.readInt();
                     byte[] bytes = new byte[len];
@@ -66,7 +68,7 @@ public class DiskTreeStore implements TreeSource {
                     var subInput = new InstanceInput(new ByteArrayInputStream(bytes));
                     var version = subInput.readLong();
                     subInput.read(); // wire type
-                    var id = subInput.readLong();
+                    var id = subInput.readId();
                     trees.put(id, new Tree(id, version, bytes));
                 }
                 this.trees = trees;

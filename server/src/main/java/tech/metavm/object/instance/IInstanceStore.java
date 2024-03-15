@@ -3,6 +3,7 @@ package tech.metavm.object.instance;
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.StoreLoadRequest;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.*;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
@@ -25,19 +26,19 @@ public interface IInstanceStore {
 
     ReferencePO getFirstReference(long appId, Set<Long> targetIds, Set<Long> excludedSourceIds);
 
-    List<ReferencePO> getAllStrongReferences(long appId, Set<Long> targetIds, Set<Long> excludedSourceIds);
+    List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Id> excludedSourceIds);
 
-    List<Long> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context);
+    List<Id> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context);
 
     long indexCount(IndexKeyPO from, IndexKeyPO to, IInstanceContext context);
 
-    List<Long> query(InstanceIndexQuery query, IInstanceContext context);
+    List<Id> query(InstanceIndexQuery query, IInstanceContext context);
 
     long count(InstanceIndexQuery query, IInstanceContext context);
 
     List<InstancePO> load(StoreLoadRequest request, IInstanceContext context);
 
-    List<Long> getByReferenceTargetId(long targetId, long startIdExclusive, long limit, IInstanceContext context);
+    List<Id> getByReferenceTargetId(long targetId, long startIdExclusive, long limit, IInstanceContext context);
 
     default List<InstancePO> getByTypeIds(Collection<Long> typeIds, IInstanceContext context) {
         return queryByTypeIds(

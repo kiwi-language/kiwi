@@ -38,7 +38,7 @@ public class PlatformUsers {
         if (eventQueue != null) {
             platformContext.getInstanceContext().registerCommitCallback(() -> {
                 for (PlatformUser platformUser : platformUsers) {
-                    eventQueue.publishUserEvent(new LeaveAppEvent(platformUser.getId(), app.getId()));
+                    eventQueue.publishUserEvent(new LeaveAppEvent(platformUser.getStringId(), app.getStringId()));
                 }
             });
         }

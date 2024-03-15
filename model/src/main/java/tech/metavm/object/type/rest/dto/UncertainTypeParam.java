@@ -1,10 +1,8 @@
 package tech.metavm.object.type.rest.dto;
 
-import tech.metavm.common.RefDTO;
-
 public record UncertainTypeParam(
-        RefDTO lowerBoundRef,
-        RefDTO upperBoundRef
+        String lowerBoundId,
+        String upperBoundId
 ) implements TypeParam {
 
     @Override
@@ -14,6 +12,6 @@ public record UncertainTypeParam(
 
     @Override
     public TypeKey getTypeKey() {
-        return new UncertainTypeKey(lowerBoundRef, upperBoundRef);
+        return new UncertainTypeKey(lowerBoundId, upperBoundId);
     }
 }

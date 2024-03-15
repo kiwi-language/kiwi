@@ -104,7 +104,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
         return sourceRef != null;
     }
 
-    public Long getMappingId() {
+    public Id getMappingId() {
         if (getId() instanceof ViewId viewId) {
             return viewId.getMappingId();
         } else
@@ -115,6 +115,10 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
     @NoProxy
     public @Nullable Id getId() {
         return id;
+    }
+
+    public String getStringId() {
+        return NncUtils.get(id, Id::toString);
     }
 
     public Object getMappedEntity() {
@@ -353,7 +357,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
         var output = new InstanceOutput(bout, withChildren);
         output.writeLong(getVersion());
         output.writeValue(this);
-        return new Tree(getPhysicalId(), getVersion(), bout.toByteArray());
+        return new Tree(getId(), getVersion(), bout.toByteArray());
     }
 
     public abstract void readFrom(InstanceInput input);

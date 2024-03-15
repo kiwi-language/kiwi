@@ -26,7 +26,7 @@ public class InstanceOfExpression extends Expression {
     public String buildSelf(VarType symbolType) {
         try(var serContext = SerializeContext.enter()) {
             return operand.build(symbolType, false) + " instanceof "
-                    + serContext.getRef(targetType).getIdString();
+                    + serContext.getRef(targetType);
         }
     }
 

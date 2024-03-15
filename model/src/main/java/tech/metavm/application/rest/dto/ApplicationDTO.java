@@ -1,8 +1,8 @@
 package tech.metavm.application.rest.dto;
 
 public record ApplicationDTO(
-        long id,
+        String id,
         String name,
-        long ownerId
+        String ownerId
 ) {
 }

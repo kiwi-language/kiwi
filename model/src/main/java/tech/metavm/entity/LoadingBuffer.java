@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.InstanceVersion;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.StreamVisitor;
@@ -17,10 +19,10 @@ public class LoadingBuffer {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(LoadingBuffer.class);
 
-    private final List<Long> bufferedIds = new ArrayList<>();
-    private final Set<Long> visited = new HashSet<>();
+    private final List<Id> bufferedIds = new ArrayList<>();
+    private final Set<Id> visited = new HashSet<>();
     private final IInstanceContext context;
-    private final Map<Long, Tree> invertedIndex = new HashMap<>();
+    private final Map<Id, Tree> invertedIndex = new HashMap<>();
     private final List<TreeSource> treeSources;
     private final VersionSource versionSource;
 
@@ -30,7 +32,7 @@ public class LoadingBuffer {
         this.versionSource = versionSource;
     }
 
-    public boolean buffer(long id) {
+    public boolean buffer(Id id) {
         if (visited.add(id)) {
             bufferedIds.add(id);
             return true;
@@ -38,20 +40,20 @@ public class LoadingBuffer {
             return false;
     }
 
-    public Tree getTree(long id) {
+    public Tree getTree(Id id) {
         return NncUtils.requireNonNull(
                 tryGetTree(id),
                 () -> new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id)
         );
     }
 
-    public void invalidateCache(List<Long> ids) {
+    public void invalidateCache(List<Id> ids) {
         for (TreeSource treeSource : treeSources) {
             treeSource.remove(ids);
         }
     }
 
-    public Tree tryGetTree(long id) {
+    public Tree tryGetTree(Id id) {
         var tree = invertedIndex.get(id);
         if (tree != null)
             return tree;
@@ -68,11 +70,11 @@ public class LoadingBuffer {
         bufferedIds.clear();
     }
 
-    private void loadForest(List<Long> ids) {
+    private void loadForest(List<Id> ids) {
         try(var ignored = context.getProfiler().enter("LoadingBuffer.loadForest")) {
-            var rootVersions = versionSource.getRootVersions(ids, context);
-            Map<Long, Long> versionMap = NncUtils.toMap(rootVersions, InstanceVersion::id, InstanceVersion::version);
-            Set<Long> misses = new HashSet<>(versionMap.keySet());
+            var rootVersions = versionSource.getRootVersions(NncUtils.map(ids, Id::toString), context);
+            Map<Id, Long> versionMap = NncUtils.toMap(rootVersions, InstanceVersion::id, InstanceVersion::version);
+            Set<Id> misses = new HashSet<>(versionMap.keySet());
             List<TreeSource> prevSources = new ArrayList<>();
             for (TreeSource treeSource : treeSources) {
                 if (misses.isEmpty())
@@ -100,7 +102,7 @@ public class LoadingBuffer {
         new StreamVisitor(new ByteArrayInputStream(tree.data())) {
 
             @Override
-            public void visitRecordBody(long id) {
+            public void visitRecordBody(PhysicalId id) {
                 invertedIndex.put(id, tree);
                 super.visitRecordBody(id);
             }

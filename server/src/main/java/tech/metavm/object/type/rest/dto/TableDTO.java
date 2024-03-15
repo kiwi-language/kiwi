@@ -5,8 +5,7 @@ import tech.metavm.common.BaseDTO;
 import java.util.List;
 
 public record TableDTO(
-        Long id,
-        Long tmpId,
+        String id,
         String name,
         String code,
         String desc,

@@ -1,13 +1,11 @@
 package tech.metavm.object.type.rest.dto;
 
-import tech.metavm.common.RefDTO;
-
 import java.util.List;
 
 public record TypeVariableParam(
-        RefDTO genericDeclarationRef,
+        String genericDeclarationId,
         int index,
-        List<RefDTO> boundRefs
+        List<String> boundIds
 ) implements TypeParam {
     @Override
     public int getType() {
@@ -16,6 +14,6 @@ public record TypeVariableParam(
 
     @Override
     public TypeKey getTypeKey() {
-        return new TypeVariableKey(genericDeclarationRef, index);
+        return new TypeVariableKey(genericDeclarationId, index);
     }
 }

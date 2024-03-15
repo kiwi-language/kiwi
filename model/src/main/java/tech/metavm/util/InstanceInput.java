@@ -3,6 +3,7 @@ package tech.metavm.util;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.TypeCategory;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -14,7 +15,7 @@ import java.util.function.Function;
 
 public class InstanceInput implements Closeable {
 
-    public static final Function<Long, DurableInstance> UNSUPPORTED_RESOLVER = id -> {
+    public static final Function<Id, DurableInstance> UNSUPPORTED_RESOLVER = id -> {
         throw new UnsupportedOperationException();
     };
 
@@ -23,11 +24,11 @@ public class InstanceInput implements Closeable {
         if (context == null)
             return new InstanceInput(bout);
         else
-            return new InstanceInput(bout, id -> context.internalGet(new PhysicalId(id)));
+            return new InstanceInput(bout, context::internalGet);
     }
 
     private final InputStream inputStream;
-    private final Function<Long, DurableInstance> getInstance;
+    private final Function<Id, DurableInstance> getInstance;
     @Nullable
     private DurableInstance parent;
     @Nullable
@@ -39,7 +40,7 @@ public class InstanceInput implements Closeable {
     }
 
     public InstanceInput(InputStream inputStream,
-                         Function<Long, DurableInstance> getInstance) {
+                         Function<Id, DurableInstance> getInstance) {
         this.inputStream = inputStream;
         this.getInstance = getInstance;
     }
@@ -61,22 +62,22 @@ public class InstanceInput implements Closeable {
             case WireTypes.BOOLEAN -> new BooleanInstance(readBoolean(), StandardTypes.getBooleanType());
             case WireTypes.TIME -> new TimeInstance(readLong(), StandardTypes.getTimeType());
             case WireTypes.PASSWORD -> new PasswordInstance(readString(), StandardTypes.getPasswordType());
-            case WireTypes.REFERENCE -> resolveInstance(readLong());
+            case WireTypes.REFERENCE -> resolveInstance(readId());
             case WireTypes.RECORD -> readRecord();
             default -> throw new IllegalStateException("Invalid wire type: " + wireType);
         };
     }
 
-    private DurableInstance resolveInstance(long id) {
+    private DurableInstance resolveInstance(Id id) {
         return getInstance.apply(id);
     }
 
     private final StreamVisitor skipper = new StreamVisitor(this);
 
     private Instance readRecord() {
-        var instance = resolveInstance(readLong());
+        var instance = resolveInstance(readId());
         if (instance.isInitialized())
-            skipper.visitRecordBody(instance.getPhysicalId());
+            skipper.visitRecordBody((PhysicalId) instance.getId());
         else {
             instance.setParentInternal(parent, parentField);
             instance.readFrom(this);
@@ -115,6 +116,10 @@ public class InstanceInput implements Closeable {
         return (int) readLong();
     }
 
+    public TypeTag readTypeTag() {
+        return TypeTag.fromCode(readInt());
+    }
+
     public double readDouble() {
         long l = 0;
         for (int shifts = 0; shifts < 64; shifts += 8)
@@ -141,6 +146,10 @@ public class InstanceInput implements Closeable {
     public void setParent(@Nullable DurableInstance parent, @Nullable Field parentField) {
         this.parent = parent;
         this.parentField = parentField;
+    }
+
+    public PhysicalId readId() {
+        return PhysicalId.of(readLong(), readTypeTag(), readLong());
     }
 
     public boolean isLoadedFromCache() {

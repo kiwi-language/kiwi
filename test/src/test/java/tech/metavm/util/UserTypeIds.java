@@ -1,11 +1,11 @@
 package tech.metavm.util;
 
 public record UserTypeIds(
-        long platformUserTypeId,
-        long applicationTypeId,
-        long applicationNameFieldId,
-        long applicationOwnerFieldId,
-        long platformUserLoginNameFieldId,
-        long platformUserPasswordFieldId
+        String platformUserTypeId,
+        String applicationTypeId,
+        String applicationNameFieldId,
+        String applicationOwnerFieldId,
+        String platformUserLoginNameFieldId,
+        String platformUserPasswordFieldId
 ) {
 }

@@ -1,6 +1,7 @@
 package tech.metavm.instance.core;
 
 import tech.metavm.autograph.TypeClient;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.system.BaseIdService;
 import tech.metavm.object.type.Type;
 
@@ -14,7 +15,7 @@ public class CompilerIdService extends BaseIdService {
     }
 
     @Override
-    public Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count) {
+    public Map<Type, List<Long>> allocate(Id appId, Map<Type, Integer> typeId2count) {
         throw new UnsupportedOperationException();
     }
 }

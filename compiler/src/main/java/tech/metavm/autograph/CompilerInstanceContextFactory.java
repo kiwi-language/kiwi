@@ -5,6 +5,7 @@ import tech.metavm.instance.core.CompilerIdService;
 import tech.metavm.instance.core.CompilerInstanceContext;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
+import tech.metavm.object.instance.core.Id;
 
 import java.util.List;
 
@@ -29,12 +30,12 @@ public class CompilerInstanceContextFactory {
         serverTreeSource = new ServerTreeSource(typeClient);
     }
 
-    public IInstanceContext newContext(long appId) {
+    public IInstanceContext newContext(Id appId) {
         //noinspection resource
         return newEntityContext(appId).getInstanceContext();
     }
 
-    public IEntityContext newEntityContext(long appId) {
+    public IEntityContext newEntityContext(Id appId) {
         var bridge = new EntityInstanceContextBridge();
         var context = newBridgedInstanceContext(appId, bridge, new DefaultIdInitializer(idService));
         var entityContext = new CompilerEntityContext(context, defContext, defContext);
@@ -42,7 +43,7 @@ public class CompilerInstanceContextFactory {
         return entityContext;
     }
 
-    public IInstanceContext newBridgedInstanceContext(long appId, EntityInstanceContextBridge bridge, IdInitializer idProvider) {
+    public IInstanceContext newBridgedInstanceContext(Id appId, EntityInstanceContextBridge bridge, IdInitializer idProvider) {
         return new CompilerInstanceContext(
                 appId,
                 List.of(diskTreeSource, serverTreeSource),

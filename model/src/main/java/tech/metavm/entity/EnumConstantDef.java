@@ -1,8 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.EnumConstantRT;
 import tech.metavm.util.ReflectionUtils;
 
@@ -16,7 +15,7 @@ public class EnumConstantDef<T extends Enum<?>> {
     private final ClassInstance instance;
     private final EnumDef<T> enumDef;
 
-    public EnumConstantDef(T value, EnumDef<T> enumDef, Function<Object, Long> getId) {
+    public EnumConstantDef(T value, EnumDef<T> enumDef, Function<Object, Id> getId) {
         java.lang.reflect.Field enumField = ReflectionUtils.getField(value.getClass(), value.name());
         this.enumDef = enumDef;
         this.enumConstant = enumDef.createEnumConstant(value, enumField, getId);

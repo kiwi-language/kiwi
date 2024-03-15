@@ -7,6 +7,7 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.entity.EntityContextFactoryBean;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.user.rest.dto.LoginInfo;
 import tech.metavm.user.rest.dto.LoginRequest;
 import tech.metavm.util.BusinessException;
@@ -32,7 +33,7 @@ public class LoginService extends EntityContextFactoryBean  {
 
     @Transactional
     public LoginResult login(LoginRequest request, String clientIP) {
-        try (IEntityContext context = newContext(request.appId())) {
+        try (IEntityContext context = newContext(Id.parse(request.appId()))) {
             var failedCountByIP = context.count(LoginAttempt.IDX_CLIENT_IP_SUCC_TIME.newQueryBuilder()
                     .addEqItem("clientIP", clientIP)
                     .addEqItem("successful", false)
@@ -62,23 +63,23 @@ public class LoginService extends EntityContextFactoryBean  {
             if (!user.getPassword().equals(EncodingUtils.md5(request.password())))
                 token = null;
             else
-                token = directLogin(request.appId(), user, context);
+                token = directLogin(Id.parse(request.appId()), user, context);
             context.bind(new LoginAttempt(token != null, request.loginName(), clientIP, new Date()));
             context.finish();
-            return new LoginResult(token, user.getId());
+            return new LoginResult(token, user.getStringId());
         }
     }
 
-    public Token directLogin(long appId, User user, IEntityContext context) {
+    public Token directLogin(Id appId, User user, IEntityContext context) {
         var session = new Session(user, new Date(System.currentTimeMillis() + TOKEN_TTL));
         context.bind(session);
-        return new Token(appId, session.getToken());
+        return new Token(appId.toString(), session.getToken());
     }
 
     @Transactional
     public void logout(List<Token> tokens) {
         for (Token token : tokens) {
-            try (var context = newContext(token.appId())) {
+            try (var context = newContext(Id.parse(token.appId()))) {
                 var session = context.selectFirstByKey(Session.IDX_TOKEN, token.token());
                 if (session != null) {
                     if (session.isActive())
@@ -91,14 +92,15 @@ public class LoginService extends EntityContextFactoryBean  {
 
     @Transactional(readOnly = true)
     public LoginInfo verify(@NotNull Token token) {
-        try (var context = newContext(token.appId());
+        var appId = Id.parse(token.appId());
+        try (var context = newContext(appId);
              var ignored = ContextUtil.getProfiler().enter("verifyAndSetContext")) {
             var session = context.selectFirstByKey(Session.IDX_TOKEN, token.token());
             if (session != null && session.isActive()) {
-                ContextUtil.setAppId(token.appId());
+                ContextUtil.setAppId(appId);
                 ContextUtil.setUserId(session.getUser().getId());
                 ContextUtil.setToken(token.token());
-                return new LoginInfo(token.appId(), session.getUser().getId());
+                return new LoginInfo(appId.toString(), session.getUser().getStringId());
             } else
                 return LoginInfo.failed();
         }

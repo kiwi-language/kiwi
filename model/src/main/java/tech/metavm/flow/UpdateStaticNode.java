@@ -4,6 +4,7 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateStaticNodeParam;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
@@ -16,8 +17,8 @@ public class UpdateStaticNode extends NodeRT {
 
     public static UpdateStaticNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         UpdateStaticNodeParam param = nodeDTO.getParam();
-        var node = (UpdateStaticNode) context.getNode(nodeDTO.getRef());
-        var type = context.getClassType(param.typeRef());
+        var node = (UpdateStaticNode) context.getNode(Id.parse(nodeDTO.id()));
+        var type = context.getClassType(Id.parse(param.typeId()));
         if (node == null)
             node = new UpdateStaticNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, type);
         else
@@ -27,7 +28,7 @@ public class UpdateStaticNode extends NodeRT {
                 NncUtils.map(
                         param.fields(),
                         field -> new UpdateField(
-                                context.getField(field.fieldRef()),
+                                context.getField(Id.parse(field.fieldId())),
                                 UpdateOp.getByCode(field.opCode()),
                                 ValueFactory.create(field.value(), parsingContext)
                         )

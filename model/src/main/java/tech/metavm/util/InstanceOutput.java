@@ -3,6 +3,7 @@ package tech.metavm.util;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.core.PrimitiveInstance;
 
 import java.io.ByteArrayOutputStream;
@@ -89,6 +90,12 @@ public class InstanceOutput extends OutputStream {
 
     public void writeInt(int i) {
         writeLong(i);
+    }
+
+    public void writeId(PhysicalId id) {
+        writeLong(id.getId());
+        write(id.getTypeTag().code());
+        writeLong(id.getTypeId());
     }
 
     public void writeLong(long l) {

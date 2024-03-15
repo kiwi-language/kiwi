@@ -1,21 +1,19 @@
 package tech.metavm.flow.rest;
 
 import tech.metavm.common.BaseDTO;
-import tech.metavm.common.RefDTO;
 
 import javax.annotation.Nullable;
 
 public record ParameterDTO(
-        Long id,
-        Long tmpId,
+        String id,
         String name,
         String code,
-        RefDTO typeRef,
+        String typeId,
         @Nullable ValueDTO condition,
-        @Nullable RefDTO templateRef,
-        RefDTO callableRef
+        @Nullable String templateId,
+        String callableId
 ) implements BaseDTO {
-    public static ParameterDTO create(Long tmpId, String name, RefDTO typeRef) {
-        return new ParameterDTO(null, tmpId, name, null, typeRef, null, null, null);
+    public static ParameterDTO create(String id, String name, String typeId) {
+        return new ParameterDTO(id, name, null, typeId, null, null, null);
     }
 }

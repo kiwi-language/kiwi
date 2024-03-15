@@ -65,8 +65,8 @@ public class Message extends Entity {
 
     public MessageDTO toDTO() {
         return new MessageDTO(
-                getId(),
-                receiver.getId(), title, kind.code,
+                getStringId(),
+                receiver.getStringId(), title, kind.code,
                 target.getInstanceIdString(),
                 read
         );

@@ -9,13 +9,21 @@
         <result property="targetId" jdbcType="BIGINT" column="target_id"/>
         <result property="fieldId" jdbcType="BIGINT" column="field_id"/>
         <result property="kind" jdbcType="INTEGER" column="kind"/>
+        <result property="sourceTypeTag" jdbcType="VARCHAR" column="source_type_tag"/>
+        <result property="sourceTypeId" jdbcType="BIGINT" column="source_type_id"/>
+        <result property="targetTypeTag" jdbcType="VARCHAR" column="target_type_tag"/>
+        <result property="targetTypeId" jdbcType="BIGINT" column="target_type_id"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         <!--@mbg.generated-->
         app_id,
         source_id,
+        source_type_tag,
+        source_type_id,
         target_id,
+        target_type_tag,
+        target_type_id,
         field_id,
         kind
     </sql>

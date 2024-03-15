@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.common.BaseDTO;
 import tech.metavm.common.RefDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.TypeReference;
@@ -96,14 +97,14 @@ public class ChildArray<T extends Entity> extends ReadonlyArray<T> {
     public <P extends BaseDTO> void update(List<P> params,
                                            BiFunction<P, EntityParentRef, T> create,
                                            BiConsumer<T, P> update)  {
-        Map<RefDTO, T> map = new HashMap<>();
+        Map<Id, T> map = new HashMap<>();
         for (T t : table) {
-            map.put(t.getRef(), t);
+            map.put(t.getId(), t);
         }
         table.clear();
         var parentRef = EntityParentRef.fromArray(this);
         for (P param : params) {
-            var existing = map.get(param.getRef());
+            var existing = map.get(Id.parse(param.id()));
             if(existing != null) {
                 table.add(existing);
                 update.accept(existing, param);

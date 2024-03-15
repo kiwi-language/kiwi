@@ -69,8 +69,8 @@ public class EnumConstantRT {
 
     public EnumConstantDTO toDTO() {
         return new EnumConstantDTO(
-                instance.tryGetPhysicalId(),
-                instance.getType().tryGetId(),
+                instance.getStringId(),
+                instance.getType().getStringId(),
                 getOrdinal(),
                 getName()
         );

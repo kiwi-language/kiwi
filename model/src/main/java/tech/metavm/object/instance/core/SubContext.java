@@ -10,15 +10,15 @@ import java.util.*;
 public final class SubContext {
     private final Set<Value> values = new LinkedHashSet<>();
     private final IdentityHashMap<Tree, Tree> entities = new IdentityHashMap<>();
-    private final Map<Long, Tree> entityMap = new HashMap<>();
+    private final Map<Id, Tree> entityMap = new HashMap<>();
     private final Set<ReferencePO> references = new HashSet<>();
-    private final long appId;
+    private final Id appId;
 
-    public SubContext(long appId) {
+    public SubContext(Id appId) {
         this.appId = appId;
     }
 
-    public Tree get(long id) {
+    public Tree get(Id id) {
         return entityMap.get(id);
     }
 
@@ -32,7 +32,7 @@ public final class SubContext {
         }
         entityMap.put(tree.id(), tree);
         entities.put(tree, tree);
-        new ReferenceExtractor(tree.openInput(), appId, references::add).visitMessage();
+        new ReferenceExtractor(tree.openInput(), appId.getPhysicalId(), references::add).visitMessage();
     }
 
     public Set<ReferencePO> getReferences() {

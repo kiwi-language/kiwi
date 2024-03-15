@@ -2,6 +2,7 @@ package tech.metavm.object.type.mocks;
 
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.common.RefDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeRepository;
@@ -12,7 +13,7 @@ import java.util.Map;
 
 public class MockTypeRepository implements TypeRepository {
 
-    private final Map<RefDTO, Type> map = new HashMap<>();
+    private final Map<Id, Type> map = new HashMap<>();
 
     @Nullable
     @Override
@@ -24,12 +25,12 @@ public class MockTypeRepository implements TypeRepository {
     }
 
     @Override
-    public Type getType(RefDTO ref) {
-        return map.get(ref);
+    public Type getType(Id id) {
+        return map.get(id);
     }
 
     @Override
     public void save(Type type) {
-        map.put(type.getRef(), type);
+        map.put(type.getId(), type);
     }
 }

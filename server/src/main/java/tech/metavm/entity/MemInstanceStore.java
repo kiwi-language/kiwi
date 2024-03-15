@@ -41,12 +41,6 @@ public class MemInstanceStore extends InstanceStore {
         return NncUtils.first(instanceMapper.selectByIds(appId, List.of(id), 0));
     }
 
-    public void addIndex(long appId, IndexKeyPO indexKey, Long id) {
-        indexEntryMapper.batchInsert(
-                List.of(new IndexEntryPO(appId, indexKey, id))
-        );
-    }
-
     public MemInstanceMapper getInstanceMapper() {
         return (MemInstanceMapper) instanceMapper;
     }

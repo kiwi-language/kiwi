@@ -36,7 +36,7 @@ public class FunctionTest extends TestCase {
                 function.getTypeParameters(),
                 List.of(StandardTypes.getStringType()),
                 ResolutionStage.INIT,
-                new MockEntityRepository(),
+                new MockEntityRepository(typeProviders.entityRepository.getTypeRegistry()),
                 typeProviders.createFacade(),
                 typeProviders.parameterizedTypeProvider,
                 typeProviders.parameterizedFlowProvider,

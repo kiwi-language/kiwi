@@ -4,6 +4,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.LoopNode;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceProvider;
 import tech.metavm.object.instance.core.PhysicalId;
@@ -32,7 +33,7 @@ public class FlowParsingContext extends BaseParsingContext {
     private final NodeRT prev;
     private final NodeRT lastNode;
     private long lastBuiltVersion = -1L;
-    private final Map<Long, NodeRT> id2node = new HashMap<>();
+    private final Map<Id, NodeRT> id2node = new HashMap<>();
     private final Map<String, NodeRT> name2node = new HashMap<>();
     private final Map<NodeRT, NodeExpression> node2expression = new HashMap<>();
 
@@ -60,8 +61,8 @@ public class FlowParsingContext extends BaseParsingContext {
     }
 
     @Override
-    public Instance getInstance(long id) {
-        return getInstanceProvider().get(new PhysicalId(id));
+    public Instance getInstance(Id id) {
+        return getInstanceProvider().get(id);
     }
 
     @Override

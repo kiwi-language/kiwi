@@ -1,12 +1,10 @@
 package tech.metavm.object.type.rest.dto;
 
-import tech.metavm.common.RefDTO;
-
 import java.util.HashSet;
 import java.util.List;
 
 public record IntersectionTypeParam(
-        List<RefDTO> typeRefs
+        List<String> typeIds
 ) implements TypeParam{
 
     @Override
@@ -16,6 +14,6 @@ public record IntersectionTypeParam(
 
     @Override
     public TypeKey getTypeKey() {
-        return new IntersectionTypeKey(new HashSet<>(typeRefs));
+        return new IntersectionTypeKey(new HashSet<>(typeIds));
     }
 }

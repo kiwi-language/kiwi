@@ -1,7 +1,7 @@
 package tech.metavm.flow.rest;
 
 public record GetFlowRequest(
-        long id,
+        String id,
         boolean includeNodes
 ) {
 }

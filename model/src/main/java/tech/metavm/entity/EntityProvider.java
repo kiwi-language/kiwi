@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.common.RefDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
@@ -13,26 +13,20 @@ import java.util.List;
 
 public interface EntityProvider extends MappingProvider, TypeProvider {
 
-    <T> T getEntity(Class<T> entityType, RefDTO ref);
+    <T> T getEntity(Class<T> entityType, Id id);
 
-    default <T> T getEntity(Class<T> entityType, long id) {
-        return getEntity(entityType, RefDTO.fromId(id));
+    TypeRegistry getTypeRegistry();
+
+    default ClassType getClassType(Id id) {
+        return getEntity(ClassType.class, id);
     }
 
-    default ClassType getClassType(RefDTO ref) {
-        return getEntity(ClassType.class, ref);
+    default Mapping getMapping(Id id) {
+        return getEntity(Mapping.class, id);
     }
 
-    default Mapping getMapping(RefDTO ref) {
-        return getEntity(Mapping.class, ref);
-    }
-
-    default Type getType(long id) {
+    default Type getType(Id id) {
         return getEntity(Type.class, id);
-    }
-
-    default Type getType(RefDTO ref) {
-        return getEntity(Type.class, ref);
     }
 
     <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... values);

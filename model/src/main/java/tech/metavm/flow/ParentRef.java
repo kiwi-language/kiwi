@@ -6,6 +6,7 @@ import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.ParentRefDTO;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
@@ -15,15 +16,13 @@ import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 @EntityType("父引用")
 public class ParentRef extends Element {
 
     public static ParentRef create(ParentRefDTO parentRefDTO, ParsingContext parsingContext, IEntityContext entityContext, @Nullable Type childType) {
         var master = ValueFactory.create(parentRefDTO.parent(), parsingContext);
-        var field = NncUtils.get(parentRefDTO.fieldRef(),
-                Objects.requireNonNull(entityContext)::getField);
+        var field = NncUtils.get(parentRefDTO.fieldId(), id -> entityContext.getField(Id.parse(id)));
         var masterRef = new ParentRef(master, field);
         if (childType != null) {
             masterRef.ensureChildAssignable(childType);

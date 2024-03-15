@@ -2,17 +2,17 @@ package tech.metavm.expression.dto;
 
 public class TypeParsingContextDTO extends ParsingContextDTO{
 
-    private long typeId;
+    private String typeId;
 
     public TypeParsingContextDTO() {
         super(ContextTypes.CONTEXT_TYPE_TYPE);
     }
 
-    public long getTypeId() {
+    public String getTypeId() {
         return typeId;
     }
 
-    public void setTypeId(long typeId) {
+    public void setTypeId(String typeId) {
         this.typeId = typeId;
     }
 }

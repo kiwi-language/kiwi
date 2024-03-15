@@ -16,11 +16,11 @@ import static tech.metavm.util.ContextUtil.getAppId;
 
 public class MemInstanceSearchServiceV2 implements InstanceSearchService {
 
-    private final MultiApplicationMap<Long, Source> sourceMap = new MultiApplicationMap<>();
+    private final MultiApplicationMap<Id, Source> sourceMap = new MultiApplicationMap<>();
 
     @Override
-    public Page<Long> search(SearchQuery query) {
-        List<Long> result = new ArrayList<>();
+    public Page<Id> search(SearchQuery query) {
+        List<Id> result = new ArrayList<>();
         doSearch(query.appId(), query, result);
         if (query.includeBuiltin())
             doSearch(ROOT_APP_ID, query, result);
@@ -33,18 +33,18 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
 
     @Override
     public long count(SearchQuery query) {
-        List<Long> result = new ArrayList<>();
+        List<Id> result = new ArrayList<>();
         doSearch(query.appId(), query, result);
         if (query.includeBuiltin())
             doSearch(ROOT_APP_ID, query, result);
         return result.size();
     }
 
-    private void doSearch(long appId, SearchQuery query, List<Long> result) {
+    private void doSearch(Long appId, SearchQuery query, List<Id> result) {
         Collection<Source> sources = sourceMap.values(appId);
         for (var source : sources) {
             if (match(source, query))
-                result.add(source.id());
+                result.add(source.getId());
         }
     }
 
@@ -55,7 +55,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
     private boolean match(Source source, SearchQuery query) {
-        if (!query.typeIds().contains(source.typeId()))
+        if (!query.typeIds().contains(source.getId()))
             return false;
         return query.condition() == null || Instances.isTrue(
                 query.condition().evaluate(new SourceEvaluationContext(source, null))
@@ -63,8 +63,8 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
 
-    public boolean contains(long id) {
-        return sourceMap.containsKey(getAppId(), id)
+    public boolean contains(Id id) {
+        return sourceMap.containsKey(getAppId().getPhysicalId(), id)
                 || sourceMap.containsKey(ROOT_APP_ID, id);
     }
 
@@ -77,30 +77,31 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
     @Override
-    public void bulk(long appId, List<ClassInstance> toIndex, List<Long> toDelete) {
+    public void bulk(long appId, List<ClassInstance> toIndex, List<Id> toDelete) {
         for (ClassInstance instance : toIndex) {
             NncUtils.requireNonNull(instance.tryGetPhysicalId());
             sourceMap.put(
                     appId,
-                    instance.tryGetPhysicalId(),
+                    instance.getId(),
                     buildSource(instance)
             );
         }
-        for (Long id : toDelete) {
+        for (var id : toDelete) {
             sourceMap.remove(appId, id);
             sourceMap.remove(appId, id);
         }
     }
 
     private Source buildSource(ClassInstance instance) {
-        var fields = new HashMap<Long, FieldValue>();
+        var fields = new HashMap<Id, FieldValue>();
         instance.forEachField((field, value) -> {
             if (!field.isChild())
                 fields.put(field.getId(), value.toFieldValueDTO());
         });
         return new Source(
                 instance.getPhysicalId(),
-                instance.getType().getId(),
+                instance.getType().getTag(),
+                instance.getType().getId().getPhysicalId(),
                 fields
         );
     }

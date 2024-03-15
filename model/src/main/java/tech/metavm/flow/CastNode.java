@@ -7,6 +7,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.CastNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Instances;
 
@@ -18,10 +19,10 @@ public class CastNode extends NodeRT {
 
     public static CastNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var param = (CastNodeParam) nodeDTO.param();
-        var node = (CastNode) context.getNode(nodeDTO.getRef());
+        var node = (CastNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var object = ValueFactory.create(param.object(), parsingContext);
-        var type = context.getType(nodeDTO.outputTypeRef());
+        var type = context.getType(Id.parse(nodeDTO.outputTypeId()));
         if (node == null)
             node = new CastNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), type, prev, scope, object);
         else {

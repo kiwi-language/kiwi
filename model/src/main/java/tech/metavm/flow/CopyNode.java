@@ -4,6 +4,7 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.CopyNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.InstanceCopier;
 import tech.metavm.util.NncUtils;
 
@@ -20,13 +21,13 @@ public class CopyNode extends NodeRT {
         if (param.parentRef() != null) {
             parentRef = new ParentRef(
                     ValueFactory.create(param.parentRef().parent(), parsingContext),
-                    NncUtils.get(param.parentRef().fieldRef(), context::getField)
+                    NncUtils.get(param.parentRef().fieldId(), id -> context.getField(Id.parse(id)))
             );
         } else
             parentRef = null;
         CopyNode node;
         if (nodeDTO.id() != null) {
-            node = (CopyNode) context.getNode(nodeDTO.id());
+            node = (CopyNode) context.getNode(Id.parse(nodeDTO.id()));
             node.setSource(source);
             node.setParentRef(parentRef);
         } else

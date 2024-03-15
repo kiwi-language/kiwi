@@ -163,8 +163,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
             serContext.writeType(returnType);
         }
         return new FlowDTO(
-                id,
-                serContext.getTmpId(this),
+                serContext.getRef(this),
                 getName(),
                 getCode(),
                 isNative,
@@ -448,7 +447,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public static FlowSignatureDTO getSignature(String name, List<Type> parameterTypes) {
         return new FlowSignatureDTO(name,
-                NncUtils.map(parameterTypes, Entity::getRef)
+                NncUtils.map(parameterTypes, Entity::getStringId)
         );
     }
 

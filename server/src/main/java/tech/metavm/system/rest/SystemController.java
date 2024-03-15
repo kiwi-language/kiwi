@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import tech.metavm.application.ApplicationManager;
 import tech.metavm.application.rest.dto.ApplicationCreateRequest;
 import tech.metavm.common.Result;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.system.CacheManager;
 import tech.metavm.system.StoreManager;
 import tech.metavm.user.PlatformUserManager;
@@ -71,14 +72,14 @@ public class SystemController {
     public Result<Void> initTest(HttpServletRequest request, HttpServletResponse response) {
         bootstrapController.boot(true);
         var createAppResult = applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser(APP_NAME, LOGIN_NAME, PASSWD));
-        loginController.login(request, response, new LoginRequest(Constants.PLATFORM_APP_ID, LOGIN_NAME, PASSWD));
+        loginController.login(request, response, new LoginRequest(Constants.getPlatformAppId().toString(), LOGIN_NAME, PASSWD));
         NncUtils.writeFile(RESULT_JSON_FILE, "[]");
-        NncUtils.writeFile(APP_ID_FILE, Long.toString(createAppResult.appId()));
+        NncUtils.writeFile(APP_ID_FILE, createAppResult.appId());
         clearDirectory(METAVM_HOME);
         clearDirectory(METAVM_HOME_1);
         clearDirectory(METAVM_HOME_2);
         NncUtils.writeFile(AUTH_FILE, createAppResult.appId() + "\ndemo\n123456");
-        ContextUtil.setUserId(createAppResult.ownerId());
+        ContextUtil.setUserId(Id.parse(createAppResult.ownerId()));
         var appToken = platformUserManager.enterApp(createAppResult.appId());
         Tokens.setToken(response, createAppResult.appId(), appToken.token());
         return Result.voidSuccess();
@@ -100,11 +101,11 @@ public class SystemController {
     }
 
     @PostMapping("/new-app")
-    public Result<Long> newApp(HttpServletRequest request, HttpServletResponse response) {
+    public Result<String> newApp(HttpServletRequest request, HttpServletResponse response) {
         String appName = "test_" + NncUtils.randomInt(1000);
         String loginName = "admin_" + NncUtils.randomInt(1000);
         var appId = applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser(appName, loginName, PASSWD)).appId();
-        loginController.login(request, response, new LoginRequest(Constants.PLATFORM_APP_ID, LOGIN_NAME, PASSWD));
+        loginController.login(request, response, new LoginRequest(Constants.getPlatformAppId().toString(), LOGIN_NAME, PASSWD));
         return Result.success(appId);
     }
 

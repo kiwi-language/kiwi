@@ -4,6 +4,7 @@ import tech.metavm.entity.CopyVisitor;
 import tech.metavm.entity.Element;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.InternalException;
@@ -70,8 +71,8 @@ public abstract class Expression extends Element {
         return getClass().getSimpleName();
     }
 
-    public static String idVarName(long id) {
-        return "$" + id;
+    public static String idVarName(Id id) {
+        return "$" + id.toString();
     }
 
     public <T extends Expression> List<T> extractExpressions(Class<T> klass) {

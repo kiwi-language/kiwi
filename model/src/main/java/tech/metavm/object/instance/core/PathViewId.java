@@ -15,9 +15,9 @@ public abstract class PathViewId extends ViewId {
 
     private final @Nullable Id sourceId;
 
-    private final long typeId;
+    private final Id typeId;
 
-    protected PathViewId(ViewId parent, long mappingId, @Nullable Id sourceId, long typeId) {
+    protected PathViewId(ViewId parent, Id mappingId, @Nullable Id sourceId, Id typeId) {
         super(mappingId);
         this.parent = parent;
         this.sourceId = sourceId;
@@ -69,7 +69,7 @@ public abstract class PathViewId extends ViewId {
     public SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider) {
         var mappingId = getMappingId();
         if(sourceId != null)
-            return new SourceRef(instanceProvider.get(sourceId), mappingId > 0 ? mappingProvider.getMapping(mappingId) : null);
+            return new SourceRef(instanceProvider.get(sourceId), mappingId != null ? mappingProvider.getMapping(mappingId) : null);
         else
             return null;
     }
@@ -77,7 +77,7 @@ public abstract class PathViewId extends ViewId {
     @Override
     public Type getViewType(MappingProvider mappingProvider, TypeProvider typeProvider) {
         var mappingId = getMappingId();
-        if(mappingId > 0L)
+        if(mappingId != null)
             return super.getViewType(mappingProvider, typeProvider);
         return typeProvider.getType(typeId);
 //        return getViewTypeByPath(parent.getViewType(mappingProvider, typeProvider));
@@ -85,7 +85,7 @@ public abstract class PathViewId extends ViewId {
 
     protected abstract Type getViewTypeByPath(Type parentType);
 
-    public long getTypeId() {
+    public Id getTypeId() {
         return typeId;
     }
 }

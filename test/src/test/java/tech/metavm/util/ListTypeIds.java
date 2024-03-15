@@ -1,10 +1,10 @@
 package tech.metavm.util;
 
 public record ListTypeIds(
-        long listTypeId,
-        long listValueTypeId,
-        long listLabelFieldId,
-        long listValueFieldId,
+        String listTypeId,
+        String listValueTypeId,
+        String listLabelFieldId,
+        String listValueFieldId,
         NodeTypeIds nodeTypeIds
 ) {
 }

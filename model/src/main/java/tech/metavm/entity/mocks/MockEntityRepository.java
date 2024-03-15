@@ -1,10 +1,7 @@
 package tech.metavm.entity.mocks;
 
-import tech.metavm.common.RefDTO;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityMemoryIndex;
-import tech.metavm.entity.EntityRepository;
-import tech.metavm.entity.IndexDef;
+import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
@@ -15,12 +12,22 @@ import java.util.Map;
 public class MockEntityRepository implements EntityRepository {
 
     private final IdentitySet<Object> objects = new IdentitySet<>();
-    private final Map<RefDTO, Entity> entities = new HashMap<>();
+    private final Map<Id, Entity> entities = new HashMap<>();
     private final EntityMemoryIndex index = new EntityMemoryIndex();
+    private final TypeRegistry typeRegistry;
+
+    public MockEntityRepository(TypeRegistry typeRegistry) {
+        this.typeRegistry = typeRegistry;
+    }
 
     @Override
-    public <T> T getEntity(Class<T> entityType, RefDTO ref) {
-        return entityType.cast(entities.get(ref));
+    public <T> T getEntity(Class<T> entityType, Id id) {
+        return entityType.cast(entities.get(id));
+    }
+
+    @Override
+    public TypeRegistry getTypeRegistry() {
+        return typeRegistry;
     }
 
     @Override
@@ -28,8 +35,8 @@ public class MockEntityRepository implements EntityRepository {
         NncUtils.requireTrue(objects.add(entity));
         if (entity instanceof Entity e) {
             e.forEachDescendant(d -> {
-                if (d.getRef().isNotEmpty())
-                    entities.put(d.getRef(), d);
+                if (d.tryGetId() != null)
+                    entities.put(d.getId(), d);
             });
         }
         index.save(entity);
@@ -44,8 +51,8 @@ public class MockEntityRepository implements EntityRepository {
 
     @Override
     public boolean remove(Object object) {
-        if(object instanceof Entity entity && entity.getRef().isNotEmpty())
-            entities.remove(entity.getRef());
+        if(object instanceof Entity entity && entity.tryGetId() != null)
+            entities.remove(entity.getId());
         index.remove(object);
         return true;
     }

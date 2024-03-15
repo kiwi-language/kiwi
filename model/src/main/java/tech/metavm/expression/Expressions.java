@@ -365,9 +365,9 @@ public class Expressions {
         return new InternalException(expression + " is not a context expression of " + context);
     }
 
-    public static long parseIdFromConstantVar(String var) {
+    public static String parseIdFromConstantVar(String var) {
         if (var.startsWith(Constants.CONSTANT_ID_PREFIX)) {
-            return Long.parseLong(var.substring(Constants.CONSTANT_ID_PREFIX.length()));
+            return var.substring(Constants.CONSTANT_ID_PREFIX.length());
         }
         throw new InternalException("Path item '" + var + "' does not represent an identity");
     }

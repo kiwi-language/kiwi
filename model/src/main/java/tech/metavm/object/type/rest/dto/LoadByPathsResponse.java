@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 public record LoadByPathsResponse(
-        Map<String, Long> path2typeId,
+        Map<String, String> path2typeId,
         List<TypeDTO> types
 ) {
 }

@@ -9,9 +9,9 @@ import tech.metavm.user.PlatformUsers;
 public class ClearUsersTask extends Task {
 
     @EntityField("应用ID")
-    private final long appId;
+    private final String appId;
 
-    protected ClearUsersTask(String title, long appId) {
+    protected ClearUsersTask(String title, String appId) {
         super(title);
         this.appId = appId;
     }

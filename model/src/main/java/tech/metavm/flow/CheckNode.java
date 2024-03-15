@@ -5,6 +5,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.CheckNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
@@ -16,8 +17,8 @@ public class CheckNode extends NodeRT {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         CheckNodeParam param = nodeDTO.getParam();
         var condition = ValueFactory.create(param.condition(), parsingContext);
-        var exit = context.getEntity(BranchNode.class, param.exitRef());
-        CheckNode node = (CheckNode) context.getNode(nodeDTO.getRef());
+        var exit = context.getEntity(BranchNode.class, Id.parse(param.exitId()));
+        CheckNode node = (CheckNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null) {
             node.setCondition(condition);
             node.setExit(exit);

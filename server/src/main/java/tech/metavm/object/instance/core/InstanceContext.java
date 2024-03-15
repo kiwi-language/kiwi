@@ -10,7 +10,6 @@ import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
-import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
@@ -39,7 +38,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private final IInstanceStore instanceStore;
     private final Cache cache;
 
-    public InstanceContext(long appId,
+    public InstanceContext(Id appId,
                            IInstanceStore instanceStore,
                            IdInitializer idInitializer,
                            Executor executor,
@@ -81,7 +80,7 @@ public class InstanceContext extends BufferingInstanceContext {
             buffer(Objects.requireNonNull(replacement.getId()));
         }
         for (var replacement : replacements) {
-            var tree = loadingBuffer.tryGetTree(replacement.getPhysicalId());
+            var tree = loadingBuffer.tryGetTree(replacement.getId());
             if (tree != null) {
                 headContext.add(tree);
             }
@@ -126,7 +125,7 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void incVersions(Patch patch) {
-        patch.entityChange.forEachUpdateOrDelete(i -> internalGet(new PhysicalId(i.getId())).incVersion());
+        patch.entityChange.forEachUpdateOrDelete(i -> internalGet(i.getInstanceId()).incVersion());
     }
 
     private static class PatchContext {
@@ -166,7 +165,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private void removeOrphans(Patch patch) {
         var orphans = new ArrayList<DurableInstance>();
         for (InstancePO delete : patch.entityChange.deletes()) {
-            var instance = Objects.requireNonNull(getSelfBuffered(PhysicalId.of(delete.getId())));
+            var instance = Objects.requireNonNull(getSelfBuffered(delete.getInstanceId()));
             if (!instance.isRemoved())
                 orphans.add(instance);
         }
@@ -187,7 +186,7 @@ public class InstanceContext extends BufferingInstanceContext {
                         limit,
                         this
                 ),
-                id -> get(PhysicalId.of(id))
+                this::get
         );
     }
 
@@ -212,7 +211,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit, boolean persistedOnly) {
         List<InstancePO> instancePOs = loadByType(new LoadByTypeRequest(type, startExclusive, limit));
-        var persistedResult = NncUtils.map(instancePOs, instancePO -> get(new PhysicalId(instancePO.getId())));
+        var persistedResult = NncUtils.map(instancePOs, instancePO -> get(instancePO.getInstanceId()));
         if (persistedResult.size() >= limit || persistedOnly)
             return persistedResult;
         Set<Long> persistedIds = NncUtils.mapUnique(persistedResult, DurableInstance::tryGetPhysicalId);
@@ -244,7 +243,7 @@ public class InstanceContext extends BufferingInstanceContext {
         var result = instanceStore.queryByTypeIds(
                 List.of(
                         new ByTypeQuery(
-                                NncUtils.requireNonNull(request.type().tryGetId(), "Type id is not initialized"),
+                                request.type().getId().getPhysicalId(),
                                 request.startExclusive() == null ? -1L : request.startExclusive().getPhysicalId() + 1L,
                                 request.limit()
                         )
@@ -269,7 +268,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 instanceStore.scan(List.of(
                         new ScanQuery(startExclusive == null ? 0L : startExclusive.getPhysicalId() + 1L, limit)
                 ), this),
-                instancePO -> get(new PhysicalId(instancePO.getId()))
+                instancePO -> get(instancePO.getInstanceId())
         );
     }
 
@@ -360,34 +359,34 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private ContextDifference buildDifference(Collection<Tree> bufferedTrees) {
         ContextDifference difference =
-                new ContextDifference(appId, id -> internalGet(new PhysicalId(id)).getType().tryGetId());
+                new ContextDifference(appId.getPhysicalId(), id -> internalGet(id).getType().getTypeId());
         difference.diff(headContext.trees(), bufferedTrees);
         difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedTrees));
-        computeVirtualUpdates(difference.getEntityChange());
+//        computeVirtualUpdates(difference.getEntityChange());
         return difference;
     }
 
-    private void computeVirtualUpdates(EntityChange<InstancePO> change) {
-        var queue = new LinkedList<InstancePO>();
-        queue.addAll(change.inserts());
-        queue.addAll(change.updates());
-        queue.addAll(change.deletes());
-        var queuedIds = new HashSet<>(NncUtils.map(queue, InstancePO::getId));
-        while (!queue.isEmpty()) {
-            var instance = queue.poll();
-            if (instance.getParentId() != -1L && queuedIds.add(instance.getParentId())) {
-                var parent = internalGet(PhysicalId.of(instance.getParentId()));
-                var parentPO = new InstancePO(
-                        appId, parent.getPhysicalId(), null, parent.getType().getId(), null,
-                        NncUtils.getOrElse(parent.getParent(), DurableInstance::getPhysicalId, -1L),
-                        NncUtils.getOrElse(parent.getParentField(), Entity::getId, -1L),
-                        parent.getRoot().getPhysicalId(), parent.getVersion() + 1,0L
-                );
-                queue.offer(parentPO);
-                change.addVirtualUpdate(parentPO);
-            }
-        }
-    }
+//    private void computeVirtualUpdates(EntityChange<InstancePO> change) {
+//        var queue = new LinkedList<InstancePO>();
+//        queue.addAll(change.inserts());
+//        queue.addAll(change.updates());
+//        queue.addAll(change.deletes());
+//        var queuedIds = new HashSet<>(NncUtils.map(queue, InstancePO::getId));
+//        while (!queue.isEmpty()) {
+//            var instance = queue.poll();
+//            if (instance.getParentId() != -1L && queuedIds.add(instance.getParentId())) {
+//                var parent = internalGet(PhysicalId.of(instance.getParentId(), ));
+//                var parentPO = new InstancePO(
+//                        appId, parent.getPhysicalId(), null, parent.getType().getId(), null,
+//                        NncUtils.getOrElse(parent.getParent(), DurableInstance::getPhysicalId, -1L),
+//                        NncUtils.getOrElse(parent.getParentField(), Entity::getId, -1L),
+//                        parent.getRoot().getPhysicalId(), parent.getVersion() + 1,0L
+//                );
+//                queue.offer(parentPO);
+//                change.addVirtualUpdate(parentPO);
+//            }
+//        }
+//    }
 
     private Patch processChanges(Patch patch, PatchContext patchContext) {
         var ref = new Object() {
@@ -396,7 +395,7 @@ public class InstanceContext extends BufferingInstanceContext {
         try (var ignored = getProfiler().enter("processChanges")) {
             patch.entityChange.forEachInsertOrUpdate(instancePO -> {
                 if (patchContext.changeNotified.add(instancePO.getId())) {
-                    if (onChange(internalGet(new PhysicalId(instancePO.getId()))))
+                    if (onChange(internalGet(instancePO.getInstanceId())))
                         ref.changed = true;
                 }
             }, true);
@@ -425,25 +424,25 @@ public class InstanceContext extends BufferingInstanceContext {
             Set<Long> idsToRemove = NncUtils.mapUnique(entityChange.deletes(), InstancePO::getId);
             Set<Long> idsToUpdate = NncUtils.mapUnique(entityChange.updates(), InstancePO::getId);
             ReferencePO ref = instanceStore.getFirstReference(
-                    appId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
+                    appId.getPhysicalId(), idsToRemove, mergeSets(idsToRemove, idsToUpdate)
             );
             if (ref != null)
-                throw BusinessException.strongReferencesPreventRemoval(get(new PhysicalId(ref.getSourceId())),
-                        internalGet(new PhysicalId(ref.getTargetId())));
+                throw BusinessException.strongReferencesPreventRemoval(get(ref.getSourceInstanceId()),
+                        internalGet(ref.getTargetInstanceId()));
         }
     }
 
-    private boolean isChildReference(ReferencePO referencePO) {
-        long sourceId = referencePO.getSourceId();
-        Instance source = isRemoved(sourceId) ? getRemoved(sourceId) : get(new PhysicalId(sourceId));
-        if (source instanceof ArrayInstance array) {
-            return array.isChildArray();
-        } else {
-            ClassType type = (ClassType) source.getType();
-            var field = type.getField(referencePO.getFieldId());
-            return field.isChild();
-        }
-    }
+//    private boolean isChildReference(ReferencePO referencePO) {
+//        long sourceId = referencePO.getSourceId();
+//        Instance source = isRemoved(sourceId) ? getRemoved(sourceId) : get(new PhysicalId(sourceId));
+//        if (source instanceof ArrayInstance array) {
+//            return array.isChildArray();
+//        } else {
+//            ClassType type = (ClassType) source.getType();
+//            var field = type.getField(referencePO.getFieldId());
+//            return field.isChild();
+//        }
+//    }
 
     @Override
     public boolean isFinished() {
@@ -467,7 +466,7 @@ public class InstanceContext extends BufferingInstanceContext {
                         && !instance.isRemoved() && !instance.isEphemeral()
                         && (instance.isNew() || !instance.isLoadedFromCache()) && !processed.contains(instance)) {
                     var tree = new Tree(
-                            instance.getPhysicalId(),
+                            instance.getId(),
                             instance.getVersion(),
                             InstanceOutput.toMessage(instance)
                     );
@@ -485,7 +484,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private Set<ReferencePO> getBufferedReferences(Collection<Tree> trees) {
         Set<ReferencePO> references = new HashSet<>();
         for (Tree tree : trees) {
-            new ReferenceExtractor(tree.openInput(), appId, references::add).visitMessage();
+            new ReferenceExtractor(tree.openInput(), appId.getPhysicalId(), references::add).visitMessage();
         }
         return references;
     }
@@ -552,7 +551,7 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public IInstanceContext createSame(long appId) {
+    public IInstanceContext createSame(Id appId) {
         return new InstanceContext(
                 appId,
                 instanceStore,

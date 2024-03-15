@@ -7,6 +7,7 @@ import tech.metavm.flow.rest.AddObjectNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstanceBuilder;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.Instances;
@@ -22,9 +23,9 @@ public class AddObjectNode extends ScopeNode implements NewNode {
 
     public static AddObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         AddObjectNodeParam param = nodeDTO.getParam();
-        ClassType type = context.getClassType(param.getTypeRef());
+        ClassType type = context.getClassType(Id.parse(param.getTypeId()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        AddObjectNode node = (AddObjectNode) context.getNode(nodeDTO.getRef());
+        AddObjectNode node = (AddObjectNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new AddObjectNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
                     NncUtils.orElse(param.isInitializeArrayChildren(), false), param.isEphemeral(),
@@ -36,7 +37,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
         }
         node.setFields(NncUtils.map(
                 param.getFieldParams(),
-                fp -> new FieldParam(context.getField(fp.fieldRef()), fp.value(), parsingContext)
+                fp -> new FieldParam(context.getField(Id.parse(fp.fieldId())), fp.value(), parsingContext)
         ));
         var parentRef = param.getParentRef() != null ?
                 ParentRef.create(param.getParentRef(), parsingContext, context, type) : null;

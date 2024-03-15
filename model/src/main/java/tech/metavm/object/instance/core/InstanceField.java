@@ -29,7 +29,7 @@ public class InstanceField {
         return field;
     }
 
-    public long getId() {
+    public Id getId() {
         return field.getId();
     }
 
@@ -96,7 +96,7 @@ public class InstanceField {
 
     public InstanceFieldDTO toDTO() {
         return new InstanceFieldDTO(
-                field.tryGetId(),
+                field.getStringId(),
                 field.getName(),
                 field.getType().getConcreteType().getCategory().code(),
                 field.getType().isArray(),

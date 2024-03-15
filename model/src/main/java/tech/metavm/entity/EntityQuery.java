@@ -11,8 +11,8 @@ public record EntityQuery<T extends Entity>(
         int page,
         int pageSize,
         List<EntityQueryField> fields,
-        List<Long> newlyCreated,
-        List<Long> excluded
+        List<String> newlyCreated,
+        List<String> excluded
 ) {
 
 }

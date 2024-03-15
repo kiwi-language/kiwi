@@ -21,11 +21,11 @@ public class ViewManager extends EntityContextFactoryBean {
         super(entityContextFactory);
     }
 
-    public Long getListViewTypeId() {
+    public String getListViewTypeId() {
         return ModelDefRegistry.getTypeId(ListView.class);
     }
 
-    public ListViewDTO getDefaultListView(long typeId) {
+    public ListViewDTO getDefaultListView(String typeId) {
         try (IEntityContext context = newContext()) {
             ClassType type = context.getClassType(typeId);
             List<ListView> views = context.query(
@@ -43,16 +43,16 @@ public class ViewManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public Long saveMapping(ObjectMappingDTO viewMapping) {
+    public String saveMapping(ObjectMappingDTO viewMapping) {
         try (var context = newContext()) {
             var mapping = MappingSaver.create(context).save(viewMapping);
             context.finish();
-            return mapping.tryGetId();
+            return mapping.getStringId();
         }
     }
 
     @Transactional
-    public void removeMapping(long id) {
+    public void removeMapping(String id) {
         try (var context = newContext()) {
             var mapping = context.getEntity(FieldsObjectMapping.class, id);
             mapping.getSourceType().removeMapping(mapping);
@@ -60,7 +60,7 @@ public class ViewManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public void setDefaultMapping(long id) {
+    public void setDefaultMapping(String id) {
         try (var context = newContext()) {
             context.getEntity(FieldsObjectMapping.class, id).setDefault();
         }

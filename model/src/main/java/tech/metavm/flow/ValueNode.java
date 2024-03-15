@@ -5,6 +5,7 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ValueNodeParam;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
@@ -15,7 +16,7 @@ public class ValueNode extends NodeRT {
 
     public static ValueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         ValueNodeParam param = nodeDTO.getParam();
-        var node = (ValueNode) context.getNode(nodeDTO.getRef());
+        var node = (ValueNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var value = ValueFactory.create(param.value(), parsingContext);
         var outputType = parsingContext.getExpressionType(value.getExpression()).getCertainUpperBound();

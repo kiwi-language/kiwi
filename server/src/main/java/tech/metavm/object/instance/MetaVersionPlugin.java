@@ -31,12 +31,12 @@ public class MetaVersionPlugin implements ContextPlugin {
         var typeType = typeRegistry.getType(Type.class);
         var mappingType = typeRegistry.getType(Mapping.class);
         var functionType = typeRegistry.getType(Function.class);
-        var changedTypeIds = new HashSet<Long>();
-        var changedMappingIds = new HashSet<Long>();
-        var changedFunctionIds = new HashSet<Long>();
+        var changedTypeIds = new HashSet<String>();
+        var changedMappingIds = new HashSet<String>();
+        var changedFunctionIds = new HashSet<String>();
         change.forEachInsertOrUpdate(i -> {
-            var id = i.getId();
-            var instance = context.get(id);
+            var id = i.getInstanceId().toString();
+            var instance = context.get(i.getInstanceId());
             if (typeType.isInstance(instance))
                 changedTypeIds.add(id);
             else if (mappingType.isInstance(instance))
@@ -44,12 +44,12 @@ public class MetaVersionPlugin implements ContextPlugin {
             else if (functionType.isInstance(instance))
                 changedFunctionIds.add(id);
         }, true);
-        var removedTypeIds = new HashSet<Long>();
-        var removedMappingIds = new HashSet<Long>();
-        var removedFunctionIds = new HashSet<Long>();
+        var removedTypeIds = new HashSet<String>();
+        var removedMappingIds = new HashSet<String>();
+        var removedFunctionIds = new HashSet<String>();
         change.deletes().forEach(i -> {
-            var id = i.getId();
-            var instance = context.getRemoved(id);
+            var id = i.getInstanceId().toString();
+            var instance = context.getRemoved(i.getInstanceId());
             if(typeType.isInstance(instance))
                 removedTypeIds.add(id);
             else if(mappingType.isInstance(instance))

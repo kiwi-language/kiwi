@@ -9,6 +9,7 @@ import tech.metavm.flow.rest.ForeachNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
@@ -23,7 +24,7 @@ import java.util.Map;
 public class ForeachNode extends LoopNode {
 
     public static ForeachNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var outputType = context.getClassType(nodeDTO.outputTypeRef());
+        var outputType = context.getClassType(Id.parse(nodeDTO.outputTypeId()));
         ParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
         ForeachNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.getArray(), parsingContext);
@@ -37,7 +38,7 @@ public class ForeachNode extends LoopNode {
         // IMPORTANT COMMENT DON"T REMOVE:
         // DO NOT call setLoopParam here. setLoopParam should be called after the loop body has been constructed.
         // See FlowManager.saveLoopNodeContent
-        var node = (ForeachNode) context.getNode(nodeDTO.getRef());
+        var node = (ForeachNode) context.getNode(Id.parse(nodeDTO.id()));
         if(node == null)
             node = new ForeachNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, array, condition);
         else

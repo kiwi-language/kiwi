@@ -5,6 +5,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.MethodCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -15,7 +16,7 @@ public class MethodCallNode extends CallNode {
 
     public static MethodCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         MethodCallNodeParam param = nodeDTO.getParam();
-        var method = context.getMethod(param.getFlowRef());
+        var method = context.getMethod(Id.parse(param.getFlowId()));
         FlowParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
         var self = NncUtils.get(param.getSelf(), s -> ValueFactory.create(s, parsingContext));
         List<Argument> arguments = NncUtils.biMap(
@@ -25,7 +26,7 @@ public class MethodCallNode extends CallNode {
         );
         MethodCallNode node;
         if (nodeDTO.id() != null) {
-            node = (MethodCallNode) context.getNode(nodeDTO.id());
+            node = (MethodCallNode) context.getNode(Id.parse(nodeDTO.id()));
             node.setSelf(self);
             node.setSubFlow(method);
             node.setArguments(arguments);

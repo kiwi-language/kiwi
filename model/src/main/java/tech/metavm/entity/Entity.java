@@ -1,7 +1,8 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.common.RefDTO;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -13,9 +14,9 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     private transient boolean removed;
     private transient boolean persisted;
-    private transient Long tmpId;
+//    private transient Long tmpId;
     @Nullable
-    protected transient Long id;
+    protected transient Id id;
     @Nullable
     private transient Entity parentEntity;
     @Nullable
@@ -37,7 +38,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     public Entity(Long tmpId, @Nullable EntityParentRef parentRef, boolean ephemeral) {
-        this.tmpId = tmpId;
+        this.id = TmpId.of(tmpId);
         this.ephemeralEntity = ephemeral;
         if (parentRef != null) {
             if (parentRef.parent() instanceof ReadonlyArray<?> array) {
@@ -52,13 +53,13 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         }
     }
 
-    @Nullable
-    public final Long tryGetId() {
-        return id;
-    }
+//    @Nullable
+//    public final Long tryGetId() {
+//        return id;
+//    }
 
     @NoProxy
-    public boolean idEquals(long id) {
+    public boolean idEquals(Id id) {
         return Objects.equals(this.id, id);
     }
 
@@ -67,9 +68,9 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         return id != null;
     }
 
-    public final RefDTO getRef() {
-        return new RefDTO(id, tmpId);
-    }
+//    public final RefDTO getRef() {
+//        return new RefDTO(id, tmpId, ModelDefRegistry.getTypeId(this.getClass()));
+//    }
 
     @NoProxy
     public boolean isEphemeralEntity() {
@@ -86,12 +87,28 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         }
     }
 
-    @NoProxy
-    public final long getId() {
-        if (id != null)
-            return id;
-        else
-            throw new InternalException("Entity id not initialized yet: " + this);
+//    @NoProxy
+//    public final long getId() {
+//        if (id != null)
+//            return id;
+//        else
+//            throw new InternalException("Entity id not initialized yet: " + this);
+//    }
+
+    public Id getEntityId() {
+//        var type = ModelDefRegistry.getType(this.getClass());
+//        return PhysicalId.of(getId(), type.getCategory(), type.getEntityId().getPhysicalId());
+        return id;
+    }
+
+    @Nullable
+    @Override
+    public Id tryGetId() {
+        return id;
+    }
+
+    public String getStringId() {
+        return NncUtils.get(getEntityId(), Id::toString);
     }
 
     @NoProxy
@@ -187,7 +204,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     @Override
-    public final void initId(long id) {
+    public final void initId(Id id) {
         if (!isIdNull()) {
             throw new IllegalStateException("objectId is already initialized");
         }
@@ -220,14 +237,14 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         }
     }
 
-    @NoProxy
-    public Long getTmpId() {
-        return tmpId;
-    }
+//    @NoProxy
+//    public Long getTmpId() {
+//        return tmpId;
+//    }
 
-    public void setTmpId(Long tmpId) {
-        this.tmpId = tmpId;
-    }
+//    public void setTmpId(Long tmpId) {
+//        this.tmpId = tmpId;
+//    }
 
     @Override
     public void clearId() {
@@ -290,4 +307,14 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
                 EntityUtils.getRealType(this).getSimpleName(), id);
     }
 
+    public Long getTmpId() {
+        if(id instanceof TmpId tmpId)
+            return tmpId.getTmpId();
+        else
+            return null;
+    }
+
+    public void setTmpId(Long tmpId) {
+        initId(TmpId.of(tmpId));
+    }
 }

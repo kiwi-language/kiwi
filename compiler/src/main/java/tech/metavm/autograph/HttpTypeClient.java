@@ -1,5 +1,6 @@
 package tech.metavm.autograph;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.GetTreesRequest;
 import tech.metavm.object.instance.rest.InstanceVersionDTO;
 import tech.metavm.object.instance.rest.InstanceVersionsRequest;
@@ -12,6 +13,7 @@ import tech.metavm.system.rest.dto.GetActiveBlocksRequest;
 import tech.metavm.user.rest.dto.LoginInfo;
 import tech.metavm.user.rest.dto.LoginRequest;
 import tech.metavm.util.CompilerHttpUtils;
+import tech.metavm.util.Constants;
 import tech.metavm.util.TypeReference;
 
 import java.util.List;
@@ -19,13 +21,13 @@ import java.util.List;
 public class HttpTypeClient implements TypeClient {
 
     @Override
-    public long getAppId() {
-        return CompilerHttpUtils.getAppId();
+    public String getAppId() {
+        return Constants.getAppId(CompilerHttpUtils.getAppId()).toString();
     }
 
     @Override
-    public void setAppId(long appId) {
-        CompilerHttpUtils.setAppId(appId);
+    public void setAppId(String appId) {
+        CompilerHttpUtils.setAppId(Id.parse(appId).getPhysicalId());
     }
 
     @Override
@@ -35,25 +37,27 @@ public class HttpTypeClient implements TypeClient {
     }
 
     @Override
-    public void login(long appId, String loginName, String password) {
+    public void login(String appId, String loginName, String password) {
         CompilerHttpUtils.setAppId(2L);
-        CompilerHttpUtils.post("/login", new LoginRequest(2L, loginName, password),
+        CompilerHttpUtils.post("/login", new LoginRequest(Constants.getPlatformAppId().toString(), loginName, password),
                 new TypeReference<LoginInfo>() {
                 });
         CompilerHttpUtils.post("/platform-user/enter-app/" + appId, null, new TypeReference<LoginInfo>() {
         });
-        CompilerHttpUtils.setAppId(appId);
+        CompilerHttpUtils.setAppId(Id.parse(appId).getPhysicalId());
     }
 
     @Override
     public BlockDTO getContainingBlock(long id) {
-        return CompilerHttpUtils.get("/block/containing/" + id, new TypeReference<BlockDTO>() {});
+        return CompilerHttpUtils.get("/block/containing/" + id, new TypeReference<>() {
+        });
     }
 
     @Override
     public List<BlockDTO> getActive(List<Long> typeIds) {
         return CompilerHttpUtils.post("/block/active",
-                new GetActiveBlocksRequest(typeIds), new TypeReference<List<BlockDTO>>() {});
+                new GetActiveBlocksRequest(typeIds), new TypeReference<>() {
+                });
     }
 
     @Override

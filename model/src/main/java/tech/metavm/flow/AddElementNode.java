@@ -7,6 +7,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.AddElementNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
@@ -25,7 +26,7 @@ public class AddElementNode extends NodeRT {
         var element = ValueFactory.create(param.element(), parsingContext);
         AddElementNode node;
         if (nodeDTO.id() != null) {
-            node = (AddElementNode) context.getNode(nodeDTO.id());
+            node = (AddElementNode) context.getNode(Id.parse(nodeDTO.id()));
             node.update(array, element);
         } else
             node = new AddElementNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, array, element);

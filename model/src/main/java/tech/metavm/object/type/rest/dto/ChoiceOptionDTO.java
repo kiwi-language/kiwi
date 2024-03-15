@@ -1,7 +1,7 @@
 package tech.metavm.object.type.rest.dto;
 
 public record ChoiceOptionDTO(
-        Long id,
+        String id,
         String name,
         int order,
         boolean defaultSelected

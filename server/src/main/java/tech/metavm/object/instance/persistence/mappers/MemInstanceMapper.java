@@ -158,7 +158,7 @@ public class MemInstanceMapper implements InstanceMapper {
                 .map(id2instance::get)
                 .filter(Objects::nonNull)
                 .distinct()
-                .map(i -> new Version(i.getId(), i.getVersion()))
+                .map(i -> new Version(i.getId(), i.getTypeTag(), i.getTypeId(), i.getVersion()))
                 .collect(Collectors.toList());
     }
 

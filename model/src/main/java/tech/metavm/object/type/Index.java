@@ -7,6 +7,7 @@ import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.IndexFieldDTO;
 import tech.metavm.util.InternalException;
@@ -41,7 +42,7 @@ public class Index extends Constraint implements LocalKey {
         this.fields.addChild(item);
     }
 
-    public IndexField getField(long id) {
+    public IndexField getField(Id id) {
         return NncUtils.requireNonNull(
                 fields.get(Entity::tryGetId, id),
                 "Can not find index item for id " + id

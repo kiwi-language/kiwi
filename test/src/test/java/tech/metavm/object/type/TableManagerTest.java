@@ -6,6 +6,7 @@ import tech.metavm.entity.*;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceQueryService;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.ColumnDTO;
 import tech.metavm.object.type.rest.dto.TableDTO;
 import tech.metavm.object.type.rest.dto.TitleFieldDTO;
@@ -27,7 +28,7 @@ public class TableManagerTest extends TestCase {
                 new EntityQueryService(new InstanceQueryService(bootResult.instanceSearchService()));
         TypeManager typeManager = new TypeManager(entityContextFactory, entityQueryService, jobManager, new MockTransactionOperations());
         tableManager = new TableManager(entityContextFactory, typeManager);
-        ContextUtil.setAppId(TestConstants.APP_ID);
+        ContextUtil.setAppId(TestConstants.getAppId());
     }
 
     @Override
@@ -38,8 +39,8 @@ public class TableManagerTest extends TestCase {
     public void testSmoking() {
         Type fooType = ModelDefRegistry.getType(Foo.class);
 
-        TableDTO tableDTO = tableManager.get(fooType.getId());
-        Assert.assertEquals(fooType.tryGetId(), tableDTO.id());
+        TableDTO tableDTO = tableManager.get(fooType.getStringId());
+        Assert.assertEquals(fooType.getStringId(), tableDTO.id());
 
         Field bazListField = ModelDefRegistry.getField(Foo.class, "bazList");
         Assert.assertTrue(bazListField.getType().isNullable());
@@ -51,13 +52,13 @@ public class TableManagerTest extends TestCase {
 
     public void testGet() {
         ClassType type = ModelDefRegistry.getClassType(Type.class);
-        TableDTO tableDTO = tableManager.get(type.getId());
+        TableDTO tableDTO = tableManager.get(type.getStringId());
         Assert.assertNotNull(tableDTO.id());
         Assert.assertEquals(type.getName(), tableDTO.name());
         Assert.assertEquals(type.getAllFields().size(), tableDTO.fields().size());
         for (ColumnDTO column : tableDTO.fields()) {
             Assert.assertNotNull(column.id());
-            Field field = type.getField(column.id());
+            Field field = type.getField(Id.parse(column.id()));
             Assert.assertNotNull(field);
             Assert.assertEquals(field.getName(), column.name());
             Assert.assertEquals(field.isUnique(), column.unique());
@@ -68,7 +69,7 @@ public class TableManagerTest extends TestCase {
 
     public void testSave() {
         TableDTO tableDTO = new TableDTO(
-                null, NncUtils.randomNonNegative(), "傻", "Foo", null,
+                null, "傻", "Foo", null,
                 false, false,
                 new TitleFieldDTO(
                         NncUtils.randomNonNegative(),
@@ -90,7 +91,7 @@ public class TableManagerTest extends TestCase {
 
     public void testMultiValuedField() {
         TableDTO bar = save(new TableDTO(
-                null, NncUtils.randomNonNegative(), "Bar", "Bar", null,
+                null,  "Bar", "Bar", null,
                 false, false,
                 new TitleFieldDTO(
                         NncUtils.randomNonNegative(),
@@ -102,7 +103,7 @@ public class TableManagerTest extends TestCase {
 
 
         TableDTO foo = save(new TableDTO(
-                null, NncUtils.randomNonNegative(), "Foo", "Foo", null,
+                null, "Foo", "Foo", null,
                 false, false,
                 new TitleFieldDTO(
                         NncUtils.randomNonNegative(),
@@ -112,7 +113,6 @@ public class TableManagerTest extends TestCase {
                 List.of(
                         new ColumnDTO(
                                 null,
-                                NncUtils.randomNonNegative(),
                                 "bars", TableManager.ColumnType.TABLE.code(),
                                 Access.PUBLIC.code(), null,
                                 bar.id(), null, true, true, false,

@@ -1,6 +1,9 @@
 package tech.metavm.instance.core;
 
 import tech.metavm.autograph.TypeClient;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TypeId;
+import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.system.BlockRT;
 import tech.metavm.system.BlockSource;
 import tech.metavm.system.rest.dto.BlockDTO;
@@ -30,8 +33,8 @@ public class ServerBlockSource implements BlockSource {
     private BlockRT fromDTO(BlockDTO blockDTO) {
         return new BlockRT(
                 blockDTO.id(),
-                blockDTO.appId(),
-                blockDTO.typeId(),
+                Id.parse(blockDTO.appId()),
+                new TypeId(TypeTag.fromCode(blockDTO.typeTag()), blockDTO.typeId()),
                 blockDTO.start(),
                 blockDTO.end(),
                 blockDTO.next()

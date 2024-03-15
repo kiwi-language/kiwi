@@ -91,10 +91,10 @@ public class ManufacturingCompileTest extends CompilerTestBase {
             // get default mapping of material type
             var materialDefaultMapping = TestUtils.getDefaultMapping(materialType);
             // get material view
-            var materialViewType = typeManager.getType(new GetTypeRequest(materialDefaultMapping.targetTypeRef().id(), false)).type();
+            var materialViewType = typeManager.getType(new GetTypeRequest(materialDefaultMapping.targetTypeId(), false)).type();
             // load material view object
             var materialView = instanceManager.get(
-                    new DefaultViewId(materialDefaultMapping.id(), Id.parse(materialId)).toString(),
+                    new DefaultViewId(Id.parse(materialDefaultMapping.id()), Id.parse(materialId)).toString(),
                     1
             ).instance();
             // save material view
@@ -115,8 +115,8 @@ public class ManufacturingCompileTest extends CompilerTestBase {
             var defaultMapping = TestUtils.getDefaultMapping(inventoryAttributesType);
             Assert.assertNotNull(defaultMapping);
             // get target type of default mapping
-            var targetTypeRef = defaultMapping.targetTypeRef();
-            var inventoryAttrViewType = typeManager.getType(new GetTypeRequest(targetTypeRef.id(), false)).type();
+            var targetTypeId = defaultMapping.targetTypeId();
+            var inventoryAttrViewType = typeManager.getType(new GetTypeRequest(targetTypeId, false)).type();
             // assert that the view type and the source type have the same number of fields
             Assert.assertEquals(inventoryAttributesType.getClassParam().fields().size(),
                     inventoryAttrViewType.getClassParam().fields().size());
@@ -347,7 +347,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 List.of(
                         InstanceFieldValue.of(
                                 InstanceDTO.createClassInstance(
-                                        byAmountInboundRequestType.getRef(),
+                                        byAmountInboundRequestType.id(),
                                         List.of(
                                                 InstanceFieldDTO.create(
                                                         TestUtils.getFieldIdByCode(inboundRequestType, "bizType"),
@@ -429,7 +429,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 List.of(
                         InstanceFieldValue.of(
                                 InstanceDTO.createClassInstance(
-                                        bySpecInboundRequestType.getRef(),
+                                        bySpecInboundRequestType.id(),
                                         List.of(
                                                 InstanceFieldDTO.create(
                                                         TestUtils.getFieldIdByCode(inboundRequestType, "bizType"),
@@ -489,7 +489,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                 List.of(
                                                                         InstanceFieldValue.of(
                                                                                 InstanceDTO.createClassInstance(
-                                                                                        bySpecInboundRequestItemType.getRef(),
+                                                                                        bySpecInboundRequestItemType.id(),
                                                                                         List.of(
                                                                                                 InstanceFieldDTO.create(
                                                                                                         TestUtils.getFieldIdByCode(bySpecInboundRequestItemType, "qrCodeAmount"),
@@ -504,7 +504,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                         ),
                                                                         InstanceFieldValue.of(
                                                                                 InstanceDTO.createClassInstance(
-                                                                                        bySpecInboundRequestItemType.getRef(),
+                                                                                        bySpecInboundRequestItemType.id(),
                                                                                         List.of(
                                                                                                 InstanceFieldDTO.create(
                                                                                                         TestUtils.getFieldIdByCode(bySpecInboundRequestItemType, "qrCodeAmount"),
@@ -608,7 +608,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                 List.of(
                                         InstanceFieldValue.of(
                                                 InstanceDTO.createClassInstance(
-                                                        transferRequestType.getRef(),
+                                                        transferRequestType.id(),
                                                         List.of(
                                                                 InstanceFieldDTO.create(
                                                                         TestUtils.getFieldIdByCode(transferRequestType, "to"),
@@ -622,7 +622,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                                 List.of(
                                                                                         InstanceFieldValue.of(
                                                                                                 InstanceDTO.createClassInstance(
-                                                                                                        transferRequestItemType.getRef(),
+                                                                                                        transferRequestItemType.id(),
                                                                                                         List.of(
                                                                                                                 InstanceFieldDTO.create(
                                                                                                                         TestUtils.getFieldIdByCode(transferRequestItemType, "transferOrderItem"),
@@ -636,7 +636,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                                                                                 List.of(
                                                                                                                                         InstanceFieldValue.of(
                                                                                                                                                 InstanceDTO.createClassInstance(
-                                                                                                                                                        transferRequestSubItemType.getRef(),
+                                                                                                                                                        transferRequestSubItemType.id(),
                                                                                                                                                         List.of(
                                                                                                                                                                 InstanceFieldDTO.create(
                                                                                                                                                                         TestUtils.getFieldIdByCode(transferRequestSubItemType, "inventory"),
@@ -684,10 +684,10 @@ public class ManufacturingCompileTest extends CompilerTestBase {
     private RoutingObjects processRouting(InstanceDTO material, InstanceDTO unit) {
         var routingType = getClassTypeByCode("tech.metavm.manufacturing.production.Routing");
         var defaultMapping = TestUtils.getDefaultMapping(routingType);
-        var routingViewType = typeManager.getType(new GetTypeRequest(defaultMapping.targetTypeRef().id(), false)).type();
+        var routingViewType = typeManager.getType(new GetTypeRequest(defaultMapping.targetTypeId(), false)).type();
         var fromViewMethodId = TestUtils.getStaticMethodIdByCode(routingType, "fromView");
         var routingItemType = getClassTypeByCode("tech.metavm.manufacturing.production.RoutingItem");
-        var routingItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(routingItemType).targetTypeRef().id(), false)).type();
+        var routingItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(routingItemType).targetTypeId(), false)).type();
 
         var workCenterType = getClassTypeByCode("tech.metavm.manufacturing.production.WorkCenter");
         var workCenterConstructorId = TestUtils.getMethodIdByCode(workCenterType, "WorkCenter");
@@ -716,7 +716,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 List.of(
                         InstanceFieldValue.of(
                                 InstanceDTO.createClassInstance(
-                                        routingViewType.getRef(),
+                                        routingViewType.id(),
                                         List.of(
                                                 InstanceFieldDTO.create(
                                                         TestUtils.getFieldIdByCode(routingViewType, "name"),
@@ -739,7 +739,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                         // create a RoutingItem
                                                                         InstanceFieldValue.of(
                                                                                 InstanceDTO.createClassInstance(
-                                                                                        routingItemViewType.getRef(),
+                                                                                        routingItemViewType.id(),
                                                                                         List.of(
                                                                                                 InstanceFieldDTO.create(
                                                                                                         TestUtils.getFieldIdByCode(routingItemViewType, "processCode"),
@@ -791,8 +791,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 
         Assert.assertNotNull(routing.id());
         // reload routing
-        var id = Id.parse(routing.id()).getPhysicalId();
-        var reloadedRoutingView = instanceManager.getDefaultView(PhysicalId.of(id).toString());
+        var reloadedRoutingView = instanceManager.getDefaultView(routing.id());
         var viewId = (DefaultViewId) Id.parse(reloadedRoutingView.instance().id());
         Assert.assertEquals(viewId.getSourceId(), Id.parse(routing.id()));
 
@@ -804,13 +803,13 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                             TypeDTO feedingTypeType, TypeDTO pickingMethodType, TypeDTO generalStateType, TypeDTO qualityInspectionStateType) {
         var bomType = getClassTypeByCode("tech.metavm.manufacturing.production.BOM");
         var bomDefaultMapping = TestUtils.getDefaultMapping(bomType);
-        var bomViewType = typeManager.getType(new GetTypeRequest(bomDefaultMapping.targetTypeRef().id(), false)).type();
+        var bomViewType = typeManager.getType(new GetTypeRequest(bomDefaultMapping.targetTypeId(), false)).type();
 
         var bomItemType = getClassTypeByCode("tech.metavm.manufacturing.production.BOMItem");
-        var bomItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(bomItemType).targetTypeRef().id(), false)).type();
+        var bomItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(bomItemType).targetTypeId(), false)).type();
 
         var bomSubItemType = getClassTypeByCode("tech.metavm.manufacturing.production.BOMSubItem");
-        var bomSubItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(bomSubItemType).targetTypeRef().id(), false)).type();
+        var bomSubItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(bomSubItemType).targetTypeId(), false)).type();
 
         var directFeedingType = TestUtils.getEnumConstantByName(feedingTypeType, "直接投料");
         var onDemandPickingMethod = TestUtils.getEnumConstantByName(pickingMethodType, "按需领料");
@@ -821,7 +820,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var bomView = doInTransaction(() -> instanceManager.create(
                 InstanceDTO.createClassInstance(
                         null,
-                        bomViewType.getRef(),
+                        bomViewType.id(),
                         bomDefaultMapping.id(),
                         List.of(
                                 InstanceFieldDTO.create(
@@ -861,7 +860,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                         // create a BOMItem
                                                         InstanceFieldValue.of(
                                                                 InstanceDTO.createClassInstance(
-                                                                        bomItemViewType.getRef(),
+                                                                        bomItemViewType.id(),
                                                                         List.of(
                                                                                 InstanceFieldDTO.create(
                                                                                         TestUtils.getFieldIdByCode(bomItemViewType, "sequence"),
@@ -916,7 +915,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                                                         // create a BOMSubItem
                                                                                                         InstanceFieldValue.of(
                                                                                                                 InstanceDTO.createClassInstance(
-                                                                                                                        bomSubItemViewType.getRef(),
+                                                                                                                        bomSubItemViewType.id(),
                                                                                                                         List.of(
                                                                                                                                 InstanceFieldDTO.create(
                                                                                                                                         TestUtils.getFieldIdByCode(bomSubItemViewType, "sequence"),

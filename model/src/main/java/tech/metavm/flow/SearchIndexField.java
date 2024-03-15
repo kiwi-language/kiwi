@@ -13,7 +13,7 @@ public class SearchIndexField extends Entity {
 
     public static SearchIndexField create(SearchIndexFieldDTO fieldDTO, ParsingContext parsingContext, IEntityContext entityContext) {
         return new SearchIndexField(
-                entityContext.getEntity(IndexField.class, fieldDTO.indexFieldRef()),
+                entityContext.getEntity(IndexField.class, fieldDTO.indexFieldId()),
                 IndexOperator.getByCode(fieldDTO.operator()),
                 ValueFactory.create(fieldDTO.value(), parsingContext)
         );

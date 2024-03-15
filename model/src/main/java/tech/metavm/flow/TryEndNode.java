@@ -10,6 +10,7 @@ import tech.metavm.flow.rest.TryEndFieldDTO;
 import tech.metavm.flow.rest.TryEndNodeParam;
 import tech.metavm.flow.rest.TryEndValueDTO;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
@@ -27,10 +28,10 @@ import java.util.Map;
 public class TryEndNode extends ChildTypeNode {
 
     public static TryEndNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var node = (TryEndNode) context.getNode(nodeDTO.getRef());
+        var node = (TryEndNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new TryEndNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
-                    context.getEntity(ClassType.class, nodeDTO.outputTypeRef()),
+                    context.getEntity(ClassType.class, Id.parse(nodeDTO.outputTypeId())),
                     (TryNode) prev, scope);
         }
         var param = (TryEndNodeParam) nodeDTO.getParam();
@@ -43,7 +44,7 @@ public class TryEndNode extends ChildTypeNode {
         for (TryEndFieldDTO mergeFieldDTO : mergeFieldDTOs) {
             List<TryEndValue> values = new ArrayList<>();
             for (TryEndValueDTO valueDTO : mergeFieldDTO.values()) {
-                var raiseNode = context.getNode(valueDTO.raiseNodeRef());
+                var raiseNode = context.getNode(Id.parse(valueDTO.raiseNodeId()));
                 var raiseParsingContext = raiseParsingContexts.computeIfAbsent(raiseNode, k ->
                         FlowParsingContext.create(raiseNode.getScope(), raiseNode, context));
                 values.add(
@@ -51,7 +52,7 @@ public class TryEndNode extends ChildTypeNode {
                 );
             }
             fields.add(new TryEndField(
-                    context.getField(mergeFieldDTO.fieldRef()),
+                    context.getField(Id.parse(mergeFieldDTO.fieldId())),
                     values,
                     ValueFactory.create(mergeFieldDTO.defaultValue(), parsingContext),
                     node

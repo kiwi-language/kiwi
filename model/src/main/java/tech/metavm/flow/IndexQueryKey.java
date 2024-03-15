@@ -5,6 +5,7 @@ import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.IndexQueryKeyDTO;
 import tech.metavm.object.instance.IndexKeyRT;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Index;
 import tech.metavm.util.NncUtils;
 
@@ -15,7 +16,7 @@ public class IndexQueryKey extends Entity {
 
     public static IndexQueryKey create(IndexQueryKeyDTO indexQueryKeyDTO, IEntityContext context, ParsingContext parsingContext) {
         return new IndexQueryKey(
-                context.getEntity(Index.class, indexQueryKeyDTO.indexRef()),
+                context.getEntity(Index.class, Id.parse(indexQueryKeyDTO.indexId())),
                 NncUtils.map(indexQueryKeyDTO.items(), item -> IndexQueryKeyItem.create(item, context, parsingContext))
         );
     }

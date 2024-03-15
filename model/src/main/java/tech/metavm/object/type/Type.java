@@ -5,6 +5,8 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.TypeId;
+import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
@@ -397,11 +399,10 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return category.getSQLType();
     }
 
-    protected TypeDTO toDTO(TypeParam param, Long tmpId) {
-        try (var ignored = SerializeContext.enter()) {
+    protected TypeDTO toDTO(TypeParam param) {
+        try (var ser = SerializeContext.enter()) {
             return new TypeDTO(
-                    tryGetId(),
-                    tmpId,
+                    ser.getRef(this),
                     name,
                     code,
                     category.code(),
@@ -414,7 +415,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
 
     public TypeDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
-            return toDTO(getParam(), serContext.getTmpId(this));
+            return toDTO(getParam());
         }
     }
 
@@ -454,5 +455,13 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public abstract String getInternalName(@org.jetbrains.annotations.Nullable Flow current);
+
+    public TypeTag getTag() {
+        return TypeTag.fromCategory(category);
+    }
+
+    public TypeId getTypeId() {
+        return new TypeId(TypeTag.fromCategory(category), getId().getPhysicalId());
+    }
 
 }

@@ -1,6 +1,8 @@
 package tech.metavm.autograph;
 
 import tech.metavm.entity.IndexOperator;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
@@ -19,7 +21,7 @@ public class LocalIndex {
 
     public static final int NUM_COLS = 5;
     private final String path;
-    private Map<IndexKeyPO, Long> indexMap = new HashMap<>();
+    private Map<IndexKeyPO, String> indexMap = new HashMap<>();
 
     LocalIndex(String path) {
         this.path = path;
@@ -37,7 +39,7 @@ public class LocalIndex {
                     instOutput.writeInt(bytes.length);
                     instOutput.write(bytes);
                 }
-                instOutput.writeLong(id);
+                instOutput.writeId((PhysicalId) Id.parse(id));
             });
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -51,7 +53,7 @@ public class LocalIndex {
         try (var input = new FileInputStream(path)) {
             var instInput = new InstanceInput(input);
             int size = instInput.readInt();
-            var indexMap = new HashMap<IndexKeyPO, Long>(size);
+            var indexMap = new HashMap<IndexKeyPO, String>(size);
             for (int i = 0; i < size; i++) {
                 var key = new IndexKeyPO();
                 key.setIndexId(instInput.readLong());
@@ -61,8 +63,8 @@ public class LocalIndex {
                     input.read(bytes);
                     key.setColumn(j, bytes);
                 }
-                long id = instInput.readLong();
-                indexMap.put(key, id);
+                var id = instInput.readId();
+                indexMap.put(key, id.toString());
             }
             this.indexMap = indexMap;
         } catch (IOException e) {
@@ -70,24 +72,24 @@ public class LocalIndex {
         }
     }
 
-    public void reset(Map<IndexKeyPO, Long> indexMap) {
+    public void reset(Map<IndexKeyPO, String> indexMap) {
         this.indexMap = new HashMap<>(indexMap);
         save();
     }
 
     public QueryResult query(Query query) {
-        List<Long> ids = new ArrayList<>();
+        List<String> ids = new ArrayList<>();
         this.indexMap.forEach((key, id) -> {
             if(query.match(key))
                 ids.add(id);
         });
         if(query.desc)
-            ids.sort((id1, id2) -> Long.compare(id2, id1));
+            ids.sort(Comparator.comparing(Id::parse));
         else
             Collections.sort(ids);
-        Long last = null;
-        var result = new ArrayList<Long>();
-        for (Long l : ids) {
+        String last = null;
+        var result = new ArrayList<String>();
+        for (var l : ids) {
             if(!l.equals(last)) {
                 result.add(l);
                 last = l;
@@ -110,10 +112,10 @@ public class LocalIndex {
         return count;
     }
 
-    public List<Long> scan(IndexKeyPO from, IndexKeyPO to) {
+    public List<String> scan(IndexKeyPO from, IndexKeyPO to) {
         if(from.getIndexId() != to.getIndexId())
             throw new RuntimeException("Can not scan keys from different indexes");
-        List<Long> ids = new ArrayList<>();
+        List<String> ids = new ArrayList<>();
         for (var e : indexMap.entrySet()) {
             var key = e.getKey();
             if(key.getIndexId() == from.getIndexId() && key.compareTo(from) >= 0 && key.compareTo(to) <= 0)
@@ -140,6 +142,6 @@ public class LocalIndex {
     public record QueryItem(IndexOperator operator, byte[] value) {
     }
 
-    public record QueryResult(List<Long> ids, long total) {}
+    public record QueryResult(List<String> ids, long total) {}
 
 }

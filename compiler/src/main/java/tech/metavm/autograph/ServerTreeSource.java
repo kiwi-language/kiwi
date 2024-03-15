@@ -3,11 +3,9 @@ package tech.metavm.autograph;
 import tech.metavm.entity.Tree;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.GetTreesRequest;
-import tech.metavm.object.instance.rest.TreeDTO;
-import tech.metavm.util.CompilerHttpUtils;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.TypeReference;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,13 +25,13 @@ public class ServerTreeSource implements TreeSource {
     }
 
     @Override
-    public List<Tree> load(Collection<Long> ids, IInstanceContext context) {
-        var trees = typeClient.getTrees(new GetTreesRequest(new ArrayList<>(ids)));
-        return NncUtils.map(trees, t -> new Tree(t.id(), t.version(), t.bytes()));
+    public List<Tree> load(Collection<Id> ids, IInstanceContext context) {
+        var trees = typeClient.getTrees(new GetTreesRequest(new ArrayList<>(NncUtils.map(ids, Id::toString))));
+        return NncUtils.map(trees, t -> new Tree(Id.parse(t.id()), t.version(), t.bytes()));
     }
 
     @Override
-    public void remove(List<Long> ids) {
+    public void remove(List<Id> ids) {
         throw new UnsupportedOperationException();
     }
 }

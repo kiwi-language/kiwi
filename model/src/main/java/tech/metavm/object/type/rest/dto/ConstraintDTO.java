@@ -1,15 +1,13 @@
 package tech.metavm.object.type.rest.dto;
 
 import tech.metavm.common.BaseDTO;
-import tech.metavm.common.RefDTO;
 
 import javax.annotation.Nullable;
 
 public record ConstraintDTO(
-        Long id,
-        Long tmpId,
+        String id,
         int kind,
-        RefDTO typeRef,
+        String typeId,
         String name,
         @Nullable String code,
         String message,

@@ -2,12 +2,13 @@ package tech.metavm.object.instance.search;
 
 
 import tech.metavm.expression.Expression;
+import tech.metavm.object.instance.core.Id;
 
 import java.util.Set;
 
 public record SearchQuery (
         long appId,
-        Set<Long> typeIds,
+        Set<Id> typeIds,
         Expression condition,
         boolean includeBuiltin,
         int page,

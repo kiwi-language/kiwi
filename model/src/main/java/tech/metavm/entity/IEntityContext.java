@@ -1,14 +1,13 @@
 package tech.metavm.entity;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.event.EventQueue;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.*;
-import tech.metavm.object.view.FieldsObjectMapping;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.object.view.ObjectMapping;
@@ -27,12 +26,16 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     boolean containsModel(Object model);
 
-    default <T extends Entity> T getEntity(TypeReference<T> typeReference, long id) {
+//    default <T extends Entity> T getEntity(TypeReference<T> typeReference, long id) {
+//        return getEntity(typeReference.getType(), id);
+//    }
+
+    default <T extends Entity> T getEntity(TypeReference<T> typeReference, Id id) {
         return getEntity(typeReference.getType(), id);
     }
 
-    default <T extends Entity> T getEntity(TypeReference<T> typeReference, RefDTO ref) {
-        return getEntity(typeReference.getType(), ref);
+    default <T extends Entity> T getEntity(TypeReference<T> typeReference, String id) {
+        return getEntity(typeReference.getType(), id);
     }
 
     default <T> T getEntity(Class<T> klass, DurableInstance instance) {
@@ -45,7 +48,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     DurableInstance getInstance(Object object);
 
-    void invalidateCache(long id);
+    void invalidateCache(Id id);
 
     Profiler getProfiler();
 
@@ -101,42 +104,54 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     Set<CompositeType> getNewCompositeTypes();
 
-    <T> T getEntity(Class<T> entityType, long id);
+//    <T> T getEntity(Class<T> entityType, long id);
 
     <T> T getBufferedEntity(Class<T> entityType, long id);
 
-    @Nullable<T> T getEntity(Class<T> entityType, RefDTO ref);
+    <T> T getEntity(Class<T> entityType, Id id);
+
+    default <T> T getEntity(Class<T> entityType, String id) {
+        return getEntity(entityType, Id.parse(id));
+    }
 
     Type getType(Class<?> javaType);
+
+    default Type getType(String id) {
+        return getType(Id.parse(id));
+    }
 
     @Nullable IEntityContext getParent();
 
     <T> T createEntity(DurableInstance instance, ModelDef<T, ?> def);
 
-    default FunctionType getFunctionType(RefDTO ref) {
-        return getEntity(FunctionType.class, ref);
+    default FunctionType getFunctionType(Id id) {
+        return getEntity(FunctionType.class, id);
     }
 
     boolean isNewEntity(Object entity);
 
-    <T> T getRemoved(Class<T> entityClass, long id);
+    <T> T getRemoved(Class<T> entityClass, Id id);
 
     boolean isPersisted(Object entity);
 
-    default Type getType(long id) {
+//    default Type getType(long id) {
+//        return getEntity(Type.class, id);
+//    }
+
+    default Type getType(Id id) {
         return getEntity(Type.class, id);
     }
 
-    default Type getType(RefDTO ref) {
-        return getEntity(Type.class, ref);
-    }
+//    default ClassType getClassType(long id) {
+//        return getEntity(ClassType.class, id);
+//    }
 
-    default ClassType getClassType(long id) {
+    default ClassType getClassType(Id id) {
         return getEntity(ClassType.class, id);
     }
 
-    default ClassType getClassType(RefDTO ref) {
-        return getEntity(ClassType.class, ref);
+    default ClassType getClassType(String id) {
+        return getEntity(ClassType.class, Id.parse(id));
     }
 
     UnionType getUnionType(Set<Type> members);
@@ -157,82 +172,76 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return getGenericContext().getParameterizedType(StandardTypes.getReadWriteListType(), List.of(elementType));
     }
 
-    default ClassType getClassType(Long id, String code) {
-        NncUtils.requireTrue(id != null || code != null, "id and code can't both be null");
-        if(id != null) {
-            return getClassType(id);
-        }
-        else {
-            return selectFirstByKey(ClassType.UNIQUE_CODE, code);
-        }
-    }
+    Id getAppId(Object model);
 
-    long getAppId(Object model);
+    Id getAppId();
 
-    long getAppId();
+//    default Field getField(long id) {
+//        return getEntity(Field.class, id);
+//    }
 
-    default Field getField(long id) {
+    default Field getField(Id id) {
         return getEntity(Field.class, id);
     }
 
-    default Field getField(RefDTO ref) {
-        return getEntity(Field.class, ref);
+    default Field getField(String id) {
+        return getEntity(Field.class, Id.parse(id));
     }
 
-    default TypeVariable getTypeVariable(RefDTO ref) {
-        return getEntity(TypeVariable.class, ref);
+    default TypeVariable getTypeVariable(Id id) {
+        return getEntity(TypeVariable.class, id);
     }
 
-    default NodeRT getNode(long id) {
+    default TypeVariable getTypeVariable(String id) {
+        return getEntity(TypeVariable.class, Id.parse(id));
+    }
+
+    default NodeRT getNode(Id id) {
         return getEntity(NodeRT.class, id);
     }
 
-    default NodeRT getNode(RefDTO ref) {
-        return getEntity(NodeRT.class, ref);
+    default NodeRT getNode(String id) {
+        return getEntity(NodeRT.class, Id.parse(id));
     }
 
-    default ScopeRT getScope(long id) {
-        return getEntity(ScopeRT.class, id);
-    }
-
-    default Flow getFlow(long id) {
+    default Flow getFlow(Id id) {
         return getEntity(Flow.class, id);
     }
 
-    default Flow getFlow(RefDTO ref) {
-        return getEntity(Flow.class, ref);
+    default ScopeRT getScope(Id id) {
+        return getEntity(ScopeRT.class, id);
     }
 
-    default Method getMethod(RefDTO ref) {
-        return getEntity(Method.class, ref);
+    default ScopeRT getScope(String id) {
+        return getEntity(ScopeRT.class, Id.parse(id));
     }
 
-    default Method getMethod(long id) {
+    default Method getMethod(Id id) {
         return getEntity(Method.class, id);
     }
 
-    default ObjectMapping getObjectMapping(RefDTO ref) {
-        return getEntity(ObjectMapping.class, ref);
+    default Method getMethod(String id) {
+        return getEntity(Method.class, id);
     }
 
-    default Mapping getMapping(RefDTO ref) {
-        return getEntity(Mapping.class, ref);
+    default ObjectMapping getObjectMapping(Id id) {
+        return getEntity(ObjectMapping.class, id);
     }
 
-    default Function getFunction(RefDTO ref) {
-        return getEntity(Function.class, ref);
-    }
-
-    default Function getFunction(Long id) {
-        return getEntity(Function.class, id);
-    }
-
-    default Mapping getMapping(long id) {
+    default Mapping getMapping(Id id) {
         return getEntity(Mapping.class, id);
     }
 
-    default FieldsObjectMapping getObjectMapping(Long id) {
-        return getEntity(FieldsObjectMapping.class, id);
+    default Mapping getMapping(String id) {
+        return getEntity(Mapping.class, id);
+    }
+
+    default Function getFunction(Id id) {
+        return getEntity(Function.class, id);
+    }
+
+    default Function getFunction(String id) {
+        return getEntity(Function.class, id);
     }
 
     boolean isFinished();
@@ -277,7 +286,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return true;
     }
 
-    void initIdManually(Object model, long id);
+    void initIdManually(Object model, Id id);
 
     CompositeTypeContext<?> getCompositeTypeContext(TypeCategory category);
 
@@ -285,6 +294,6 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     boolean isRemoved(Object entity);
 
-    IEntityContext createSame(long appId);
+    IEntityContext createSame(Id appId);
 
 }

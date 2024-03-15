@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
@@ -110,7 +111,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 //        }
     }
 
-    protected Long getId(T model) {
+    protected Id getId(T model) {
         return null;
     }
 

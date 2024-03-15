@@ -8,6 +8,7 @@ import tech.metavm.flow.rest.InputFieldDTO;
 import tech.metavm.flow.rest.InputNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
@@ -22,10 +23,10 @@ import java.util.Map;
 public class InputNode extends ChildTypeNode {
 
     public static InputNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var node = (InputNode) context.getNode(nodeDTO.getRef());
+        var node = (InputNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new InputNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
-                    context.getClassType(nodeDTO.outputTypeRef()), prev, scope);
+                    context.getClassType(Id.parse(nodeDTO.outputTypeId())), prev, scope);
         }
         return node;
     }

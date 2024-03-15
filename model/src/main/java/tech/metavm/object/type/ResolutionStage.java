@@ -1,6 +1,7 @@
 package tech.metavm.object.type;
 
 import tech.metavm.flow.rest.FlowDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.ParameterizedFlowDTO;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.view.MappingSaver;
@@ -39,8 +40,8 @@ public enum ResolutionStage {
         @Override
         void saveParameterizedFlow(ParameterizedFlowDTO flowDTO, SaveTypeBatch batch) {
             var context = batch.getContext();
-            var template = context.getFlow(flowDTO.getTemplateRef());
-            var typeArgs = NncUtils.map(flowDTO.getTypeArgumentRefs(), context::getType);
+            var template = context.getFlow(Id.parse(flowDTO.getTemplateId()));
+            var typeArgs = NncUtils.map(flowDTO.getTypeArgumentIds(), id -> context.getType(Id.parse(id)));
             context.getGenericContext().getParameterizedFlow(template, typeArgs, DECLARATION, batch);
         }
 
@@ -62,7 +63,7 @@ public enum ResolutionStage {
     MAPPING_DEFINITION(5) {
         @Override
         Type saveType(TypeDTO typeDTO, SaveTypeBatch batch) {
-            var type = batch.get(typeDTO.getRef());
+            var type = batch.get(typeDTO.id());
             if (type instanceof ClassType classType && classType.isClass() && !classType.isAnonymous())
                 MappingSaver.create(batch.getContext()).saveBuiltinMapping(classType, true);
             return type;

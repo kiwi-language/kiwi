@@ -1,11 +1,9 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.common.RefDTO;
-
 public interface FieldReferringDTO<T extends FieldReferringDTO<T>> {
 
-    RefDTO fieldRef();
+    String fieldId();
 
-    T copyWithFieldRef(RefDTO fieldRef);
+    T copyWithFieldId(String fieldId);
 
 }

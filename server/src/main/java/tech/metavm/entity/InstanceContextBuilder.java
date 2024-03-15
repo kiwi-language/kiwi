@@ -5,9 +5,7 @@ import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
-import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.InstanceContext;
-import tech.metavm.object.instance.core.EntityInstanceContextBridge;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
@@ -19,7 +17,7 @@ import java.util.function.Function;
 
 public class InstanceContextBuilder {
 
-    public static InstanceContextBuilder newBuilder(long appId,
+    public static InstanceContextBuilder newBuilder(Id appId,
                                                     IInstanceStore instanceStore,
                                                     IdInitializer idProvider,
                                                     TypeProvider typeProvider,
@@ -29,7 +27,7 @@ public class InstanceContextBuilder {
                 typeProvider, mappingProvider, parameterizedFlowProvider);
     }
 
-    private final long appId;
+    private final Id appId;
     private IInstanceStore instanceStore;
     private IdInitializer idInitializer;
     private Executor executor;
@@ -43,9 +41,9 @@ public class InstanceContextBuilder {
     private Cache cache;
     private EventQueue eventQueue;
     private boolean readonly;
-    private Function<Long, Long> getTypeIdInterceptor;
+    private Function<Id, TypeId> getTypeIdInterceptor;
 
-    public InstanceContextBuilder(long appId,
+    public InstanceContextBuilder(Id appId,
                                   IInstanceStore instanceStore,
                                   IdInitializer idInitializer,
                                   TypeProvider typeProvider,
@@ -120,7 +118,7 @@ public class InstanceContextBuilder {
         return this;
     }
 
-    public InstanceContextBuilder getTypeIdInterceptor(Function<Long, Long> getTypeIdInterceptor) {
+    public InstanceContextBuilder getTypeIdInterceptor(Function<Id, TypeId> getTypeIdInterceptor) {
         this.getTypeIdInterceptor = getTypeIdInterceptor;
         return this;
     }

@@ -82,10 +82,9 @@ public class Branch extends Element implements LocalKey {
 
     public BranchDTO toDTO(boolean withNodes, SerializeContext serContext) {
         return new BranchDTO(
-                tryGetId(),
-                serContext.getTmpId(this),
+                serContext.getRef(this),
                 index,
-                owner.tryGetId(),
+                owner.getStringId(),
                 NncUtils.get(condition, Value::toDTO),
                 scope.toDTO(withNodes, serContext),
                 preselected,

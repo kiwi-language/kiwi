@@ -45,7 +45,7 @@ public class UnionType extends CompositeType {
 
     @Override
     public TypeKey getTypeKey() {
-        return new UnionTypeKey(NncUtils.mapUnique(members, Entity::getRef));
+        return new UnionTypeKey(NncUtils.mapUnique(members, Entity::getStringId));
     }
 
     @Override
@@ -146,7 +146,7 @@ public class UnionType extends CompositeType {
     }
 
     public static String getKey(List<Type> componentTypes) {
-        return CompositeType.getKey(NncUtils.sort(componentTypes, Comparator.comparingLong(Entity::getId)));
+        return CompositeType.getKey(NncUtils.sort(componentTypes, Comparator.comparing(Entity::getId)));
     }
 
     @Override

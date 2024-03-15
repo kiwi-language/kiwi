@@ -4,8 +4,8 @@ import org.springframework.stereotype.Component;
 import tech.metavm.common.Page;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.ContextArrayTypeProvider;
 import tech.metavm.object.type.ContextTypeRepository;
@@ -56,8 +56,8 @@ public class EntityQueryService {
                 entityQuery.page(),
                 entityQuery.pageSize(),
                 NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(entityDef, f, context)),
-                NncUtils.map(entityQuery.newlyCreated(), PhysicalId::new),
-                NncUtils.map(entityQuery.excluded(), PhysicalId::new),
+                NncUtils.map(entityQuery.newlyCreated(), Id::parse),
+                NncUtils.map(entityQuery.excluded(), Id::parse),
                 null
         );
     }

@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.flow.NodeKind;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.PojoMatcher;
-import tech.metavm.common.RefDTO;
 import tech.metavm.util.TestUtils;
 
 import java.util.List;
@@ -18,23 +17,22 @@ public class NodeDTOTest extends TestCase {
 
     public void testToJSONString() {
         NodeDTO nodeDTO = new NodeDTO(
-                1L,
-                NncUtils.randomNonNegative(),
-                1L,
+                "1",
+                "1",
                 "Test",
                 null,
                 NodeKind.ADD_OBJECT.code(),
                 null,
-                RefDTO.fromId(1L),
+                "1",
                 new AddObjectNodeParam(
-                        RefDTO.fromId(1L),
+                        "1",
                         true,
                         false, List.of(),
                         null,
                         null
                 ),
                 null,
-                1L,
+                "1",
                 null
         );
         TestUtils.logJSON(LOGGER, nodeDTO);

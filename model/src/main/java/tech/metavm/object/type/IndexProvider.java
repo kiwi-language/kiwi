@@ -1,13 +1,9 @@
 package tech.metavm.object.type;
 
-import tech.metavm.common.RefDTO;
+import tech.metavm.object.instance.core.Id;
 
 public interface IndexProvider {
 
-    Index getIndex(RefDTO ref);
-
-    default Index getIndex(long id) {
-        return getIndex(RefDTO.fromId(id));
-    }
+    Index getIndex(Id id);
 
 }

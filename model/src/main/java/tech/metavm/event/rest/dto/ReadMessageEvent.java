@@ -4,14 +4,14 @@ import tech.metavm.event.UserEventKind;
 
 public class ReadMessageEvent extends UserEvent{
 
-    private final long messageId;
+    private final String messageId;
 
-    public ReadMessageEvent(long userId, long messageId) {
+    public ReadMessageEvent(String userId, String messageId) {
         super(UserEventKind.READ_MESSAGE.code(), userId);
         this.messageId = messageId;
     }
 
-    public long getMessageId() {
+    public String getMessageId() {
         return messageId;
     }
 }

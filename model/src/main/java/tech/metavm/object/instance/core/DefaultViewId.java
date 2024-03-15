@@ -1,7 +1,6 @@
 package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.object.type.Type;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceOutput;
 
@@ -13,7 +12,7 @@ public class DefaultViewId extends ViewId {
 
     private final Id sourceId;
 
-    public DefaultViewId(long mappingId, Id sourceId) {
+    public DefaultViewId(Id mappingId, Id sourceId) {
         super(mappingId);
         this.sourceId = sourceId;
     }
@@ -21,7 +20,7 @@ public class DefaultViewId extends ViewId {
     @Override
     public void write(InstanceOutput output) {
         output.write(TAG);
-        output.writeLong(getMappingId());
+        getMappingId().write(output);
         sourceId.write(output);
     }
 

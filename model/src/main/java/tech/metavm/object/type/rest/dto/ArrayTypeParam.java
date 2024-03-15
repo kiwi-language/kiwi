@@ -1,9 +1,7 @@
 package tech.metavm.object.type.rest.dto;
 
-import tech.metavm.common.RefDTO;
-
 public record ArrayTypeParam(
-        RefDTO elementTypeRef,
+        String elementTypeId,
         int kind
 ) implements TypeParam {
     @Override
@@ -13,6 +11,6 @@ public record ArrayTypeParam(
 
     @Override
     public TypeKey getTypeKey() {
-        return new ArrayTypeKey(kind, elementTypeRef);
+        return new ArrayTypeKey(kind, elementTypeId);
     }
 }

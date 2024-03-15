@@ -26,8 +26,8 @@ public class EntityQueryBuilder<T extends Entity> {
     private boolean includeBuiltin;
     private int page = 1;
     private int pageSize = 20;
-    private List<Long> newlyCreated = List.of();
-    private List<Long> excluded = List.of();
+    private List<String> newlyCreated = List.of();
+    private List<String> excluded = List.of();
 
     private EntityQueryBuilder(Class<T> entityClass) {
         this.entityClass = entityClass;
@@ -89,18 +89,18 @@ public class EntityQueryBuilder<T extends Entity> {
         return this;
     }
 
-    public EntityQueryBuilder<T> newlyCreated(List<Long> newlyCreated) {
+    public EntityQueryBuilder<T> newlyCreated(List<String> newlyCreated) {
         this.newlyCreated = NncUtils.orElse(newlyCreated, List.of());
         return this;
     }
 
-    public EntityQueryBuilder<T> excluded(List<Long> excluded) {
+    public EntityQueryBuilder<T> excluded(List<String> excluded) {
         this.excluded = NncUtils.orElse(excluded, List.of());
         return this;
     }
 
     public EntityQuery<T> build() {
-        return new EntityQuery<T>(
+        return new EntityQuery<>(
                 entityClass,
                 searchText,
                 expression,

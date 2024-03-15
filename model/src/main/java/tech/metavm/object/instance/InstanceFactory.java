@@ -53,7 +53,7 @@ public class InstanceFactory {
     }
 
     public static Instance save(InstanceDTO instanceDTO,
-                                Function<Long, Type> getType,
+                                Function<Id, Type> getType,
                                 @Nullable InstanceParentRef parentRef,
                                 IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
         if (instanceDTO.id() != null) {
@@ -71,24 +71,24 @@ public class InstanceFactory {
 
     public static Instance create(
             InstanceDTO instanceDTO,
-            Function<Long, Type> getType,
+            Function<Id, Type> getType,
             @Nullable InstanceParentRef parentRef,
             IInstanceContext context,
             ParameterizedTypeProvider parameterizedTypeProvider) {
         NncUtils.requireTrue(instanceDTO.id() == null,
                 "Id of new instance must be null or zero");
-        Type type = getType.apply(instanceDTO.typeRef().id());
+        Type type = getType.apply(Id.parse(instanceDTO.typeId()));
         DurableInstance instance;
         var param = instanceDTO.param();
         if (param instanceof ClassInstanceParam classInstanceParam) {
             var classType = (ClassType) type;
-            Map<Long, InstanceFieldDTO> fieldMap = NncUtils.toMap(classInstanceParam.fields(), InstanceFieldDTO::fieldId);
+            Map<String, InstanceFieldDTO> fieldMap = NncUtils.toMap(classInstanceParam.fields(), InstanceFieldDTO::fieldId);
             ClassInstance object = ClassInstance.allocate(classType, parentRef);
             instance = object;
             for (Field field : classType.getAllFields()) {
-                if (fieldMap.containsKey(field.tryGetId())) {
+                if (fieldMap.containsKey(field.getStringId())) {
                     var fieldValue = resolveValue(
-                            fieldMap.get(field.tryGetId()).value(),
+                            fieldMap.get(field.getStringId()).value(),
                             field.getType(),
                             getType,
                             InstanceParentRef.ofObject(object, field),
@@ -125,7 +125,7 @@ public class InstanceFactory {
             throw new InternalException("Can not create instance for type '" + type + "'");
         }
         if (instanceDTO.sourceMappingId() != null) {
-            var sourceMapping = context.getMappingProvider().getMapping(instanceDTO.sourceMappingId());
+            var sourceMapping = context.getMappingProvider().getMapping(Id.parse(instanceDTO.sourceMappingId()));
             var source = sourceMapping.unmap(instance, context, context.getParameterizedFlowProvider());
             instance.setSourceRef(new SourceRef(source, sourceMapping));
             context.bind(instance);
@@ -141,7 +141,7 @@ public class InstanceFactory {
     }
 
     public static Instance resolveValue(FieldValue rawValue, Type type,
-                                        Function<Long, Type> getType,
+                                        Function<Id, Type> getType,
                                         @Nullable InstanceParentRef parentRef,
                                         IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
         if (rawValue == null) {

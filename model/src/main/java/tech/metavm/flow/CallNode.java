@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.CallNodeParam;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Instances;
@@ -20,7 +21,7 @@ import static java.util.Objects.requireNonNull;
 public abstract class CallNode extends NodeRT {
 
     public static Flow getFlow(CallNodeParam param, IEntityContext context) {
-        return context.getEntity(Method.class, param.getFlowRef());
+        return context.getEntity(Method.class, Id.parse(param.getFlowId()));
     }
 
     @EntityField("子流程")

@@ -36,10 +36,10 @@ public class InstanceQueryService {
                                          UnionTypeProvider unionTypeProvider) {
         var expression = buildCondition(query, typeProvider, instanceProvider, arrayTypeProvider, unionTypeProvider);
         Type type = query.type();
-        Set<Long> typeIds = (type instanceof ClassType classType) ? classType.getSubTypeIds() :
+        Set<Id> typeIds = (type instanceof ClassType classType) ? classType.getSubTypeIds() :
                 Set.of(query.type().getId());
         return new SearchQuery(
-                ContextUtil.getAppId(),
+                ContextUtil.getAppId().getPhysicalId(),
                 typeIds,
                 expression,
                 query.includeBuiltin(),
@@ -143,15 +143,15 @@ public class InstanceQueryService {
                                                 ArrayTypeProvider arrayTypeProvider,
                                                 UnionTypeProvider unionTypeProvider) {
         var idPage = instanceSearchService.search(buildSearchQuery(query, typeProvider, instanceProvider, arrayTypeProvider, unionTypeProvider));
-        var newlyCreatedIds = NncUtils.map(query.createdIds(), id -> ((PhysicalId) id).getId());
-        var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
-        List<Long> ids = NncUtils.merge(idPage.data(), newlyCreatedIds, true);
-        ids = NncUtils.filter(ids, id -> !excludedIds.contains(id));
+//        var newlyCreatedIds = NncUtils.map(query.createdIds(), id -> ((PhysicalId) id).getId());
+//        var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
+        List<Id> ids = NncUtils.merge(idPage.data(), query.createdIds(), true);
+        ids = NncUtils.filter(ids, id -> !query.excludedIds().contains(id));
         ids = instanceRepository.filterAlive(ids);
         int actualSize = ids.size();
         ids = ids.subList(0, Math.min(ids.size(), query.pageSize()));
         long total = idPage.total() + (actualSize - idPage.data().size());
-        return new Page<>(NncUtils.map(ids, id -> instanceRepository.get(PhysicalId.of(id))), total);
+        return new Page<>(NncUtils.map(ids, instanceRepository::get), total);
     }
 
     public long count(InstanceQuery query, IEntityContext context) {
@@ -208,7 +208,7 @@ public class InstanceQueryService {
         return condition;
     }
 
-    private Expression buildConditionForSearchText(long typeId, String searchText,
+    private Expression buildConditionForSearchText(Id typeId, String searchText,
                                                    List<Field> searchFields,
                                                    TypeProvider typeProvider) {
         if (NncUtils.isEmpty(searchText))

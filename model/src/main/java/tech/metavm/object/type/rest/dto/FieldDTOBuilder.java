@@ -1,6 +1,5 @@
 package tech.metavm.object.type.rest.dto;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.type.Access;
@@ -8,20 +7,19 @@ import tech.metavm.object.type.MetadataState;
 
 public class FieldDTOBuilder {
 
-    public static FieldDTOBuilder newBuilder(String name, RefDTO typeRef) {
-        return new FieldDTOBuilder(name, typeRef);
+    public static FieldDTOBuilder newBuilder(String name, String typeId) {
+        return new FieldDTOBuilder(name, typeId);
     }
 
     private final String name;
     private String code;
-    private final RefDTO typeRef;
-    private Long id;
-    private Long tmpId;
+    private final String typeId;
+    private String id;
     private int access = Access.PUBLIC.code();
     private FieldValue defaultValue;
     private boolean unique;
     private boolean asTitle;
-    private Long declaringTypeId;
+    private String declaringTypeId;
     private boolean isChild;
     private boolean isStatic;
     private boolean readonly;
@@ -30,23 +28,18 @@ public class FieldDTOBuilder {
     private boolean searchable;
     private int state = MetadataState.READY.code();
 
-    private FieldDTOBuilder(String name, RefDTO typeRef) {
+    private FieldDTOBuilder(String name, String typeId) {
         this.name = name;
-        this.typeRef = typeRef;
+        this.typeId = typeId;
     }
 
-    public FieldDTOBuilder id(Long id) {
+    public FieldDTOBuilder id(String id) {
         this.id = id;
         return this;
     }
 
     public FieldDTOBuilder code(String code) {
         this.code = code;
-        return this;
-    }
-
-    public FieldDTOBuilder tmpId(Long tmpId) {
-        this.tmpId = tmpId;
         return this;
     }
 
@@ -100,7 +93,7 @@ public class FieldDTOBuilder {
         return this;
     }
 
-    public FieldDTOBuilder declaringTypeId(Long declaringTypeId) {
+    public FieldDTOBuilder declaringTypeId(String declaringTypeId) {
         this.declaringTypeId = declaringTypeId;
         return this;
     }
@@ -112,14 +105,14 @@ public class FieldDTOBuilder {
 
     public FieldDTO build() {
         return new FieldDTO(
-                id, tmpId,
+                id,
                 name,
                 code,
                 access,
                 defaultValue,
                 unique,
                 declaringTypeId,
-                typeRef,
+                typeId,
                 isChild,
                 isStatic,
                 readonly,

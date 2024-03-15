@@ -55,7 +55,7 @@ public class ArrayType extends CompositeType {
 
     @Override
     public TypeKey getTypeKey() {
-        return new ArrayTypeKey(kind.code(), elementType.getRef());
+        return new ArrayTypeKey(kind.code(), elementType.getStringId());
     }
 
     @Override

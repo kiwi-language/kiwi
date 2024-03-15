@@ -17,9 +17,9 @@ import java.util.Objects;
 public abstract class UserEvent {
 
     private final int kind;
-    private final long userId;
+    private final String userId;
 
-    public UserEvent(int kind, long userId) {
+    public UserEvent(int kind, String userId) {
         this.kind = kind;
         this.userId = userId;
     }
@@ -28,7 +28,7 @@ public abstract class UserEvent {
         return kind;
     }
 
-    public long getUserId() {
+    public String getUserId() {
         return userId;
     }
 
@@ -36,7 +36,7 @@ public abstract class UserEvent {
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof UserEvent userEvent)) return false;
-        return kind == userEvent.kind && userId == userEvent.userId;
+        return kind == userEvent.kind && Objects.equals(userId, userEvent.userId);
     }
 
     @Override

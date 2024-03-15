@@ -52,7 +52,7 @@ public class InstanceManager extends EntityContextFactoryBean {
     public Page<InstanceDTO[]> select(SelectRequest request) {
         try (var entityContext = newContext()) {
             var context = entityContext.getInstanceContext();
-            ClassType type = context.getClassType(request.typeId());
+            ClassType type = context.getClassType(Id.parse(request.typeId()));
             var dataPage = instanceQueryService.query(InstanceQueryBuilder.newBuilder(type)
                     .expression(request.condition())
                     .page(request.page())
@@ -69,9 +69,9 @@ public class InstanceManager extends EntityContextFactoryBean {
         }
     }
 
-    public List<TreeDTO> getTrees(List<Long> ids) {
+    public List<TreeDTO> getTrees(List<String> ids) {
         try (var context = newInstanceContext()) {
-            var instances = context.batchGet(NncUtils.map(ids, PhysicalId::of));
+            var instances = context.batchGet(NncUtils.map(ids, Id::parse));
             var roots = NncUtils.mapUnique(instances, DurableInstance::getRoot);
             return NncUtils.map(roots, r -> r.toTree(true).toDTO());
         }
@@ -81,7 +81,7 @@ public class InstanceManager extends EntityContextFactoryBean {
         try (var context = newInstanceContext()) {
             var instances = context.batchGet(NncUtils.map(ids, Id::parse));
             var roots = NncUtils.mapUnique(instances, DurableInstance::getRoot);
-            return NncUtils.map(roots, r -> new InstanceVersionDTO(r.getPhysicalId(), r.getVersion()));
+            return NncUtils.map(roots, r -> new InstanceVersionDTO(r.getStringId(), r.getVersion()));
         }
     }
 
@@ -181,9 +181,9 @@ public class InstanceManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public void deleteByTypes(List<Long> typeIds) {
+    public void deleteByTypes(List<String> typeIds) {
         try (var context = newInstanceContext()) {
-            var types = NncUtils.mapAndFilter(typeIds, context::getType, type -> !type.isEnum());
+            var types = NncUtils.mapAndFilter(typeIds, id -> context.getType(Id.parse(id)), type -> !type.isEnum());
             var toRemove = NncUtils.flatMap(
                     types,
                     type -> context.getByType(type, null, 1000)
@@ -193,29 +193,31 @@ public class InstanceManager extends EntityContextFactoryBean {
         }
     }
 
-    public List<String> getReferenceChain(long id, int rootMode) {
+    public List<String> getReferenceChain(String stringId, int rootMode) {
         try (var context = newInstanceContext()) {
-            ReferenceTree root = new ReferenceTree(context.get(PhysicalId.of(id)), rootMode);
-            Set<Long> visited = new HashSet<>();
-            Map<Long, ReferenceTree> trees = new HashMap<>();
+            var id = Id.parse(stringId);
+            ReferenceTree root = new ReferenceTree(context.get(id), rootMode);
+            Set<Id> visited = new HashSet<>();
+            Map<Id, ReferenceTree> trees = new HashMap<>();
             trees.put(id, root);
             visited.add(id);
-            Set<Long> ids = new HashSet<>();
+            Set<Id> ids = new HashSet<>();
             ids.add(id);
             while (!ids.isEmpty()) {
-                var refs = instanceStore.getAllStrongReferences(context.getAppId(), ids, visited);
+                var refs = instanceStore.getAllStrongReferences(context.getAppId().getPhysicalId(), ids, visited);
                 ids.clear();
                 for (ReferencePO ref : refs) {
-                    if (visited.contains(ref.getSourceId())) continue;
-                    visited.add(ref.getSourceId());
-                    ids.add(ref.getSourceId());
-                    var parent = trees.get(ref.getTargetId());
-                    var tree = new ReferenceTree(context.get(PhysicalId.of(ref.getSourceId())), rootMode);
+                    var sourceId = ref.getSourceInstanceId();
+                    if (visited.contains(sourceId)) continue;
+                    visited.add(sourceId);
+                    ids.add(sourceId);
+                    var parent = trees.get(ref.getTargetInstanceId());
+                    var tree = new ReferenceTree(context.get(sourceId), rootMode);
                     parent.addChild(tree);
-                    trees.put(ref.getSourceId(), tree);
+                    trees.put(sourceId, tree);
                 }
             }
-            context.batchGet(NncUtils.map(visited, PhysicalId::new));
+            context.batchGet(visited);
             return root.getPaths();
         }
     }
@@ -224,14 +226,14 @@ public class InstanceManager extends EntityContextFactoryBean {
         try (var entityContext = newContext()) {
             var context = entityContext.getInstanceContext();
             var mappingProvider = context.getMappingProvider();
-            Type type = context.getType(query.typeId());
+            Type type = context.getType(Id.parse(query.typeId()));
             if (type instanceof ClassType) {
                 var internalQuery = InstanceQueryBuilder.newBuilder(type)
                         .searchText(query.searchText())
                         .newlyCreated(NncUtils.map(query.createdIds(), Id::parse))
                         .fields(NncUtils.map(query.fields(), f -> InstanceQueryField.create(f, entityContext)))
                         .expression(query.expression())
-                        .sourceMapping(NncUtils.get(query.sourceMappingId(), mappingProvider::getMapping))
+                        .sourceMapping(NncUtils.get(query.sourceMappingId(), id -> mappingProvider.getMapping(Id.parse(id))))
                         .page(query.page())
                         .pageSize(query.pageSize())
                         .build();

@@ -22,7 +22,7 @@ public class IndexRebuildJobTest extends TestCase {
         var bootResult = BootstrapUtils.bootstrap();
         instanceSearchService = bootResult.instanceSearchService();
         entityContextFactory = bootResult.entityContextFactory();
-        ContextUtil.setAppId(TestConstants.APP_ID);
+        ContextUtil.setAppId(TestConstants.getAppId());
     }
 
     @Override
@@ -63,7 +63,7 @@ public class IndexRebuildJobTest extends TestCase {
     }
 
     private IEntityContext newContext() {
-        return entityContextFactory.newContext(TestConstants.APP_ID);
+        return entityContextFactory.newContext(TestConstants.getAppId());
     }
 
 }

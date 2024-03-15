@@ -13,13 +13,13 @@ import java.util.List;
 
 public interface TypeClient {
 
-    long getAppId();
+    String getAppId();
 
-    void setAppId(long appId);
+    void setAppId(String appId);
 
     void batchSave(BatchSaveRequest request);
 
-    void login(long appId, String loginName, String password);
+    void login(String appId, String loginName, String password);
 
     BlockDTO getContainingBlock(long id);
 

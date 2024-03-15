@@ -3,11 +3,11 @@ package tech.metavm.object.type;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.Page;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.entity.EntityContextFactoryBean;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.ArrayFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.ReferenceFieldValue;
@@ -34,7 +34,7 @@ public class TableManager extends EntityContextFactoryBean {
         this.typeManager = typeManager;
     }
 
-    public TableDTO get(long id) {
+    public TableDTO get(String id) {
         try (IEntityContext context = newContext()) {
             ClassType type = context.getClassType(id);
             return NncUtils.get(type, Type::toDTO, t -> convertToTable(t, context));
@@ -46,7 +46,6 @@ public class TableManager extends EntityContextFactoryBean {
         IEntityContext context = newContext();
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder(table.name())
                 .id(table.id())
-                .tmpId(table.tmpId())
                 .code(table.code())
                 .ephemeral(table.ephemeral())
                 .anonymous(table.anonymous())
@@ -84,22 +83,22 @@ public class TableManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public long saveColumn(ColumnDTO column) {
+    public String saveColumn(ColumnDTO column) {
         requireNonNull(column.ownerId(), () -> BusinessException.invalidParams("表格ID必填"));
         IEntityContext context = newContext();
-        ClassType declaringType = context.getClassType(column.ownerId());
+        ClassType declaringType = context.getClassType(Id.parse(column.ownerId()));
         Field field = saveField(column, declaringType, context);
         context.finish();
-        return field.getId();
+        return field.getStringId();
     }
 
-    public ColumnDTO getColumn(long id) {
+    public ColumnDTO getColumn(String id) {
         try (var context = newContext()) {
             FieldDTO fieldDTO = context.getField(id).toDTO();
             if (fieldDTO == null || !isVisible(fieldDTO, context)) {
                 return null;
             }
-            return convertToColumnDTO(fieldDTO, context.getType(fieldDTO.typeId()));
+            return convertToColumnDTO(fieldDTO, context.getType(Id.parse(fieldDTO.typeId())));
         }
     }
 
@@ -129,17 +128,16 @@ public class TableManager extends EntityContextFactoryBean {
                     )
                     : NncUtils.first(enumEditContext.getDefaultOptions(), enumConstantRT1 -> enumConstantRT1.toFieldValue(context.getInstanceContext()));
         } else {
-            type = getType(column, NncUtils.get(column.targetId(), context::getType), context);
+            type = getType(column, NncUtils.get(column.targetId(), id -> context.getType(Id.parse(id))), context);
             defaultValue = column.defaultValue();
         }
         return typeManager.saveField(
-                FieldDTOBuilder.newBuilder(column.name(), RefDTO.fromId(type.tryGetId()))
+                FieldDTOBuilder.newBuilder(column.name(), type.getStringId())
                         .id(column.id())
-                        .tmpId(column.tmpId())
                         .access(column.access())
                         .defaultValue(defaultValue)
                         .unique(column.unique())
-                        .declaringTypeId(declaringType.tryGetId())
+                        .declaringTypeId(declaringType.getStringId())
                         .build(),
                 context
         );
@@ -149,7 +147,6 @@ public class TableManager extends EntityContextFactoryBean {
         TypeInfo typeInfo = getTypeInfo(type, field.defaultValue());
         return new ColumnDTO(
                 field.id(),
-                field.tmpId(),
                 field.name(),
                 typeInfo.columnType.code,
                 field.access(),
@@ -170,7 +167,7 @@ public class TableManager extends EntityContextFactoryBean {
                 getColumnType(concreteType),
                 concreteType.getName(),
                 concreteType.isEnum() || concreteType.isClass() || concreteType.isValue() ?
-                        concreteType.tryGetId() : null,
+                        concreteType.getStringId() : null,
                 type.isNotNull(),
                 type.isBinaryNullable() ? type.getUnderlyingType().isArray() : type.isArray(),
                 getChoiceOptions(concreteType, fieldDefaultValue)
@@ -225,7 +222,7 @@ public class TableManager extends EntityContextFactoryBean {
                 enumConstants,
                 Comparator.comparingInt(EnumConstantRT::getOrdinal),
                 ec -> new ChoiceOptionDTO(
-                        ec.getId(),
+                        ec.getInstanceIdString(),
                         ec.getName(),
                         ec.getOrdinal(),
                         isPreselected(ec, fieldDefaultValue)
@@ -298,11 +295,10 @@ public class TableManager extends EntityContextFactoryBean {
 
     private TableDTO convertToTable(TypeDTO typeDTO, IEntityContext context) {
         ClassTypeParam param = (ClassTypeParam) typeDTO.param();
-        FieldDTO titleField = param.titleFieldRef() != null ?
-                NncUtils.find(param.fields(), f -> f.getRef().equals(param.titleFieldRef())) : null;
+        FieldDTO titleField = param.titleFieldId() != null ?
+                NncUtils.find(param.fields(), f -> f.id().equals(param.titleFieldId())) : null;
         return new TableDTO(
                 typeDTO.id(),
-                typeDTO.tmpId(),
                 typeDTO.name(),
                 typeDTO.code(),
                 param.desc(),
@@ -312,7 +308,8 @@ public class TableManager extends EntityContextFactoryBean {
                 NncUtils.filterAndMap(
                         param.fields(),
                         f -> isVisible(f, context),
-                        f -> convertToColumnDTO(f, context.getType(f.typeId()))
+                        f -> convertToColumnDTO(f, context.getType(Id.parse(f.typeId()))
+                        )
                 )
         );
     }
@@ -321,7 +318,7 @@ public class TableManager extends EntityContextFactoryBean {
 
     private boolean isVisible(FieldDTO fieldDTO, IEntityContext context) {
         NncUtils.requireNonNull(fieldDTO.typeId(), "字段'" + fieldDTO.name() + "'的typeId为空");
-        Type fieldType = context.getType(fieldDTO.typeId());
+        Type fieldType = context.getType(Id.parse(fieldDTO.typeId()));
         if (ModelDefRegistry.containsDef(fieldType)) {
             Class<?> javaClass = ModelDefRegistry.getJavaClass(fieldType);
             return !CONFIDENTIAL_JAVA_CLASSES.contains(javaClass);
@@ -331,9 +328,9 @@ public class TableManager extends EntityContextFactoryBean {
     }
 
     private TitleFieldDTO convertToTitleField(FieldDTO fieldDTO, IEntityContext context) {
-        Type fieldType = context.getType(fieldDTO.typeId());
+        Type fieldType = context.getType(Id.parse(fieldDTO.typeId()));
         return new TitleFieldDTO(
-                fieldDTO.tmpId(),
+                null,
                 fieldDTO.name(),
                 getColumnType(fieldType.getConcreteType()).code,
                 fieldDTO.unique(),
@@ -344,7 +341,7 @@ public class TableManager extends EntityContextFactoryBean {
     private record TypeInfo(
             ColumnType columnType,
             String name,
-            Long concreteTypeId,
+            String concreteTypeId,
             boolean required,
             boolean multiValued,
             List<ChoiceOptionDTO> choiceOptions

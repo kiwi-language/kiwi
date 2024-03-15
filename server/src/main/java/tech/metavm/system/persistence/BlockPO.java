@@ -4,6 +4,7 @@ package tech.metavm.system.persistence;
 public class BlockPO {
     private Long id;
     private Long appId;
+    private Integer typeTag;
     private Long typeId;
     private Long startId;
     private Long endId;
@@ -13,9 +14,10 @@ public class BlockPO {
     public BlockPO() {
     }
 
-    public BlockPO(Long id, Long appId, Long typeId, Long startId, Long endId, Long nextId, Boolean active) {
+    public BlockPO(Long id, Long appId, Integer typeTag, Long typeId, Long startId, Long endId, Long nextId, Boolean active) {
         this.id = id;
         this.appId = appId;
+        this.typeTag = typeTag;
         this.typeId = typeId;
         this.startId = startId;
         this.endId = endId;
@@ -37,6 +39,14 @@ public class BlockPO {
 
     public void setAppId(Long appId) {
         this.appId = appId;
+    }
+
+    public Integer getTypeTag() {
+        return typeTag;
+    }
+
+    public void setTypeTag(Integer typeTag) {
+        this.typeTag = typeTag;
     }
 
     public Long getTypeId() {
@@ -80,7 +90,7 @@ public class BlockPO {
     }
 
     public BlockPO copy() {
-        return new BlockPO(id, appId, typeId, startId, endId, nextId, active);
+        return new BlockPO(id, appId, typeTag, typeId, startId, endId, nextId, active);
     }
 
     @Override

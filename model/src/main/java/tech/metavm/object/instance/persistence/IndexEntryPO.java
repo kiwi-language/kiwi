@@ -1,5 +1,9 @@
 package tech.metavm.object.instance.persistence;
 
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.TypeTag;
+
 import java.util.Objects;
 
 public class IndexEntryPO {
@@ -7,11 +11,15 @@ public class IndexEntryPO {
     private long appId;
     private final IndexKeyPO key;
     private long instanceId;
+    private int typeTag;
+    private long typeId;
 
-    public IndexEntryPO(long appId, IndexKeyPO key, long instanceId) {
+    public IndexEntryPO(long appId, IndexKeyPO key, long instanceId, int typeTag, long typeId) {
         this.appId = appId;
         this.key = key;
         this.instanceId = instanceId;
+        this.typeTag = typeTag;
+        this.typeId = typeId;
     }
 
     public long getAppId() {
@@ -166,6 +174,26 @@ public class IndexEntryPO {
         return instanceId;
     }
 
+    public int getTypeTag() {
+        return typeTag;
+    }
+
+    public void setTypeTag(int typeTag) {
+        this.typeTag = typeTag;
+    }
+
+    public long getTypeId() {
+        return typeId;
+    }
+
+    public void setTypeId(long typeId) {
+        this.typeId = typeId;
+    }
+
+    public Id getId() {
+        return PhysicalId.of(instanceId, TypeTag.fromCode(typeTag), typeId);
+    }
+
     public void setInstanceId(long instanceId) {
         this.instanceId = instanceId;
     }
@@ -193,7 +221,7 @@ public class IndexEntryPO {
     }
 
     public IndexEntryPO copy() {
-        return new IndexEntryPO(appId, key.copy(), instanceId);
+        return new IndexEntryPO(appId, key.copy(), instanceId, typeTag, typeId);
     }
 
 }

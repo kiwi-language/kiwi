@@ -5,7 +5,7 @@ import tech.metavm.util.NncUtils;
 
 public class BaseDTOTest extends TestCase {
 
-    public record FooDTO(Long id, Long tmpId) implements BaseDTO {
+    public record FooDTO(String id, Long tmpId) implements BaseDTO {
     }
 
     public void testDeserialize() {

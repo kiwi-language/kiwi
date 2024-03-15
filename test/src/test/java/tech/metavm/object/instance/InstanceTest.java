@@ -11,10 +11,7 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.persistence.PersistenceUtils;
 import tech.metavm.object.type.Field;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.FooTypes;
-import tech.metavm.util.MockUtils;
-import tech.metavm.util.TestUtils;
+import tech.metavm.util.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +29,7 @@ public class InstanceTest extends TestCase {
 
     @Override
     protected void setUp() {
-        ContextUtil.setAppId(APP_ID);
+        ContextUtil.setAppId(Constants.getAppId(APP_ID));
         MockStandardTypesInitializer.init();
     }
 
@@ -46,7 +43,7 @@ public class InstanceTest extends TestCase {
         Map<Field, Instance> barData = new HashMap<>();
         barData.put(fooTypes.barCodeField(), stringInstance(CONST_BAR_CODE));
         ClassInstance bar = ClassInstance.create(barData, fooTypes.barType());
-        bar.initId(PhysicalId.of(2L));
+        bar.initId(PhysicalId.ofClass(2L, 1L));
         return bar;
     }
 
@@ -61,7 +58,7 @@ public class InstanceTest extends TestCase {
         );
         fooData.put(fooTypes.fooBazListField(), new ArrayInstance(fooTypes.bazArrayType()));
         ClassInstance foo = ClassInstance.create(fooData, fooTypes.fooType());
-        foo.initId(PhysicalId.of(1L));
+        foo.initId(PhysicalId.ofClass(1L, 1L));
         return foo;
     }
 

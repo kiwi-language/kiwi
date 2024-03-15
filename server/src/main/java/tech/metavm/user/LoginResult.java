@@ -4,6 +4,6 @@ import javax.annotation.Nullable;
 
 public record LoginResult(
         @Nullable Token token,
-        long userId
+        String userId
 ) {
 }

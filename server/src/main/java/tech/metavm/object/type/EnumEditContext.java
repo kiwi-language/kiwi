@@ -3,6 +3,7 @@ package tech.metavm.object.type;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.type.rest.dto.EnumConstantDTO;
 import tech.metavm.util.BusinessException;
@@ -13,7 +14,7 @@ import java.util.Objects;
 
 public class EnumEditContext {
 
-    private final Long id;
+    private final String id;
     private final String name;
     private final boolean anonymous;
     private final List<ChoiceOptionDTO> optionDTOs;
@@ -21,7 +22,7 @@ public class EnumEditContext {
     private final IEntityContext entityContext;
     private ClassType type;
 
-    public EnumEditContext(Long id,
+    public EnumEditContext(String id,
                            String name,
                            boolean anonymous,
                            List<ChoiceOptionDTO> optionDTOs,
@@ -45,7 +46,7 @@ public class EnumEditContext {
             type = createType();
         }
         else {
-            type = entityContext.getEntity(ClassType.class, id);
+            type = entityContext.getEntity(ClassType.class, Id.parse(id));
         }
     }
 
@@ -68,7 +69,7 @@ public class EnumEditContext {
 //                    type.addEnumConstant(option.getInstance());
                     addEnumConstant(option.getName(), option.getInstance());
                 } else {
-                    option = type.getEnumConstant(optionDTO.id());
+                    option = type.getEnumConstant(Id.parse(optionDTO.id()));
                     option.update(convertToEnumConstant(optionDTO, ordinal++));
                 }
                 if (optionDTO.defaultSelected()) {
@@ -89,7 +90,7 @@ public class EnumEditContext {
     private EnumConstantDTO convertToEnumConstant(ChoiceOptionDTO choiceOptionDTO, int ordinal) {
         return new EnumConstantDTO(
                 choiceOptionDTO.id(),
-                0L,
+                null,
                 ordinal,
                 choiceOptionDTO.name()
         );

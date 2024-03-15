@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceProvider;
 import tech.metavm.object.type.ArrayTypeProvider;
@@ -9,7 +10,7 @@ import tech.metavm.object.type.UnionTypeProvider;
 
 public interface ParsingContext {
 
-    Instance getInstance(long id);
+    Instance getInstance(Id id);
 
     boolean isContextVar(Var var);
 

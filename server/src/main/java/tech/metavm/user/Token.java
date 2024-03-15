@@ -1,7 +1,7 @@
 package tech.metavm.user;
 
 public record Token(
-        long appId,
+        String appId,
         String token
 ) {
 

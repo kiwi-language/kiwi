@@ -1,21 +1,17 @@
 package tech.metavm.object.type;
 
-import tech.metavm.common.RefDTO;
+import tech.metavm.object.instance.core.Id;
 
 public interface TypeProvider {
 
-    Type getType(RefDTO ref);
+    Type getType(Id id);
 
-    default Type getType(long id) {
-        return getType(RefDTO.fromId(id));
+    default Type getType(String id) {
+        return getType(Id.parse(id));
     }
 
-    default ClassType getClassType(long id) {
+    default ClassType getClassType(Id id) {
         return (ClassType) getType(id);
-    }
-
-    default ClassType getClassType(RefDTO ref) {
-        return (ClassType) getType(ref);
     }
 
 }

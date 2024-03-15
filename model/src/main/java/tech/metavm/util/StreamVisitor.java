@@ -1,5 +1,7 @@
 package tech.metavm.util;
 
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.system.RegionConstants;
 
 import java.io.InputStream;
@@ -50,8 +52,15 @@ public class StreamVisitor {
     }
 
     public void visitRecord() {
-        long id = input.readLong();
-        visitRecordBody(id);
+        visitRecordBody(readId());
+    }
+
+    public PhysicalId readId() {
+        return PhysicalId.of(input.readLong(), readTypeTag(), readLong());
+    }
+
+    public TypeTag readTypeTag() {
+        return TypeTag.fromCode(input.read());
     }
 
     public int readInt() {
@@ -78,7 +87,7 @@ public class StreamVisitor {
         return input.readBoolean();
     }
 
-    public void visitRecordBody(long id) {
+    public void visitRecordBody(PhysicalId id) {
         if (RegionConstants.isArrayId(id)) {
             int len = input.readInt();
             for (int i = 0; i < len; i++)

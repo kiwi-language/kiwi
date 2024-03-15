@@ -8,6 +8,7 @@ import org.junit.Assert;
 import tech.metavm.entity.IndexOperator;
 import tech.metavm.entity.LockMode;
 import tech.metavm.entity.MockStandardTypesInitializer;
+import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.IndexQueryItemPO;
@@ -55,7 +56,7 @@ public class IndexEntryMapperTest extends TestCase {
                 k.setIndexId(INDEX_ID);
                 k.setColumn0(BytesUtils.toIndexBytes(Instances.longInstance(1L)));
                 k.setColumn1(BytesUtils.toIndexBytes(Instances.longInstance(i)));
-                indexItems.add(new IndexEntryPO(APP_ID, k, instanceIdBase + i));
+                indexItems.add(new IndexEntryPO(APP_ID, k, instanceIdBase + i, TypeTag.Class.code(), 0L));
             }
             indexEntryMapper.batchInsert(indexItems);
 

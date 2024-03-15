@@ -1,6 +1,5 @@
 package tech.metavm.instance.core;
 
-import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.entity.IdInitializer;
 import tech.metavm.entity.VersionSource;
 import tech.metavm.event.EventQueue;
@@ -10,6 +9,7 @@ import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.BufferingInstanceContext;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
@@ -19,7 +19,7 @@ import java.util.List;
 
 public class CompilerInstanceContext extends BufferingInstanceContext {
 
-    public CompilerInstanceContext(long appId,
+    public CompilerInstanceContext(Id appId,
                                    List<TreeSource> treeSources,
                                    VersionSource versionSource,
                                    IdInitializer idService,
@@ -38,7 +38,7 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public IInstanceContext createSame(long appId) {
+    public IInstanceContext createSame(Id appId) {
         return null;
     }
 

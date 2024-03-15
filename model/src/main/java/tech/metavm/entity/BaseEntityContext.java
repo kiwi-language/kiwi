@@ -2,7 +2,6 @@ package tech.metavm.entity;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.common.RefDTO;
 import tech.metavm.event.EventQueue;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.NodeRT;
@@ -12,8 +11,8 @@ import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.*;
 import tech.metavm.object.type.Index;
+import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.*;
 import tech.metavm.util.*;
 import tech.metavm.util.profile.Profiler;
@@ -21,6 +20,7 @@ import tech.metavm.util.profile.Profiler;
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
 import static tech.metavm.entity.EntityUtils.*;
 
 public abstract class BaseEntityContext implements CompositeTypeFactory, IEntityContext, ContextListener {
@@ -130,7 +130,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public void invalidateCache(long id) {
+    public void invalidateCache(Id id) {
         var entity = get(Object.class, id);
         var instance = getInstance(entity);
         instanceContext.invalidateCache(instance);
@@ -143,7 +143,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             entityMap.put(instance.getPhysicalId(), model);
             if (model instanceof IdInitializing idInitializing) {
                 NncUtils.requireNull(idInitializing.tryGetId());
-                idInitializing.initId(instance.getPhysicalId());
+                idInitializing.initId(instance.getId());
             }
         }
     }
@@ -179,7 +179,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> T getRemoved(Class<T> entityClass, long id) {
+    public <T> T getRemoved(Class<T> entityClass, Id id) {
         return entityClass.cast(getEntity(entityClass, instanceContext.getRemoved(id)));
     }
 
@@ -268,7 +268,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             final ModelDef<?, ?> defFinal = def;
             model = EntityProxyFactory.getProxy(
                     def.getJavaClass(),
-                    instance.tryGetPhysicalId(),
+                    instance.getId(),
                     k -> def.getJavaClass().cast(defFinal.createModelProxyHelper(k)),
                     m -> initializeModel(m, instance, defFinal)
             );
@@ -333,7 +333,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return model;
     }
 
-    public void initIdManually(Object model, long id) {
+    public void initIdManually(Object model, Id id) {
         var instance = getInstance(model);
         if (instance.tryGetPhysicalId() != null) {
             throw new InternalException("Model " + model + " already its id initialized");
@@ -341,34 +341,34 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         NncUtils.requireNonNull(instanceContext).initIdManually(instance, id);
     }
 
-    public Flow getFlow(long id) {
+    public Flow getFlow(Id id) {
         return getEntity(Flow.class, id);
     }
 
-    public ScopeRT getScope(long id) {
+    public ScopeRT getScope(Id id) {
         return getEntity(ScopeRT.class, id);
     }
 
-    public Field getField(long id) {
+    public Field getField(Id id) {
         return getEntity(Field.class, id);
     }
 
-    public NodeRT getNode(long id) {
+    public NodeRT getNode(Id id) {
         return getEntity(NodeRT.class, id);
     }
 
 
     @SuppressWarnings("unused")
-    public Index getUniqueConstraint(long id) {
+    public Index getUniqueConstraint(Id id) {
         return getEntity(Index.class, id);
     }
 
     @SuppressWarnings("unused")
-    public CheckConstraint getCheckConstraint(long id) {
+    public CheckConstraint getCheckConstraint(Id id) {
         return getEntity(CheckConstraint.class, id);
     }
 
-    public <T extends Entity> T getEntity(TypeReference<T> typeReference, long id) {
+    public <T extends Entity> T getEntity(TypeReference<T> typeReference, Id id) {
         return getEntity(typeReference.getType(), id);
     }
 
@@ -388,9 +388,9 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             return null;
     }
 
-    public <T> T getEntity(Class<T> entityType, long id) {
-        return getEntity(entityType, instanceContext.get(new PhysicalId(id)));
-    }
+//    public <T> T getEntity(Class<T> entityType, Id id) {
+//        return getEntity(entityType, instanceContext.get(id));
+//    }
 
 //    private void ensureNotRemoved(Object entity) {
 //        if (entity instanceof Entity e)
@@ -402,17 +402,17 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 //    }
 
     @Override
-    public <T> @Nullable T getEntity(Class<T> entityType, RefDTO ref) {
-        if (ref.isEmpty())
-            return null;
-        var id = ref.toId();
+    public <T> @Nullable T getEntity(Class<T> entityType, Id id) {
+//        if (id.isEmpty())
+//            return null;
+//        var id = id.toId();
         if (id.tryGetPhysicalId() == null && !instanceContext.contains(id))
             return null;
         var instance = instanceContext.get(id);
         return getEntity(entityType, instance);
     }
 
-    public <T> T get(Class<T> klass, long id) {
+    public <T> T get(Class<T> klass, Id id) {
         return klass.cast(getEntity(klass, id));
     }
 
@@ -535,7 +535,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public long getAppId(Object model) {
+    public Id getAppId(Object model) {
         if (model2instance.containsKey(model)) {
             return getAppId();
         } else if (parent != null) {
@@ -609,7 +609,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public long getAppId() {
+    public Id getAppId() {
         NncUtils.requireNonNull(instanceContext);
         return instanceContext.getAppId();
     }
@@ -664,7 +664,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 else {
                     ReflectionUtils.set(
                             entity.getParentEntity(),
-                            Objects.requireNonNull(entity.getParentEntityField()),
+                            requireNonNull(entity.getParentEntityField()),
                             null
                     );
                 }
@@ -720,7 +720,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         NncUtils.requireNonNull(instanceContext);
         IndexKeyRT indexKey = createIndexKey(uniqueConstraintDef, fieldValues);
         var instance = instanceContext.selectFirstByKey(indexKey);
-        return NncUtils.get(instance, i -> getEntity(entityType, i.getPhysicalId()));
+        return NncUtils.get(instance, i -> getEntity(entityType, requireNonNull(i.getId())));
     }
 
     private IndexKeyRT createIndexKey(IndexDef<?> uniqueConstraintDef, Object... values) {
@@ -772,7 +772,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private DurableInstance newInstance(Object object) {
         ModelDef<?, ?> def = getDefContext().getDefByModel(object);
         if (def.isProxySupported()) {
-            var instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), NncUtils.get(tryGetId(object), PhysicalId::new),
+            var instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), tryGetId(object),
                     EntityUtils.isEphemeral(object));
             addBinding(object, instance);
             def.initInstanceHelper(instance, object, objectInstanceMap);

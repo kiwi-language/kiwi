@@ -2,7 +2,6 @@ package tech.metavm.object.instance.core;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.entity.mocks.MockEntityRepository;
 import tech.metavm.event.EventQueue;
@@ -35,7 +34,7 @@ public class InstanceContextTest extends TestCase {
         super.setUp();
         MockStandardTypesInitializer.init();
         instanceStore = new MemInstanceStore();
-        entityRepository = new MockEntityRepository();
+        entityRepository = new MockEntityRepository(new MemTypeRegistry());
         typeProviders = new TypeProviders();
         cache = new MockCache();
         eventQueue = new MockEventQueue();
@@ -45,7 +44,7 @@ public class InstanceContextTest extends TestCase {
 
     private IInstanceContext newContext() {
         return new InstanceContext(
-                TestConstants.APP_ID,
+                TestConstants.getAppId(),
                 instanceStore,
                 new DefaultIdInitializer(idProvider),
                 executor,
@@ -63,24 +62,24 @@ public class InstanceContextTest extends TestCase {
 
     public void test() {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        fooType.initId(101L);
+        fooType.initId(PhysicalId.ofClass(101L, 1L));
         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
                 .build();
-        fooNameField.initId(111L);
+        fooNameField.initId(PhysicalId.ofClass(111L, 1L));
 
         entityRepository.bind(fooType);
-        long tmpId = 10001L;
+        var tmpId = TmpId.of(10001L);
         String name = "foo";
-        long id;
+        Id id;
         try (var context = newContext()) {
             var instance = ClassInstanceBuilder.newBuilder(fooType)
-                    .id(TmpId.of(tmpId))
+                    .id(tmpId)
                     .data(Map.of(fooNameField, Instances.stringInstance(name)))
                     .build();
             context.bind(instance);
-            Assert.assertSame(instance, context.get(RefDTO.fromTmpId(tmpId)));
+            Assert.assertSame(instance, context.get(tmpId));
             context.finish();
-            id = instance.getPhysicalId();
+            id = instance.getId();
         }
         try (var context = newContext()) {
             var instance = (ClassInstance) context.get(id);
@@ -93,8 +92,8 @@ public class InstanceContextTest extends TestCase {
     }
 
     public void testOnChange() {
-        long fooId;
-        long bazId;
+        Id fooId;
+        Id bazId;
         var fooTypes = MockUtils.createFooTypes(true);
         EntityUtils.visitGraph(fooTypes.fooType(), object -> {
             if (object instanceof Entity entity && entity.isIdNotNull())
@@ -110,8 +109,8 @@ public class InstanceContextTest extends TestCase {
             context.bind(foo);
             context.bind(baz);
             context.finish();
-            fooId = foo.getPhysicalId();
-            bazId = baz.getPhysicalId();
+            fooId = foo.getId();
+            bazId = baz.getId();
         }
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {

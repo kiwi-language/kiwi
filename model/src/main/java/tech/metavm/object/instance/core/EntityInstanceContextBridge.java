@@ -1,7 +1,6 @@
 package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.TypeRegistry;
 import tech.metavm.flow.Flow;
@@ -39,8 +38,8 @@ public class EntityInstanceContextBridge implements MappingProvider, Parameteriz
     }
 
     @Override
-    public Mapping getMapping(RefDTO ref) {
-        return entityContext.getMapping(ref);
+    public Mapping getMapping(Id id) {
+        return entityContext.getMapping(id);
     }
 
     public void setEntityContext(IEntityContext entityContext) {
@@ -48,13 +47,13 @@ public class EntityInstanceContextBridge implements MappingProvider, Parameteriz
     }
 
     @Override
-    public Type getType(RefDTO ref) {
-        return entityContext.getType(ref);
+    public Type getType(Id id) {
+        return entityContext.getType(id);
     }
 
     @Override
-    public Index getIndex(RefDTO ref) {
-        return entityContext.getEntity(Index.class, ref);
+    public Index getIndex(Id id) {
+        return entityContext.getEntity(Index.class, id);
     }
 
     @Nullable

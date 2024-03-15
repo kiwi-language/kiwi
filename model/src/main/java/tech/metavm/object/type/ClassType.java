@@ -10,6 +10,7 @@ import tech.metavm.flow.Error;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.object.view.MappingSaver;
@@ -318,12 +319,12 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return NncUtils.find(mappings, ObjectMapping::isBuiltin);
     }
 
-    public Set<Long> getSubTypeIds() {
-        Set<Long> typeIds = new HashSet<>();
+    public Set<Id> getSubTypeIds() {
+        Set<Id> typeIds = new HashSet<>();
         accept(new VoidElementVisitor() {
             @Override
             public Void visitClassType(ClassType type) {
-                typeIds.add(type.tryGetId());
+                typeIds.add(type.getId());
                 for (ClassType subType : type.subTypes)
                     subType.accept(this);
                 return super.visitClassType(type);
@@ -340,7 +341,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public ParameterizedTypeKey getParameterizedKey() {
         NncUtils.requireNonNull(template);
-        return new ParameterizedTypeKey(template.getRef(), NncUtils.map(typeArguments, Entity::getRef));
+        return new ParameterizedTypeKey(template.getStringId(), NncUtils.map(typeArguments, Entity::getStringId));
     }
 
     public List<Error> getErrors() {
@@ -378,7 +379,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
                         if (f.isIdNotNull())
                             sf.add(f);
                     });
-                    sf.sort(Comparator.comparingLong(Field::getId));
+                    sf.sort(Comparator.comparing(Field::getId));
                     sortedFields = sf;
                 }
             }
@@ -623,7 +624,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             defaultMapping = mapping;
     }
 
-    public Field findFieldById(long fieldId) {
+    public Field findFieldById(Id fieldId) {
         Field found = NncUtils.find(fields, f -> f.idEquals(fieldId));
         if (found != null)
             return found;
@@ -633,22 +634,22 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             return null;
     }
 
-    public Field getField(long fieldId) {
-        return NncUtils.requireNonNull(findFieldById(fieldId),
-                () -> new InternalException(String.format("Field %d not found", fieldId)));
-    }
+//    public Field getField(Id fieldId) {
+//        return NncUtils.requireNonNull(findFieldById(fieldId),
+//                () -> new InternalException(String.format("Field %d not found", fieldId)));
+//    }
 
-    public Field getField(RefDTO ref) {
-        var field = fields.get(Entity::getRef, ref);
+    public Field getField(Id id) {
+        var field = fields.get(Entity::tryGetId, id);
         if (field != null)
             return field;
         if (superClass != null)
-            return superClass.getField(ref);
-        throw new NullPointerException("Can not find field for " + ref + " in type " + name);
+            return superClass.getField(id);
+        throw new NullPointerException("Can not find field for " + id + " in type " + name);
     }
 
-    public Method getMethod(RefDTO ref) {
-        return Objects.requireNonNull(methods.get(Entity::getRef, ref));
+    public Method getMethod(Id id) {
+        return Objects.requireNonNull(methods.get(Entity::tryGetId, id));
     }
 
     public @Nullable Field findSelfField(Predicate<Field> predicate) {
@@ -672,7 +673,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return fields.get(Entity::tryGetId, fieldId) != null || superClass != null && superClass.containsField(fieldId);
     }
 
-    public boolean containsStaticField(long fieldId) {
+    public boolean containsStaticField(Id fieldId) {
         return staticFields.get(Entity::tryGetId, fieldId) != null || superClass != null && superClass.containsStaticField(fieldId);
     }
 
@@ -757,7 +758,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         this.source = source;
     }
 
-    public Field getStaticField(long id) {
+    public Field getStaticField(Id id) {
         if (superClass != null && superClass.containsStaticField(id))
             return superClass.getStaticField(id);
         Field field = staticFields.get(Entity::tryGetId, id);
@@ -783,7 +784,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         };
     }
 
-    public Property getProperty(long id) {
+    public Property getProperty(Id id) {
         return NncUtils.requireNonNull(getProperty(Property::tryGetId, id),
                 "Can not find attribute with id: " + id + " in type " + this);
     }
@@ -1014,8 +1015,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public TypeDTO toPTypeDTO(SerializeContext serializeContext) {
         return new TypeDTO(
-                tryGetId(),
-                serializeContext.getTmpId(this),
+                serializeContext.getRef(this),
                 getName(),
                 getCode(),
                 getCategory().code(),
@@ -1087,8 +1087,8 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return constraints.toList();
     }
 
-    public <T extends Constraint> T getConstraint(Class<T> constraintType, long id) {
-        return find(getConstraints(constraintType), c -> c.getId() == id);
+    public <T extends Constraint> T getConstraint(Class<T> constraintType, Id id) {
+        return find(getConstraints(constraintType), c -> c.getId().equals(id));
     }
 
     public List<CheckConstraint> getFieldCheckConstraints(Field field) {
@@ -1097,11 +1097,11 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     @SuppressWarnings("unused")
-    public Constraint getConstraint(long id) {
-        return NncUtils.find(requireNonNull(constraints), c -> c.getId() == id);
+    public Constraint getConstraint(Id id) {
+        return NncUtils.find(requireNonNull(constraints), c -> c.idEquals(id));
     }
 
-    public Index getUniqueConstraint(long id) {
+    public Index getUniqueConstraint(Id id) {
         return getConstraint(Index.class, id);
     }
 
@@ -1120,11 +1120,11 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         );
     }
 
-    public EnumConstantRT getEnumConstant(long id) {
+    public EnumConstantRT getEnumConstant(Id id) {
         if (!isEnum())
             throw new InternalException("type " + this + " is not a enum type");
         for (Field field : staticFields) {
-            if (isEnumConstantField(field) && Objects.equals(((DurableInstance) field.getStaticValue()).tryGetPhysicalId(), id))
+            if (isEnumConstantField(field) && Objects.equals(field.getStaticValue().getId(), id))
                 return createEnumConstant((ClassInstance) field.getStaticValue());
         }
         throw new InternalException("Can not find enum constant with id " + id);
@@ -1318,23 +1318,23 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             setTypeArguments(typeParameters);
     }
 
-    public ObjectMapping getMappingInAncestors(RefDTO ref) {
-        var mapping = findMapping(ref);
+    public ObjectMapping getMappingInAncestors(Id id) {
+        var mapping = findMapping(id);
         if (mapping != null)
             return mapping;
         if (superClass != null) {
-            if ((mapping = superClass.getMappingInAncestors(ref)) != null)
+            if ((mapping = superClass.getMappingInAncestors(id)) != null)
                 return mapping;
         }
         for (ClassType it : interfaces) {
-            if ((mapping = it.getMappingInAncestors(ref)) != null)
+            if ((mapping = it.getMappingInAncestors(id)) != null)
                 return mapping;
         }
         throw new InternalException("Can not find mapping in the ancestors of type: " + getName());
     }
 
-    public @Nullable ObjectMapping findMapping(RefDTO ref) {
-        return mappings.get(Entity::getRef, ref);
+    public @Nullable ObjectMapping findMapping(Id id) {
+        return mappings.get(Entity::getId, id);
     }
 
     public void setFields(List<Field> fields) {
@@ -1389,8 +1389,8 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     @Override
     public TypeKey getTypeKey() {
         return template != null ?
-                new ParameterizedTypeKey(template.getRef(), NncUtils.map(typeArguments, Entity::getRef))
-                : new ClassTypeKey(getRef());
+                new ParameterizedTypeKey(template.getStringId(), NncUtils.map(typeArguments, Entity::getStringId))
+                : new ClassTypeKey(getId());
     }
 
     @Override

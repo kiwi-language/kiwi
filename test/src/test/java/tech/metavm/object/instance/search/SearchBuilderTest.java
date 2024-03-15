@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.expression.Expressions;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.util.*;
 
 import java.util.Set;
@@ -32,7 +34,7 @@ public class SearchBuilderTest extends TestCase {
         );
         var query = new SearchQuery(
                 Constants.ROOT_APP_ID,
-                Set.of(100L),
+                Set.of(PhysicalId.ofClass(100, 1)),
                 condition,
                 false,
                 1,

@@ -2,15 +2,11 @@ package tech.metavm.entity;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.common.RefDTO;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.InstanceFactory;
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.Index;
 import tech.metavm.util.*;
@@ -21,7 +17,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.*;
-import java.util.function.Function;
 
 import static tech.metavm.object.type.ResolutionStage.*;
 
@@ -45,7 +40,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final ColumnStore columnStore;
     private final Map<Type, DefParser<?, ?, ?>> parsers = new HashMap<>();
     private final EntityMemoryIndex memoryIndex = new EntityMemoryIndex();
-    private final Map<Long, Object> entityMap = new HashMap<>();
+    private final Map<Id, Object> entityMap = new HashMap<>();
     private final Set<java.lang.reflect.Field> fieldBlacklist = new HashSet<>();
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
@@ -129,16 +124,21 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         this.fieldBlacklist.addAll(fieldBlacklist);
     }
 
-    @Override
-    public <T> @Nullable T getEntity(Class<T> entityType, RefDTO ref) {
-        if (ref.id() != null)
-            return getEntity(entityType, ref.id());
-        else
-            return null;
-    }
+//    @Override
+//    public <T> @Nullable T getEntity(Class<T> entityType, Id id) {
+//        if (id.id() != null)
+//            return getEntity(entityType, id.id());
+//        else
+//            return null;
+//    }
 
     @Override
-    public <T> T getEntity(Class<T> entityType, long id) {
+    public TypeRegistry getTypeRegistry() {
+        return this;
+    }
+
+//    @Override
+    public <T> T getEntity(Class<T> entityType, Id id) {
         return entityType.cast(entityMap.get(id));
     }
 
@@ -194,8 +194,14 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return typeInternMap.computeIfAbsent(type, t -> type);
     }
 
-    private Long getEntityId(Object entity) {
-        return EntityUtils.isEphemeral(entity) ? null : stdIdProvider.getId(identityContext.getModelId(entity));
+    private Id getEntityId(Object entity) {
+        if(EntityUtils.isEphemeral(entity) )
+            return null;
+        var physicalId = stdIdProvider.getId(identityContext.getModelId(entity));
+        if(physicalId == null)
+            return null;
+        var type = getType(EntityUtils.getRealType(entity.getClass()));
+        return PhysicalId.of(physicalId, type);
     }
 
     @SuppressWarnings("unchecked")
@@ -397,7 +403,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private void tryInitEntityId(Object entity) {
         if (EntityUtils.isDurable(entity)) {
             if ((entity instanceof IdInitializing idInitializing) && idInitializing.tryGetId() == null) {
-                Long id = getEntityId(entity);
+                var id = getEntityId(entity);
                 if (id != null) {
                     idInitializing.initId(id);
                     entityMap.put(id, idInitializing);
@@ -516,10 +522,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             return;
         if (def == null)
             def = getDefByModel(model);
-        Long id = getEntityId(model);
+        var id = getEntityId(model);
         if (id == null) {
             if (def.isProxySupported()) {
-                var instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), NncUtils.get(id, PhysicalId::new),
+                var instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), id,
                         EntityUtils.isEphemeral(model));
                 addToContext(model, instance);
                 def.initInstanceHelper(instance, model, getObjectInstanceMap());
@@ -693,7 +699,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    public IEntityContext createSame(long appId) {
+    public IEntityContext createSame(Id appId) {
         throw new UnsupportedOperationException();
     }
 

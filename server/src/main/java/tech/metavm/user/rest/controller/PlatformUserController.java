@@ -45,12 +45,12 @@ public class PlatformUserController {
     }
 
     @GetMapping("/{id:[0-9]+}")
-    public Result<UserDTO> get(@PathVariable("id") long id) {
+    public Result<UserDTO> get(@PathVariable("id") String id) {
         return Result.success(platformUserManager.get(id));
     }
 
     @PostMapping
-    public Result<Long> save(@RequestBody UserDTO userDTO) {
+    public Result<String> save(@RequestBody UserDTO userDTO) {
         return Result.success(platformUserManager.save(userDTO));
     }
 
@@ -74,7 +74,7 @@ public class PlatformUserController {
     }
 
     @DeleteMapping("/{id:[0-9]+}")
-    public Result<Void> delete(@PathVariable("id") long id) {
+    public Result<Void> delete(@PathVariable("id") String id) {
         platformUserManager.delete(id);
         return Result.voidSuccess();
     }
@@ -82,11 +82,11 @@ public class PlatformUserController {
     @GetMapping("/apps")
     public Result<List<ApplicationDTO>> getApplications(HttpServletRequest request) {
         ensurePlatformUser(request);
-        return Result.success(platformUserManager.getApplications(ContextUtil.getUserId()));
+        return Result.success(platformUserManager.getApplications(ContextUtil.getUserId().toString()));
     }
 
     @PostMapping("/enter-app/{id:[0-9]+}")
-    public Result<LoginInfo> enterApp(@PathVariable("id") long id, HttpServletRequest request, HttpServletResponse response) {
+    public Result<LoginInfo> enterApp(@PathVariable("id") String id, HttpServletRequest request, HttpServletResponse response) {
         Token token = Tokens.getToken(id, request);
         if (token != null) {
             var loginInfo = loginService.verify(token);
@@ -100,21 +100,21 @@ public class PlatformUserController {
     }
 
     @PostMapping("/join-app/{id:[0-9]+}")
-    public Result<Void> joinApplication(@PathVariable("id") long id, HttpServletRequest request) {
+    public Result<Void> joinApplication(@PathVariable("id") String id, HttpServletRequest request) {
         ensurePlatformUser(request);
-        platformUserManager.joinApplication(ContextUtil.getUserId(), id);
+        platformUserManager.joinApplication(ContextUtil.getUserId().toString(), id);
         return Result.voidSuccess();
     }
 
     @PostMapping("/leave-app/{id:[0-9]+}")
-    public Result<Void> leaveApplication(@PathVariable("id") long id, HttpServletRequest request) {
+    public Result<Void> leaveApplication(@PathVariable("id") String id, HttpServletRequest request) {
         ensurePlatformUser(request);
-        platformUserManager.leaveApplication(List.of(ContextUtil.getUserId()), id);
+        platformUserManager.leaveApplication(List.of(ContextUtil.getUserId().toString()), id);
         return Result.voidSuccess();
     }
 
     private void ensurePlatformUser(HttpServletRequest request) {
-        if (ContextUtil.getAppId() != Constants.PLATFORM_APP_ID) {
+        if (ContextUtil.getAppId().getPhysicalId() != Constants.PLATFORM_APP_ID) {
             var platformToken = Tokens.getPlatformToken(request);
             if (platformToken == null || !loginService.verify(platformToken).isSuccessful())
                 throw new BusinessException(ErrorCode.PLATFORM_USER_REQUIRED);

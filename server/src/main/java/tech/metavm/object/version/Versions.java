@@ -7,12 +7,12 @@ import java.util.Set;
 
 public class Versions {
 
-    public static Version create(Set<Long> changedTypeIds,
-                                 Set<Long> removedTypeIds,
-                                 Set<Long> changedMappingIds,
-                                 Set<Long> removedMappingIds,
-                                 Set<Long> changedFunctionIds,
-                                 Set<Long> removedFunctionIds,
+    public static Version create(Set<String> changedTypeIds,
+                                 Set<String> removedTypeIds,
+                                 Set<String> changedMappingIds,
+                                 Set<String> removedMappingIds,
+                                 Set<String> changedFunctionIds,
+                                 Set<String> removedFunctionIds,
                                  VersionRepository versionRepository) {
         NncUtils.requireTrue(!changedTypeIds.isEmpty() || !removedTypeIds.isEmpty(),
                 "Change set is empty");

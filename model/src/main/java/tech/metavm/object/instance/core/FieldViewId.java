@@ -10,9 +10,9 @@ import java.util.Objects;
 public class FieldViewId extends PathViewId {
 
     public static final int TAG = 6;
-    public final long fieldId;
+    public final Id fieldId;
 
-    public FieldViewId(ViewId parent, long mappingId, long fieldId, @Nullable Id sourceId, long typeId) {
+    public FieldViewId(ViewId parent, Id mappingId, Id fieldId, @Nullable Id sourceId, Id typeId) {
         super(parent, mappingId, sourceId, typeId);
         this.fieldId = fieldId;
     }
@@ -21,10 +21,10 @@ public class FieldViewId extends PathViewId {
     public void write(InstanceOutput output) {
         output.write(TAG);
         getParent().write(output);
-        output.writeLong(getMappingId());
-        output.writeLong(fieldId);
+        getMappingId().write(output);
+        fieldId.write(output);
         writeSourceId(output);
-        output.writeLong(getTypeId());
+        getTypeId().write(output);
     }
 
     @Override

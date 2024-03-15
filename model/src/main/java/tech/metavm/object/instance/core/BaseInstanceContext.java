@@ -29,7 +29,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     public static final Logger LOGGER = LoggerFactory.getLogger(BaseInstanceContext.class);
 
-    protected final long appId;
+    protected final Id appId;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
     private final Map<Id, DurableInstance> instanceMap = new HashMap<>();
     private final Set<Id> creatingIds = new HashSet<>();
@@ -56,7 +56,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private int seq;
 
-    public BaseInstanceContext(long appId,
+    public BaseInstanceContext(Id appId,
                                IInstanceContext parent,
                                boolean readonly,
                                IndexSource indexSource,
@@ -98,7 +98,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public List<ClassInstance> indexScan(IndexKeyRT from, IndexKeyRT to) {
-        return NncUtils.map(indexSource.scan(from, to, this), id -> (ClassInstance) get(PhysicalId.of(id)));
+        return NncUtils.map(indexSource.scan(from, to, this), id -> (ClassInstance) get(id));
     }
 
     @Override
@@ -115,7 +115,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         var memResults = memIndex.query(query);
         if (query.memoryOnly())
             return memResults;
-        var storeResults = NncUtils.map(indexSource.query(query, this), id -> (ClassInstance) get(new PhysicalId(id)));
+        var storeResults = NncUtils.map(indexSource.query(query, this), id -> (ClassInstance) get(id));
         return Instances.merge(memResults, storeResults, query.desc(), NncUtils.orElse(query.limit(), -1L));
     }
 
@@ -251,16 +251,16 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public List<Long> filterAlive(List<Long> ids) {
-        buffer(NncUtils.map(ids, PhysicalId::of));
+    public List<Id> filterAlive(List<Id> ids) {
+        buffer(ids);
         return NncUtils.filter(ids, this::isAlive);
     }
 
     @Override
-    public final boolean isAlive(long id) {
+    public final boolean isAlive(Id id) {
         if (parent != null && parent.containsId(id))
             return parent.isAlive(id);
-        var instance = getSelfBuffered(PhysicalId.of(id));
+        var instance = getSelfBuffered(id);
         if (instance != null) {
             if (instance.isRemoved())
                 return false;
@@ -315,19 +315,19 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         });
     }
 
-    private long getTypeId(Id id) {
+    private Id getTypeId(Id id) {
         return switch (id) {
-            case PhysicalId physicalId -> getTypeId(physicalId.getId());
-            case ViewId viewId -> viewId.getViewType(mappingProvider, typeProvider).getId();
+            case PhysicalId physicalId -> physicalId.getTypeEntityId();
+            case ViewId viewId -> viewId.getViewType(mappingProvider, typeProvider).getEntityId();
             default -> throw new IllegalStateException("Unexpected value: " + id);
         };
     }
 
-    protected abstract long getTypeId(long id);
+//    protected abstract long getTypeId(long id);
 
     protected abstract void initializeInstance(DurableInstance instance);
 
-    protected abstract boolean checkAliveInStore(long id);
+    protected abstract boolean checkAliveInStore(Id id);
 
 //    @Override
 //    public Instance getIfPresentByTmpId(long tmpId) {
@@ -375,8 +375,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public boolean containsId(long id) {
-        return instanceMap.containsKey(PhysicalId.of(id)) || parent != null && parent.containsId(id);
+    public boolean containsId(Id id) {
+        return instanceMap.containsKey(id) || parent != null && parent.containsId(id);
     }
 
     @Override
@@ -420,14 +420,14 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     protected abstract void finishInternal();
 
-    public DurableInstance getRemoved(long id) {
-        var instance = NncUtils.requireNonNull(instanceMap.get(PhysicalId.of(id)));
+    public DurableInstance getRemoved(Id id) {
+        var instance = NncUtils.requireNonNull(instanceMap.get(id));
         NncUtils.requireTrue(instance.isRemoved());
         return instance;
     }
 
-    protected boolean isRemoved(long id) {
-        var instance = instanceMap.get(PhysicalId.of(id));
+    protected boolean isRemoved(Id id) {
+        var instance = instanceMap.get(id);
         return instance != null && instance.isRemoved();
     }
 
@@ -436,9 +436,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
 
     @Override
-    public void initIdManually(DurableInstance instance, long id) {
+    public void initIdManually(DurableInstance instance, Id id) {
         NncUtils.requireTrue(instance.getContext() == this);
-        instance.initId(PhysicalId.of(id));
+        instance.initId(id);
         onIdInitialized(instance);
     }
 
@@ -446,7 +446,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         instanceMap.put(instance.getId(), instance);
         listeners.forEach(l -> l.onInstanceIdInit(instance));
         forEachView(instance, v ->
-                v.initId(new DefaultViewId(requireNonNull(v.getSourceRef().mapping()).getId(), v.getSource().getId())));
+                v.initId(new DefaultViewId(requireNonNull(v.getSourceRef().mapping()).getEntityId(), v.getSource().getId())));
     }
 
     protected void onContextInitializeId() {
@@ -476,12 +476,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public long getAppId() {
+    public Id getAppId() {
         return appId;
     }
 
     @Override
-    public Type getType(long id) {
+    public Type getType(Id id) {
         return typeProvider.getType(id);
     }
 
@@ -733,10 +733,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //            entry.addMessage("numCalls", visitor.numCalls);
             return result;
 //        }
-    }
-
-    private boolean isIdInParent(long id) {
-        return parent != null && parent.containsId(id);
     }
 
 

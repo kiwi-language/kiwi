@@ -33,7 +33,7 @@ public class RegisterController {
     }
 
     @PostMapping
-    public Result<Long> register(@RequestBody RegisterRequest request) {
+    public Result<String> register(@RequestBody RegisterRequest request) {
         return Result.success(platformUserManager.register(request));
     }
 

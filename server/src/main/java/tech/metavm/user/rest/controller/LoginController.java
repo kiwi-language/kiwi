@@ -28,7 +28,7 @@ public class LoginController {
         var loginResult = loginService.login(request, RequestUtils.getClientIP(servletRequest));
         if(loginResult.token() == null)
             throw new BusinessException(ErrorCode.AUTH_FAILED);
-        Tokens.setToken(servletResponse, Constants.PLATFORM_APP_ID, loginResult.token());
+        Tokens.setToken(servletResponse, Constants.getPlatformAppId().toString(), loginResult.token());
         return Result.success(new LoginInfo(loginResult.token().appId(), loginResult.userId()));
     }
 
@@ -44,13 +44,13 @@ public class LoginController {
 
     @GetMapping("/get-login-info")
     public Result<LoginInfo> getLoginInfo(HttpServletRequest request) {
-        var appId = NncUtils.tryParseLong(request.getHeader(Headers.APP_ID));
+        var appId = request.getHeader(Headers.APP_ID);
         if(appId != null) {
             var token = Tokens.getToken(appId, request);
             if (token != null && loginService.verify(token).isSuccessful())
-                return Result.success(new LoginInfo(ContextUtil.getAppId(), ContextUtil.getUserId()));
+                return Result.success(new LoginInfo(ContextUtil.getAppId().toString(), ContextUtil.getUserId().toString()));
         }
-        return Result.success(new LoginInfo(-1L, -1L));
+        return Result.success(new LoginInfo(null, null));
     }
 
 }

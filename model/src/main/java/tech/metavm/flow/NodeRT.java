@@ -198,8 +198,8 @@ public abstract class NodeRT extends Element implements LocalKey {
         if (getType() != null && serContext.includeNodeOutputType())
             serContext.writeType(getType());
         return new NodeDTO(
-                id, serContext.getTmpId(this),
-                getFlow().tryGetId(),
+                serContext.getRef(this),
+                getFlow().getStringId(),
                 name,
                 code,
                 kind.code(),
@@ -207,7 +207,7 @@ public abstract class NodeRT extends Element implements LocalKey {
                 NncUtils.get(getType(), serContext::getRef),
                 getParam(serContext),
                 kind.isOutputTypeAsChild() ? getTypeDTO() : null,
-                scope.tryGetId(),
+                scope.getStringId(),
                 error
         );
     }

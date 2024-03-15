@@ -5,14 +5,13 @@ import tech.metavm.common.RefDTO;
 import tech.metavm.util.NncUtils;
 
 public record FieldParamDTO (
-        Long id,
-        Long tmpId,
-        RefDTO fieldRef,
+        String id,
+        String fieldId,
         ValueDTO value
 ) implements BaseDTO {
 
-    public static FieldParamDTO create(RefDTO fieldRef, ValueDTO value) {
-        return new FieldParamDTO(null, NncUtils.randomNonNegative(), fieldRef, value);
+    public static FieldParamDTO create(String fieldId, ValueDTO value) {
+        return new FieldParamDTO(null, fieldId, value);
     }
 
 }

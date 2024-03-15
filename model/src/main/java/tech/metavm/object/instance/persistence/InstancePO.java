@@ -1,5 +1,9 @@
 package tech.metavm.object.instance.persistence;
 
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.TypeTag;
+
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -7,6 +11,7 @@ public class InstancePO {
     private long appId;
     private long id;
     private String title;
+    private int typeTag;
     private long typeId;
     private byte[] data;
     private long parentId;
@@ -21,6 +26,7 @@ public class InstancePO {
     public InstancePO(long appId,
                       long id,
                       String title,
+                      int typeTag,
                       long typeId,
                       byte[] data,
                       long parentId,
@@ -30,6 +36,7 @@ public class InstancePO {
                       long syncVersion) {
         this.appId = appId;
         this.id = id;
+        this.typeTag = typeTag;
         this.typeId = typeId;
         this.rootId = rootId;
         this.parentId = parentId;
@@ -57,6 +64,10 @@ public class InstancePO {
 
     public long getId() {
         return id;
+    }
+
+    public Id getInstanceId() {
+        return PhysicalId.of(id, TypeTag.fromCode(typeTag), typeId);
     }
 
     public byte[] getData() {
@@ -115,6 +126,14 @@ public class InstancePO {
         this.syncVersion = syncVersion;
     }
 
+    public int getTypeTag() {
+        return typeTag;
+    }
+
+    public void setTypeTag(int typeTag) {
+        this.typeTag = typeTag;
+    }
+
     public VersionPO nextVersion() {
         return new VersionPO(
                 appId, id, version + 1
@@ -150,7 +169,7 @@ public class InstancePO {
     }
 
     public InstancePO copy() {
-        return new InstancePO(appId, id, title, typeId, data, parentId, parentFieldId, rootId, version, syncVersion);
+        return new InstancePO(appId, id, title, typeTag, typeId, data, parentId, parentFieldId, rootId, version, syncVersion);
     }
 
 }

@@ -2,7 +2,6 @@ package tech.metavm.object.type.rest.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.common.BaseDTO;
-import tech.metavm.common.RefDTO;
 import tech.metavm.flow.rest.GenericDeclarationDTO;
 import tech.metavm.util.InternalException;
 
@@ -10,8 +9,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record TypeDTO(
-        Long id,
-        Long tmpId,
+        String id,
         String name,
         @Nullable String code,
         int category,
@@ -57,9 +55,9 @@ public record TypeDTO(
 
     @JsonIgnore
     @Override
-    public List<RefDTO> typeParameterRefs() {
+    public List<String> typeParameterIds() {
         if(param instanceof ClassTypeParam classTypeParam)
-            return classTypeParam.typeParameterRefs();
+            return classTypeParam.typeParameterIds();
         else
             throw new InternalException("Not a generic declaration");
     }

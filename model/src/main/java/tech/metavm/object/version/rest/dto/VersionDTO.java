@@ -4,7 +4,7 @@ import java.util.List;
 
 public record VersionDTO(
         long version,
-        List<Long> changedTypeIds,
-        List<Long> removedTypeIds
+        List<String> changedTypeIds,
+        List<String> removedTypeIds
 ) {
 }

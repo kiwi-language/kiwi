@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceProvider;
 import tech.metavm.object.type.ArrayTypeProvider;
@@ -18,7 +19,7 @@ public class SubParsingContext implements ParsingContext {
     }
 
     @Override
-    public Instance getInstance(long id) {
+    public Instance getInstance(Id id) {
         return parent.getInstance(id);
     }
 

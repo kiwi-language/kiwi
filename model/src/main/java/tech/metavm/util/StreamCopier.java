@@ -1,5 +1,7 @@
 package tech.metavm.util;
 
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.system.RegionConstants;
 
 import java.io.InputStream;
@@ -33,13 +35,13 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitRecord() {
         output.write(WireTypes.RECORD);
-        long id = readLong();
-        output.writeLong(id);
+        var id = readId();
+        output.writeId(id);
         visitRecordBody(id);
     }
 
     @Override
-    public void visitRecordBody(long id) {
+    public void visitRecordBody(PhysicalId id) {
         if (RegionConstants.isArrayId(id)) {
             int len = readInt();
             output.writeInt(len);
@@ -103,6 +105,10 @@ public class StreamCopier extends StreamVisitor {
 
     public void write(int b) {
         output.write(b);
+    }
+
+    public void writeId(PhysicalId id) {
+        output.writeId(id);
     }
 
     @Override

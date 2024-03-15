@@ -53,7 +53,7 @@ public class FunctionType extends CompositeType {
 
     @Override
     public TypeKey getTypeKey() {
-        return new FunctionTypeKey(NncUtils.map(parameterTypes, Type::getRef), returnType.getRef());
+        return new FunctionTypeKey(NncUtils.map(parameterTypes, Type::getStringId), returnType.getStringId());
     }
 
     @Override

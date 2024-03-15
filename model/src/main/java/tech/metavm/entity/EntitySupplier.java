@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -36,15 +37,15 @@ public class EntitySupplier {
         );
     }
 
-    private final long id;
+    private final Id id;
     private final Supplier<Entity> creator;
 
-    public EntitySupplier(long id, Supplier<Entity> creator) {
+    public EntitySupplier(Id id, Supplier<Entity> creator) {
         this.id = id;
         this.creator = creator;
     }
 
-    public long getId() {
+    public Id getId() {
         return id;
     }
 

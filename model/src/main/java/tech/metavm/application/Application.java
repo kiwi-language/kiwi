@@ -50,7 +50,7 @@ public class Application extends Entity {
     }
 
     public ApplicationDTO toDTO() {
-        return new ApplicationDTO(getId(), name, owner.getId());
+        return new ApplicationDTO(getStringId(), name, owner.getStringId());
     }
 
     public void addAdmin(PlatformUser user) {

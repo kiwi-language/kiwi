@@ -2,7 +2,6 @@ package tech.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import tech.metavm.common.RefDTO;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -16,24 +15,24 @@ import java.util.List;
 )
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "callKind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class CallNodeParam {
-    private final RefDTO flowRef;
+    private final String flowId;
     @Nullable
-    private final RefDTO typeRef;
+    private final String typeId;
     private final List<ArgumentDTO> arguments;
 
-    public CallNodeParam(RefDTO flowRef, @Nullable RefDTO typeRef, List<ArgumentDTO> arguments) {
-        this.flowRef = flowRef;
-        this.typeRef = typeRef;
+    public CallNodeParam(String flowId, @Nullable String typeId, List<ArgumentDTO> arguments) {
+        this.flowId = flowId;
+        this.typeId = typeId;
         this.arguments = arguments;
     }
 
-    public RefDTO getFlowRef() {
-        return flowRef;
+    public String getFlowId() {
+        return flowId;
     }
 
     @Nullable
-    public RefDTO getTypeRef() {
-        return typeRef;
+    public String getTypeId() {
+        return typeId;
     }
 
     public List<ArgumentDTO> getArguments() {

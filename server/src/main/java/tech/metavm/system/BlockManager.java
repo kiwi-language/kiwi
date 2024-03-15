@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import tech.metavm.system.persistence.BlockMapper;
 import tech.metavm.system.persistence.BlockPO;
 import tech.metavm.system.rest.dto.BlockDTO;
+import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -28,7 +29,8 @@ public class BlockManager {
 
     private BlockDTO toDTO(BlockPO blockPO) {
         return new BlockDTO(
-                blockPO.getId(), blockPO.getAppId(), blockPO.getTypeId(), blockPO.getStartId(),
+                blockPO.getId(), Constants.getAppId(blockPO.getAppId()).toString(),
+                blockPO.getTypeTag(), blockPO.getTypeId(), blockPO.getStartId(),
                 blockPO.getEndId(), blockPO.getNextId(), blockPO.getActive()
         );
     }

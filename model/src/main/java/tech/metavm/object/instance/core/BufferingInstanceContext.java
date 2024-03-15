@@ -12,12 +12,14 @@ import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
+
 public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     protected final LoadingBuffer loadingBuffer;
     protected final IdInitializer idInitializer;
 
-    public BufferingInstanceContext(long appId,
+    public BufferingInstanceContext(Id appId,
                                     List<TreeSource> treeSources,
                                     VersionSource versionSource,
                                     IndexSource indexSource,
@@ -38,22 +40,20 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         if (parent != null && parent.contains(id))
             parent.buffer(id);
         else {
-            var physicalId = id.tryGetPhysicalId();
-            if (physicalId != null)
-                loadingBuffer.buffer(physicalId);
+            loadingBuffer.buffer(id);
         }
     }
 
-    @Override
-    protected long getTypeId(long id) {
-        return idInitializer.getTypeId(id);
-    }
+//    @Override
+//    protected long getTypeId(long id) {
+//        return idInitializer.getTypeId(id);
+//    }
 
     @Override
     protected void initializeInstance(DurableInstance instance) {
-        var tree = loadingBuffer.getTree(instance.getPhysicalId());
+        var tree = loadingBuffer.getTree(instance.getId());
         onTreeLoaded(tree);
-        var input = new InstanceInput(new ByteArrayInputStream(tree.data()), id -> internalGet(new PhysicalId(id)));
+        var input = new InstanceInput(new ByteArrayInputStream(tree.data()), this::internalGet);
         readInstance(input);
     }
 
@@ -75,12 +75,12 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    protected boolean checkAliveInStore(long id) {
+    protected boolean checkAliveInStore(Id id) {
         return loadingBuffer.tryGetTree(id) != null;
     }
 
     @Override
     public void invalidateCache(DurableInstance instance) {
-        loadingBuffer.invalidateCache(List.of(instance.getPhysicalId()));
+        loadingBuffer.invalidateCache(List.of(requireNonNull(instance.getId())));
     }
 }

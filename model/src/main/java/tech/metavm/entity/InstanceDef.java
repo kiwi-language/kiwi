@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.type.AnyType;
 import tech.metavm.object.type.Type;
@@ -21,7 +21,7 @@ public class InstanceDef<I extends DurableInstance> extends ModelDef<I, I> {
     }
 
     @Override
-    public I createInstance(I model, ObjectInstanceMap instanceMap, Long id) {
+    public I createInstance(I model, ObjectInstanceMap instanceMap, Id id) {
         return model;
     }
 

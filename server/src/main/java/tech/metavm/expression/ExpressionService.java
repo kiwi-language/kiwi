@@ -12,6 +12,7 @@ import tech.metavm.flow.ScopeRT;
 import tech.metavm.flow.ValueKind;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
@@ -56,10 +57,10 @@ public class ExpressionService extends EntityContextFactoryBean {
         }
     }
 
-    public List<InstanceSearchItemDTO> parseSearchText(long typeId, String searchText) {
+    public List<InstanceSearchItemDTO> parseSearchText(String typeId, String searchText) {
         try (var entityContext = newContext()) {
             var context = entityContext.getInstanceContext();
-            ClassType type = context.getClassType(typeId);
+            ClassType type = context.getClassType(Id.parse(typeId));
             Expression expression = ExpressionParser.parse(searchText, TypeParsingContext.create(type, entityContext));
             return parseExpression(expression);
         }
@@ -99,7 +100,7 @@ public class ExpressionService extends EntityContextFactoryBean {
             searchValue = primitiveInstance.getValue();
         else
             searchValue = NncUtils.requireNonNull(((DurableInstance) constExpr.getValue()).tryGetPhysicalId());
-        return new InstanceSearchItemDTO(fieldExpr.getProperty().getId(), searchValue);
+        return new InstanceSearchItemDTO(fieldExpr.getProperty().getIdRequired().getPhysicalId(), searchValue);
     }
 
     private String extractExpr(ValueDTO value) throws ExpressionParsingException {

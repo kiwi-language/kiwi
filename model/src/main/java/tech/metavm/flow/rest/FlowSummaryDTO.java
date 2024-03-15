@@ -1,15 +1,13 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.common.RefDTO;
-
 import java.util.List;
 
 public record FlowSummaryDTO(
-    Long id,
+    String id,
     String name,
-    Long typeId,
+    String typeId,
     List<ParameterDTO> parameters,
-    RefDTO returnTypeRef,
+    String returnTypeId,
     boolean inputRequired,
     boolean isConstructor,
     int state

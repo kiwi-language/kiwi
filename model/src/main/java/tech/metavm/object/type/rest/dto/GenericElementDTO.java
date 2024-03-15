@@ -1,24 +1,22 @@
 package tech.metavm.object.type.rest.dto;
 
-import tech.metavm.common.RefDTO;
-
 import java.util.function.Consumer;
 
 public class GenericElementDTO {
-    private final RefDTO templateRef;
-    private final RefDTO ref;
+    private final String templateId;
+    private final String id;
 
-    public GenericElementDTO(RefDTO templateRef, RefDTO ref) {
-        this.templateRef = templateRef;
-        this.ref = ref;
+    public GenericElementDTO(String templateId, String id) {
+        this.templateId = templateId;
+        this.id = id;
     }
 
-    public RefDTO getTemplateRef() {
-        return templateRef;
+    public String getTemplateId() {
+        return templateId;
     }
 
-    public RefDTO getRef() {
-        return ref;
+    public String getId() {
+        return id;
     }
 
     public void forEachDescendant(Consumer<GenericElementDTO> action) {

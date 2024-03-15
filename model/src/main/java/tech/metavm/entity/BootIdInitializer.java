@@ -1,7 +1,9 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.object.type.BootIdProvider;
 
 import java.util.ArrayList;
@@ -21,19 +23,19 @@ public class BootIdInitializer implements IdInitializer {
     }
 
     @Override
-    public long getTypeId(long id) {
+    public TypeId getTypeId(Id id) {
         return bootIdProvider.getTypeId(id);
     }
 
     @Override
-    public void initializeIds(long appId, Collection<? extends DurableInstance> instances) {
+    public void initializeIds(Id appId, Collection<? extends DurableInstance> instances) {
         List<DurableInstance> toInitialize = new ArrayList<>();
         for (DurableInstance instance : instances) {
             var entity = instance.getMappedEntity();
             if(entity != null) {
                 var id = bootIdProvider.getId(identityContext.getModelId(entity));
                 if(id != null) {
-                    instance.initId(PhysicalId.of(id));
+                    instance.initId(PhysicalId.of(id, instance.getType()));
                     continue;
                 }
             }

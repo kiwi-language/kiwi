@@ -34,7 +34,7 @@ public class StaticPropertyExpression extends Expression {
             return switch (symbolType) {
                 case NAME -> property.getDeclaringType().getName() + "." + property.getName();
                 case ID -> idVarName(property.getDeclaringType().getId()) + "." +
-                        idVarName(property.getId());
+                        idVarName(property.getIdRequired());
             };
         }
     }

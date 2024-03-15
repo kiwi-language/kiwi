@@ -1,5 +1,6 @@
 package tech.metavm.object.type;
 
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
@@ -10,8 +11,6 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
-
-import static tech.metavm.util.NncUtils.encodeBase64;
 
 @EntityType("复合类型")
 public abstract class CompositeType extends Type {
@@ -70,6 +69,6 @@ public abstract class CompositeType extends Type {
     }
 
     public static String getKey(List<Type> componentTypes) {
-        return NncUtils.join(componentTypes, typeArg -> encodeBase64(typeArg.getId()), "-");
+        return NncUtils.join(componentTypes, Entity::getStringId, "-");
     }
 }

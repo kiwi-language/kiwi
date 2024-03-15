@@ -2,15 +2,22 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.LocalKey;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 
+import static java.util.Objects.requireNonNull;
+
 @EntityType("属性")
 public interface Property extends ClassMember, LocalKey {
 
-    Long tryGetId();
+    @Nullable Id tryGetId();
+
+    default Id getIdRequired() {
+        return requireNonNull(tryGetId());
+    }
 
     String getName();
 
@@ -61,13 +68,13 @@ public interface Property extends ClassMember, LocalKey {
         return getAccess() == Access.PROTECTED;
     }
 
-    default long getId() {
-        return Objects.requireNonNull(tryGetId());
-    }
+//    default Id getId() {
+//        return Objects.requireNonNull(tryGetId());
+//    }
 
-    default boolean idEquals(long id) {
+    default boolean idEquals(Id id) {
         var selfId = tryGetId();
-        return selfId != null && selfId == id;
+        return selfId != null && selfId.equals(id);
     }
 
 }

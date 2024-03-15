@@ -1,6 +1,5 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
 
@@ -9,27 +8,26 @@ import java.util.List;
 
 public record TryEndFieldDTO(
         String name,
-        RefDTO fieldRef,
-        RefDTO typeRef,
+        String fieldId,
+        String typeId,
         List<TryEndValueDTO> values,
         ValueDTO defaultValue
 ) implements FieldReferringDTO<TryEndFieldDTO> {
 
     @Override
-    public TryEndFieldDTO copyWithFieldRef(RefDTO fieldRef) {
+    public TryEndFieldDTO copyWithFieldId(String fieldId) {
         return new TryEndFieldDTO(
                 name,
-                fieldRef,
-                typeRef,
+                fieldId,
+                typeId,
                 new ArrayList<>(values),
                 defaultValue
         );
     }
 
     public FieldDTO toFieldDTO() {
-        return FieldDTOBuilder.newBuilder(name, typeRef)
-                .tmpId(fieldRef().tmpId())
-                .id(fieldRef.id())
+        return FieldDTOBuilder.newBuilder(name, typeId)
+                .id(fieldId)
                 .readonly(true)
                 .build();
     }

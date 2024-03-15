@@ -17,15 +17,14 @@ public class FieldData extends Entity {
 
     public static FieldData fromFieldDTO(FieldDTO fieldDTO, IEntityContext context) {
         var declaringType = context.getClassType(fieldDTO.declaringTypeId());
-        var fieldType = context.getType(fieldDTO.typeRef());
+        var fieldType = context.getType(fieldDTO.typeId());
         var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
         var column = declaringType.allocateColumn(fieldType, null);
-        FieldData data = new FieldData(
+        return new FieldData(
                 fieldDTO.tmpId(),
                 fieldDTO.name(), fieldDTO.code(), column, fieldDTO.unique(),
                 declaringType, Access.getByCode(fieldDTO.access()), fieldType, fieldDTO.isChild(),
                 fieldDTO.isStatic(), Instances.nullInstance(), defaultValue);
-        return data;
     }
 
     private final String name;
@@ -107,7 +106,7 @@ public class FieldData extends Entity {
         return new CreatingFieldDTO(
                 name,
                 code,
-                type.getId(),
+                type.getStringId(),
                 type.getName(),
                 unique
         );

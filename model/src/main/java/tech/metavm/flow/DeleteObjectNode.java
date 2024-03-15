@@ -5,6 +5,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.DeleteObjectNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 
 import javax.annotation.Nullable;
 
@@ -15,7 +16,7 @@ public class DeleteObjectNode extends NodeRT {
         DeleteObjectNodeParam param = nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var objectId = ValueFactory.create(param.objectId(), parsingContext);
-        DeleteObjectNode node = (DeleteObjectNode) context.getNode(nodeDTO.getRef());
+        DeleteObjectNode node = (DeleteObjectNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null)
             node.setObject(objectId);
         else

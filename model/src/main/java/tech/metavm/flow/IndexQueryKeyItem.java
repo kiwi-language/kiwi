@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.IndexQueryKeyItemDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.IndexField;
 
 import static java.util.Objects.requireNonNull;
@@ -13,7 +14,7 @@ public class IndexQueryKeyItem extends Entity {
 
     public static IndexQueryKeyItem create(IndexQueryKeyItemDTO itemDTO, IEntityContext context, ParsingContext parsingContext) {
         return new IndexQueryKeyItem(
-                requireNonNull(context.getEntity(IndexField.class, itemDTO.indexFieldRef())),
+                requireNonNull(context.getEntity(IndexField.class, Id.parse(itemDTO.indexFieldId()))),
                 ValueFactory.create(itemDTO.value(), parsingContext)
         );
     }

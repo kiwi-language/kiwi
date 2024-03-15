@@ -1,35 +1,33 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.common.RefDTO;
-
 import javax.annotation.Nullable;
 import java.util.List;
 
 public class LambdaNodeParam extends ScopeNodeParamDTO {
 
     private final List<ParameterDTO> parameters;
-    private final RefDTO returnTypeRef;
+    private final String returnTypeId;
     @Nullable
-    private final RefDTO functionalInterfaceRef;
+    private final String functionalInterfaceId;
 
-    public LambdaNodeParam(ScopeDTO bodyScope, List<ParameterDTO> parameters, RefDTO returnTypeRef,
-                           @Nullable RefDTO functionalInterfaceRef) {
+    public LambdaNodeParam(ScopeDTO bodyScope, List<ParameterDTO> parameters, String returnTypeId,
+                           @Nullable String functionalInterfaceId) {
         super(bodyScope);
         this.parameters = parameters;
-        this.returnTypeRef = returnTypeRef;
-        this.functionalInterfaceRef = functionalInterfaceRef;
+        this.returnTypeId = returnTypeId;
+        this.functionalInterfaceId = functionalInterfaceId;
     }
 
     public List<ParameterDTO> getParameters() {
         return parameters;
     }
 
-    public RefDTO getReturnTypeRef() {
-        return returnTypeRef;
+    public String getReturnTypeId() {
+        return returnTypeId;
     }
 
     @Nullable
-    public RefDTO getFunctionalInterfaceRef() {
-        return functionalInterfaceRef;
+    public String getFunctionalInterfaceId() {
+        return functionalInterfaceId;
     }
 }

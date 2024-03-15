@@ -9,7 +9,7 @@ public record TypeQuery(
         boolean includeAnonymous,
         boolean includeBuiltin,
         Boolean error,
-        List<Long> newlyCreated,
+        List<String> newlyCreated,
         int page,
         int pageSize
 ) {

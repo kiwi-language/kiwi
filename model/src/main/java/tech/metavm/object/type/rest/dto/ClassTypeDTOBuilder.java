@@ -2,9 +2,7 @@ package tech.metavm.object.type.rest.dto;
 
 import tech.metavm.common.BaseDTO;
 import tech.metavm.common.ErrorDTO;
-import tech.metavm.common.RefDTO;
 import tech.metavm.flow.rest.FlowDTO;
-import tech.metavm.object.instance.core.ClassInstanceBuilder;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.util.NncUtils;
@@ -22,7 +20,7 @@ public class ClassTypeDTOBuilder {
     private final String name;
     private int category = TypeCategoryCodes.CLASS;
     @Nullable
-    private Long id;
+    private String id;
     @Nullable
     private Long tmpId;
     @Nullable
@@ -34,36 +32,36 @@ public class ClassTypeDTOBuilder {
     private boolean ephemeral;
     private boolean anonymous;
     @Nullable
-    private RefDTO superClassRef;
-    private List<RefDTO> interfaceRefs = new ArrayList<>();
+    private String superClassId;
+    private List<String> interfaceIds = new ArrayList<>();
     private List<FieldDTO> fields = new ArrayList<>();
     private List<FieldDTO> staticFields = new ArrayList<>();
     @Nullable
-    private RefDTO titleFieldRef;
+    private String titleFieldId;
     private List<ConstraintDTO> constraints = new ArrayList<>();
     private List<FlowDTO> flows = new ArrayList<>();
     private List<ObjectMappingDTO> mappings = new ArrayList<>();
-    private RefDTO defaultMappingRef;
+    private String defaultMappingId;
     private int source = ClassSourceCodes.RUNTIME;
     private boolean isAbstract;
     private boolean isTemplate;
-    private RefDTO templateRef;
-    private List<RefDTO> typeArgumentRefs = new ArrayList<>();
+    private String templateId;
+    private List<String> typeArgumentIds = new ArrayList<>();
     private List<TypeDTO> typeParameters = new ArrayList<>();
-    private List<RefDTO> typeParameterRefs = new ArrayList<>();
-    private List<RefDTO> dependencyRefs = new ArrayList<>();
+    private List<String> typeParameterIds = new ArrayList<>();
+    private List<String> dependencyIds = new ArrayList<>();
     private boolean hasSubTypes;
     private boolean struct;
     private List<InstanceDTO> enumConstants = new ArrayList<>();
     private List<ErrorDTO> errors = new ArrayList<>();
     @Nullable
-    private RefDTO sourceMappingRef;
+    private String sourceMappingId;
 
     private ClassTypeDTOBuilder(String name) {
         this.name = name;
     }
 
-    public ClassTypeDTOBuilder id(Long id) {
+    public ClassTypeDTOBuilder id(String id) {
         this.id = id;
         return this;
     }
@@ -88,8 +86,8 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder interfaceRefs(List<RefDTO> interfaceRefs) {
-        this.interfaceRefs = new ArrayList<>(interfaceRefs);
+    public ClassTypeDTOBuilder interfaceIds(List<String> interfaceIds) {
+        this.interfaceIds = new ArrayList<>(interfaceIds);
         return this;
     }
 
@@ -98,8 +96,8 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder titleFieldRef(RefDTO titleFieldRef) {
-        this.titleFieldRef = titleFieldRef;
+    public ClassTypeDTOBuilder titleFieldId(String titleFieldId) {
+        this.titleFieldId = titleFieldId;
         return this;
     }
 
@@ -158,8 +156,8 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder defaultMappingRef(RefDTO defaultMappingRef) {
-        this.defaultMappingRef = defaultMappingRef;
+    public ClassTypeDTOBuilder defaultMappingId(String defaultMappingId) {
+        this.defaultMappingId = defaultMappingId;
         return this;
     }
 
@@ -168,8 +166,8 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder superClassRef(RefDTO superClassRef) {
-        this.superClassRef = superClassRef;
+    public ClassTypeDTOBuilder superClassId(String superClassId) {
+        this.superClassId = superClassId;
         return this;
     }
 
@@ -178,8 +176,8 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder templateRef(RefDTO templateRef) {
-        this.templateRef = templateRef;
+    public ClassTypeDTOBuilder templateId(String templateId) {
+        this.templateId = templateId;
         return this;
     }
 
@@ -207,54 +205,54 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder typeArgumentRefs(List<RefDTO> typeArgumentRefs) {
-        this.typeArgumentRefs = new ArrayList<>(typeArgumentRefs);
+    public ClassTypeDTOBuilder typeArgumentIds(List<String> typeArgumentIds) {
+        this.typeArgumentIds = new ArrayList<>(typeArgumentIds);
         return this;
     }
 
-    public ClassTypeDTOBuilder dependencyRefs(List<RefDTO> dependencyRefs) {
-        this.dependencyRefs = new ArrayList<>(dependencyRefs);
+    public ClassTypeDTOBuilder dependencyIds(List<String> dependencyIds) {
+        this.dependencyIds = new ArrayList<>(dependencyIds);
         return this;
     }
 
-    public ClassTypeDTOBuilder sourceMappingRef(RefDTO sourceMappingRef) {
-        this.sourceMappingRef = sourceMappingRef;
+    public ClassTypeDTOBuilder sourceMappingId(String sourceMappingId) {
+        this.sourceMappingId = sourceMappingId;
         return this;
     }
 
     public ClassTypeDTOBuilder typeParameters(List<TypeDTO> typeParameters) {
         this.typeParameters = new ArrayList<>(typeParameters);
-        this.typeParameterRefs= NncUtils.map(typeParameters, BaseDTO::getRef);
+        this.typeParameterIds = NncUtils.map(typeParameters, BaseDTO::id);
         return this;
     }
 
-    public ClassTypeDTOBuilder typeParameterRefs(List<RefDTO> typeParameterRefs) {
-        this.typeParameterRefs = new ArrayList<>(typeParameterRefs);
+    public ClassTypeDTOBuilder typeParameterIds(List<String> typeParameterIds) {
+        this.typeParameterIds = new ArrayList<>(typeParameterIds);
         return this;
     }
 
     private ClassTypeParam buildClassTypeParam() {
         return new ClassTypeParam(
-                superClassRef,
-                interfaceRefs,
+                superClassId,
+                interfaceIds,
                 source,
                 fields,
                 staticFields,
-                titleFieldRef,
+                titleFieldId,
                 constraints,
                 flows,
                 mappings,
-                defaultMappingRef,
+                defaultMappingId,
                 desc,
                 extra,
                 enumConstants,
                 isAbstract,
                 isTemplate,
-                typeParameterRefs,
+                typeParameterIds,
                 typeParameters,
-                templateRef,
-                typeArgumentRefs,
-                dependencyRefs,
+                templateId,
+                typeArgumentIds,
+                dependencyIds,
                 hasSubTypes,
                 struct,
                 errors
@@ -264,7 +262,6 @@ public class ClassTypeDTOBuilder {
     public TypeDTO build() {
         return new TypeDTO(
                 id,
-                tmpId,
                 name,
                 code,
                 category,

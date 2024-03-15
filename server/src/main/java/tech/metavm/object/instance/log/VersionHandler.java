@@ -31,8 +31,8 @@ public class VersionHandler implements LogHandler<Version> {
     public void process(List<Version> created, @Nullable String clientId, IEntityContext context) {
         if (!created.isEmpty()) {
             long maxVersion = 0L;
-            Set<Long> typeIds = new HashSet<>();
-            Set<Long> functionIds = new HashSet<>();
+            Set<String> typeIds = new HashSet<>();
+            Set<String> functionIds = new HashSet<>();
             for (Version version : created) {
                 maxVersion = Math.max(maxVersion, version.getVersion());
                 typeIds.addAll(version.getRemovedTypeIds());
@@ -42,12 +42,12 @@ public class VersionHandler implements LogHandler<Version> {
             }
             if (!typeIds.isEmpty()) {
                 eventQueue.publishAppEvent(
-                        new TypeChangeEvent(context.getAppId(), maxVersion, new ArrayList<>(typeIds), clientId)
+                        new TypeChangeEvent(context.getAppId().toString(), maxVersion, new ArrayList<>(typeIds), clientId)
                 );
             }
             if (!functionIds.isEmpty()) {
                 eventQueue.publishAppEvent(
-                        new FunctionChangeEvent(context.getAppId(), maxVersion, new ArrayList<>(functionIds), clientId)
+                        new FunctionChangeEvent(context.getAppId().toString(), maxVersion, new ArrayList<>(functionIds), clientId)
                 );
             }
         }

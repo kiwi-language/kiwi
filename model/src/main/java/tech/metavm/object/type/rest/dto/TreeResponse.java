@@ -7,6 +7,6 @@ import java.util.List;
 public record TreeResponse(
         long version,
         List<TreeDTO> trees,
-        List<Long> removedIds
+        List<String> removedIds
 ) {
 }

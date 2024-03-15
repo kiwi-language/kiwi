@@ -5,6 +5,7 @@ import tech.metavm.expression.ParsingContext;
 import tech.metavm.expression.TypeParsingContext;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.ValueFactory;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.ConstraintDTO;
 import tech.metavm.object.type.rest.dto.IndexFieldDTO;
 import tech.metavm.util.InternalException;
@@ -17,7 +18,7 @@ import java.util.List;
 public class ConstraintFactory {
 
     public static Constraint save(ConstraintDTO constraintDTO, IEntityContext context) {
-        var constraint = context.getEntity(Constraint.class, constraintDTO.getRef());
+        var constraint = context.getEntity(Constraint.class, constraintDTO.id());
         if (constraint != null) {
             constraint.update(constraintDTO, context);
             return constraint;
@@ -27,7 +28,7 @@ public class ConstraintFactory {
     }
 
     public static Constraint createFromDTO(ConstraintDTO constraintDTO, IEntityContext entityContext) {
-        ClassType type = entityContext.getClassType(constraintDTO.typeRef());
+        ClassType type = entityContext.getClassType(constraintDTO.typeId());
         ParsingContext parsingContext = TypeParsingContext.create(type, entityContext);
         String message = constraintDTO.message();
         if (constraintDTO.param() instanceof IndexParam) {
@@ -87,7 +88,7 @@ public class ConstraintFactory {
     public static void update(ConstraintDTO constraintDTO, IEntityContext entityContext) {
         Constraint constraint = entityContext.getEntity(new TypeReference<>() {
         }, constraintDTO.id());
-        ClassType type = entityContext.getClassType(constraintDTO.typeRef());
+        ClassType type = entityContext.getClassType(constraintDTO.typeId());
         ParsingContext parsingContext = TypeParsingContext.create(type, entityContext);
         constraint.update(constraintDTO, entityContext);
         if (constraint instanceof Index indexConstraint) {
@@ -105,7 +106,7 @@ public class ConstraintFactory {
             if (fieldDTO.id() == null) {
                 new IndexField(index, fieldDTO.name(), fieldDTO.code(), value);
             } else {
-                IndexField item = index.getField(fieldDTO.id());
+                IndexField item = index.getField(Id.parse(fieldDTO.id()));
                 item.setName(fieldDTO.name());
                 item.setCode(fieldDTO.code());
                 item.setValue(value);

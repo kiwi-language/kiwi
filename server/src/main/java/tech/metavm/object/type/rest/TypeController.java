@@ -43,7 +43,7 @@ public class TypeController {
     }
 
     @GetMapping("/{id:[0-9]+}/descendants")
-    public Result<GetTypesResponse> getDescendants(@PathVariable("id") long id) {
+    public Result<GetTypesResponse> getDescendants(@PathVariable("id") String id) {
         return Result.success(typeManager.getDescendants(id));
     }
 
@@ -69,28 +69,28 @@ public class TypeController {
     }
 
     @GetMapping("/{id:[0-9]+}/creating-fields")
-    public Result<List<CreatingFieldDTO>> getCreatingFields(@PathVariable("id") long id) {
+    public Result<List<CreatingFieldDTO>> getCreatingFields(@PathVariable("id") String id) {
         return Result.success(typeManager.getCreatingFields(id));
     }
 
     @PostMapping
-    public Result<Long> save(@RequestBody TypeDTO typeDTO) {
+    public Result<String> save(@RequestBody TypeDTO typeDTO) {
         return Result.success(typeManager.saveType(typeDTO).id());
     }
 
     @PostMapping("/batch")
-    public Result<List<Long>> batchSave(@RequestBody BatchSaveRequest request) {
+    public Result<List<String>> batchSave(@RequestBody BatchSaveRequest request) {
         return Result.success(typeManager.batchSave(request));
     }
 
     @PostMapping("/batch-delete")
-    public Result<Void> batchRemove(@RequestBody List<Long> typeIds) {
+    public Result<Void> batchRemove(@RequestBody List<String> typeIds) {
         typeManager.batchRemove(typeIds);
         return Result.voidSuccess();
     }
 
     @PostMapping("/enum-constant")
-    public Result<Long> saveEnumConstant(@RequestBody InstanceDTO instanceDTO) {
+    public Result<String> saveEnumConstant(@RequestBody InstanceDTO instanceDTO) {
         return Result.success(typeManager.saveEnumConstant(instanceDTO));
     }
 
@@ -101,33 +101,33 @@ public class TypeController {
     }
 
     @GetMapping("/{id:[0-9]+}/array")
-    public Result<TypeDTO> getArrayType(@PathVariable("id") long id) {
+    public Result<TypeDTO> getArrayType(@PathVariable("id") String id) {
         return Result.success(typeManager.getArrayType(id, ArrayKind.READ_WRITE.code()).type());
     }
 
     @GetMapping("/{id:[0-9]+}/nullable")
-    public Result<TypeDTO> getNullableType(@PathVariable("id") long id) {
+    public Result<TypeDTO> getNullableType(@PathVariable("id") String id) {
         return Result.success(typeManager.getNullableType(id));
     }
 
     @GetMapping("/{id:[0-9]+}/nullable-array")
-    public Result<TypeDTO> getNullableArrayType(@PathVariable("id") long id) {
+    public Result<TypeDTO> getNullableArrayType(@PathVariable("id") String id) {
         return Result.success(typeManager.getNullableArrayType(id));
     }
 
     @DeleteMapping("/{id:[0-9]+}")
-    public Result<Void> delete(@PathVariable("id") long id) {
+    public Result<Void> delete(@PathVariable("id") String id) {
         typeManager.remove(id);
         return Result.success(null);
     }
 
     @GetMapping("/field/{id:[0-9]+}")
-    public Result<GetFieldResponse> getField(@PathVariable("id") long fieldId) {
+    public Result<GetFieldResponse> getField(@PathVariable("id") String fieldId) {
         return Result.success(typeManager.getField(fieldId));
     }
 
     @PostMapping("/field")
-    public Result<Long> saveField(@RequestBody FieldDTO field) {
+    public Result<String> saveField(@RequestBody FieldDTO field) {
         return Result.success(typeManager.saveField(field));
     }
 
@@ -138,13 +138,13 @@ public class TypeController {
     }
 
     @DeleteMapping("/field/{id:[0-9]+}")
-    public Result<Void> deleteField(@PathVariable("id") long id) {
+    public Result<Void> deleteField(@PathVariable("id") String id) {
         typeManager.removeField(id);
         return Result.success(null);
     }
 
     @PostMapping("/field/{id:[0-9]+}/set-as-title")
-    public Result<Void> setAsTitle(@PathVariable("id") long id) {
+    public Result<Void> setAsTitle(@PathVariable("id") String id) {
         typeManager.setFieldAsTitle(id);
         return Result.success(null);
     }
@@ -176,7 +176,7 @@ public class TypeController {
 
     @GetMapping("/constraint")
     public Result<Page<ConstraintDTO>> listConstraint(
-            @RequestParam("typeId") long typeId,
+            @RequestParam("typeId") String typeId,
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "pagSize", defaultValue = "20") int pageSize
     ) {
@@ -184,7 +184,7 @@ public class TypeController {
     }
 
     @GetMapping("/constraint/{id:[0-9]+}")
-    public Result<ConstraintDTO> getConstraint(@PathVariable("id") long id) {
+    public Result<ConstraintDTO> getConstraint(@PathVariable("id") String id) {
         return Result.success(typeManager.getConstraint(id));
     }
 
@@ -194,24 +194,24 @@ public class TypeController {
     }
 
     @PostMapping("/constraint")
-    public Result<Long> saveConstraint(@RequestBody ConstraintDTO constraint) {
+    public Result<String> saveConstraint(@RequestBody ConstraintDTO constraint) {
         return Result.success(typeManager.saveConstraint(constraint));
     }
 
     @PostMapping("/init-composite-types/{id}")
-    public Result<Void> initCompositeTypes(@PathVariable long id) {
+    public Result<Void> initCompositeTypes(@PathVariable String id) {
         typeManager.initCompositeTypes(id);
         return Result.voidSuccess();
     }
 
     @DeleteMapping("/constraint/{id:[0-9]+}")
-    public Result<Void> removeConstraint(@PathVariable("id") long id) {
+    public Result<Void> removeConstraint(@PathVariable("id") String id) {
         typeManager.removeConstraint(id);
         return Result.voidSuccess();
     }
 
     @GetMapping("/primitive-map")
-    public Result<Map<Integer, Long>> getPrimitiveMap() {
+    public Result<Map<Integer, String>> getPrimitiveMap() {
         return Result.success(typeManager.getPrimitiveMap());
     }
 

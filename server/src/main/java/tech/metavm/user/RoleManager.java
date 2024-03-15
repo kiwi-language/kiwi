@@ -32,7 +32,7 @@ public class RoleManager extends EntityContextFactoryBean{
         );
     }
 
-    public RoleDTO get(long id) {
+    public RoleDTO get(String id) {
         try (var context = newContext()) {
             Role role = context.getEntity(Role.class, id);
             NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));
@@ -41,11 +41,11 @@ public class RoleManager extends EntityContextFactoryBean{
     }
 
     @Transactional
-    public long save(RoleDTO roleDTO) {
+    public String save(RoleDTO roleDTO) {
         try (var context = newContext()) {
             Role role = save(roleDTO, context);
             context.finish();
-            return role.getId();
+            return role.getStringId();
         }
     }
 
@@ -63,7 +63,7 @@ public class RoleManager extends EntityContextFactoryBean{
     }
 
     @Transactional
-    public void delete(long id) {
+    public void delete(String id) {
         try (var context = newContext()) {
             Role role = context.getEntity(Role.class, id);
             NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));

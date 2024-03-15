@@ -4,6 +4,7 @@ import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.entity.ReadonlyList;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.type.*;
 
 import javax.annotation.Nullable;
@@ -446,7 +447,7 @@ public class Instances {
         return sortAndLimit(new ArrayList<>(NncUtils.mergeUnique(result1, result2)), desc, limit);
     }
 
-    public static @Nullable Long getSourceMappingId(Instance instance) {
+    public static @Nullable String getSourceMappingId(Instance instance) {
         if (instance instanceof DurableInstance durableInstance)
             return durableInstance.isView() ? durableInstance.getSourceRef().getMappingId() : null;
         else

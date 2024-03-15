@@ -19,7 +19,7 @@ import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Set;
 
-import static tech.metavm.util.Constants.ROOT_APP_ID;
+import static tech.metavm.util.Constants.getRootAppId;
 
 @Component
 public class Bootstrap extends EntityContextFactoryBean implements InitializingBean {
@@ -40,12 +40,12 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
 
     public BootstrapResult boot() {
         try (var ignoredEntry = ContextUtil.getProfiler().enter("Bootstrap.boot")) {
-            ContextUtil.setAppId(ROOT_APP_ID);
+            ContextUtil.setAppId(getRootAppId());
             var identityContext = new IdentityContext();
             var idInitializer = new BootIdInitializer(new BootIdProvider(stdAllocators), identityContext);
             var bridge = new EntityInstanceContextBridge();
             var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
-                    ROOT_APP_ID, false, null, null,
+                    getRootAppId(), false, null, null,
                     idInitializer, bridge);
             var defContext = new DefContext(
                     new StdIdProvider(stdIdStore),
@@ -81,7 +81,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
         try (var ignoredEntry = defContext.getProfiler().enter("Bootstrap.save")) {
             if (defContext.isFinished())
                 return;
-            try (var tempContext = newContext(ROOT_APP_ID)) {
+            try (var tempContext = newContext(getRootAppId())) {
                 var stdInstanceContext = (InstanceContext) defContext.getInstanceContext();
                 var metaVersionPlugin = stdInstanceContext.getPlugin(MetaVersionPlugin.class);
                 var bridge = new EntityInstanceContextBridge();

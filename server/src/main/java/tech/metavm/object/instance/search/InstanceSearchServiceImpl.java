@@ -12,6 +12,7 @@ import org.elasticsearch.search.SearchHit;
 import org.springframework.stereotype.Component;
 import tech.metavm.common.Page;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
 
 import java.io.IOException;
@@ -26,16 +27,16 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     private final RestHighLevelClient restHighLevelClient;
 
     @Override
-    public Page<Long> search(SearchQuery query) {
+    public Page<Id> search(SearchQuery query) {
         SearchRequest searchRequest = new SearchRequest(INDEX);
         searchRequest.routing(query.appId() + (query.includeBuiltin() ? ",-1" : ""));
         searchRequest.source(SearchBuilder.build(query));
         try {
             SearchResponse response = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
             long total = response.getHits().getTotalHits().value;
-            List<Long> ids = new ArrayList<>();
+            List<Id> ids = new ArrayList<>();
             for (SearchHit hit : response.getHits().getHits()) {
-                ids.add(Long.valueOf(hit.getId()));
+                ids.add(Id.parse(hit.getId()));
             }
             return new Page<>(ids, total);
         } catch (IOException e) {
@@ -61,7 +62,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     }
 
     @Override
-    public void bulk(long appId, List<ClassInstance> toIndex, List<Long> toDelete) {
+    public void bulk(long appId, List<ClassInstance> toIndex, List<Id> toDelete) {
         BulkRequest bulkRequest = new BulkRequest();
         List<IndexRequest> indexRequests = NncUtils.map(toIndex, instance -> buildIndexRequest(appId, instance));
         List<DeleteRequest> deleteRequests = NncUtils.map(toDelete, id -> buildDeleteRequest(appId, id));
@@ -82,9 +83,9 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
         return indexRequest;
     }
 
-    private DeleteRequest buildDeleteRequest(long appId, long id) {
+    private DeleteRequest buildDeleteRequest(long appId, Id id) {
         DeleteRequest deleteRequest = new DeleteRequest(INDEX);
-        deleteRequest.id(id + "");
+        deleteRequest.id(id.toString());
         deleteRequest.routing(appId + "");
         return deleteRequest;
     }

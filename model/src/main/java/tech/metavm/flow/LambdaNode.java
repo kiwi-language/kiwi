@@ -5,6 +5,7 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.rest.LambdaNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.LambdaInstance;
 import tech.metavm.object.type.*;
 import tech.metavm.util.InternalException;
@@ -22,13 +23,13 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
         var parameters = NncUtils.map(
                 param.getParameters(),
                 paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
-                        context.getType(paramDTO.typeRef()))
+                        context.getType(Id.parse(paramDTO.typeId())))
         );
         var parameterTypes = NncUtils.map(parameters, Parameter::getType);
-        var returnType = context.getType(param.getReturnTypeRef());
-        var funcInterface = NncUtils.get(param.getFunctionalInterfaceRef(), context::getClassType);
+        var returnType = context.getType(Id.parse(param.getReturnTypeId()));
+        var funcInterface = NncUtils.get(param.getFunctionalInterfaceId(), id -> context.getClassType(Id.parse(id)));
         var funcType = context.getFunctionTypeContext().getFunctionType(parameterTypes, returnType);
-        var node = (LambdaNode) context.getNode(nodeDTO.getRef());
+        var node = (LambdaNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new LambdaNode(
                     nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, parameters, returnType,

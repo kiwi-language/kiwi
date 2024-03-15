@@ -1,19 +1,36 @@
 package tech.metavm.object.instance.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.TypeTag;
 
 import java.util.Objects;
 
 public class ReferencePO {
     private long appId;
+    private int sourceTypeTag;
+    private long sourceTypeId;
     private long sourceId;
+    private int targetTypeTag;
+    private long targetTypeId;
     private long targetId;
     private long fieldId;
     private int kind;
 
-    public ReferencePO(long appId, long sourceId, long targetId, long fieldId, int kind) {
+    public ReferencePO(long appId,
+                       long sourceId, int sourceTypeTag,
+                       long sourceTypeId,
+                       long targetId, int targetTypeTag,
+                       long targetTypeId,
+                       long fieldId,
+                       int kind) {
         this.appId = appId;
+        this.sourceTypeTag = sourceTypeTag;
+        this.sourceTypeId = sourceTypeId;
         this.sourceId = sourceId;
+        this.targetTypeTag = targetTypeTag;
+        this.targetTypeId = targetTypeId;
         this.targetId = targetId;
         this.fieldId = fieldId;
         this.kind = kind;
@@ -30,6 +47,22 @@ public class ReferencePO {
         this.appId = appId;
     }
 
+    public int getSourceTypeTag() {
+        return sourceTypeTag;
+    }
+
+    public void setSourceTypeTag(int sourceTypeTag) {
+        this.sourceTypeTag = sourceTypeTag;
+    }
+
+    public long getSourceTypeId() {
+        return sourceTypeId;
+    }
+
+    public void setSourceTypeId(long sourceTypeId) {
+        this.sourceTypeId = sourceTypeId;
+    }
+
     public long getSourceId() {
         return sourceId;
     }
@@ -38,12 +71,36 @@ public class ReferencePO {
         this.sourceId = sourceId;
     }
 
+    public Id getSourceInstanceId() {
+        return PhysicalId.of(sourceId, TypeTag.fromCode(sourceTypeTag), sourceTypeId);
+    }
+
+    public int getTargetTypeTag() {
+        return targetTypeTag;
+    }
+
+    public void setTargetTypeTag(int targetTypeTag) {
+        this.targetTypeTag = targetTypeTag;
+    }
+
+    public long getTargetTypeId() {
+        return targetTypeId;
+    }
+
+    public void setTargetTypeId(long targetTypeId) {
+        this.targetTypeId = targetTypeId;
+    }
+
     public long getTargetId() {
         return targetId;
     }
 
     public void setTargetId(long targetId) {
         this.targetId = targetId;
+    }
+
+    public Id getTargetInstanceId() {
+        return PhysicalId.of(targetId, TypeTag.fromCode(targetTypeTag), targetTypeId);
     }
 
     public long getFieldId() {

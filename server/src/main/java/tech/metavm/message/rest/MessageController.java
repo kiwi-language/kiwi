@@ -23,7 +23,7 @@ public class MessageController {
     }
 
     @PostMapping("/{id:[0-9]+}/mark-read")
-    public Result<Void> read(@PathVariable("id") long id) {
+    public Result<Void> read(@PathVariable("id") String id) {
         messageManager.read(id);
         return Result.voidSuccess();
     }

@@ -4,8 +4,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record GetByRangeRequest(
-        long lowerBoundId,
-        long upperBoundId,
+        String lowerBoundId,
+        String upperBoundId,
         boolean includeParameterized,
         boolean isTemplate,
         boolean includeBuiltin,

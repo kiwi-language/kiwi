@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
@@ -62,9 +63,9 @@ public class Var {
         }
     }
 
-    public long getId() {
+    public Id getId() {
         if(isId()) {
-            return (long) symbol;
+            return (Id) symbol;
         }
         else {
             throw new InternalException(this + " is not an id var");

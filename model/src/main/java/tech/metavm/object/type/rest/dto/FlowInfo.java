@@ -1,7 +1,5 @@
 package tech.metavm.object.type.rest.dto;
 
-import tech.metavm.common.RefDTO;
-
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -11,8 +9,8 @@ public class FlowInfo extends GenericElementDTO {
 
     private final List<GenericElementDTO> typeVariables;
 
-    public FlowInfo(RefDTO templateRef, RefDTO ref, List<GenericElementDTO> parameters, List<GenericElementDTO> typeVariables) {
-        super(templateRef, ref);
+    public FlowInfo(String templateId, String id, List<GenericElementDTO> parameters, List<GenericElementDTO> typeVariables) {
+        super(templateId, id);
         this.parameters = parameters;
         this.typeVariables = typeVariables;
     }

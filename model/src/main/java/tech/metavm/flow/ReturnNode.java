@@ -5,6 +5,7 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ReturnNodeParam;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
@@ -16,7 +17,7 @@ import java.util.Objects;
 public class ReturnNode extends NodeRT {
 
     public static ReturnNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
-        ReturnNode node = (ReturnNode) entityContext.getNode(nodeDTO.getRef());
+        ReturnNode node = (ReturnNode) entityContext.getNode(Id.parse(nodeDTO.id()));
         var param = (ReturnNodeParam) nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, entityContext);
         var value = param.value() != null ? ValueFactory.create(param.value(), parsingContext) : null;

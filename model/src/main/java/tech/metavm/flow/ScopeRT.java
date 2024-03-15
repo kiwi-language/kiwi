@@ -1,11 +1,11 @@
 package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.expression.ExpressionTypeMap;
 import tech.metavm.expression.TypeNarrower;
 import tech.metavm.flow.rest.ScopeDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TypeReference;
 
@@ -52,7 +52,7 @@ public class ScopeRT extends Element {
 
     public ScopeDTO toDTO(boolean withNodes, SerializeContext serializeContext) {
         return new ScopeDTO(
-                tryGetId(), serializeContext.getTmpId(this),
+                serializeContext.getRef(this),
                 withNodes ? NncUtils.map(getNodes(), nodeRT -> nodeRT.toDTO(serializeContext)) : List.of()
         );
     }
@@ -119,8 +119,8 @@ public class ScopeRT extends Element {
         return nodes.get(Entity::tryGetId, id);
     }
 
-    public NodeRT getNode(RefDTO ref) {
-        return nodes.get(Entity::getRef, ref);
+    public NodeRT getNode(Id id) {
+        return nodes.get(Entity::tryGetId, id);
     }
 
     public List<NodeRT> getNodes() {

@@ -66,8 +66,8 @@ public class MockInstanceRepository implements InstanceRepository {
     }
 
     @Override
-    public List<Long> filterAlive(List<Long> ids) {
-        return NncUtils.filter(ids, id -> instanceMap.containsKey(PhysicalId.of(id)));
+    public List<Id> filterAlive(List<Id> ids) {
+        return NncUtils.filter(ids, instanceMap::containsKey);
     }
 
 }

@@ -1,29 +1,28 @@
 package tech.metavm.object.type.rest.dto;
 
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.common.RefDTO;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 public final class PTypeDTO extends GenericElementDTO implements TypeParam {
-    private final List<RefDTO> typeArgumentRefs;
+    private final List<String> typeArgumentIds;
     private final List<GenericElementDTO> fields;
     private final List<GenericElementDTO> staticFields;
     private final List<FlowInfo> flows;
     private final List<GenericElementDTO> mappings;
 
     public PTypeDTO(
-            RefDTO ref,
-            RefDTO templateRef,
-            List<RefDTO> typeArgumentRefs,
+            String ref,
+            String templateRef,
+            List<String> typeArgumentIds,
             List<GenericElementDTO> fields,
             List<GenericElementDTO> staticFields,
             List<FlowInfo> flows,
             List<GenericElementDTO> mappings
     ) {
         super(templateRef, ref);
-        this.typeArgumentRefs = typeArgumentRefs;
+        this.typeArgumentIds = typeArgumentIds;
         this.fields = fields;
         this.staticFields = staticFields;
         this.flows = flows;
@@ -31,7 +30,7 @@ public final class PTypeDTO extends GenericElementDTO implements TypeParam {
     }
 
     public ParameterizedTypeKey getKey() {
-        return new ParameterizedTypeKey(getTemplateRef(), typeArgumentRefs);
+        return new ParameterizedTypeKey(getTemplateId(), typeArgumentIds);
     }
 
     @Override
@@ -42,8 +41,8 @@ public final class PTypeDTO extends GenericElementDTO implements TypeParam {
         mappings.forEach(m -> m.forEachDescendant(action));
     }
 
-    public List<RefDTO> getTypeArgumentRefs() {
-        return typeArgumentRefs;
+    public List<String> getTypeArgumentIds() {
+        return typeArgumentIds;
     }
 
     public List<GenericElementDTO> getFields() {
@@ -70,6 +69,6 @@ public final class PTypeDTO extends GenericElementDTO implements TypeParam {
     @Nullable
     @Override
     public TypeKey getTypeKey() {
-        return new ParameterizedTypeKey(getTemplateRef(), getTypeArgumentRefs());
+        return new ParameterizedTypeKey(getTemplateId(), getTypeArgumentIds());
     }
 }

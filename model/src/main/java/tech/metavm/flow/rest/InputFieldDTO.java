@@ -1,6 +1,5 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
@@ -8,25 +7,24 @@ import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
 import javax.annotation.Nullable;
 
 public record InputFieldDTO(
-        RefDTO fieldRef,
+        String fieldId,
         String name,
-        RefDTO typeRef,
+        String typeId,
         FieldValue defaultValue,
         @Nullable ValueDTO condition
 ) implements FieldReferringDTO<InputFieldDTO> {
 
-    public static InputFieldDTO create(String name, RefDTO typeRef) {
-        return new InputFieldDTO(null, name, typeRef, null, null);
+    public static InputFieldDTO create(String name, String typeId) {
+        return new InputFieldDTO(null, name, typeId, null, null);
     }
 
-    public InputFieldDTO copyWithFieldRef(RefDTO fieldRef) {
-        return new InputFieldDTO(fieldRef, name, typeRef, defaultValue, condition);
+    public InputFieldDTO copyWithFieldId(String fieldId) {
+        return new InputFieldDTO(fieldId, name, typeId, defaultValue, condition);
     }
 
-    public FieldDTO toFieldDTO(Long declaringTypeId) {
-        return FieldDTOBuilder.newBuilder(name, typeRef)
-                .tmpId(fieldRef.tmpId())
-                .id(fieldRef.id())
+    public FieldDTO toFieldDTO(String declaringTypeId) {
+        return FieldDTOBuilder.newBuilder(name, typeId)
+                .id(fieldId)
                 .readonly(true)
                 .defaultValue(defaultValue)
                 .declaringTypeId(declaringTypeId)

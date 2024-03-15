@@ -3,7 +3,6 @@ package tech.metavm.object.instance.rest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
-import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.InstanceParamTypeIdResolver;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
@@ -16,27 +15,27 @@ import java.util.Set;
 
 public record InstanceDTO(
         @Nullable String id,
-        RefDTO typeRef,
+        String typeId,
         String typeName,
         String title,
-        @Nullable Long sourceMappingId,
+        @Nullable String sourceMappingId,
         @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
         @JsonTypeIdResolver(InstanceParamTypeIdResolver.class)
         InstanceParam param
 ) implements Serializable {
 
-    public static InstanceDTO createClassInstance(RefDTO typeRef, List<InstanceFieldDTO> fields) {
-        return createClassInstance(null, typeRef, fields);
+    public static InstanceDTO createClassInstance(String typeId, List<InstanceFieldDTO> fields) {
+        return createClassInstance(null, typeId, fields);
     }
 
-    public static InstanceDTO createClassInstance(@Nullable String id, RefDTO typeRef, List<InstanceFieldDTO> fields) {
-        return createClassInstance(id, typeRef, null, fields);
+    public static InstanceDTO createClassInstance(@Nullable String id, String typeId, List<InstanceFieldDTO> fields) {
+        return createClassInstance(id, typeId, null, fields);
     }
 
-    public static InstanceDTO createClassInstance(@Nullable String id, RefDTO typeRef, Long sourceMappingId, List<InstanceFieldDTO> fields) {
+    public static InstanceDTO createClassInstance(@Nullable String id, String typeId, String sourceMappingId, List<InstanceFieldDTO> fields) {
         return new InstanceDTO(
                 id,
-                typeRef,
+                typeId,
                 null,
                 null,
                 sourceMappingId,
@@ -44,31 +43,31 @@ public record InstanceDTO(
         );
     }
 
-    public static InstanceDTO createArrayInstance(RefDTO typeRef, boolean elementAsChild, List<FieldValue> elements) {
-        return createArrayInstance(null, typeRef, elementAsChild, elements);
+    public static InstanceDTO createArrayInstance(String typeId, boolean elementAsChild, List<FieldValue> elements) {
+        return createArrayInstance(null, typeId, elementAsChild, elements);
     }
 
-    public static InstanceDTO createArrayInstance(@Nullable String id, RefDTO typeRef, boolean elementAsChild, List<FieldValue> elements) {
+    public static InstanceDTO createArrayInstance(@Nullable String id, String typeId, boolean elementAsChild, List<FieldValue> elements) {
         return new InstanceDTO(
-                id, typeRef, null, null, null,
+                id, typeId, null, null, null,
                 new ArrayInstanceParam(elementAsChild, elements)
         );
     }
 
-    public static InstanceDTO createListInstance(RefDTO typeRef, boolean elementAsChild, List<FieldValue> elements) {
-        return createListInstance(null, typeRef, elementAsChild, elements);
+    public static InstanceDTO createListInstance(String typeId, boolean elementAsChild, List<FieldValue> elements) {
+        return createListInstance(null, typeId, elementAsChild, elements);
     }
 
-    public static InstanceDTO createListInstance(@Nullable String id, RefDTO typeRef, boolean elementAsChild, List<FieldValue> elements) {
+    public static InstanceDTO createListInstance(@Nullable String id, String typeId, boolean elementAsChild, List<FieldValue> elements) {
         return new InstanceDTO(
-                id, typeRef, null, null, null,
+                id, typeId, null, null, null,
                 new ListInstanceParam(elementAsChild, elements)
         );
     }
 
 
     public InstanceDTO copyWithParam(InstanceParam param) {
-        return new InstanceDTO(id, typeRef, typeName, title, sourceMappingId, param);
+        return new InstanceDTO(id, typeId, typeName, title, sourceMappingId, param);
     }
 
     @Override
@@ -76,12 +75,12 @@ public record InstanceDTO(
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         InstanceDTO that = (InstanceDTO) o;
-        return Objects.equals(id, that.id) && Objects.equals(typeRef, that.typeRef) && Objects.equals(typeName, that.typeName) && Objects.equals(title, that.title) && Objects.equals(param, that.param);
+        return Objects.equals(id, that.id) && Objects.equals(typeId, that.typeId) && Objects.equals(typeName, that.typeName) && Objects.equals(title, that.title) && Objects.equals(param, that.param);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, typeRef, typeName, title, param);
+        return Objects.hash(id, typeId, typeName, title, param);
     }
 
 
@@ -90,9 +89,9 @@ public record InstanceDTO(
     }
 
     @JsonIgnore
-    public FieldValue getFieldValue(long fieldId) {
+    public FieldValue getFieldValue(String fieldId) {
         var param = (ClassInstanceParam) param();
-        return NncUtils.findRequired(param.fields(), f -> f.fieldId() == fieldId).value();
+        return NncUtils.findRequired(param.fields(), f -> Objects.equals(f.fieldId(), fieldId)).value();
     }
 
     @JsonIgnore
@@ -135,7 +134,7 @@ public record InstanceDTO(
 
     public boolean valueEquals(InstanceDTO that, Set<String> newIds) {
         return (Objects.equals(id, that.id) || newIds.contains(id) && that.id == null || newIds.contains(that.id) && id == null)
-                && Objects.equals(typeRef, that.typeRef)
+                && Objects.equals(typeId, that.typeId)
                 && param.valueEquals(that.param, newIds);
     }
 

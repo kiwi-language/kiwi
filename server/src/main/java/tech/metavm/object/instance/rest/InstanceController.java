@@ -72,7 +72,7 @@ public class InstanceController {
     }
 
     @PostMapping("/delete-by-types")
-    public Result<Void> deleteByTypes(@RequestBody List<Long> typeIds) {
+    public Result<Void> deleteByTypes(@RequestBody List<String> typeIds) {
         instanceManager.deleteByTypes(typeIds);
         return Result.voidSuccess();
     }
@@ -95,7 +95,7 @@ public class InstanceController {
     }
 
     @GetMapping("/reference-chain/{id:[0-9]+}")
-    public Result<List<String>> getReferenceChain(@PathVariable("id") long id,
+    public Result<List<String>> getReferenceChain(@PathVariable("id") String id,
                                                   @RequestParam(defaultValue = "1") int rootMode) {
         return Result.success(instanceManager.getReferenceChain(id, rootMode));
     }

@@ -5,6 +5,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TransactionUtils;
 
@@ -20,13 +22,13 @@ public class Scheduler extends EntityContextFactoryBean {
     private long lastSignalPollAt;
     private long version;
     private volatile boolean running;
-    private final Map<Long, Object> monitorMap = new ConcurrentSkipListMap<>();
+    private final Map<String, Object> monitorMap = new ConcurrentSkipListMap<>();
     private final ThreadPoolExecutor executor;
     private final Executor scheduleExecutor = Executors.newSingleThreadExecutor(
             r -> new Thread(r, "scheduler-worker-1")
     );
 
-    private final Set<Long> runningTaskIds = new ConcurrentSkipListSet<>();
+    private final Set<String> runningTaskIds = new ConcurrentSkipListSet<>();
 
     public Scheduler(EntityContextFactory entityContextFactory, TransactionOperations transactionOperations) {
         super(entityContextFactory);
@@ -64,7 +66,7 @@ public class Scheduler extends EntityContextFactoryBean {
             TaskSignal signal = selectSignalForScheduling(platformContext);
             if (signal != null) {
                 if (signal.hasUnfinishedTasks())
-                    runTaskForApplication(signal.getAppId());
+                    runTaskForApplication(Id.parse(signal.getAppId()).getPhysicalId());
                 else
                     removeSignal(signal);
             }
@@ -83,7 +85,7 @@ public class Scheduler extends EntityContextFactoryBean {
                             .limit(512)
                             .build()
             );
-            activeSignalMap.putAll(NncUtils.toMap(signals, TaskSignal::getAppId));
+            activeSignalMap.putAll(NncUtils.toMap(signals, t -> Id.parse(t.getAppId()).getPhysicalId()));
             lastSignalPollAt = current;
         }
     }
@@ -111,14 +113,14 @@ public class Scheduler extends EntityContextFactoryBean {
     }
 
     private void runTaskForApplication(long appId) {
-        List<Long> taskIds = NncUtils.requireNonNull(transactionOperations.execute(s -> takeTask(appId)));
-        for (Long taskId : taskIds) {
+        var taskIds = NncUtils.requireNonNull(transactionOperations.execute(s -> takeTask(appId)));
+        for (var taskId : taskIds) {
             transactionOperations.executeWithoutResult(s -> runTask(appId, taskId));
         }
     }
 
-    private List<Long> takeTask(long appId) {
-        try (var context = newContext(appId)) {
+    private List<String> takeTask(long appId) {
+        try (var context = newContext(Constants.getAppId(appId))) {
             Objects.requireNonNull(context.getInstanceContext()).setLockMode(LockMode.EXCLUSIVE);
             List<Task> runnableTasks = context.query(
                     Task.IDX_STATE_LAST_RUN_AT.newQueryBuilder()
@@ -142,11 +144,11 @@ public class Scheduler extends EntityContextFactoryBean {
                 }
                 context.finish();
             }
-            return NncUtils.map(tasks, Entity::tryGetId);
+            return NncUtils.map(tasks, Entity::getStringId);
         }
     }
 
-    private void onTaskDone(long appId, long taskId) {
+    private void onTaskDone(long appId, String taskId) {
         TaskSignal signal = activeSignalMap.get(appId);
         if (signal != null) {
             try (var platformContext = newPlatformContext()) {
@@ -161,7 +163,7 @@ public class Scheduler extends EntityContextFactoryBean {
         notifyWaitingThreads(taskId);
     }
 
-    private void notifyWaitingThreads(long taskId) {
+    private void notifyWaitingThreads(String taskId) {
         TransactionUtils.afterCommit(() -> {
             Object monitor = monitorMap.get(taskId);
             if (monitor != null) {
@@ -173,11 +175,11 @@ public class Scheduler extends EntityContextFactoryBean {
         });
     }
 
-    private void runTask(long appId, long taskId) {
+    private void runTask(long appId, String taskId) {
         if (!runningTaskIds.add(taskId))
             return;
         try {
-            try (var context = newContext(appId)) {
+            try (var context = newContext(Constants.getAppId(appId))) {
                 Objects.requireNonNull(context.getInstanceContext()).setLockMode(LockMode.EXCLUSIVE);
                 Task task = context.getEntity(Task.class, taskId);
                 if (task.isRunning()) {
@@ -225,7 +227,7 @@ public class Scheduler extends EntityContextFactoryBean {
     private TaskSignal nextSignal(TaskSignal signal) {
         if (signal == null)
             return NncUtils.get(activeSignalMap.firstEntry(), Map.Entry::getValue);
-        TaskSignal next = NncUtils.get(activeSignalMap.higherEntry(signal.getAppId()), Map.Entry::getValue);
+        TaskSignal next = NncUtils.get(activeSignalMap.higherEntry(Id.parse(signal.getAppId()).getPhysicalId()), Map.Entry::getValue);
         if (next == null)
             next = NncUtils.get(activeSignalMap.firstEntry(), Map.Entry::getValue);
         return next;
@@ -233,16 +235,16 @@ public class Scheduler extends EntityContextFactoryBean {
 
 
     private void addSignal(TaskSignal signal) {
-        activeSignalMap.put(signal.getAppId(), signal);
+        activeSignalMap.put(Id.parse(signal.getAppId()).getPhysicalId(), signal);
     }
 
     private void removeSignal(TaskSignal signal) {
-        activeSignalMap.remove(signal.getAppId());
+        activeSignalMap.remove(Id.parse(signal.getAppId()).getPhysicalId());
     }
 
     public void waitForJobDone(Task task, int maxSchedules) {
         NncUtils.requireNonNull(task.tryGetId());
-        Object monitor = monitorMap.computeIfAbsent(task.tryGetId(), k -> new Object());
+        Object monitor = monitorMap.computeIfAbsent(task.getStringId(), k -> new Object());
         scheduleExecutor.execute(() -> {
             for (int i = 0; i < maxSchedules; i++) {
                 schedule();

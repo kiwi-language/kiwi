@@ -39,8 +39,8 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
     }
 
     @Override
-    public RefDTO getRef() {
-        return new RefDTO(-1L, 0L);
+    public String getStringId() {
+        return null;
     }
 
     @Override

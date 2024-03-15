@@ -21,7 +21,7 @@ public record SourceEvaluationContext(Source source,
     public Instance evaluate(Expression expression) {
         var thisPropertyExpr = getThisPropertyExpression(expression);
         if (thisPropertyExpr != null) {
-            var fieldId = thisPropertyExpr.getProperty().getId();
+            var fieldId = thisPropertyExpr.getProperty().getIdRequired();
             return getSourceField(source, fieldId);
         }
         var equalityExpr = getEqualityExpression(expression);
@@ -69,7 +69,7 @@ public record SourceEvaluationContext(Source source,
         return false;
     }
 
-    private Instance getSourceField(Source source, long fieldId) {
+    private Instance getSourceField(Source source, Id fieldId) {
         return createInstance(source.fields().get(fieldId));
     }
 

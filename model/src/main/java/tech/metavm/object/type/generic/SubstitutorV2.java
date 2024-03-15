@@ -1,8 +1,9 @@
 package tech.metavm.object.type.generic;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.GenericElementDTO;
 import tech.metavm.object.view.FieldsObjectMapping;
@@ -47,7 +48,7 @@ public class SubstitutorV2 extends CopyVisitor {
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private final EntityRepository entityRepository;
     private final ResolutionStage stage;
-    private final Map<RefDTO, RefDTO> copyTmpIds = new HashMap<>();
+    private final Map<String, String> copyTmpIds = new HashMap<>();
     private final Map<Object, Object> existingCopies = new HashMap<>();
 
     public SubstitutorV2(Object root,
@@ -69,9 +70,9 @@ public class SubstitutorV2 extends CopyVisitor {
         NncUtils.biForEach(typeParameters, typeArguments, this::addCopy);
         var rootDTO = switch (root) {
             case ClassType classType ->
-                    dtoProvider.getPTypeDTO(classType.getRef(), NncUtils.map(typeArguments, Entity::getRef));
+                    dtoProvider.getPTypeDTO(classType.getStringId(), NncUtils.map(typeArguments, Entity::getStringId));
             case Flow flow ->
-                    dtoProvider.getParameterizedFlowDTO(flow.getRef(), NncUtils.map(typeArguments, Entity::getRef));
+                    dtoProvider.getParameterizedFlowDTO(flow.getStringId(), NncUtils.map(typeArguments, Entity::getStringId));
             default -> throw new IllegalStateException("Unexpected root: " + root);
         };
         if (rootDTO != null)
@@ -108,8 +109,8 @@ public class SubstitutorV2 extends CopyVisitor {
     }
 
     private void addCopyTmpId(GenericElementDTO member) {
-        if (member.getTemplateRef() != null && member.getRef() != null)
-            this.copyTmpIds.put(member.getTemplateRef(), member.getRef());
+        if (member.getTemplateId() != null && member.getId() != null)
+            this.copyTmpIds.put(member.getTemplateId(), member.getId());
     }
 
     public Type substituteType(Type type) {
@@ -186,8 +187,12 @@ public class SubstitutorV2 extends CopyVisitor {
 
     @Override
     protected @Nullable Long getCopyTmpId(Object object) {
-        return object instanceof Entity entity ?
-                NncUtils.get(copyTmpIds.get(entity.getRef()), RefDTO::tmpId) : null;
+        if(object instanceof Entity entity) {
+            var id = NncUtils.get(copyTmpIds.get(entity.getStringId()), Id::parse);
+            if(id instanceof TmpId tmpId)
+                return tmpId.getTmpId();
+        }
+        return null;
     }
 
     @Override

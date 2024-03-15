@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.Field;
@@ -72,12 +73,12 @@ public abstract class ModelDef<T, I extends DurableInstance> {
 
     public abstract void initInstance(I instance, T model, ObjectInstanceMap instanceMap);
 
-    public final I createInstanceHelper(Object model, ObjectInstanceMap instanceMap, Long id) {
+    public final I createInstanceHelper(Object model, ObjectInstanceMap instanceMap, Id id) {
         return createInstance(javaClass.cast(model), instanceMap, id);
     }
 
-    public I createInstance(T model, ObjectInstanceMap instanceMap, Long id) {
-        I instance = InstanceFactory.allocate(instanceType, getType(), NncUtils.get(id, PhysicalId::new), EntityUtils.isEphemeral(model));
+    public I createInstance(T model, ObjectInstanceMap instanceMap, Id id) {
+        I instance = InstanceFactory.allocate(instanceType, getType(), id, EntityUtils.isEphemeral(model));
         initInstance(instance, model, instanceMap);
         return instance;
     }
@@ -118,7 +119,7 @@ public abstract class ModelDef<T, I extends DurableInstance> {
         if(model instanceof IdInitializing idInitializing) {
             var d = (DurableInstance) instance;
             if(d.tryGetPhysicalId() != null)
-                idInitializing.initId(d.getPhysicalId());
+                idInitializing.initId(d.getId());
         }
         initModel(model, instance, objectInstanceMap);
         return model;

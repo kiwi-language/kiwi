@@ -10,6 +10,7 @@ import tech.metavm.object.instance.IndexConstraintPlugin;
 import tech.metavm.object.instance.MetaVersionPlugin;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.type.IdConstants;
@@ -43,23 +44,23 @@ public class EntityContextFactory {
     }
 
 
-    public IEntityContext newContext(long appId, IdInitializer idProvider) {
+    public IEntityContext newContext(Id appId, IdInitializer idProvider) {
         return newContext(appId, defContext, idProvider);
     }
 
-    public IEntityContext newContext(long appId) {
+    public IEntityContext newContext(Id appId) {
         return newContext(appId, defContext);
     }
 
-    public IEntityContext newContext(long appId, @Nullable IEntityContext parent) {
+    public IEntityContext newContext(Id appId, @Nullable IEntityContext parent) {
         return newContext(appId, parent, null);
     }
 
-    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider) {
+    public IEntityContext newContext(Id appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider) {
         return newContext(appId, parent, idProvider, defaultAsyncLogProcess);
     }
 
-    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider,
+    public IEntityContext newContext(Id appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider,
                                      boolean asyncLogProcessing) {
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(), asyncLogProcessing,
@@ -69,7 +70,7 @@ public class EntityContextFactory {
         return context;
     }
 
-    public IInstanceContext newBridgedInstanceContext(long appId,
+    public IInstanceContext newBridgedInstanceContext(Id appId,
                                                       boolean readonly,
                                                       @Nullable Boolean asyncLogProcessing,
                                                       @Nullable IInstanceContext parent,
@@ -79,7 +80,7 @@ public class EntityContextFactory {
                 .readonly(readonly)
                 .asyncPostProcess(NncUtils.orElse(asyncLogProcessing, defaultAsyncLogProcess))
                 .parent(parent)
-                .getTypeIdInterceptor(id -> IdConstants.isBuiltinAppId(id) ? bridge.getType(Application.class).tryGetId() : null)
+                .getTypeIdInterceptor(id -> IdConstants.isBuiltinAppId(id.getPhysicalId()) ? bridge.getType(Application.class).getTypeId() : null)
                 .plugins(
                         new MetaVersionPlugin(bridge, bridge),
                         new CheckConstraintPlugin(),

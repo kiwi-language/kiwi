@@ -42,7 +42,7 @@ public class ClassInstanceTest extends TestCase {
                         new ArrayInstance(fooType.bazArrayType())
                 ))
                 .build();
-        foo.initId(PhysicalId.of(100000L));
+        foo.initId(PhysicalId.ofClass(100000L, 1L));
         FieldValue fieldValueDTO = foo.toFieldValueDTO();
         Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
         Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
@@ -94,7 +94,7 @@ public class ClassInstanceTest extends TestCase {
                 ),
                 type
         );
-        instance.initId(PhysicalId.of(10001L));
+        instance.initId(PhysicalId.ofClass(10001L, 1L));
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 
@@ -125,12 +125,12 @@ public class ClassInstanceTest extends TestCase {
                 .build();
 
         TestUtils.initInstanceIds(flow);
-        Map<Long, DurableInstance> id2instance = new HashMap<>();
+        Map<Id, DurableInstance> id2instance = new HashMap<>();
         flow.accept(new StructuralVisitor() {
 
             @Override
             public Void visitDurableInstance(DurableInstance instance) {
-                id2instance.put(instance.getPhysicalId(), instance);
+                id2instance.put(instance.getId(), instance);
                 return super.visitDurableInstance(instance);
             }
         });
@@ -143,7 +143,7 @@ public class ClassInstanceTest extends TestCase {
         var input = new InstanceInput(bin, id -> {
             var inst = id2instance.get(id);
             if(inst instanceof ClassInstance classInst)
-                return new ClassInstance(PhysicalId.of(id), classInst.getType(), classInst.isEphemeral(), null);
+                return new ClassInstance(id, classInst.getType(), classInst.isEphemeral(), null);
             else
                 throw new RuntimeException("Unexpected instance: " + inst);
         });

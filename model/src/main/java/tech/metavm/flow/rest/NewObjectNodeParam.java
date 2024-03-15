@@ -1,7 +1,5 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.common.RefDTO;
-
 import javax.annotation.Nullable;
 import java.util.List;
 
@@ -14,14 +12,14 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
 
     private final boolean unbound;
 
-    public NewObjectNodeParam(RefDTO flowRef,
-                              @Nullable RefDTO typeRef,
+    public NewObjectNodeParam(String flowId,
+                              @Nullable String typeId,
                               List<ArgumentDTO> arguments,
                               @Nullable ParentRefDTO parent,
                               boolean ephemeral,
                               boolean unbound
     ) {
-        super(flowRef, typeRef, arguments);
+        super(flowId, typeId, arguments);
         this.parent = parent;
         this.ephemeral = ephemeral;
         this.unbound = unbound;
@@ -43,7 +41,7 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
     @Override
     public NewObjectNodeParam copyWithParentRef(ParentRefDTO parentRef) {
         return new NewObjectNodeParam(
-                getFlowRef(), getTypeRef(), getArguments(), parentRef, ephemeral, unbound
+                getFlowId(), getTypeId(), getArguments(), parentRef, ephemeral, unbound
         );
     }
 

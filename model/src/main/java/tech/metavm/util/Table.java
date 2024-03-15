@@ -3,6 +3,7 @@ package tech.metavm.util;
 import tech.metavm.entity.IdInitializing;
 import tech.metavm.entity.ModelIdentity;
 import tech.metavm.entity.NoProxy;
+import tech.metavm.object.instance.core.Id;
 
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
@@ -23,7 +24,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         );
     }
 
-    private Long id;
+    private Id id;
     private final Type genericType;
     private final Type elementType;
     private final int buildIndexThreshold;
@@ -87,7 +88,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         }
     }
 
-    public void initId(long id) {
+    public void initId(Id id) {
         NncUtils.requireNull(this.id, "id already initialized");
         this.id = id;
     }
@@ -127,7 +128,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         }
     }
 
-    public Long tryGetId() {
+    public Id tryGetId() {
         return id;
     }
 

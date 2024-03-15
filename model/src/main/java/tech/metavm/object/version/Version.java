@@ -15,30 +15,30 @@ public class Version extends Entity {
     private final long version;
 
     @ChildEntity("变更类型ID列表")
-    private final ReadWriteArray<Long> changedTypeIds = addChild(new ReadWriteArray<>(Long.class), "changedTypeIds");
+    private final ReadWriteArray<String> changedTypeIds = addChild(new ReadWriteArray<>(String.class), "changedTypeIds");
 
     @ChildEntity("删除类型ID列表")
-    private final ReadWriteArray<Long> removedTypeIds = addChild(new ReadWriteArray<>(Long.class), "removedTypeIds");
+    private final ReadWriteArray<String> removedTypeIds = addChild(new ReadWriteArray<>(String.class), "removedTypeIds");
 
     @ChildEntity("变更映射ID列表")
-    private final ReadWriteArray<Long> changedMappingIds = addChild(new ReadWriteArray<>(Long.class), "changedMappingIds");
+    private final ReadWriteArray<String> changedMappingIds = addChild(new ReadWriteArray<>(String.class), "changedMappingIds");
 
     @ChildEntity("删除映射ID列表")
-    private final ReadWriteArray<Long> removedMappingIds = addChild(new ReadWriteArray<>(Long.class), "removedMappingIds");
+    private final ReadWriteArray<String> removedMappingIds = addChild(new ReadWriteArray<>(String.class), "removedMappingIds");
 
     @ChildEntity("变更函数ID列表")
-    private final ReadWriteArray<Long> changedFunctionIds = addChild(new ReadWriteArray<>(Long.class), "changedFunctionIds");
+    private final ReadWriteArray<String> changedFunctionIds = addChild(new ReadWriteArray<>(String.class), "changedFunctionIds");
 
     @ChildEntity("删除函数ID列表")
-    private final ReadWriteArray<Long> removedFunctionIds = addChild(new ReadWriteArray<>(Long.class), "removedFunctionIds");
+    private final ReadWriteArray<String> removedFunctionIds = addChild(new ReadWriteArray<>(String.class), "removedFunctionIds");
 
     public Version(long version,
-                   Set<Long> changedTypeIds,
-                   Set<Long> removedTypeIds,
-                   Set<Long> changedMappingIds,
-                   Set<Long> removedMappingIds,
-                   Set<Long> changedFunctionIds,
-                   Set<Long> removedFunctionIds
+                   Set<String> changedTypeIds,
+                   Set<String> removedTypeIds,
+                   Set<String> changedMappingIds,
+                   Set<String> removedMappingIds,
+                   Set<String> changedFunctionIds,
+                   Set<String> removedFunctionIds
     ) {
         this.version = version;
         this.changedTypeIds.addAll(changedTypeIds);
@@ -53,27 +53,27 @@ public class Version extends Entity {
         return version;
     }
 
-    public List<Long> getChangedTypeIds() {
+    public List<String> getChangedTypeIds() {
         return changedTypeIds.toList();
     }
 
-    public List<Long> getRemovedTypeIds() {
+    public List<String> getRemovedTypeIds() {
         return removedTypeIds.toList();
     }
 
-    public List<Long> getChangedMappingIds() {
+    public List<String> getChangedMappingIds() {
         return changedMappingIds.toList();
     }
 
-    public List<Long> getRemovedMappingIds() {
+    public List<String> getRemovedMappingIds() {
         return removedMappingIds.toList();
     }
 
-    public ReadWriteArray<Long> getChangedFunctionIds() {
+    public ReadWriteArray<String> getChangedFunctionIds() {
         return changedFunctionIds;
     }
 
-    public ReadWriteArray<Long> getRemovedFunctionIds() {
+    public ReadWriteArray<String> getRemovedFunctionIds() {
         return removedFunctionIds;
     }
 

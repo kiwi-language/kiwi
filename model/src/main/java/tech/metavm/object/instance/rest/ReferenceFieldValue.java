@@ -8,32 +8,24 @@ import java.util.Set;
 
 public class ReferenceFieldValue extends FieldValue {
 
-    public static ReferenceFieldValue create(String id, RefDTO typeRef) {
-        return new ReferenceFieldValue(null, id, typeRef);
+    public static ReferenceFieldValue create(String id) {
+        return new ReferenceFieldValue(null, id);
     }
 
     public static ReferenceFieldValue create(InstanceDTO instanceDTO) {
-        return new ReferenceFieldValue(instanceDTO.title(), instanceDTO.id(), instanceDTO.typeRef());
+        return new ReferenceFieldValue(instanceDTO.title(), instanceDTO.id());
     }
 
     private final String id;
 
-    private final RefDTO typeRef;
-
     public ReferenceFieldValue(@JsonProperty("displayValue") String displayValue,
-                               @JsonProperty("id") String id,
-                               @JsonProperty("typeRef") RefDTO typeRef) {
+                               @JsonProperty("id") String id) {
         super(FieldValueKind.REFERENCE.code(), displayValue);
         this.id = id;
-        this.typeRef = typeRef;
     }
 
     public String getId() {
         return id;
-    }
-
-    public RefDTO getTypeRef() {
-        return typeRef;
     }
 
     @Override

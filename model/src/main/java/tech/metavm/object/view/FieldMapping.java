@@ -72,8 +72,7 @@ public abstract class FieldMapping extends Element {
 
     public FieldMappingDTO toDTO(SerializeContext serializeContext) {
         return new FieldMappingDTO(
-                tryGetId(),
-                serializeContext.getTmpId(this),
+                serializeContext.getRef(this),
                 getName(),
                 getCode(),
                 serializeContext.getRef(getType()),
@@ -81,7 +80,7 @@ public abstract class FieldMapping extends Element {
                 isReadonly(),
                 NncUtils.get(getSourceField(), serializeContext::getRef),
                 serializeContext.getRef(targetField),
-                nestedMapping instanceof ObjectNestedMapping classCodeGenerator ? classCodeGenerator.getMapping().getRef() : null,
+                nestedMapping instanceof ObjectNestedMapping classCodeGenerator ? classCodeGenerator.getMapping().getStringId() : null,
                 getParam(serializeContext)
         );
     }

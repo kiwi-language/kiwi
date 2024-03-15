@@ -174,7 +174,7 @@
     </select>
 
     <select id="selectRootVersions" resultType="tech.metavm.object.instance.persistence.Version">
-        select distinct r.id, r.version
+        select distinct r.id, r.type_tag as typeTag, r.type_id as typeId, r.version
         from instance r
         inner join instance i on r.id = i.root_id
         where i.app_id = #{appId}

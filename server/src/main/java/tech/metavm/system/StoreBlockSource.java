@@ -1,5 +1,6 @@
 package tech.metavm.system;
 
+import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.system.persistence.BlockMapper;
 import tech.metavm.util.NncUtils;
 

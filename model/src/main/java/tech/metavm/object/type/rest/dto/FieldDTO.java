@@ -8,15 +8,14 @@ import tech.metavm.object.instance.rest.InstanceDTO;
 import javax.annotation.Nullable;
 
 public record FieldDTO(
-        Long id,
-        Long tmpId,
+        String id,
         String name,
         String code,
         int access,
         FieldValue defaultValue,
         boolean unique,
-        Long declaringTypeId,
-        RefDTO typeRef,
+        String declaringTypeId,
+        String typeId,
         boolean isChild,
         boolean isStatic,
         boolean readonly,
@@ -24,9 +23,5 @@ public record FieldDTO(
         @Nullable InstanceDTO staticValue,
         int state
 ) implements BaseDTO {
-
-    public Long typeId() {
-        return typeRef.id();
-    }
 
 }

@@ -8,7 +8,7 @@ import tech.metavm.util.CommonConstants;
 
 import java.util.Objects;
 
-public record RefDTO(Long id, Long tmpId) {
+public record RefDTO(Long id, Long tmpId, long typeId) {
 
     public RefDTO {
         if (id != null) tmpId = null;
@@ -29,12 +29,12 @@ public record RefDTO(Long id, Long tmpId) {
         return (id == null || id == 0L) && tmpId == null;
     }
 
-    public static RefDTO fromId(Long id) {
-        return new RefDTO(id, null);
+    public static RefDTO fromId(Long id, long typeId) {
+        return new RefDTO(id, null, typeId);
     }
 
-    public static RefDTO fromTmpId(Long tmpId) {
-        return new RefDTO(null, tmpId);
+    public static RefDTO fromTmpId(Long tmpId, long typeId) {
+        return new RefDTO(null, tmpId, typeId);
     }
 
     @JsonIgnore
@@ -45,13 +45,6 @@ public record RefDTO(Long id, Long tmpId) {
     @Override
     public String toString() {
         return tmpId != null ? "tmpId-" + tmpId : "id-" + id;
-    }
-
-    public Id toId() {
-        if(id != null)
-            return new PhysicalId(id);
-        else
-            return new TmpId(Objects.requireNonNull(tmpId));
     }
 
 }

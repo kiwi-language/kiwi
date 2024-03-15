@@ -7,6 +7,7 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.flow.rest.UpdateObjectNodeParam;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.ContextUtil;
@@ -22,7 +23,7 @@ public class UpdateObjectNode extends NodeRT {
     public static UpdateObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
         UpdateObjectNodeParam param = nodeDTO.getParam();
         ParsingContext parsingContext = FlowParsingContext.create(scope, prev, entityContext);
-        var node = (UpdateObjectNode) entityContext.getNode(nodeDTO.getRef());
+        var node = (UpdateObjectNode) entityContext.getNode(Id.parse(nodeDTO.id()));
         var objectId = ValueFactory.create(param.objectId(), parsingContext);
         if (node == null) {
             node = new UpdateObjectNode(
@@ -40,7 +41,7 @@ public class UpdateObjectNode extends NodeRT {
     }
 
     private static UpdateField saveField(UpdateObjectNode node, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext, ClassType type) {
-        var field = type.getField(updateFieldDTO.fieldRef());
+        var field = type.getField(Id.parse(updateFieldDTO.fieldId()));
         var op = UpdateOp.getByCode(updateFieldDTO.opCode());
         var value = ValueFactory.create(updateFieldDTO.value(), parsingContext);
         var existing = node.getField(field);

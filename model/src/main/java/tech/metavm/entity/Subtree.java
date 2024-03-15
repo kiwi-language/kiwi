@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.InstancePO;
 
 import java.util.Arrays;
@@ -8,8 +9,8 @@ import java.util.Objects;
 import java.util.function.Function;
 
 public record Subtree(
-        long id,
-        long parentId,
+        Id id,
+        Id parentId,
         long parentFieldId,
         byte[] data
 ) implements Comparable<Subtree> {
@@ -29,6 +30,6 @@ public record Subtree(
 
     @Override
     public int compareTo(@NotNull Subtree o) {
-        return Long.compare(id, o.id);
+        return id.compareTo(o.id);
     }
 }

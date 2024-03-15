@@ -6,6 +6,7 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
@@ -24,16 +25,16 @@ public class BranchNode extends NodeRT {
         BranchNodeParam param = nodeDTO.getParam();
         BranchNode node;
         if (nodeDTO.id() != null) {
-            node = (BranchNode) context.getNode(nodeDTO.id());
+            node = (BranchNode) context.getNode(Id.parse(nodeDTO.id()));
         } else
             node = new BranchNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), param.inclusive(), prev, scope);
         node.setInclusive(param.inclusive());
         if (param.branches() != null) {
-            Set<RefDTO> branchRefs = NncUtils.mapAndFilterUnique(param.branches(), BranchDTO::getRef, Objects::nonNull);
-            if (branchRefs.size() > param.branches().size()) {
+            Set<String> branchIds = NncUtils.mapAndFilterUnique(param.branches(), BranchDTO::id, Objects::nonNull);
+            if (branchIds.size() > param.branches().size()) {
                 throw new BusinessException(ErrorCode.BRANCH_INDEX_DUPLICATE);
             }
-            if (branchRefs.size() < param.branches().size()) {
+            if (branchIds.size() < param.branches().size()) {
                 throw new BusinessException(ErrorCode.BRANCH_INDEX_REQUIRED);
             }
             if (NncUtils.count(param.branches(), BranchDTO::preselected) != 1) {
@@ -43,7 +44,7 @@ public class BranchNode extends NodeRT {
             List<Branch> branches = new ArrayList<>();
             for (int i = 0; i < param.branches().size(); i++) {
                 BranchDTO branchDTO = param.branches().get(i);
-                var branch = context.getEntity(Branch.class, branchDTO.getRef());
+                var branch = context.getEntity(Branch.class, Id.parse(branchDTO.id()));
                 if (branch == null) {
                     branch = new Branch(
                             branchDTO.index(),

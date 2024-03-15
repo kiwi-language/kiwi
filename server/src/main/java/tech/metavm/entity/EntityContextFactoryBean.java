@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.Constants;
 
 public class EntityContextFactoryBean {
@@ -14,15 +15,15 @@ public class EntityContextFactoryBean {
         return entityContextFactory.newContext();
     }
 
-    public IEntityContext newContext(long appId) {
+    public IEntityContext newContext(Id appId) {
         return entityContextFactory.newContext(appId);
     }
 
     public IEntityContext newPlatformContext() {
-        return newContext(Constants.PLATFORM_APP_ID);
+        return newContext(Constants.getPlatformAppId());
     }
 
-    public IEntityContext newContext(long appId, IdInitializer idProvider) {
+    public IEntityContext newContext(Id appId, IdInitializer idProvider) {
         return entityContextFactory.newContext(appId, idProvider);
     }
 

@@ -5,6 +5,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.IndexScanNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.Index;
 
@@ -17,10 +18,10 @@ public class IndexScanNode extends NodeRT {
 
     public static IndexScanNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var param = (IndexScanNodeParam) nodeDTO.param();
-        var index = requireNonNull(context.getEntity(Index.class, param.indexRef()));
+        var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var type = context.getArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
-        var node = (IndexScanNode) context.getNode(nodeDTO.getRef());
+        var node = (IndexScanNode) context.getNode(Id.parse(nodeDTO.id()));
         var from = IndexQueryKey.create(param.from(), context, parsingContext);
         var to = IndexQueryKey.create(param.to(), context, parsingContext);
         if (node != null) {

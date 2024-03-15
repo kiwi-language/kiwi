@@ -2,6 +2,8 @@ package tech.metavm.entity;
 
 import tech.metavm.common.RefDTO;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.ContextUtil;
@@ -37,7 +39,7 @@ public class SerializeContext implements Closeable {
     private boolean writeParameterizedTypeAsPTypeDTO;
     private final Set<Type> writtenTypes = new IdentitySet<>();
     private final Map<Type, TypeDTO> types = new HashMap<>();
-    private final Map<Long, TypeDTO> typeMap = new HashMap<>();
+    private final Map<Id, TypeDTO> typeMap = new HashMap<>();
     private final Set<ClassType> writingCodeTypes = new IdentitySet<>();
 
     private SerializeContext() {
@@ -77,11 +79,11 @@ public class SerializeContext implements Closeable {
         return tmpIdMap.computeIfAbsent(model, k -> ContextUtil.nextTmpId());
     }
 
-    public RefDTO getRef(Object model) {
-        if (model instanceof Identifiable identifiable && identifiable.tryGetId() != null) {
-            return new RefDTO(identifiable.tryGetId(), null);
+    public String getRef(Object model) {
+        if (model instanceof Entity entity && entity.getStringId() != null) {
+            return entity.getStringId();
         } else {
-            return new RefDTO(null, getTmpId(model));
+            return TmpId.of(getTmpId(model)).toString();
         }
     }
 
@@ -245,10 +247,10 @@ public class SerializeContext implements Closeable {
     }
 
     public List<TypeDTO> getTypesExclude(Type type) {
-        return NncUtils.filter(types.values(), t -> !Objects.equals(t.getRef(), getRef(type)));
+        return NncUtils.filter(types.values(), t -> !Objects.equals(t.id(), getRef(type)));
     }
 
-    public TypeDTO getType(long id) {
+    public TypeDTO getType(Id id) {
         return NncUtils.requireNonNull(typeMap.get(id));
     }
 

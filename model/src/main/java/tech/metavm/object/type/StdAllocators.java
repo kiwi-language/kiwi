@@ -6,6 +6,7 @@ import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.ModelIdentity;
 import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.entity.ReadonlyArray;
+import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
@@ -84,15 +85,15 @@ public class StdAllocators {
         allocatorMap.get(javaType).putId(entityCode, id);
     }
 
-    public long getTypeId(long id) {
+    public TypeId getTypeId(long id) {
         StdAllocator classTypeAllocator = allocatorMap.get(ClassType.class);
         StdAllocator arrayTypeAllocator = allocatorMap.get(ArrayType.class);
         for (StdAllocator allocator : allocatorMap.values()) {
             if (allocator.contains(id)) {
                 if (isMetaArray(allocator.getJavaType())) {
-                    return arrayTypeAllocator.getId(allocator.getJavaType().getTypeName());
+                    return TypeId.ofArray(arrayTypeAllocator.getId(allocator.getJavaType().getTypeName()));
                 } else {
-                    return classTypeAllocator.getId(allocator.getJavaType().getTypeName());
+                    return TypeId.ofClass(classTypeAllocator.getId(allocator.getJavaType().getTypeName()));
                 }
             }
         }

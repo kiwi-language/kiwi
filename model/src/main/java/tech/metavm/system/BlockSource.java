@@ -1,5 +1,8 @@
 package tech.metavm.system;
 
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TypeId;
+
 import java.util.Collection;
 import java.util.List;
 

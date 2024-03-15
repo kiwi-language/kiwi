@@ -9,10 +9,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType;
 import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
@@ -20,12 +19,11 @@ import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.cache.MockCache;
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.GraphVisitor;
-import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 
@@ -171,6 +169,10 @@ public class TestUtils {
         }
     }
 
+    public static Id getTypeId(TypeDTO typeDTO) {
+        return Id.parse(typeDTO.id());
+    }
+
     public static String getId(FieldValue fieldValue) {
         return switch (fieldValue) {
             case ReferenceFieldValue refValue -> refValue.getId();
@@ -241,7 +243,9 @@ public class TestUtils {
 
         EntityUtils.visitGraph(List.of(root), o -> {
             if (o instanceof Entity entity && entity.isIdNull()) {
-                entity.initId(ref.nextId++);
+                var typeId = Types.getType(entity).getPhysicalId();
+                var typeTag = entity instanceof ReadonlyArray<?> ? TypeTag.Array : TypeTag.Class;
+                entity.initId(PhysicalId.of(ref.nextId++, typeTag, typeId));
             }
         });
     }
@@ -250,7 +254,9 @@ public class TestUtils {
         EntityUtils.visitGraph(List.of(root), o -> {
             if (o instanceof Entity entity && entity.isIdNull()) {
                 var type = ModelDefRegistry.getDefContext().getType(EntityUtils.getRealType(entity.getClass()));
-                entity.initId(idProvider.allocateOne(TestConstants.APP_ID, type));
+                var typeId = Types.getType(entity).getPhysicalId();
+                var typeTag = entity instanceof ReadonlyArray<?> ? TypeTag.Array : TypeTag.Class;
+                entity.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.getAppId(), type), typeTag, typeId));
             }
         });
     }
@@ -275,7 +281,7 @@ public class TestUtils {
             @Override
             public Void visitDurableInstance(DurableInstance instance) {
                 if (!instance.isIdInitialized()) {
-                    long id = idProvider.allocateOne(TestConstants.APP_ID, instance.getType());
+                    long id = idProvider.allocateOne(TestConstants.getAppId(), instance.getType());
 //                    if (instance instanceof ArrayInstance arrayInstance) {
 //                        id = switch (arrayInstance.getType().getKind()) {
 //                            case READ_WRITE -> ref.nextReadWriteArrayId++;
@@ -290,7 +296,7 @@ public class TestUtils {
 //                            id = ref.nextObjectId++;
 //                    } else
 //                        throw new InternalException("Invalid instance: " + instance);
-                    instance.initId(PhysicalId.of(id));
+                    instance.initId(PhysicalId.of(id, instance.getType()));
                 }
                 return super.visitDurableInstance(instance);
             }
@@ -333,45 +339,45 @@ public class TestUtils {
         }
     }
 
-    public static long getFieldIdByCode(TypeDTO typeDTO, String fieldCode) {
+    public static String getFieldIdByCode(TypeDTO typeDTO, String fieldCode) {
         return NncUtils.findRequired(typeDTO.getClassParam().fields(), f -> fieldCode.equals(f.code())).id();
     }
 
     public static ObjectMappingDTO getDefaultMapping(TypeDTO typeDTO) {
         return NncUtils.findRequired(
                 typeDTO.getClassParam().mappings(),
-                m -> m.getRef().equals(typeDTO.getClassParam().defaultMappingRef())
+                m -> m.id().equals(typeDTO.getClassParam().defaultMappingId())
         );
     }
 
-    public static long getDefaultViewTypeId(TypeDTO typeDTO) {
-        return getDefaultMapping(typeDTO).targetTypeRef().id();
+    public static String getDefaultViewTypeId(TypeDTO typeDTO) {
+        return getDefaultMapping(typeDTO).targetTypeId();
     }
 
-    public static long getMethodIdByCode(TypeDTO typeDTO, String methodCode) {
+    public static String getMethodIdByCode(TypeDTO typeDTO, String methodCode) {
         return NncUtils.findRequired(typeDTO.getClassParam().flows(), f -> methodCode.equals(f.code())).id();
     }
 
-    public static long getStaticMethodIdByCode(TypeDTO typeDTO, String methodCode) {
+    public static String getStaticMethodIdByCode(TypeDTO typeDTO, String methodCode) {
         return NncUtils.findRequired(typeDTO.getClassParam().flows(),
                 f -> methodCode.equals(f.code()) && ((MethodParam) f.param()).isStatic()
         ).id();
     }
 
-    public static long getStaticMethod(TypeDTO typeDTO, String code, RefDTO...parameterTypeRefs) {
-        var paramTypeRefList = List.of(parameterTypeRefs);
+    public static String getStaticMethod(TypeDTO typeDTO, String code, String...parameterTypeIds) {
+        var paramTypeRefList = List.of(parameterTypeIds);
         return NncUtils.findRequired(typeDTO.getClassParam().flows(),
                 f -> code.equals(f.code()) &&
                         ((MethodParam) f.param()).isStatic() &&
-                        paramTypeRefList.equals(NncUtils.map(f.parameters(), ParameterDTO::typeRef))
+                        paramTypeRefList.equals(NncUtils.map(f.parameters(), ParameterDTO::typeId))
         ).id();
     }
 
-    public static long getMethodId(TypeDTO typeDTO, String code, Long... parameterTypeIds) {
+    public static String getMethodId(TypeDTO typeDTO, String code, String... parameterTypeIds) {
         var paramTypeidList = List.of(parameterTypeIds);
         return NncUtils.findRequired(typeDTO.getClassParam().flows(),
                 f -> code.equals(f.code()) && paramTypeidList.equals(
-                        NncUtils.map(f.parameters(), p -> p.typeRef().id())
+                        NncUtils.map(f.parameters(), ParameterDTO::typeId)
                 )
         ).id();
     }

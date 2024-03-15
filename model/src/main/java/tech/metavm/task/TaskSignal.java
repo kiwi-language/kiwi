@@ -17,7 +17,7 @@ public class TaskSignal extends Entity {
     );
 
     @EntityField("租户ID")
-    private final long appId;
+    private final String appId;
     @EntityField("未完成任务数")
     private long unfinishedCount;
     @EntityField("最近任务创建时间")
@@ -25,11 +25,11 @@ public class TaskSignal extends Entity {
     @EntityField("最近执行任务ID")
     private long lastRunTaskId;
 
-    public TaskSignal(long appId) {
+    public TaskSignal(String appId) {
         this.appId = appId;
     }
 
-    public long getAppId() {
+    public String getAppId() {
         return appId;
     }
 

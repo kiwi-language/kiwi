@@ -7,6 +7,7 @@ import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.ParsingContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.type.Field;
@@ -21,7 +22,7 @@ public class FieldParam extends Entity implements LocalKey {
     public static FieldParam create(FieldParamDTO fieldParamDTO,
                                     ParsingContext parsingContext, IEntityContext entityContext) {
         return new FieldParam(
-                entityContext.getField(fieldParamDTO.fieldRef()),
+                entityContext.getField(Id.parse(fieldParamDTO.fieldId())),
                 ValueFactory.create(fieldParamDTO.value(), parsingContext)
         );
     }
@@ -55,8 +56,8 @@ public class FieldParam extends Entity implements LocalKey {
     public FieldParamDTO toDTO() {
         try(var serContext = SerializeContext.enter()) {
             return new FieldParamDTO(
-                    tryGetId(), getTmpId(),
-                    serContext.getRef(field), NncUtils.get(value, v -> v.toDTO()));
+                    serContext.getRef(this),
+                    serContext.getRef(field), NncUtils.get(value, Value::toDTO));
         }
     }
 

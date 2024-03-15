@@ -5,14 +5,14 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 public record AuthConfig(
-        long appId,
+        String appId,
         String loginName,
         String password
 ) {
 
     public static AuthConfig fromFile(String filePath) {
         try (Scanner scanner = new Scanner(new FileInputStream(filePath))) {
-            long appId = scanner.nextLong();
+            String appId = scanner.next();
             String loginName = scanner.next();
             String password = scanner.next();
             return new AuthConfig(appId, loginName, password);

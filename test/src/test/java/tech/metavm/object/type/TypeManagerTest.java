@@ -5,7 +5,6 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.mocks.Foo;
@@ -53,7 +52,7 @@ public class TypeManagerTest extends TestCase {
         flowManager = new FlowManager(entityContextFactory);
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
-        ContextUtil.setAppId(TestConstants.APP_ID);
+        ContextUtil.setAppId(TestConstants.getAppId());
     }
 
     @Override
@@ -69,8 +68,7 @@ public class TypeManagerTest extends TestCase {
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
                 .tmpId(NncUtils.randomNonNegative())
                 .addField(
-                        FieldDTOBuilder.newBuilder("name", StandardTypes.getStringType().getRef())
-                                .tmpId(NncUtils.randomNonNegative())
+                        FieldDTOBuilder.newBuilder("name", StandardTypes.getStringType().getStringId())
                                 .build()
                 )
                 .build();
@@ -95,19 +93,18 @@ public class TypeManagerTest extends TestCase {
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
                 .tmpId(NncUtils.randomNonNegative())
                 .addField(
-                        FieldDTOBuilder.newBuilder("name", StandardTypes.getStringType().getRef())
-                                .tmpId(NncUtils.randomNonNegative())
+                        FieldDTOBuilder.newBuilder("name", StandardTypes.getStringType().getStringId())
                                 .build()
                 )
                 .build();
         TypeDTO savedTypeDTO = TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
-        Assert.assertTrue(instanceSearchService.contains(savedTypeDTO.id()));
+        Assert.assertTrue(instanceSearchService.contains(TestUtils.getTypeId(savedTypeDTO)));
         TestUtils.doInTransactionWithoutResult(() -> typeManager.remove(savedTypeDTO.id()));
-        Assert.assertFalse(instanceSearchService.contains(savedTypeDTO.id()));
+        Assert.assertFalse(instanceSearchService.contains(TestUtils.getTypeId(savedTypeDTO)));
     }
 
     public void testLoadByPaths() {
-        ContextUtil.setAppId(Constants.ROOT_APP_ID);
+        ContextUtil.setAppId(Constants.getRootAppId());
         var fooType = ModelDefRegistry.getClassType(Foo.class);
         var stringType = StandardTypes.getStringType();
         String path1 = "傻.巴.编号";
@@ -115,7 +112,7 @@ public class TypeManagerTest extends TestCase {
         LoadByPathsResponse response = typeManager.loadByPaths(List.of(path1, path2));
 
         Assert.assertEquals(
-                Map.of(path1, stringType.getId(), path2, stringType.getId()),
+                Map.of(path1, stringType.getStringId(), path2, stringType.getStringId()),
                 response.path2typeId()
         );
 //        try (var context = entityContextFactory.newContext(10L)) {
@@ -144,8 +141,8 @@ public class TypeManagerTest extends TestCase {
         var nodeTypeIds = MockUtils.createNodeTypes(typeManager, flowManager);
         var nodeType = typeManager.getParameterizedType(
                 new GetParameterizedTypeRequest(
-                        RefDTO.fromId(nodeTypeIds.nodeTypeId()),
-                        List.of(StandardTypes.getStringType().getRef()),
+                        nodeTypeIds.nodeTypeId(),
+                        List.of(StandardTypes.getStringType().getStringId()),
                         List.of()
                 )
         ).type();
@@ -153,7 +150,7 @@ public class TypeManagerTest extends TestCase {
         var valueFieldId = TestUtils.getFieldIdByCode(nodeType, "value");
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.create(new InstanceDTO(
                 null,
-                nodeType.getRef(),
+                nodeType.id(),
                 null,
                 null,
                 null,
@@ -164,7 +161,7 @@ public class TypeManagerTest extends TestCase {
                         )
                 )
         )));
-        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(FieldDTOBuilder.newBuilder("编号", StandardTypes.getStringType().getRef())
+        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(FieldDTOBuilder.newBuilder("编号", StandardTypes.getStringType().getStringId())
                 .declaringTypeId(nodeTypeIds.nodeTypeId())
                 .defaultValue(PrimitiveFieldValue.createString("000"))
                 .build()));

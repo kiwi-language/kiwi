@@ -6,6 +6,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.RemoveElementNodeParam;
 import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.AssertUtils;
@@ -20,7 +21,7 @@ public class RemoveElementNode extends NodeRT {
 
     public static RemoveElementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         RemoveElementNodeParam param = nodeDTO.getParam();
-        var node = (RemoveElementNode) context.getNode(nodeDTO.getRef());
+        var node = (RemoveElementNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var array = ValueFactory.create(param.array(), parsingContext);
         var element = ValueFactory.create(param.element(), parsingContext);

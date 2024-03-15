@@ -5,11 +5,11 @@ import java.util.List;
 public record InternalMetaPatch(
         long baseVersion,
         long version,
-        List<Long> changedTypeIds,
-        List<Long> removedTypeIds,
-        List<Long> changedMappingIds,
-        List<Long> removedMappingIds,
-        List<Long> changedFunctionIds,
-        List<Long> removedFunctionIds
+        List<String> changedTypeIds,
+        List<String> removedTypeIds,
+        List<String> changedMappingIds,
+        List<String> removedMappingIds,
+        List<String> changedFunctionIds,
+        List<String> removedFunctionIds
 ) {
 }

@@ -5,6 +5,7 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.IndexSelectFirstNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Index;
 import tech.metavm.util.Instances;
@@ -19,10 +20,10 @@ public class IndexSelectFirstNode extends NodeRT {
 
     public static IndexSelectFirstNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var param = (IndexSelectFirstNodeParam) nodeDTO.param();
-        var index = requireNonNull(context.getEntity(Index.class, param.indexRef()));
+        var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var key = IndexQueryKey.create(param.key(), context, parsingContext);
-        var node = (IndexSelectFirstNode) context.getNode(nodeDTO.getRef());
+        var node = (IndexSelectFirstNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null) {
             node.setIndex(index);
             node.setKey(key);

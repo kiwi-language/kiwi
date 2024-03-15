@@ -3,15 +3,15 @@ package tech.metavm.object.type.rest.dto;
 import tech.metavm.common.Request;
 
 public final class GetTypeRequest extends Request {
-    private final long id;
+    private final String id;
     private final boolean includingPropertyTypes;
 
-    public GetTypeRequest(long id, boolean includingPropertyTypes) {
+    public GetTypeRequest(String id, boolean includingPropertyTypes) {
         this.id = id;
         this.includingPropertyTypes = includingPropertyTypes;
     }
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 

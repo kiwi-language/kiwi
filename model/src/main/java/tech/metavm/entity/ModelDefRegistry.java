@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
@@ -69,8 +70,8 @@ public class ModelDefRegistry {
         return (ClassType) getType(javaType);
     }
 
-    public static long getTypeId(Class<?> entityClass) {
-        return getType(entityClass).getId();
+    public static String getTypeId(Class<?> entityClass) {
+        return getType(entityClass).getStringId();
     }
 
     public static Field getField(java.lang.reflect.Field javaField) {

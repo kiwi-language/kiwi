@@ -1,12 +1,10 @@
 package tech.metavm.object.type.rest.dto;
 
-import tech.metavm.common.RefDTO;
-
 import java.util.List;
 
 public record FunctionTypeParam(
-        List<RefDTO> parameterTypeRefs,
-        RefDTO returnTypeRef
+        List<String> parameterTypeIds,
+        String returnTypeId
 ) implements TypeParam {
     @Override
     public int getType() {
@@ -15,6 +13,6 @@ public record FunctionTypeParam(
 
     @Override
     public TypeKey getTypeKey() {
-        return new FunctionTypeKey(parameterTypeRefs, returnTypeRef);
+        return new FunctionTypeKey(parameterTypeIds, returnTypeId);
     }
 }

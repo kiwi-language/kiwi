@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import javassist.util.proxy.ProxyFactory;
 import javassist.util.proxy.ProxyObject;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
@@ -32,20 +33,20 @@ public class EntityProxyFactory {
     }
 
     public static <T> T getProxy(Class<T> type,
-                                 @Nullable Long id,
+                                 @Nullable Id id,
                                  Consumer<T> initializer) {
         return getProxy(type, id, ReflectionUtils::allocateInstance, initializer);
     }
 
     public static <T> T getProxy(TypeReference<T> type,
-                                 @Nullable Long id,
+                                 @Nullable Id id,
                                  Consumer<T> initializer,
                                  Function<Class<? extends T>, T> constructor) {
         return getProxy(type.getType(), id, constructor, initializer);
     }
 
     public static <T> T getProxy(Class<T> type,
-                                 @Nullable Long id,
+                                 @Nullable Id id,
                                  Function<Class<? extends T>, T> constructor,
                                  Consumer<T> initializer) {
         Class<? extends T> proxyClass = getProxyClass(type).asSubclass(type);
@@ -75,7 +76,7 @@ public class EntityProxyFactory {
         }
     }
 
-    public static <T extends Entity> T makeEntityDummy(Class<T> type, long id) {
+    public static <T extends Entity> T makeEntityDummy(Class<T> type, Id id) {
         try {
             ProxyObject proxyInstance = (ProxyObject) makeDummy(type);
             FIELD_ID.set(proxyInstance, id);

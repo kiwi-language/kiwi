@@ -1,11 +1,12 @@
 package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
-import tech.metavm.entity.*;
+import tech.metavm.entity.InstanceIndexQuery;
+import tech.metavm.entity.StoreLoadRequest;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.instance.persistence.*;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapper;
@@ -14,7 +15,10 @@ import tech.metavm.util.ChangeList;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Component
 public class InstanceStore extends BaseInstanceStore {
@@ -54,7 +58,7 @@ public class InstanceStore extends BaseInstanceStore {
     public List<Version> getRootVersions(List<Long> ids, IInstanceContext context) {
         try(var entry = context.getProfiler().enter("getRootVersions")) {
             entry.addMessage("numIds", ids.size());
-            return instanceMapper.selectRootVersions(context.getAppId(), ids);
+            return instanceMapper.selectRootVersions(context.getAppId().getPhysicalId(), ids);
         }
     }
 
@@ -80,28 +84,30 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
-    public List<ReferencePO> getAllStrongReferences(long appId, Set<Long> targetIds, Set<Long> excludedSourceIds) {
+    public List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Id> excludedSourceIds) {
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getAllStrongReferences")) {
-            return referenceMapper.selectAllStrongReferences(appId, targetIds, excludedSourceIds);
+            return referenceMapper.selectAllStrongReferences(appId,
+                    NncUtils.map(targetIds, Id::getPhysicalId), NncUtils.map(excludedSourceIds, Id::getPhysicalId));
         }
     }
 
     @Override
-    public List<Long> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
-        return NncUtils.map(indexEntryMapper.scan(context.getAppId(), from, to), IndexEntryPO::getInstanceId);
+    public List<Id> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
+        return NncUtils.map(indexEntryMapper.scan(context.getAppId().getPhysicalId(), from, to),
+                IndexEntryPO::getId);
     }
 
     @Override
     public long indexCount(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
-        return indexEntryMapper.countRange(context.getAppId(), from, to);
+        return indexEntryMapper.countRange(context.getAppId().getPhysicalId(), from, to);
     }
 
     @Override
-    public List<Long> query(InstanceIndexQuery query, IInstanceContext context) {
+    public List<Id> query(InstanceIndexQuery query, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.query")) {
             return NncUtils.map(
-                    indexEntryMapper.query(PersistenceUtils.toIndexQueryPO(query,context.getAppId(), context.getLockMode().code())),
-                    IndexEntryPO::getInstanceId
+                    indexEntryMapper.query(PersistenceUtils.toIndexQueryPO(query,context.getAppId().getPhysicalId(), context.getLockMode().code())),
+                    IndexEntryPO::getId
             );
         }
     }
@@ -109,16 +115,16 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public long count(InstanceIndexQuery query, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.count")) {
-            return indexEntryMapper.count(PersistenceUtils.toIndexQueryPO(query, context.getAppId(), context.getLockMode().code()));
+            return indexEntryMapper.count(PersistenceUtils.toIndexQueryPO(query, context.getAppId().getPhysicalId(), context.getLockMode().code()));
         }
     }
 
     @Override
-    public List<Long> getByReferenceTargetId(long targetId, long startIdExclusive, long limit, IInstanceContext context) {
+    public List<Id> getByReferenceTargetId(long targetId, long startIdExclusive, long limit, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.getByReferenceTargetId")) {
             return NncUtils.map(
-                    referenceMapper.selectByTargetId(context.getAppId(), targetId, startIdExclusive, limit),
-                    ReferencePO::getSourceId
+                    referenceMapper.selectByTargetId(context.getAppId().getPhysicalId(), targetId, startIdExclusive, limit),
+                    r -> PhysicalId.of(r.getSourceId(), TypeTag.fromCode(r.getTargetTypeTag()), r.getSourceId())
             );
         }
     }
@@ -126,14 +132,14 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public List<InstancePO> queryByTypeIds(List<ByTypeQuery> queries, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.queryByTypeIds")) {
-            return instanceMapper.selectByTypeIds(context.getAppId(), queries);
+            return instanceMapper.selectByTypeIds(context.getAppId().getPhysicalId(), queries);
         }
     }
 
     @Override
     public List<InstancePO> scan(List<ScanQuery> queries, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.scan")) {
-            return instanceMapper.scan(context.getAppId(), queries);
+            return instanceMapper.scan(context.getAppId().getPhysicalId(), queries);
         }
     }
 
@@ -151,9 +157,9 @@ public class InstanceStore extends BaseInstanceStore {
             entry.addMessage("numInstances", ids.size());
             if (entry.isVerbose())
                 entry.addMessage("ids", ids);
-            var records = instanceMapper.selectForest(context.getAppId(), ids,
+            var records = instanceMapper.selectForest(context.getAppId().getPhysicalId(), ids,
                     context.getLockMode().code());
-            var typeIds = NncUtils.mapUnique(records, r -> PhysicalId.of(r.getId()));
+            var typeIds = NncUtils.mapUnique(records, r -> PhysicalId.of(r.getId(), TypeTag.fromCode(r.getTypeTag()), r.getTypeId()));
             context.buffer(typeIds);
             return records;
         }
@@ -169,9 +175,10 @@ public class InstanceStore extends BaseInstanceStore {
             if (NncUtils.isEmpty(request.ids())) {
                 return List.of();
             }
-            List<InstancePO> records = instanceMapper.selectByIds(context.getAppId(), request.ids(),
+            List<InstancePO> records = instanceMapper.selectByIds(context.getAppId().getPhysicalId(), request.ids(),
                     context.getLockMode().code());
-            Set<Id> typeIds = NncUtils.mapUnique(records, r -> PhysicalId.of(r.getTypeId()));
+            Set<Id> typeIds = NncUtils.mapUnique(records,
+                    r -> PhysicalId.of(r.getTypeId(), TypeTag.fromCode(r.getTypeTag()), r.getTypeId()));
             context.buffer(typeIds);
             return records;
         }
@@ -183,17 +190,6 @@ public class InstanceStore extends BaseInstanceStore {
             return Set.of();
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getAliveInstanceIds")) {
             return new HashSet<>(instanceMapper.getAliveIds(appId, instanceIds));
-        }
-    }
-
-    public String getTitle(Long id, InstanceContext context) {
-        try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getTitle")) {
-            Map<Long, String> titleMap = context.getAttribute(ContextAttributeKey.INSTANCE_TITLES);
-            String title = titleMap.get(id);
-            if (title != null) {
-                return title;
-            }
-            return context.get(PhysicalId.of(id)).getTitle();
         }
     }
 

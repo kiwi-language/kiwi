@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface GenericDeclarationDTO {
 
-    List<RefDTO> typeParameterRefs();
+    List<String> typeParameterIds();
 
 }

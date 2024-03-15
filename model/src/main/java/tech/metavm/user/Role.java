@@ -35,8 +35,7 @@ public class Role extends Entity {
     public RoleDTO toRoleDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new RoleDTO(
-                    id,
-                    serContext.getTmpId(this),
+                    serContext.getRef(this),
                     getName()
             );
         }

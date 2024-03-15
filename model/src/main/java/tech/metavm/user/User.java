@@ -29,7 +29,7 @@ public class User extends Entity {
 
     @EntityField("平台用户ID")
     @Nullable
-    private Long platformUserId;
+    private String platformUserId;
 
     @ChildEntity("角色列表")
     private final ReadWriteArray<Role> roles = addChild(new ReadWriteArray<>(Role.class), "roles");
@@ -74,17 +74,17 @@ public class User extends Entity {
         this.state = state;
     }
 
-    public void setPlatformUserId(@Nullable Long platformUserId) {
+    public void setPlatformUserId(@Nullable String platformUserId) {
         this.platformUserId = platformUserId;
     }
 
     public UserDTO toDTO() {
         return new UserDTO(
-                id,
+                getStringId(),
                 getLoginName(),
                 getName(),
                 null,
-                NncUtils.map(getRoles(), Entity::getRef)
+                NncUtils.map(getRoles(), Entity::getStringId)
         );
     }
 

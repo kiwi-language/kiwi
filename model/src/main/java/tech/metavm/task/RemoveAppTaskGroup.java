@@ -11,9 +11,9 @@ import java.util.List;
 public class RemoveAppTaskGroup extends TaskGroup {
 
     @EntityField("应用ID")
-    private final long appId;
+    private final String appId;
 
-    public RemoveAppTaskGroup(long appId) {
+    public RemoveAppTaskGroup(String appId) {
         this.appId = appId;
     }
 

@@ -7,6 +7,7 @@ import tech.metavm.flow.rest.NewObjectNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.ClassInstanceBuilder;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -31,7 +32,7 @@ public class NewObjectNode extends CallNode implements NewNode {
                 p -> ParentRef.create(p, parsingContext, context, subFlow.getReturnType()));
         NewObjectNode node;
         if (nodeDTO.id() != null) {
-            node = (NewObjectNode) context.getNode(nodeDTO.id());
+            node = (NewObjectNode) context.getNode(Id.parse(nodeDTO.id()));
             node.setSubFlow(subFlow);
             node.setArguments(arguments);
             node.setParentRef(parentRef);

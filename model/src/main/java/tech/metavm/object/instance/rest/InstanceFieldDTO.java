@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.Set;
 
 public record InstanceFieldDTO(
-        Long fieldId,
+        String fieldId,
         String fieldName,
         Integer type,
         Boolean multiValued,
         FieldValue value
 ) implements Serializable {
 
-    public static InstanceFieldDTO create(Long fieldId, FieldValue value) {
+    public static InstanceFieldDTO create(String fieldId, FieldValue value) {
         return new InstanceFieldDTO(
                 fieldId,
                 null,

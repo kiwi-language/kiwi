@@ -6,14 +6,14 @@ import java.util.Objects;
 
 public class JoinAppEvent extends UserEvent {
 
-    private final long appId;
+    private final String appId;
 
-    public JoinAppEvent(long userId, long appId) {
+    public JoinAppEvent(String userId, String appId) {
         super(UserEventKind.JOIN_APP.code(), userId);
         this.appId = appId;
     }
 
-    public long getAppId() {
+    public String getAppId() {
         return appId;
     }
 
@@ -22,7 +22,7 @@ public class JoinAppEvent extends UserEvent {
         if (this == object) return true;
         if (!(object instanceof JoinAppEvent that)) return false;
         if (!super.equals(object)) return false;
-        return appId == that.appId;
+        return Objects.equals(appId, that.appId);
     }
 
     @Override

@@ -1,8 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.util.NncUtils;
 
 import java.util.Collection;
@@ -17,12 +15,12 @@ public class DefaultIdInitializer implements IdInitializer {
     }
 
     @Override
-    public long getTypeId(long id) {
+    public TypeId getTypeId(Id id) {
         return idProvider.getTypeId(id);
     }
 
     @Override
-    public void initializeIds(long appId, Collection<? extends DurableInstance> instancesToInitId) {
+    public void initializeIds(Id appId, Collection<? extends DurableInstance> instancesToInitId) {
         var countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);
         var type2ids = idProvider.allocate(appId, countMap);
         var type2instances = NncUtils.toMultiMap(instancesToInitId, Instance::getType);
@@ -40,7 +38,7 @@ public class DefaultIdInitializer implements IdInitializer {
 //            for (var instance : instances) {
 //                allocatedMap.put(instance.tryGetPhysicalId(), instance);
 //            }
-            NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(PhysicalId.of(id)));
+            NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(PhysicalId.of(id, type)));
         });
     }
 }

@@ -1,19 +1,20 @@
 package tech.metavm.common;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import tech.metavm.util.TmpIdDeserializer;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TmpId;
+
+import javax.annotation.Nullable;
 
 public interface BaseDTO {
 
-    Long id();
+    @Nullable String id();
 
-    @JsonDeserialize(using = TmpIdDeserializer.class)
-    Long tmpId();
-
-    @JsonIgnore
-    default RefDTO getRef() {
-        return new RefDTO(id(), tmpId());
+    default @Nullable Long tmpId() {
+        var id = id();
+        if(id != null && Id.parse(id) instanceof TmpId tmpId)
+            return tmpId.getTmpId();
+        else
+            return null;
     }
 
 }

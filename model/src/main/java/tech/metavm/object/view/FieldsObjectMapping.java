@@ -2,10 +2,13 @@ package tech.metavm.object.view;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.CompositeTypeFacade;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.FunctionTypeProvider;
 import tech.metavm.object.view.rest.dto.FieldsObjectMappingParam;
 import tech.metavm.object.view.rest.dto.ObjectMappingParam;
 import tech.metavm.util.BusinessException;
@@ -13,7 +16,9 @@ import tech.metavm.util.NamingUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @EntityType("字段对象映射")
 public class FieldsObjectMapping extends ObjectMapping {
@@ -200,8 +205,8 @@ public class FieldsObjectMapping extends ObjectMapping {
         );
     }
 
-    public FieldMapping findFieldMapping(RefDTO ref) {
-        return fieldMappings.get(Entity::getRef, ref);
+    public FieldMapping findFieldMapping(Id id) {
+        return fieldMappings.get(Entity::getId, id);
     }
 
     void addField(FieldMapping field) {

@@ -1,7 +1,7 @@
 package tech.metavm.object.type;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.core.Id;
 
 public class ContextTypeRepository implements TypeRepository {
 
@@ -17,8 +17,8 @@ public class ContextTypeRepository implements TypeRepository {
     }
 
     @Override
-    public Type getType(RefDTO ref) {
-        return context.getType(ref);
+    public Type getType(Id id) {
+        return context.getType(id);
     }
 
     @Override

@@ -1,6 +1,6 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.common.RefDTO;
+import tech.metavm.object.instance.core.Id;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -9,10 +9,10 @@ public record MethodParam(
         boolean isConstructor,
         boolean isAbstract,
         boolean isStatic,
-        @Nullable RefDTO verticalTemplateRef,
-        RefDTO declaringTypeRef,
-        RefDTO staticTypeRef,
-        List<RefDTO> overriddenRefs,
+        @Nullable String verticalTemplateId,
+        String declaringTypeId,
+        String staticTypeId,
+        List<String> overriddenIds,
         int access
 ) implements FlowParam {
     @Override

@@ -51,7 +51,7 @@ public class AppInvitation extends Entity {
     }
 
     public AppInvitationDTO toDTO() {
-        return new AppInvitationDTO(user.getId(), application.getId(), getTitle(),
+        return new AppInvitationDTO(user.getStringId(), application.getStringId(), getTitle(),
                 isAdmin, state.code());
     }
 

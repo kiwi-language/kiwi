@@ -6,6 +6,7 @@ import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.type.TypeProvider;
@@ -28,7 +29,7 @@ public class EntityContextBuilder {
     private IdInitializer idInitializer;
     private List<ContextPlugin> plugins = List.of();
     private EventQueue eventQueue;
-    private long appId;
+    private Id appId;
     private boolean asyncLogProcessing;
     private DefContext defContext;
     private boolean childrenLazyLoading;
@@ -90,7 +91,7 @@ public class EntityContextBuilder {
         return this;
     }
 
-    public EntityContextBuilder appId(long appId) {
+    public EntityContextBuilder appId(Id appId) {
         this.appId = appId;
         return this;
     }
@@ -106,7 +107,7 @@ public class EntityContextBuilder {
     }
 
     public IEntityContext build() {
-        if (appId == 0)
+        if (appId == null)
             appId = ContextUtil.getAppId();
         if (defContext == null)
             defContext = ModelDefRegistry.getDefContext();

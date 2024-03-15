@@ -2,26 +2,26 @@ package tech.metavm.expression.dto;
 
 public class FlowParsingContextDTO extends ParsingContextDTO {
 
-    private Long prevNodeId;
-    private long scopeId;
+    private String prevNodeId;
+    private String scopeId;
 
     public FlowParsingContextDTO() {
         super(ContextTypes.CONTEXT_TYPE_FLOW);
     }
 
-    public Long getPrevNodeId() {
+    public String getPrevNodeId() {
         return prevNodeId;
     }
 
-    public void setPrevNodeId(Long prevNodeId) {
+    public void setPrevNodeId(String prevNodeId) {
         this.prevNodeId = prevNodeId;
     }
 
-    public long getScopeId() {
+    public String getScopeId() {
         return scopeId;
     }
 
-    public void setScopeId(long scopeId) {
+    public void setScopeId(String scopeId) {
         this.scopeId = scopeId;
     }
 }

@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.system.IdService;
 import tech.metavm.system.RegionManager;
 import tech.metavm.mocks.Foo;
@@ -23,9 +24,9 @@ public class EntityIdProviderTest extends TestCase {
         ClassType typeType = ClassTypeBuilder.newBuilder("Type", null).build();
         ClassType fooType = ClassTypeBuilder.newBuilder("Foo", null).build();
         ArrayType fooArrayType = new ArrayType(null, fooType, ArrayKind.READ_WRITE);
-        typeType.initId(1L);
-        fooType.initId(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType));
-        fooArrayType.initId(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType));
+        typeType.initId(PhysicalId.ofClass(1L, 1L));
+        fooType.initId(PhysicalId.of(entityIdProvider.allocateOne(TestConstants.getAppId(), typeType), typeType));
+        fooArrayType.initId(PhysicalId.of(entityIdProvider.allocateOne(TestConstants.getAppId(), typeType), typeType));
 
         int numIdsForClass = 10, numIdsForArray = 5;
         Map<Type, Integer> type2count = Map.of(
@@ -34,7 +35,7 @@ public class EntityIdProviderTest extends TestCase {
         );
 
         Map<Type, List<Long>> idMap = entityIdProvider.allocate(
-                TestConstants.APP_ID, type2count
+                TestConstants.getAppId(), type2count
         );
 
         Set<Long> visitedIds = new HashSet<>();

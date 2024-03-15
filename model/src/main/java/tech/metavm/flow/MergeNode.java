@@ -8,6 +8,7 @@ import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.MergeNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
@@ -22,9 +23,9 @@ import java.util.*;
 public class MergeNode extends ChildTypeNode {
 
     public static MergeNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var outputType = context.getClassType(nodeDTO.outputTypeRef());
+        var outputType = context.getClassType(Id.parse(nodeDTO.outputTypeId()));
         var branchNode = (BranchNode) Objects.requireNonNull(prev);
-        var node = (MergeNode) context.getNode(nodeDTO.getRef());
+        var node = (MergeNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
             node = new MergeNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), branchNode, outputType, scope);
         var param = (MergeNodeParam) nodeDTO.param();
@@ -32,13 +33,13 @@ public class MergeNode extends ChildTypeNode {
             throw new BusinessException(ErrorCode.MISSING_MERGE_NODE_FIELD_VALUE);
         var mergeFields = new ArrayList<MergeNodeField>();
         for (var mergeFieldDTO : param.fields()) {
-            var field = context.getField(mergeFieldDTO.fieldRef());
+            var field = context.getField(Id.parse(mergeFieldDTO.fieldId()));
             var mergeField = node.findMergeField(field);
             if (mergeField == null)
                 mergeField = new MergeNodeField(field, node);
             var branchParsingContexts = new HashMap<Branch, ParsingContext>();
             for (var value : mergeFieldDTO.values()) {
-                var branch = Objects.requireNonNull(context.getEntity(Branch.class, value.branchRef()));
+                var branch = Objects.requireNonNull(context.getEntity(Branch.class, Id.parse(value.branchId())));
                 if (branch.getOwner() != branchNode)
                     throw new InternalException("Branch " + branch + " doesn't belong to the branch node of this merge node");
                 mergeField.setValue(branch,

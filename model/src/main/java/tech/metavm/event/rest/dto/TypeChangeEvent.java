@@ -8,11 +8,11 @@ import java.util.Objects;
 
 public class TypeChangeEvent extends AppEvent {
     private final long version;
-    private final List<Long> typeIds;
+    private final List<String> typeIds;
     @Nullable
     private final String triggerClientId;
 
-    public TypeChangeEvent(long appId, long version, List<Long> typeIds, @Nullable String triggerClientId) {
+    public TypeChangeEvent(String appId, long version, List<String> typeIds, @Nullable String triggerClientId) {
         super(appId, AppEventKind.TYPE_CHANGE.code());
         this.version = version;
         this.typeIds = typeIds;
@@ -23,7 +23,7 @@ public class TypeChangeEvent extends AppEvent {
         return version;
     }
 
-    public List<Long> getTypeIds() {
+    public List<String> getTypeIds() {
         return typeIds;
     }
 

@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassSource;
 import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.ResolutionStage;
@@ -17,9 +18,9 @@ public class EnumParser<T extends Enum<?>> extends DefParser<T, ClassInstance, E
     private final ValueDef<Enum<?>> superDef;
     private EnumDef<T> def;
     private final DefContext defContext;
-    private final Function<Object, Long> getId;
+    private final Function<Object, Id> getId;
 
-    public EnumParser(Class<T> enumType, ValueDef<Enum<?>> superDef, DefContext defContext, Function<Object, Long> getId) {
+    public EnumParser(Class<T> enumType, ValueDef<Enum<?>> superDef, DefContext defContext, Function<Object, Id> getId) {
         this.javaClass = enumType;
         this.superDef = superDef;
         this.defContext = defContext;

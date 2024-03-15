@@ -91,8 +91,7 @@ public class IndexField extends Entity implements LocalKey {
     public IndexFieldDTO toDTO() {
         try(var serializeContext = SerializeContext.enter()) {
             return new IndexFieldDTO(
-                    serializeContext.getTmpId(this),
-                    id,
+                    serializeContext.getRef(this),
                     name,
                     code,
                     value.toDTO()

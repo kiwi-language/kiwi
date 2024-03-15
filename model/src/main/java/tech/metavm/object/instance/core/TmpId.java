@@ -10,6 +10,10 @@ public final class TmpId extends Id {
         return new TmpId(tmpId);
     }
 
+    public static TmpId random() {
+        return new TmpId(System.nanoTime());
+    }
+
     public static final int TAG = 2;
 
     private final long tmpId;

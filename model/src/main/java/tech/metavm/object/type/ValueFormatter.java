@@ -23,7 +23,7 @@ public class ValueFormatter {
         if (instanceDTO.id() != null) {
             actualType = context.get(instanceDTO.parseId()).getType();
         } else {
-            actualType = context.getTypeProvider().getType(instanceDTO.typeRef());
+            actualType = context.getTypeProvider().getType(instanceDTO.typeId());
         }
         if (actualType instanceof ClassType classType) {
             if (classType.isList()) {
@@ -48,7 +48,7 @@ public class ValueFormatter {
             } else {
                 Map<Field, Instance> fieldValueMap = new HashMap<>();
                 ClassInstanceParam param = (ClassInstanceParam) instanceDTO.param();
-                Map<Long, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(
+                Map<String, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(
                         param.fields(),
                         InstanceFieldDTO::fieldId
                 );
@@ -59,7 +59,7 @@ public class ValueFormatter {
                     instance = ClassInstance.allocate(classType);
                 }
                 for (Field field : classType.getAllFields()) {
-                    FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.tryGetId()), InstanceFieldDTO::value);
+                    FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getStringId()), InstanceFieldDTO::value);
                     Instance fieldValue = rawValue != null ?
                             parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context, parameterizedTypeProvider)
                             : Instances.nullInstance();

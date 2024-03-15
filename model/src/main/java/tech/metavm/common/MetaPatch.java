@@ -10,10 +10,10 @@ public record MetaPatch(
         long baseVersion,
         long version,
         List<TypeDTO> changedTypes,
-        List<Long> removedTypeIds,
+        List<String> removedTypeIds,
         List<MappingDTO> changedMappings,
-        List<Long> removedMappingIds,
+        List<String> removedMappingIds,
         List<FlowDTO> changedFunctions,
-        List<Long> removedFunctionIds
+        List<String> removedFunctionIds
 ) {
 }

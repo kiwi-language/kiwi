@@ -29,7 +29,7 @@ public class InstanceManagerTest extends TestCase {
         var instanceQueryService = new InstanceQueryService(instanceSearchService);
         entityContextFactory = bootResult.entityContextFactory();
         instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService);
-        ContextUtil.setAppId(TestConstants.APP_ID);
+        ContextUtil.setAppId(TestConstants.getAppId());
     }
 
     @Override
@@ -70,7 +70,7 @@ public class InstanceManagerTest extends TestCase {
 
     public void testLoadByPaths() {
         var foo = saveFoo();
-        var id = PhysicalId.of(foo.getId());
+        var id = foo.getId();
         var result = instanceManager.loadByPaths(
                 new LoadInstancesByPathsRequest(
                         null,
@@ -103,7 +103,7 @@ public class InstanceManagerTest extends TestCase {
         var foo = saveFoo();
         var fooType = ModelDefRegistry.getClassType(Foo.class);
         var page = instanceManager.select(new SelectRequest(
-                fooType.getId(),
+                fooType.getStringId(),
                 List.of(
                         "巴.编号",
                         "量子X"

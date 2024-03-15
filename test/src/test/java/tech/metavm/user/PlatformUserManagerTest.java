@@ -3,8 +3,7 @@ package tech.metavm.user;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.common.MockEmailService;
-import tech.metavm.common.RefDTO;
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityQueryService;
 import tech.metavm.event.MockEventQueue;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.user.rest.dto.RoleDTO;
@@ -39,18 +38,18 @@ public class PlatformUserManagerTest extends TestCase {
     }
 
     public void testSave() {
-        long roleId = doInTransaction(() -> roleManager.save(new RoleDTO(null, null, "admin")));
+        var roleId = doInTransaction(() -> roleManager.save(new RoleDTO(null, "admin")));
         UserDTO user = new UserDTO(
                 null, "leen", "Twodogs Li", "123456",
-                List.of(RefDTO.fromId(roleId))
+                List.of(roleId)
         );
 
-        long userId = doInTransaction(() -> platformUserManager.save(user));
+        var userId = doInTransaction(() -> platformUserManager.save(user));
         UserDTO loadedUser = platformUserManager.get(userId);
-        Assert.assertEquals(userId, (long) loadedUser.id());
+        Assert.assertEquals(userId, loadedUser.id());
         Assert.assertEquals(user.name(), loadedUser.name());
         Assert.assertNull(loadedUser.password());
-        Assert.assertEquals(user.roleRefs(), loadedUser.roleRefs());
+        Assert.assertEquals(user.roleIds(), loadedUser.roleIds());
     }
 
 

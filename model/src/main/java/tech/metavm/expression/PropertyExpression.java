@@ -48,7 +48,7 @@ public class PropertyExpression extends Expression {
     @Override
     public String buildSelf(VarType symbolType) {
         String fieldsExpr = switch (symbolType) {
-            case ID -> idVarName(property.getId());
+            case ID -> idVarName(requireNonNull(property.tryGetId()));
             case NAME -> property.getName();
         };
         if((instance instanceof CursorExpression cursorExpression) && cursorExpression.getAlias() == null) {

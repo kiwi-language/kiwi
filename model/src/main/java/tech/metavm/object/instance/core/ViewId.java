@@ -9,13 +9,13 @@ import java.util.Objects;
 
 public abstract class ViewId extends Id {
 
-    private final long mappingId;
+    private final Id mappingId;
 
-    public ViewId(long mappingId) {
+    public ViewId(Id mappingId) {
         this.mappingId = mappingId;
     }
 
-    public long getMappingId() {
+    public Id getMappingId() {
         return mappingId;
     }
 

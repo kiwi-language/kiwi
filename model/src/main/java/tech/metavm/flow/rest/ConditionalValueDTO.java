@@ -1,9 +1,7 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.common.RefDTO;
-
 public record ConditionalValueDTO(
-        RefDTO branchRef,
+        String branchId,
         ValueDTO value
 ) {
 }

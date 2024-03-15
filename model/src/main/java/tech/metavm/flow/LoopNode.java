@@ -9,6 +9,7 @@ import tech.metavm.flow.rest.LoopFieldDTO;
 import tech.metavm.flow.rest.LoopParamDTO;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
@@ -41,7 +42,7 @@ public abstract class LoopNode extends ScopeNode {
         var parsingContext = getParsingContext(context);
         List<LoopField> fields = new ArrayList<>();
         for (LoopFieldDTO loopFieldDTO : param.getFields()) {
-            var field = context.getField(loopFieldDTO.fieldRef());
+            var field = context.getField(Id.parse(loopFieldDTO.fieldId()));
             var loopField = this.fields.get(LoopField::getField, field);
             if (loopField == null) {
                 fields.add(new LoopField(
