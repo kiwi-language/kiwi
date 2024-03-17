@@ -573,13 +573,13 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    public boolean containsModel(Object model) {
-        return entities.contains(model);
+    public boolean containsEntity(Object entity) {
+        return entities.contains(entity);
 //        return super.containsModel(model) || pendingModels.contains(model);
     }
 
     private boolean isInstanceGenerated(Object entity) {
-        return super.containsModel(entity);
+        return super.containsEntity(entity);
     }
 
     @Override
@@ -679,12 +679,12 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    public <T> T bind(T model) {
-        if (model instanceof Entity entity && entity.isEphemeralEntity())
+    public <T> T bind(T entiy) {
+        if (entiy instanceof Entity entity && entity.isEphemeralEntity())
             throw new IllegalArgumentException("Can not bind an ephemeral entity");
-        if (BINDING_ALLOWED_CLASSES.contains(EntityUtils.getRealType(model.getClass()))) {
-            writeEntity(model);
-            return model;
+        if (BINDING_ALLOWED_CLASSES.contains(EntityUtils.getRealType(entiy.getClass()))) {
+            writeEntity(entiy);
+            return entiy;
         } else
             // Entities enter the DefContext through models def.
             throw new UnsupportedOperationException("Binding not supported.");

@@ -22,8 +22,8 @@ public class WhileNode extends LoopNode {
         // IMPORTANT COMMENT DON"T REMOVE:
         // DO NOT call setLoopParam here. setLoopParam should be called after the loop body has been constructed.
         // See FlowManager.saveLoopNodeContent
-        WhileNode node = (WhileNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (nodeDTO.id() == null)
+        WhileNode node = (WhileNode) context.getNode(nodeDTO.id());
+        if (node == null)
             node = new WhileNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, condition);
         return node;
     }

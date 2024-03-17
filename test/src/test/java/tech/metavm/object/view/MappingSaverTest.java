@@ -339,6 +339,7 @@ public class MappingSaverTest extends TestCase {
                     scope
             );
         }
+        TestUtils.initEntityIds(productType);
         var typeRepository = new MockTypeRepository();
         typeRepository.save(productType);
         typeRepository.save(skuType);

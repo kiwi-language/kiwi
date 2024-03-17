@@ -93,7 +93,7 @@ public class ArrayType extends CompositeType {
     @Override
     protected ArrayTypeParam getParamInternal() {
         try (var serContext = SerializeContext.enter()) {
-            return new ArrayTypeParam(serContext.getRef(elementType), kind.code());
+            return new ArrayTypeParam(serContext.getId(elementType), kind.code());
         }
     }
 

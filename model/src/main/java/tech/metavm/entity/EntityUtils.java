@@ -373,11 +373,15 @@ public class EntityUtils {
         return Enum.class.isAssignableFrom(klass);
     }
 
-    public static Id tryGetId(Object object) {
-        if (object instanceof Identifiable identifiable) {
+    public static Id tryGetId(Object entity) {
+        if (entity instanceof Identifiable identifiable) {
             return identifiable.tryGetId();
         }
         return null;
+    }
+
+    public static Long tryGetPhysicalId(Object entity) {
+        return NncUtils.get(tryGetId(entity), Id::tryGetPhysicalId);
     }
 
     @SuppressWarnings("unused")

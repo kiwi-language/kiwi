@@ -65,7 +65,7 @@ public class Index extends Constraint implements LocalKey {
         List<Instance> instanceValues = new ArrayList<>();
         NncUtils.biForEach(
                 fields, values,
-                (item, fieldValue) -> instanceValues.add(item.convertModelToInstance(fieldValue, entityContext))
+                (item, fieldValue) -> instanceValues.add(item.convertEntityToInstance(fieldValue, entityContext))
         );
         return createIndexKey(instanceValues);
     }
@@ -125,7 +125,7 @@ public class Index extends Constraint implements LocalKey {
         if (indexParam.fields() != null) {
             for (IndexFieldDTO fieldDTO : indexParam.fields()) {
                 if (fieldDTO.id() != null) {
-                    var field = fields.get(Entity::tryGetId, fieldDTO.id());
+                    var field = fields.get(Entity::getStringId, fieldDTO.id());
                     if (fieldDTO.name() != null)
                         field.setName(fieldDTO.name());
                     if (fieldDTO.code() != null)

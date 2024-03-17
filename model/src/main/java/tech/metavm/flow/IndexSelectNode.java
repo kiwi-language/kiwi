@@ -47,7 +47,7 @@ public class IndexSelectNode extends NodeRT {
     @Override
     protected IndexSelectNodeParam getParam(SerializeContext serializeContext) {
         return new IndexSelectNodeParam(
-                serializeContext.getRef(index),
+                serializeContext.getId(index),
                 key.toDTO(serializeContext)
         );
     }

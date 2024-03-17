@@ -1,10 +1,13 @@
 package tech.metavm.object.instance.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceOutput;
 
 import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 public class DefaultViewId extends ViewId {
 
@@ -12,7 +15,7 @@ public class DefaultViewId extends ViewId {
 
     private final Id sourceId;
 
-    public DefaultViewId(Id mappingId, Id sourceId) {
+    public DefaultViewId(@NotNull Id mappingId, Id sourceId) {
         super(mappingId);
         this.sourceId = sourceId;
     }
@@ -22,6 +25,11 @@ public class DefaultViewId extends ViewId {
         output.write(TAG);
         getMappingId().write(output);
         sourceId.write(output);
+    }
+
+    @Override
+    public @NotNull Id getMappingId() {
+        return requireNonNull(super.getMappingId());
     }
 
     public Id getSourceId() {

@@ -24,9 +24,8 @@ public class MethodCallNode extends CallNode {
                 param.getArguments(),
                 (p, a) -> new Argument(a.tmpId(), p, ValueFactory.create(a.value(), parsingContext))
         );
-        MethodCallNode node;
-        if (nodeDTO.id() != null) {
-            node = (MethodCallNode) context.getNode(Id.parse(nodeDTO.id()));
+        var node = (MethodCallNode) context.getNode(nodeDTO.id());
+        if (node != null) {
             node.setSelf(self);
             node.setSubFlow(method);
             node.setArguments(arguments);
@@ -50,8 +49,8 @@ public class MethodCallNode extends CallNode {
             var method = getMethod();
             return new MethodCallNodeParam(
                     NncUtils.get(self, Value::toDTO),
-                    serContext.getRef(method),
-                    serContext.getRef(method.getDeclaringType()),
+                    serContext.getId(method),
+                    serContext.getId(method.getDeclaringType()),
                     NncUtils.map(arguments, Argument::toDTO)
             );
         }

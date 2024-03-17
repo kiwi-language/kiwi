@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.util.EncodingUtils;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
@@ -13,6 +14,10 @@ import java.util.Objects;
 public abstract class Id implements Comparable<Id> {
 
     public abstract void write(InstanceOutput output);
+
+    public static boolean isPersistedId(@Nullable String id) {
+        return id != null && Id.parse(id).tryGetPhysicalId() != null;
+    }
 
     public String toString() {
         var bout = new ByteArrayOutputStream();
@@ -32,10 +37,10 @@ public abstract class Id implements Comparable<Id> {
             case DefaultViewId.TAG -> new DefaultViewId(readId(input), readId(input));
             case ChildViewId.TAG -> new ChildViewId(readId(input), readId(input), (ViewId) readId(input));
             case FieldViewId.TAG ->
-                    new FieldViewId((ViewId) readId(input), readId(input), readId(input),
+                    new FieldViewId((ViewId) readId(input), ViewId.readMappingId(input), readId(input),
                             PathViewId.readSourceId(input), readId(input));
             case ElementViewId.TAG ->
-                    new ElementViewId((ViewId) readId(input), readId(input), input.readInt(),
+                    new ElementViewId((ViewId) readId(input), ViewId.readMappingId(input), input.readInt(),
                             PathViewId.readSourceId(input), readId(input));
             default -> throw new IllegalArgumentException("Unknown instance id tag: " + tag);
         };

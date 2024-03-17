@@ -163,17 +163,17 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
             serContext.writeType(returnType);
         }
         return new FlowDTO(
-                serContext.getRef(this),
+                serContext.getId(this),
                 getName(),
                 getCode(),
                 isNative,
                 includeCode && isRootScopePresent() ? getRootScope().toDTO(true, serContext) : null,
-                serContext.getRef(getReturnType()),
+                serContext.getId(getReturnType()),
                 NncUtils.map(parameters, Parameter::toDTO),
-                serContext.getRef(getType()),
-                NncUtils.map(typeParameters, serContext::getRef),
-                NncUtils.get(horizontalTemplate, serContext::getRef),
-                NncUtils.map(typeArguments, serContext::getRef),
+                serContext.getId(getType()),
+                NncUtils.map(typeParameters, serContext::getId),
+                NncUtils.get(horizontalTemplate, serContext::getId),
+                NncUtils.map(typeArguments, serContext::getId),
                 isTemplate(),
                 getState().code(),
                 getParam(includeCode, serContext)
@@ -457,8 +457,8 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public FlowInfo toGenericElementDTO(SerializeContext serializeContext) {
         return new FlowInfo(
-                serializeContext.getRef(Objects.requireNonNull(getTemplate())),
-                serializeContext.getRef(this),
+                serializeContext.getId(Objects.requireNonNull(getTemplate())),
+                serializeContext.getId(this),
                 NncUtils.map(parameters, p -> p.toGenericElementDTO(serializeContext)),
                 NncUtils.map(typeParameters, tp -> tp.toGenericElementDTO(serializeContext))
         );
@@ -466,9 +466,9 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public ParameterizedFlowDTO toPFlowDTO(SerializeContext serializeContext) {
         return new ParameterizedFlowDTO(
-                serializeContext.getRef(Objects.requireNonNull(getHorizontalTemplate())),
-                serializeContext.getRef(this),
-                NncUtils.map(typeArguments, serializeContext::getRef),
+                serializeContext.getId(Objects.requireNonNull(getHorizontalTemplate())),
+                serializeContext.getId(this),
+                NncUtils.map(typeArguments, serializeContext::getId),
                 NncUtils.map(parameters, p -> p.toGenericElementDTO(serializeContext))
         );
     }

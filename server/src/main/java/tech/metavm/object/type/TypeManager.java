@@ -262,7 +262,7 @@ public class TypeManager extends EntityContextFactoryBean {
         return transactionTemplate.execute(status -> {
             try (IEntityContext context = newContext()) {
                 Type compositeType = mapper.apply(context, context.getType(id));
-                if (!context.containsModel(compositeType)) {
+                if (!context.containsEntity(compositeType)) {
                     context.bind(compositeType);
                 }
                 context.finish();
@@ -281,15 +281,15 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     public ClassType saveType(TypeDTO typeDTO, IEntityContext context) {
-        if (typeDTO.id() == null) {
+        var type = context.getClassType(typeDTO.id());
+        if (type == null)
             return createType(typeDTO, context);
-        } else {
-            return updateType(typeDTO, context.getClassType(Id.parse(typeDTO.id())), context);
-        }
+        else
+            return updateType(typeDTO, type, context);
     }
 
     public ClassType saveTypeWithContent(TypeDTO typeDTO, IEntityContext context) {
-        ClassType type = context.getEntity(ClassType.class, Id.parse(typeDTO.id()));
+        ClassType type = context.getEntity(ClassType.class, typeDTO.id());
         return saveTypeWithContent(typeDTO, type, context);
     }
 
@@ -344,8 +344,8 @@ public class TypeManager extends EntityContextFactoryBean {
         try (var context = newContext()) {
             batchSave(typeDTOs, request.functions(), request.parameterizedFlows(), context);
             List<ClassType> newClasses = NncUtils.filterAndMap(
-                    typeDTOs, t -> TypeCategory.getByCode(t.category()).isPojo() && t.id() == null,
-                    t -> context.getClassType(Id.parse(t.id()))
+                    typeDTOs, t -> TypeCategory.getByCode(t.category()).isPojo() && !Id.isPersistedId(t.id()),
+                    t -> context.getClassType(t.id())
             );
             for (ClassType newClass : newClasses) {
                 if (!newClass.isInterface()) {
@@ -740,7 +740,7 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     private Field saveField(FieldDTO fieldDTO, ClassType declaringType, IEntityContext context) {
-        Field field = context.getField(Id.parse(fieldDTO.id()));
+        Field field = context.getField(fieldDTO.id());
         if (field == null) {
             return createField(fieldDTO, declaringType, context);
         } else {

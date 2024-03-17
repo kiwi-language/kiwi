@@ -6,4 +6,5 @@ public interface DefContextHolder {
 
     void set(DefContext defContext);
 
+    boolean isPresent();
 }

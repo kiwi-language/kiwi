@@ -49,7 +49,7 @@ public class IndexCountNode extends NodeRT {
     @Override
     protected IndexCountNodeParam getParam(SerializeContext serializeContext) {
         return new IndexCountNodeParam(
-                serializeContext.getRef(index),
+                serializeContext.getId(index),
                 from.toDTO(serializeContext),
                 to.toDTO(serializeContext)
         );

@@ -1,12 +1,16 @@
 package tech.metavm.common;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
+import tech.metavm.util.IdDeserializer;
+import tech.metavm.util.TmpIdDeserializer;
 
 import javax.annotation.Nullable;
 
 public interface BaseDTO {
 
+    @JsonDeserialize(using = IdDeserializer.class)
     @Nullable String id();
 
     default @Nullable Long tmpId() {

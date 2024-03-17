@@ -8,11 +8,11 @@ public interface EntityRepository extends EntityProvider {
 
     boolean remove(Object object);
 
-    boolean containsModel(Object object);
+    boolean containsEntity(Object object);
 
     default void rebind(Object entity) {
         EntityUtils.forEachDescendant(entity, e -> {
-            if(!containsModel(e))
+            if(!containsEntity(e))
                 tryBind(e);
         });
     }

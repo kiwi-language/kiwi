@@ -86,8 +86,8 @@ public class UncertainType extends CompositeType implements LoadAware  {
     protected UncertainTypeParam getParamInternal() {
         try(var serContext = SerializeContext.enter()) {
             return new UncertainTypeParam(
-                    serContext.getRef(lowerBound),
-                    serContext.getRef(upperBound)
+                    serContext.getId(lowerBound),
+                    serContext.getId(upperBound)
             );
         }
     }

@@ -93,7 +93,7 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
     }
 
     public <K> T get(IndexMapper<? super T, K> keyMapper, K key) {
-        return NncUtils.find(table, t -> keyMapper.apply(t).equals(key));
+        return NncUtils.find(table, t -> Objects.equals(keyMapper.apply(t), key));
     }
 
     public <K> T remove(IndexMapper<T, K> keyMapper, K key) {

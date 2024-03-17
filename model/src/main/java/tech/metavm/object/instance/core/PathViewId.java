@@ -17,7 +17,7 @@ public abstract class PathViewId extends ViewId {
 
     private final Id typeId;
 
-    protected PathViewId(ViewId parent, Id mappingId, @Nullable Id sourceId, Id typeId) {
+    protected PathViewId(ViewId parent, @Nullable Id mappingId, @Nullable Id sourceId, Id typeId) {
         super(mappingId);
         this.parent = parent;
         this.sourceId = sourceId;
@@ -51,7 +51,7 @@ public abstract class PathViewId extends ViewId {
         if (this == object) return true;
         if (!(object instanceof PathViewId that)) return false;
         if (!super.equals(object)) return false;
-        return typeId == that.typeId && Objects.equals(parent, that.parent) && Objects.equals(sourceId, that.sourceId);
+        return Objects.equals(typeId, that.typeId) && Objects.equals(parent, that.parent) && Objects.equals(sourceId, that.sourceId);
     }
 
     @Override

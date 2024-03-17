@@ -24,7 +24,7 @@ import java.util.Set;
 
 public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, MappingProvider {
 
-    boolean containsModel(Object model);
+    boolean containsEntity(Object entity);
 
 //    default <T extends Entity> T getEntity(TypeReference<T> typeReference, long id) {
 //        return getEntity(typeReference.getType(), id);
@@ -69,7 +69,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     default List<ClassType> getTemplateInstances(ClassType template) {
         NncUtils.requireTrue(template.isTemplate());
-        return selectByKey(ClassType.TEMPLATE_IDX,template);
+        return selectByKey(ClassType.TEMPLATE_IDX, template);
     }
 
     <T> List<T> getAllBufferedEntities(Class<T> entityClass);
@@ -82,7 +82,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments);
 
-    default ClassType getParameterizedType(ClassType template, Type...typeArguments) {
+    default ClassType getParameterizedType(ClassType template, Type... typeArguments) {
         return getParameterizedType(template, List.of(typeArguments));
     }
 
@@ -111,16 +111,17 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     <T> T getEntity(Class<T> entityType, Id id);
 
     default <T> T getEntity(Class<T> entityType, String id) {
-        return getEntity(entityType, Id.parse(id));
+        return id != null ? getEntity(entityType, Id.parse(id)) : null;
     }
 
     Type getType(Class<?> javaType);
 
     default Type getType(String id) {
-        return getType(Id.parse(id));
+        return getEntity(Type.class, id);
     }
 
-    @Nullable IEntityContext getParent();
+    @Nullable
+    IEntityContext getParent();
 
     <T> T createEntity(DurableInstance instance, ModelDef<T, ?> def);
 
@@ -151,12 +152,13 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     }
 
     default ClassType getClassType(String id) {
-        return getEntity(ClassType.class, Id.parse(id));
+        return getEntity(ClassType.class, id);
     }
 
     UnionType getUnionType(Set<Type> members);
 
-    @Nullable EventQueue getEventQueue();
+    @Nullable
+    EventQueue getEventQueue();
 
     IntersectionType getIntersectionType(Set<Type> types);
 
@@ -185,7 +187,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     }
 
     default Field getField(String id) {
-        return getEntity(Field.class, Id.parse(id));
+        return getEntity(Field.class, id);
     }
 
     default TypeVariable getTypeVariable(Id id) {
@@ -193,7 +195,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     }
 
     default TypeVariable getTypeVariable(String id) {
-        return getEntity(TypeVariable.class, Id.parse(id));
+        return getEntity(TypeVariable.class, id);
     }
 
     default NodeRT getNode(Id id) {
@@ -201,7 +203,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     }
 
     default NodeRT getNode(String id) {
-        return getEntity(NodeRT.class, Id.parse(id));
+        return getEntity(NodeRT.class, id);
     }
 
     default Flow getFlow(Id id) {
@@ -213,7 +215,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     }
 
     default ScopeRT getScope(String id) {
-        return getEntity(ScopeRT.class, Id.parse(id));
+        return getEntity(ScopeRT.class, id);
     }
 
     default Method getMethod(Id id) {
@@ -258,25 +260,24 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     void update(Object object);
 
-    <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object...refValues);
+    <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... refValues);
 
     boolean remove(Object model);
 
     void batchRemove(List<?> entities);
 
     @Nullable
-    default <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Object...values) {
+    default <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Object... values) {
         return NncUtils.first(selectByKey(indexDef, values));
     }
 
     void initIds();
 
     default boolean tryBind(Object entity) {
-        if(isBindSupported() && isNewEntity(entity)) {
+        if (isBindSupported() && isNewEntity(entity)) {
             bind(entity);
             return true;
-        }
-        else
+        } else
             return false;
     }
 

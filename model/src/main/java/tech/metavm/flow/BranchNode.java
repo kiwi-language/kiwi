@@ -23,10 +23,8 @@ public class BranchNode extends NodeRT {
 
     public static BranchNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         BranchNodeParam param = nodeDTO.getParam();
-        BranchNode node;
-        if (nodeDTO.id() != null) {
-            node = (BranchNode) context.getNode(Id.parse(nodeDTO.id()));
-        } else
+        BranchNode node =(BranchNode) context.getNode(nodeDTO.id());
+        if(node == null)
             node = new BranchNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), param.inclusive(), prev, scope);
         node.setInclusive(param.inclusive());
         if (param.branches() != null) {

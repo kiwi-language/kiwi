@@ -5,11 +5,9 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.AssertUtils;
 import tech.metavm.util.NncUtils;
@@ -56,8 +54,8 @@ public class FieldParam extends Entity implements LocalKey {
     public FieldParamDTO toDTO() {
         try(var serContext = SerializeContext.enter()) {
             return new FieldParamDTO(
-                    serContext.getRef(this),
-                    serContext.getRef(field), NncUtils.get(value, Value::toDTO));
+                    serContext.getId(this),
+                    serContext.getId(field), NncUtils.get(value, Value::toDTO));
         }
     }
 

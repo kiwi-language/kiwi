@@ -69,7 +69,7 @@ public class EntityQueryService {
     }
 
     private Instance convertValue(Object value, IEntityContext context) {
-        if (context.containsModel(value)) {
+        if (context.containsEntity(value)) {
             return context.getInstance(value);
         } else if (value instanceof Collection<?> coll) {
             return new ArrayInstance(

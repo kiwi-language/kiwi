@@ -8,7 +8,7 @@ import java.util.Set;
 
 public record SearchQuery (
         long appId,
-        Set<Id> typeIds,
+        Set<Long> typeIds,
         Expression condition,
         boolean includeBuiltin,
         int page,

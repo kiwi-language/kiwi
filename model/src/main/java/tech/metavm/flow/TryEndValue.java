@@ -36,7 +36,7 @@ public class TryEndValue extends Entity {
 
     public TryEndValueDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
-            return new TryEndValueDTO(serContext.getRef(raiseNode), value.toDTO());
+            return new TryEndValueDTO(serContext.getId(raiseNode), value.toDTO());
         }
     }
 

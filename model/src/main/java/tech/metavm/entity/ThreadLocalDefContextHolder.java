@@ -13,4 +13,9 @@ public class ThreadLocalDefContextHolder implements DefContextHolder {
     public void set(DefContext defContext) {
         tl.get().set(defContext);
     }
+
+    @Override
+    public boolean isPresent() {
+        return tl.get().isPresent();
+    }
 }

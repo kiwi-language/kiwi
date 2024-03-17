@@ -69,8 +69,10 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
         this.syncVersion = syncVersion;
         this.load = load;
         this.ephemeral = ephemeral;
-        if (id != null)
+        if (id != null) {
             initId(id);
+            _new = id.tryGetPhysicalId() == null;
+        }
         else
             _new = true;
     }

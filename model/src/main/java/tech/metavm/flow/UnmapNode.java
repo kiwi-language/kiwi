@@ -48,7 +48,7 @@ public class UnmapNode extends NodeRT {
 
     @Override
     protected UnmapNodeParam getParam(SerializeContext serializeContext) {
-        return new UnmapNodeParam(view.toDTO(), serializeContext.getRef(mapping));
+        return new UnmapNodeParam(view.toDTO(), serializeContext.getId(mapping));
     }
 
     public void update(Value view, Mapping mapping) {

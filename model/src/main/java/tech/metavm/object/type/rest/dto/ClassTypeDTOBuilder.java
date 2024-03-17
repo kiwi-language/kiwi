@@ -3,6 +3,7 @@ package tech.metavm.object.type.rest.dto;
 import tech.metavm.common.BaseDTO;
 import tech.metavm.common.ErrorDTO;
 import tech.metavm.flow.rest.FlowDTO;
+import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.util.NncUtils;
@@ -54,8 +55,6 @@ public class ClassTypeDTOBuilder {
     private boolean struct;
     private List<InstanceDTO> enumConstants = new ArrayList<>();
     private List<ErrorDTO> errors = new ArrayList<>();
-    @Nullable
-    private String sourceMappingId;
 
     private ClassTypeDTOBuilder(String name) {
         this.name = name;
@@ -216,7 +215,6 @@ public class ClassTypeDTOBuilder {
     }
 
     public ClassTypeDTOBuilder sourceMappingId(String sourceMappingId) {
-        this.sourceMappingId = sourceMappingId;
         return this;
     }
 
@@ -260,6 +258,8 @@ public class ClassTypeDTOBuilder {
     }
 
     public TypeDTO build() {
+        if(id == null && tmpId != null)
+            id = TmpId.of(tmpId).toString();
         return new TypeDTO(
                 id,
                 name,

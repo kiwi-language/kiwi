@@ -36,6 +36,7 @@ public class ExpressionTypeResolverTest extends TestCase {
 
     public void testEq() {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
+        TestUtils.initEntityIds(fooType);
         typeRepository.save(List.of(fooType));
         FieldBuilder.newBuilder("名称", "name", fooType, StandardTypes.getStringType()).build();
         String exprString = "this.名称 = \"Big Foo\"";

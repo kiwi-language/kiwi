@@ -7,6 +7,7 @@ import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.type.rest.dto.ColumnDTO;
 import tech.metavm.object.type.rest.dto.TableDTO;
 import tech.metavm.object.type.rest.dto.TitleFieldDTO;
@@ -69,7 +70,7 @@ public class TableManagerTest extends TestCase {
 
     public void testSave() {
         TableDTO tableDTO = new TableDTO(
-                null, "傻", "Foo", null,
+                TmpId.random().toString(), "傻", "Foo", null,
                 false, false,
                 new TitleFieldDTO(
                         NncUtils.randomNonNegative(),
@@ -91,7 +92,7 @@ public class TableManagerTest extends TestCase {
 
     public void testMultiValuedField() {
         TableDTO bar = save(new TableDTO(
-                null,  "Bar", "Bar", null,
+                TmpId.random().toString(),  "Bar", "Bar", null,
                 false, false,
                 new TitleFieldDTO(
                         NncUtils.randomNonNegative(),
@@ -103,7 +104,7 @@ public class TableManagerTest extends TestCase {
 
 
         TableDTO foo = save(new TableDTO(
-                null, "Foo", "Foo", null,
+                TmpId.random().toString(), "Foo", "Foo", null,
                 false, false,
                 new TitleFieldDTO(
                         NncUtils.randomNonNegative(),
@@ -112,7 +113,7 @@ public class TableManagerTest extends TestCase {
                 ),
                 List.of(
                         new ColumnDTO(
-                                null,
+                                TmpId.random().toString(),
                                 "bars", TableManager.ColumnType.TABLE.code(),
                                 Access.PUBLIC.code(), null,
                                 bar.id(), null, true, true, false,

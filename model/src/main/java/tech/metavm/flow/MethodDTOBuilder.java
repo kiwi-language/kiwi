@@ -1,6 +1,8 @@
 package tech.metavm.flow;
 
 import tech.metavm.flow.rest.*;
+import tech.metavm.object.instance.core.TmpId;
+import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.type.Access;
 import tech.metavm.object.type.MetadataState;
 
@@ -27,6 +29,7 @@ public class MethodDTOBuilder {
     private List<ParameterDTO> parameters = new ArrayList<>();
     private int state = MetadataState.READY.code();
     private String id;
+    private Long tmpId;
     private String rootScopeId;
 
     public MethodDTOBuilder(String declaringTypeId, String name) {
@@ -112,7 +115,14 @@ public class MethodDTOBuilder {
     }
 
 
+    public MethodDTOBuilder tmpId(long tmpId) {
+        this.tmpId = tmpId;
+        return this;
+    }
+
     public FlowDTO build() {
+        if(id == null && tmpId != null)
+            id = TmpId.of(tmpId).toString();
         return new FlowDTO(
                 id,
                 name,

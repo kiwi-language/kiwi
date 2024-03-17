@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.Types;
 import tech.metavm.util.InstanceOutput;
@@ -72,10 +73,12 @@ public final class PhysicalId extends Id {
         return typeTag;
     }
 
+    @JsonIgnore
     public long getTypeId() {
         return typeId;
     }
 
+    @JsonIgnore
     public Id getTypeEntityId() {
         var typeType = Types.getTypeType(typeTag);
         return PhysicalId.of(typeId, TypeTag.Class, typeType.getId().getPhysicalId());

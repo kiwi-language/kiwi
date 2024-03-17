@@ -24,11 +24,10 @@ public class AddElementNode extends NodeRT {
         AddElementNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.array(), parsingContext);
         var element = ValueFactory.create(param.element(), parsingContext);
-        AddElementNode node;
-        if (nodeDTO.id() != null) {
-            node = (AddElementNode) context.getNode(Id.parse(nodeDTO.id()));
+        AddElementNode node = (AddElementNode) context.getNode(nodeDTO.id());
+        if (node != null)
             node.update(array, element);
-        } else
+        else
             node = new AddElementNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, array, element);
         return node;
     }

@@ -91,7 +91,7 @@ public class IndexField extends Entity implements LocalKey {
     public IndexFieldDTO toDTO() {
         try(var serializeContext = SerializeContext.enter()) {
             return new IndexFieldDTO(
-                    serializeContext.getRef(this),
+                    serializeContext.getId(this),
                     name,
                     code,
                     value.toDTO()
@@ -103,11 +103,11 @@ public class IndexField extends Entity implements LocalKey {
         return index.getFieldIndex(this);
     }
 
-    public Instance convertModelToInstance(Object model, IEntityContext context) {
-        if (Instances.isPrimitive(model) || context.containsModel(model))
-            return context.getObjectInstanceMap().getInstance(model);
+    public Instance convertEntityToInstance(Object entity, IEntityContext context) {
+        if (Instances.isPrimitive(entity) || context.containsEntity(entity))
+            return context.getObjectInstanceMap().getInstance(entity);
         else
-            throw new InternalException("Model " + model + " does not exist in the context");
+            throw new InternalException("Entity " + entity + " not found in the context");
 
     }
 

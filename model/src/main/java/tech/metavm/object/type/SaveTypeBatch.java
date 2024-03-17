@@ -108,7 +108,7 @@ public class SaveTypeBatch implements DTOProvider {
     }
 
     public Type get(String id) {
-        var existing = context.getType(Id.parse(id));
+        var existing = context.getType(id);
         if (existing != null)
             return existing;
         var typeDTO = NncUtils.requireNonNull(typeMap.get(id),

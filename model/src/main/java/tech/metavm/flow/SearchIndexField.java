@@ -6,8 +6,6 @@ import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.SearchIndexFieldDTO;
 import tech.metavm.object.type.IndexField;
 
-import java.util.Objects;
-
 @EntityType("查询索引字段")
 public class SearchIndexField extends Entity {
 
@@ -61,7 +59,7 @@ public class SearchIndexField extends Entity {
     public SearchIndexFieldDTO toDTO(IEntityContext context) {
         try(var serContext = SerializeContext.enter()) {
             return new SearchIndexFieldDTO(
-                    serContext.getRef(field), operator.code(),
+                    serContext.getId(field), operator.code(),
                     value.toDTO()
             );
         }

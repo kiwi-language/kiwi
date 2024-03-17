@@ -240,8 +240,9 @@ public class TestUtils {
         };
 
         EntityUtils.visitGraph(List.of(root), o -> {
-            if (o instanceof Entity entity && entity.isIdNull()) {
-                var typeId = Types.getType(entity).getPhysicalId();
+            if (o instanceof Entity entity && entity.isPhysicalIdNull()) {
+                var typeId =
+                        ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(entity).getPhysicalId() : 1L;
                 var typeTag = entity instanceof ReadonlyArray<?> ? TypeTag.Array : TypeTag.Class;
                 entity.initId(PhysicalId.of(ref.nextId++, typeTag, typeId));
             }
@@ -250,7 +251,7 @@ public class TestUtils {
 
     public static void initEntityIds(Object root, EntityIdProvider idProvider) {
         EntityUtils.visitGraph(List.of(root), o -> {
-            if (o instanceof Entity entity && entity.isIdNull()) {
+            if (o instanceof Entity entity && entity.isPhysicalIdNull()) {
                 var type = ModelDefRegistry.getDefContext().getType(EntityUtils.getRealType(entity.getClass()));
                 entity.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.APP_ID, type), type));
             }

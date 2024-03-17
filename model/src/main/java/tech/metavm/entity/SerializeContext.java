@@ -1,6 +1,5 @@
 package tech.metavm.entity;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
@@ -79,7 +78,7 @@ public class SerializeContext implements Closeable {
         return tmpIdMap.computeIfAbsent(model, k -> ContextUtil.nextTmpId());
     }
 
-    public String getRef(Object model) {
+    public String getId(Object model) {
         if (model instanceof Entity entity && entity.getStringId() != null) {
             return entity.getStringId();
         } else {
@@ -247,7 +246,7 @@ public class SerializeContext implements Closeable {
     }
 
     public List<TypeDTO> getTypesExclude(Type type) {
-        return NncUtils.filter(types.values(), t -> !Objects.equals(t.id(), getRef(type)));
+        return NncUtils.filter(types.values(), t -> !Objects.equals(t.id(), getId(type)));
     }
 
     public TypeDTO getType(Id id) {

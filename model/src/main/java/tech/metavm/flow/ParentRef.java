@@ -50,7 +50,7 @@ public class ParentRef extends Element {
         try (var serContext = SerializeContext.enter()) {
             return new ParentRefDTO(
                     parent.toDTO(),
-                    NncUtils.get(field, serContext::getRef)
+                    NncUtils.get(field, serContext::getId)
             );
         }
     }

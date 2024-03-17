@@ -40,7 +40,7 @@ public class Argument extends Element implements LocalKey {
 
     public ArgumentDTO toDTO() {
         try(var serContext = SerializeContext.enter()) {
-            return new ArgumentDTO(null, serContext.getRef(parameter), value.toDTO());
+            return new ArgumentDTO(null, serContext.getId(parameter), value.toDTO());
         }
     }
 

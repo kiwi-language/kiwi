@@ -70,7 +70,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
             private void process(DurableInstance instance) {
                 var sourceRef = instance.getSourceRef();
                 var sourceId = sourceRef.source().getId();
-                var mappingId = Id.parse(sourceRef.getMappingId());
+                var mappingId = NncUtils.get(sourceRef.getMappingId(), Id::parse);
                 if (sourceId != null && mappingId != null) {
                     if (instance.isRoot())
                         instance.initId(new DefaultViewId(mappingId, sourceId));

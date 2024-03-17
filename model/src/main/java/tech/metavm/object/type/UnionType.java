@@ -69,7 +69,7 @@ public class UnionType extends CompositeType {
     protected UnionTypeParam getParamInternal() {
         try (var serContext = SerializeContext.enter()) {
             return new UnionTypeParam(
-                    NncUtils.map(members, serContext::getRef)
+                    NncUtils.map(members, serContext::getId)
             );
         }
     }

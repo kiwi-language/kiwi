@@ -27,7 +27,7 @@ public class ContextUtil {
         void enterApp(long appId, Id appUserId) {
             if(this.appId == -1L)
                 throw new BusinessException(ErrorCode.INVALID_TOKEN);
-            if(this.appId == Constants.PLATFORM_APP_ID)
+            if(this.appId != Constants.PLATFORM_APP_ID)
                 throw new BusinessException(ErrorCode.REENTERING_APP);
             platformUserId = this.userId;
             this.appId = appId;

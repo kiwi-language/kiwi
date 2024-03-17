@@ -79,7 +79,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
     protected AddObjectNodeParam getParam(SerializeContext serializeContext) {
         try (var serContext = SerializeContext.enter()) {
             return new AddObjectNodeParam(
-                    serContext.getRef(getType()),
+                    serContext.getId(getType()),
                     initializeArrayChildren,
                     ephemeral, NncUtils.map(fields, FieldParam::toDTO),
                     NncUtils.get(parentRef, ParentRef::toDTO),

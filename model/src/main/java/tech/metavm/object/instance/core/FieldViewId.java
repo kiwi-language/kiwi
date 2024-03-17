@@ -12,7 +12,7 @@ public class FieldViewId extends PathViewId {
     public static final int TAG = 6;
     public final Id fieldId;
 
-    public FieldViewId(ViewId parent, Id mappingId, Id fieldId, @Nullable Id sourceId, Id typeId) {
+    public FieldViewId(ViewId parent, @Nullable Id mappingId, Id fieldId, @Nullable Id sourceId, Id typeId) {
         super(parent, mappingId, sourceId, typeId);
         this.fieldId = fieldId;
     }
@@ -21,7 +21,7 @@ public class FieldViewId extends PathViewId {
     public void write(InstanceOutput output) {
         output.write(TAG);
         getParent().write(output);
-        getMappingId().write(output);
+        writeMappingId(output);
         fieldId.write(output);
         writeSourceId(output);
         getTypeId().write(output);
@@ -47,7 +47,7 @@ public class FieldViewId extends PathViewId {
         if (this == object) return true;
         if (!(object instanceof FieldViewId that)) return false;
         if (!super.equals(object)) return false;
-        return fieldId == that.fieldId;
+        return Objects.equals(fieldId, that.fieldId);
     }
 
     @Override

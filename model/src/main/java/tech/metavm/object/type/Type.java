@@ -402,7 +402,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     protected TypeDTO toDTO(TypeParam param) {
         try (var ser = SerializeContext.enter()) {
             return new TypeDTO(
-                    ser.getRef(this),
+                    ser.getId(this),
                     name,
                     code,
                     category.code(),

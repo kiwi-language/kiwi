@@ -69,8 +69,8 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     @Override
     public FlowFieldMappingParam getParam(SerializeContext serializeContext) {
         return new FlowFieldMappingParam(
-                serializeContext.getRef(getter),
-                NncUtils.get(setter, serializeContext::getRef)
+                serializeContext.getId(getter),
+                NncUtils.get(setter, serializeContext::getId)
         );
     }
 

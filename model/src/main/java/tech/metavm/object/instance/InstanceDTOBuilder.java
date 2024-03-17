@@ -45,7 +45,7 @@ public class InstanceDTOBuilder {
                 var array = new ListNative(instance).toArray();
                 InstanceDTO instanceDTO = new InstanceDTO(
                         instance.getInstanceIdString(),
-                        serContext.getRef(instance.getType()),
+                        serContext.getId(instance.getType()),
                         instance.getType().getName(),
                         instance.getTitle(),
                         Instances.getSourceMappingId(instance),
@@ -69,7 +69,7 @@ public class InstanceDTOBuilder {
             } else {
                 InstanceDTO instanceDTO = new InstanceDTO(
                         instance.getInstanceIdString(),
-                        serContext.getRef(instance.getType()),
+                        serContext.getId(instance.getType()),
                         instance.getType().getName(),
                         instance.getTitle(),
                         Instances.getSourceMappingId(instance),
@@ -99,7 +99,7 @@ public class InstanceDTOBuilder {
                 serContext.forceWriteType(array.getType());
                 InstanceDTO instanceDTO = new InstanceDTO(
                         array.getInstanceIdString(),
-                        serContext.getRef(array.getType()),
+                        serContext.getId(array.getType()),
                         array.getType().getName(),
                         array.getTitle(),
                         Instances.getSourceMappingId(array),

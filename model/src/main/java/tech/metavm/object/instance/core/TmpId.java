@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.util.InstanceOutput;
+import tech.metavm.util.NncUtils;
 
 import java.util.Objects;
 
@@ -11,7 +12,7 @@ public final class TmpId extends Id {
     }
 
     public static TmpId random() {
-        return new TmpId(System.nanoTime());
+        return new TmpId(NncUtils.randomNonNegative());
     }
 
     public static final int TAG = 2;

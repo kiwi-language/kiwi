@@ -15,4 +15,9 @@ public class GlobalDefContextHolder implements DefContextHolder {
     public void set(DefContext defContext) {
         this.defContext = defContext;
     }
+
+    @Override
+    public boolean isPresent() {
+        return defContext != null;
+    }
 }

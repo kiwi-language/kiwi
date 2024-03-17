@@ -59,7 +59,7 @@ public class FunctionCallNode extends CallNode {
     @Override
     protected FunctionCallNodeParam getParam(SerializeContext serializeContext) {
         return new FunctionCallNodeParam(
-                serializeContext.getRef(getSubFlow()),
+                serializeContext.getId(getSubFlow()),
                 null,
                 NncUtils.map(arguments, Argument::toDTO)
         );

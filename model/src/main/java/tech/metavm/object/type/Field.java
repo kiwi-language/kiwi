@@ -308,14 +308,14 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     public FieldDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new FieldDTO(
-                    serContext.getRef(this),
+                    serContext.getId(this),
                     getName(),
                     getCode(),
                     getAccess().code(),
                     defaultValue.toFieldValueDTO(),
                     isUnique(),
                     declaringType.getStringId(),
-                    serContext.getRef(getType()),
+                    serContext.getId(getType()),
                     isChild,
                     isStatic(),
                     readonly,
@@ -385,8 +385,8 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
         return new GenericElementDTO(
-                serializeContext.getRef(Objects.requireNonNull(getCopySource())),
-                serializeContext.getRef(this)
+                serializeContext.getId(Objects.requireNonNull(getCopySource())),
+                serializeContext.getId(this)
         );
     }
 

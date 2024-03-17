@@ -3,13 +3,11 @@ package tech.metavm.object.type;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Var;
 import tech.metavm.flow.Error;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.*;
@@ -541,7 +539,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public void addField(Field field) {
-        if (field.tryGetId() != null && getField(field.tryGetId()) != null)
+        if (fields.contains(field))
             throw new RuntimeException("Field " + field.tryGetId() + " is already added");
         if (tryGetFieldByName(field.getName()) != null || tryGetStaticFieldByName(field.getName()) != null)
             throw BusinessException.invalidField(field, "字段名称'" + field.getName() + "'已存在");
@@ -1003,9 +1001,9 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public PTypeDTO toGenericElementDTO(SerializeContext serializeContext) {
         return new PTypeDTO(
-                serializeContext.getRef(this),
-                serializeContext.getRef(Objects.requireNonNull(template)),
-                NncUtils.map(typeArguments, serializeContext::getRef),
+                serializeContext.getId(this),
+                serializeContext.getId(Objects.requireNonNull(template)),
+                NncUtils.map(typeArguments, serializeContext::getId),
                 NncUtils.map(fields, f -> f.toGenericElementDTO(serializeContext)),
                 NncUtils.map(staticFields, f -> f.toGenericElementDTO(serializeContext)),
                 NncUtils.map(methods, f -> f.toGenericElementDTO(serializeContext)),
@@ -1015,7 +1013,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public TypeDTO toPTypeDTO(SerializeContext serializeContext) {
         return new TypeDTO(
-                serializeContext.getRef(this),
+                serializeContext.getId(this),
                 getName(),
                 getCode(),
                 getCategory().code(),
@@ -1036,26 +1034,26 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             if (template != null)
                 serContext.writeType(template);
             var param = new ClassTypeParam(
-                    NncUtils.get(superClass, serContext::getRef),
-                    NncUtils.map(interfaces, serContext::getRef),
+                    NncUtils.get(superClass, serContext::getId),
+                    NncUtils.map(interfaces, serContext::getId),
                     source.code(),
                     NncUtils.map(fields, Field::toDTO),
                     NncUtils.map(staticFields, Field::toDTO),
-                    NncUtils.get(titleField, serContext::getRef),
+                    NncUtils.get(titleField, serContext::getId),
                     NncUtils.map(constraints, Constraint::toDTO),
                     NncUtils.map(methods, f -> f.toDTO(serContext.shouldWriteCode(this), serContext)),
                     NncUtils.map(mappings, m -> m.toDTO(serContext)),
-                    NncUtils.get(defaultMapping, serContext::getRef),
+                    NncUtils.get(defaultMapping, serContext::getId),
                     desc,
                     getExtra(),
                     isEnum() ? NncUtils.map(getEnumConstants(), Instance::toDTO) : List.of(),
                     isAbstract,
                     isTemplate(),
-                    NncUtils.map(typeParameters, serContext::getRef),
+                    NncUtils.map(typeParameters, serContext::getId),
                     NncUtils.map(typeParameters, Type::toDTO),
-                    NncUtils.get(template, serContext::getRef),
-                    NncUtils.map(typeArguments, serContext::getRef),
-                    NncUtils.map(dependencies, serContext::getRef),
+                    NncUtils.get(template, serContext::getId),
+                    NncUtils.map(typeArguments, serContext::getId),
+                    NncUtils.map(dependencies, serContext::getId),
                     !subTypes.isEmpty(),
                     struct,
                     NncUtils.map(errors, Error::toDTO)

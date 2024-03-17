@@ -133,20 +133,6 @@ public class Types {
         };
     }
 
-    public static Type getType(Object entity) {
-        if(entity instanceof ReadonlyArray<?> array) {
-            var elementType = getType(array.getElementType());
-            var arrayKind = switch (entity) {
-                case ChildArray<?> childArray -> ArrayKind.CHILD;
-                case ReadWriteArray<?> readWriteArray -> ArrayKind.READ_WRITE;
-                default -> ArrayKind.READ_ONLY;
-            };
-            return ModelDefRegistry.getDefContext().getArrayType(elementType, arrayKind);
-        }
-        else
-            return ModelDefRegistry.getType(EntityUtils.getRealType(entity.getClass()));
-    }
-
     public static ClassType getTypeType(TypeCategory typeCategory) {
         if(typeCategory.isPojo())
             return StandardTypes.getClassType(ClassType.class);

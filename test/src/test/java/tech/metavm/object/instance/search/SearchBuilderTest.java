@@ -34,7 +34,7 @@ public class SearchBuilderTest extends TestCase {
         );
         var query = new SearchQuery(
                 Constants.ROOT_APP_ID,
-                Set.of(PhysicalId.ofClass(100, 1)),
+                Set.of(100L),
                 condition,
                 false,
                 1,

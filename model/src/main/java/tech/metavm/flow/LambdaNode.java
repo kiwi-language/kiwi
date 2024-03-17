@@ -105,8 +105,8 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
             return new LambdaNodeParam(
                     bodyScope.toDTO(true, serializeContext),
                     NncUtils.map(parameters, Parameter::toDTO),
-                    serContext.getRef(returnType),
-                    NncUtils.get(functionalInterface, serContext::getRef)
+                    serContext.getId(returnType),
+                    NncUtils.get(functionalInterface, serContext::getId)
             );
         }
     }

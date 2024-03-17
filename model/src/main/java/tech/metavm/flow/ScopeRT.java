@@ -52,7 +52,7 @@ public class ScopeRT extends Element {
 
     public ScopeDTO toDTO(boolean withNodes, SerializeContext serializeContext) {
         return new ScopeDTO(
-                serializeContext.getRef(this),
+                serializeContext.getId(this),
                 withNodes ? NncUtils.map(getNodes(), nodeRT -> nodeRT.toDTO(serializeContext)) : List.of()
         );
     }

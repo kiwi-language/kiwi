@@ -36,8 +36,9 @@ public class InstanceQueryService {
                                          UnionTypeProvider unionTypeProvider) {
         var expression = buildCondition(query, typeProvider, instanceProvider, arrayTypeProvider, unionTypeProvider);
         Type type = query.type();
-        Set<Id> typeIds = (type instanceof ClassType classType) ? classType.getSubTypeIds() :
-                Set.of(query.type().getId());
+        Set<Long> typeIds = (type instanceof ClassType classType) ?
+                NncUtils.mapUnique(classType.getSubTypeIds(), Id::getPhysicalId) :
+                Set.of(query.type().getPhysicalId());
         return new SearchQuery(
                 ContextUtil.getAppId(),
                 typeIds,

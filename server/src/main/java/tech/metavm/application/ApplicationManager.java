@@ -92,7 +92,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
 
     @Transactional
     public CreateAppResult createBuiltin(ApplicationCreateRequest request) {
-        return createBuiltin(-1L, request);
+        return createBuiltin(null, request);
     }
 
     @Transactional
@@ -139,10 +139,11 @@ public class ApplicationManager extends EntityContextFactoryBean {
         return PhysicalId.of(idService.allocate(PLATFORM_APP_ID, appType), appType);
     }
 
-    private CreateAppResult createBuiltin(long id, ApplicationCreateRequest request) {
+    private CreateAppResult createBuiltin(Long id, ApplicationCreateRequest request) {
         ContextUtil.setAppId(PLATFORM_APP_ID);
         try (var platformContext = newPlatformContext()) {
-            long appId = id != -1L ? id : PLATFORM_APP_ID;
+            long appId = id != null ? id :
+                    idService.allocate(PLATFORM_APP_ID, ModelDefRegistry.getType(Application.class));
             PlatformUser owner;
             if (request.creatorId() == null) {
                 Role role = roleManager.save(new RoleDTO(TmpId.of(ContextUtil.nextTmpId()).toString(), ADMIN_ROLE_NAME), platformContext);

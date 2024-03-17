@@ -2,13 +2,13 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.ReflectionUtils;
+import tech.metavm.util.RuntimeGeneric;
 
 import javax.annotation.Nullable;
 
@@ -27,6 +27,10 @@ public class ModelDefRegistry {
 
     public static DefContext getDefContext() {
         return holder.get();
+    }
+
+    public static boolean isDefContextPresent() {
+        return holder.isPresent();
     }
 
     public static boolean containsDef(Type type) {
@@ -55,7 +59,10 @@ public class ModelDefRegistry {
     }
 
     public static Type getType(Entity entity) {
-        return getType(EntityUtils.getRealType(entity.getClass()));
+        if(entity instanceof RuntimeGeneric runtimeGeneric)
+            return getType(runtimeGeneric.getGenericType());
+        else
+            return getType(EntityUtils.getRealType(entity.getClass()));
     }
 
     public static Type getType(Class<?> entityClass) {

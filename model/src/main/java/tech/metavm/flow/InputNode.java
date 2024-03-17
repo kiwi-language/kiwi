@@ -43,9 +43,9 @@ public class InputNode extends ChildTypeNode {
     private InputFieldDTO toInputFieldDTO(Field field) {
         try (var serContext = SerializeContext.enter()) {
             return new InputFieldDTO(
-                    serContext.getRef(field),
+                    serContext.getId(field),
                     field.getName(),
-                    serContext.getRef(field.getType()),
+                    serContext.getId(field.getType()),
                     NncUtils.get(field.getDefaultValue(), Instance::toFieldValueDTO),
                     NncUtils.get(getFieldCondition(field), Value::toDTO)
             );

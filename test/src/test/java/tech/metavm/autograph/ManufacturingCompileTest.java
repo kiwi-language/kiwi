@@ -288,7 +288,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
             instanceManager.get(inventory.id(), 1);
             Assert.fail("Inventory should be removed");
         } catch (BusinessException e) {
-            Assert.assertEquals(String.format("对象'%s'不存在", Id.parse(inventory.id()).getPhysicalId()), e.getMessage());
+            Assert.assertEquals(String.format("对象'%s'不存在", inventory.id()), e.getMessage());
         }
     }
 

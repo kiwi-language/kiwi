@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.util.*;
@@ -103,6 +104,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     @Nullable
     @Override
+    @NoProxy
     public Id tryGetId() {
         return id;
     }
@@ -203,9 +205,14 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         return id == null;
     }
 
+    @NoProxy
+    public final boolean isPhysicalIdNull() {
+        return id == null || id.tryGetPhysicalId() == null;
+    }
+
     @Override
     public final void initId(Id id) {
-        if (!isIdNull()) {
+        if (tryGetPhysicalId() != null) {
             throw new IllegalStateException("objectId is already initialized");
         }
 //        if(StandardTypes.containsModel(this)) {
@@ -307,6 +314,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
                 EntityUtils.getRealType(this).getSimpleName(), id);
     }
 
+    @NoProxy
     public Long getTmpId() {
         if(id instanceof TmpId tmpId)
             return tmpId.getTmpId();

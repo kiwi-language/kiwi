@@ -92,8 +92,8 @@ public class FunctionType extends CompositeType {
     protected FunctionTypeParam getParamInternal() {
         try (var serContext = SerializeContext.enter()) {
             return new FunctionTypeParam(
-                    NncUtils.map(parameterTypes, serContext::getRef),
-                    serContext.getRef(returnType)
+                    NncUtils.map(parameterTypes, serContext::getId),
+                    serContext.getId(returnType)
             );
         }
     }

@@ -89,13 +89,13 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     public ParameterDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new ParameterDTO(
-                    serContext.getRef(this),
+                    serContext.getId(this),
                     name,
                     code,
-                    serContext.getRef(type),
+                    serContext.getId(type),
                     NncUtils.get(condition, Value::toDTO),
-                    NncUtils.get(copySource, serContext::getRef),
-                    serContext.getRef(callable)
+                    NncUtils.get(copySource, serContext::getId),
+                    serContext.getId(callable)
             );
         }
     }

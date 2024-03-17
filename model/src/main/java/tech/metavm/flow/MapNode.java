@@ -48,7 +48,7 @@ public class MapNode extends NodeRT {
 
     @Override
     protected MapNodeParam getParam(SerializeContext serializeContext) {
-        return new MapNodeParam(source.toDTO(), serializeContext.getRef(mapping));
+        return new MapNodeParam(source.toDTO(), serializeContext.getId(mapping));
     }
 
     public void update(Value source, Mapping mapping) {

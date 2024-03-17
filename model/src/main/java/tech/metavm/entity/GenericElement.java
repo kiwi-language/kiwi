@@ -15,8 +15,8 @@ public interface GenericElement {
 
     default GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
         return new GenericElementDTO(
-                serializeContext.getRef(getCopySource()),
-                serializeContext.getRef(this)
+                serializeContext.getId(getCopySource()),
+                serializeContext.getId(this)
         );
     }
 

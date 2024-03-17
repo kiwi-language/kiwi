@@ -96,7 +96,7 @@ public abstract class TypeFactory {
     public ClassType saveClassType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveClassType")) {
             var param = typeDTO.getClassParam();
-            var type = batch.getContext().getClassType(Id.parse(typeDTO.id()));
+            var type = batch.getContext().getClassType(typeDTO.id());
             var context = batch.getContext();
             if (type == null) {
                 type = ClassTypeBuilder.newBuilder(typeDTO.name(), typeDTO.code())
@@ -170,7 +170,7 @@ public abstract class TypeFactory {
     }
 
     public Field saveField(ClassType declaringType, FieldDTO fieldDTO, IEntityContext context) {
-        Field field = context.getField(Id.parse(fieldDTO.id()));
+        Field field = context.getField(fieldDTO.id());
         Type fieldType = context.getType(Id.parse(fieldDTO.typeId()));
         var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
         var access = Access.getByCode(fieldDTO.access());
@@ -198,7 +198,7 @@ public abstract class TypeFactory {
 
     public Method saveMethod(FlowDTO flowDTO, ResolutionStage stage, SaveTypeBatch batch) {
         var context = batch.getContext();
-        var flow = context.getMethod(Id.parse(flowDTO.id()));
+        var flow = context.getMethod(flowDTO.id());
         var param  = (MethodParam) flowDTO.param();
         if (flow == null) {
             var declaringType = batch.getClassType(param.declaringTypeId());
@@ -271,7 +271,7 @@ public abstract class TypeFactory {
 
     private Parameter saveParameter(ParameterDTO parameterDTO, SaveTypeBatch batch) {
         var context = batch.getContext();
-        var param = context.getEntity(Parameter.class, Id.parse(parameterDTO.id()));
+        var param = context.getEntity(Parameter.class, parameterDTO.id());
         if (param == null) {
             param = new Parameter(
                     parameterDTO.tmpId(),

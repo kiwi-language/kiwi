@@ -55,7 +55,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
     private boolean match(Source source, SearchQuery query) {
-        if (!query.typeIds().contains(source.getId()))
+        if (!query.typeIds().contains(source.typeId()))
             return false;
         return query.condition() == null || Instances.isTrue(
                 query.condition().evaluate(new SourceEvaluationContext(source, null))

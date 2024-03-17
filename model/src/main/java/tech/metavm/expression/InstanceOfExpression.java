@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.Constants;
 import tech.metavm.util.Instances;
 
 import java.util.List;
@@ -26,7 +27,7 @@ public class InstanceOfExpression extends Expression {
     public String buildSelf(VarType symbolType) {
         try(var serContext = SerializeContext.enter()) {
             return operand.build(symbolType, false) + " instanceof "
-                    + serContext.getRef(targetType);
+                    + Constants.CONSTANT_ID_PREFIX + serContext.getId(targetType);
         }
     }
 

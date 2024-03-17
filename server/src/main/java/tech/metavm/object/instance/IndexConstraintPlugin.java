@@ -4,6 +4,7 @@ import tech.metavm.entity.EntityChange;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
@@ -64,10 +65,10 @@ public class IndexConstraintPlugin implements ContextPlugin {
                 e -> oldInstanceIds.contains(e.getInstanceId())
         );
 
-        Map<IndexKeyPO, List<Long>> newKeyMap = NncUtils.toMultiMap(
-                currentEntries, IndexEntryPO::getKey, IndexEntryPO::getInstanceId
+        Map<IndexKeyPO, List<Id>> newKeyMap = NncUtils.toMultiMap(
+                currentEntries, IndexEntryPO::getKey, IndexEntryPO::getId
         );
-        Map<IndexKeyPO, Long> conflictingKeyMap = NncUtils.toMap(conflictingEntries, IndexEntryPO::getKey, IndexEntryPO::getInstanceId);
+        Map<IndexKeyPO, Id> conflictingKeyMap = NncUtils.toMap(conflictingEntries, IndexEntryPO::getKey, IndexEntryPO::getId);
         for (IndexEntryPO currentItem : currentEntries) {
             Index constraint = indexProvider.getIndex(PhysicalId.of(currentItem.getIndexId(), ModelDefRegistry.getType(Index.class)));
             if (!constraint.isUnique() || PersistenceUtils.containsNull(constraint, currentItem.getKey())) {
@@ -78,8 +79,8 @@ public class IndexConstraintPlugin implements ContextPlugin {
                         instanceMap.get(currentItem.getInstanceId()), constraint
                 );
             }
-            Long conflictingInstanceId = conflictingKeyMap.get(currentItem.getKey());
-            if (conflictingInstanceId != null && !conflictingInstanceId.equals(currentItem.getInstanceId())) {
+            var conflictingInstanceId = conflictingKeyMap.get(currentItem.getKey());
+            if (conflictingInstanceId != null && !conflictingInstanceId.equals(currentItem.getId())) {
                 throw BusinessException.constraintCheckFailed(
                         instanceMap.get(currentItem.getInstanceId()), constraint
                 );

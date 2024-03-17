@@ -58,7 +58,7 @@ public class MockEntityRepository implements EntityRepository {
     }
 
     @Override
-    public boolean containsModel(Object object) {
+    public boolean containsEntity(Object object) {
         return objects.contains(object);
     }
 

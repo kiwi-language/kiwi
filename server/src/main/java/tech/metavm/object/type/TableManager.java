@@ -269,7 +269,7 @@ public class TableManager extends EntityContextFactoryBean {
             throw BusinessException.invalidColumn(name, "未选择列类型或未选择关联表格");
         }
         if (type.tryGetId() == null) {
-            if (!context.containsModel(type)) {
+            if (!context.containsEntity(type)) {
                 context.bind(type);
             }
             context.initIds();

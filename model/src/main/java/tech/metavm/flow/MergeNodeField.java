@@ -59,8 +59,8 @@ public class MergeNodeField extends Entity implements LocalKey {
         try (var serContext = SerializeContext.enter()) {
             return new MergeFieldDTO(
                     field.getName(),
-                    serContext.getRef(field),
-                    serContext.getRef(field.getType()),
+                    serContext.getId(field),
+                    serContext.getId(field.getType()),
                     NncUtils.sortAndMap(values,
                             Comparator.comparingLong(value -> value.getBranch().getIndex()),
                             ConditionalValue::toDTO)

@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.SerializeContext;
-import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceParam;
@@ -129,7 +128,7 @@ public abstract class Instance {
         try (var serContext = SerializeContext.enter()) {
             return new InstanceDTO(
                     NncUtils.get(getId(), Objects::toString),
-                    serContext.getRef(getType()),
+                    serContext.getId(getType()),
                     getType().getName(),
                     getTitle(),
                     Instances.getSourceMappingId(this),

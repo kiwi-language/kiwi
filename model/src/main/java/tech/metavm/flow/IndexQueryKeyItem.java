@@ -38,7 +38,7 @@ public class IndexQueryKeyItem extends Entity {
     }
 
     public IndexQueryKeyItemDTO toDTO(SerializeContext serializeContext) {
-        return new IndexQueryKeyItemDTO(serializeContext.getRef(indexField), value.toDTO());
+        return new IndexQueryKeyItemDTO(serializeContext.getId(indexField), value.toDTO());
     }
 
     public String getText() {

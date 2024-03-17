@@ -163,11 +163,11 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
 
     public ObjectMappingDTO toDTO(SerializeContext serializeContext) {
         return new ObjectMappingDTO(
-                serializeContext.getRef(this),
+                serializeContext.getId(this),
                 getName(),
                 getCode(),
-                serializeContext.getRef(getSourceType()),
-                serializeContext.getRef(getTargetType()),
+                serializeContext.getId(getSourceType()),
+                serializeContext.getId(getTargetType()),
                 isDefault(),
                 isBuiltin(),
                 NncUtils.map(overridden, Entity::getStringId),

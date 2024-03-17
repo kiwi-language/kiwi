@@ -259,7 +259,7 @@ public class InstanceContext extends BufferingInstanceContext {
         if (NncUtils.anyMatch(this, i -> type.isInstance(i) && (!persistedOnly || i.isPersisted()))) {
             return true;
         }
-        return type.tryGetId() != null && NncUtils.isNotEmpty(getByType(type, null, 1, persistedOnly));
+        return type.tryGetPhysicalId() != null && NncUtils.isNotEmpty(getByType(type, null, 1, persistedOnly));
     }
 
     @Override

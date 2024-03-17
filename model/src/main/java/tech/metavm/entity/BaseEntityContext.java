@@ -95,21 +95,20 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public <T> T getEntity(Class<T> entityClass, DurableInstance instance, @Nullable ModelDef<T, ?> def) {
-        var d = (DurableInstance) instance;
-        var found = d.getMappedEntity();
+        var found = instance.getMappedEntity();
         if (found != null)
             return entityClass.cast(found);
-        NncUtils.requireNonNull(d.getContext());
+        NncUtils.requireNonNull(instance.getContext());
         if (def == null) {
             var resolvedDef = getDefContext().tryGetDef(instance.getType());
             if (resolvedDef == null || resolvedDef instanceof DirectDef<?>)
                 return entityClass.cast(instance);
             def = resolvedDef.as(entityClass);
         }
-        if (d.getContext() == instanceContext)
-            return createEntity(d, def);
+        if (instance.getContext() == instanceContext)
+            return createEntity(instance, def);
         if (parent != null)
-            return parent.createEntity(d, def);
+            return parent.createEntity(instance, def);
         else
             throw new InternalException(String.format("Instance '%s' is not contained in the context", instance));
     }
@@ -142,7 +141,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if (model != null && model2instance.containsKey(model)) {
             entityMap.put(instance.getPhysicalId(), model);
             if (model instanceof IdInitializing idInitializing) {
-                NncUtils.requireNull(idInitializing.tryGetId());
+                NncUtils.requireNull(idInitializing.tryGetPhysicalId());
                 idInitializing.initId(instance.getId());
             }
         }
@@ -253,12 +252,12 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public boolean containsModel(Object model) {
-        return model2instance.containsKey(model) || parent != null && parent.containsModel(model);
+    public boolean containsEntity(Object entity) {
+        return model2instance.containsKey(entity) || parent != null && parent.containsEntity(entity);
     }
 
     public boolean containsKey(EntityKey entityKey) {
-        return entityMap.containsKey(entityKey.id());
+        return entityMap.containsKey(entityKey.id().getPhysicalId());
     }
 
     @Override
@@ -323,14 +322,14 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         EntityUtils.setProxyState(model, EntityMethodHandler.State.INITIALIZED);
     }
 
-    public <T> T bind(T model) {
+    public <T> T bind(T entity) {
 //        if(model instanceof Entity entity && entity.isEphemeralEntity())
 //            throw new IllegalArgumentException("Can not bind an ephemeral entity");
-        NncUtils.requireTrue(EntityUtils.tryGetId(model) == null, "Can not bind a persisted entity");
-        if (containsModel(model))
-            return model;
-        newInstance(model);
-        return model;
+        NncUtils.requireTrue(EntityUtils.tryGetPhysicalId(entity) == null, "Can not bind a persisted entity");
+        if (this.containsEntity(entity))
+            return entity;
+        newInstance(entity);
+        return entity;
     }
 
     public void initIdManually(Object model, Id id) {
@@ -587,7 +586,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if (value == null) {
             return Instances.nullInstance();
         }
-        if (containsModel(value)) {
+        if (this.containsEntity(value)) {
             return getInstance(value);
         }
         return Instances.serializePrimitive(value, getDefContext()::getType);
@@ -621,10 +620,10 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     public void batchRemove(List<?> entities) {
         if (parent != null) {
-            List<?> parentEntities = NncUtils.filter(entities, parent::containsModel);
+            List<?> parentEntities = NncUtils.filter(entities, parent::containsEntity);
             if (!parentEntities.isEmpty()) {
                 parent.batchRemove(parentEntities);
-                entities = NncUtils.exclude(entities, parent::containsModel);
+                entities = NncUtils.exclude(entities, parent::containsEntity);
             }
         }
         var instances = beforeRemove(entities);
@@ -746,7 +745,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public DurableInstance getInstance(Object model) {
-        if (parent != null && parent.containsModel(model)) {
+        if (parent != null && parent.containsEntity(model)) {
             return parent.getInstance(model);
         }
         var instance = model2instance.get(model);

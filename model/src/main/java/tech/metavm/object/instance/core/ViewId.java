@@ -3,19 +3,21 @@ package tech.metavm.object.instance.core;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 
 public abstract class ViewId extends Id {
 
-    private final Id mappingId;
+    private final @Nullable Id mappingId;
 
-    public ViewId(Id mappingId) {
+    public ViewId(@Nullable Id mappingId) {
         this.mappingId = mappingId;
     }
 
-    public Id getMappingId() {
+    public @Nullable Id getMappingId() {
         return mappingId;
     }
 
@@ -27,11 +29,25 @@ public abstract class ViewId extends Id {
         return mappingProvider.getMapping(mappingId).getTargetType();
     }
 
+    public void writeMappingId(InstanceOutput output) {
+        if(mappingId != null) {
+            output.writeBoolean(true);
+            mappingId.write(output);
+        }
+        else
+            output.writeBoolean(false);
+    }
+
+    public static @Nullable Id readMappingId(InstanceInput input) {
+        var hasMapping = input.readBoolean();
+        return hasMapping ? Id.readId(input) : null;
+    }
+
     @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof ViewId viewId)) return false;
-        return mappingId == viewId.mappingId;
+        return Objects.equals(mappingId, viewId.mappingId);
     }
 
     @Override

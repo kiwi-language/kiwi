@@ -50,11 +50,9 @@ public class RoleManager extends EntityContextFactoryBean{
     }
 
     public Role save(RoleDTO roleDTO, IEntityContext context) {
-        Role role;
-        if (roleDTO.id() != null) {
-            role = context.getEntity(Role.class, roleDTO.id());
-            NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(roleDTO.id()));
-            NncUtils.invokeIfNotNull(role, r -> r.update(roleDTO));
+        var role = context.getEntity(Role.class, roleDTO.id());
+        if (role != null) {
+            role.update(roleDTO);
         } else {
             role = new Role(roleDTO.tmpId(), roleDTO.name());
             context.bind(role);

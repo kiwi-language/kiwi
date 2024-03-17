@@ -1,5 +1,7 @@
 package tech.metavm.object.type.rest.dto;
 
+import tech.metavm.object.instance.core.ClassInstanceBuilder;
+import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.type.Access;
@@ -15,6 +17,7 @@ public class FieldDTOBuilder {
     private String code;
     private final String typeId;
     private String id;
+    private Long tmpId;
     private int access = Access.PUBLIC.code();
     private FieldValue defaultValue;
     private boolean unique;
@@ -35,6 +38,11 @@ public class FieldDTOBuilder {
 
     public FieldDTOBuilder id(String id) {
         this.id = id;
+        return this;
+    }
+
+    public FieldDTOBuilder tmpId(long tmpId) {
+        this.tmpId = tmpId;
         return this;
     }
 
@@ -104,6 +112,8 @@ public class FieldDTOBuilder {
     }
 
     public FieldDTO build() {
+        if(id == null && tmpId != null)
+           id = TmpId.of(tmpId).toString();
         return new FieldDTO(
                 id,
                 name,
@@ -121,6 +131,5 @@ public class FieldDTOBuilder {
                 state
         );
     }
-
 
 }

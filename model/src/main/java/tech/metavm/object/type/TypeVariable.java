@@ -126,9 +126,9 @@ public class TypeVariable extends Type implements LocalKey, GenericElement {
         try (var serContext = SerializeContext.enter()) {
             getBounds().forEach(serContext::writeType);
             return new TypeVariableParam(
-                    serContext.getRef(genericDeclaration),
+                    serContext.getId(genericDeclaration),
                     genericDeclaration.getTypeParameters().indexOf(this),
-                    NncUtils.map(bounds, serContext::getRef)
+                    NncUtils.map(bounds, serContext::getId)
             );
         }
     }

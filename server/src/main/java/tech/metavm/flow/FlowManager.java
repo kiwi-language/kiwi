@@ -256,7 +256,7 @@ public class FlowManager extends EntityContextFactoryBean {
     }
 
     private NodeRT saveNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
-        if (nodeDTO.id() == null) {
+        if (nodeDTO.id() == null || Id.parse(nodeDTO.id()).tryGetPhysicalId() == null) {
             return createNode(nodeDTO, scope, context);
         } else {
             return updateNode(nodeDTO, context);
@@ -606,6 +606,7 @@ public class FlowManager extends EntityContextFactoryBean {
             tmpId = NncUtils.randomNonNegative();
         return ClassTypeDTOBuilder.newBuilder(name)
                 .id(id)
+                .tmpId(tmpId)
                 .category(TypeCategory.CLASS.code())
                 .ephemeral(true)
                 .anonymous(true)
