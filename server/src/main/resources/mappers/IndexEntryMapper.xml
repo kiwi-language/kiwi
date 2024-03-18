@@ -22,6 +22,8 @@
         <result property="column13" column="column13"/>
         <result property="column14" column="column14"/>
         <result property="instanceId" jdbcType="BIGINT" column="instance_id"/>
+        <result property="typeTag" jdbcType="SMALLINT" column="type_tag"/>
+        <result property="typeId" jdbcType="BIGINT" column="type_id"/>
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -43,7 +45,9 @@
         column12,
         column13,
         column14,
-        instance_id
+        instance_id,
+        type_tag,
+        type_id
     </sql>
 
     <update id="batchDelete">
@@ -61,13 +65,13 @@
 
     <insert id="batchInsert">
         <!--@mbg.generated-->
-        insert into index_entry (app_id, index_id, column0, column1, column2, column3, column4, column5,column6,column7,column8,column9,column10,column11,column12,column13,column14,instance_id)
+        insert into index_entry (app_id, index_id, column0, column1, column2, column3, column4, column5,column6,column7,column8,column9,column10,column11,column12,column13,column14,instance_id, type_tag, type_id)
         values
         <foreach collection="collection" item="item" separator=",">
             (#{item.appId}, #{item.indexId}, #{item.column0}, #{item.column1}, #{item.column2},
             #{item.column3}, #{item.column4},
             #{item.column5}, #{item.column6}, #{item.column7}, #{item.column8}, #{item.column9}, #{item.column10}, #{item.column11}, #{item.column12}, #{item.column13}, #{item.column14},
-            #{item.instanceId})
+            #{item.instanceId}, #{item.typeTag}, #{item.typeId})
         </foreach>
     </insert>
 

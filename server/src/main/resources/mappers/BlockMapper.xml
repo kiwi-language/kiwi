@@ -7,6 +7,7 @@
     <!--@Table id_block-->
     <id column="id" jdbcType="BIGINT" property="id"/>
     <result column="app_id" jdbcType="BIGINT" property="appId"/>
+    <result column="type_tag" jdbcType="SMALLINT" property="typeTag" />
     <result column="type_id" jdbcType="BIGINT" property="typeId" />
     <result column="start_id" jdbcType="BIGINT" property="startId" />
     <result column="end_id" jdbcType="BIGINT" property="endId" />
@@ -16,14 +17,14 @@
 
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, app_id, type_id, start_id, end_id, next_id, is_active
+    id, app_id, type_tag, type_id, start_id, end_id, next_id, is_active
   </sql>
 
   <insert id="batchInsert">
     <!--@mbg.generated-->
-    insert into id_block (id, app_id, type_id, start_id, end_id, next_id, is_active) values
+    insert into id_block (id, app_id, type_tag, type_id, start_id, end_id, next_id, is_active) values
     <foreach collection="collection" item="item" separator=",">
-        (#{item.id}, #{item.appId}, #{item.typeId}, #{item.startId}, #{item.endId}, #{item.nextId},
+        (#{item.id}, #{item.appId}, #{item.typeTag}, #{item.typeId}, #{item.startId}, #{item.endId}, #{item.nextId},
         #{item.active})
     </foreach>
   </insert>

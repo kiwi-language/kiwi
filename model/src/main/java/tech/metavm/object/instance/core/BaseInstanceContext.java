@@ -446,7 +446,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         instanceMap.put(instance.getId(), instance);
         listeners.forEach(l -> l.onInstanceIdInit(instance));
         forEachView(instance, v ->
-                v.initId(new DefaultViewId(requireNonNull(v.getSourceRef().mapping()).getEntityId(), v.getSource().getId())));
+                v.initId(new DefaultViewId(requireNonNull(requireNonNull(v.getSourceRef().mapping()).getEntityId()), v.getSource().getId())));
     }
 
     protected void onContextInitializeId() {

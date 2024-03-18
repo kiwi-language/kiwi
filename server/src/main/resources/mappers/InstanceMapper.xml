@@ -6,6 +6,7 @@
         <!--@Table instance-->
         <id property="id" jdbcType="BIGINT" column="id"/>
         <result property="appId" jdbcType="BIGINT" column="app_id"/>
+        <result property="typeTag" jdbcType="SMALLINT" column="type_tag"/>
         <result property="typeId" jdbcType="BIGINT" column="type_id"/>
         <result property="title" jdbcType="VARCHAR" column="title"/>
         <result property="data" column="data"/>
@@ -21,6 +22,7 @@
         id,
         title,
         app_id,
+        type_tag,
         type_id,
         data,
         parent_id,
@@ -44,10 +46,10 @@
 
     <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
         <!--@mbg.generated-->
-        insert into instance (id, title, app_id, type_id, data, root_id, parent_id, parent_field_id)
+        insert into instance (id, title, app_id, type_tag, type_id, data, root_id, parent_id, parent_field_id)
         values
         <foreach collection="collection" item="item" separator=",">
-            (#{item.id}, #{item.title}, #{item.appId}, #{item.typeId},
+            (#{item.id}, #{item.title}, #{item.appId}, #{item.typeTag}, #{item.typeId},
             #{item.data}, #{item.rootId},
             #{item.parentId}, #{item.parentFieldId})
         </foreach>

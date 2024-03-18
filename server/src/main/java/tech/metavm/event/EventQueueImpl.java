@@ -18,7 +18,7 @@ public class EventQueueImpl implements EventQueue {
     @Override
     public void publishUserEvent(UserEvent event) {
         try(var ignored = ContextUtil.getProfiler().enter("publishUserEvent")) {
-            simpMessagingTemplate.convertAndSend(String.format("/topic/user/%d", event.getUserId()), event);
+            simpMessagingTemplate.convertAndSend(String.format("/topic/user/%s", event.getUserId()), event);
         }
     }
 

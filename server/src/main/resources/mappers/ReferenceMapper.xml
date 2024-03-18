@@ -9,9 +9,9 @@
         <result property="targetId" jdbcType="BIGINT" column="target_id"/>
         <result property="fieldId" jdbcType="BIGINT" column="field_id"/>
         <result property="kind" jdbcType="INTEGER" column="kind"/>
-        <result property="sourceTypeTag" jdbcType="VARCHAR" column="source_type_tag"/>
+        <result property="sourceTypeTag" jdbcType="SMALLINT" column="source_type_tag"/>
         <result property="sourceTypeId" jdbcType="BIGINT" column="source_type_id"/>
-        <result property="targetTypeTag" jdbcType="VARCHAR" column="target_type_tag"/>
+        <result property="targetTypeTag" jdbcType="SMALLINT" column="target_type_tag"/>
         <result property="targetTypeId" jdbcType="BIGINT" column="target_type_id"/>
     </resultMap>
 
@@ -40,10 +40,12 @@
 
     <insert id="batchInsert">
         <!--@mbg.generated-->
-        insert into reference (app_id, source_id, target_id, field_id, kind)
+        insert into reference (app_id, source_id, target_id, field_id, kind, source_type_tag, source_type_id,
+        target_type_tag, target_type_id)
         values
         <foreach collection="collection" item="item" separator=",">
-            (#{item.appId}, #{item.sourceId}, #{item.targetId}, #{item.fieldId}, #{item.kind})
+            (#{item.appId}, #{item.sourceId}, #{item.targetId}, #{item.fieldId}, #{item.kind},
+            #{item.sourceTypeTag}, #{item.sourceTypeId}, #{item.targetTypeTag}, #{item.targetTypeId})
         </foreach>
     </insert>
 
