@@ -77,7 +77,7 @@ public class InstanceQueryService {
                     sourcePage.total()
             );
         } else
-            return queryPhysical(query, instanceRepository, typeProvider, instanceRepository, arrayTypeProvider, unionTypeProvider);
+            return queryPhysical(query, instanceRepository, typeProvider, instanceRepository, arrayTypeProvider, unionTypeProvider, parameterizedFlowProvider);
     }
 
     private InstanceQuery convertToSourceQuery(InstanceQuery query, ClassType viewType,
@@ -142,11 +142,16 @@ public class InstanceQueryService {
                                                 IndexedTypeProvider typeProvider,
                                                 InstanceProvider instanceProvider,
                                                 ArrayTypeProvider arrayTypeProvider,
-                                                UnionTypeProvider unionTypeProvider) {
-        var idPage = instanceSearchService.search(buildSearchQuery(query, typeProvider, instanceProvider, arrayTypeProvider, unionTypeProvider));
+                                                UnionTypeProvider unionTypeProvider,
+                                                ParameterizedFlowProvider parameterizedFlowProvider) {
+        var searchQuery = buildSearchQuery(query, typeProvider, instanceProvider, arrayTypeProvider, unionTypeProvider);
+        var idPage = instanceSearchService.search(searchQuery);
 //        var newlyCreatedIds = NncUtils.map(query.createdIds(), id -> ((PhysicalId) id).getId());
 //        var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
-        List<Id> ids = NncUtils.merge(idPage.data(), query.createdIds(), true);
+        var created = NncUtils.map(query.createdIds(), instanceProvider::get);
+        var filteredCreatedId =
+                NncUtils.filterAndMap(created, i -> searchQuery.match((ClassInstance) i, parameterizedFlowProvider), DurableInstance::getId);
+        List<Id> ids = NncUtils.merge(idPage.data(), filteredCreatedId, true);
         ids = NncUtils.filter(ids, id -> !query.excludedIds().contains(id));
         ids = instanceRepository.filterAlive(ids);
         int actualSize = ids.size();

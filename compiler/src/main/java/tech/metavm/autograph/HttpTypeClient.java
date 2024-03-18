@@ -31,7 +31,7 @@ public class HttpTypeClient implements TypeClient {
 
     @Override
     public void batchSave(BatchSaveRequest request) {
-        CompilerHttpUtils.post("/type/batch", request, new TypeReference<List<Long>>() {
+        CompilerHttpUtils.post("/type/batch", request, new TypeReference<List<String>>() {
         });
     }
 

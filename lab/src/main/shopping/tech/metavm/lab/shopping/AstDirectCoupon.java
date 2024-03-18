@@ -15,6 +15,12 @@ public class AstDirectCoupon implements AstCoupon {
     @EntityField("商品")
     public AstProduct product;
 
+    public AstDirectCoupon(long discount, AstProduct product) {
+        this.discount = discount;
+        this.product = product;
+        state = AstCouponState.UNUSED;
+    }
+
     public long use(int amount) {
         if(state != AstCouponState.UNUSED) {
             throw new RuntimeException("The coupon is already used");

@@ -114,7 +114,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     public void update(FieldDTO update) {
-        if (update.typeId() != null && !Objects.equals(getType().tryGetId(), update.typeId()))
+        if (update.typeId() != null && !Objects.equals(getType().getStringId(), update.typeId()))
             throw BusinessException.invalidField(this, "类型不支持修改");
         setName(update.name());
         setCode(update.code());

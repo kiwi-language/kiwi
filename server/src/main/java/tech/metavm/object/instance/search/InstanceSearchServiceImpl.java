@@ -5,6 +5,7 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 import tech.metavm.common.Page;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.util.NncUtils;
 
 import java.io.IOException;
@@ -36,7 +38,9 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
             long total = response.getHits().getTotalHits().value;
             List<Id> ids = new ArrayList<>();
             for (SearchHit hit : response.getHits().getHits()) {
-                ids.add(Id.parse(hit.getId()));
+                var id = Long.parseLong(hit.getId());
+                var typeId = ((Number) hit.getSourceAsMap().get("typeId")).longValue();
+                ids.add(PhysicalId.ofClass(id, typeId));
             }
             return new Page<>(ids, total);
         } catch (IOException e) {
@@ -64,6 +68,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     @Override
     public void bulk(long appId, List<ClassInstance> toIndex, List<Id> toDelete) {
         BulkRequest bulkRequest = new BulkRequest();
+        bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         List<IndexRequest> indexRequests = NncUtils.map(toIndex, instance -> buildIndexRequest(appId, instance));
         List<DeleteRequest> deleteRequests = NncUtils.map(toDelete, id -> buildDeleteRequest(appId, id));
         indexRequests.forEach(bulkRequest::add);

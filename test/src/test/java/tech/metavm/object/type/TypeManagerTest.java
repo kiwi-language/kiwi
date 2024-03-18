@@ -167,4 +167,23 @@ public class TypeManagerTest extends TestCase {
                 .build()));
     }
 
+    public void testUpdateField() {
+        var typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
+                .tmpId(NncUtils.randomNonNegative())
+                .addField(
+                        FieldDTOBuilder.newBuilder("名称", StandardTypes.getStringType().getStringId())
+                                .build()
+                )
+                .build();
+        var savedTypeDTO = TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
+        var updatedFieldDTO = FieldDTOBuilder.newBuilder("名称", StandardTypes.getStringType().getStringId())
+                .id(savedTypeDTO.getClassParam().fields().get(0).id())
+                .declaringTypeId(savedTypeDTO.id())
+                .code("name")
+                .build();
+        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(updatedFieldDTO));
+        var loadedTypeDTO = typeManager.getType(new GetTypeRequest(savedTypeDTO.id(), true)).type();
+        Assert.assertEquals("name", loadedTypeDTO.getClassParam().fields().get(0).code());
+    }
+
 }

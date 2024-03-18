@@ -11,6 +11,10 @@ import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.object.type.mocks.MockTypeRepository;
 import tech.metavm.util.*;
 
+import java.util.List;
+
+import static java.util.Objects.requireNonNull;
+
 public class InstanceQueryServiceTest extends TestCase {
 
     private MemInstanceSearchServiceV2 instanceSearchService;
@@ -88,6 +92,33 @@ public class InstanceQueryServiceTest extends TestCase {
                 instanceRepository, parameterizedFlowProvider, typeRepository, arrayTypeProvider, unionTypeProvider);
         Assert.assertEquals(1, page2.total());
         Assert.assertEquals(foo.tryGetPhysicalId(), page2.data().get(0).tryGetPhysicalId());
+    }
+
+    public void testCreatedIds() {
+        var fooTypes = MockUtils.createFooTypes(true);
+        var fooType = fooTypes.fooType();
+        var fooNameField = fooTypes.fooNameField();
+        var fooQuxField = fooTypes.fooQuxField();
+        var foo = addInstance(MockUtils.createFoo(fooTypes, true));
+        var qux = (ClassInstance) foo.getField(fooQuxField);
+        addInstance(qux);
+
+        var page = instanceQueryService.query(
+                InstanceQueryBuilder.newBuilder(fooType)
+                        .fields(
+                                InstanceQueryField.create(fooNameField, foo.getField(fooNameField)),
+                                InstanceQueryField.create(fooQuxField, qux)
+                        )
+                        .newlyCreated(List.of(requireNonNull(qux.getId())))
+                        .build(),
+                instanceRepository,
+                parameterizedFlowProvider,
+                typeRepository,
+                arrayTypeProvider,
+                unionTypeProvider
+        );
+        Assert.assertEquals(1, page.total());
+        Assert.assertEquals(foo.tryGetPhysicalId(), page.data().get(0).tryGetPhysicalId());
     }
 
 }
