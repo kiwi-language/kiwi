@@ -56,12 +56,7 @@ public class FlowController {
 
     @PostMapping("/node")
     public Result<NodeDTO> saveNode(@RequestBody NodeDTO node) {
-        if(node.id() == null) {
-            return Result.success(flowManager.createNode(node));
-        }
-        else {
-            return Result.success(flowManager.updateNode(node));
-        }
+        return Result.success(flowManager.saveNode(node));
     }
 
     @PostMapping("/move")

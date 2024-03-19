@@ -1,7 +1,7 @@
 package tech.metavm.application.rest.dto;
 
 public record InviteeQuery(
-        String appId,
+        long appId,
         String loginName
 ) {
 }

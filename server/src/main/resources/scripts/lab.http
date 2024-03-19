@@ -34,9 +34,14 @@ AppId: 2
 GET http://localhost:8080/platform-user/apps
 
 ###
-POST http://localhost:8080/platform-user/enter-app/1267505351
+POST http://localhost:8080/platform-user/enter-app/1816816338
 Accept: application/json
 AppId: 2
+
+###
+GET http://localhost:8080/type/field/0198a3ecc60d01b4d503
+Accept: application/json
+AppId: 1816816338
 
 ###
 POST http://localhost:8080/platform-user/exit-app

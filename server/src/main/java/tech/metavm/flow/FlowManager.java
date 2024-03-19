@@ -361,6 +361,14 @@ public class FlowManager extends EntityContextFactoryBean {
     }
 
     @Transactional
+    public NodeDTO saveNode(NodeDTO nodeDTO) {
+        if(nodeDTO.id() == null || Id.parse(nodeDTO.id()) instanceof TmpId)
+            return createNode(nodeDTO);
+        else
+            return updateNode(nodeDTO);
+    }
+
+    @Transactional
     public NodeDTO createNode(NodeDTO nodeDTO) {
         try (var context = newContext();
              var serContext = SerializeContext.enter()) {

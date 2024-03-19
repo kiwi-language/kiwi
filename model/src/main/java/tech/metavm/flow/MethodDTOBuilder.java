@@ -2,7 +2,6 @@ package tech.metavm.flow;
 
 import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.core.TmpId;
-import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.type.Access;
 import tech.metavm.object.type.MetadataState;
 
@@ -31,6 +30,7 @@ public class MethodDTOBuilder {
     private String id;
     private Long tmpId;
     private String rootScopeId;
+    private boolean skipRootScope;
 
     public MethodDTOBuilder(String declaringTypeId, String name) {
         this.declaringTypeId = declaringTypeId;
@@ -62,13 +62,18 @@ public class MethodDTOBuilder {
         return this;
     }
 
+    public MethodDTOBuilder skipRootScope(boolean skipRootScope) {
+        this.skipRootScope = skipRootScope;
+        return this;
+    }
+
     public MethodDTOBuilder nodes(List<NodeDTO> nodes) {
         this.nodes = nodes;
         return this;
     }
 
     public MethodDTOBuilder addNode(NodeDTO node) {
-        if(!this.nodes.isEmpty())
+        if (!this.nodes.isEmpty())
             node = node.copyWithPrevId(this.nodes.get(this.nodes.size() - 1).id());
         this.nodes.add(node);
         return this;
@@ -121,14 +126,14 @@ public class MethodDTOBuilder {
     }
 
     public FlowDTO build() {
-        if(id == null && tmpId != null)
+        if (id == null && tmpId != null)
             id = TmpId.of(tmpId).toString();
         return new FlowDTO(
                 id,
                 name,
                 code,
                 isNative,
-                new ScopeDTO(
+                skipRootScope ? null : new ScopeDTO(
                         rootScopeId,
                         nodes
                 ),

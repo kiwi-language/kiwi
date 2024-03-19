@@ -19,7 +19,7 @@ public class NodeFactory {
             Method createMethod = tryGetStaticMethod(
                     klass, "save", NodeDTO.class, NodeRT.class, ScopeRT.class, IEntityContext.class);
             NodeRT prev = nodeDTO.prevId() != null ? context.getNode(nodeDTO.prevId()) : scope.getLastNode();
-            NodeRT node = context.getNode(Id.parse(nodeDTO.id()));
+            NodeRT node = context.getNode(nodeDTO.id());
             boolean isCreate = node == null;
             if(node != null) {
                 node.setName(nodeDTO.name());

@@ -1,5 +1,6 @@
 package tech.metavm.application;
 
+import org.apache.tomcat.util.bcel.Const;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.application.rest.dto.*;
@@ -8,8 +9,6 @@ import tech.metavm.common.Page;
 import tech.metavm.entity.*;
 import tech.metavm.message.Message;
 import tech.metavm.message.MessageKind;
-import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.system.IdService;
 import tech.metavm.task.RemoveAppTaskGroup;
@@ -20,6 +19,7 @@ import tech.metavm.util.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static tech.metavm.util.Constants.*;
 
@@ -59,9 +59,9 @@ public class ApplicationManager extends EntityContextFactoryBean {
         }
     }
 
-    public ApplicationDTO get(String id) {
+    public ApplicationDTO get(long id) {
         try (var context = newPlatformContext()) {
-            return context.getEntity(Application.class, id).toDTO();
+            return context.getEntity(Application.class, Constants.getAppId(id)).toDTO();
         }
     }
 
@@ -107,36 +107,32 @@ public class ApplicationManager extends EntityContextFactoryBean {
 
 
     @Transactional
-    public String save(ApplicationDTO appDTO) {
+    public long save(ApplicationDTO appDTO) {
         ensurePlatformUser();
         try (var platformCtx = newPlatformContext()) {
             Application app;
-            if (appDTO.id() == -1L) {
+            if (appDTO.id() == null || appDTO.id() == 0L) {
                 var owner = platformCtx.getEntity(PlatformUser.class, ContextUtil.getUserId());
-                app = createApp(-1L, appDTO.name(), owner, platformCtx);
+                app = createApp(null, appDTO.name(), owner, platformCtx);
             } else {
                 app = platformCtx.getEntity(Application.class, Constants.getAppId(appDTO.id()));
                 ensureAppAdmin(app);
                 app.setName(appDTO.name());
             }
             platformCtx.finish();
-            return app.getStringId();
+            return app.getPhysicalId();
         }
     }
 
-    private Application createApp(long id, String name, PlatformUser owner, IEntityContext platformContext) {
-        var appId = id != -1L ? id : allocateAppId().getPhysicalId();
+    private Application createApp(Long id, String name, PlatformUser owner, IEntityContext platformContext) {
+        long appId = id != null ? id :
+                idService.allocate(PLATFORM_APP_ID, ModelDefRegistry.getType(Application.class));
         platformContext.bind(new TaskSignal(appId));
         Application application = new Application(name, owner);
         // initIdManually will bind application to context
         platformContext.initIdManually(application, Constants.getAppId(appId));
         platformUserManager.joinApplication(owner, application, platformContext);
         return application;
-    }
-
-    private Id allocateAppId() {
-        var appType = ModelDefRegistry.getType(Application.class);
-        return PhysicalId.of(idService.allocate(PLATFORM_APP_ID, appType), appType);
     }
 
     private CreateAppResult createBuiltin(Long id, ApplicationCreateRequest request) {
@@ -166,6 +162,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
     @Transactional
     public void update(ApplicationDTO applicationDTO) {
         setupContextInfo(applicationDTO.id());
+        Objects.requireNonNull(applicationDTO.id());
         try (IEntityContext platformContext = newPlatformContext()) {
             Application app = platformContext.getEntity(Application.class, Constants.getAppId(applicationDTO.id()));
             ensureAppAdmin(app);
@@ -175,12 +172,13 @@ public class ApplicationManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public void delete(String appId) {
+    public void delete(long appId) {
         try (IEntityContext platformContext = newPlatformContext()) {
-            var app = platformContext.getEntity(Application.class, appId);
+            var id = Constants.getAppId(appId);
+            var app = platformContext.getEntity(Application.class, id);
             ensureAppOwner(app);
             app.deactivate();
-            platformContext.bind(new RemoveAppTaskGroup((appId)));
+            platformContext.bind(new RemoveAppTaskGroup(id.toString()));
             platformContext.finish();
         }
     }
@@ -188,7 +186,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
     @Transactional
     public void evict(AppEvictRequest request) {
         try (var platformCtx = newPlatformContext()) {
-            var app = platformCtx.getEntity(Application.class, request.appId());
+            var app = platformCtx.getEntity(Application.class, Constants.getAppId(request.appId()));
             ensureAppAdmin(app);
             var users = NncUtils.map(request.userIds(), userId -> platformCtx.getEntity(PlatformUser.class, userId));
             PlatformUsers.leaveApp(users, app, platformCtx);
@@ -199,7 +197,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
     @Transactional
     public void invite(AppInvitationRequest request) {
         try (var platformCtx = newPlatformContext()) {
-            var app = platformCtx.getEntity(Application.class, request.appId());
+            var app = platformCtx.getEntity(Application.class, Constants.getAppId(request.appId()));
             ensureAppAdmin(app);
             var invitee = platformCtx.getEntity(PlatformUser.class, request.userId());
             if (invitee.hasJoinedApplication(app))
@@ -218,9 +216,9 @@ public class ApplicationManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public void promote(String appId, String userId) {
+    public void promote(long appId, String userId) {
         try (var context = newPlatformContext()) {
-            var app = context.getEntity(Application.class, appId);
+            var app = context.getEntity(Application.class, Constants.getAppId(appId));
             ensureAppAdmin(app);
             var user = context.getEntity(PlatformUser.class, userId);
             app.addAdmin(user);
@@ -232,9 +230,9 @@ public class ApplicationManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public void demote(String appId, String userId) {
+    public void demote(long appId, String userId) {
         try (var context = newPlatformContext()) {
-            var app = context.getEntity(Application.class, appId);
+            var app = context.getEntity(Application.class, Constants.getAppId(appId));
             ensureAppAdmin(app);
             var user = context.getEntity(PlatformUser.class, userId);
             app.removeAdmin(user);
@@ -248,9 +246,10 @@ public class ApplicationManager extends EntityContextFactoryBean {
     @Transactional(readOnly = true)
     public Page<AppMemberDTO> queryMembers(AppMemberQuery query) {
         try (var context = newPlatformContext()) {
-            var app = context.getEntity(Application.class, query.appId());
+            var appId = Constants.getAppId(query.appId());
+            var app = context.getEntity(Application.class, appId);
             var dataPage = platformUserManager.query(new PlatformUserQuery(
-                    query.appId(),
+                    appId.toString(),
                     query.searchText(),
                     null,
                     query.excluded(),
@@ -279,7 +278,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
                 invitees.add(new InviteeDTO(
                         user.getStringId(),
                         user.getLoginName(),
-                        NncUtils.anyMatch(user.getApplications(), app -> app.idEquals(Id.parse(query.appId())))
+                        NncUtils.anyMatch(user.getApplications(), app -> app.idEquals(Constants.getAppId(query.appId())))
                 ));
             }
             return new Page<>(invitees, dataPage.total());

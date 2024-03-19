@@ -26,17 +26,17 @@ public class ApplicationController {
     }
 
     @PostMapping
-    public Result<String> save(@RequestBody ApplicationDTO appDTO) {
+    public Result<Long> save(@RequestBody ApplicationDTO appDTO) {
         return Result.success(applicationManager.save(appDTO));
     }
 
-    @GetMapping("/{id}")
-    public Result<ApplicationDTO> get(@PathVariable("id") String id) {
+    @GetMapping("/{id:[0-9]+}")
+    public Result<ApplicationDTO> get(@PathVariable("id") long id) {
         return Result.success(applicationManager.get(id));
     }
 
-    @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable("id") String id) {
+    @DeleteMapping("/{id:[0-9]+}")
+    public Result<Void> delete(@PathVariable("id") long id) {
         applicationManager.delete(id);
         return Result.voidSuccess();
     }

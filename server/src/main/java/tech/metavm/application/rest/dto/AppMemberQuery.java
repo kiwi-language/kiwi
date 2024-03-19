@@ -4,7 +4,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record AppMemberQuery(
-        String appId,
+        long appId,
         @Nullable String searchText,
         int page,
         int pageSize,

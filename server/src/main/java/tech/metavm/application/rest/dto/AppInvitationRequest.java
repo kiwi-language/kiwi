@@ -1,7 +1,7 @@
 package tech.metavm.application.rest.dto;
 
 public record AppInvitationRequest(
-        String appId,
+        long appId,
         String userId,
         boolean isAdmin
 ) {

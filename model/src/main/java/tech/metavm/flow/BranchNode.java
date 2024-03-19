@@ -1,12 +1,10 @@
 package tech.metavm.flow;
 
 import tech.metavm.common.ErrorCode;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
@@ -16,7 +14,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 @EntityType("分支节点")
 public class BranchNode extends NodeRT {
@@ -28,7 +25,7 @@ public class BranchNode extends NodeRT {
             node = new BranchNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), param.inclusive(), prev, scope);
         node.setInclusive(param.inclusive());
         if (param.branches() != null) {
-            Set<String> branchIds = NncUtils.mapAndFilterUnique(param.branches(), BranchDTO::id, Objects::nonNull);
+            var branchIds = NncUtils.mapAndFilterUnique(param.branches(), BranchDTO::index, Objects::nonNull);
             if (branchIds.size() > param.branches().size()) {
                 throw new BusinessException(ErrorCode.BRANCH_INDEX_DUPLICATE);
             }
@@ -42,7 +39,7 @@ public class BranchNode extends NodeRT {
             List<Branch> branches = new ArrayList<>();
             for (int i = 0; i < param.branches().size(); i++) {
                 BranchDTO branchDTO = param.branches().get(i);
-                var branch = context.getEntity(Branch.class, Id.parse(branchDTO.id()));
+                var branch = context.getEntity(Branch.class, branchDTO.id());
                 if (branch == null) {
                     branch = new Branch(
                             branchDTO.index(),
