@@ -20,7 +20,7 @@ public class ValueFormatter {
 
     public static Instance parseInstance(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
         Type actualType;
-        if (instanceDTO.id() != null) {
+        if (!instanceDTO.isNew()) {
             actualType = context.get(instanceDTO.parseId()).getType();
         } else {
             actualType = context.getTypeProvider().getType(instanceDTO.typeId());
@@ -30,7 +30,7 @@ public class ValueFormatter {
                 var param = (ListInstanceParam) instanceDTO.param();
                 ClassInstance list;
                 ListNative listNative;
-                if (instanceDTO.id() != null) {
+                if (!instanceDTO.isNew()) {
                     list = (ClassInstance) context.get(instanceDTO.parseId());
                     listNative = new ListNative(list);
                     listNative.clear();
@@ -53,7 +53,7 @@ public class ValueFormatter {
                         InstanceFieldDTO::fieldId
                 );
                 ClassInstance instance;
-                if (instanceDTO.id() != null) {
+                if (!instanceDTO.isNew()) {
                     instance = (ClassInstance) context.get(instanceDTO.parseId());
                 } else {
                     instance = ClassInstance.allocate(classType);
@@ -65,7 +65,7 @@ public class ValueFormatter {
                             : Instances.nullInstance();
                     fieldValueMap.put(field, fieldValue);
                 }
-                if (instanceDTO.id() != null) {
+                if (!instanceDTO.isNew()) {
                     fieldValueMap.forEach((field, value) -> {
                         if (!field.isReadonly())
                             instance.setField(field, value);
@@ -80,7 +80,7 @@ public class ValueFormatter {
         } else if (actualType instanceof ArrayType arrayType) {
             ArrayInstanceParam param = (ArrayInstanceParam) instanceDTO.param();
             ArrayInstance array;
-            if (instanceDTO.id() != null) {
+            if (!instanceDTO.isNew()) {
                 array = (ArrayInstance) context.get(instanceDTO.parseId());
             } else {
                 array = new ArrayInstance(arrayType);

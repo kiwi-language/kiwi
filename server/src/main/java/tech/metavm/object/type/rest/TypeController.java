@@ -42,7 +42,7 @@ public class TypeController {
         return Result.success(typeManager.loadAllMetadata());
     }
 
-    @GetMapping("/{id:[0-9]+}/descendants")
+    @GetMapping("/{id}/descendants")
     public Result<GetTypesResponse> getDescendants(@PathVariable("id") String id) {
         return Result.success(typeManager.getDescendants(id));
     }
@@ -68,7 +68,7 @@ public class TypeController {
         );
     }
 
-    @GetMapping("/{id:[0-9]+}/creating-fields")
+    @GetMapping("/{id}/creating-fields")
     public Result<List<CreatingFieldDTO>> getCreatingFields(@PathVariable("id") String id) {
         return Result.success(typeManager.getCreatingFields(id));
     }
@@ -100,28 +100,28 @@ public class TypeController {
         return Result.voidSuccess();
     }
 
-    @GetMapping("/{id:[0-9]+}/array")
+    @GetMapping("/{id}/array")
     public Result<TypeDTO> getArrayType(@PathVariable("id") String id) {
         return Result.success(typeManager.getArrayType(id, ArrayKind.READ_WRITE.code()).type());
     }
 
-    @GetMapping("/{id:[0-9]+}/nullable")
+    @GetMapping("/{id}/nullable")
     public Result<TypeDTO> getNullableType(@PathVariable("id") String id) {
         return Result.success(typeManager.getNullableType(id));
     }
 
-    @GetMapping("/{id:[0-9]+}/nullable-array")
+    @GetMapping("/{id}/nullable-array")
     public Result<TypeDTO> getNullableArrayType(@PathVariable("id") String id) {
         return Result.success(typeManager.getNullableArrayType(id));
     }
 
-    @DeleteMapping("/{id:[0-9]+}")
+    @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable("id") String id) {
         typeManager.remove(id);
         return Result.success(null);
     }
 
-    @GetMapping("/field/{id:[0-9]+}")
+    @GetMapping("/field/{id}")
     public Result<GetFieldResponse> getField(@PathVariable("id") String fieldId) {
         return Result.success(typeManager.getField(fieldId));
     }
@@ -137,13 +137,13 @@ public class TypeController {
         return Result.voidSuccess();
     }
 
-    @DeleteMapping("/field/{id:[0-9]+}")
+    @DeleteMapping("/field/{id}")
     public Result<Void> deleteField(@PathVariable("id") String id) {
         typeManager.removeField(id);
         return Result.success(null);
     }
 
-    @PostMapping("/field/{id:[0-9]+}/set-as-title")
+    @PostMapping("/field/{id}/set-as-title")
     public Result<Void> setAsTitle(@PathVariable("id") String id) {
         typeManager.setFieldAsTitle(id);
         return Result.success(null);
@@ -183,7 +183,7 @@ public class TypeController {
         return Result.success(typeManager.listConstraints(typeId, page, pageSize));
     }
 
-    @GetMapping("/constraint/{id:[0-9]+}")
+    @GetMapping("/constraint/{id}")
     public Result<ConstraintDTO> getConstraint(@PathVariable("id") String id) {
         return Result.success(typeManager.getConstraint(id));
     }
@@ -204,7 +204,7 @@ public class TypeController {
         return Result.voidSuccess();
     }
 
-    @DeleteMapping("/constraint/{id:[0-9]+}")
+    @DeleteMapping("/constraint/{id}")
     public Result<Void> removeConstraint(@PathVariable("id") String id) {
         typeManager.removeConstraint(id);
         return Result.voidSuccess();

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import tech.metavm.object.instance.InstanceParamTypeIdResolver;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -136,6 +137,11 @@ public record InstanceDTO(
         return (Objects.equals(id, that.id) || newIds.contains(id) && that.id == null || newIds.contains(that.id) && id == null)
                 && Objects.equals(typeId, that.typeId)
                 && param.valueEquals(that.param, newIds);
+    }
+
+    @JsonIgnore
+    public boolean isNew() {
+        return id == null || Id.parse(id) instanceof TmpId;
     }
 
 }

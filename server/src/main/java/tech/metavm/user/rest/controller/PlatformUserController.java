@@ -44,7 +44,7 @@ public class PlatformUserController {
         return Result.success(platformUserManager.list(page, pageSize, searchText));
     }
 
-    @GetMapping("/{id:[0-9]+}")
+    @GetMapping("/{id}")
     public Result<UserDTO> get(@PathVariable("id") String id) {
         return Result.success(platformUserManager.get(id));
     }
@@ -73,7 +73,7 @@ public class PlatformUserController {
         return Result.voidSuccess();
     }
 
-    @DeleteMapping("/{id:[0-9]+}")
+    @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable("id") String id) {
         platformUserManager.delete(id);
         return Result.voidSuccess();
@@ -106,7 +106,7 @@ public class PlatformUserController {
         return Result.voidSuccess();
     }
 
-    @PostMapping("/leave-app/{id:[0-9]+}")
+    @PostMapping("/leave-app/{id}")
     public Result<Void> leaveApplication(@PathVariable("id") String id, HttpServletRequest request) {
         ensurePlatformUser(request);
         platformUserManager.leaveApplication(List.of(ContextUtil.getUserId().toString()), id);

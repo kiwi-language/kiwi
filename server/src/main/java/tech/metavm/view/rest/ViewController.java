@@ -31,13 +31,13 @@ public class ViewController {
         return Result.success(viewManager.saveMapping(viewMapping));
     }
 
-    @DeleteMapping("/mapping/{id:[0-9]+}")
+    @DeleteMapping("/mapping/{id}")
     public Result<Void> removeViewMapping(@PathVariable("id") String id) {
         viewManager.removeMapping(id);
         return Result.voidSuccess();
     }
 
-    @PostMapping("/mapping/{id:[0-9]+}/set-default")
+    @PostMapping("/mapping/{id}/set-default")
     public Result<Void> saveViewMapping(@PathVariable("id") String id) {
         viewManager.setDefaultMapping(id);
         return Result.voidSuccess();

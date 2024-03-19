@@ -38,7 +38,7 @@ public class FlowController {
         return Result.success(flowManager.list(typeId, page, pageSize, searchText));
     }
 
-    @PostMapping("/{id:[0-9]+}/check")
+    @PostMapping("/{id}/check")
     public Result<GetFlowResponse> check(@PathVariable String id) {
         return Result.success(flowManager.check(id));
     }
@@ -48,7 +48,7 @@ public class FlowController {
         return Result.success(flowManager.save(flow).getStringId());
     }
 
-    @DeleteMapping("/{id:[0-9]+}")
+    @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable("id") String id) {
         flowManager.remove(id);
         return Result.success(null);
@@ -80,12 +80,12 @@ public class FlowController {
         return Result.success(flowManager.createBranchNode(node));
     }
 
-    @GetMapping("/node/{id:[0-9]+}")
+    @GetMapping("/node/{id}")
     public Result<NodeDTO> getNode(@PathVariable("id") String nodeId) {
         return Result.success(flowManager.getNode(nodeId));
     }
 
-    @DeleteMapping("/node/{id:[0-9]+}")
+    @DeleteMapping("/node/{id}")
     public Result<Void> deleteNode(@PathVariable("id") String nodeId) {
         flowManager.deleteNode(nodeId);
         return Result.success(null);
@@ -101,7 +101,7 @@ public class FlowController {
         }
     }
 
-    @DeleteMapping("/node/branch/{ownerId:[0-9]+}/{id:[0-9]+}")
+    @DeleteMapping("/node/branch/{ownerId}/{id}")
     public Result<Void> deleteBranch(@PathVariable("ownerId") String ownerId,
                                      @PathVariable("id") long id) {
         flowManager.deleteBranch(ownerId, id);

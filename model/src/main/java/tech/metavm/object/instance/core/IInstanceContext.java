@@ -1,6 +1,9 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.ContextAttributeKey;
+import tech.metavm.entity.InstanceIndexQuery;
+import tech.metavm.entity.InstanceSink;
+import tech.metavm.entity.LockMode;
 import tech.metavm.event.EventQueue;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
@@ -13,7 +16,8 @@ import tech.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 
 public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository {

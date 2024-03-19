@@ -24,7 +24,7 @@ public class TableController {
         return Result.success(tableManager.list(searchText, page, pageSize));
     }
 
-    @GetMapping("/{id:[0-9]+}")
+    @GetMapping("/{id}")
     public Result<TableDTO> get(@PathVariable("id") String id) {
         return Result.success(tableManager.get(id));
     }
@@ -34,7 +34,7 @@ public class TableController {
         return Result.success(tableManager.save(type));
     }
 
-    @GetMapping("/column/{id:[0-9]+}")
+    @GetMapping("/column/{id}")
     public Result<ColumnDTO> getColumn(@PathVariable("id") String id) {
         return Result.success(tableManager.getColumn(id));
     }

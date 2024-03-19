@@ -604,7 +604,7 @@ public class TypeManager extends EntityContextFactoryBean {
             var instanceContext = Objects.requireNonNull(context.getInstanceContext());
             var type = context.getClassType(Id.parse(instanceDTO.typeId()));
             ClassInstance instance;
-            if (instanceDTO.id() == null) {
+            if (instanceDTO.isNew()) {
                 instanceDTO = setOrdinal(instanceDTO, type.getEnumConstants().size(), type);
                 instance = (ClassInstance) instanceManager.create(instanceDTO, instanceContext, context.getGenericContext());
                 FieldBuilder.newBuilder(instance.getTitle(), null, type, type)

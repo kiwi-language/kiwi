@@ -516,7 +516,7 @@ public class MappingTest extends TestCase {
 
     private String saveInstance(InstanceDTO instanceDTO) {
         String id;
-        if (instanceDTO.id() == null)
+        if (instanceDTO.isNew())
             id = TestUtils.doInTransaction(() -> instanceManager.create(instanceDTO));
         else {
             id = instanceDTO.id();

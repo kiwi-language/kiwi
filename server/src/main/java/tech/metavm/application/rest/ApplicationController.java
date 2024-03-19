@@ -30,12 +30,12 @@ public class ApplicationController {
         return Result.success(applicationManager.save(appDTO));
     }
 
-    @GetMapping("/{id:[0-9]+}")
+    @GetMapping("/{id}")
     public Result<ApplicationDTO> get(@PathVariable("id") String id) {
         return Result.success(applicationManager.get(id));
     }
 
-    @DeleteMapping("/{id:[0-9]+}")
+    @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable("id") String id) {
         applicationManager.delete(id);
         return Result.voidSuccess();
@@ -47,7 +47,7 @@ public class ApplicationController {
         return Result.voidSuccess();
     }
 
-    @PostMapping("/invitation/{id:[0-9]+}/accept")
+    @PostMapping("/invitation/{id}/accept")
     public Result<Void> accept(@PathVariable("id") String id) {
         applicationManager.acceptInvitation(id);
         return Result.voidSuccess();
@@ -59,7 +59,7 @@ public class ApplicationController {
         return Result.voidSuccess();
     }
 
-    @GetMapping("/invitation/{id:[0-9]+}")
+    @GetMapping("/invitation/{id}")
     public Result<AppInvitationDTO> getInvitation(@PathVariable("id") String id) {
         return Result.success(applicationManager.getInvitation(id));
     }

@@ -144,9 +144,9 @@ public class InstanceContext extends BufferingInstanceContext {
     private Patch buildPatch(@Nullable Patch prevPatch, PatchContext patchContext) {
         patchContext.incBuild();
         onPatchBuild();
+        saveViews();
         craw();
         check();
-        saveViews();
         initIds();
         var bufferedTrees = getBufferedTrees();
         var difference = buildDifference(bufferedTrees.keySet());

@@ -49,7 +49,7 @@ public class InstanceController {
 
     @PostMapping
     public Result<String> save(@RequestBody InstanceDTO instance) {
-        if (instance.id() == null ) {
+        if (instance.isNew() ) {
             return Result.success(instanceManager.create(instance));
         } else {
             instanceManager.update(instance);
@@ -94,7 +94,7 @@ public class InstanceController {
         return Result.success(instanceManager.loadByPaths(request));
     }
 
-    @GetMapping("/reference-chain/{id:[0-9]+}")
+    @GetMapping("/reference-chain/{id}")
     public Result<List<String>> getReferenceChain(@PathVariable("id") String id,
                                                   @RequestParam(defaultValue = "1") int rootMode) {
         return Result.success(instanceManager.getReferenceChain(id, rootMode));

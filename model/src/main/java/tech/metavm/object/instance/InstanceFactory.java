@@ -56,7 +56,7 @@ public class InstanceFactory {
                                 Function<Id, Type> getType,
                                 @Nullable InstanceParentRef parentRef,
                                 IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
-        if (instanceDTO.id() != null) {
+        if (!instanceDTO.isNew()) {
             var instance = context.get(instanceDTO.parseId());
             if (parentRef != null) {
                 NncUtils.requireTrue(
@@ -75,7 +75,7 @@ public class InstanceFactory {
             @Nullable InstanceParentRef parentRef,
             IInstanceContext context,
             ParameterizedTypeProvider parameterizedTypeProvider) {
-        NncUtils.requireTrue(instanceDTO.id() == null,
+        NncUtils.requireTrue(instanceDTO.isNew(),
                 "Id of new instance must be null or zero");
         Type type = getType.apply(Id.parse(instanceDTO.typeId()));
         DurableInstance instance;

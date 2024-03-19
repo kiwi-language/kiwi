@@ -127,8 +127,8 @@ public class InstanceManager extends EntityContextFactoryBean {
     @Transactional
     public void update(InstanceDTO instanceDTO) {
         try (var context = newContext()) {
-            if (instanceDTO.id() == null) {
-                throw BusinessException.invalidParams("实例ID为空");
+            if (instanceDTO.isNew()) {
+                throw BusinessException.invalidParams("Instance is new");
             }
             update(instanceDTO, context.getInstanceContext(), context.getGenericContext());
             context.finish();
@@ -137,7 +137,7 @@ public class InstanceManager extends EntityContextFactoryBean {
 
 
     public void save(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
-        if (instanceDTO.id() != null) {
+        if (!instanceDTO.isNew()) {
             update(instanceDTO, context, parameterizedTypeProvider);
         } else {
             create(instanceDTO, context, parameterizedTypeProvider);
