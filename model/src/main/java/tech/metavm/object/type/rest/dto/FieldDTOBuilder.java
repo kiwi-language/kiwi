@@ -1,6 +1,5 @@
 package tech.metavm.object.type.rest.dto;
 
-import tech.metavm.object.instance.core.ClassInstanceBuilder;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceDTO;

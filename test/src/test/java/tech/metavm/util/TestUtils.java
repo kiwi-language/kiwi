@@ -21,7 +21,10 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.Types;
+import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 
@@ -338,6 +341,15 @@ public class TestUtils {
 
     public static String getFieldIdByCode(TypeDTO typeDTO, String fieldCode) {
         return NncUtils.findRequired(typeDTO.getClassParam().fields(), f -> fieldCode.equals(f.code())).id();
+    }
+
+    public static FieldDTO getFieldByName(TypeDTO typeDTO, String name) {
+        return NncUtils.findRequired(typeDTO.getClassParam().fields(), f -> name.equals(f.name()));
+    }
+
+    public static TypeDTO getViewType(TypeDTO type, TypeManager typeManager) {
+        var defaultMapping = getDefaultMapping(type);
+        return typeManager.getType(new GetTypeRequest(defaultMapping.targetTypeId(), false)).type();
     }
 
     public static ObjectMappingDTO getDefaultMapping(TypeDTO typeDTO) {

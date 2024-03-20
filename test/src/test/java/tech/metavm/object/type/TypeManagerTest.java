@@ -11,6 +11,7 @@ import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchServiceV2;
+import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.ClassInstanceParam;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
@@ -184,6 +185,67 @@ public class TypeManagerTest extends TestCase {
         TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(updatedFieldDTO));
         var loadedTypeDTO = typeManager.getType(new GetTypeRequest(savedTypeDTO.id(), true)).type();
         Assert.assertEquals("name", loadedTypeDTO.getClassParam().fields().get(0).code());
+    }
+
+    public void testAddField() {
+        var titleFieldId = TmpId.random().toString();
+        var skuType = TestUtils.doInTransaction(() -> typeManager.saveType(ClassTypeDTOBuilder.newBuilder("SKU")
+                .id(TmpId.random().toString())
+                .addField(FieldDTOBuilder.newBuilder("title", StandardTypes.getStringType().getStringId())
+                        .id(titleFieldId)
+                        .build())
+                .titleFieldId(titleFieldId)
+                .build()));
+
+        TestUtils.doInTransaction(() -> typeManager.saveField(
+                FieldDTOBuilder.newBuilder("price", StandardTypes.getDoubleType().getStringId())
+                        .id(TmpId.random().toString())
+                        .declaringTypeId(skuType.id())
+                        .build()
+        ));
+
+        TestUtils.doInTransaction(() -> typeManager.saveField(
+                FieldDTOBuilder.newBuilder("quantity", StandardTypes.getLongType().getStringId())
+                        .id(TmpId.random().toString())
+                        .declaringTypeId(skuType.id())
+                        .build()
+        ));
+
+        var skuChildArrayType = typeManager.getArrayType(skuType.id(), ArrayKind.CHILD.code()).type();
+
+        var productType = TestUtils.doInTransaction(() -> typeManager.saveType(ClassTypeDTOBuilder.newBuilder("Product")
+                .id(TmpId.random().toString())
+                .addField(FieldDTOBuilder.newBuilder("title", StandardTypes.getStringType().getStringId())
+                        .id(titleFieldId)
+                        .build())
+                .titleFieldId(titleFieldId)
+                .build()));
+
+        TestUtils.doInTransaction(() -> typeManager.saveField(
+                FieldDTOBuilder.newBuilder("sku", skuChildArrayType.id())
+                        .id(TmpId.random().toString())
+                        .declaringTypeId(productType.id())
+                        .isChild(true)
+                        .build()
+        ));
+
+        var skuViewType = TestUtils.getViewType(skuType, typeManager);
+        var productViewType = TestUtils.getViewType(productType, typeManager);
+        var skuViewChildArrayType = typeManager.getArrayType(skuViewType.id(), ArrayKind.CHILD.code()).type();
+
+        var productViewSkuField = TestUtils.getFieldByName(productViewType, "sku");
+        Assert.assertEquals(skuViewChildArrayType.id(), productViewSkuField.typeId());
+
+        TestUtils.doInTransaction(() -> typeManager.saveField(
+                FieldDTOBuilder.newBuilder("desc", StandardTypes.getStringType().getStringId())
+                        .id(TmpId.random().toString())
+                        .declaringTypeId(productType.id())
+                        .build()
+        ));
+
+        var reloadedProductViewType = TestUtils.getViewType(productType, typeManager);
+        var reloadedProductViewSkuField = TestUtils.getFieldByName(reloadedProductViewType, "sku");
+        Assert.assertEquals(skuViewChildArrayType.id(), reloadedProductViewSkuField.typeId());
     }
 
 }

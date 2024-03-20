@@ -138,7 +138,7 @@ public class MappingSaver {
                                     containingMapping.getTargetType(),
                                     fieldMappingDTO.name(),
                                     fieldMappingDTO.code(),
-                                    getTargetFieldType(sourceField.getType(), nestedMapping),
+                                    getTargetFieldType(sourceField.getType(), codeGenerator),
                                     fieldMappingDTO.isChild(),
                                     sourceField.isTitle(),
                                     DirectFieldMapping.checkReadonly(sourceField, fieldMappingDTO.readonly())
@@ -150,15 +150,16 @@ public class MappingSaver {
                 case FlowFieldMappingParam flowParam -> {
                     var getter = sourceType.getMethod(Id.parse(flowParam.getterId()));
                     var setter = NncUtils.get(flowParam.setterId(), id -> sourceType.getMethod(Id.parse(id)));
+                    var objectNestedMapping =  nestedMapping != null ? new ObjectNestedMapping(nestedMapping) : null;
                     yield new FlowFieldMapping(
                             fieldMappingDTO.tmpId(),
                             containingMapping,
-                            nestedMapping != null ? new ObjectNestedMapping(nestedMapping) : null,
+                            objectNestedMapping,
                             createTargetField(
                                     containingMapping.getTargetType(),
                                     fieldMappingDTO.name(),
                                     fieldMappingDTO.code(),
-                                    getTargetFieldType(getter.getReturnType(), nestedMapping),
+                                    getTargetFieldType(getter.getReturnType(), objectNestedMapping),
                                     fieldMappingDTO.isChild(),
                                     false,
                                     setter == null
@@ -176,7 +177,7 @@ public class MappingSaver {
                                     containingMapping.getTargetType(),
                                     fieldMappingDTO.name(),
                                     fieldMappingDTO.code(),
-                                    getTargetFieldType(value.getType(), nestedMapping),
+                                    getTargetFieldType(value.getType(), codeGenerator),
                                     fieldMappingDTO.isChild(),
                                     false,
                                     true
@@ -202,7 +203,7 @@ public class MappingSaver {
                     flowFieldMapping.setFlows(
                             getter,
                             NncUtils.get(flowParam.setterId(), id -> sourceType.getMethod(Id.parse(id))),
-                            getTargetFieldType(getter.getReturnType(), nestedMapping),
+                            getTargetFieldType(getter.getReturnType(), codeGenerator),
                             compositeTypeFacade);
                 }
                 case ComputedFieldMapping computedFieldMapping -> {
@@ -368,7 +369,7 @@ public class MappingSaver {
         return fieldMapping;
     }
 
-    private Type getTargetFieldType(Type targetFieldType, @Nullable ObjectMapping nestedMapping) {
+    private Type getTargetFieldType(Type targetFieldType, @Nullable NestedMapping nestedMapping) {
         return FieldMapping.getTargetFieldType(targetFieldType, nestedMapping, compositeTypeFacade);
     }
 

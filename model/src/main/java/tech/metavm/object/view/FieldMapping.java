@@ -140,20 +140,14 @@ public abstract class FieldMapping extends Element {
     }
 
     protected void resetTargetFieldType(CompositeTypeFacade compositeTypeFacade) {
-        targetField.setType(getTargetFieldType(getTargetFieldType(), getNestedMapping(), compositeTypeFacade));
+        targetField.setType(getTargetFieldType(getTargetFieldType(), this.nestedMapping, compositeTypeFacade));
     }
 
-    public static Type getTargetFieldType(Type targetFieldType, @Nullable ObjectMapping nestedMapping, CompositeTypeFacade compositeTypeFacade) {
+    public static Type getTargetFieldType(Type targetFieldType, @Nullable NestedMapping nestedMapping, CompositeTypeFacade compositeTypeFacade) {
         if (nestedMapping == null)
             return targetFieldType;
-        if (targetFieldType instanceof ArrayType arrayType) {
-            var elementType = arrayType.getInnermostElementType();
-            var typeSubst = new TypeSubstitutor(List.of(elementType), List.of(nestedMapping.getTargetType()),
-                    compositeTypeFacade, new MockDTOProvider());
-            return targetFieldType.accept(typeSubst);
-        } else {
-            return targetFieldType;
-        }
+        else
+            return nestedMapping.getTargetType();
     }
 
     @Nullable
