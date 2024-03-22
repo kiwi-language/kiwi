@@ -28,13 +28,13 @@ public interface IndexEntryMapper {
 
     List<IndexEntryPO> selectByInstanceIdsOrKeys(
             @Param("appId") long appId,
-            @Param("instanceIds") Collection<Long> instanceIds,
+            @Param("instanceIds") Collection<byte[]> instanceIds,
             @Param("keys") Collection<IndexKeyPO> keys
             );
 
     List<IndexEntryPO> selectByInstanceIds(
             @Param("appId") long appId,
-            @Param("instanceIds") Collection<Long> instanceIds
+            @Param("instanceIds") Collection<byte[]> instanceIds
     );
 
     List<IndexEntryPO> selectByKeys(@Param("appId") long appId, @Param("keys") Collection<IndexKeyPO> keys);

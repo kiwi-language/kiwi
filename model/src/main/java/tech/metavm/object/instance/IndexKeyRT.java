@@ -38,7 +38,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     public IndexKeyPO toPO() {
         IndexKeyPO key = new IndexKeyPO();
         var index = getIndex();
-        key.setIndexId(index.getId().getPhysicalId());
+        key.setIndexId(index.getId().toBytes());
         for (IndexField field : index.getFields()) {
             var fieldValue = getFields().get(field);
             if(fieldValue != null)

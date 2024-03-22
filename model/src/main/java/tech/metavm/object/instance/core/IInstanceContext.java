@@ -72,7 +72,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     boolean containsId(Id id);
 
-    List<DurableInstance> getByReferenceTargetId(long targetId, DurableInstance startExclusive, long limit);
+    List<DurableInstance> getByReferenceTargetId(Id targetId, DurableInstance startExclusive, long limit);
 
     void buffer(Id id);
 

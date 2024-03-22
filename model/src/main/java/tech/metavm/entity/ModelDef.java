@@ -7,10 +7,8 @@ import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
 
@@ -119,7 +117,7 @@ public abstract class ModelDef<T, I extends DurableInstance> {
         if(model instanceof IdInitializing idInitializing) {
             var d = (DurableInstance) instance;
             if(d.tryGetPhysicalId() != null)
-                idInitializing.initId(d.getId());
+                idInitializing.initId(d.tryGetId());
         }
         initModel(model, instance, objectInstanceMap);
         return model;

@@ -2,35 +2,25 @@ package tech.metavm.object.instance.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
-import tech.metavm.object.instance.core.TypeTag;
+import tech.metavm.util.EncodingUtils;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 public class ReferencePO {
     private long appId;
-    private int sourceTypeTag;
-    private long sourceTypeId;
-    private long sourceId;
-    private int targetTypeTag;
-    private long targetTypeId;
-    private long targetId;
-    private long fieldId;
+    private byte[] sourceId;
+    private byte[] targetId;
+    private byte[] fieldId;
     private int kind;
 
     public ReferencePO(long appId,
-                       long sourceId, int sourceTypeTag,
-                       long sourceTypeId,
-                       long targetId, int targetTypeTag,
-                       long targetTypeId,
-                       long fieldId,
+                       byte[] sourceId,
+                       byte[] targetId,
+                       byte[] fieldId,
                        int kind) {
         this.appId = appId;
-        this.sourceTypeTag = sourceTypeTag;
-        this.sourceTypeId = sourceTypeId;
         this.sourceId = sourceId;
-        this.targetTypeTag = targetTypeTag;
-        this.targetTypeId = targetTypeId;
         this.targetId = targetId;
         this.fieldId = fieldId;
         this.kind = kind;
@@ -47,67 +37,35 @@ public class ReferencePO {
         this.appId = appId;
     }
 
-    public int getSourceTypeTag() {
-        return sourceTypeTag;
-    }
-
-    public void setSourceTypeTag(int sourceTypeTag) {
-        this.sourceTypeTag = sourceTypeTag;
-    }
-
-    public long getSourceTypeId() {
-        return sourceTypeId;
-    }
-
-    public void setSourceTypeId(long sourceTypeId) {
-        this.sourceTypeId = sourceTypeId;
-    }
-
-    public long getSourceId() {
+    public byte[] getSourceId() {
         return sourceId;
     }
 
-    public void setSourceId(long sourceId) {
+    public void setSourceId(byte[] sourceId) {
         this.sourceId = sourceId;
     }
 
-    public Id getSourceInstanceId() {
-        return PhysicalId.of(sourceId, TypeTag.fromCode(sourceTypeTag), sourceTypeId);
-    }
-
-    public int getTargetTypeTag() {
-        return targetTypeTag;
-    }
-
-    public void setTargetTypeTag(int targetTypeTag) {
-        this.targetTypeTag = targetTypeTag;
-    }
-
-    public long getTargetTypeId() {
-        return targetTypeId;
-    }
-
-    public void setTargetTypeId(long targetTypeId) {
-        this.targetTypeId = targetTypeId;
-    }
-
-    public long getTargetId() {
+    public byte[] getTargetId() {
         return targetId;
     }
 
-    public void setTargetId(long targetId) {
+    public void setTargetId(byte[] targetId) {
         this.targetId = targetId;
     }
 
-    public Id getTargetInstanceId() {
-        return PhysicalId.of(targetId, TypeTag.fromCode(targetTypeTag), targetTypeId);
+    public Id getSourceInstanceId() {
+        return Id.fromBytes(sourceId);
     }
 
-    public long getFieldId() {
+    public Id getTargetInstanceId() {
+        return Id.fromBytes(targetId);
+    }
+
+    public byte[] getFieldId() {
         return fieldId;
     }
 
-    public void setFieldId(long fieldId) {
+    public void setFieldId(byte[] fieldId) {
         this.fieldId = fieldId;
     }
 
@@ -124,46 +82,39 @@ public class ReferencePO {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ReferencePO that = (ReferencePO) o;
-        return appId == that.appId && sourceId == that.sourceId && targetId == that.targetId && fieldId == that.fieldId;
+        return appId == that.appId
+                && Arrays.equals(sourceId, that.sourceId)
+                && Arrays.equals(targetId, that.targetId)
+                && Arrays.equals(fieldId, that.fieldId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(appId, sourceId, targetId, fieldId);
+        return Objects.hash(appId, Arrays.hashCode(sourceId), Arrays.hashCode(targetId), Arrays.hashCode(fieldId));
     }
 
     @Override
     public String toString() {
         return "ReferencePO{" +
                 "appId=" + appId +
-                ", sourceId=" + sourceId +
-                ", targetId=" + targetId +
-                ", fieldId=" + fieldId +
+                ", sourceId=" + EncodingUtils.bytesToHex(sourceId) +
+                ", targetId=" + EncodingUtils.bytesToHex(targetId) +
+                ", fieldId=" + (fieldId != null ? EncodingUtils.bytesToHex(fieldId) : "null") +
                 ", kind=" + kind +
                 '}';
     }
 
     @JsonIgnore
     public String targetKeyWithKind() {
-        return appId + "-" + targetId + "-" + kind;
+        return appId + "-" + EncodingUtils.bytesToHex(targetId) + "-" + kind;
     }
 
     @JsonIgnore
     public String targetKeyWithField() {
-        return appId + "-" + targetId + "-" + fieldId;
-    }
-
-    public static Long convertToRefId(Object fieldValue, boolean isRef) {
-        if (fieldValue == null) {
-            return null;
-        }
-        if (fieldValue instanceof IdentityPO identityPO) {
-            return identityPO.id();
-        }
-        if (isRef) {
-            return (Long) fieldValue;
-        }
-        return null;
+        if (fieldId != null)
+            return appId + "-" + EncodingUtils.bytesToHex(targetId) + "-" + EncodingUtils.bytesToHex(fieldId);
+        else
+            return appId + "-" + EncodingUtils.bytesToHex(targetId);
     }
 
 }

@@ -28,7 +28,7 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitField() {
-        output.writeLong(readLong());
+        output.writeId(readId());
         visit();
     }
 
@@ -41,7 +41,7 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
-    public void visitRecordBody(PhysicalId id) {
+    public void visitRecordBody(Id id) {
         if (RegionConstants.isArrayId(id)) {
             int len = readInt();
             output.writeInt(len);
@@ -107,7 +107,7 @@ public class StreamCopier extends StreamVisitor {
         output.write(b);
     }
 
-    public void writeId(PhysicalId id) {
+    public void writeId(Id id) {
         output.writeId(id);
     }
 

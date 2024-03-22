@@ -9,7 +9,6 @@ import java.util.Objects;
 
 public class FieldViewId extends PathViewId {
 
-    public static final int TAG = 6;
     public final Id fieldId;
 
     public FieldViewId(ViewId parent, @Nullable Id mappingId, Id fieldId, @Nullable Id sourceId, Id typeId) {
@@ -19,7 +18,7 @@ public class FieldViewId extends PathViewId {
 
     @Override
     public void write(InstanceOutput output) {
-        output.write(TAG);
+        output.writeIdTag(IdTag.FIELD_VIEW);
         getParent().write(output);
         writeMappingId(output);
         fieldId.write(output);

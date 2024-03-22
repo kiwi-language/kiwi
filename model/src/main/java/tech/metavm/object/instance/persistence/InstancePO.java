@@ -1,22 +1,20 @@
 package tech.metavm.object.instance.persistence;
 
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
-import tech.metavm.object.instance.core.TypeTag;
+import tech.metavm.util.EncodingUtils;
 
 import java.util.Arrays;
 import java.util.Objects;
 
 public class InstancePO {
     private long appId;
-    private long id;
+    private byte[] id;
+    private byte[] typeId;
     private String title;
-    private int typeTag;
-    private long typeId;
     private byte[] data;
-    private long parentId;
-    private long parentFieldId;
-    private long rootId;
+    private byte[] parentId;
+    private byte[] parentFieldId;
+    private byte[] rootId;
     private long version;
     private long syncVersion;
 
@@ -24,19 +22,17 @@ public class InstancePO {
     }
 
     public InstancePO(long appId,
-                      long id,
+                      byte[] id,
+                      byte[] typeId,
                       String title,
-                      int typeTag,
-                      long typeId,
                       byte[] data,
-                      long parentId,
-                      long parentFieldId,
-                      long rootId,
+                      byte[] parentId,
+                      byte[] parentFieldId,
+                      byte[] rootId,
                       long version,
                       long syncVersion) {
         this.appId = appId;
         this.id = id;
-        this.typeTag = typeTag;
         this.typeId = typeId;
         this.rootId = rootId;
         this.parentId = parentId;
@@ -58,16 +54,20 @@ public class InstancePO {
         return version;
     }
 
-    public long getTypeId() {
-        return typeId;
-    }
-
-    public long getId() {
+    public byte[] getId() {
         return id;
     }
 
+    public byte[] getTypeId() {
+        return typeId;
+    }
+
+    public void setTypeId(byte[] typeId) {
+        this.typeId = typeId;
+    }
+
     public Id getInstanceId() {
-        return PhysicalId.of(id, TypeTag.fromCode(typeTag), typeId);
+        return Id.fromBytes(id);
     }
 
     public byte[] getData() {
@@ -78,23 +78,19 @@ public class InstancePO {
         this.appId = appId;
     }
 
-    public void setTypeId(long typeId) {
-        this.typeId = typeId;
-    }
-
-    public long getParentId() {
+    public byte[] getParentId() {
         return parentId;
     }
 
-    public long getParentFieldId() {
+    public byte[] getParentFieldId() {
         return parentFieldId;
     }
 
-    public void setParentId(long parentId) {
+    public void setParentId(byte[] parentId) {
         this.parentId = parentId;
     }
 
-    public void setParentFieldId(long parentFieldId) {
+    public void setParentFieldId(byte[] parentFieldId) {
         this.parentFieldId = parentFieldId;
     }
 
@@ -102,8 +98,12 @@ public class InstancePO {
         this.data = data;
     }
 
-    public long getRootId() {
+    public byte[] getRootId() {
         return rootId;
+    }
+
+    public Id getRootInstanceId() {
+        return Id.fromBytes(getRootId());
     }
 
     public String getTitle() {
@@ -114,7 +114,7 @@ public class InstancePO {
         this.title = title;
     }
 
-    public void setRootId(long rootId) {
+    public void setRootId(byte[] rootId) {
         this.rootId = rootId;
     }
 
@@ -126,21 +126,13 @@ public class InstancePO {
         this.syncVersion = syncVersion;
     }
 
-    public int getTypeTag() {
-        return typeTag;
-    }
-
-    public void setTypeTag(int typeTag) {
-        this.typeTag = typeTag;
-    }
-
     public VersionPO nextVersion() {
         return new VersionPO(
                 appId, id, version + 1
         );
     }
 
-    public void setId(long id) {
+    public void setId(byte[] id) {
         this.id = id;
     }
 
@@ -149,27 +141,26 @@ public class InstancePO {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         InstancePO that = (InstancePO) o;
-        return Objects.equals(appId, that.appId) && Objects.equals(id, that.id) && Objects.equals(typeId, that.typeId) && Arrays.equals(data, that.data) && Objects.equals(version, that.version) && Objects.equals(syncVersion, that.syncVersion);
+        return Objects.equals(appId, that.appId) && Arrays.equals(id, that.id) && Arrays.equals(data, that.data) && Objects.equals(version, that.version) && Objects.equals(syncVersion, that.syncVersion);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(appId, id, typeId, Arrays.hashCode(data), version, syncVersion);
+        return Objects.hash(appId, Arrays.hashCode(id), Arrays.hashCode(data), version, syncVersion);
     }
 
     @Override
     public String toString() {
         return "InstancePO{" +
                 "appId=" + appId +
-                ", id=" + id +
-                ", typeId=" + typeId +
+                ", id=" + EncodingUtils.bytesToHex(id) +
                 ", version=" + version +
                 ", syncVersion=" + syncVersion +
                 '}';
     }
 
     public InstancePO copy() {
-        return new InstancePO(appId, id, title, typeTag, typeId, data, parentId, parentFieldId, rootId, version, syncVersion);
+        return new InstancePO(appId, id, typeId, title, data, parentId, parentFieldId, rootId, version, syncVersion);
     }
 
 }

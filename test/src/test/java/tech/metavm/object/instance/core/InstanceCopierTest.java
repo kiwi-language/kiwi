@@ -16,7 +16,7 @@ public class InstanceCopierTest extends TestCase {
         var fooTypes = MockUtils.createFooTypes(true);
         var foo = MockUtils.createFoo(fooTypes, true);
         var fooCopy = (ClassInstance) foo.accept(new InstanceCopier(foo));
-        Assert.assertNull(fooCopy.getId());
+        Assert.assertNull(fooCopy.tryGetId());
         Assert.assertEquals(foo.getField(fooTypes.fooNameField()), fooCopy.getField(fooTypes.fooNameField()));
     }
 

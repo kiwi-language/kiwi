@@ -15,8 +15,6 @@ public final class TmpId extends Id {
         return new TmpId(NncUtils.randomNonNegative());
     }
 
-    public static final int TAG = 2;
-
     private final long tmpId;
 
     public TmpId(long tmpId) {
@@ -25,7 +23,7 @@ public final class TmpId extends Id {
 
     @Override
     public void write(InstanceOutput output) {
-        output.write(TAG);
+        output.writeIdTag(IdTag.TMP);
         output.writeLong(tmpId);
     }
 

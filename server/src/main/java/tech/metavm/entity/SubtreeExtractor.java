@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.StreamCopier;
 import tech.metavm.util.StreamVisitor;
@@ -14,7 +13,7 @@ import java.util.function.Consumer;
 public class SubtreeExtractor extends StreamVisitor {
 
     private Id parentId;
-    private long parentFieldId = -1L;
+    private Id parentFieldId;
     private final Consumer<Subtree> add;
 
     public SubtreeExtractor(InputStream in, Consumer<Subtree> add) {
@@ -23,7 +22,7 @@ public class SubtreeExtractor extends StreamVisitor {
     }
 
     @Override
-    public void visitRecordBody(PhysicalId id) {
+    public void visitRecordBody(Id id) {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.write(WireTypes.RECORD);
@@ -31,11 +30,11 @@ public class SubtreeExtractor extends StreamVisitor {
         var oldParentId = parentId;
         var oldParentFieldId = parentFieldId;
         parentId = id;
-        parentFieldId = -1L;
+        parentFieldId = null;
         new StreamCopier(getInput(), output) {
             @Override
             public void visitField() {
-                writeLong(parentFieldId = readLong());
+                writeId(parentFieldId = readId());
                 visit();
             }
 

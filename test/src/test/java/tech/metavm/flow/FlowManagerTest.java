@@ -14,6 +14,7 @@ import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
 import tech.metavm.task.TaskManager;
 import tech.metavm.util.BootstrapUtils;
 import tech.metavm.util.MockTransactionOperations;
+import tech.metavm.util.NncUtils;
 import tech.metavm.util.TestUtils;
 
 import java.util.List;
@@ -50,12 +51,14 @@ public class FlowManagerTest extends TestCase {
 
     public void testDecreaseQuantity() {
         var type = TestUtils.doInTransaction(() -> typeManager.saveType(ClassTypeDTOBuilder.newBuilder("Product")
+                .tmpId(NncUtils.randomNonNegative())
                 .addField(FieldDTOBuilder.newBuilder("title", StandardTypes.getStringType().getStringId()).build())
                 .addField(FieldDTOBuilder.newBuilder("price", StandardTypes.getDoubleType().getStringId()).build())
                 .addField(FieldDTOBuilder.newBuilder("quantity", StandardTypes.getLongType().getStringId()).build())
                 .build()));
 
         var flow = TestUtils.doInTransaction(() -> flowManager.save(MethodDTOBuilder.newBuilder(type.id(), "decreaseQuantity")
+                .tmpId(NncUtils.randomNonNegative())
                 .parameters(List.of(ParameterDTO.create(null, "quantity", StandardTypes.getLongType().getStringId())))
                 .returnTypeId(StandardTypes.getVoidType().getStringId())
                 .skipRootScope(true)

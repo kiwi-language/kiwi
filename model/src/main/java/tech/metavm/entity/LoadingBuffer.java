@@ -102,7 +102,7 @@ public class LoadingBuffer {
         new StreamVisitor(new ByteArrayInputStream(tree.data())) {
 
             @Override
-            public void visitRecordBody(PhysicalId id) {
+            public void visitRecordBody(Id id) {
                 invertedIndex.put(id, tree);
                 super.visitRecordBody(id);
             }

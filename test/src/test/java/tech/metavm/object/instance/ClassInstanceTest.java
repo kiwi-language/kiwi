@@ -42,12 +42,12 @@ public class ClassInstanceTest extends TestCase {
                         new ArrayInstance(fooType.bazArrayType())
                 ))
                 .build();
-        foo.initId(PhysicalId.ofClass(100000L, 1L));
+        foo.initId(DefaultPhysicalId.of(100000L, 0L, TypePhysicalId.ofClass(1L, 0L)));
         FieldValue fieldValueDTO = foo.toFieldValueDTO();
         Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
         Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
         ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
-        Assert.assertEquals(foo.getId(), Id.parse(refFieldValueDTO.getId()));
+        Assert.assertEquals(foo.tryGetId(), Id.parse(refFieldValueDTO.getId()));
     }
 
     public void testToDTO() {
@@ -94,7 +94,7 @@ public class ClassInstanceTest extends TestCase {
                 ),
                 type
         );
-        instance.initId(PhysicalId.ofClass(10001L, 1L));
+        instance.initId(DefaultPhysicalId.of(10001L, 0L, TypePhysicalId.ofClass(1L, 0L)));
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 
@@ -130,7 +130,7 @@ public class ClassInstanceTest extends TestCase {
 
             @Override
             public Void visitDurableInstance(DurableInstance instance) {
-                id2instance.put(instance.getId(), instance);
+                id2instance.put(instance.tryGetId(), instance);
                 return super.visitDurableInstance(instance);
             }
         });

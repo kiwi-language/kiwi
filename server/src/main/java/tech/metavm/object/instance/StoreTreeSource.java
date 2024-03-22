@@ -30,7 +30,7 @@ public class StoreTreeSource implements TreeSource {
     @Override
     public List<Tree> load(Collection<Id> ids, IInstanceContext context) {
         var instancePOs = new HashMap<Id, InstancePO>();
-        for (InstancePO instancePO : instanceStore.loadForest(NncUtils.map(ids, Id::getPhysicalId), context)) {
+        for (InstancePO instancePO : instanceStore.loadForest(ids, context)) {
             instancePOs.put(instancePO.getInstanceId(), instancePO);
         }
         List<Tree> trees = new ArrayList<>();
@@ -54,8 +54,8 @@ public class StoreTreeSource implements TreeSource {
 
     private static class MessageWriter extends InstanceOutput {
 
-        private long parentId;
-        private long parentFieldId;
+        private Id parentId;
+        private Id parentFieldId;
         private final Map<Id, InstancePO> instancePOs;
 
         public MessageWriter(OutputStream outputStream, Map<Id, InstancePO> instancePOs) {
@@ -69,15 +69,15 @@ public class StoreTreeSource implements TreeSource {
         }
 
         public void writeInstancePO(InstancePO instancePO) {
-            long oldParentId = parentId;
-            long oldParentFieldId = parentFieldId;
-            parentId = instancePO.getId();
-            parentFieldId = -1L;
+            var oldParentId = parentId;
+            var oldParentFieldId = parentFieldId;
+            parentId = instancePO.getInstanceId();
+            parentFieldId = null;
             new StreamCopier(new ByteArrayInputStream(instancePO.getData()), this) {
 
                 @Override
                 public void visitField() {
-                    writeLong(parentFieldId = readLong());
+                    writeId(parentFieldId = readId());
                     visit();
                 }
 
@@ -86,8 +86,8 @@ public class StoreTreeSource implements TreeSource {
                     var id = readId();
                     var instancePO = instancePOs.get(id);
                     if (instancePO != null
-                            && instancePO.getParentId() == parentId
-                            && instancePO.getParentFieldId() == parentFieldId)
+                            && NncUtils.bytesEquals(instancePO.getParentId(), NncUtils.get(parentId, Id::toBytes))
+                            && NncUtils.bytesEquals(instancePO.getParentFieldId(), NncUtils.get(parentFieldId, Id::toBytes)))
                         writeInstancePO(instancePO);
                     else {
                         write(WireTypes.REFERENCE);

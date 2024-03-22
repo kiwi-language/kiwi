@@ -210,12 +210,12 @@ public class ClassInstance extends DurableInstance {
             if (!field.shouldSkipWrite())
                 numFields++;
         }
-        fields.sort(Comparator.comparingLong(f -> f.getId().getPhysicalId()));
+        fields.sort(Comparator.comparing(InstanceField::getId));
         output.writeInt(numFields);
         for (InstanceField field : fields) {
             if (field.shouldSkipWrite())
                 continue;
-            output.writeLong(field.getId().getPhysicalId());
+            output.writeId(field.getId());
             if (includeChildren && field.getField().isChild() && !field.getField().isLazy())
                 output.writeValue(field.getValue());
             else
@@ -234,13 +234,13 @@ public class ClassInstance extends DurableInstance {
         int numFields = input.readInt();
         int j = 0;
         for (int i = 0; i < numFields; i++) {
-            var fieldId = input.readLong();
-            while (j < fields.size() && fields.get(j).getId().getPhysicalId() < fieldId) {
+            var fieldId = input.readId();
+            while (j < fields.size() && fields.get(j).getId().compareTo(fieldId) < 0) {
                 instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
                 j++;
             }
             Field field;
-            if (j < fields.size() && (field = fields.get(j)).getId().getPhysicalId() == fieldId) {
+            if (j < fields.size() && (field = fields.get(j)).getId().equals(fieldId)) {
                 input.setParent(this, field);
                 var value = input.readInstance();
                 instFields.add(new InstanceField(this, field, value, false));
@@ -252,6 +252,8 @@ public class ClassInstance extends DurableInstance {
         for (; j < fields.size(); j++)
             instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
 //        }
+        if(this.fields.size() != fields.size())
+            System.out.println("Caught");
     }
 
     public ClassInstance getClassInstance(Field field) {

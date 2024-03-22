@@ -11,8 +11,6 @@ import static java.util.Objects.requireNonNull;
 
 public class DefaultViewId extends ViewId {
 
-    public static final int TAG = 3;
-
     private final Id sourceId;
 
     public DefaultViewId(@NotNull Id mappingId, Id sourceId) {
@@ -22,7 +20,7 @@ public class DefaultViewId extends ViewId {
 
     @Override
     public void write(InstanceOutput output) {
-        output.write(TAG);
+        output.writeIdTag(IdTag.DEFAULT_VIEW);
         getMappingId().write(output);
         sourceId.write(output);
     }

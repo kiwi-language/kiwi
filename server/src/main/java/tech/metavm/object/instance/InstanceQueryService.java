@@ -150,7 +150,7 @@ public class InstanceQueryService {
 //        var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
         var created = NncUtils.map(query.createdIds(), instanceProvider::get);
         var filteredCreatedId =
-                NncUtils.filterAndMap(created, i -> searchQuery.match((ClassInstance) i, parameterizedFlowProvider), DurableInstance::getId);
+                NncUtils.filterAndMap(created, i -> searchQuery.match((ClassInstance) i, parameterizedFlowProvider), DurableInstance::tryGetId);
         List<Id> ids = NncUtils.merge(idPage.data(), filteredCreatedId, true);
         ids = NncUtils.filter(ids, id -> !query.excludedIds().contains(id));
         ids = instanceRepository.filterAlive(ids);

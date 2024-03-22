@@ -91,7 +91,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
                 defContext.finish();
                 defContext.getIdentityMap().forEach((object, javaConstruct) -> {
                     if (EntityUtils.isDurable(object))
-                        stdAllocators.putId(javaConstruct, defContext.getInstance(object).getId());
+                        stdAllocators.putId(javaConstruct, defContext.getInstance(object).tryGetId());
                 });
                 if (saveIds) {
                     stdAllocators.save();

@@ -5,7 +5,6 @@ import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -15,16 +14,16 @@ public class ReferenceCleanupTask extends Task {
 
     public static final long BATCH_SIZE = 256;
 
-    private final long targetId;
+    private final String targetId;
     @Nullable
     private String nextReferenceId;
 
-    public ReferenceCleanupTask(long targetId, String typeName, String instanceTitle) {
+    public ReferenceCleanupTask(String targetId, String typeName, String instanceTitle) {
         super("Reference cleanup " + instanceTitle + "/" + typeName);
         this.targetId = targetId;
     }
 
-    public long getTargetId() {
+    public String getTargetId() {
         return targetId;
     }
 
@@ -32,14 +31,14 @@ public class ReferenceCleanupTask extends Task {
     public boolean run0(IEntityContext context) {
         var instanceContext = context.getInstanceContext();
         var next = NncUtils.get(nextReferenceId, id -> instanceContext.get(Id.parse(nextReferenceId)));
-        var instances = instanceContext.getByReferenceTargetId(targetId, next, BATCH_SIZE);
+        var instances = instanceContext.getByReferenceTargetId(Id.parse(targetId), next, BATCH_SIZE);
         for (Instance instance : instances) {
             EntityUtils.ensureProxyInitialized(instance);
         }
         if(instances.size() < BATCH_SIZE) {
             return true;
         }
-        nextReferenceId = NncUtils.get(instances.get(instances.size() - 1).getId(), Id::toString);
+        nextReferenceId = NncUtils.get(instances.get(instances.size() - 1).tryGetId(), Id::toString);
         return false;
     }
     

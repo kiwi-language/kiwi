@@ -17,7 +17,7 @@ public class ChildViewId extends DefaultViewId {
 
     @Override
     public void write(InstanceOutput output) {
-        output.write(TAG);
+        output.writeIdTag(IdTag.CHILD_VIEW);
         getMappingId().write(output);
         getSourceId().write(output);
         rootId.write(output);

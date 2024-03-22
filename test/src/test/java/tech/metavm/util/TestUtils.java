@@ -22,7 +22,6 @@ import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.TypeManager;
-import tech.metavm.object.type.Types;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
@@ -245,9 +244,8 @@ public class TestUtils {
         EntityUtils.visitGraph(List.of(root), o -> {
             if (o instanceof Entity entity && entity.isPhysicalIdNull()) {
                 var typeId =
-                        ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(entity).getPhysicalId() : 1L;
-                var typeTag = entity instanceof ReadonlyArray<?> ? TypeTag.Array : TypeTag.Class;
-                entity.initId(PhysicalId.of(ref.nextId++, typeTag, typeId));
+                        ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(entity).getId() : new MockId(1L);
+                entity.initId(DefaultPhysicalId.of(ref.nextId++, 0L, typeId));
             }
         });
     }
@@ -256,7 +254,7 @@ public class TestUtils {
         EntityUtils.visitGraph(List.of(root), o -> {
             if (o instanceof Entity entity && entity.isPhysicalIdNull()) {
                 var type = ModelDefRegistry.getDefContext().getType(EntityUtils.getRealType(entity.getClass()));
-                entity.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.APP_ID, type), type));
+                entity.initId(DefaultPhysicalId.of(idProvider.allocateOne(TestConstants.APP_ID, type), 0L, type));
             }
         });
     }
@@ -296,7 +294,7 @@ public class TestUtils {
 //                            id = ref.nextObjectId++;
 //                    } else
 //                        throw new InternalException("Invalid instance: " + instance);
-                    instance.initId(PhysicalId.of(id, instance.getType()));
+                    instance.initId(DefaultPhysicalId.of(id, 0L, instance.getType()));
                 }
                 return super.visitDurableInstance(instance);
             }

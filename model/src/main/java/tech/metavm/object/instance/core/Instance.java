@@ -87,10 +87,10 @@ public abstract class Instance {
         return false;
     }
 
-    public abstract @Nullable Id getId();
+    public abstract @Nullable Id tryGetId();
 
     public @Nullable String getInstanceIdString() {
-        var id = getId();
+        var id = tryGetId();
         return id != null ? id.toString() : null;
     }
 
@@ -127,7 +127,7 @@ public abstract class Instance {
     protected InstanceDTO toDTO(InstanceParam param) {
         try (var serContext = SerializeContext.enter()) {
             return new InstanceDTO(
-                    NncUtils.get(getId(), Objects::toString),
+                    NncUtils.get(tryGetId(), Objects::toString),
                     serContext.getId(getType()),
                     getType().getName(),
                     getTitle(),

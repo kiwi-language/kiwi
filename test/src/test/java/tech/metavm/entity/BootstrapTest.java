@@ -81,7 +81,7 @@ public class BootstrapTest extends TestCase {
             var originalDefContext = ModelDefRegistry.getDefContext();
             var entities = NncUtils.filter(originalDefContext.getEntities(), e -> !EntityUtils.isEphemeral(e));
             var modelIds = NncUtils.map(entities, e -> originalDefContext.getIdentityContext().getModelId(e));
-            var originalIds = NncUtils.map(entities, e -> originalDefContext.getInstance(e).getId());
+            var originalIds = NncUtils.map(entities, e -> originalDefContext.getInstance(e).tryGetId());
             stdIdStore = new MemoryStdIdStore();
             instanceStore = new MemInstanceStore();
             idProvider = new MockIdProvider();
@@ -93,7 +93,7 @@ public class BootstrapTest extends TestCase {
                     NncUtils.map(
                             modelIds,
                             modelId ->
-                                    defContext.getInstance(defContext.getIdentityContext().getModel(modelId)).getId()
+                                    defContext.getInstance(defContext.getIdentityContext().getModel(modelId)).tryGetId()
                     )
             );
         }

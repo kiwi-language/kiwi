@@ -47,7 +47,7 @@ public record SourceEvaluationContext(Source source,
                 leftDurable = rightDurable;
                 rightDurable = tmp;
             }
-            if (Objects.equals(leftDurable.getId(), rightDurable.getId()))
+            if (Objects.equals(leftDurable.tryGetId(), rightDurable.tryGetId()))
                 return Instances.trueInstance();
             else if (leftDurable instanceof ArrayInstance array && arrayContains(array, rightDurable))
                 return Instances.trueInstance();
@@ -62,7 +62,7 @@ public record SourceEvaluationContext(Source source,
             if (element.equals(instance))
                 return true;
             if (element instanceof DurableInstance durableElement && instance instanceof DurableInstance durableInstance) {
-                if (Objects.equals(durableElement.getId(), durableInstance.getId()))
+                if (Objects.equals(durableElement.tryGetId(), durableInstance.tryGetId()))
                     return true;
             }
         }

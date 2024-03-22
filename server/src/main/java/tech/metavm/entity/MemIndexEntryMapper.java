@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.IndexQueryPO;
@@ -13,13 +14,13 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     private final Map<GlobalKey, List<IndexEntryPO>> key2items = new HashMap<>();
     private final Set<IndexEntryPO> entries = new HashSet<>();
-    private final Map<Long, List<IndexEntryPO>> instanceId2items = new HashMap<>();
+    private final Map<Id, List<IndexEntryPO>> instanceId2items = new HashMap<>();
 
     private List<IndexEntryPO> getItems(GlobalKey key) {
         return key2items.computeIfAbsent(key, k -> new ArrayList<>());
     }
 
-    private List<IndexEntryPO> getItemsByInstanceId(long instanceId) {
+    private List<IndexEntryPO> getItemsByInstanceId(Id instanceId) {
         return instanceId2items.computeIfAbsent(instanceId, k -> new ArrayList<>());
     }
 
@@ -30,11 +31,11 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     @Override
     public long countRange(long appId, IndexKeyPO from, IndexKeyPO to) {
-        if(from.getIndexId() != to.getIndexId())
-            throw new InternalException("from.getIndexId() != to.getIndexId()");
+        if(!Arrays.equals(from.getIndexId(), to.getIndexId()))
+            throw new InternalException("from.getIndexId() not equal to to.getIndexId()");
         long count = 0;
         for (IndexEntryPO entry : entries) {
-            if (entry.getAppId() == appId && entry.getIndexId() == from.getIndexId() &&
+            if (entry.getAppId() == appId && Arrays.equals(entry.getIndexId(), from.getIndexId()) &&
                     entry.getKey().compareTo(from) >= 0 && entry.getKey().compareTo(to) <= 0) {
                 count++;
             }
@@ -44,11 +45,11 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     @Override
     public List<IndexEntryPO> scan(long appId, IndexKeyPO from, IndexKeyPO to) {
-        if(from.getIndexId() != to.getIndexId())
-            throw new InternalException("from.getIndexId() != to.getIndexId()");
+        if(!Arrays.equals(from.getIndexId(), to.getIndexId()))
+            throw new InternalException("from.getIndexId() not equal to to.getIndexId()");
         var result = new ArrayList<IndexEntryPO>();
         for (IndexEntryPO entry : entries) {
-            if (entry.getAppId() == appId && entry.getIndexId() == from.getIndexId() &&
+            if (entry.getAppId() == appId && Arrays.equals(entry.getIndexId(), from.getIndexId()) &&
                     entry.getKey().compareTo(from) >= 0 && entry.getKey().compareTo(to) <= 0) {
                 result.add(entry.copy());
             }
@@ -62,18 +63,18 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     @Override
     public List<IndexEntryPO> selectByInstanceIdsOrKeys(long appId,
-                                                        Collection<Long> instanceIds,
+                                                        Collection<byte[]> instanceIds,
                                                         Collection<IndexKeyPO> keys) {
         var globalKeys = NncUtils.map(keys, k -> new GlobalKey(appId, k));
         return NncUtils.union(
-                NncUtils.flatMap(instanceIds, this::getItemsByInstanceId),
+                NncUtils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id))),
                 NncUtils.flatMap(globalKeys, this::getItems)
         );
     }
 
     @Override
-    public List<IndexEntryPO> selectByInstanceIds(long appId, Collection<Long> instanceIds) {
-        return NncUtils.flatMap(instanceIds, this::getItemsByInstanceId);
+    public List<IndexEntryPO> selectByInstanceIds(long appId, Collection<byte[]> instanceIds) {
+        return NncUtils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id)));
     }
 
     @Override
@@ -86,7 +87,7 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     public void batchInsert(Collection<IndexEntryPO> items) {
         for (IndexEntryPO item : items) {
             getItems(new GlobalKey(item.getAppId(), item.getKey())).add(item);
-            getItemsByInstanceId(item.getInstanceId()).add(item);
+            getItemsByInstanceId(item.getId()).add(item);
             this.entries.add(item);
         }
     }
@@ -97,7 +98,7 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
             if(!this.entries.remove(item))
                 throw new InternalException(item + " does not exist");
             getItems(new GlobalKey(item.getAppId(), item.getKey())).remove(item);
-            getItemsByInstanceId(item.getInstanceId()).remove(item);
+            getItemsByInstanceId(item.getId()).remove(item);
         }
     }
 

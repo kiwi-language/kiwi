@@ -153,7 +153,7 @@ public class InstanceManager extends EntityContextFactoryBean {
         try (var context = newContext()) {
             Instance instance = create(instanceDTO, context.getInstanceContext(), context.getGenericContext());
             context.finish();
-            return Objects.requireNonNull(instance.getId()).toString();
+            return Objects.requireNonNull(instance.tryGetId()).toString();
         }
     }
 

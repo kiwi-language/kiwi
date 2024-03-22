@@ -9,7 +9,6 @@ import java.util.Objects;
 
 public class ElementViewId extends PathViewId {
 
-    public static final int TAG = 5;
     private final int index;
 
     public ElementViewId(ViewId parent, @Nullable Id mappingId, int index, @Nullable Id sourceId, Id typeId) {
@@ -19,7 +18,7 @@ public class ElementViewId extends PathViewId {
 
     @Override
     public void write(InstanceOutput output) {
-        output.write(TAG);
+        output.writeIdTag(IdTag.ELEMENT_VIEW);
         getParent().write(output);
         writeMappingId(output);
         output.writeInt(index);

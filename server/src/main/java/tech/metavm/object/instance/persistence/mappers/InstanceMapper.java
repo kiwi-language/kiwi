@@ -15,15 +15,15 @@ import java.util.List;
 @Mapper
 public interface InstanceMapper {
 
-    InstancePO selectById(@Param("id") long id);
+    InstancePO selectById(@Param("id") byte[] id);
 
-    List<InstancePO> selectByIds(@Param("appId") long appId, @Param("ids") Collection<Long> ids,
+    List<InstancePO> selectByIds(@Param("appId") long appId, @Param("ids") Collection<byte[]> ids,
                                  @Param("lockMode") int lockMode);
 
     List<InstancePO> selectByTypeIds(@Param("appId") long appId,
                                      @Param("queries") Collection<ByTypeQuery> queries);
 
-    List<InstancePO> selectForest(@Param("appId") long appId, @Param("ids") Collection<Long> ids,
+    List<InstancePO> selectForest(@Param("appId") long appId, @Param("ids") Collection<byte[]> ids,
                                   @Param("lockMode") int lockMode);
 
     void batchInsert(Collection<InstancePO> records);
@@ -43,14 +43,14 @@ public interface InstanceMapper {
                      @Param("timestamp") long timestamp,
                      @Param("versions") Collection<VersionPO> versions);
 
-    List<Long> getAliveIds(@Param("appId") long appId, @Param("ids") Collection<Long> ids);
+    List<byte[]> getAliveIds(@Param("appId") long appId, @Param("ids") Collection<byte[]> ids);
 
     int updateSyncVersion(List<VersionPO> versions);
 
     List<InstancePO> scan(@Param("appId") long appId,
                           @Param("queries") Collection<ScanQuery> queries);
 
-    List<Long> selectVersions(@Param("ids") List<Long> ids);
+    List<Long> selectVersions(@Param("ids") List<byte[]> ids);
 
-    List<Version> selectRootVersions(@Param("appId") long appId, @Param("ids") List<Long> ids);
+    List<Version> selectRootVersions(@Param("appId") long appId, @Param("ids") List<byte[]> ids);
 }

@@ -121,8 +121,8 @@ public class SystemController {
         return Result.voidSuccess();
     }
 
-    @GetMapping("/instance/{id:[0-9]+}")
-    public Result<Object> getInstance(@PathVariable("id") long id) {
+    @GetMapping("/instance/{id}")
+    public Result<Object> getInstance(@PathVariable("id") String id) {
         return Result.success(storeManager.getInstance(id));
     }
 

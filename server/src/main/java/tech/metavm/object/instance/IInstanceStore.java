@@ -18,13 +18,13 @@ public interface IInstanceStore {
 
     void save(ChangeList<InstancePO> diff);
 
-    List<Long> getVersions(List<Long> ids);
+    List<Long> getVersions(List<Id> ids);
 
-    List<Version> getRootVersions(List<Long> ids, IInstanceContext context);
+    List<Version> getRootVersions(List<Id> ids, IInstanceContext context);
 
     void saveReferences(ChangeList<ReferencePO> refChanges);
 
-    ReferencePO getFirstReference(long appId, Set<Long> targetIds, Set<Long> excludedSourceIds);
+    ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Id> excludedSourceIds);
 
     List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Id> excludedSourceIds);
 
@@ -38,16 +38,16 @@ public interface IInstanceStore {
 
     List<InstancePO> load(StoreLoadRequest request, IInstanceContext context);
 
-    List<Id> getByReferenceTargetId(long targetId, long startIdExclusive, long limit, IInstanceContext context);
+    List<Id> getByReferenceTargetId(Id targetId, Id startIdExclusive, long limit, IInstanceContext context);
 
-    default List<InstancePO> getByTypeIds(Collection<Long> typeIds, IInstanceContext context) {
+    default List<InstancePO> getByTypeIds(Collection<Id> typeIds, IInstanceContext context) {
         return queryByTypeIds(
-                NncUtils.map(typeIds, typeId -> new ByTypeQuery(typeId, 0L, BY_TYPE_LIMIT)),
+                NncUtils.map(typeIds, typeId -> new ByTypeQuery(typeId, null, BY_TYPE_LIMIT)),
                 context
         );
     }
 
-    List<InstancePO> loadForest(Collection<Long> ids, IInstanceContext context);
+    List<InstancePO> loadForest(Collection<Id> ids, IInstanceContext context);
 
     List<InstancePO> queryByTypeIds(List<ByTypeQuery> queries, IInstanceContext context);
 
@@ -55,6 +55,6 @@ public interface IInstanceStore {
 
     void updateSyncVersion(List<VersionPO> versions);
 
-    Set<Long> getAliveInstanceIds(long appId, Set<Long> instanceIds);
+    Set<Id> getAliveInstanceIds(long appId, Set<Id> instanceIds);
 
 }

@@ -1,11 +1,9 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.EntityChange;
-import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
@@ -38,17 +36,17 @@ public class IndexConstraintPlugin implements ContextPlugin {
 
     @Override
     public boolean beforeSaving(EntityChange<InstancePO> change, IInstanceContext context) {
-        Map<Long, ClassInstance> instanceMap = new HashMap<>();
+        Map<Id, ClassInstance> instanceMap = new HashMap<>();
         List<IndexEntryPO> currentEntries = new ArrayList<>();
         change.forEachInsertOrUpdate(instancePO -> {
             var instance = context.get(instancePO.getInstanceId());
             if (instance instanceof ClassInstance classInstance) {
-                instanceMap.put(classInstance.getPhysicalId(), classInstance);
+                instanceMap.put(classInstance.getId(), classInstance);
                 currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.getParameterizedFlowProvider(), context.getAppId()));
             }
         });
         List<InstancePO> oldInstances = NncUtils.union(change.updates(), change.deletes());
-        Set<Long> oldInstanceIds = NncUtils.mapUnique(oldInstances, InstancePO::getId);
+        var oldInstanceIds = NncUtils.mapUnique(oldInstances, InstancePO::getInstanceId);
         Set<IndexEntryPO> relatedEntries = new HashSet<>();
         NncUtils.doInBatch(NncUtils.map(oldInstances, InstancePO::getId),
                 ids -> relatedEntries.addAll(indexEntryMapper.selectByInstanceIds(context.getAppId(), ids)));
@@ -57,12 +55,12 @@ public class IndexConstraintPlugin implements ContextPlugin {
 
         List<IndexEntryPO> oldEntries = NncUtils.filter(
                 relatedEntries,
-                e -> oldInstanceIds.contains(e.getInstanceId())
+                e -> oldInstanceIds.contains(e.getId())
         );
 
         List<IndexEntryPO> conflictingEntries = NncUtils.exclude(
                 relatedEntries,
-                e -> oldInstanceIds.contains(e.getInstanceId())
+                e -> oldInstanceIds.contains(e.getId())
         );
 
         Map<IndexKeyPO, List<Id>> newKeyMap = NncUtils.toMultiMap(
@@ -70,19 +68,19 @@ public class IndexConstraintPlugin implements ContextPlugin {
         );
         Map<IndexKeyPO, Id> conflictingKeyMap = NncUtils.toMap(conflictingEntries, IndexEntryPO::getKey, IndexEntryPO::getId);
         for (IndexEntryPO currentItem : currentEntries) {
-            Index constraint = indexProvider.getIndex(PhysicalId.of(currentItem.getIndexId(), ModelDefRegistry.getType(Index.class)));
+            Index constraint = indexProvider.getIndex(Id.fromBytes(currentItem.getIndexId()));
             if (!constraint.isUnique() || PersistenceUtils.containsNull(constraint, currentItem.getKey())) {
                 continue;
             }
             if (newKeyMap.get(currentItem.getKey()).size() > 1) {
                 throw BusinessException.constraintCheckFailed(
-                        instanceMap.get(currentItem.getInstanceId()), constraint
+                        instanceMap.get(currentItem.getId()), constraint
                 );
             }
             var conflictingInstanceId = conflictingKeyMap.get(currentItem.getKey());
             if (conflictingInstanceId != null && !conflictingInstanceId.equals(currentItem.getId())) {
                 throw BusinessException.constraintCheckFailed(
-                        instanceMap.get(currentItem.getInstanceId()), constraint
+                        instanceMap.get(currentItem.getId()), constraint
                 );
             }
         }
@@ -100,7 +98,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         return result;
     }
 
-    private List<IndexEntryPO> selectByInstanceIds(long appId, List<Long> instanceIds) {
+    private List<IndexEntryPO> selectByInstanceIds(long appId, List<byte[]> instanceIds) {
         List<IndexEntryPO> result = new ArrayList<>();
         for (int i = 0; i < 20 && (i + 1) * BATCH_SIZE < instanceIds.size(); i++) {
             var batch = instanceIds.subList(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);

@@ -24,8 +24,6 @@ import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.function.Function;
 
-import static tech.metavm.util.NncUtils.encodeBase64;
-
 public class Types {
 
     private static final TypeFactory TYPE_FACTORY = new DefaultTypeFactory(ModelDefRegistry::getType);
@@ -128,8 +126,8 @@ public class Types {
 
     public static ClassType getTypeType(TypeTag tag) {
         return switch (tag) {
-            case Class -> StandardTypes.getClassType(ClassType.class);
-            case Array -> StandardTypes.getClassType(ArrayType.class);
+            case CLASS -> StandardTypes.getClassType(ClassType.class);
+            case ARRAY -> StandardTypes.getClassType(ArrayType.class);
         };
     }
 

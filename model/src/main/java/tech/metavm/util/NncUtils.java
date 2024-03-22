@@ -116,6 +116,14 @@ public class NncUtils {
         }
     }
 
+    public static boolean bytesEquals(@Nullable byte[] bytes1, @Nullable byte[] bytes2) {
+        if(bytes1 == bytes2)
+            return true;
+        if(bytes1 != null && bytes2 != null)
+            return Arrays.equals(bytes1, bytes2);
+        return false;
+    }
+
     public static boolean isDigits(String str) {
         return DIGITS_PTN.matcher(str).matches();
     }

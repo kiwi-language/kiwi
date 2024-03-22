@@ -77,10 +77,10 @@ public class InstanceContext extends BufferingInstanceContext {
     @Override
     protected void onReplace(List<DurableInstance> replacements) {
         for (Instance replacement : replacements) {
-            buffer(Objects.requireNonNull(replacement.getId()));
+            buffer(Objects.requireNonNull(replacement.tryGetId()));
         }
         for (var replacement : replacements) {
-            var tree = loadingBuffer.tryGetTree(replacement.getId());
+            var tree = loadingBuffer.tryGetTree(replacement.tryGetId());
             if (tree != null) {
                 headContext.add(tree);
             }
@@ -133,7 +133,7 @@ public class InstanceContext extends BufferingInstanceContext {
         public static final int MAX_BUILD = 10;
 
         int numBuild;
-        final Set<Long> changeNotified = new HashSet<>();
+        final Set<Id> changeNotified = new HashSet<>();
 
         void incBuild() {
             if (++numBuild > MAX_BUILD)
@@ -178,11 +178,11 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public List<DurableInstance> getByReferenceTargetId(long targetId, DurableInstance startExclusive, long limit) {
+    public List<DurableInstance> getByReferenceTargetId(Id targetId, DurableInstance startExclusive, long limit) {
         return NncUtils.map(
                 instanceStore.getByReferenceTargetId(
                         targetId,
-                        NncUtils.getOrElse(startExclusive, DurableInstance::tryGetPhysicalId, -1L),
+                        NncUtils.get(startExclusive, DurableInstance::tryGetId),
                         limit,
                         this
                 ),
@@ -243,8 +243,8 @@ public class InstanceContext extends BufferingInstanceContext {
         var result = instanceStore.queryByTypeIds(
                 List.of(
                         new ByTypeQuery(
-                                request.type().getId().getPhysicalId(),
-                                request.startExclusive() == null ? -1L : request.startExclusive().getPhysicalId() + 1L,
+                                request.type().getId(),
+                                request.startExclusive() == null ? null : request.startExclusive().getId(),
                                 request.limit()
                         )
                 ),
@@ -266,7 +266,7 @@ public class InstanceContext extends BufferingInstanceContext {
     public List<DurableInstance> scan(DurableInstance startExclusive, long limit) {
         return NncUtils.map(
                 instanceStore.scan(List.of(
-                        new ScanQuery(startExclusive == null ? 0L : startExclusive.getPhysicalId() + 1L, limit)
+                        new ScanQuery(startExclusive == null ? NullId.BYTES : startExclusive.getId().toBytes(), limit)
                 ), this),
                 instancePO -> get(instancePO.getInstanceId())
         );
@@ -359,7 +359,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private ContextDifference buildDifference(Collection<Tree> bufferedTrees) {
         ContextDifference difference =
-                new ContextDifference(appId, id -> internalGet(id).getType().getTypeId());
+                new ContextDifference(appId, id -> internalGet(id).getType().getId());
         difference.diff(headContext.trees(), bufferedTrees);
         difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedTrees));
 //        computeVirtualUpdates(difference.getEntityChange());
@@ -394,7 +394,7 @@ public class InstanceContext extends BufferingInstanceContext {
         };
         try (var ignored = getProfiler().enter("processChanges")) {
             patch.entityChange.forEachInsertOrUpdate(instancePO -> {
-                if (patchContext.changeNotified.add(instancePO.getId())) {
+                if (patchContext.changeNotified.add(instancePO.getInstanceId())) {
                     if (onChange(internalGet(instancePO.getInstanceId())))
                         ref.changed = true;
                 }
@@ -421,8 +421,8 @@ public class InstanceContext extends BufferingInstanceContext {
                 if (!instance.isRemoved() && !instance.isEphemeral())
                     visitor.visit(instance);
             }
-            Set<Long> idsToRemove = NncUtils.mapUnique(entityChange.deletes(), InstancePO::getId);
-            Set<Long> idsToUpdate = NncUtils.mapUnique(entityChange.updates(), InstancePO::getId);
+            var idsToRemove = NncUtils.mapUnique(entityChange.deletes(), InstancePO::getInstanceId);
+            var idsToUpdate = NncUtils.mapUnique(entityChange.updates(), InstancePO::getInstanceId);
             ReferencePO ref = instanceStore.getFirstReference(
                     appId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
             );
@@ -466,7 +466,7 @@ public class InstanceContext extends BufferingInstanceContext {
                         && !instance.isRemoved() && !instance.isEphemeral()
                         && (instance.isNew() || !instance.isLoadedFromCache()) && !processed.contains(instance)) {
                     var tree = new Tree(
-                            instance.getId(),
+                            instance.tryGetId(),
                             instance.getVersion(),
                             InstanceOutput.toMessage(instance)
                     );

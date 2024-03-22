@@ -149,7 +149,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             head = instance.getNext();
         if (instance == tail)
             tail = instance.getPrev();
-        var id = instance.getId();
+        var id = instance.tryGetId();
         if (id != null)
             instanceMap.remove(id);
         instance.setContext(null);
@@ -297,14 +297,14 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private void initializeView(DurableInstance view) {
-        var id = (ViewId) requireNonNull(view.getId());
+        var id = (ViewId) requireNonNull(view.tryGetId());
         view = internalGet(id.getRootId());
         var mapping = mappingProvider.getMapping(view.getMappingId());
         var r = mapping.mapRoot(view.getSource(), this, parameterizedFlowProvider);
         r.accept(new InstanceCopier(r) {
             @Override
             protected Instance getExisting(Instance instance) {
-                var id = instance.getId();
+                var id = instance.tryGetId();
                 if (id != null) {
                     var existing = internalGet(id);
                     existing.setLoaded(requireNonNull(((DurableInstance) instance).tryGetSource()).isLoadedFromCache());
@@ -317,7 +317,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private Id getTypeId(Id id) {
         return switch (id) {
-            case PhysicalId physicalId -> physicalId.getTypeEntityId();
+            case PhysicalId physicalId -> physicalId.getTypeId();
             case ViewId viewId -> viewId.getViewType(mappingProvider, typeProvider).getEntityId();
             default -> throw new IllegalStateException("Unexpected value: " + id);
         };
@@ -443,10 +443,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void onIdInitialized(DurableInstance instance) {
-        instanceMap.put(instance.getId(), instance);
+        instanceMap.put(instance.tryGetId(), instance);
         listeners.forEach(l -> l.onInstanceIdInit(instance));
         forEachView(instance, v ->
-                v.initId(new DefaultViewId(requireNonNull(requireNonNull(v.getSourceRef().mapping()).getEntityId()), v.getSource().getId())));
+                v.initId(new DefaultViewId(requireNonNull(requireNonNull(v.getSourceRef().mapping()).getEntityId()), v.getSource().tryGetId())));
     }
 
     protected void onContextInitializeId() {
@@ -669,9 +669,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         instance.setSeq(seq++);
         if(instance.isView())
             source2views.computeIfAbsent(instance.getSource(), k -> new ArrayList<>()).add(instance);
-        if(instance.getId() != null) {
-            if (instanceMap.put(instance.getId(), instance) != null)
-                LOGGER.warn("Duplicate instance add to context: " + instance.getId());
+        if(instance.tryGetId() != null) {
+            if (instanceMap.put(instance.tryGetId(), instance) != null)
+                LOGGER.warn("Duplicate instance add to context: " + instance.tryGetId());
         }
 //        if (instance.getTmpId() != null) {
 //            tmpId2Instance.put(instance.getTmpId(), instance);

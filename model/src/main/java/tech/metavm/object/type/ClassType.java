@@ -1122,7 +1122,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         if (!isEnum())
             throw new InternalException("type " + this + " is not a enum type");
         for (Field field : staticFields) {
-            if (isEnumConstantField(field) && Objects.equals(field.getStaticValue().getId(), id))
+            if (isEnumConstantField(field) && Objects.equals(field.getStaticValue().tryGetId(), id))
                 return createEnumConstant((ClassInstance) field.getStaticValue());
         }
         throw new InternalException("Can not find enum constant with id " + id);

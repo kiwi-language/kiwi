@@ -28,12 +28,12 @@ public class DefaultIdInitializer implements IdInitializer {
         var classType = ModelDefRegistry.getType(ClassType.class);
         var classTypeInst = ModelDefRegistry.getDefContext().getInstance(classType);
         Map<Type, DurableInstance> typeInstance = new HashMap<>();
-        if(instancesToInitId.remove(classTypeInst)) {
-            var ids = type2ids.get(classType);
-            var id = ids.remove(ids.size() - 1);
-            classTypeInst.initId(PhysicalId.ofClass(id, id));
-            typeInstance.put(classType, classTypeInst);
-        }
+//        if(instancesToInitId.remove(classTypeInst)) {
+//            var ids = type2ids.get(classType);
+//            var id = ids.remove(ids.size() - 1);
+//            classTypeInst.initId(PhysicalId.of(id, id));
+//            typeInstance.put(classType, classTypeInst);
+//        }
         for (DurableInstance instance : instancesToInitId) {
             if(instance.getMappedEntity() instanceof Type type)
                 typeInstance.put(type, instance);
@@ -51,9 +51,14 @@ public class DefaultIdInitializer implements IdInitializer {
         for (Type type : types) {
             var instances = type2instances.get(type);
             var ids = type2ids.get(type);
-            var typeTag = type.getTag();
-            var typeId = typeInstance.containsKey(type) ? typeInstance.get(type).getPhysicalId() : type.getPhysicalId();
-            NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(PhysicalId.of(id, typeTag, typeId)));
+            if(type == classType)
+                NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(TypePhysicalId.of(id, 0, TypeTag.CLASS)));
+            else if(type == arrayType)
+                NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(TypePhysicalId.of(id, 0, TypeTag.ARRAY)));
+            else {
+                var typeId = typeInstance.containsKey(type) ? typeInstance.get(type).getId() : type.getId();
+                NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(DefaultPhysicalId.of(id, 0, typeId)));
+            }
         }
     }
 }

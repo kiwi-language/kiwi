@@ -2,8 +2,8 @@ package tech.metavm.util;
 
 import tech.metavm.application.Application;
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.object.instance.core.DefaultPhysicalId;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 
 public class Constants {
 
@@ -37,15 +37,15 @@ public class Constants {
     private Constants() {}
 
     public static Id getRootAppId() {
-        return PhysicalId.of(ROOT_APP_ID, ModelDefRegistry.getType(Application.class));
+        return DefaultPhysicalId.of(ROOT_APP_ID, 0L, ModelDefRegistry.getType(Application.class));
     }
 
     public static Id getPlatformAppId() {
-        return PhysicalId.of(PLATFORM_APP_ID, ModelDefRegistry.getType(Application.class));
+        return DefaultPhysicalId.of(PLATFORM_APP_ID, 0L, ModelDefRegistry.getType(Application.class));
     }
 
     public static Id getAppId(long id) {
-        return PhysicalId.of(id, ModelDefRegistry.getType(Application.class));
+        return DefaultPhysicalId.of(id, 0L, ModelDefRegistry.getType(Application.class));
     }
 
 }

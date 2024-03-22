@@ -142,8 +142,8 @@
             from instance
             where app_id = #{appId}
             and deleted_at = 0
-            and id > #{query.startId}
-            limit #{query.limit}
+            and id > #{query}
+            limit #{query}
         </foreach>
     </select>
 

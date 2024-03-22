@@ -87,7 +87,8 @@ public class BytesUtils {
                 case WireTypes.RECORD -> readRecord();
                 case WireTypes.NULL -> null;
                 case WireTypes.BOOLEAN -> readBoolean();
-                case WireTypes.REFERENCE, WireTypes.LONG, WireTypes.TIME -> readLong();
+                case WireTypes.REFERENCE -> readId().toString();
+                case WireTypes.LONG, WireTypes.TIME -> readLong();
                 case WireTypes.DOUBLE -> readDouble();
                 case WireTypes.PASSWORD, WireTypes.STRING -> readString();
                 default -> throw new IllegalStateException("Invalid wire type");
@@ -95,9 +96,9 @@ public class BytesUtils {
         }
 
         private Object readRecord() {
-            long id = readLong();
+            var id = readId();
             Map<String, Object> map = new HashMap<>();
-            map.put("id", id);
+            map.put("id", id.toString());
             if (RegionConstants.isArrayId(id)) {
                 int len = readInt();
                 var elements = new ArrayList<>(len);
@@ -109,7 +110,7 @@ public class BytesUtils {
                 var fields = new ArrayList<>(numFields);
                 map.put("fields", fields);
                 for (int i = 0; i < numFields; i++)
-                    fields.add(Map.of("id", readLong(), "value", NncUtils.orElse(readValue(), "null")));
+                    fields.add(Map.of("id", readId().toString(), "value", NncUtils.orElse(readValue(), "null")));
             }
             return map;
         }

@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.persistence;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
 
 import java.util.Collection;
@@ -34,7 +35,7 @@ public record IndexQueryPO(long appId,
     }
 
     private boolean matches(IndexEntryPO indexItem) {
-        if (appId != indexItem.getAppId() || constraintId != indexItem.getIndexId())
+        if (appId != indexItem.getAppId() || constraintId != Id.fromBytes(indexItem.getIndexId()).getPhysicalId())
             return false;
         for (int i = 0; i < items.size(); i++) {
             var item = items.get(i);

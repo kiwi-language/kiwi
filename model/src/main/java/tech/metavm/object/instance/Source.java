@@ -8,10 +8,6 @@ import tech.metavm.object.type.TypeCategory;
 
 import java.util.Map;
 
-public record Source(long id, TypeTag typeTag, long typeId, Map<Id, FieldValue> fields) {
-
-    public Id getId() {
-        return PhysicalId.of(id, typeTag, typeId);
-    }
+public record Source(Id id, Map<Id, FieldValue> fields) {
 
 }

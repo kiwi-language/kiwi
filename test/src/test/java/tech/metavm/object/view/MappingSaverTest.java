@@ -180,7 +180,7 @@ public class MappingSaverTest extends TestCase {
         Assert.assertSame(foo, fooView.tryGetSource());
         var fooViewName = fooView.getField("name");
         Assert.assertEquals(foo.getField("name"), fooViewName);
-        Assert.assertTrue(fooView.getId() instanceof ViewId);
+        Assert.assertTrue(fooView.tryGetId() instanceof ViewId);
 
         var fooViewBars = (ArrayInstance) fooView.getField("bars");
         Assert.assertTrue(fooViewBars.isChildArray());
@@ -188,7 +188,7 @@ public class MappingSaverTest extends TestCase {
         var barViewType = barMapping.getTargetType();
         Assert.assertSame(barView.getType(), barViewType);
         Assert.assertEquals(barInst.getField("code"), barView.getField("code"));
-        Assert.assertTrue(barView.getId() instanceof ChildViewId);
+        Assert.assertTrue(barView.tryGetId() instanceof ChildViewId);
 
         // mapping
         logger.info(fooMapping.getMapper().getText());
@@ -369,9 +369,9 @@ public class MappingSaverTest extends TestCase {
         var viewSkuListField = productMapping.getTargetType().getFieldByCode("skuList");
         var productView = (ClassInstance) productMapping.mapRoot(product, instanceRepository, typeProviders.parameterizedFlowProvider);
         var skuListView = (ArrayInstance) productView.getField(viewSkuListField);
-        Assert.assertTrue(productView.getId() instanceof ViewId);
-        Assert.assertTrue(skuListView.getId() instanceof FieldViewId);
-        Assert.assertTrue(skuListView.get(0).getId() instanceof ChildViewId);
+        Assert.assertTrue(productView.tryGetId() instanceof ViewId);
+        Assert.assertTrue(skuListView.tryGetId() instanceof FieldViewId);
+        Assert.assertTrue(skuListView.get(0).tryGetId() instanceof ChildViewId);
 
         skuListView.removeElement(0);
 

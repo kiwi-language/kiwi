@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import tech.metavm.common.Page;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.util.NncUtils;
 
 import java.io.IOException;
@@ -38,9 +37,9 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
             long total = response.getHits().getTotalHits().value;
             List<Id> ids = new ArrayList<>();
             for (SearchHit hit : response.getHits().getHits()) {
-                var id = Long.parseLong(hit.getId());
-                var typeId = ((Number) hit.getSourceAsMap().get("typeId")).longValue();
-                ids.add(PhysicalId.ofClass(id, typeId));
+                var id = Id.parse(hit.getId());
+//                var typeId = ((Number) hit.getSourceAsMap().get("typeId")).longValue();
+                ids.add(id);
             }
             return new Page<>(ids, total);
         } catch (IOException e) {

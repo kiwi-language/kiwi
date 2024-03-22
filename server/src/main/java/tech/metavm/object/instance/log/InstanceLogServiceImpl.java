@@ -15,7 +15,6 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Set;
 
 @Component
 public class InstanceLogServiceImpl extends EntityContextFactoryBean implements InstanceLogService {
@@ -44,16 +43,16 @@ public class InstanceLogServiceImpl extends EntityContextFactoryBean implements 
             return;
         }
         var appId = logs.get(0).getAppId();
-        List<Id> idsToLoad = NncUtils.filterAndMap(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getInstanceId);
-        Set<Long> newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
+        List<Id> idsToLoad = NncUtils.filterAndMap(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getId);
+        var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
         try (var context = newContext(appId)) {
             var instanceContext = context.getInstanceContext();
             List<ClassInstance> changed = NncUtils.filterByType(instanceContext.batchGet(idsToLoad), ClassInstance.class);
-            List<ClassInstance> created = NncUtils.filter(changed, c -> newInstanceIds.contains(c.getPhysicalId()));
+            List<ClassInstance> created = NncUtils.filter(changed, c -> newInstanceIds.contains(c.getId()));
             for (LogHandler<?> handler : handlers) {
                 invokeHandler(created, handler, clientId, context);
             }
-            List<Id> removed = NncUtils.filterAndMap(logs, InstanceLog::isDelete, InstanceLog::getInstanceId);
+            List<Id> removed = NncUtils.filterAndMap(logs, InstanceLog::isDelete, InstanceLog::getId);
             if (NncUtils.isNotEmpty(changed) || NncUtils.isNotEmpty(removed)) {
                 try (var ignored = context.getProfiler().enter("bulk")) {
                     instanceSearchService.bulk(appId, changed, removed);

@@ -1,33 +1,31 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.object.instance.core.Id;
+
 public class ByTypeQuery {
-    private long typeId;
-    private long startId;
+    private Id typeId;
+    private Id startId;
     private long limit;
 
-    public ByTypeQuery(long typeId, long startId, long limit) {
+    public ByTypeQuery(Id typeId, Id startId, long limit) {
         this.typeId = typeId;
         this.startId = startId;
         this.limit = limit;
     }
 
-    public ByTypeQuery() {
-        this(0L, 0L, 0L);
-    }
-
-    public long getTypeId() {
+    public Id getTypeId() {
         return typeId;
     }
 
-    public void setTypeId(long typeId) {
+    public void setTypeId(Id typeId) {
         this.typeId = typeId;
     }
 
-    public long getStartId() {
+    public Id getStartId() {
         return startId;
     }
 
-    public void setStartId(long startId) {
+    public void setStartId(Id startId) {
         this.startId = startId;
     }
 

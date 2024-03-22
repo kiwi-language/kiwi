@@ -109,7 +109,7 @@ public class InstanceQueryServiceTest extends TestCase {
                                 InstanceQueryField.create(fooNameField, foo.getField(fooNameField)),
                                 InstanceQueryField.create(fooQuxField, qux)
                         )
-                        .newlyCreated(List.of(requireNonNull(qux.getId())))
+                        .newlyCreated(List.of(requireNonNull(qux.tryGetId())))
                         .build(),
                 instanceRepository,
                 parameterizedFlowProvider,

@@ -69,20 +69,20 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
 
             private void process(DurableInstance instance) {
                 var sourceRef = instance.getSourceRef();
-                var sourceId = sourceRef.source().getId();
+                var sourceId = sourceRef.source().tryGetId();
                 var mappingId = NncUtils.get(sourceRef.getMappingId(), Id::parse);
                 if (sourceId != null && mappingId != null) {
                     if (instance.isRoot())
                         instance.initId(new DefaultViewId(mappingId, sourceId));
                     else
-                        instance.initId(new ChildViewId(mappingId, sourceId, (ViewId) instance.getRoot().getId()));
-                } else if (/*mappingId != null && */getParent() != null && getParent().getId() != null) {
+                        instance.initId(new ChildViewId(mappingId, sourceId, (ViewId) instance.getRoot().tryGetId()));
+                } else if (/*mappingId != null && */getParent() != null && getParent().tryGetId() != null) {
 //                    if(mappingId == null)
 //                        mappingId = 0L;
                     if (getParentField() != null)
-                        instance.initId(new FieldViewId((ViewId) getParent().getId(), mappingId, getParentField().getId(), sourceId, instance.getType().getEntityId()));
+                        instance.initId(new FieldViewId((ViewId) getParent().tryGetId(), mappingId, getParentField().getId(), sourceId, instance.getType().getEntityId()));
                     else
-                        instance.initId(new ElementViewId((ViewId) getParent().getId(), mappingId, getIndex(), sourceId, instance.getType().getEntityId()));
+                        instance.initId(new ElementViewId((ViewId) getParent().tryGetId(), mappingId, getIndex(), sourceId, instance.getType().getEntityId()));
                 }
             }
         });

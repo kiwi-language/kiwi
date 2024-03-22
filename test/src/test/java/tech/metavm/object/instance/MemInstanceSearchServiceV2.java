@@ -44,7 +44,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
         Collection<Source> sources = sourceMap.values(appId);
         for (var source : sources) {
             if (match(source, query))
-                result.add(source.getId());
+                result.add(source.id());
         }
     }
 
@@ -55,7 +55,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
     private boolean match(Source source, SearchQuery query) {
-        if (!query.typeIds().contains(source.typeId()))
+        if (!query.typeIds().contains(((PhysicalId)source.id()).getTypeId().getPhysicalId()))
             return false;
         return query.condition() == null || Instances.isTrue(
                 query.condition().evaluate(new SourceEvaluationContext(source, null))
@@ -82,7 +82,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
             NncUtils.requireNonNull(instance.tryGetPhysicalId());
             sourceMap.put(
                     appId,
-                    instance.getId(),
+                    instance.tryGetId(),
                     buildSource(instance)
             );
         }
@@ -99,9 +99,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
                 fields.put(field.getId(), value.toFieldValueDTO());
         });
         return new Source(
-                instance.getPhysicalId(),
-                instance.getType().getTag(),
-                instance.getType().getId().getPhysicalId(),
+                instance.getId(),
                 fields
         );
     }

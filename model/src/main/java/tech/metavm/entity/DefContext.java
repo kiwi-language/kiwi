@@ -326,7 +326,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         var stdIds = new HashMap<String, Id>();
         for (Object entity : entities) {
             var instance = getInstance(entity);
-            var id = instance.getId();
+            var id = instance.tryGetId();
             if(id != null) {
                 var modeId = identityContext.getModelId(entity);
                 stdIds.put(modeId.qualifiedName(), id);

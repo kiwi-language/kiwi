@@ -2,7 +2,6 @@ package tech.metavm.autograph;
 
 import tech.metavm.entity.IndexOperator;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
@@ -33,13 +32,13 @@ public class LocalIndex {
             var instOutput = new InstanceOutput(output);
             instOutput.writeInt(indexMap.size());
             indexMap.forEach((key, id) -> {
-                instOutput.writeLong(key.getIndexId());
+                instOutput.writeId(Id.fromBytes(key.getIndexId()));
                 for (int i = 0; i < NUM_COLS; i++) {
                     var bytes = key.getColumn(i);
                     instOutput.writeInt(bytes.length);
                     instOutput.write(bytes);
                 }
-                instOutput.writeId((PhysicalId) Id.parse(id));
+                instOutput.writeId(Id.parse(id));
             });
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -56,7 +55,7 @@ public class LocalIndex {
             var indexMap = new HashMap<IndexKeyPO, String>(size);
             for (int i = 0; i < size; i++) {
                 var key = new IndexKeyPO();
-                key.setIndexId(instInput.readLong());
+                key.setIndexId(instInput.readId().toBytes());
                 for (int j = 0; j < NUM_COLS; j++) {
                     int n = instInput.readInt();
                     var bytes = new byte[n];
@@ -79,6 +78,7 @@ public class LocalIndex {
 
     public QueryResult query(Query query) {
         List<String> ids = new ArrayList<>();
+        // TODO performance optimization
         this.indexMap.forEach((key, id) -> {
             if(query.match(key))
                 ids.add(id);
@@ -124,10 +124,10 @@ public class LocalIndex {
         return ids;
     }
 
-    public record Query(long indexId, List<QueryItem> items, boolean desc, Long limit) {
+    public record Query(Id indexId, List<QueryItem> items, boolean desc, Long limit) {
 
         boolean match(IndexKeyPO key) {
-            if(indexId != key.getIndexId())
+            if(!indexId.equals(Id.fromBytes(key.getIndexId())))
                 return false;
             int i = 0;
             for (var item : items) {

@@ -142,7 +142,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             entityMap.put(instance.getPhysicalId(), model);
             if (model instanceof IdInitializing idInitializing) {
                 NncUtils.requireNull(idInitializing.tryGetPhysicalId());
-                idInitializing.initId(instance.getId());
+                idInitializing.initId(instance.tryGetId());
             }
         }
     }
@@ -267,7 +267,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             final ModelDef<?, ?> defFinal = def;
             model = EntityProxyFactory.getProxy(
                     def.getJavaClass(),
-                    instance.getId(),
+                    instance.tryGetId(),
                     k -> def.getJavaClass().cast(defFinal.createModelProxyHelper(k)),
                     m -> initializeModel(m, instance, defFinal)
             );
@@ -719,7 +719,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         NncUtils.requireNonNull(instanceContext);
         IndexKeyRT indexKey = createIndexKey(uniqueConstraintDef, fieldValues);
         var instance = instanceContext.selectFirstByKey(indexKey);
-        return NncUtils.get(instance, i -> getEntity(entityType, requireNonNull(i.getId())));
+        return NncUtils.get(instance, i -> getEntity(entityType, requireNonNull(i.tryGetId())));
     }
 
     private IndexKeyRT createIndexKey(IndexDef<?> uniqueConstraintDef, Object... values) {

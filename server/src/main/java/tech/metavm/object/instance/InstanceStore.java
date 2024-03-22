@@ -6,7 +6,6 @@ import tech.metavm.entity.StoreLoadRequest;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.PhysicalId;
-import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.instance.persistence.*;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapper;
@@ -16,7 +15,6 @@ import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -48,17 +46,17 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
-    public List<Long> getVersions(List<Long> ids) {
+    public List<Long> getVersions(List<Id> ids) {
         try (var ignored = ContextUtil.getProfiler().enter("getVersions")) {
-            return instanceMapper.selectVersions(ids);
+            return instanceMapper.selectVersions(NncUtils.map(ids, Id::toBytes));
         }
     }
 
     @Override
-    public List<Version> getRootVersions(List<Long> ids, IInstanceContext context) {
-        try(var entry = context.getProfiler().enter("getRootVersions")) {
+    public List<Version> getRootVersions(List<Id> ids, IInstanceContext context) {
+        try (var entry = context.getProfiler().enter("getRootVersions")) {
             entry.addMessage("numIds", ids.size());
-            return instanceMapper.selectRootVersions(context.getAppId(), ids);
+            return instanceMapper.selectRootVersions(context.getAppId(), NncUtils.map(ids, Id::toBytes));
         }
     }
 
@@ -75,8 +73,8 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
-    public ReferencePO getFirstReference(long appId, Set<Long> targetIds, Set<Long> excludedSourceIds) {
-        if(targetIds.isEmpty())
+    public ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Id> excludedSourceIds) {
+        if (targetIds.isEmpty())
             return null;
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getFirstStrongReferences")) {
             return referenceMapper.selectFirstStrongReference(appId, targetIds, excludedSourceIds);
@@ -86,8 +84,7 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Id> excludedSourceIds) {
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getAllStrongReferences")) {
-            return referenceMapper.selectAllStrongReferences(appId,
-                    NncUtils.map(targetIds, Id::getPhysicalId), NncUtils.map(excludedSourceIds, Id::getPhysicalId));
+            return referenceMapper.selectAllStrongReferences(appId, targetIds, excludedSourceIds);
         }
     }
 
@@ -106,7 +103,7 @@ public class InstanceStore extends BaseInstanceStore {
     public List<Id> query(InstanceIndexQuery query, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.query")) {
             return NncUtils.map(
-                    indexEntryMapper.query(PersistenceUtils.toIndexQueryPO(query,context.getAppId(), context.getLockMode().code())),
+                    indexEntryMapper.query(PersistenceUtils.toIndexQueryPO(query, context.getAppId(), context.getLockMode().code())),
                     IndexEntryPO::getId
             );
         }
@@ -120,11 +117,12 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
-    public List<Id> getByReferenceTargetId(long targetId, long startIdExclusive, long limit, IInstanceContext context) {
+    public List<Id> getByReferenceTargetId(Id targetId, Id startIdExclusive, long limit, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.getByReferenceTargetId")) {
             return NncUtils.map(
-                    referenceMapper.selectByTargetId(context.getAppId(), targetId, startIdExclusive, limit),
-                    r -> PhysicalId.of(r.getSourceId(), TypeTag.fromCode(r.getTargetTypeTag()), r.getSourceId())
+                    referenceMapper.selectByTargetId(context.getAppId(), targetId.toBytes(),
+                            NncUtils.get(startIdExclusive, Id::toBytes), limit),
+                    ReferencePO::getSourceInstanceId
             );
         }
     }
@@ -150,16 +148,16 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
-    public List<InstancePO> loadForest(Collection<Long> ids, IInstanceContext context) {
+    public List<InstancePO> loadForest(Collection<Id> ids, IInstanceContext context) {
         if (NncUtils.isEmpty(ids))
             return List.of();
         try (var entry = context.getProfiler().enter("InstanceStore.loadForest")) {
             entry.addMessage("numInstances", ids.size());
             if (entry.isVerbose())
                 entry.addMessage("ids", ids);
-            var records = instanceMapper.selectForest(context.getAppId(), ids,
+            var records = instanceMapper.selectForest(context.getAppId(), NncUtils.map(ids, Id::toBytes),
                     context.getLockMode().code());
-            var typeIds = NncUtils.mapUnique(records, r -> PhysicalId.of(r.getId(), TypeTag.fromCode(r.getTypeTag()), r.getTypeId()));
+            var typeIds = NncUtils.mapUnique(records, InstancePO::getInstanceId);
             context.buffer(typeIds);
             return records;
         }
@@ -175,21 +173,25 @@ public class InstanceStore extends BaseInstanceStore {
             if (NncUtils.isEmpty(request.ids())) {
                 return List.of();
             }
-            List<InstancePO> records = instanceMapper.selectByIds(context.getAppId(), request.ids(),
+            List<InstancePO> records = instanceMapper.selectByIds(context.getAppId(),
+                    NncUtils.map(request.ids(), Id::toBytes),
                     context.getLockMode().code());
             Set<Id> typeIds = NncUtils.mapUnique(records,
-                    r -> PhysicalId.of(r.getTypeId(), TypeTag.fromCode(r.getTypeTag()), r.getTypeId()));
+                    r -> ((PhysicalId) r.getInstanceId()).getTypeId());
             context.buffer(typeIds);
             return records;
         }
     }
 
     @Override
-    public Set<Long> getAliveInstanceIds(long appId, Set<Long> instanceIds) {
-        if(NncUtils.isEmpty(instanceIds))
+    public Set<Id> getAliveInstanceIds(long appId, Set<Id> instanceIds) {
+        if (NncUtils.isEmpty(instanceIds))
             return Set.of();
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getAliveInstanceIds")) {
-            return new HashSet<>(instanceMapper.getAliveIds(appId, instanceIds));
+            return NncUtils.mapUnique(
+                    instanceMapper.getAliveIds(appId, NncUtils.map(instanceIds, Id::toBytes)),
+                    Id::fromBytes
+            );
         }
     }
 

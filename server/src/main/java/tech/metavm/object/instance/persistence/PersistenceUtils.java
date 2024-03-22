@@ -1,15 +1,12 @@
 package tech.metavm.object.instance.persistence;
 
-import tech.metavm.entity.Identifiable;
 import tech.metavm.entity.InstanceIndexQuery;
-import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -18,6 +15,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 public class PersistenceUtils {
 
@@ -33,7 +32,7 @@ public class PersistenceUtils {
         List<IndexKeyRT> keys = index.createIndexKey(instance, parameterizedFlowProvider);
         return NncUtils.map(
                 keys,
-                key -> new IndexEntryPO(appId, key.toPO(), instance.getPhysicalId(), instance.getType().getTag().code(), instance.getType().getId().getPhysicalId())
+                key -> new IndexEntryPO(appId, key.toPO(), requireNonNull(instance.tryGetId()).toBytes())
         );
     }
 
@@ -50,14 +49,13 @@ public class PersistenceUtils {
         classInstance.ensureAllFieldsInitialized();
         return new InstancePO(
                 appId,
-                classInstance.getPhysicalId(),
+                classInstance.getId().toBytes(),
+                classInstance.getType().getId().toBytes(),
                 classInstance.getTitle(),
-                classInstance.getType().getTag().code(),
-                classInstance.getType().getId().getPhysicalId(),
                 InstanceOutput.toByteArray(classInstance),
-                NncUtils.getOrElse(classInstance.getParent(), DurableInstance::tryGetPhysicalId, -1L),
-                NncUtils.getOrElse(classInstance.getParentField(), f -> f.getId().getPhysicalId(), -1L),
-                classInstance.getRoot().getPhysicalId(),
+                NncUtils.get(classInstance.getParent(), p -> p.getId().toBytes()),
+                NncUtils.get(classInstance.getParentField(), f -> f.getId().toBytes()),
+                classInstance.getRoot().getId().toBytes(),
                 classInstance.getVersion(),
                 classInstance.getSyncVersion()
         );
@@ -66,14 +64,13 @@ public class PersistenceUtils {
     private static InstancePO toInstancePO(ArrayInstance arrayInstance, long appId) {
         return new InstancePO(
                 appId,
-                arrayInstance.getPhysicalId(),
+                arrayInstance.getId().toBytes(),
+                arrayInstance.getType().getId().toBytes(),
                 arrayInstance.getTitle(),
-                arrayInstance.getType().getTag().code(),
-                arrayInstance.getType().getPhysicalId(),
                 InstanceOutput.toByteArray(arrayInstance),
-                NncUtils.getOrElse(arrayInstance.getParent(), DurableInstance::tryGetPhysicalId, -1L),
-                NncUtils.getOrElse(arrayInstance.getParentField(), Identifiable::getPhysicalId, -1L),
-                arrayInstance.getRoot().getPhysicalId(),
+                NncUtils.get(arrayInstance.getParent(), p -> p.getId().toBytes()),
+                NncUtils.get(arrayInstance.getParentField(), f -> f.getId().toBytes()),
+                arrayInstance.getRoot().getId().toBytes(),
                 arrayInstance.getVersion(),
                 arrayInstance.getSyncVersion()
         );
@@ -113,18 +110,14 @@ public class PersistenceUtils {
         new StreamVisitor(new ByteArrayInputStream(instancePO.getData())) {
             @Override
             public void visitField() {
-                var field = classType.getField(PhysicalId.of(readLong(), ModelDefRegistry.getType(Field.class)));
+                var field = classType.getField(readId());
                 var wireType = read();
                 if (wireType == WireTypes.REFERENCE) {
                     refs.add(new ReferencePO(
                             instancePO.getAppId(),
                             instancePO.getId(),
-                            instancePO.getTypeTag(),
-                            instancePO.getTypeId(),
-                            readLong(),
-                            read(),
-                            readLong(),
-                            field.getPhysicalId(),
+                            readId().toBytes(),
+                            field.getId().toBytes(),
                             ReferenceKind.getFromType(field.getType()).code()
                     ));
                 } else
@@ -143,12 +136,8 @@ public class PersistenceUtils {
                 refs.add(new ReferencePO(
                         instancePO.getAppId(),
                         instancePO.getId(),
-                        instancePO.getTypeTag(),
-                        instancePO.getTypeId(),
-                        targetId.getId(),
-                        targetId.getTypeTag().code(),
-                        targetId.getTypeId(),
-                        -1L,
+                        targetId.toBytes(),
+                        null,
                         ReferenceKind.getFromType(arrayType.getElementType()).code()
                 ));
             }

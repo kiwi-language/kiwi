@@ -62,10 +62,10 @@ public class InstanceContextTest extends TestCase {
 
     public void test() {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        fooType.initId(PhysicalId.ofClass(101L, 1L));
+        fooType.initId(DefaultPhysicalId.of(101L, 0L, TypePhysicalId.ofClass(1L, 0L)));
         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
                 .build();
-        fooNameField.initId(PhysicalId.ofClass(111L, 1L));
+        fooNameField.initId(DefaultPhysicalId.of(111L, 0L, TypePhysicalId.ofClass(1L, 0L)));
 
         entityRepository.bind(fooType);
         var tmpId = TmpId.of(10001L);
@@ -79,7 +79,7 @@ public class InstanceContextTest extends TestCase {
             context.bind(instance);
             Assert.assertSame(instance, context.get(tmpId));
             context.finish();
-            id = instance.getId();
+            id = instance.tryGetId();
         }
         try (var context = newContext()) {
             var instance = (ClassInstance) context.get(id);
@@ -109,8 +109,8 @@ public class InstanceContextTest extends TestCase {
             context.bind(foo);
             context.bind(baz);
             context.finish();
-            fooId = foo.getId();
-            bazId = baz.getId();
+            fooId = foo.tryGetId();
+            bazId = baz.tryGetId();
         }
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {

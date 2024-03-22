@@ -19,7 +19,7 @@ public class IndexSourceBuilder {
         Map<String, Object> source = new HashMap<>();
         source.put(APPLICATION_ID, appId);
         source.put(TYPE_ID, type.getPhysicalId());
-        source.put(ID, instance.getPhysicalId());
+        source.put(ID, instance.getStringId());
 
         List<ClassType> hierarchy = type.getAncestorClasses();
         for (int lev = 0; lev < hierarchy.size(); lev++) {

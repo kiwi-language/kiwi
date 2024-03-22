@@ -1,10 +1,7 @@
 package tech.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PhysicalId;
-import tech.metavm.object.instance.core.PrimitiveInstance;
+import tech.metavm.object.instance.core.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -62,10 +59,10 @@ public class InstanceOutput extends OutputStream {
                 write(WireTypes.NULL);
             else if (isReference) {
                 write(WireTypes.REFERENCE);
-                writeId((PhysicalId) requireNonNull(d.getId()));
+                writeId((PhysicalId) requireNonNull(d.tryGetId()));
             } else {
                 write(WireTypes.RECORD);
-                writeId((PhysicalId) requireNonNull(d.getId()));
+                writeId((PhysicalId) requireNonNull(d.tryGetId()));
                 d.writeTo(this, includeChildren);
             }
         } else
@@ -92,10 +89,8 @@ public class InstanceOutput extends OutputStream {
         writeLong(i);
     }
 
-    public void writeId(PhysicalId id) {
-        writeLong(id.getId());
-        write(id.getTypeTag().code());
-        writeLong(id.getTypeId());
+    public void writeId(Id id) {
+        id.write(this);
     }
 
     public void writeLong(long l) {
@@ -129,6 +124,10 @@ public class InstanceOutput extends OutputStream {
         } catch (IOException e) {
             throw new InternalException("Failed to write to the underlying output stream", e);
         }
+    }
+
+    public void writeIdTag(IdTag idTag) {
+        write(idTag.code());
     }
 
 }

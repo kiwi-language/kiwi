@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.util.NncUtils;
@@ -19,9 +18,9 @@ public class ContextDifference {
     private final EntityChange<ReferencePO> referenceChange = new EntityChange<>(ReferencePO.class);
     private final Map<Class<? extends Value>, ValueChange<?>> valueChangeMap = new HashMap<>();
     private final long appId;
-    private final Function<Id, TypeId> getTypeId;
+    private final Function<Id, Id> getTypeId;
 
-    public ContextDifference(long appId, Function<Id, TypeId> getTypeId) {
+    public ContextDifference(long appId, Function<Id, Id> getTypeId) {
         this.appId = appId;
         this.getTypeId = getTypeId;
     }
@@ -55,7 +54,7 @@ public class ContextDifference {
             var ref = new Object() {
                 boolean rootChanged;
             };
-            var rootId = t1.id().getPhysicalId();
+            var rootId = t1.id();
             var newVersion = t1.version() + 1;
             NncUtils.forEachPair(firstSubtrees, secondSubtrees, (s1, s2) -> {
                 if (s1 == null && s2 == null)
@@ -67,7 +66,7 @@ public class ContextDifference {
                 else if (!s1.equals(s2)) {
                     var updatePO = toInstancePO(t2, s2);
                     entityChange.addUpdate(updatePO);
-                    if (s2.id().getPhysicalId() == rootId) {
+                    if (s2.id().getPhysicalId() == rootId.getPhysicalId()) {
                         updatePO.setVersion(newVersion);
                         ref.rootChanged = true;
                     }
@@ -75,10 +74,14 @@ public class ContextDifference {
             });
             if (!ref.rootChanged) {
                 var typeId = getTypeId.apply(t1.id());
-                entityChange.addUpdate(new InstancePO(appId, rootId, "",
-                        typeId.tag().code(),
-                        typeId.id(), null,
-                        -1L, -1L, rootId, newVersion, 0L));
+                entityChange.addUpdate(new InstancePO(appId,
+                        rootId.toBytes(),
+                        typeId.toBytes(),
+                        "",
+                        null,
+                        null,
+                        null,
+                        rootId.toBytes(), newVersion, 0L));
             }
         }
     }
@@ -110,14 +113,13 @@ public class ContextDifference {
         var typeId = getTypeId.apply(id);
         return new InstancePO(
                 appId,
-                id.getPhysicalId(),
+                id.toBytes(),
+                typeId.toBytes(),
                 "",
-                typeId.tag().code(),
-                typeId.id(),
                 subTree.data(),
-                NncUtils.getOrElse(subTree.parentId(), Id::getPhysicalId, -1L),
-                subTree.parentFieldId(),
-                rootId.getPhysicalId(),
+                NncUtils.get(subTree.parentId(), Id::toBytes),
+                NncUtils.get(subTree.parentFieldId(), Id::toBytes),
+                rootId.toBytes(),
                 id == rootId ? tree.version() : 0L,
                 0L
         );

@@ -13,7 +13,7 @@ public class MemReferenceMapper implements ReferenceMapper {
 
     private final Map<String, List<ReferencePO>> targetWithKindMap = new HashMap<>();
     private final Map<String, List<ReferencePO>> targetWithFieldMap = new HashMap<>();
-    private final Map<Long, List<ReferencePO>> targetMap = new HashMap<>();
+    private final Map<Id, List<ReferencePO>> targetMap = new HashMap<>();
     private final Set<ReferencePO> references = new HashSet<>();
 
     @Override
@@ -27,43 +27,43 @@ public class MemReferenceMapper implements ReferenceMapper {
     }
 
     @Override
-    public List<ReferencePO> selectByTargetId(long appId, long targetId, long startIdExclusive, long limit) {
-        List<ReferencePO> refs = targetMap.get(targetId);
+    public List<ReferencePO> selectByTargetId(long appId, byte[] targetId, byte[] startIdExclusive, long limit) {
+        List<ReferencePO> refs = targetMap.get(Id.fromBytes(targetId));
         if (NncUtils.isEmpty(refs)) {
             return List.of();
         }
         return NncUtils.filterAndSortAndLimit(
                 refs,
-                ref -> ref.getSourceId() > startIdExclusive,
-                Comparator.comparingLong(ReferencePO::getSourceId),
+                ref -> startIdExclusive == null || ref.getSourceInstanceId().compareTo(Id.fromBytes(startIdExclusive)) > 0,
+                Comparator.comparing(ReferencePO::getSourceInstanceId),
                 limit
         );
     }
 
     @Override
     public @Nullable ReferencePO selectFirstStrongReference(long appId,
-                                                            Collection<Long> targetIds,
-                                                            Collection<Long> excludedSourceIds) {
-        Set<Long> excludedSourceIdSet = new HashSet<>(excludedSourceIds);
+                                                            Collection<Id> targetIds,
+                                                            Collection<Id> excludedSourceIds) {
+        var excludedSourceIdSet = new HashSet<>(excludedSourceIds);
         List<String> keys = NncUtils.map(targetIds, id -> appId + "-" + id + "-1");
         return keys.stream()
                 .map(key -> NncUtils.find(
                         targetWithKindMap.get(key),
-                        ref -> !excludedSourceIdSet.contains(ref.getSourceId())
+                        ref -> !excludedSourceIdSet.contains(ref.getSourceInstanceId())
                 ))
                 .filter(Objects::nonNull)
                 .findFirst().orElse(null);
     }
 
     @Override
-    public List<ReferencePO> selectAllStrongReferences(long appId, Collection<Long> ids, Collection<Long> excludedSourceIds) {
-        Set<Long> excludedSourceIdSet = new HashSet<>(excludedSourceIds);
+    public List<ReferencePO> selectAllStrongReferences(long appId, Collection<Id> ids, Collection<Id> excludedSourceIds) {
+        var excludedSourceIdSet = new HashSet<>(excludedSourceIds);
         List<String> keys = NncUtils.map(ids, id -> appId + "-" + id + "-1");
         return NncUtils.flatMapAndFilter(
                 keys,
                 key -> NncUtils.filter(
                         targetWithKindMap.get(key),
-                        ref -> !excludedSourceIdSet.contains(ref.getSourceId())
+                        ref -> !excludedSourceIdSet.contains(ref.getSourceInstanceId())
                 ),
                 Objects::nonNull
         );
@@ -92,7 +92,7 @@ public class MemReferenceMapper implements ReferenceMapper {
         }
         targetWithKindMap.computeIfAbsent(ref.targetKeyWithKind(), k -> new ArrayList<>()).add(ref);
         targetWithFieldMap.computeIfAbsent(ref.targetKeyWithField(), k -> new ArrayList<>()).add(ref);
-        targetMap.computeIfAbsent(ref.getTargetId(), k -> new ArrayList<>()).add(ref);
+        targetMap.computeIfAbsent(ref.getTargetInstanceId(), k -> new ArrayList<>()).add(ref);
     }
 
     private void remove(ReferencePO ref) {
@@ -101,7 +101,7 @@ public class MemReferenceMapper implements ReferenceMapper {
         }
         targetWithKindMap.get(ref.targetKeyWithKind()).remove(ref);
         targetWithFieldMap.get(ref.targetKeyWithField()).remove(ref);
-        targetMap.get(ref.getTargetId()).remove(ref);
+        targetMap.get(ref.getTargetInstanceId()).remove(ref);
     }
 
     public MemReferenceMapper copy() {

@@ -52,7 +52,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     @Override
     protected void initializeInstance(DurableInstance instance) {
-        var tree = loadingBuffer.getTree(instance.getId());
+        var tree = loadingBuffer.getTree(instance.tryGetId());
         onTreeLoaded(tree);
         var input = new InstanceInput(new ByteArrayInputStream(tree.data()), this::internalGet);
         readInstance(input);
@@ -82,6 +82,6 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     @Override
     public void invalidateCache(DurableInstance instance) {
-        loadingBuffer.invalidateCache(List.of(requireNonNull(instance.getId())));
+        loadingBuffer.invalidateCache(List.of(requireNonNull(instance.tryGetId())));
     }
 }

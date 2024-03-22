@@ -107,7 +107,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
     }
 
     public Id getMappingId() {
-        if (getId() instanceof ViewId viewId) {
+        if (tryGetId() instanceof ViewId viewId) {
             return viewId.getMappingId();
         } else
             throw new InternalException("Not a view instance");
@@ -115,8 +115,12 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     @Override
     @NoProxy
-    public @Nullable Id getId() {
+    public @Nullable Id tryGetId() {
         return id;
+    }
+
+    public Id getId() {
+        return requireNonNull(id);
     }
 
     public String getStringId() {
@@ -359,7 +363,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
         var output = new InstanceOutput(bout, withChildren);
         output.writeLong(getVersion());
         output.writeValue(this);
-        return new Tree(getId(), getVersion(), bout.toByteArray());
+        return new Tree(tryGetId(), getVersion(), bout.toByteArray());
     }
 
     public abstract void readFrom(InstanceInput input);

@@ -1,25 +1,21 @@
 package tech.metavm.object.instance.persistence;
 
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
-import tech.metavm.object.instance.core.TypeTag;
+import tech.metavm.util.EncodingUtils;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 public class IndexEntryPO {
 
     private long appId;
     private final IndexKeyPO key;
-    private long instanceId;
-    private int typeTag;
-    private long typeId;
+    private byte[] instanceId;
 
-    public IndexEntryPO(long appId, IndexKeyPO key, long instanceId, int typeTag, long typeId) {
+    public IndexEntryPO(long appId, IndexKeyPO key, byte[] instanceId) {
         this.appId = appId;
         this.key = key;
         this.instanceId = instanceId;
-        this.typeTag = typeTag;
-        this.typeId = typeId;
     }
 
     public long getAppId() {
@@ -34,12 +30,12 @@ public class IndexEntryPO {
         key = new IndexKeyPO();
     }
 
-    public long getIndexId() {
+    public byte[] getIndexId() {
         return key.getIndexId();
     }
 
-    public void setIndexId(long constraintId) {
-        key.setIndexId(constraintId);
+    public void setIndexId(byte[] indexId) {
+        key.setIndexId(indexId);
     }
 
     public byte[] getColumn0() {
@@ -170,31 +166,15 @@ public class IndexEntryPO {
         return key;
     }
 
-    public long getInstanceId() {
+    public byte[] getInstanceId() {
         return instanceId;
     }
 
-    public int getTypeTag() {
-        return typeTag;
-    }
-
-    public void setTypeTag(int typeTag) {
-        this.typeTag = typeTag;
-    }
-
-    public long getTypeId() {
-        return typeId;
-    }
-
-    public void setTypeId(long typeId) {
-        this.typeId = typeId;
-    }
-
     public Id getId() {
-        return PhysicalId.of(instanceId, TypeTag.fromCode(typeTag), typeId);
+        return Id.fromBytes(instanceId);
     }
 
-    public void setInstanceId(long instanceId) {
+    public void setInstanceId(byte[] instanceId) {
         this.instanceId = instanceId;
     }
 
@@ -203,12 +183,12 @@ public class IndexEntryPO {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IndexEntryPO that = (IndexEntryPO) o;
-        return instanceId == that.instanceId && Objects.equals(key, that.key);
+        return Objects.equals(key, that.key) && Arrays.equals(instanceId, that.instanceId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, instanceId);
+        return Objects.hash(key, Arrays.hashCode(instanceId));
     }
 
     @Override
@@ -216,12 +196,12 @@ public class IndexEntryPO {
         return "IndexItemPO{" +
                 "appId=" + appId +
                 ", key=" + key +
-                ", instanceId=" + instanceId +
+                ", instanceId=" + EncodingUtils.bytesToHex(instanceId) +
                 '}';
     }
 
     public IndexEntryPO copy() {
-        return new IndexEntryPO(appId, key.copy(), instanceId, typeTag, typeId);
+        return new IndexEntryPO(appId, key.copy(), instanceId);
     }
 
 }

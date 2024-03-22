@@ -17,8 +17,8 @@ public class StoreVersionSource implements VersionSource {
     @Override
     public List<InstanceVersion> getRootVersions(List<String> ids, IInstanceContext context) {
         return NncUtils.map(
-                instanceStore.getRootVersions(NncUtils.map(ids, id -> Id.parse(id).getPhysicalId()), context),
-                v -> new InstanceVersion(PhysicalId.of(v.getId(), TypeTag.fromCode(v.getTypeTag()), v.getTypeId()), v.getVersion())
+                instanceStore.getRootVersions(NncUtils.map(ids, Id::parse), context),
+                v -> new InstanceVersion(v.getInstanceId(), v.getVersion())
         );
     }
 }
