@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
@@ -26,7 +27,8 @@ public class DefaultIdInitializer implements IdInitializer {
         var countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);
         var type2ids = idProvider.allocate(appId, countMap);
         var classType = ModelDefRegistry.getType(ClassType.class);
-        var classTypeInst = ModelDefRegistry.getDefContext().getInstance(classType);
+        var arrayType = ModelDefRegistry.getType(ArrayType.class);
+        var fieldType = ModelDefRegistry.getType(Field.class);
         Map<Type, DurableInstance> typeInstance = new HashMap<>();
 //        if(instancesToInitId.remove(classTypeInst)) {
 //            var ids = type2ids.get(classType);
@@ -39,7 +41,7 @@ public class DefaultIdInitializer implements IdInitializer {
                 typeInstance.put(type, instance);
         }
         var type2instances = NncUtils.toMultiMap(instancesToInitId, Instance::getType);
-        var arrayType = ModelDefRegistry.getType(ArrayType.class);
+
         var types = new ArrayList<>(type2instances.keySet());
         types.sort(Comparator.comparingInt(t -> {
             if(t == classType)
@@ -51,10 +53,17 @@ public class DefaultIdInitializer implements IdInitializer {
         for (Type type : types) {
             var instances = type2instances.get(type);
             var ids = type2ids.get(type);
+            IdTag tag;
             if(type == classType)
-                NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(TypePhysicalId.of(id, 0, TypeTag.CLASS)));
+                tag = IdTag.CLASS_TYPE_PHYSICAL;
             else if(type == arrayType)
-                NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(TypePhysicalId.of(id, 0, TypeTag.ARRAY)));
+                tag = IdTag.ARRAY_TYPE_PHYSICAL;
+            else if(type == fieldType)
+                tag = IdTag.FIELD_PHYSICAL;
+            else
+                tag = null;
+            if(tag != null)
+                NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(new TaggedPhysicalId(tag, id, 0)));
             else {
                 var typeId = typeInstance.containsKey(type) ? typeInstance.get(type).getId() : type.getId();
                 NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(DefaultPhysicalId.of(id, 0, typeId)));

@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nullable;
 import tech.metavm.util.EncodingUtils;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
-import tech.metavm.util.NncUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -43,7 +42,8 @@ public abstract class Id implements Comparable<Id> {
         return switch (tag) {
             case NULL -> new NullId();
             case DEFAULT_PHYSICAL -> new DefaultPhysicalId(input.readLong(), input.readLong(), readId(input));
-            case CLASS_TYPE_PHYSICAL -> new TypePhysicalId(input.readLong(), input.readLong(), TypeTag.fromCode(input.read()));
+            case CLASS_TYPE_PHYSICAL, ARRAY_TYPE_PHYSICAL, FIELD_PHYSICAL ->
+                    new TaggedPhysicalId(tag, input.readLong(), input.readLong());
             case TMP -> new TmpId(input.readLong());
             case DEFAULT_VIEW -> new DefaultViewId(readId(input), readId(input));
             case CHILD_VIEW -> new ChildViewId(readId(input), readId(input), (ViewId) readId(input));

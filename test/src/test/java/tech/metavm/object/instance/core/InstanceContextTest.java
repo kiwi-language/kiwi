@@ -62,10 +62,10 @@ public class InstanceContextTest extends TestCase {
 
     public void test() {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        fooType.initId(DefaultPhysicalId.of(101L, 0L, TypePhysicalId.ofClass(1L, 0L)));
+        fooType.initId(DefaultPhysicalId.of(101L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
                 .build();
-        fooNameField.initId(DefaultPhysicalId.of(111L, 0L, TypePhysicalId.ofClass(1L, 0L)));
+        fooNameField.initId(DefaultPhysicalId.of(111L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
 
         entityRepository.bind(fooType);
         var tmpId = TmpId.of(10001L);

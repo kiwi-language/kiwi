@@ -11,8 +11,7 @@ import tech.metavm.expression.NodeExpression;
 import tech.metavm.expression.PropertyExpression;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.DefaultPhysicalId;
-import tech.metavm.object.instance.core.PhysicalId;
-import tech.metavm.object.instance.core.TypePhysicalId;
+import tech.metavm.object.instance.core.TaggedPhysicalId;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.util.InternalException;
@@ -99,7 +98,7 @@ public class SubstitutorV2Test extends TestCase {
             throw new InternalException("Type not found: " + t.getTypeName());
         });
 
-        stringType.initId(DefaultPhysicalId.of(1L, 0L, TypePhysicalId.ofClass(1L, 0L)));
+        stringType.initId(DefaultPhysicalId.of(1L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
 
         var typeProviders = new TypeProviders();
 

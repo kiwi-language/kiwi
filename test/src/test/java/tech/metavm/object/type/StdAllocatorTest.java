@@ -5,8 +5,7 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.object.instance.core.DefaultPhysicalId;
-import tech.metavm.object.instance.core.PhysicalId;
-import tech.metavm.object.instance.core.TypePhysicalId;
+import tech.metavm.object.instance.core.TaggedPhysicalId;
 
 public class StdAllocatorTest extends TestCase {
 
@@ -26,22 +25,22 @@ public class StdAllocatorTest extends TestCase {
 
     public void testSmoking() {
         var ids = allocator.allocate(3);
-        allocator.putId(ClassType.class.getName(), DefaultPhysicalId.of(ids.get(0), 0L, TypePhysicalId.ofClass(1L, 0L)));
-        allocator.putId(Field.class.getName(), DefaultPhysicalId.of(ids.get(1), 0L, TypePhysicalId.ofClass(1L, 0L)));
-        allocator.putId(Index.class.getName(), DefaultPhysicalId.of(ids.get(2), 0L, TypePhysicalId.ofClass(1L, 0L)));
+        allocator.putId(ClassType.class.getName(), DefaultPhysicalId.of(ids.get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocator.putId(Field.class.getName(), DefaultPhysicalId.of(ids.get(1), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocator.putId(Index.class.getName(), DefaultPhysicalId.of(ids.get(2), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
         var typeId = allocator.getId(ClassType.class.getName());
         var fieldId = allocator.getId(Field.class.getName());
         var uniqueConstraintId = allocator.getId(Index.class.getName());
-        Assert.assertEquals(DefaultPhysicalId.of(ids.get(0), 0L, TypePhysicalId.ofClass(1L, 0L)), typeId);
-        Assert.assertEquals(DefaultPhysicalId.of(ids.get(1), 0L, TypePhysicalId.ofClass(1L, 0L)), fieldId);
-        Assert.assertEquals(DefaultPhysicalId.of(ids.get(2), 0L, TypePhysicalId.ofClass(1L, 0L)), uniqueConstraintId);
+        Assert.assertEquals(DefaultPhysicalId.of(ids.get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)), typeId);
+        Assert.assertEquals(DefaultPhysicalId.of(ids.get(1), 0L, TaggedPhysicalId.ofClass(1L, 0L)), fieldId);
+        Assert.assertEquals(DefaultPhysicalId.of(ids.get(2), 0L, TaggedPhysicalId.ofClass(1L, 0L)), uniqueConstraintId);
     }
 
     public void testIdContains() {
         var allocatedId = allocator.allocate(1).get(0);
-        allocator.putId(Field.class.getName(), DefaultPhysicalId.of(allocatedId, 0L, TypePhysicalId.ofClass(1L, 0L)));
+        allocator.putId(Field.class.getName(), DefaultPhysicalId.of(allocatedId, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
         var fieldId = allocator.getId(Field.class.getName());
-        Assert.assertEquals(DefaultPhysicalId.of(allocatedId, 0L, TypePhysicalId.ofClass(1L, 0L)), fieldId);
+        Assert.assertEquals(DefaultPhysicalId.of(allocatedId, 0L, TaggedPhysicalId.ofClass(1L, 0L)), fieldId);
         Assert.assertTrue(allocator.contains(fieldId));
     }
 

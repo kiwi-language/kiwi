@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.DefaultPhysicalId;
-import tech.metavm.object.instance.core.TypePhysicalId;
+import tech.metavm.object.instance.core.TaggedPhysicalId;
 import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.type.*;
 import tech.metavm.system.IdService;
@@ -26,7 +26,7 @@ public class EntityIdProviderTest extends TestCase {
         ClassType typeType = ClassTypeBuilder.newBuilder("Type", null).build();
         ClassType fooType = ClassTypeBuilder.newBuilder("Foo", null).build();
         ArrayType fooArrayType = new ArrayType(null, fooType, ArrayKind.READ_WRITE);
-        typeType.initId(DefaultPhysicalId.of(1L, 0L, TypePhysicalId.of(1L, 0L, TypeTag.CLASS)));
+        typeType.initId(DefaultPhysicalId.of(1L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
         fooType.initId(DefaultPhysicalId.of(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType), 0L, typeType));
         fooArrayType.initId(DefaultPhysicalId.of(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType), 0L, typeType));
 

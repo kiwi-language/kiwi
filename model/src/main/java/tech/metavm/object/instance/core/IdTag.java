@@ -7,11 +7,13 @@ public enum IdTag {
     NULL(0),
     DEFAULT_PHYSICAL(1),
     CLASS_TYPE_PHYSICAL(2),
-    TMP(3),
-    DEFAULT_VIEW(4),
-    CHILD_VIEW(5),
-    FIELD_VIEW(6),
-    ELEMENT_VIEW(7),
+    ARRAY_TYPE_PHYSICAL(3),
+    FIELD_PHYSICAL(4),
+    TMP(19),
+    DEFAULT_VIEW(11),
+    CHILD_VIEW(12),
+    FIELD_VIEW(13),
+    ELEMENT_VIEW(14),
     MOCK(100);
 
     private final int code;
