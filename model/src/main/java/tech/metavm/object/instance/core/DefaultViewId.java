@@ -13,14 +13,14 @@ public class DefaultViewId extends ViewId {
 
     private final Id sourceId;
 
-    public DefaultViewId(@NotNull Id mappingId, Id sourceId) {
-        super(mappingId);
+    public DefaultViewId(boolean isArray, @NotNull Id mappingId, Id sourceId) {
+        super(isArray, mappingId);
         this.sourceId = sourceId;
     }
 
     @Override
     public void write(InstanceOutput output) {
-        output.writeIdTag(IdTag.DEFAULT_VIEW);
+        output.writeIdTag(IdTag.DEFAULT_VIEW, isArray());
         getMappingId().write(output);
         sourceId.write(output);
     }

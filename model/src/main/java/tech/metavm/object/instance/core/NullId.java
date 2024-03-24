@@ -6,9 +6,13 @@ public class NullId extends Id {
 
     public static final byte[] BYTES = new byte[] {0};
 
+    public NullId() {
+        super(false);
+    }
+
     @Override
     public void write(InstanceOutput output) {
-        output.writeIdTag(IdTag.NULL);
+        output.writeIdTag(IdTag.NULL, false);
     }
 
     @Override

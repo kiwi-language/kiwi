@@ -30,8 +30,8 @@ public class StoreManager {
         return convertToJSON(bytes, true);
     }
 
-    public @Nullable Object getInstance(String id) {
-        var instance = instanceMapper.selectById(Id.parse(id).toBytes());
+    public @Nullable Object getInstance(long id) {
+        var instance = instanceMapper.selectById(id);
         if (instance == null)
             return null;
         return Map.of(

@@ -10,6 +10,7 @@ import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
+import tech.metavm.object.instance.persistence.VersionRT;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
@@ -105,7 +106,7 @@ public class InstanceContext extends BufferingInstanceContext {
         var patch = buildPatch(null, patchContext);
         processRemoval(patch);
         patch = beforeSaving(patch, patchContext);
-        saveInstances(patch.entityChange);
+        saveInstances(patch.treeChanges);
         afterSaving(patch);
         saveReferences(patch.referenceChange);
         headContext.clear();
@@ -118,14 +119,6 @@ public class InstanceContext extends BufferingInstanceContext {
             }
         }
         finished = true;
-    }
-
-    private void incPOVersions(Patch patch) {
-        patch.entityChange.forEachUpdateOrDelete(i -> i.setVersion(i.getVersion() + 1));
-    }
-
-    private void incVersions(Patch patch) {
-        patch.entityChange.forEachUpdateOrDelete(i -> internalGet(i.getInstanceId()).incVersion());
     }
 
     private static class PatchContext {
@@ -152,6 +145,7 @@ public class InstanceContext extends BufferingInstanceContext {
         var difference = buildDifference(bufferedTrees.keySet());
         var entityChange = difference.getEntityChange();
         var refChange = difference.getReferenceChange();
+        var treeChanges = difference.getTreeChanges();
         onContextInitializeId();
         if (prevPatch != null) {
             prevPatch.entityChange.getAttributes().forEach((key, value) -> {
@@ -159,13 +153,13 @@ public class InstanceContext extends BufferingInstanceContext {
                 entityChange.setAttribute((DifferenceAttributeKey) key, value);
             });
         }
-        return processChanges(new Patch(bufferedTrees, entityChange, refChange), patchContext);
+        return processChanges(new Patch(bufferedTrees, entityChange, treeChanges, refChange), patchContext);
     }
 
     private void removeOrphans(Patch patch) {
         var orphans = new ArrayList<DurableInstance>();
-        for (InstancePO delete : patch.entityChange.deletes()) {
-            var instance = Objects.requireNonNull(getSelfBuffered(delete.getInstanceId()));
+        for (var version : patch.entityChange.deletes()) {
+            var instance = Objects.requireNonNull(getSelfBuffered(version.id()));
             if (!instance.isRemoved())
                 orphans.add(instance);
         }
@@ -204,23 +198,23 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    @Override
-    public List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit) {
-        return getByType(type, startExclusive, limit, false);
-    }
+//    @Override
+//    public List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit) {
+//        return getByType(type, startExclusive, limit, false);
+//    }
 
-    private List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit, boolean persistedOnly) {
-        List<InstancePO> instancePOs = loadByType(new LoadByTypeRequest(type, startExclusive, limit));
-        var persistedResult = NncUtils.map(instancePOs, instancePO -> get(instancePO.getInstanceId()));
-        if (persistedResult.size() >= limit || persistedOnly)
-            return persistedResult;
-        Set<Long> persistedIds = NncUtils.mapUnique(persistedResult, DurableInstance::tryGetPhysicalId);
-        var result = NncUtils.union(
-                persistedResult,
-                getByTypeFromBuffer(type, startExclusive, (int) (limit - persistedResult.size()), persistedIds)
-        );
-        return result;
-    }
+//    private List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit, boolean persistedOnly) {
+//        List<InstancePO> instancePOs = loadByType(new LoadByTypeRequest(type, startExclusive, limit));
+//        var persistedResult = NncUtils.map(instancePOs, instancePO -> get(instancePO.getInstanceId()));
+//        if (persistedResult.size() >= limit || persistedOnly)
+//            return persistedResult;
+//        Set<Long> persistedIds = NncUtils.mapUnique(persistedResult, DurableInstance::tryGetPhysicalId);
+//        var result = NncUtils.union(
+//                persistedResult,
+//                getByTypeFromBuffer(type, startExclusive, (int) (limit - persistedResult.size()), persistedIds)
+//        );
+//        return result;
+//    }
 
     private List<DurableInstance> getByTypeFromBuffer(Type type, @Nullable DurableInstance startExclusive, int limit, Set<Long> persistedIds) {
         var typeInstances = NncUtils.filter(
@@ -236,41 +230,41 @@ public class InstanceContext extends BufferingInstanceContext {
         );
     }
 
-    private List<InstancePO> loadByType(LoadByTypeRequest request) {
-        var cachedResult = loadByTypeCache.get(request);
-        if (cachedResult != null)
-            return cachedResult;
-        var result = instanceStore.queryByTypeIds(
-                List.of(
-                        new ByTypeQuery(
-                                request.type().getId(),
-                                request.startExclusive() == null ? null : request.startExclusive().getId(),
-                                request.limit()
-                        )
-                ),
-                this
-        );
-        loadByTypeCache.put(request, result);
-        return result;
-    }
+//    private List<InstancePO> loadByType(LoadByTypeRequest request) {
+//        var cachedResult = loadByTypeCache.get(request);
+//        if (cachedResult != null)
+//            return cachedResult;
+//        var result = instanceStore.queryByTypeIds(
+//                List.of(
+//                        new ByTypeQuery(
+//                                request.type().getId(),
+//                                request.startExclusive() == null ? null : request.startExclusive().getId(),
+//                                request.limit()
+//                        )
+//                ),
+//                this
+//        );
+//        loadByTypeCache.put(request, result);
+//        return result;
+//    }
 
-    @Override
-    public boolean existsInstances(Type type, boolean persistedOnly) {
-        if (NncUtils.anyMatch(this, i -> type.isInstance(i) && (!persistedOnly || i.isPersisted()))) {
-            return true;
-        }
-        return type.tryGetPhysicalId() != null && NncUtils.isNotEmpty(getByType(type, null, 1, persistedOnly));
-    }
+//    @Override
+//    public boolean existsInstances(Type type, boolean persistedOnly) {
+//        if (NncUtils.anyMatch(this, i -> type.isInstance(i) && (!persistedOnly || i.isPersisted()))) {
+//            return true;
+//        }
+//        return type.tryGetPhysicalId() != null && NncUtils.isNotEmpty(getByType(type, null, 1, persistedOnly));
+//    }
 
-    @Override
-    public List<DurableInstance> scan(DurableInstance startExclusive, long limit) {
-        return NncUtils.map(
-                instanceStore.scan(List.of(
-                        new ScanQuery(startExclusive == null ? NullId.BYTES : startExclusive.getId().toBytes(), limit)
-                ), this),
-                instancePO -> get(instancePO.getInstanceId())
-        );
-    }
+//    @Override
+//    public List<DurableInstance> scan(DurableInstance startExclusive, long limit) {
+//        return NncUtils.map(
+//                instanceStore.scan(List.of(
+//                        new ScanQuery(startExclusive == null ? NullId.BYTES : startExclusive.getId().toBytes(), limit)
+//                ), this),
+//                instancePO -> get(instancePO.getInstanceId())
+//        );
+//    }
 
     private static class ForestChecker extends VoidInstanceVisitor {
 
@@ -337,7 +331,8 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private record Patch(IdentityHashMap<Tree, Instance> instancePOs,
-                         EntityChange<InstancePO> entityChange,
+                         EntityChange<VersionRT> entityChange,
+                         EntityChange<InstancePO> treeChanges,
                          EntityChange<ReferencePO> referenceChange) {
     }
 
@@ -393,9 +388,9 @@ public class InstanceContext extends BufferingInstanceContext {
             boolean changed = false;
         };
         try (var ignored = getProfiler().enter("processChanges")) {
-            patch.entityChange.forEachInsertOrUpdate(instancePO -> {
-                if (patchContext.changeNotified.add(instancePO.getInstanceId())) {
-                    if (onChange(internalGet(instancePO.getInstanceId())))
+            patch.entityChange.forEachInsertOrUpdate(v -> {
+                if (patchContext.changeNotified.add(v.id())) {
+                    if (onChange(internalGet(v.id())))
                         ref.changed = true;
                 }
             }, true);
@@ -421,8 +416,8 @@ public class InstanceContext extends BufferingInstanceContext {
                 if (!instance.isRemoved() && !instance.isEphemeral())
                     visitor.visit(instance);
             }
-            var idsToRemove = NncUtils.mapUnique(entityChange.deletes(), InstancePO::getInstanceId);
-            var idsToUpdate = NncUtils.mapUnique(entityChange.updates(), InstancePO::getInstanceId);
+            var idsToRemove = NncUtils.mapUnique(entityChange.deletes(), VersionRT::id);
+            var idsToUpdate = NncUtils.mapUnique(entityChange.updates(), VersionRT::id);
             ReferencePO ref = instanceStore.getFirstReference(
                     appId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
             );
@@ -466,8 +461,9 @@ public class InstanceContext extends BufferingInstanceContext {
                         && !instance.isRemoved() && !instance.isEphemeral()
                         && (instance.isNew() || !instance.isLoadedFromCache()) && !processed.contains(instance)) {
                     var tree = new Tree(
-                            instance.tryGetId(),
+                            instance.getPhysicalId(),
                             instance.getVersion(),
+                            instance.getNextNodeId(),
                             InstanceOutput.toMessage(instance)
                     );
                     trees.put(tree, instance);
@@ -567,6 +563,15 @@ public class InstanceContext extends BufferingInstanceContext {
                 cache,
                 eventQueue,
                 isReadonly());
+    }
+
+    @Override
+    public List<DurableInstance> scan(long start, long limit) {
+        var treeIds = instanceStore.scan(getAppId(), start, limit);
+        treeIds.forEach(loadingBuffer::buffer);
+        loadingBuffer.flush();
+        var ids = NncUtils.flatMap(treeIds, loadingBuffer::getIdsInTree);
+        return NncUtils.map(ids, this::get);
     }
 
 }

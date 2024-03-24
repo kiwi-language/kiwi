@@ -39,7 +39,7 @@ public class Scheduler extends EntityContextFactoryBean {
     @Transactional
     public void createSchedulerStatus() {
         try (var platformContext = newPlatformContext()) {
-            List<JobSchedulerStatus> existing = platformContext.getByType(JobSchedulerStatus.class, null, 1);
+            List<JobSchedulerStatus> existing = platformContext.selectByKey(JobSchedulerStatus.IDX_ALL_FLAG, true);
             if (NncUtils.isNotEmpty(existing))
                 return;
             platformContext.bind(new JobSchedulerStatus());
@@ -94,7 +94,7 @@ public class Scheduler extends EntityContextFactoryBean {
         long now = System.currentTimeMillis();
         try (var platformContext = newPlatformContext()) {
             JobSchedulerStatus schedulerStatus =
-                    NncUtils.first(platformContext.getByType(JobSchedulerStatus.class, null, 1));
+                    platformContext.selectFirstByKey(JobSchedulerStatus.IDX_ALL_FLAG, true);
             NncUtils.requireNonNull(schedulerStatus, "JobSchedulerStatus is not present");
             if (schedulerStatus.getVersion() == version || schedulerStatus.isHeartbeatTimeout()) {
                 schedulerStatus.setLastHeartbeat(now);

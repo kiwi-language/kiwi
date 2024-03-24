@@ -3,11 +3,14 @@ package tech.metavm.task;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IndexDef;
 
 import javax.annotation.Nullable;
 
 @EntityType("任务调度器状态")
 public class JobSchedulerStatus extends Entity {
+
+    public static final IndexDef<JobSchedulerStatus> IDX_ALL_FLAG = IndexDef.create(JobSchedulerStatus.class, "allFlag");
 
     public static final long HEARTBEAT_TIMEOUT = 20000000000L;
 
@@ -18,6 +21,7 @@ public class JobSchedulerStatus extends Entity {
     @EntityField("节点IP")
     @Nullable
     private String nodeIP;
+    private boolean allFlag = true;
 
     public long getVersion() {
         return version;

@@ -9,7 +9,8 @@ public abstract class PhysicalId extends Id {
     private final long treeId;
     private final long nodeId;
 
-    public PhysicalId(long treeId, long nodeId) {
+    public PhysicalId(boolean isArray, long treeId, long nodeId) {
+        super(isArray);
         this.treeId = treeId;
         this.nodeId = nodeId;
     }

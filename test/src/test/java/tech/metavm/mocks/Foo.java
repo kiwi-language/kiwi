@@ -12,6 +12,8 @@ public class Foo extends Entity {
 
     public static final IndexDef<Foo> IDX_NAME = new IndexDef<>(Foo.class, false, "name");
 
+    public static final IndexDef<Foo> IDX_ALL_FLAG = new IndexDef<>(Foo.class, false, "allFlag");
+
     @EntityField(value = "名称", asTitle = true)
     private String name;
 
@@ -33,6 +35,8 @@ public class Foo extends Entity {
     @ChildEntity("巴子")
     @Nullable
     private ReadWriteArray<Baz> bazList;
+
+    private boolean allFlag = true;
 
     public Foo(String name, Bar bar) {
         this.name = name;

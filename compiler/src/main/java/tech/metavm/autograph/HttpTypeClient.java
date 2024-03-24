@@ -1,7 +1,7 @@
 package tech.metavm.autograph;
 
+import tech.metavm.object.instance.core.TreeVersion;
 import tech.metavm.object.instance.rest.GetTreesRequest;
-import tech.metavm.object.instance.rest.InstanceVersionDTO;
 import tech.metavm.object.instance.rest.InstanceVersionsRequest;
 import tech.metavm.object.instance.rest.TreeDTO;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
@@ -60,7 +60,7 @@ public class HttpTypeClient implements TypeClient {
     }
 
     @Override
-    public List<InstanceVersionDTO> getVersions(InstanceVersionsRequest request) {
+    public List<TreeVersion> getVersions(InstanceVersionsRequest request) {
         return CompilerHttpUtils.post("/instance/versions", request, new TypeReference<>() {});
     }
 

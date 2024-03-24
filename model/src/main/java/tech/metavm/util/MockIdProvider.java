@@ -45,7 +45,7 @@ public class MockIdProvider implements EntityIdProvider {
                 requireNonNull(category.getIdRegion(), "region not found for category " + category).start() + INITIAL_NEXT_ID :
                 id + 1
         );
-        var id = DefaultPhysicalId.of(resultId, 0L, type);
+        var id = DefaultPhysicalId.ofObject(resultId, 0L, type);
         id2typeId.put(id, new TypeId(TypeTag.fromCategory(type.getCategory()), type.getId().getPhysicalId()));
         return resultId;
     }

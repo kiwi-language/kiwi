@@ -38,20 +38,6 @@ public class TaskManager extends EntityContextFactoryBean  {
 //        });
     }
 
-    private void executeTask() {
-        transactionTemplate.executeWithoutResult(status -> {
-            IEntityContext context = newContext();
-            List<FieldRemovalTask> tasks = context.getByType(FieldRemovalTask.class, null, 1);
-            if (NncUtils.isEmpty(tasks)) {
-                return;
-            }
-            FieldRemovalTask task = tasks.get(0);
-            if (task.executeBatch(context)) {
-                context.remove(task);
-            }
-            context.finish();
-        });
-    }
 
     @Transactional
     public void addGlobalTask(Task task) {

@@ -15,7 +15,7 @@ public class IndexRebuildTask extends ScanTask {
     }
 
     @Override
-    protected List<DurableInstance> scan(IInstanceContext context, DurableInstance cursor, long limit) {
+    protected List<DurableInstance> scan(IInstanceContext context, long cursor, long limit) {
         return context.scan(cursor, limit);
     }
 

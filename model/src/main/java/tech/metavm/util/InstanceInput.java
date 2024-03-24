@@ -46,8 +46,10 @@ public class InstanceInput implements Closeable {
 
     public DurableInstance readMessage() {
         var version = readLong();
+        var nextNodeId = readInt();
         var instance = (DurableInstance) readInstance();
         instance.setVersion(version);
+        instance.setNextNodeId(nextNodeId);
         return instance;
     }
 

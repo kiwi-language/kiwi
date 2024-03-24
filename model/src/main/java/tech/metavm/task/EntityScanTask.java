@@ -11,6 +11,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @EntityType("实体扫描任务")
 public abstract class EntityScanTask<T> extends ScanTask {
@@ -23,9 +24,9 @@ public abstract class EntityScanTask<T> extends ScanTask {
     }
 
     @Override
-    protected List<DurableInstance> scan(IInstanceContext context, DurableInstance cursor, long limit) {
+    protected List<DurableInstance> scan(IInstanceContext context, long cursor, long limit) {
         tech.metavm.object.type.Type metaType = ModelDefRegistry.getType(entityType);
-        return context.getByType(metaType, cursor, limit);
+        return context.scan(cursor, limit).stream().filter(metaType::isInstance).collect(Collectors.toList());
     }
 
     @Override

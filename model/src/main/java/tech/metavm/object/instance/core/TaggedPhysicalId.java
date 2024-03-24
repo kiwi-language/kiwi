@@ -25,7 +25,7 @@ public class TaggedPhysicalId extends PhysicalId {
     private final IdTag tag;
 
     public TaggedPhysicalId(IdTag tag, long treeId, long nodeId) {
-        super(treeId, nodeId);
+        super(false, treeId, nodeId);
         this.tag = tag;
     }
 
@@ -41,7 +41,7 @@ public class TaggedPhysicalId extends PhysicalId {
 
     @Override
     public void write(InstanceOutput output) {
-        output.writeIdTag(tag);
+        output.writeIdTag(tag, false);
         output.writeLong(getTreeId());
         output.writeLong(getNodeId());
     }

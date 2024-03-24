@@ -41,7 +41,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
             parent.buffer(id);
         else {
             if(id.tryGetPhysicalId() != null)
-                loadingBuffer.buffer(id);
+                loadingBuffer.buffer(id.getPhysicalId());
         }
     }
 
@@ -61,7 +61,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     protected void onTreeLoaded(Tree tree) {
     }
 
-    private Instance readInstance(InstanceInput input) {
+    private DurableInstance readInstance(InstanceInput input) {
 //        try (var entry = getProfiler().enter("readInstance")) {
             var instance = input.readMessage();
 //            entry.addMessage("id", instance.getPhysicalId());
@@ -82,6 +82,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     @Override
     public void invalidateCache(DurableInstance instance) {
-        loadingBuffer.invalidateCache(List.of(requireNonNull(instance.tryGetId())));
+        loadingBuffer.invalidateCache(List.of(instance.getTreeId()));
     }
+
 }

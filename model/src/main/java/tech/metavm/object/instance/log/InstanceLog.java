@@ -2,21 +2,21 @@ package tech.metavm.object.instance.log;
 
 import tech.metavm.object.instance.ChangeType;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.VersionPO;
+import tech.metavm.object.instance.persistence.VersionRT;
 
 public class InstanceLog {
 
-    public static InstanceLog insert(InstancePO instance) {
-        return new InstanceLog(instance.getAppId(), instance.getInstanceId(), ChangeType.INSERT, instance.getVersion());
+    public static InstanceLog insert(VersionRT version) {
+        return new InstanceLog(version.appId(), version.id(), ChangeType.INSERT, version.version());
     }
 
-    public static InstanceLog update(InstancePO instance) {
-        return new InstanceLog(instance.getAppId(), instance.getInstanceId(), ChangeType.UPDATE, instance.getVersion());
+    public static InstanceLog update(VersionRT version) {
+        return new InstanceLog(version.appId(), version.id(), ChangeType.UPDATE, version.version());
     }
 
-    public static InstanceLog delete(InstancePO instance) {
-        return new InstanceLog(instance.getAppId(), instance.getInstanceId(), ChangeType.DELETE, instance.getVersion());
+    public static InstanceLog delete(VersionRT version) {
+        return new InstanceLog(version.appId(), version.id(), ChangeType.DELETE, version.version());
     }
 
     private final long appId;
@@ -44,7 +44,7 @@ public class InstanceLog {
     }
 
     public VersionPO getVersion() {
-        return new VersionPO(appId, id.toBytes(), version);
+        return new VersionPO(appId, id.getPhysicalId(), version);
     }
 
     public boolean isInsert() {

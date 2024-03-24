@@ -4,11 +4,11 @@ import org.springframework.stereotype.Component;
 import tech.metavm.entity.Tree;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Id;
-import tech.metavm.util.BytesUtils;
+import tech.metavm.util.InstanceInput;
 import tech.metavm.util.KeyValue;
 import tech.metavm.util.NncUtils;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -26,24 +26,26 @@ public class CacheTreeSource implements TreeSource {
     public void save(List<Tree> trees) {
         List<KeyValue<Long, byte[]>> entries = new ArrayList<>();
         for (var tree : trees) {
-            entries.add(new KeyValue<>(tree.id().getPhysicalId(), tree.data()));
+            entries.add(new KeyValue<>(tree.id(), tree.data()));
         }
         cache.batchAdd(entries);
     }
 
     @Override
-    public List<Tree> load(Collection<Id> ids, IInstanceContext context) {
-        var bytes = cache.batchGet(NncUtils.map(ids, Id::getPhysicalId));
+    public List<Tree> load(Collection<Long> ids, IInstanceContext context) {
+        var bytes = cache.batchGet(ids);
         var trees = new ArrayList<Tree>();
         NncUtils.biForEach(ids, bytes, (id, bs) -> {
-            if (bs != null)
-                trees.add(new Tree(id, BytesUtils.readFirstLong(bs), bs));
+            if (bs != null) {
+                var input = new InstanceInput(new ByteArrayInputStream(bs));
+                trees.add(new Tree(id, input.readLong(), input.readInt(), bs));
+            }
         });
         return trees;
     }
 
     @Override
-    public void remove(List<Id> ids) {
-        cache.batchRemove(NncUtils.map(ids, Id::getPhysicalId));
+    public void remove(List<Long> ids) {
+        cache.batchRemove(ids);
     }
 }

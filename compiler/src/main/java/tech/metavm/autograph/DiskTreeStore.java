@@ -4,10 +4,10 @@ import tech.metavm.entity.Tree;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.StreamVisitor;
 
 import java.io.*;
 import java.util.*;
@@ -15,7 +15,7 @@ import java.util.*;
 public class DiskTreeStore implements TreeSource {
 
     private final String path;
-    private Map<Id, Tree> trees = new HashMap<>();
+    private Map<Long, Tree> trees = new HashMap<>();
 
     DiskTreeStore(String path) {
         this.path = path;
@@ -23,7 +23,17 @@ public class DiskTreeStore implements TreeSource {
     }
 
     public Collection<Id> getAllInstanceIds() {
-        return Collections.unmodifiableSet(trees.keySet());
+        var ids = new ArrayList<Id>();
+        for (Tree tree : trees.values()) {
+            new StreamVisitor(new ByteArrayInputStream(tree.data())) {
+                @Override
+                public void visitRecordBody(Id id) {
+                    ids.add(id);
+                    super.visitRecordBody(id);
+                }
+            }.visitMessage();
+        }
+        return ids;
     }
 
     @Override
@@ -34,12 +44,12 @@ public class DiskTreeStore implements TreeSource {
     }
 
     @Override
-    public List<Tree> load(Collection<Id> ids, IInstanceContext context) {
+    public List<Tree> load(Collection<Long> ids, IInstanceContext context) {
         return NncUtils.mapAndFilter(ids, trees::get, Objects::nonNull);
     }
 
     @Override
-    public void remove(List<Id> ids) {
+    public void remove(List<Long> ids) {
         NncUtils.forEach(ids, trees::remove);
     }
 
@@ -60,16 +70,17 @@ public class DiskTreeStore implements TreeSource {
         if(file.exists()) {
             try (var input = new InstanceInput(new FileInputStream(file))) {
                 int numTrees = input.readInt();
-                var trees = new HashMap<Id, Tree>(numTrees);
+                var trees = new HashMap<Long, Tree>(numTrees);
                 for (int i = 0; i < numTrees; i++) {
                     int len = input.readInt();
                     byte[] bytes = new byte[len];
                     input.read(bytes);
                     var subInput = new InstanceInput(new ByteArrayInputStream(bytes));
                     var version = subInput.readLong();
+                    var nextNodeId = subInput.readInt();
                     subInput.read(); // wire type
-                    var id = subInput.readId();
-                    trees.put(id, new Tree(id, version, bytes));
+                    var id = subInput.readId().getPhysicalId();
+                    trees.put(id, new Tree(id, version, nextNodeId, bytes));
                 }
                 this.trees = trees;
             } catch (IOException e) {

@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityChange;
 import tech.metavm.entity.TypeRegistry;
 import tech.metavm.flow.Function;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.instance.persistence.VersionRT;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.version.VersionRepository;
 import tech.metavm.object.version.Versions;
@@ -23,7 +23,7 @@ public class MetaVersionPlugin implements ContextPlugin {
     }
 
     @Override
-    public boolean beforeSaving(EntityChange<InstancePO> change, IInstanceContext context) {
+    public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
 //        if (!context.getEntityContext().isBindSupported() && context.getBindHook() == null)
 //            return false;
 //        var entityContext = context.getEntityContext();
@@ -34,9 +34,9 @@ public class MetaVersionPlugin implements ContextPlugin {
         var changedTypeIds = new HashSet<String>();
         var changedMappingIds = new HashSet<String>();
         var changedFunctionIds = new HashSet<String>();
-        change.forEachInsertOrUpdate(i -> {
-            var id = i.getInstanceId().toString();
-            var instance = context.get(i.getInstanceId());
+        change.forEachInsertOrUpdate(v -> {
+            var id = v.id().toString();
+            var instance = context.get(v.id());
             if (typeType.isInstance(instance))
                 changedTypeIds.add(id);
             else if (mappingType.isInstance(instance))
@@ -47,9 +47,9 @@ public class MetaVersionPlugin implements ContextPlugin {
         var removedTypeIds = new HashSet<String>();
         var removedMappingIds = new HashSet<String>();
         var removedFunctionIds = new HashSet<String>();
-        change.deletes().forEach(i -> {
-            var id = i.getInstanceId().toString();
-            var instance = context.getRemoved(i.getInstanceId());
+        change.deletes().forEach(v -> {
+            var id = v.id().toString();
+            var instance = context.getRemoved(v.id());
             if(typeType.isInstance(instance))
                 removedTypeIds.add(id);
             else if(mappingType.isInstance(instance))
@@ -72,7 +72,7 @@ public class MetaVersionPlugin implements ContextPlugin {
     }
 
     @Override
-    public void afterSaving(EntityChange<InstancePO> change, IInstanceContext context) {
+    public void afterSaving(EntityChange<VersionRT> change, IInstanceContext context) {
     }
 
     public void setVersionRepository(VersionRepository versionRepository) {

@@ -38,23 +38,31 @@ public abstract class Id implements Comparable<Id> {
     }
 
     public static Id readId(InstanceInput input) {
-        var tag = IdTag.fromCode(input.read());
+        var maskedTagCode = input.read();
+        var tag = IdTag.fromCode(maskedTagCode & 0x7F);
+        var isArray = (maskedTagCode & 0x80) != 0;
         return switch (tag) {
             case NULL -> new NullId();
-            case DEFAULT_PHYSICAL -> new DefaultPhysicalId(input.readLong(), input.readLong(), readId(input));
+            case OBJECT_PHYSICAL -> new DefaultPhysicalId(isArray, input.readLong(), input.readLong(), readId(input));
             case CLASS_TYPE_PHYSICAL, ARRAY_TYPE_PHYSICAL, FIELD_PHYSICAL ->
                     new TaggedPhysicalId(tag, input.readLong(), input.readLong());
             case TMP -> new TmpId(input.readLong());
-            case DEFAULT_VIEW -> new DefaultViewId(readId(input), readId(input));
-            case CHILD_VIEW -> new ChildViewId(readId(input), readId(input), (ViewId) readId(input));
+            case DEFAULT_VIEW -> new DefaultViewId(isArray, readId(input), readId(input));
+            case CHILD_VIEW -> new ChildViewId(isArray, readId(input), readId(input), (ViewId) readId(input));
             case FIELD_VIEW ->
-                    new FieldViewId((ViewId) readId(input), ViewId.readMappingId(input), readId(input),
+                    new FieldViewId(isArray, (ViewId) readId(input), ViewId.readMappingId(input), readId(input),
                             PathViewId.readSourceId(input), readId(input));
             case ELEMENT_VIEW ->
-                    new ElementViewId((ViewId) readId(input), ViewId.readMappingId(input), input.readInt(),
+                    new ElementViewId(isArray, (ViewId) readId(input), ViewId.readMappingId(input), input.readInt(),
                             PathViewId.readSourceId(input), readId(input));
             case MOCK -> new MockId(input.readLong());
         };
+    }
+
+    private final boolean isArray;
+
+    protected Id(boolean isArray) {
+        this.isArray = isArray;
     }
 
     public abstract Long tryGetPhysicalId();
@@ -64,6 +72,10 @@ public abstract class Id implements Comparable<Id> {
     }
 
     public abstract boolean isTemporary();
+
+    public boolean isArray() {
+        return isArray;
+    }
 
     @Override
     public int compareTo(@NotNull Id o) {

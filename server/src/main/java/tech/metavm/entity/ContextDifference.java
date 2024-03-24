@@ -3,10 +3,15 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
+import tech.metavm.object.instance.persistence.VersionRT;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Pair;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.function.Function;
 
@@ -14,11 +19,12 @@ public class ContextDifference {
 
     private final Map<Class<? extends Entity>, EntityChange<?>> changeMap = new HashMap<>();
 
-    private final EntityChange<InstancePO> entityChange = new EntityChange<>(InstancePO.class);
+    private final EntityChange<VersionRT> entityChange = new EntityChange<>(VersionRT.class);
     private final EntityChange<ReferencePO> referenceChange = new EntityChange<>(ReferencePO.class);
     private final Map<Class<? extends Value>, ValueChange<?>> valueChangeMap = new HashMap<>();
     private final long appId;
     private final Function<Id, Id> getTypeId;
+    private final EntityChange<InstancePO> treeChanges = new EntityChange<>(InstancePO.class);
 
     public ContextDifference(long appId, Function<Id, Id> getTypeId) {
         this.appId = appId;
@@ -43,47 +49,64 @@ public class ContextDifference {
         if (t1 == null && t2 == null)
             return;
         if (t1 == null) {
+            treeChanges.addInsert(buildInstancePO(t2));
             getSubTrees(t2).forEach(subtree ->
-                    entityChange.addInsert(toInstancePO(t2, subtree)));
+                    entityChange.addInsert(new VersionRT(appId, subtree.id(), t2.version())));
         } else if (t2 == null) {
+            treeChanges.addDelete(buildInstancePO(t1));
             getSubTrees(t1).forEach(subtree ->
-                    entityChange.addDelete(toInstancePO(t1, subtree)));
+                    entityChange.addDelete(new VersionRT(appId, subtree.id(), t1.version() + 1)));
         } else if (!Arrays.equals(t1.data(), t2.data())) {
+            treeChanges.addUpdate(buildInstancePO(t2));
             var firstSubtrees = getSubTrees(t1);
             var secondSubtrees = getSubTrees(t2);
-            var ref = new Object() {
-                boolean rootChanged;
-            };
-            var rootId = t1.id();
-            var newVersion = t1.version() + 1;
             NncUtils.forEachPair(firstSubtrees, secondSubtrees, (s1, s2) -> {
                 if (s1 == null && s2 == null)
                     return;
                 if (s1 == null)
-                    entityChange.addInsert(toInstancePO(t2, s2));
+                    entityChange.addInsert(new VersionRT(appId, s2.id(), t2.version()));
                 else if (s2 == null)
-                    entityChange.addDelete(toInstancePO(t1, s1));
+                    entityChange.addDelete(new VersionRT(appId, s1.id(), t2.version()));
                 else if (!s1.equals(s2)) {
-                    var updatePO = toInstancePO(t2, s2);
-                    entityChange.addUpdate(updatePO);
-                    if (s2.id().getPhysicalId() == rootId.getPhysicalId()) {
-                        updatePO.setVersion(newVersion);
-                        ref.rootChanged = true;
-                    }
+                    entityChange.addUpdate(new VersionRT(appId, s2.id(), t2.version()));
                 }
             });
-            if (!ref.rootChanged) {
-                var typeId = getTypeId.apply(t1.id());
-                entityChange.addUpdate(new InstancePO(appId,
-                        rootId.toBytes(),
-                        typeId.toBytes(),
-                        "",
-                        null,
-                        null,
-                        null,
-                        rootId.toBytes(), newVersion, 0L));
-            }
         }
+    }
+
+    private InstancePO buildInstancePO(Tree tree) {
+        return new InstancePO(
+                appId,
+                tree.id(),
+                incVersion(tree.data()),
+                tree.version() + 1,
+                0L,
+                tree.nextNodeId()
+        );
+    }
+
+    private byte[] incVersion(byte[] tree) {
+        var bin = new ByteArrayInputStream(tree);
+        var input = new InstanceInput(bin);
+        var bout = new ByteArrayOutputStream();
+        var output = new InstanceOutput(bout);
+        output.writeLong(input.readLong() + 1);
+        var newHeadBytes = bout.toByteArray();
+        var oldHeadLen = calcHeadLength(tree);
+        var length = newHeadBytes.length - oldHeadLen + tree.length;
+        var newTree = new byte[length];
+        System.arraycopy(newHeadBytes, 0, newTree, 0, newHeadBytes.length);
+        System.arraycopy(tree, oldHeadLen, newTree, newHeadBytes.length, tree.length - oldHeadLen);
+        return newTree;
+    }
+
+    private int calcHeadLength(byte[] tree) {
+        var bin = new ByteArrayInputStream(tree);
+        var input = new InstanceInput(bin);
+        var bout = new ByteArrayOutputStream();
+        var output = new InstanceOutput(bout);
+        output.writeLong(input.readLong());
+        return bout.toByteArray().length;
     }
 
     public void diffValues(Collection<Value> head, Collection<Value> buffer) {
@@ -107,24 +130,6 @@ public class ContextDifference {
             change.addInsert(castPair.second());
     }
 
-    private InstancePO toInstancePO(Tree tree, Subtree subTree) {
-        var rootId = tree.id();
-        var id = subTree.id();
-        var typeId = getTypeId.apply(id);
-        return new InstancePO(
-                appId,
-                id.toBytes(),
-                typeId.toBytes(),
-                "",
-                subTree.data(),
-                NncUtils.get(subTree.parentId(), Id::toBytes),
-                NncUtils.get(subTree.parentFieldId(), Id::toBytes),
-                rootId.toBytes(),
-                id == rootId ? tree.version() : 0L,
-                0L
-        );
-    }
-
     private List<Subtree> getSubTrees(Tree tree) {
         List<Subtree> subTrees = new ArrayList<>();
         new SubtreeExtractor(tree.openInput(), subTrees::add).visitMessage();
@@ -133,6 +138,10 @@ public class ContextDifference {
 
     public EntityChange<ReferencePO> getReferenceChange() {
         return referenceChange;
+    }
+
+    public EntityChange<InstancePO> getTreeChanges() {
+        return treeChanges;
     }
 
     @SuppressWarnings("unchecked")
@@ -144,7 +153,7 @@ public class ContextDifference {
         return changeMap;
     }
 
-    public EntityChange<InstancePO> getEntityChange() {
+    public EntityChange<VersionRT> getEntityChange() {
         return entityChange;
     }
 

@@ -221,7 +221,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
                 || isChild() && getType().isArray()) {
             return;
         }
-        if (Objects.requireNonNull(context.getInstanceContext()).existsInstances(declaringType, true)) {
+        if (declaringType.isDeployed()) {
             throw BusinessException.notNullFieldWithoutDefaultValue(this);
         }
     }

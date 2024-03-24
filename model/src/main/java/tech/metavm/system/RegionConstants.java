@@ -1,5 +1,6 @@
 package tech.metavm.system;
 
+import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.TypeCategory;
 import tech.metavm.util.InternalException;
@@ -33,8 +34,7 @@ public class RegionConstants {
     }
 
     public static boolean isArrayId(Id id) {
-        var physicalId = id.tryGetPhysicalId();
-        return physicalId == null || isArrayId(physicalId);
+        return id.isArray();
     }
 
     public static boolean isArrayId(long id) {

@@ -19,11 +19,15 @@ import java.util.List;
 @EntityType("函数")
 public class Function extends Flow implements GlobalKey {
 
+    public static final IndexDef<Function> IDX_ALL_FLAG = IndexDef.create(Function.class, "allFlag");
+
     public static final IndexDef<Function> IDX_NAME =
             IndexDef.create(Function.class, "name");
 
     public static final IndexDef<Function> UNIQUE_IDX_CODE =
             IndexDef.createUnique(Function.class, "code");
+
+    private boolean allFlag = true;
 
     public Function(Long tmpId,
                     String name,

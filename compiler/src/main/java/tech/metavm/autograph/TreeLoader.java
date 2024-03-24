@@ -1,7 +1,6 @@
 package tech.metavm.autograph;
 
 import tech.metavm.entity.Tree;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.TypeTreeQuery;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.MetaVersionStore;
@@ -27,7 +26,7 @@ public class TreeLoader {
             var resp = typeClient.queryTrees(new TypeTreeQuery(version));
             var trees = NncUtils.map(resp.trees(), Tree::fromDTO);
             metaVersionStore.setMetaVersion(resp.version());
-            diskTreeStore.remove(NncUtils.map(resp.removedIds(), Id::parse));
+            diskTreeStore.remove(resp.removedIds());
             diskTreeStore.save(trees);
             diskTreeStore.persist();
             indexSource.populateIndex();

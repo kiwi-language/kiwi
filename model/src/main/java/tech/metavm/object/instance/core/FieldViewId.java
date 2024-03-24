@@ -11,14 +11,14 @@ public class FieldViewId extends PathViewId {
 
     public final Id fieldId;
 
-    public FieldViewId(ViewId parent, @Nullable Id mappingId, Id fieldId, @Nullable Id sourceId, Id typeId) {
-        super(parent, mappingId, sourceId, typeId);
+    public FieldViewId(boolean isArray, ViewId parent, @Nullable Id mappingId, Id fieldId, @Nullable Id sourceId, Id typeId) {
+        super(isArray, parent, mappingId, sourceId, typeId);
         this.fieldId = fieldId;
     }
 
     @Override
     public void write(InstanceOutput output) {
-        output.writeIdTag(IdTag.FIELD_VIEW);
+        output.writeIdTag(IdTag.FIELD_VIEW, isArray());
         getParent().write(output);
         writeMappingId(output);
         fieldId.write(output);

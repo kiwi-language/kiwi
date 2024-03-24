@@ -7,18 +7,22 @@ import java.util.Objects;
 
 public class DefaultPhysicalId extends PhysicalId {
 
-    public static PhysicalId of(long id, long nodeId, Id typeId) {
-        return new DefaultPhysicalId(id, nodeId, typeId);
+    public static PhysicalId ofObject(long id, long nodeId, Id typeId) {
+        return new DefaultPhysicalId(false, id, nodeId, typeId);
     }
 
-    public static PhysicalId of(long id, long nodeId, Type type) {
-        return new DefaultPhysicalId(id, nodeId, type.getId());
+    public static PhysicalId ofObject(long id, long nodeId, Type type) {
+        return new DefaultPhysicalId(false, id, nodeId, type.getId());
+    }
+
+    public static PhysicalId ofArray(long id, long nodeId, Id typeId) {
+        return new DefaultPhysicalId(true, id, nodeId, typeId);
     }
 
     private final Id typeId;
 
-    public DefaultPhysicalId(long treeId, long nodeId, Id typeId) {
-        super(treeId, nodeId);
+    public DefaultPhysicalId(boolean isArray, long treeId, long nodeId, Id typeId) {
+        super(isArray, treeId, nodeId);
         this.typeId = typeId;
     }
 
@@ -29,7 +33,7 @@ public class DefaultPhysicalId extends PhysicalId {
 
     @Override
     public void write(InstanceOutput output) {
-        output.writeIdTag(IdTag.DEFAULT_PHYSICAL);
+        output.writeIdTag(IdTag.OBJECT_PHYSICAL, isArray());
         output.writeLong(getTreeId());
         output.writeLong(getNodeId());
         typeId.write(output);

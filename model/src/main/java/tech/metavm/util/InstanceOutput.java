@@ -21,11 +21,13 @@ public class InstanceOutput extends OutputStream {
         return toByteArray(instance, true, true);
     }
 
-    private static byte[] toByteArray(DurableInstance instance, boolean includeChild, boolean withVersion) {
+    public static byte[] toByteArray(DurableInstance instance, boolean includeChild, boolean withVersion) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout, includeChild);
-        if (withVersion)
+        if (withVersion) {
             output.writeLong(instance.getVersion());
+            output.writeInt(instance.getNextNodeId());
+        }
         output.writeValue(instance);
         return bout.toByteArray();
     }
@@ -59,10 +61,10 @@ public class InstanceOutput extends OutputStream {
                 write(WireTypes.NULL);
             else if (isReference) {
                 write(WireTypes.REFERENCE);
-                writeId((PhysicalId) requireNonNull(d.tryGetId()));
+                writeId(requireNonNull(d.tryGetId()));
             } else {
                 write(WireTypes.RECORD);
-                writeId((PhysicalId) requireNonNull(d.tryGetId()));
+                writeId(requireNonNull(d.tryGetId()));
                 d.writeTo(this, includeChildren);
             }
         } else
@@ -126,8 +128,8 @@ public class InstanceOutput extends OutputStream {
         }
     }
 
-    public void writeIdTag(IdTag idTag) {
-        write(idTag.code());
+    public void writeIdTag(IdTag idTag, boolean isArray) {
+        write(idTag.maskedCode(isArray));
     }
 
 }

@@ -54,18 +54,18 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     DefContext getDefContext();
 
-    default <T> void getAllByType(Class<T> klass, List<? super T> result) {
-        T start = null;
-        List<T> batch;
-        do {
-            batch = getByType(klass, start, Constants.BATCH_SIZE);
-            result.addAll(batch);
-            if (!batch.isEmpty())
-                start = batch.get(batch.size() - 1);
-        } while (batch.size() == Constants.BATCH_SIZE);
-    }
+//    default <T> void getAllByType(Class<T> klass, List<? super T> result) {
+//        T start = null;
+//        List<T> batch;
+//        do {
+//            batch = getByType(klass, start, Constants.BATCH_SIZE);
+//            result.addAll(batch);
+//            if (!batch.isEmpty())
+//                start = batch.get(batch.size() - 1);
+//        } while (batch.size() == Constants.BATCH_SIZE);
+//    }
 
-    <T> List<T> getByType(Class<? extends T> type, @Nullable T startExclusive, long limit);
+//    <T> List<T> getByType(Class<? extends T> type, @Nullable T startExclusive, long limit);
 
     default List<ClassType> getTemplateInstances(ClassType template) {
         NncUtils.requireTrue(template.isTemplate());
@@ -76,7 +76,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     void close();
 
-    boolean existsInstances(Class<?> type);
+//    boolean existsInstances(Class<?> type);
 
     boolean containsEntity(Class<?> entityType, long id);
 
@@ -296,5 +296,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     boolean isRemoved(Object entity);
 
     IEntityContext createSame(long appId);
+
+    List<Object> scan(long start, long limit);
 
 }

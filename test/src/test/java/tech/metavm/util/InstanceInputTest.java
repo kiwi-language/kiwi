@@ -105,29 +105,29 @@ public class InstanceInputTest extends TestCase {
         ClassType barType = ClassTypeBuilder.newBuilder("Bar", "Bar").build();
         ClassType quxType = ClassTypeBuilder.newBuilder("Qux", "Qux").build();
 
-        fooType.initId(DefaultPhysicalId.of(10001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        barType.initId(DefaultPhysicalId.of(10002L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        quxType.initId(DefaultPhysicalId.of(10003L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        fooType.initId(DefaultPhysicalId.ofObject(10001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        barType.initId(DefaultPhysicalId.ofObject(10002L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        quxType.initId(DefaultPhysicalId.ofObject(10003L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
 
         Field nameField = FieldBuilder
                 .newBuilder("name", "name", fooType, StandardTypes.getStringType()).build();
-        nameField.initId(DefaultPhysicalId.of(20001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        nameField.initId(DefaultPhysicalId.ofObject(20001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
         Field barField = FieldBuilder
                 .newBuilder("bar", "bar", fooType, barType).isChild(true).build();
-        barField.initId(DefaultPhysicalId.of(20002L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        barField.initId(DefaultPhysicalId.ofObject(20002L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
         Field quxField = FieldBuilder.newBuilder("qux", "qux", fooType, quxType).build();
-        quxField.initId(DefaultPhysicalId.of(20003L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        quxField.initId(DefaultPhysicalId.ofObject(20003L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
 
         Field barCodeField = FieldBuilder
                 .newBuilder("code", "code", barType, StandardTypes.getStringType()).build();
-        barCodeField.initId(DefaultPhysicalId.of(20004L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        barCodeField.initId(DefaultPhysicalId.ofObject(20004L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
 
         Field quxNameField = FieldBuilder
                 .newBuilder("name", "name", quxType, StandardTypes.getStringType()).build();
-        quxNameField.initId(DefaultPhysicalId.of(20005L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        quxNameField.initId(DefaultPhysicalId.ofObject(20005L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
 
         var barInst = new ClassInstance(
-                DefaultPhysicalId.of(30002L, 0L, TaggedPhysicalId.ofClass(1L, 0L)),
+                DefaultPhysicalId.ofObject(30002L, 0L, TaggedPhysicalId.ofClass(1L, 0L)),
                 Map.of(
                         barCodeField,
                         new StringInstance(barCode, StandardTypes.getStringType())
@@ -136,7 +136,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var quxInst = new ClassInstance(
-                DefaultPhysicalId.of(30003L, 0L, TaggedPhysicalId.ofClass(1L, 0L)),
+                DefaultPhysicalId.ofObject(30003L, 0L, TaggedPhysicalId.ofClass(1L, 0L)),
                 Map.of(
                         quxNameField,
                         new StringInstance("qux001", StandardTypes.getStringType())
@@ -145,7 +145,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var fooInst = new ClassInstance(
-                DefaultPhysicalId.of(30001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)),
+                DefaultPhysicalId.ofObject(30001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)),
                 Map.of(
                         nameField, new StringInstance(fooName, StandardTypes.getStringType()),
                         barField, barInst,

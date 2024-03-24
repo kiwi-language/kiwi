@@ -10,7 +10,7 @@ import java.util.*;
 public final class SubContext {
     private final Set<Value> values = new LinkedHashSet<>();
     private final IdentityHashMap<Tree, Tree> entities = new IdentityHashMap<>();
-    private final Map<Id, Tree> entityMap = new HashMap<>();
+    private final Map<Long, Tree> entityMap = new HashMap<>();
     private final Set<ReferencePO> references = new HashSet<>();
     private final long appId;
 
@@ -18,7 +18,7 @@ public final class SubContext {
         this.appId = appId;
     }
 
-    public Tree get(Id id) {
+    public Tree get(long id) {
         return entityMap.get(id);
     }
 

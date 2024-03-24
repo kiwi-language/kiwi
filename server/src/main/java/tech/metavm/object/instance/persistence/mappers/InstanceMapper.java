@@ -2,10 +2,9 @@ package tech.metavm.object.instance.persistence.mappers;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import tech.metavm.object.instance.ByTypeQuery;
 import tech.metavm.object.instance.ScanQuery;
+import tech.metavm.object.instance.core.TreeVersion;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.Version;
 import tech.metavm.object.instance.persistence.VersionPO;
 import tech.metavm.util.NncUtils;
 
@@ -15,16 +14,13 @@ import java.util.List;
 @Mapper
 public interface InstanceMapper {
 
-    InstancePO selectById(@Param("id") byte[] id);
+    InstancePO selectById(@Param("id") long id);
 
-    List<InstancePO> selectByIds(@Param("appId") long appId, @Param("ids") Collection<byte[]> ids,
+    List<InstancePO> selectByIds(@Param("appId") long appId, @Param("ids") Collection<Long> ids,
                                  @Param("lockMode") int lockMode);
 
-    List<InstancePO> selectByTypeIds(@Param("appId") long appId,
-                                     @Param("queries") Collection<ByTypeQuery> queries);
-
-    List<InstancePO> selectForest(@Param("appId") long appId, @Param("ids") Collection<byte[]> ids,
-                                  @Param("lockMode") int lockMode);
+//    List<InstancePO> selectByTypeIds(@Param("appId") long appId,
+//                                     @Param("queries") Collection<ByTypeQuery> queries);
 
     void batchInsert(Collection<InstancePO> records);
 
@@ -43,14 +39,17 @@ public interface InstanceMapper {
                      @Param("timestamp") long timestamp,
                      @Param("versions") Collection<VersionPO> versions);
 
-    List<byte[]> getAliveIds(@Param("appId") long appId, @Param("ids") Collection<byte[]> ids);
+//    List<byte[]> getAliveIds(@Param("appId") long appId, @Param("ids") Collection<byte[]> ids);
 
     int updateSyncVersion(List<VersionPO> versions);
 
     List<InstancePO> scan(@Param("appId") long appId,
                           @Param("queries") Collection<ScanQuery> queries);
 
-    List<Long> selectVersions(@Param("ids") List<byte[]> ids);
+    List<Long> scanTrees(@Param("appId") long appId,
+                         @Param("startId") long startId,
+                         @Param("limit") long limit);
 
-    List<Version> selectRootVersions(@Param("appId") long appId, @Param("ids") List<byte[]> ids);
+
+    List<TreeVersion> selectVersions(@Param("appId") long appId, @Param("ids") List<Long> ids);
 }

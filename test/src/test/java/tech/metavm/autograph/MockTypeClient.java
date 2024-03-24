@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.object.instance.InstanceManager;
+import tech.metavm.object.instance.core.TreeVersion;
 import tech.metavm.object.instance.rest.GetTreesRequest;
-import tech.metavm.object.instance.rest.InstanceVersionDTO;
 import tech.metavm.object.instance.rest.InstanceVersionsRequest;
 import tech.metavm.object.instance.rest.TreeDTO;
 import tech.metavm.object.type.TypeManager;
@@ -73,7 +73,7 @@ public class MockTypeClient implements TypeClient {
     }
 
     @Override
-    public List<InstanceVersionDTO> getVersions(InstanceVersionsRequest request) {
+    public List<TreeVersion> getVersions(InstanceVersionsRequest request) {
         return submit(() -> instanceManager.getVersions(request.ids()), "getVersions");
     }
 

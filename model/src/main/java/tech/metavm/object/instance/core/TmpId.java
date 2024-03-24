@@ -18,12 +18,13 @@ public final class TmpId extends Id {
     private final long tmpId;
 
     public TmpId(long tmpId) {
+        super(false);
         this.tmpId = tmpId;
     }
 
     @Override
     public void write(InstanceOutput output) {
-        output.writeIdTag(IdTag.TMP);
+        output.writeIdTag(IdTag.TMP, false);
         output.writeLong(tmpId);
     }
 

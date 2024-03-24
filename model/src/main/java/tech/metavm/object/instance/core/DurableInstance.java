@@ -41,6 +41,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     private long version;
     private long syncVersion;
+
     @Nullable
     private DurableInstance parent;
     @Nullable
@@ -58,6 +59,8 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
     private transient @Nullable SourceRef sourceRef;
 
     private int seq;
+
+    private int nextNodeId = 1;
 
     public DurableInstance(Type type) {
         this(null, type, 0L, 0L, false, null);
@@ -117,6 +120,10 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
     @NoProxy
     public @Nullable Id tryGetId() {
         return id;
+    }
+
+    public long getTreeId() {
+        return getRoot().getPhysicalId();
     }
 
     public Id getId() {
@@ -359,11 +366,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     public Tree toTree(boolean withChildren) {
         NncUtils.requireTrue(isRoot());
-        var bout = new ByteArrayOutputStream();
-        var output = new InstanceOutput(bout, withChildren);
-        output.writeLong(getVersion());
-        output.writeValue(this);
-        return new Tree(tryGetId(), getVersion(), bout.toByteArray());
+        return new Tree(getPhysicalId(), getVersion(), nextNodeId, InstanceOutput.toByteArray(this, withChildren, true));
     }
 
     public abstract void readFrom(InstanceInput input);
@@ -488,5 +491,17 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     public void setSeq(int seq) {
         this.seq = seq;
+    }
+
+    public int nextNodeId() {
+        return nextNodeId++;
+    }
+
+    public int getNextNodeId() {
+        return nextNodeId;
+    }
+
+    public void setNextNodeId(int nextNodeId) {
+        this.nextNodeId = nextNodeId;
     }
 }

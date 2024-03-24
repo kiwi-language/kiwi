@@ -1,5 +1,6 @@
 package tech.metavm.autograph;
 
+import tech.metavm.object.instance.core.TreeVersion;
 import tech.metavm.object.instance.rest.GetTreesRequest;
 import tech.metavm.object.instance.rest.InstanceVersionDTO;
 import tech.metavm.object.instance.rest.InstanceVersionsRequest;
@@ -25,7 +26,7 @@ public interface TypeClient {
 
     List<BlockDTO> getActive(List<Long> typeIds);
 
-    List<InstanceVersionDTO> getVersions(InstanceVersionsRequest request);
+    List<TreeVersion> getVersions(InstanceVersionsRequest request);
 
     List<TreeDTO> getTrees(GetTreesRequest request);
 

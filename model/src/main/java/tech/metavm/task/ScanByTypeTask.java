@@ -6,6 +6,7 @@ import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
@@ -20,8 +21,8 @@ public abstract class ScanByTypeTask extends ScanTask {
     }
 
     @Override
-    protected List<DurableInstance> scan(IInstanceContext context, DurableInstance cursor, long limit) {
-        return context.getByType(type, cursor, limit);
+    protected List<DurableInstance> scan(IInstanceContext context, long cursor, long limit) {
+        return NncUtils.filter(context.scan(cursor, limit), type::isInstance);
     }
 
     @Override

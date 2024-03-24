@@ -25,13 +25,13 @@ public class ServerTreeSource implements TreeSource {
     }
 
     @Override
-    public List<Tree> load(Collection<Id> ids, IInstanceContext context) {
-        var trees = typeClient.getTrees(new GetTreesRequest(new ArrayList<>(NncUtils.map(ids, Id::toString))));
-        return NncUtils.map(trees, t -> new Tree(Id.parse(t.id()), t.version(), t.bytes()));
+    public List<Tree> load(Collection<Long> ids, IInstanceContext context) {
+        var trees = typeClient.getTrees(new GetTreesRequest(new ArrayList<>(ids)));
+        return NncUtils.map(trees, t -> new Tree(t.id(), t.version(), t.nextNodeId(), t.bytes()));
     }
 
     @Override
-    public void remove(List<Id> ids) {
+    public void remove(List<Long> ids) {
         throw new UnsupportedOperationException();
     }
 }

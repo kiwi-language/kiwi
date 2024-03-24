@@ -6,18 +6,16 @@ import java.util.Objects;
 
 public class ChildViewId extends DefaultViewId {
 
-    public static final int TAG = 4;
-
     private final ViewId rootId;
 
-    public ChildViewId(Id mappingId, Id sourceId, ViewId rootId) {
-        super(mappingId, sourceId);
+    public ChildViewId(boolean isArray, Id mappingId, Id sourceId, ViewId rootId) {
+        super(isArray, mappingId, sourceId);
         this.rootId = rootId;
     }
 
     @Override
     public void write(InstanceOutput output) {
-        output.writeIdTag(IdTag.CHILD_VIEW);
+        output.writeIdTag(IdTag.CHILD_VIEW, isArray());
         getMappingId().write(output);
         getSourceId().write(output);
         rootId.write(output);

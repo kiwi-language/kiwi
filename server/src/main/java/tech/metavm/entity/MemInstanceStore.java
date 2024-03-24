@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.InstanceStore;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.mappers.*;
 import tech.metavm.util.NncUtils;
@@ -36,8 +35,8 @@ public class MemInstanceStore extends InstanceStore {
         return (MemIndexEntryMapper) indexEntryMapper;
     }
 
-    public InstancePO get(long appId, Id id) {
-        return NncUtils.first(instanceMapper.selectByIds(appId, List.of(id.toBytes()), 0));
+    public InstancePO get(long appId, long id) {
+        return NncUtils.first(instanceMapper.selectByIds(appId, List.of(id), 0));
     }
 
     public MemInstanceMapper getInstanceMapper() {

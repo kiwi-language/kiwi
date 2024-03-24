@@ -42,7 +42,7 @@ public class ClassInstanceTest extends TestCase {
                         new ArrayInstance(fooType.bazArrayType())
                 ))
                 .build();
-        foo.initId(DefaultPhysicalId.of(100000L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        foo.initId(DefaultPhysicalId.ofObject(100000L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
         FieldValue fieldValueDTO = foo.toFieldValueDTO();
         Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
         Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
@@ -94,7 +94,7 @@ public class ClassInstanceTest extends TestCase {
                 ),
                 type
         );
-        instance.initId(DefaultPhysicalId.of(10001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        instance.initId(DefaultPhysicalId.ofObject(10001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 

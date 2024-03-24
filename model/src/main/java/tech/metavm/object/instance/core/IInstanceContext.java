@@ -56,11 +56,13 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     List<DurableInstance> batchGet(Collection<Id> ids);
 
-    List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit);
+//    List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit);
 
-    List<DurableInstance> scan(DurableInstance startExclusive, long limit);
+//    List<DurableInstance> scan(DurableInstance startExclusive, long limit);
 
-    boolean existsInstances(Type type, boolean persistedOnly);
+//    boolean existsInstances(Type type, boolean persistedOnly);
+
+    List<DurableInstance> scan(long start, long limit);
 
     ParameterizedFlowProvider getParameterizedFlowProvider();
 

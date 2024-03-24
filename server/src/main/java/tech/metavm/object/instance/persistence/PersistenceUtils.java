@@ -7,7 +7,9 @@ import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.*;
+import tech.metavm.system.RegionConstants;
 import tech.metavm.util.*;
 
 import java.io.ByteArrayInputStream;
@@ -49,30 +51,22 @@ public class PersistenceUtils {
         classInstance.ensureAllFieldsInitialized();
         return new InstancePO(
                 appId,
-                classInstance.getId().toBytes(),
-                classInstance.getType().getId().toBytes(),
-                classInstance.getTitle(),
+                classInstance.getId().getPhysicalId(),
                 InstanceOutput.toByteArray(classInstance),
-                NncUtils.get(classInstance.getParent(), p -> p.getId().toBytes()),
-                NncUtils.get(classInstance.getParentField(), f -> f.getId().toBytes()),
-                classInstance.getRoot().getId().toBytes(),
                 classInstance.getVersion(),
-                classInstance.getSyncVersion()
+                classInstance.getSyncVersion(),
+                classInstance.getNextNodeId()
         );
     }
 
     private static InstancePO toInstancePO(ArrayInstance arrayInstance, long appId) {
         return new InstancePO(
                 appId,
-                arrayInstance.getId().toBytes(),
-                arrayInstance.getType().getId().toBytes(),
-                arrayInstance.getTitle(),
+                arrayInstance.getId().getPhysicalId(),
                 InstanceOutput.toByteArray(arrayInstance),
-                NncUtils.get(arrayInstance.getParent(), p -> p.getId().toBytes()),
-                NncUtils.get(arrayInstance.getParentField(), f -> f.getId().toBytes()),
-                arrayInstance.getRoot().getId().toBytes(),
                 arrayInstance.getVersion(),
-                arrayInstance.getSyncVersion()
+                arrayInstance.getSyncVersion(),
+                arrayInstance.getNextNodeId()
         );
     }
 
@@ -106,42 +100,47 @@ public class PersistenceUtils {
     }
 
     private static Set<ReferencePO> extractReferences(final ClassType classType, InstancePO instancePO) {
+        var appId = instancePO.getAppId();
         Set<ReferencePO> refs = new HashSet<>();
         new StreamVisitor(new ByteArrayInputStream(instancePO.getData())) {
-            @Override
-            public void visitField() {
-                var field = classType.getField(readId());
-                var wireType = read();
-                if (wireType == WireTypes.REFERENCE) {
-                    refs.add(new ReferencePO(
-                            instancePO.getAppId(),
-                            instancePO.getId(),
-                            readId().toBytes(),
-                            field.getId().toBytes(),
-                            ReferenceKind.getFromType(field.getType()).code()
-                    ));
-                } else
-                    super.visit(wireType);
-            }
-        }.visit();
-        return refs;
-    }
 
-    private static Set<ReferencePO> extractReferences(final ArrayType arrayType, InstancePO instancePO) {
-        Set<ReferencePO> refs = new HashSet<>();
-        new StreamVisitor(new ByteArrayInputStream(instancePO.getData())) {
+            private Id sourceId;
+            private Id fieldId;
+
+            @Override
+            public void visitRecordBody(Id id) {
+                var oldSourceId = sourceId;
+                var oldFieldId = fieldId;
+                sourceId = id;
+                if (RegionConstants.isArrayId(id)) {
+                    fieldId = null;
+                    int len = readInt();
+                    for (int i = 0; i < len; i++)
+                        visit();
+                } else {
+                    int numFields = readInt();
+                    for (int i = 0; i < numFields; i++) {
+                        fieldId = readId();
+                        visit();
+                    }
+                }
+                sourceId = oldSourceId;
+                fieldId = oldFieldId;
+            }
+
             @Override
             public void visitReference() {
                 var targetId = readId();
                 refs.add(new ReferencePO(
-                        instancePO.getAppId(),
-                        instancePO.getId(),
+                        appId,
+                        sourceId.toBytes(),
                         targetId.toBytes(),
-                        null,
-                        ReferenceKind.getFromType(arrayType.getElementType()).code()
+                        NncUtils.get(fieldId, Id::toBytes),
+                        ReferenceKind.STRONG.code()
                 ));
             }
         }.visit();
         return refs;
     }
+
 }

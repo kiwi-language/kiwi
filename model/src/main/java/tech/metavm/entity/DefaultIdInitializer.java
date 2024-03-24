@@ -5,9 +5,11 @@ import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.IdentitySet;
 
 import java.util.*;
+
+import static java.util.Objects.requireNonNull;
 
 public class DefaultIdInitializer implements IdInitializer {
 
@@ -24,50 +26,69 @@ public class DefaultIdInitializer implements IdInitializer {
 
     @Override
     public void initializeIds(long appId, Collection<? extends DurableInstance> instancesToInitId) {
-        var countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);
-        var type2ids = idProvider.allocate(appId, countMap);
+        var countMap = Map.of(ModelDefRegistry.getType(ClassType.class), instancesToInitId.size());
+        var ids = new LinkedList<>(idProvider.allocate(appId, countMap).get(ModelDefRegistry.getType(ClassType.class)));
         var classType = ModelDefRegistry.getType(ClassType.class);
         var arrayType = ModelDefRegistry.getType(ArrayType.class);
         var fieldType = ModelDefRegistry.getType(Field.class);
         Map<Type, DurableInstance> typeInstance = new HashMap<>();
-//        if(instancesToInitId.remove(classTypeInst)) {
-//            var ids = type2ids.get(classType);
-//            var id = ids.remove(ids.size() - 1);
-//            classTypeInst.initId(PhysicalId.of(id, id));
-//            typeInstance.put(classType, classTypeInst);
-//        }
         for (DurableInstance instance : instancesToInitId) {
-            if(instance.getMappedEntity() instanceof Type type)
+            if (instance.getMappedEntity() instanceof Type type)
                 typeInstance.put(type, instance);
         }
-        var type2instances = NncUtils.toMultiMap(instancesToInitId, Instance::getType);
-
-        var types = new ArrayList<>(type2instances.keySet());
-        types.sort(Comparator.comparingInt(t -> {
-            if(t == classType)
-                return 0;
-            if(t == arrayType)
-                return 1;
-            return 2;
-        }));
-        for (Type type : types) {
-            var instances = type2instances.get(type);
-            var ids = type2ids.get(type);
+        var sortedInstances = sort(instancesToInitId, typeInstance);
+        for (DurableInstance inst : sortedInstances) {
+            var type = inst.getType();
             IdTag tag;
-            if(type == classType)
+            if (type == classType)
                 tag = IdTag.CLASS_TYPE_PHYSICAL;
-            else if(type == arrayType)
+            else if (type == arrayType)
                 tag = IdTag.ARRAY_TYPE_PHYSICAL;
-            else if(type == fieldType)
+            else if (type == fieldType)
                 tag = IdTag.FIELD_PHYSICAL;
             else
                 tag = null;
-            if(tag != null)
-                NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(new TaggedPhysicalId(tag, id, 0)));
+            long treeId, nodeId;
+            if(inst.isRoot()) {
+                treeId = requireNonNull(ids.poll());
+                nodeId = 0;
+            } else {
+                var root = inst.getRoot();
+                treeId = root.getPhysicalId();
+                nodeId = root.nextNodeId();
+            }
+            if (tag != null)
+                inst.initId(new TaggedPhysicalId(tag, treeId, nodeId));
             else {
                 var typeId = typeInstance.containsKey(type) ? typeInstance.get(type).getId() : type.getId();
-                NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(DefaultPhysicalId.of(id, 0, typeId)));
+                inst.initId(new DefaultPhysicalId(inst instanceof ArrayInstance, treeId, nodeId, typeId));
             }
         }
     }
+
+    private List<DurableInstance> sort(Collection<? extends DurableInstance> instances, Map<Type, DurableInstance> typeInstance) {
+        var result = new ArrayList<DurableInstance>();
+        var visited = new IdentitySet<DurableInstance>();
+        var visiting = new IdentitySet<DurableInstance>();
+        instances.forEach(i -> visit(i, result, visited, visiting, typeInstance));
+        return result;
+    }
+
+    private void visit(DurableInstance instance, List<DurableInstance> result, Set<DurableInstance> visited,
+                       Set<DurableInstance> visiting, Map<Type, DurableInstance> type2instance) {
+        if(visited.contains(instance))
+            return;
+        if(visiting.contains(instance))
+            throw new IllegalArgumentException("Cycle detected");
+        visiting.add(instance);
+        var typeInst = type2instance.get(instance.getType());
+        if(typeInst != null && typeInst != instance)
+            visit(typeInst, result, visited, visiting, type2instance);
+        if(!instance.isRoot() && instance.getRoot().tryGetPhysicalId() == null)
+            visit(instance.getRoot(), result, visited, visiting, type2instance);
+        visiting.remove(instance);
+        visited.add(instance);
+        result.add(instance);
+    }
+
 }

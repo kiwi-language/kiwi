@@ -37,15 +37,15 @@ public class Constants {
     private Constants() {}
 
     public static Id getRootAppId() {
-        return DefaultPhysicalId.of(ROOT_APP_ID, 0L, ModelDefRegistry.getType(Application.class));
+        return DefaultPhysicalId.ofObject(ROOT_APP_ID, 0L, ModelDefRegistry.getType(Application.class));
     }
 
     public static Id getPlatformAppId() {
-        return DefaultPhysicalId.of(PLATFORM_APP_ID, 0L, ModelDefRegistry.getType(Application.class));
+        return DefaultPhysicalId.ofObject(PLATFORM_APP_ID, 0L, ModelDefRegistry.getType(Application.class));
     }
 
     public static Id getAppId(long id) {
-        return DefaultPhysicalId.of(id, 0L, ModelDefRegistry.getType(Application.class));
+        return DefaultPhysicalId.ofObject(id, 0L, ModelDefRegistry.getType(Application.class));
     }
 
 }

@@ -36,8 +36,8 @@ public class StdAllocatorsTest extends TestCase {
 
         
         
-        allocators.putId(Field.class, DefaultPhysicalId.of(class2ids.get(ClassType.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        allocators.putId(typeNameField, DefaultPhysicalId.of(class2ids.get(Field.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocators.putId(Field.class, DefaultPhysicalId.ofObject(class2ids.get(ClassType.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocators.putId(typeNameField, DefaultPhysicalId.ofObject(class2ids.get(Field.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
 
         var fieldClassId = allocators.getId(Field.class);
         LOGGER.info("Field id: " + fieldClassId);
@@ -52,11 +52,11 @@ public class StdAllocatorsTest extends TestCase {
         var class2ids = allocators.allocate(
                 Map.of(ClassType.class, 3, Field.class, 1, TypeCategory.class, 1)
         );
-        allocators.putId(ClassType.class, DefaultPhysicalId.of(class2ids.get(ClassType.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        allocators.putId(Field.class, DefaultPhysicalId.of(class2ids.get(ClassType.class).get(1), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        allocators.putId(TypeCategory.class, DefaultPhysicalId.of(class2ids.get(ClassType.class).get(2), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        allocators.putId(typeNameReflectField, DefaultPhysicalId.of(class2ids.get(Field.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        allocators.putId(TypeCategory.CLASS, DefaultPhysicalId.of(class2ids.get(TypeCategory.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocators.putId(ClassType.class, DefaultPhysicalId.ofObject(class2ids.get(ClassType.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocators.putId(Field.class, DefaultPhysicalId.ofObject(class2ids.get(ClassType.class).get(1), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocators.putId(TypeCategory.class, DefaultPhysicalId.ofObject(class2ids.get(ClassType.class).get(2), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocators.putId(typeNameReflectField, DefaultPhysicalId.ofObject(class2ids.get(Field.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocators.putId(TypeCategory.CLASS, DefaultPhysicalId.ofObject(class2ids.get(TypeCategory.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
 
         var typeClassId = allocators.getId(ClassType.class);
         var fieldClassId = allocators.getId(Field.class);

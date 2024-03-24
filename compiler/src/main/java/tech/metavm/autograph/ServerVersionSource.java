@@ -2,9 +2,7 @@ package tech.metavm.autograph;
 
 import tech.metavm.entity.VersionSource;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.InstanceVersion;
-import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.TreeVersion;
 import tech.metavm.object.instance.rest.InstanceVersionsRequest;
 import tech.metavm.util.NncUtils;
 
@@ -19,12 +17,12 @@ public class ServerVersionSource implements VersionSource {
     }
 
     @Override
-    public List<InstanceVersion> getRootVersions(List<String> ids, IInstanceContext context) {
+    public List<TreeVersion> getVersions(List<Long> ids, IInstanceContext context) {
         var versions = typeClient.getVersions(
                 new InstanceVersionsRequest(ids));
         return NncUtils.map(
                 versions,
-                v -> new InstanceVersion((PhysicalId) Id.parse(v.id()), v.version())
+                v -> new TreeVersion(v.id(), v.version())
         );
     }
 

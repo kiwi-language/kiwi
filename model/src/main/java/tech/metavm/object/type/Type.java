@@ -23,6 +23,8 @@ import java.util.Set;
 @EntityType("类型")
 public abstract class Type extends Element implements LoadAware, GlobalKey {
 
+    public static final IndexDef<Type> IDX_ALL_FLAG = IndexDef.create(Type.class, "allFlag");
+
     public static final IndexDef<Type> IDX_CATEGORY = IndexDef.create(Type.class, "category");
 
     @SuppressWarnings("StaticInitializerReferencesSubClass")
@@ -43,6 +45,9 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     private boolean error = false;
 
     //<editor-fold desc="search flags">
+
+    private boolean allFlag = true;
+
     @SuppressWarnings("unused")
     private boolean templateFlag = false;
     //</editor-fold>

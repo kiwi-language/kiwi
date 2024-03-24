@@ -6,8 +6,8 @@ import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
-import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.PersistenceUtils;
+import tech.metavm.object.instance.persistence.VersionRT;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.IndexProvider;
@@ -35,32 +35,32 @@ public class IndexConstraintPlugin implements ContextPlugin {
     }
 
     @Override
-    public boolean beforeSaving(EntityChange<InstancePO> change, IInstanceContext context) {
+    public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
         Map<Id, ClassInstance> instanceMap = new HashMap<>();
         List<IndexEntryPO> currentEntries = new ArrayList<>();
-        change.forEachInsertOrUpdate(instancePO -> {
-            var instance = context.get(instancePO.getInstanceId());
+        change.forEachInsertOrUpdate(ver -> {
+            var instance = context.get(ver.id());
             if (instance instanceof ClassInstance classInstance) {
                 instanceMap.put(classInstance.getId(), classInstance);
                 currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.getParameterizedFlowProvider(), context.getAppId()));
             }
         });
-        List<InstancePO> oldInstances = NncUtils.union(change.updates(), change.deletes());
-        var oldInstanceIds = NncUtils.mapUnique(oldInstances, InstancePO::getInstanceId);
+        var oldVersions = NncUtils.union(change.updates(), change.deletes());
+        var oldIdSet = NncUtils.mapUnique(oldVersions, VersionRT::id);
         Set<IndexEntryPO> relatedEntries = new HashSet<>();
-        NncUtils.doInBatch(NncUtils.map(oldInstances, InstancePO::getId),
+        NncUtils.doInBatch(NncUtils.map(oldVersions, v -> v.id().toBytes()),
                 ids -> relatedEntries.addAll(indexEntryMapper.selectByInstanceIds(context.getAppId(), ids)));
         NncUtils.doInBatch(NncUtils.map(currentEntries, IndexEntryPO::getKey),
                 keys -> relatedEntries.addAll(indexEntryMapper.selectByKeys(context.getAppId(), keys)));
 
         List<IndexEntryPO> oldEntries = NncUtils.filter(
                 relatedEntries,
-                e -> oldInstanceIds.contains(e.getId())
+                e -> oldIdSet.contains(e.getId())
         );
 
         List<IndexEntryPO> conflictingEntries = NncUtils.exclude(
                 relatedEntries,
-                e -> oldInstanceIds.contains(e.getId())
+                e -> oldIdSet.contains(e.getId())
         );
 
         Map<IndexKeyPO, List<Id>> newKeyMap = NncUtils.toMultiMap(
@@ -108,7 +108,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
     }
 
     @Override
-    public void afterSaving(EntityChange<InstancePO> change, IInstanceContext context) {
+    public void afterSaving(EntityChange<VersionRT> change, IInstanceContext context) {
         List<IndexEntryPO> oldItems = change.getAttribute(OLD_INDEX_ITEMS);
         List<IndexEntryPO> currentItems = change.getAttribute(NEW_INDEX_ITEMS);
         ChangeList<IndexEntryPO> changeList = ChangeList.build(oldItems, currentItems, Function.identity());

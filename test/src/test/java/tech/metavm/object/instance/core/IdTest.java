@@ -6,45 +6,45 @@ import org.junit.Assert;
 public class IdTest extends TestCase {
 
     public void test() {
-        Id id = DefaultPhysicalId.of(1L, 0L, TaggedPhysicalId.ofClass(2L, 3L));
+        Id id = DefaultPhysicalId.ofObject(1L, 0L, TaggedPhysicalId.ofClass(2L, 3L));
         assertEquals(id, Id.parse(id.toString()));
         id = new TmpId(1L);
         assertEquals(id, Id.parse(id.toString()));
-        id = new DefaultViewId(DefaultPhysicalId.of(4L, 1L, TaggedPhysicalId.ofClass(4L, 0L)), id);
+        id = new DefaultViewId(false, DefaultPhysicalId.ofObject(4L, 1L, TaggedPhysicalId.ofClass(4L, 0L)), id);
         assertEquals(id, Id.parse(id.toString()));
     }
 
     public void testChildViewId() {
-        Id rootId = DefaultPhysicalId.of(1L, 0L, TaggedPhysicalId.ofClass(2L, 3L));
-        var mappingId = DefaultPhysicalId.of(4L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
-        ViewId rootViewId = new DefaultViewId(mappingId, rootId);
+        Id rootId = DefaultPhysicalId.ofObject(1L, 0L, TaggedPhysicalId.ofClass(2L, 3L));
+        var mappingId = DefaultPhysicalId.ofObject(4L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
+        ViewId rootViewId = new DefaultViewId(false, mappingId, rootId);
 
-        ChildViewId childId = new ChildViewId(mappingId, rootId, rootViewId);
+        ChildViewId childId = new ChildViewId(false, mappingId, rootId, rootViewId);
 
         var parsedId = Id.parse(childId.toString());
         assertEquals(childId, parsedId);
     }
 
     public void testFieldViewId() {
-        var sourceId = DefaultPhysicalId.of(1L, 0L, TaggedPhysicalId.ofClass(2L, 3L));
-        var mappingId = DefaultPhysicalId.of(4L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
-        var parentId = new DefaultViewId(mappingId, sourceId);
+        var sourceId = DefaultPhysicalId.ofObject(1L, 0L, TaggedPhysicalId.ofClass(2L, 3L));
+        var mappingId = DefaultPhysicalId.ofObject(4L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
+        var parentId = new DefaultViewId(false, mappingId, sourceId);
 
-        var mappingId2 = DefaultPhysicalId.of(5L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
-        var fieldId = DefaultPhysicalId.of(6L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
+        var mappingId2 = DefaultPhysicalId.ofObject(5L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
+        var fieldId = DefaultPhysicalId.ofObject(6L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
         var typeId = TaggedPhysicalId.ofClass(10L, 0L);
-        Id id = new FieldViewId(parentId, mappingId2, fieldId, null, typeId);
+        Id id = new FieldViewId(false, parentId, mappingId2, fieldId, null, typeId);
         Assert.assertEquals(id, Id.parse(id.toString()));
     }
 
     public void testElementViewId() {
-        var sourceId = DefaultPhysicalId.of(1L, 0L, TaggedPhysicalId.ofClass(2L, 3L));
-        var mappingId = DefaultPhysicalId.of(4L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
-        var parentId = new DefaultViewId(mappingId, sourceId);
+        var sourceId = DefaultPhysicalId.ofObject(1L, 0L, TaggedPhysicalId.ofClass(2L, 3L));
+        var mappingId = DefaultPhysicalId.ofObject(4L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
+        var parentId = new DefaultViewId(false, mappingId, sourceId);
         var typeId = TaggedPhysicalId.ofClass(10L, 0L);
 
-        var mappingId2 = DefaultPhysicalId.of(5L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
-        Id id = new ElementViewId(parentId, mappingId2, 2, null, typeId);
+        var mappingId2 = DefaultPhysicalId.ofObject(5L, 1L, TaggedPhysicalId.ofClass(4L, 0L));
+        Id id = new ElementViewId(false, parentId, mappingId2, 2, null, typeId);
         var recovered = Id.parse(id.toString());
         Assert.assertEquals(id, recovered);
     }

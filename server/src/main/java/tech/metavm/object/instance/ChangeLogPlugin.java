@@ -6,8 +6,7 @@ import tech.metavm.entity.EntityChange;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.log.InstanceLogService;
-import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.util.ContextUtil;
+import tech.metavm.object.instance.persistence.VersionRT;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -26,15 +25,15 @@ public class ChangeLogPlugin implements ContextPlugin {
     }
 
     @Override
-    public boolean beforeSaving(EntityChange<InstancePO> change, IInstanceContext context) {
+    public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
         List<InstanceLog> logs = new ArrayList<>();
-        for (InstancePO instance : change.inserts()) {
+        for (var instance : change.inserts()) {
             logs.add(InstanceLog.insert(instance));
         }
-        for (InstancePO instance : change.updates()) {
+        for (var instance : change.updates()) {
             logs.add(InstanceLog.update(instance));
         }
-        for (InstancePO delete : change.deletes()) {
+        for (var delete : change.deletes()) {
             logs.add(InstanceLog.delete(delete));
         }
         context.getAttribute(CHANGE_LOGS).addAll(logs);
@@ -42,7 +41,7 @@ public class ChangeLogPlugin implements ContextPlugin {
     }
 
     @Override
-    public void afterSaving(EntityChange<InstancePO> change, IInstanceContext context) {
+    public void afterSaving(EntityChange<VersionRT> change, IInstanceContext context) {
         // TODO save change logs
     }
 

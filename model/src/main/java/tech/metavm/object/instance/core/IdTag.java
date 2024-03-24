@@ -5,15 +5,15 @@ import tech.metavm.util.NncUtils;
 public enum IdTag {
 
     NULL(0),
-    DEFAULT_PHYSICAL(1),
-    CLASS_TYPE_PHYSICAL(2),
-    ARRAY_TYPE_PHYSICAL(3),
-    FIELD_PHYSICAL(4),
+    OBJECT_PHYSICAL(1),
+    CLASS_TYPE_PHYSICAL(3),
+    ARRAY_TYPE_PHYSICAL(4),
+    FIELD_PHYSICAL(5),
     TMP(19),
     DEFAULT_VIEW(11),
-    CHILD_VIEW(12),
-    FIELD_VIEW(13),
-    ELEMENT_VIEW(14),
+    CHILD_VIEW(13),
+    FIELD_VIEW(15),
+    ELEMENT_VIEW(17),
     MOCK(100);
 
     private final int code;
@@ -24,6 +24,10 @@ public enum IdTag {
 
     public int code() {
         return code;
+    }
+
+    public int maskedCode(boolean isArray) {
+        return code | (isArray ? 0x80 : 0);
     }
 
     public static IdTag fromCode(int code) {

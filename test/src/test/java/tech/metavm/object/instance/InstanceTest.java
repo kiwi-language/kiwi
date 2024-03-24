@@ -43,7 +43,7 @@ public class InstanceTest extends TestCase {
         Map<Field, Instance> barData = new HashMap<>();
         barData.put(fooTypes.barCodeField(), stringInstance(CONST_BAR_CODE));
         ClassInstance bar = ClassInstance.create(barData, fooTypes.barType());
-        bar.initId(DefaultPhysicalId.of(2L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        bar.initId(DefaultPhysicalId.ofObject(2L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
         return bar;
     }
 
@@ -58,7 +58,7 @@ public class InstanceTest extends TestCase {
         );
         fooData.put(fooTypes.fooBazListField(), new ArrayInstance(fooTypes.bazArrayType()));
         ClassInstance foo = ClassInstance.create(fooData, fooTypes.fooType());
-        foo.initId(DefaultPhysicalId.of(1L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        foo.initId(DefaultPhysicalId.ofObject(1L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
         return foo;
     }
 

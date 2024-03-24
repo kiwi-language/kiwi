@@ -99,6 +99,9 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     @CopyIgnore
     private @Nullable ClassType copySource;
 
+    @EntityField("状态")
+    private ClassTypeState state = ClassTypeState.INIT;
+
     private boolean struct;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
@@ -366,6 +369,18 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public void sortFields(Comparator<Field> comparator) {
         this.fields.sort(comparator);
+    }
+
+    public ClassTypeState getState() {
+        return state;
+    }
+
+    public boolean isDeployed() {
+        return state.ordinal() >= ClassTypeState.DEPLOYED.ordinal();
+    }
+
+    public void setState(ClassTypeState state) {
+        this.state = state;
     }
 
     public List<Field> getSortedFields() {

@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import tech.metavm.common.Page;
 import tech.metavm.common.Result;
 import tech.metavm.object.instance.InstanceManager;
+import tech.metavm.object.instance.core.TreeVersion;
 
 import java.util.List;
 
@@ -33,7 +34,7 @@ public class InstanceController {
     }
 
     @PostMapping("/versions")
-    public Result<List<InstanceVersionDTO>> getVersions(@RequestBody InstanceVersionsRequest request) {
+    public Result<List<TreeVersion>> getVersions(@RequestBody InstanceVersionsRequest request) {
         return Result.success(instanceManager.getVersions(request.ids()));
     }
 

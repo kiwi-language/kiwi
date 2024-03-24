@@ -10,6 +10,7 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionParser;
 import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.query.GraphQueryExecutor;
 import tech.metavm.object.instance.query.InstanceNode;
@@ -20,9 +21,11 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.ParameterizedTypeProvider;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.ValueFormatter;
+import tech.metavm.system.RegionConstants;
 import tech.metavm.util.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class InstanceManager extends EntityContextFactoryBean {
@@ -69,19 +72,25 @@ public class InstanceManager extends EntityContextFactoryBean {
         }
     }
 
-    public List<TreeDTO> getTrees(List<String> ids) {
+    public List<TreeDTO> getTrees(List<Long> ids) {
         try (var context = newInstanceContext()) {
-            var instances = context.batchGet(NncUtils.map(ids, Id::parse));
-            var roots = NncUtils.mapUnique(instances, DurableInstance::getRoot);
-            return NncUtils.map(roots, r -> r.toTree(true).toDTO());
+            var systemIds = NncUtils.filter(ids, RegionConstants::isSystemId);
+            var nonSystemIds = NncUtils.exclude(ids, RegionConstants::isSystemId);
+            var systemInstances = instanceStore.loadForest(systemIds, ModelDefRegistry.getDefContext().getInstanceContext());
+            var nonSystemInstances = instanceStore.loadForest(nonSystemIds, context);
+            var instanceMap = new HashMap<Long, InstancePO>();
+            systemInstances.forEach(i -> instanceMap.put(i.getId(), i));
+            nonSystemInstances.forEach(i -> instanceMap.put(i.getId(), i));
+            return ids.stream()
+                    .map(instanceMap::get)
+                    .map(i -> new TreeDTO(i.getId(), i.getVersion(), i.getNextNodeId(), i.getData()))
+                    .collect(Collectors.toList());
         }
     }
 
-    public List<InstanceVersionDTO> getVersions(List<String> ids) {
+    public List<TreeVersion> getVersions(List<Long> ids) {
         try (var context = newInstanceContext()) {
-            var instances = context.batchGet(NncUtils.map(ids, Id::parse));
-            var roots = NncUtils.mapUnique(instances, DurableInstance::getRoot);
-            return NncUtils.map(roots, r -> new InstanceVersionDTO(r.getStringId(), r.getVersion()));
+            return instanceStore.getVersions(ids, context);
         }
     }
 
@@ -94,7 +103,7 @@ public class InstanceManager extends EntityContextFactoryBean {
                 if (instanceId instanceof PhysicalId/* && !classInstance.getType().isStruct()*/) {
                     var defaultMapping = classInstance.getType().getDefaultMapping();
                     if (defaultMapping != null) {
-                        var viewId = new DefaultViewId(defaultMapping.getId(), instanceId);
+                        var viewId = new DefaultViewId(false, defaultMapping.getId(), instanceId);
                         var view = context.get(viewId);
                         return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(view, 1));
                     }
@@ -182,15 +191,16 @@ public class InstanceManager extends EntityContextFactoryBean {
 
     @Transactional
     public void deleteByTypes(List<String> typeIds) {
-        try (var context = newInstanceContext()) {
-            var types = NncUtils.mapAndFilter(typeIds, id -> context.getType(Id.parse(id)), type -> !type.isEnum());
-            var toRemove = NncUtils.flatMap(
-                    types,
-                    type -> context.getByType(type, null, 1000)
-            );
-            context.batchRemove(toRemove);
-            context.finish();
-        }
+        // TODO run a task to remove instances by type
+//        try (var context = newInstanceContext()) {
+//            var types = NncUtils.mapAndFilter(typeIds, id -> context.getType(Id.parse(id)), type -> !type.isEnum());
+//            var toRemove = NncUtils.flatMap(
+//                    types,
+//                    type -> context.getByType(type, null, 1000)
+//            );
+//            context.batchRemove(toRemove);
+//            context.finish();
+//        }
     }
 
     public List<String> getReferenceChain(String stringId, int rootMode) {

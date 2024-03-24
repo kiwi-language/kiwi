@@ -10,7 +10,6 @@ import tech.metavm.object.instance.core.BufferingInstanceContext;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
@@ -43,19 +42,24 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit) {
-        return null;
+    public List<DurableInstance> scan(long start, long limit) {
+        throw new UnsupportedOperationException();
     }
 
-    @Override
-    public List<DurableInstance> scan(DurableInstance startExclusive, long limit) {
-        return null;
-    }
+//    @Override
+//    public List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit) {
+//        return null;
+//    }
 
-    @Override
-    public boolean existsInstances(Type type, boolean persistedOnly) {
-        return false;
-    }
+//    @Override
+//    public List<DurableInstance> scan(DurableInstance startExclusive, long limit) {
+//        return null;
+//    }
+
+//    @Override
+//    public boolean existsInstances(Type type, boolean persistedOnly) {
+//        return false;
+//    }
 
     @Override
     public List<DurableInstance> getByReferenceTargetId(Id targetId, DurableInstance startExclusive, long limit) {

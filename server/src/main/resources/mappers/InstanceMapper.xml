@@ -37,10 +37,10 @@
         <foreach collection="versions" item="item" separator=";">
             update instance
             set deleted_at = #{timestamp},
-            version = #{item.version}
+                version    = #{item.version}
             where app_id = #{appId}
-            and deleted_at = 0
-            and id = #{item.id}
+              and deleted_at = 0
+              and id = #{item.id}
         </foreach>
     </update>
 
@@ -50,8 +50,8 @@
         values
         <foreach collection="collection" item="item" separator=",">
             (#{item.id}, #{item.title}, #{item.appId}, #{item.typeTag}, #{item.typeId},
-            #{item.data}, #{item.rootId},
-            #{item.parentId}, #{item.parentFieldId})
+             #{item.data}, #{item.rootId},
+             #{item.parentId}, #{item.parentFieldId})
         </foreach>
     </insert>
 
@@ -62,12 +62,12 @@
             <if test="item.data != null">
                 data = #{item.data},
             </if>
-            title = #{item.title},
-            version = #{item.version},
+            title        = #{item.title},
+            version      = #{item.version},
             sync_version = #{item.syncVersion}
             where id = #{item.id}
-            and app_id = #{item.appId}
-            and deleted_at = 0
+              and app_id = #{item.appId}
+              and deleted_at = 0
         </foreach>
     </update>
 
@@ -85,9 +85,9 @@
         <include refid="Base_Column_List"/>
         from instance
         where app_id = #{appId}
-        and deleted_at = 0
-        and
-        id in
+          and deleted_at = 0
+          and
+            id in
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>
@@ -95,7 +95,8 @@
             for share
         </if>
         <if test="lockMode == 2">
-            for update
+            for
+            update
         </if>
     </select>
 
@@ -105,9 +106,9 @@
             <include refid="Base_Column_List"/>
             from instance
             where app_id = #{appId}
-            and deleted_at = 0
-            and type_id = #{query.typeId}
-            and id >= #{query.startId}
+              and deleted_at = 0
+              and type_id = #{query.typeId}
+              and id >= #{query.startId}
             limit #{query.limit}
         </foreach>
     </select>
@@ -127,9 +128,9 @@
         select id
         from instance
         where app_id = #{appId}
-        and deleted_at = 0
-        and
-        id in
+          and deleted_at = 0
+          and
+            id in
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>
@@ -141,19 +142,20 @@
             <include refid="Base_Column_List"/>
             from instance
             where app_id = #{appId}
-            and deleted_at = 0
-            and id > #{query}
+              and deleted_at = 0
+              and id > #{query}
             limit #{query}
         </foreach>
     </select>
 
-    <select id="selectVersions" resultType="java.lang.Long">
-        select version
-        from instance where id in
-        <foreach collection="ids" open="(" close=")" separator="," item="id">
-            #{id}
-        </foreach>
-        and deleted_at = 0 for share
+    <select id="scanTrees" resultType="long">
+        select
+        id
+        from instance
+        where app_id = #{appId}
+          and deleted_at = 0
+          and id > #{startId}
+        limit #{limit}
     </select>
 
     <select id="selectForest" resultMap="BaseResultMap">
@@ -161,9 +163,9 @@
         <include refid="Base_Column_List"/>
         from instance
         where app_id = #{appId}
-        and deleted_at = 0
-        and
-        root_id in
+          and deleted_at = 0
+          and
+            root_id in
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>
@@ -171,16 +173,17 @@
             for share
         </if>
         <if test="lockMode == 2">
-            for update
+            for
+            update
         </if>
     </select>
 
-    <select id="selectRootVersions" resultType="tech.metavm.object.instance.persistence.Version">
-        select distinct r.id, r.type_tag as typeTag, r.type_id as typeId, r.version
+    <select id="selectVersions" resultType="tech.metavm.object.instance.core.TreeVersion">
+        select distinct r.id, r.version
         from instance r
-        inner join instance i on r.id = i.root_id
+                 inner join instance i on r.id = i.root_id
         where i.app_id = #{appId}
-        and i.id in
+          and i.id in
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>

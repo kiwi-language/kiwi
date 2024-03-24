@@ -13,7 +13,8 @@ public abstract class ViewId extends Id {
 
     private final @Nullable Id mappingId;
 
-    public ViewId(@Nullable Id mappingId) {
+    public ViewId(boolean isArray, @Nullable Id mappingId) {
+        super(isArray);
         this.mappingId = mappingId;
     }
 

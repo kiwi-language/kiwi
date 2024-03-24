@@ -11,14 +11,14 @@ public class ElementViewId extends PathViewId {
 
     private final int index;
 
-    public ElementViewId(ViewId parent, @Nullable Id mappingId, int index, @Nullable Id sourceId, Id typeId) {
-        super(parent, mappingId, sourceId, typeId);
+    public ElementViewId(boolean isArray, ViewId parent, @Nullable Id mappingId, int index, @Nullable Id sourceId, Id typeId) {
+        super(isArray, parent, mappingId, sourceId, typeId);
         this.index = index;
     }
 
     @Override
     public void write(InstanceOutput output) {
-        output.writeIdTag(IdTag.ELEMENT_VIEW);
+        output.writeIdTag(IdTag.ELEMENT_VIEW, isArray());
         getParent().write(output);
         writeMappingId(output);
         output.writeInt(index);

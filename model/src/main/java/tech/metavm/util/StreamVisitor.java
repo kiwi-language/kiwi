@@ -40,6 +40,7 @@ public class StreamVisitor {
 
     public void visitMessage() {
         input.readLong();
+        input.readInt();
         visit();
     }
 

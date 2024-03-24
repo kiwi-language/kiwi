@@ -80,7 +80,7 @@ public class TypeManager extends EntityContextFactoryBean {
     public TreeResponse queryTrees(TypeTreeQuery query) {
         try (var context = newContext()) {
             List<?> entities;
-            List<String> removedIds;
+            List<Long> removedIds;
             long version;
             if (query.version() == -1L) {
                 entities = getAllTypes(context);
@@ -92,10 +92,16 @@ public class TypeManager extends EntityContextFactoryBean {
                         NncUtils.map(patch.changedTypeIds(), context::getType),
                         NncUtils.map(patch.changedFunctionIds(), context::getFunction)
                 );
-                removedIds = NncUtils.merge(
+                var removedInstanceIds = NncUtils.merge(
                         patch.removedTypeIds(),
                         patch.removedFunctionIds()
                 );
+                removedIds = new ArrayList<>();
+                for (String removedInstanceId : removedInstanceIds) {
+                    var id = Id.parse(removedInstanceId);
+                    if(id instanceof PhysicalId physicalId && physicalId.getNodeId() == 0L)
+                        removedIds.add(id.getPhysicalId());
+                }
                 version = patch.version();
             }
             return new TreeResponse(
@@ -148,16 +154,18 @@ public class TypeManager extends EntityContextFactoryBean {
         List<Type> types = new ArrayList<>(
                 NncUtils.exclude(defContext.getAllBufferedEntities(Type.class), Entity::isEphemeralEntity)
         );
-        for (Class<? extends Type> customTypeClass : CUSTOM_TYPE_CLASSES) {
-            context.getAllByType(customTypeClass, types);
-        }
+        types.addAll(context.selectByKey(Type.IDX_ALL_FLAG, true));
         return types;
+//        for (Class<? extends Type> customTypeClass : CUSTOM_TYPE_CLASSES) {
+//            context.getAllByType(customTypeClass, types);
+//        }
+//        return types;
     }
 
     private List<Function> getAllFunctions(IEntityContext context) {
         var defContext = context.getDefContext();
         var functions = new ArrayList<>(defContext.getAllBufferedEntities(Function.class));
-        context.getAllByType(Function.class, functions);
+        functions.addAll(context.selectByKey(Function.IDX_ALL_FLAG, true));
         return functions;
     }
 
@@ -349,7 +357,7 @@ public class TypeManager extends EntityContextFactoryBean {
             );
             for (ClassType newClass : newClasses) {
                 if (!newClass.isInterface()) {
-                    context.initIds();
+//                    context.initIds();
                     initClass(newClass, context);
                 }
             }

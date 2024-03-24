@@ -17,8 +17,8 @@ public abstract class PathViewId extends ViewId {
 
     private final Id typeId;
 
-    protected PathViewId(ViewId parent, @Nullable Id mappingId, @Nullable Id sourceId, Id typeId) {
-        super(mappingId);
+    protected PathViewId(boolean isArray, ViewId parent, @Nullable Id mappingId, @Nullable Id sourceId, Id typeId) {
+        super(isArray, mappingId);
         this.parent = parent;
         this.sourceId = sourceId;
         this.typeId = typeId;

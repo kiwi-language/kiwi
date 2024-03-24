@@ -70,19 +70,19 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 NncUtils.get(parent, IEntityContext::getIntersectionTypeContext)));
     }
 
-    @Override
-    public <T> List<T> getByType(Class<? extends T> javaType, @Nullable T startExclusive, long limit) {
-        NncUtils.requireNonNull(instanceContext);
-        var startInstance = NncUtils.get(startExclusive, this::getInstance);
-        Type type = getDefContext().getType(javaType);
-        var instances = instanceContext.getByType(type, startInstance, limit);
-        return NncUtils.map(instances, i -> getEntity(javaType, i));
-    }
+//    @Override
+//    public <T> List<T> getByType(Class<? extends T> javaType, @Nullable T startExclusive, long limit) {
+//        NncUtils.requireNonNull(instanceContext);
+//        var startInstance = NncUtils.get(startExclusive, this::getInstance);
+//        Type type = getDefContext().getType(javaType);
+//        var instances = instanceContext.getByType(type, startInstance, limit);
+//        return NncUtils.map(instances, i -> getEntity(javaType, i));
+//    }
 
-    @Override
-    public boolean existsInstances(Class<?> type) {
-        return NncUtils.isNotEmpty(getByType(type, null, 1));
-    }
+//    @Override
+//    public boolean existsInstances(Class<?> type) {
+//        return NncUtils.isNotEmpty(getByType(type, null, 1));
+//    }
 
     @Override
     public <T> T getEntity(Class<T> klass, DurableInstance instance) {
@@ -833,5 +833,13 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     @Override
     public UnionType getNullableType(Type type) {
         return getUnionType(Set.of(type, StandardTypes.getNullType()));
+    }
+
+    @Override
+    public List<Object> scan(long start, long limit) {
+        return NncUtils.map(
+                instanceContext.scan(start, limit),
+                inst -> getEntity(Object.class, inst)
+        );
     }
 }

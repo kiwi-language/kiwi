@@ -54,7 +54,7 @@ public class IndexRebuildJobTest extends TestCase {
             }
         });
         try (var context = newContext()) {
-            var instances = context.getByType(Foo.class, null, 100);
+            var instances = context.selectByKey(Foo.IDX_ALL_FLAG, true);
             for (var instance : instances) {
                 Assert.assertTrue(instanceSearchService.contains(instance.getId()));
             }

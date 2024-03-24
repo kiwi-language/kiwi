@@ -7,7 +7,6 @@ import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.util.NncUtils;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType("实例扫描任务")
@@ -16,8 +15,7 @@ public abstract class ScanTask extends Task {
     public static final long BATCH_SIZE = 256L;
 
     @EntityField("游标")
-    @Nullable
-    private DurableInstance cursor;
+    private long cursor;
 
     protected ScanTask(String title) {
         super(title);
@@ -36,7 +34,7 @@ public abstract class ScanTask extends Task {
         }
         process(batch, context);
         if(batch.size() >= BATCH_SIZE) {
-            cursor = batch.get(batch.size() - 1);
+            cursor = batch.get(batch.size() - 1).getPhysicalId();
             return false;
         }
         else {
@@ -48,7 +46,7 @@ public abstract class ScanTask extends Task {
     protected void onScanOver() {}
 
     protected abstract List<DurableInstance> scan(IInstanceContext context,
-                                                  DurableInstance cursor,
+                                                  long cursor,
                                                   @SuppressWarnings("SameParameterValue") long limit);
 
     protected abstract void process(List<DurableInstance> batch, IEntityContext context);
