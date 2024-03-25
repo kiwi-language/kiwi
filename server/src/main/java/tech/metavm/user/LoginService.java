@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.entity.EntityContextFactoryBean;
+import tech.metavm.entity.EntityIndexKey;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.user.rest.dto.LoginInfo;
 import tech.metavm.user.rest.dto.LoginRequest;
@@ -20,7 +21,7 @@ import java.util.List;
 import static tech.metavm.user.Tokens.TOKEN_TTL;
 
 @Component
-public class LoginService extends EntityContextFactoryBean  {
+public class LoginService extends EntityContextFactoryBean {
 
     public static final long MAX_ATTEMPTS_IN_15_MINUTES = 30;
 
@@ -34,18 +35,16 @@ public class LoginService extends EntityContextFactoryBean  {
     public LoginResult login(LoginRequest request, String clientIP) {
         try (IEntityContext context = newContext(request.appId())) {
             var failedCountByIP = context.count(LoginAttempt.IDX_CLIENT_IP_SUCC_TIME.newQueryBuilder()
-                    .addEqItem("clientIP", clientIP)
-                    .addEqItem("successful", false)
-                    .addGtItem("time", new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS))
+                    .from(new EntityIndexKey(List.of(clientIP, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS))))
+                    .to(new EntityIndexKey(List.of(clientIP, false, new Date(Long.MAX_VALUE))))
                     .build()
             );
             if (failedCountByIP > MAX_ATTEMPTS_IN_15_MINUTES)
                 throw new BusinessException(ErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
 
             var failedCountByLoginName = context.count(LoginAttempt.IDX_LOGIN_NAME_SUCC_TIME.newQueryBuilder()
-                    .addEqItem("loginName", request.loginName())
-                    .addEqItem("successful", false)
-                    .addGtItem("time", new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS))
+                    .from(new EntityIndexKey(List.of(request.loginName(), false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS))))
+                    .to(new EntityIndexKey(List.of(request.loginName(), false, new Date(Long.MAX_VALUE))))
                     .build()
             );
             if (failedCountByLoginName > MAX_ATTEMPTS_IN_15_MINUTES)

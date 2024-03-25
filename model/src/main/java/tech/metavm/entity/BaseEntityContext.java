@@ -557,14 +557,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     private InstanceIndexQuery convertToInstanceIndexQuery(EntityIndexQuery<?> query) {
-        Class<?> javaClass = query.indexDef().getType();
-        var indexConstraint = getDefContext().getIndexConstraint(query.indexDef());
+        var index = getDefContext().getIndexConstraint(query.indexDef());
         return new InstanceIndexQuery(
-                indexConstraint,
-                NncUtils.map(
-                        query.items(),
-                        item -> createInstanceQueryItem(indexConstraint, javaClass, item)
-                ),
+                index,
+                query.from() != null ? new InstanceIndexKey(index, NncUtils.map(query.from().values(), this::resolveInstance))  : null,
+                query.to() != null ? new InstanceIndexKey(index, NncUtils.map(query.to().values(), this::resolveInstance))  : null,
                 query.desc(),
                 query.limit()
         );

@@ -1,19 +1,17 @@
 package tech.metavm.entity;
 
-import tech.metavm.expression.EvaluationContext;
-import tech.metavm.expression.InstanceEvaluationContext;
-import tech.metavm.flow.ParameterizedFlowProvider;
-import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.InstanceIndexKey;
 import tech.metavm.object.type.Index;
 import tech.metavm.util.NncUtils;
 
-import java.util.List;
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 public record InstanceIndexQuery(
         Index index,
-        List<InstanceIndexQueryItem> items,
+        @Nullable InstanceIndexKey from,
+        @Nullable InstanceIndexKey to,
         boolean desc,
         Long limit) {
 
@@ -23,29 +21,24 @@ public record InstanceIndexQuery(
         if (obj == null || obj.getClass() != this.getClass()) return false;
         var that = (InstanceIndexQuery) obj;
         return Objects.equals(this.index, that.index) &&
-                Objects.equals(this.items, that.items) &&
+                Objects.equals(this.from, that.to) &&
+                Objects.equals(this.to, that.to) &&
                 this.desc == that.desc &&
                 Objects.equals(this.limit, that.limit);
     }
 
-    public boolean matches(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
-        return matches(new InstanceEvaluationContext(instance, parameterizedFlowProvider));
-    }
-
-    public boolean matches(EvaluationContext evaluationContext) {
-        return NncUtils.allMatch(items, item -> item.matches(evaluationContext));
-    }
-
     public boolean memoryOnly() {
         return index.isIdNull()
-                || NncUtils.anyMatch(items, i -> i.value() instanceof DurableInstance d && !d.isIdInitialized());
+                || from != null && NncUtils.anyMatch(from.values(), i -> i instanceof DurableInstance d && !d.isIdInitialized())
+                || to != null && NncUtils.anyMatch(to.values(), i -> i instanceof DurableInstance d && !d.isIdInitialized());
     }
 
     @Override
     public String toString() {
         return "InstanceIndexQuery[" +
                 "index=" + index + ", " +
-                "items=" + items + ", " +
+                "from=" + from + ", " +
+                "to=" + to + ", " +
                 "desc=" + desc + ", " +
                 "limit=" + limit + ']';
     }

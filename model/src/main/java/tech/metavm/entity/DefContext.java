@@ -652,16 +652,6 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return null;
     }
 
-//    @Override
-//    public <T> List<T> getByType(Class<? extends T> javaType, @Nullable T startExclusive, long limit) {
-//        return memoryIndex.selectByType(javaType, startExclusive, limit);
-//    }
-
-    @Override
-    public <T> List<T> query(EntityIndexQuery<T> query) {
-        return memoryIndex.query(query);
-    }
-
     @Override
     public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... values) {
         return memoryIndex.selectByKey(indexDef, List.of(values));

@@ -8,12 +8,13 @@ import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class MemIndexEntryMapper implements IndexEntryMapper {
 
     private final Map<GlobalKey, List<IndexEntryPO>> key2items = new HashMap<>();
-    private final Set<IndexEntryPO> entries = new HashSet<>();
+    private final NavigableSet<IndexEntryPO> entries = new TreeSet<>();
     private final Map<Id, List<IndexEntryPO>> instanceId2items = new HashMap<>();
 
     private List<IndexEntryPO> getItems(GlobalKey key) {
@@ -26,39 +27,55 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     @Override
     public List<IndexEntryPO> query(IndexQueryPO query) {
-        return query.execute(new HashSet<>(entries));
+        return query(query.appId(), query.indexId(), query.from(), query.to()).stream().toList();
     }
 
     @Override
     public long countRange(long appId, IndexKeyPO from, IndexKeyPO to) {
         if(!Arrays.equals(from.getIndexId(), to.getIndexId()))
             throw new InternalException("from.getIndexId() not equal to to.getIndexId()");
-        long count = 0;
-        for (IndexEntryPO entry : entries) {
-            if (entry.getAppId() == appId && Arrays.equals(entry.getIndexId(), from.getIndexId()) &&
-                    entry.getKey().compareTo(from) >= 0 && entry.getKey().compareTo(to) <= 0) {
-                count++;
-            }
-        }
-        return count;
+        return query(appId, from.getIndexId(), from, to).stream().map(IndexEntryPO::getId).distinct().count();
     }
 
     @Override
     public List<IndexEntryPO> scan(long appId, IndexKeyPO from, IndexKeyPO to) {
         if(!Arrays.equals(from.getIndexId(), to.getIndexId()))
             throw new InternalException("from.getIndexId() not equal to to.getIndexId()");
-        var result = new ArrayList<IndexEntryPO>();
-        for (IndexEntryPO entry : entries) {
-            if (entry.getAppId() == appId && Arrays.equals(entry.getIndexId(), from.getIndexId()) &&
-                    entry.getKey().compareTo(from) >= 0 && entry.getKey().compareTo(to) <= 0) {
-                result.add(entry.copy());
-            }
-        }
-        return result;
+        return query(appId, from.getIndexId(), from, to).stream().toList();
     }
 
     public long count(IndexQueryPO query) {
-        return query.count(entries);
+        return query(query.appId(), query.indexId(), query.from(), query.to()).stream()
+                .map(IndexEntryPO::getId)
+                .distinct()
+                .count();
+    }
+
+    public static final byte[] MIN_BYTES = new byte[0];
+
+    public static final byte[] MAX_BYTES = new byte[] {
+            -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1
+    };
+
+    private static final byte[][] MIN_COLUMNS = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
+    private static final byte[][] MAX_COLUMNS = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
+
+    static {
+        for (int i = 0; i < IndexKeyPO.MAX_KEY_COLUMNS; i++) {
+            MIN_COLUMNS[i] = MIN_BYTES;
+            MAX_COLUMNS[i] = MAX_BYTES;
+        }
+    }
+
+    public Collection<IndexEntryPO> query(long appId, byte[] indexId, @Nullable IndexKeyPO from, @Nullable IndexKeyPO to) {
+        if(from == null)
+            from = new IndexKeyPO(indexId, MIN_COLUMNS);
+        if(to == null)
+            to = new IndexKeyPO(indexId, MAX_COLUMNS);
+        return entries.subSet(new IndexEntryPO(appId, from, MIN_BYTES), true, new IndexEntryPO(appId, to, MAX_BYTES), true);
     }
 
     @Override

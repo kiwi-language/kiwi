@@ -11,6 +11,7 @@ import tech.metavm.object.type.FieldBuilder;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.util.Instances;
+import tech.metavm.util.TestUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,8 @@ public class InstanceMemoryIndexTest extends TestCase {
                 fooType, "idxName", "idxName", "name must be unique", true,
                 List.of(nameField)
         );
+
+        TestUtils.initEntityIds(fooType);
 
         var name = Instances.stringInstance("foo001");
 

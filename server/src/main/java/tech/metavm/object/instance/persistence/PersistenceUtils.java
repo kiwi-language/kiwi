@@ -4,10 +4,7 @@ import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.ReferenceKind;
-import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.system.RegionConstants;
 import tech.metavm.util.*;
@@ -81,10 +78,9 @@ public class PersistenceUtils {
     public static IndexQueryPO toIndexQueryPO(InstanceIndexQuery query, long appId, int lockMode) {
         return new IndexQueryPO(
                 appId,
-                query.index().getPhysicalId(),
-                NncUtils.map(query.items(), item -> new IndexQueryItemPO(
-                        "column" + item.field().getFieldIndex(),
-                        item.operator(), BytesUtils.toIndexBytes(item.value()))),
+                query.index().getId().toBytes(),
+                NncUtils.get(query.from(), InstanceIndexKey::toPO),
+                NncUtils.get(query.to(), InstanceIndexKey::toPO),
                 query.desc(),
                 query.limit(),
                 lockMode

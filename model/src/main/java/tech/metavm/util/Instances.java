@@ -99,6 +99,13 @@ public class Instances {
             return instances.subList(0, Math.min(instances.size(), (int) limit));
     }
 
+    public static int compare(DurableInstance instance1, DurableInstance instance2) {
+        if(instance1.isIdInitialized() && instance2.isIdInitialized())
+            return instance1.getId().compareTo(instance2.getId());
+        else
+            return Integer.compare(instance1.getSeq(), instance2.getSeq());
+    }
+
     private static boolean isInteger(Instance instance) {
         return instance instanceof LongInstance;
     }

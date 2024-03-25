@@ -30,8 +30,8 @@ public class ViewManager extends EntityContextFactoryBean {
             ClassType type = context.getClassType(typeId);
             List<ListView> views = context.query(
                     IDX_TYPE_PRIORITY.newQueryBuilder()
-                            .addEqItem(0, type)
-                            .addGeItem(1, 0)
+                            .from(new EntityIndexKey(List.of(type, 0)))
+                            .to(new EntityIndexKey(List.of(type, Long.MAX_VALUE)))
                             .limit(1)
                             .build()
             );

@@ -1,8 +1,5 @@
 package tech.metavm.entity;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class EntityIndexQueryBuilder<T> {
 
     public static <T> EntityIndexQueryBuilder<T> newBuilder(IndexDef<T> indexDef) {
@@ -10,7 +7,8 @@ public class EntityIndexQueryBuilder<T> {
     }
 
     private final IndexDef<T> indexDef;
-    private List<EntityIndexQueryItem> items = new ArrayList<>();
+    private EntityIndexKey from;
+    private EntityIndexKey to;
     private boolean desc;
     private long limit = 1000;
 
@@ -18,38 +16,19 @@ public class EntityIndexQueryBuilder<T> {
         this.indexDef = indexDef;
     }
 
-    public EntityIndexQueryBuilder<T> items(List<EntityIndexQueryItem> items) {
-        this.items = new ArrayList<>(items);
+    public EntityIndexQueryBuilder<T> from(EntityIndexKey from) {
+        this.from = from;
         return this;
     }
 
-    public EntityIndexQueryBuilder<T> addEqItem(String fieldName, Object value) {
-        items.add(new EntityIndexQueryItem(fieldName, IndexOperator.EQ, value));
+    public EntityIndexQueryBuilder<T> to(EntityIndexKey to) {
+        this.to = to;
         return this;
     }
 
-    public EntityIndexQueryBuilder<T> addGtItem(String fieldName, Object value) {
-        items.add(new EntityIndexQueryItem(fieldName, IndexOperator.GT, value));
-        return this;
-    }
-
-    public EntityIndexQueryBuilder<T> addEqItem(int fieldIndex, Object value) {
-        items.add(new EntityIndexQueryItem(indexDef.getFieldName(fieldIndex), IndexOperator.EQ, value));
-        return this;
-    }
-
-    public EntityIndexQueryBuilder<T> addGeItem(int fieldIndex, Object value) {
-        items.add(new EntityIndexQueryItem(indexDef.getFieldName(fieldIndex), IndexOperator.GE, value));
-        return this;
-    }
-
-    public EntityIndexQueryBuilder<T> addGtItem(int fieldIndex, Object value) {
-        items.add(new EntityIndexQueryItem(indexDef.getFieldName(fieldIndex), IndexOperator.GT, value));
-        return this;
-    }
-
-    public EntityIndexQueryBuilder<T> addLeItem(int fieldIndex, Object value) {
-        items.add(new EntityIndexQueryItem(indexDef.getFieldName(fieldIndex), IndexOperator.LE, value));
+    public EntityIndexQueryBuilder<T> eq(EntityIndexKey key) {
+        this.from = key;
+        this.to = key;
         return this;
     }
 
@@ -66,7 +45,8 @@ public class EntityIndexQueryBuilder<T> {
     public EntityIndexQuery<T> build() {
         return new EntityIndexQuery<>(
                 indexDef,
-                items,
+                from,
+                to,
                 desc,
                 limit
         );

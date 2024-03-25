@@ -7,15 +7,16 @@ import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
-import tech.metavm.object.type.IndexField;
-import tech.metavm.util.*;
+import tech.metavm.util.BytesUtils;
+import tech.metavm.util.CompilerHttpUtils;
+import tech.metavm.util.Instances;
+import tech.metavm.util.NncUtils;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 public class LocalIndexSource implements IndexSource {
 
@@ -24,10 +25,10 @@ public class LocalIndexSource implements IndexSource {
     private final LocalIndex index;
     private final LocalTypeIndex typeIndex;
 
-    public LocalIndexSource(DiskTreeStore treeStore, String indexDir) {
+    public LocalIndexSource(long appId, DiskTreeStore treeStore, String indexDir) {
         NncUtils.ensureDirectoryExists(indexDir);
         this.treeStore = treeStore;
-        this.index = new LocalIndex(indexDir + File.separator + "index");
+        this.index = new LocalIndex(appId, indexDir + File.separator + "index");
         this.typeIndex = new LocalTypeIndex(indexDir + File.separator + "type_index");
     }
 
@@ -76,13 +77,10 @@ public class LocalIndexSource implements IndexSource {
     }
 
     public LocalIndex.Query convertQuery(InstanceIndexQuery query) {
-        var itemMap = NncUtils.toMap(query.items(), InstanceIndexQueryItem::field, Function.identity());
-        List<LocalIndex.QueryItem> items = new ArrayList<>();
-        for (IndexField field : query.index().getFields()) {
-            var queryItem = itemMap.get(field);
-            items.add(convertQueryItem(queryItem));
-        }
-        return new LocalIndex.Query(query.index().getId(), items, query.desc(), query.limit());
+        return new LocalIndex.Query(query.index().getId(),
+                NncUtils.get(query.from(), InstanceIndexKey::toPO),
+                NncUtils.get(query.to(), InstanceIndexKey::toPO),
+                query.desc(), query.limit());
     }
 
     public LocalIndex.QueryItem convertQueryItem(InstanceIndexQueryItem queryItem) {

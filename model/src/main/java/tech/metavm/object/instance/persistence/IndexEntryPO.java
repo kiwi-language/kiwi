@@ -1,12 +1,14 @@
 package tech.metavm.object.instance.persistence;
 
+import com.google.common.primitives.UnsignedBytes;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.EncodingUtils;
 
 import java.util.Arrays;
 import java.util.Objects;
 
-public class IndexEntryPO {
+public class IndexEntryPO implements Comparable<IndexEntryPO> {
 
     private long appId;
     private final IndexKeyPO key;
@@ -204,4 +206,13 @@ public class IndexEntryPO {
         return new IndexEntryPO(appId, key.copy(), instanceId);
     }
 
+    @Override
+    public int compareTo(@NotNull IndexEntryPO o) {
+        if(appId != o.appId)
+            return Long.compare(appId, o.appId);
+        var keyComparison = key.compareTo(o.key);
+        if (keyComparison != 0)
+            return keyComparison;
+        return UnsignedBytes.lexicographicalComparator().compare(instanceId, o.instanceId);
+    }
 }

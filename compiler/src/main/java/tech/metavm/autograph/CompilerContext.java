@@ -18,7 +18,7 @@ public class CompilerContext {
     public CompilerContext(String home, TypeClient typeClient, AllocatorStore allocatorStore) {
         NncUtils.ensureDirectoryExists(home);
         diskTreeStore = new DiskTreeStore(home + File.separator + "trees");
-        localIndexSource = new LocalIndexSource(diskTreeStore, home);
+        localIndexSource = new LocalIndexSource(typeClient.getAppId(), diskTreeStore, home);
         contextFactory = new CompilerInstanceContextFactory(diskTreeStore, localIndexSource, typeClient);
         localIndexSource.setContextFactory(contextFactory);
         metaVersionStore = new MetaVersionStore(home + File.separator + "metaVersion");

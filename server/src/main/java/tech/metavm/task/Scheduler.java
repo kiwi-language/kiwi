@@ -79,7 +79,7 @@ public class Scheduler extends EntityContextFactoryBean {
         try (var platformContext = newPlatformContext()) {
             List<TaskSignal> signals = platformContext.query(
                     TaskSignal.IDX_LAST_TASK_CREATED_AT.newQueryBuilder()
-                            .addGtItem(0, lastSignalPollAt - 60000L)
+                            .from(new EntityIndexKey(List.of(lastSignalPollAt - 60000L)))
                             .limit(512)
                             .build()
             );
@@ -122,15 +122,15 @@ public class Scheduler extends EntityContextFactoryBean {
             Objects.requireNonNull(context.getInstanceContext()).setLockMode(LockMode.EXCLUSIVE);
             List<Task> runnableTasks = context.query(
                     Task.IDX_STATE_LAST_RUN_AT.newQueryBuilder()
-                            .addEqItem(0, TaskState.RUNNABLE)
-                            .addLeItem(1, System.currentTimeMillis())
+                            .from(new EntityIndexKey(List.of(TaskState.RUNNABLE, 0L)))
+                            .to(new EntityIndexKey(List.of(TaskState.RUNNABLE, System.currentTimeMillis())))
                             .limit(10)
                             .build()
             );
             List<Task> expiredRunningTasks = context.query(
                     Task.IDX_STATE_LAST_RUN_AT.newQueryBuilder()
-                            .addEqItem(0, TaskState.RUNNING)
-                            .addLeItem(1, System.currentTimeMillis() - 10000L)
+                            .from(new EntityIndexKey(List.of(TaskState.RUNNING, 0L)))
+                            .to(new EntityIndexKey(List.of(TaskState.RUNNING, System.currentTimeMillis() - 10000L)))
                             .limit(10)
                             .build()
             );

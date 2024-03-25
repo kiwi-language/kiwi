@@ -1,10 +1,11 @@
 package tech.metavm.entity;
 
-import java.util.List;
+import javax.annotation.Nullable;
 
 public record EntityIndexQuery<T>(
         IndexDef<T> indexDef,
-        List<EntityIndexQueryItem> items,
+        @Nullable EntityIndexKey from,
+        @Nullable EntityIndexKey to,
         boolean desc,
         long limit
 ) {

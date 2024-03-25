@@ -8,6 +8,7 @@ import tech.metavm.common.EmailService;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.entity.EntityContextFactoryBean;
+import tech.metavm.entity.EntityIndexKey;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.EmailUtils;
@@ -15,6 +16,7 @@ import tech.metavm.util.NncUtils;
 
 import java.text.DecimalFormat;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class VerificationCodeService extends EntityContextFactoryBean {
@@ -36,8 +38,8 @@ public class VerificationCodeService extends EntityContextFactoryBean {
         var code = DF.format(NncUtils.randomInt(1000000));
         try (var platformCtx = newPlatformContext()) {
             var count = platformCtx.count(VerificationCode.IDX_CLIENT_IP_CREATED_AT.newQueryBuilder()
-                    .addEqItem("clientIP", clientIP)
-                    .addGtItem("createdAt", new Date(System.currentTimeMillis() - 15 * 60 * 1000))
+                    .from(new EntityIndexKey(List.of(clientIP, new Date(System.currentTimeMillis() - 15 * 60 * 1000))))
+                    .to(new EntityIndexKey(List.of(clientIP, new Date(Long.MAX_VALUE))))
                     .build()
             );
             if (count > MAX_SENT_PER_FIFTEEN_MINUTES)
@@ -56,9 +58,8 @@ public class VerificationCodeService extends EntityContextFactoryBean {
     public void checkVerificationCode(String receiver, String code, IEntityContext platformCtx) {
         var valid = !platformCtx.query(
                 VerificationCode.IDX.newQueryBuilder()
-                        .addEqItem("receiver", receiver)
-                        .addEqItem("code", code)
-                        .addGtItem("expiredAt", new Date())
+                        .from(new EntityIndexKey(List.of(receiver, code, new Date())))
+                        .to(new EntityIndexKey(List.of(receiver, code, new Date(Long.MAX_VALUE))))
                         .limit(1L)
                         .build()
         ).isEmpty();

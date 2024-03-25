@@ -87,7 +87,17 @@ public abstract class PrimitiveInstance extends Instance implements Comparable<P
         int cmp = Integer.compare(getType().getKind().code(), o.getType().getKind().code());
         if(cmp != 0)
             return cmp;
-        //noinspection unchecked,rawtypes
-        return ((Comparable) getValue()).compareTo(o.getValue());
+        //noinspection rawtypes
+        var v1 = (Comparable) getValue();
+        //noinspection rawtypes
+        var v2 = (Comparable) o.getValue();
+        if(v1 == null && v2 == null)
+            return 0;
+        if(v1 == null)
+            return -1;
+        if(v2 == null)
+            return 1;
+        //noinspection unchecked
+        return v1.compareTo(v2);
     }
 }

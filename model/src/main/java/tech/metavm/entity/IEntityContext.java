@@ -11,7 +11,6 @@ import tech.metavm.object.type.generic.*;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.object.view.ObjectMapping;
-import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TypeReference;
 import tech.metavm.util.profile.Profiler;

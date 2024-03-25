@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.util.IdDeserializer;
-import tech.metavm.util.TmpIdDeserializer;
 
 import javax.annotation.Nullable;
 

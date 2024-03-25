@@ -5,6 +5,8 @@ import tech.metavm.entity.*;
 import tech.metavm.user.PlatformUser;
 import tech.metavm.user.PlatformUsers;
 
+import java.util.List;
+
 @EntityType("清空用户任务")
 public class ClearUsersTask extends Task {
 
@@ -21,7 +23,7 @@ public class ClearUsersTask extends Task {
         var app = context.getEntity(Application.class, appId);
         var users = context.query(
                 PlatformUser.IDX_APP.newQueryBuilder()
-                        .addEqItem("applications", app)
+                        .eq(new EntityIndexKey(List.of(app)))
                         .limit(BATCH_SIZE)
                         .build()
         );

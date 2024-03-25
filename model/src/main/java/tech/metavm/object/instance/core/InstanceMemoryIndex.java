@@ -2,14 +2,16 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.flow.ParameterizedFlowProvider;
+import tech.metavm.object.instance.IndexEntryRT;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.type.Index;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
+
+import static tech.metavm.object.instance.IndexKeyRT.MAX_INSTANCE;
+import static tech.metavm.object.instance.IndexKeyRT.MIN_INSTANCE;
 
 public class InstanceMemoryIndex {
 
@@ -35,11 +37,11 @@ public class InstanceMemoryIndex {
     }
 
     public List<ClassInstance> scan(Index index, IndexKeyRT from, IndexKeyRT to) {
-        return subIndex(index).scan(index, from, to);
+        return subIndex(index).scan(from, to);
     }
 
     public long count(Index index, IndexKeyRT from, IndexKeyRT to) {
-        return subIndex(index).count(index, from, to);
+        return subIndex(index).count(from, to);
     }
 
     private SubIndex subIndex(Index index) {
@@ -57,16 +59,16 @@ public class InstanceMemoryIndex {
 
     public void remove(ClassInstance instance) {
         var oldKeys = keyMap.remove(instance);
-        if(oldKeys != null) {
+        if (oldKeys != null) {
             for (IndexKeyRT oldKey : oldKeys) {
                 indexMap.get(oldKey.getIndex()).remove(oldKey, instance);
             }
         }
     }
 
-    private class SubIndex {
+    private static class SubIndex {
         private final Index index;
-        private final Map<IndexKeyRT, IdentitySet<ClassInstance>> map = new HashMap<>();
+        private final NavigableSet<IndexEntryRT> map = new TreeSet<>();
 
         private SubIndex(Index index) {
             this.index = index;
@@ -82,46 +84,38 @@ public class InstanceMemoryIndex {
         }
 
         public void remove(IndexKeyRT key, ClassInstance instance) {
-            var instances = map.get(key);
-            if (instances != null)
-                instances.remove(instance);
+            map.remove(new IndexEntryRT(key, instance));
         }
 
         public void add(IndexKeyRT key, ClassInstance instance) {
-            map.computeIfAbsent(key, k -> new IdentitySet<>()).add(instance);
+            map.add(new IndexEntryRT(key, instance));
         }
 
         public List<ClassInstance> query(InstanceIndexQuery query) {
-            var matches = new IdentitySet<ClassInstance>();
-            for (var instances : map.values()) {
-                for (var instance : instances) {
-                    if (query.matches(instance, parameterizedFlowProvider))
-                        matches.add(instance);
-                }
-            }
-            return Instances.sortAndLimit(new ArrayList<>(matches), query.desc(), NncUtils.orElse(query.limit(), -1L));
+            var entries = query(query.index(), NncUtils.get(query.from(), InstanceIndexKey::toRT), NncUtils.get(query.to(), InstanceIndexKey::toRT));
+            return entries.stream().map(IndexEntryRT::getInstance)
+                    .distinct()
+                    .limit(Objects.requireNonNullElse(query.limit(), Long.MAX_VALUE))
+                    .toList();
         }
 
-        public List<ClassInstance> scan(Index index, IndexKeyRT from, IndexKeyRT to) {
-            var matches = new IdentitySet<ClassInstance>();
-            for (var entry : map.entrySet()) {
-                var key = entry.getKey();
-                if (key.getIndex() == index && key.compareTo(from) >= 0 && key.compareTo(to) <= 0) {
-                    matches.addAll(entry.getValue());
-                }
-            }
-            return new ArrayList<>(matches);
+        private Collection<IndexEntryRT> query(Index index, @Nullable IndexKeyRT from, @Nullable IndexKeyRT to) {
+            if (from == null)
+                from = new IndexKeyRT(index, NncUtils.toMap(index.getFields(), f -> f, f -> MIN_INSTANCE));
+            if (to == null)
+                to = new IndexKeyRT(index, NncUtils.toMap(index.getFields(), f -> f, f -> MAX_INSTANCE));
+            return map.subSet(new IndexEntryRT(from, MIN_INSTANCE), true, new IndexEntryRT(to, MAX_INSTANCE), true);
         }
 
-        public long count(Index index, IndexKeyRT from, IndexKeyRT to) {
-            long count = 0L;
-            for (var entry : map.entrySet()) {
-                var key = entry.getKey();
-                if (key.getIndex() == index && key.compareTo(from) >= 0 && key.compareTo(to) <= 0) {
-                    count++;
-                }
-            }
-            return count;
+        public List<ClassInstance> scan(IndexKeyRT from, IndexKeyRT to) {
+            return query(from.getIndex(), from, to).stream()
+                    .map(IndexEntryRT::getInstance)
+                    .distinct()
+                    .toList();
+        }
+
+        public long count(IndexKeyRT from, IndexKeyRT to) {
+            return query(from.getIndex(), from, to).stream().map(IndexEntryRT::getInstance).distinct().count();
         }
 
     }

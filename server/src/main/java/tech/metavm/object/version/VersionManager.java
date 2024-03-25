@@ -18,7 +18,7 @@ public class VersionManager extends EntityContextFactoryBean {
 
     public InternalMetaPatch pullInternal(long baseVersion, IEntityContext context) {
         List<Version> versions = context.query(Version.IDX_VERSION.newQueryBuilder()
-                .addGtItem("version", baseVersion)
+                .from(new EntityIndexKey(List.of(baseVersion + 1)))
                 .limit(100)
                 .build()
         );

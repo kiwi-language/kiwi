@@ -336,7 +336,7 @@ public class TypeResolverImpl implements TypeResolver {
             var classType = NncUtils.first(context.query(
                     EntityIndexQueryBuilder
                             .newBuilder(ClassType.UNIQUE_CODE)
-                            .addEqItem(0, psiClass.getQualifiedName())
+                            .eq(new EntityIndexKey(List.of(requireNonNull(psiClass.getQualifiedName()))))
                             .build()));
             if (classType != null) {
                 if (classType.getCategory() != category)

@@ -197,11 +197,13 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
         return copy;
     }
 
-
     @Override
     public int compareTo(@NotNull IndexKeyPO o) {
-        if(!Arrays.equals(indexId, o.indexId))
-            throw new RuntimeException("Can not compare keys from different indexes");
+        var indexCmpResult = UnsignedBytes.lexicographicalComparator().compare(indexId, o.indexId);
+        if(indexCmpResult != 0)
+            return indexCmpResult;
+//        if(!Arrays.equals(indexId, o.indexId))
+//            throw new RuntimeException("Can not compare keys from different indexes");
         for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
             var cmp = UnsignedBytes.lexicographicalComparator().compare(columns[i], o.columns[i]);
             if(cmp != 0)

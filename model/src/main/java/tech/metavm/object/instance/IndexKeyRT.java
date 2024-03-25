@@ -1,12 +1,10 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.entity.IndexOperator;
 import tech.metavm.entity.InstanceIndexQuery;
-import tech.metavm.entity.InstanceIndexQueryItem;
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PrimitiveInstance;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.IndexField;
 import tech.metavm.util.BytesUtils;
@@ -18,6 +16,18 @@ import java.util.Map;
 import java.util.Objects;
 
 public class IndexKeyRT implements Comparable<IndexKeyRT> {
+
+    private static final ClassType DUMMY_TYPE = ClassTypeBuilder.newBuilder("Dummy", "Dummy").build();
+
+    public  static final ClassInstance MIN_INSTANCE = ClassInstance.allocate(DUMMY_TYPE);
+
+    public static final ClassInstance MAX_INSTANCE = ClassInstance.allocate(DUMMY_TYPE);
+
+    static {
+        MIN_INSTANCE.initId(new NullId());
+        MAX_INSTANCE.initId(new MockId(Long.MAX_VALUE));
+        MAX_INSTANCE.setSeq(Integer.MAX_VALUE);
+    }
 
     private final Index index;
     private final Map<IndexField, Instance> fields;
@@ -64,16 +74,11 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     }
 
     public InstanceIndexQuery toQuery() {
+        var key = new InstanceIndexKey(index, NncUtils.map(index.getFields(), fields::get));
         return new InstanceIndexQuery(
                 index,
-                NncUtils.map(
-                        index.getFields(),
-                        f -> new InstanceIndexQueryItem(
-                                f,
-                                IndexOperator.EQ,
-                                fields.get(f))
-
-                ),
+                key,
+                key,
                 false,
                 null
         );
@@ -92,8 +97,9 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     }
 
     public int compareTo(IndexKeyRT that) {
-        if(index != that.index)
-            throw new RuntimeException("Can not compare keys from different indexes");
+        var indexComparison = index.getId().compareTo(that.index.getId());
+        if(indexComparison != 0)
+            return indexComparison;
         for (int i = 0; i < index.getFields().size(); i++) {
             var field = index.getFields().get(i);
             var cmp = compare(fields.get(field), that.fields.get(field));
@@ -104,9 +110,22 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     }
 
     private int compare(Instance first, Instance second) {
-        if(first instanceof PrimitiveInstance p1 && second instanceof PrimitiveInstance p2) {
+        if(first == second)
+            return 0;
+        if(first == MIN_INSTANCE)
+            return -1;
+        if(second == MIN_INSTANCE)
+            return 1;
+        if(first == MAX_INSTANCE)
+            return 1;
+        if(second == MAX_INSTANCE)
+            return -1;
+        if(first instanceof PrimitiveInstance p1 && second instanceof PrimitiveInstance p2)
             return p1.compareTo(p2);
-        }
+        if(first instanceof NullInstance)
+            return -1;
+        if(second instanceof NullInstance)
+            return 1;
         if(first instanceof DurableInstance d1 && !d1.isView()
                 && second instanceof DurableInstance d2 && !d2.isView()) {
             if(d1.isNew() && d2.isNew())
@@ -115,7 +134,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
                 return 1;
             else if(d2.isNew())
                 return -1;
-            return Long.compare(d1.getPhysicalId(), d2.getPhysicalId());
+            return d1.getId().compareTo(d2.getId());
         }
         throw new InternalException("Can not compare instances");
     }

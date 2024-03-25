@@ -2,9 +2,12 @@ package tech.metavm.task;
 
 import tech.metavm.application.AppInvitation;
 import tech.metavm.application.Application;
+import tech.metavm.entity.EntityIndexKey;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.message.Message;
+
+import java.util.List;
 
 @EntityType("删除邀请任务")
 public class ClearInvitationTask extends Task {
@@ -20,7 +23,7 @@ public class ClearInvitationTask extends Task {
     protected boolean run0(IEntityContext context) {
         var app = context.getEntity(Application.class, appId);
         var invitations = context.query(AppInvitation.IDX_APP.newQueryBuilder()
-                .addEqItem("application", app)
+                .eq(new EntityIndexKey(List.of(app)))
                 .limit(BATCH_SIZE)
                 .build());
         for (AppInvitation invitation : invitations) {
