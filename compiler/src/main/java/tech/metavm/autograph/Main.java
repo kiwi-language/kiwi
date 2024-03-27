@@ -31,12 +31,13 @@ public class Main {
         compiler = new Compiler(sourceRoot, compilerContext.getContextFactory(), typeClient);
     }
 
-    public void run() {
+    public List<String> run() {
         try(var files = Files.walk(Paths.get(sourceRoot))) {
             List<String> sources = new ArrayList<>();
             files.filter(path -> path.toString().endsWith(".java"))
                     .forEach(path -> sources.add(path.toString()));
             compiler.compile(sources);
+            return compiler.getClassNames();
         } catch (IOException e) {
             throw new RuntimeException("Compilation failed", e);
         }

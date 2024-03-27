@@ -129,9 +129,9 @@ public class PersistenceUtils {
                 var targetId = readId();
                 refs.add(new ReferencePO(
                         appId,
-                        sourceId.toBytes(),
+                        sourceId.getPhysicalId(),
                         targetId.toBytes(),
-                        NncUtils.get(fieldId, Id::toBytes),
+                        NncUtils.getOrElse(fieldId, Id::toBytes, Constants.EMPTY_BYTES),
                         ReferenceKind.STRONG.code()
                 ));
             }

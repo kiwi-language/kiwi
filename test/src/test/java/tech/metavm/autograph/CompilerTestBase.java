@@ -173,9 +173,9 @@ public abstract class CompilerTestBase extends TestCase  {
         compile(sourceRoot);
     }
 
-    protected void compile(String sourceRoot) {
+    protected List<String> compile(String sourceRoot) {
         ContextUtil.resetProfiler();
-        new Main(HOME, sourceRoot, AUTH_CONFIG, typeClient, allocatorStore).run();
+        return new Main(HOME, sourceRoot, AUTH_CONFIG, typeClient, allocatorStore).run();
     }
 
 

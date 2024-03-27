@@ -27,43 +27,43 @@ public class MemReferenceMapper implements ReferenceMapper {
     }
 
     @Override
-    public List<ReferencePO> selectByTargetId(long appId, byte[] targetId, byte[] startIdExclusive, long limit) {
+    public List<ReferencePO> selectByTargetId(long appId, byte[] targetId, long startIdExclusive, long limit) {
         List<ReferencePO> refs = targetMap.get(Id.fromBytes(targetId));
         if (NncUtils.isEmpty(refs)) {
             return List.of();
         }
         return NncUtils.filterAndSortAndLimit(
                 refs,
-                ref -> startIdExclusive == null || ref.getSourceInstanceId().compareTo(Id.fromBytes(startIdExclusive)) > 0,
-                Comparator.comparing(ReferencePO::getSourceInstanceId),
+                ref -> ref.getSourceTreeId() > startIdExclusive,
+                Comparator.comparingLong(ReferencePO::getSourceTreeId),
                 limit
         );
     }
 
     @Override
     public @Nullable ReferencePO selectFirstStrongReference(long appId,
-                                                            Collection<Id> targetIds,
-                                                            Collection<Id> excludedSourceIds) {
+                                                            Collection<byte[]> targetIds,
+                                                            Collection<Long> excludedSourceIds) {
         var excludedSourceIdSet = new HashSet<>(excludedSourceIds);
-        List<String> keys = NncUtils.map(targetIds, id -> appId + "-" + id + "-1");
+        List<String> keys = NncUtils.map(targetIds, id -> appId + "-" + Id.fromBytes(id) + "-1");
         return keys.stream()
                 .map(key -> NncUtils.find(
                         targetWithKindMap.get(key),
-                        ref -> !excludedSourceIdSet.contains(ref.getSourceInstanceId())
+                        ref -> !excludedSourceIdSet.contains(ref.getSourceTreeId())
                 ))
                 .filter(Objects::nonNull)
                 .findFirst().orElse(null);
     }
 
     @Override
-    public List<ReferencePO> selectAllStrongReferences(long appId, Collection<Id> ids, Collection<Id> excludedSourceIds) {
+    public List<ReferencePO> selectAllStrongReferences(long appId, Collection<byte[]> ids, Collection<Long> excludedSourceIds) {
         var excludedSourceIdSet = new HashSet<>(excludedSourceIds);
-        List<String> keys = NncUtils.map(ids, id -> appId + "-" + id + "-1");
+        List<String> keys = NncUtils.map(ids, id -> appId + "-" + Id.fromBytes(id) + "-1");
         return NncUtils.flatMapAndFilter(
                 keys,
                 key -> NncUtils.filter(
                         targetWithKindMap.get(key),
-                        ref -> !excludedSourceIdSet.contains(ref.getSourceInstanceId())
+                        ref -> !excludedSourceIdSet.contains(ref.getSourceTreeId())
                 ),
                 Objects::nonNull
         );

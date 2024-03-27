@@ -62,7 +62,7 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
 //    }
 
     @Override
-    public List<DurableInstance> getByReferenceTargetId(Id targetId, DurableInstance startExclusive, long limit) {
+    public List<DurableInstance> getByReferenceTargetId(Id targetId, long startExclusive, long limit) {
         return null;
     }
 

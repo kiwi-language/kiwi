@@ -7,6 +7,8 @@ import tech.metavm.object.instance.core.Id;
 
 public class Constants {
 
+    public static final byte[] EMPTY_BYTES = new byte[0];
+
     public static final long ROOT_APP_ID = 1L;
 
     public static final long PLATFORM_APP_ID = 2L;

@@ -108,8 +108,8 @@ public class IdService extends BaseIdService implements EntityIdProvider {
         typeId2count.forEach((type, count) -> {
             BlockRT block = activeBlockMap.get(type.getTypeId());
             NncUtils.requireNonNull(block, "Active block not found for type: " + type);
-            Integer allocateCount = Math.min(count, block.available());
-            result.put(type, block.allocate(count));
+            int allocateCount = Math.min(count, block.available());
+            result.put(type, block.allocate(allocateCount));
             if (allocateCount < count) {
                 residual.put(type, count - allocateCount);
             }

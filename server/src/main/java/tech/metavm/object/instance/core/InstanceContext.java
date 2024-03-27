@@ -55,8 +55,7 @@ public class InstanceContext extends BufferingInstanceContext {
                            boolean readonly
     ) {
         super(appId,
-                List.of(new CacheTreeSource(cache),
-                        new StoreTreeSource(instanceStore)),
+                List.of(/*new CacheTreeSource(cache),*/new StoreTreeSource(instanceStore)),
                 new StoreVersionSource(instanceStore),
                 new StoreIndexSource(instanceStore), idInitializer,
                 parent, typeProvider, mappingProvider, parameterizedFlowProvider, readonly);
@@ -172,15 +171,15 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public List<DurableInstance> getByReferenceTargetId(Id targetId, DurableInstance startExclusive, long limit) {
+    public List<DurableInstance> getByReferenceTargetId(Id targetId, long startExclusive, long limit) {
         return NncUtils.map(
                 instanceStore.getByReferenceTargetId(
                         targetId,
-                        NncUtils.get(startExclusive, DurableInstance::tryGetId),
+                        startExclusive,
                         limit,
                         this
                 ),
-                this::get
+                this::getRoot
         );
     }
 
@@ -417,12 +416,12 @@ public class InstanceContext extends BufferingInstanceContext {
                     visitor.visit(instance);
             }
             var idsToRemove = NncUtils.mapUnique(entityChange.deletes(), VersionRT::id);
-            var idsToUpdate = NncUtils.mapUnique(entityChange.updates(), VersionRT::id);
-            ReferencePO ref = instanceStore.getFirstReference(
-                    appId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
+            var idsToUpdate = NncUtils.mapUnique(entityChange.updates(), v -> v.id().getPhysicalId());
+            var ref = instanceStore.getFirstReference(
+                    appId, idsToRemove, mergeSets(NncUtils.mapUnique(idsToRemove, Id::getPhysicalId), idsToUpdate)
             );
             if (ref != null)
-                throw BusinessException.strongReferencesPreventRemoval(get(ref.getSourceInstanceId()),
+                throw BusinessException.strongReferencesPreventRemoval(getRoot(ref.getSourceTreeId()),
                         internalGet(ref.getTargetInstanceId()));
         }
     }

@@ -6,30 +6,20 @@
         <!--@Table instance-->
         <id property="id" jdbcType="BIGINT" column="id"/>
         <result property="appId" jdbcType="BIGINT" column="app_id"/>
-        <result property="typeTag" jdbcType="SMALLINT" column="type_tag"/>
-        <result property="typeId" jdbcType="BIGINT" column="type_id"/>
-        <result property="title" jdbcType="VARCHAR" column="title"/>
         <result property="data" column="data"/>
-        <result property="parentId" jdbcType="BIGINT" column="parent_id"/>
-        <result property="rootId" jdbcType="BIGINT" column="root_id"/>
-        <result property="parentFieldId" jdbcType="BIGINT" column="parent_field_id"/>
         <result property="version" jdbcType="BIGINT" column="version"/>
         <result property="syncVersion" jdbcType="BIGINT" column="sync_version"/>
+        <result property="nextNodeId" jdbcType="BIGINT" column="next_node_id"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         <!--@mbg.generated-->
         id,
-        title,
         app_id,
-        type_tag,
-        type_id,
         data,
-        parent_id,
-        parent_field_id,
-        root_id,
         version,
-        sync_version
+        sync_version,
+        next_node_id
     </sql>
 
     <update id="batchDelete">
@@ -46,12 +36,10 @@
 
     <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
         <!--@mbg.generated-->
-        insert into instance (id, title, app_id, type_tag, type_id, data, root_id, parent_id, parent_field_id)
+        insert into instance (id, app_id, data, next_node_id)
         values
         <foreach collection="collection" item="item" separator=",">
-            (#{item.id}, #{item.title}, #{item.appId}, #{item.typeTag}, #{item.typeId},
-             #{item.data}, #{item.rootId},
-             #{item.parentId}, #{item.parentFieldId})
+            (#{item.id}, #{item.appId}, #{item.data}, #{item.nextNodeId})
         </foreach>
     </insert>
 
@@ -62,9 +50,9 @@
             <if test="item.data != null">
                 data = #{item.data},
             </if>
-            title        = #{item.title},
             version      = #{item.version},
-            sync_version = #{item.syncVersion}
+            sync_version = #{item.syncVersion},
+            next_node_id = #{item.nextNodeId}
             where id = #{item.id}
               and app_id = #{item.appId}
               and deleted_at = 0
@@ -98,19 +86,6 @@
             for
             update
         </if>
-    </select>
-
-    <select id="selectByTypeIds" resultMap="BaseResultMap">
-        <foreach collection="queries" item="query" separator=" UNION DISTINCT " open="(" close=")">
-            select
-            <include refid="Base_Column_List"/>
-            from instance
-            where app_id = #{appId}
-              and deleted_at = 0
-              and type_id = #{query.typeId}
-              and id >= #{query.startId}
-            limit #{query.limit}
-        </foreach>
     </select>
 
     <update id="updateSyncVersion">
@@ -158,35 +133,14 @@
         limit #{limit}
     </select>
 
-    <select id="selectForest" resultMap="BaseResultMap">
-        select
-        <include refid="Base_Column_List"/>
+    <select id="selectVersions" resultType="tech.metavm.object.instance.core.TreeVersion">
+        select id, version
         from instance
         where app_id = #{appId}
-          and deleted_at = 0
-          and
-            root_id in
+          and id in
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>
-        <if test="lockMode == 1">
-            for share
-        </if>
-        <if test="lockMode == 2">
-            for
-            update
-        </if>
-    </select>
-
-    <select id="selectVersions" resultType="tech.metavm.object.instance.core.TreeVersion">
-        select distinct r.id, r.version
-        from instance r
-                 inner join instance i on r.id = i.root_id
-        where i.app_id = #{appId}
-          and i.id in
-        <foreach collection="ids" item="id" open="(" close=")" separator=",">
-            #{id}
-        </foreach>
-        and i.deleted_at = 0
+        and deleted_at = 0
     </select>
 </mapper>

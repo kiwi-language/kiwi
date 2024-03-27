@@ -25,9 +25,9 @@ public interface IInstanceStore {
 
     void saveReferences(ChangeList<ReferencePO> refChanges);
 
-    ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Id> excludedSourceIds);
+    ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds);
 
-    List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Id> excludedSourceIds);
+    List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds);
 
     List<Id> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context);
 
@@ -39,7 +39,7 @@ public interface IInstanceStore {
 
     List<InstancePO> load(StoreLoadRequest request, IInstanceContext context);
 
-    List<Id> getByReferenceTargetId(Id targetId, Id startIdExclusive, long limit, IInstanceContext context);
+    List<Long> getByReferenceTargetId(Id targetId, long startIdExclusive, long limit, IInstanceContext context);
 
 //    default List<InstancePO> getByTypeIds(Collection<Id> typeIds, IInstanceContext context) {
 //        return queryByTypeIds(

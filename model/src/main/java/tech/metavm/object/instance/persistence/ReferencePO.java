@@ -9,18 +9,18 @@ import java.util.Objects;
 
 public class ReferencePO {
     private long appId;
-    private byte[] sourceId;
+    private long sourceTreeId;
     private byte[] targetId;
     private byte[] fieldId;
     private int kind;
 
     public ReferencePO(long appId,
-                       byte[] sourceId,
+                       long sourceTreeId,
                        byte[] targetId,
                        byte[] fieldId,
                        int kind) {
         this.appId = appId;
-        this.sourceId = sourceId;
+        this.sourceTreeId = sourceTreeId;
         this.targetId = targetId;
         this.fieldId = fieldId;
         this.kind = kind;
@@ -37,12 +37,12 @@ public class ReferencePO {
         this.appId = appId;
     }
 
-    public byte[] getSourceId() {
-        return sourceId;
+    public long getSourceTreeId() {
+        return sourceTreeId;
     }
 
-    public void setSourceId(byte[] sourceId) {
-        this.sourceId = sourceId;
+    public void setSourceTreeId(long sourceTreeId) {
+        this.sourceTreeId = sourceTreeId;
     }
 
     public byte[] getTargetId() {
@@ -51,10 +51,6 @@ public class ReferencePO {
 
     public void setTargetId(byte[] targetId) {
         this.targetId = targetId;
-    }
-
-    public Id getSourceInstanceId() {
-        return Id.fromBytes(sourceId);
     }
 
     public Id getTargetInstanceId() {
@@ -83,21 +79,21 @@ public class ReferencePO {
         if (o == null || getClass() != o.getClass()) return false;
         ReferencePO that = (ReferencePO) o;
         return appId == that.appId
-                && Arrays.equals(sourceId, that.sourceId)
+                && sourceTreeId == that.sourceTreeId
                 && Arrays.equals(targetId, that.targetId)
                 && Arrays.equals(fieldId, that.fieldId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(appId, Arrays.hashCode(sourceId), Arrays.hashCode(targetId), Arrays.hashCode(fieldId));
+        return Objects.hash(appId, sourceTreeId, Arrays.hashCode(targetId), Arrays.hashCode(fieldId));
     }
 
     @Override
     public String toString() {
         return "ReferencePO{" +
                 "appId=" + appId +
-                ", sourceId=" + EncodingUtils.bytesToHex(sourceId) +
+                ", sourceId=" + sourceTreeId +
                 ", targetId=" + EncodingUtils.bytesToHex(targetId) +
                 ", fieldId=" + (fieldId != null ? EncodingUtils.bytesToHex(fieldId) : "null") +
                 ", kind=" + kind +

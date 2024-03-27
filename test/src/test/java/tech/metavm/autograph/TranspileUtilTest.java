@@ -63,7 +63,7 @@ public class TranspileUtilTest extends TestCase {
         );
     }
 
-    public void testGetSignatureString() {
+    public void testGetInternalName() {
         var listClass = Objects.requireNonNull(TranspileUtil.createClassType(SignatureFoo.class).resolve());
         var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("add"));
         var sig = TranspileUtil.getInternalName(getMethod);
@@ -85,6 +85,16 @@ public class TranspileUtilTest extends TestCase {
                 .build();
         var sig2 = addMethod.getInternalName(null);
         Assert.assertEquals(sig, sig2);
+    }
+
+    public void testGetInternalNameWithImplicitTypes() {
+        var klass = Objects.requireNonNull(TranspileUtil.createClassType(SignatureFoo.class).resolve());
+        var testMethod = NncUtils.findRequired(klass.getMethods(), method -> method.getName().equals("test"));
+        var internalName = TranspileUtil.getInternalName(testMethod, List.of(
+                TranspileUtil.createType(String.class),
+                TranspileUtil.createPrimitiveType(int.class)
+        ));
+        Assert.assertEquals("tech.metavm.autograph.mocks.SignatureFoo.test(String,Long,Any)", internalName);
     }
 
     public void testIsStruct() {

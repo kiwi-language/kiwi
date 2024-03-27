@@ -7,6 +7,7 @@ import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceInput;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -85,4 +86,12 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         loadingBuffer.invalidateCache(List.of(instance.getTreeId()));
     }
 
+    @Override
+    public List<DurableInstance> batchGetRoots(List<Long> treeIds) {
+        treeIds.forEach(loadingBuffer::buffer);
+        return NncUtils.map(
+                treeIds,
+                treeId -> get(loadingBuffer.getRootId(treeId))
+        );
+    }
 }

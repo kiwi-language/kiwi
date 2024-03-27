@@ -6,13 +6,14 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.TreeVersion;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.StreamVisitor;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
+
+import static java.util.Objects.requireNonNull;
 
 public class LoadingBuffer {
 
@@ -38,6 +39,12 @@ public class LoadingBuffer {
             return true;
         } else
             return false;
+    }
+
+    public Id getRootId(long id) {
+        buffer(id);
+        flush();
+        return requireNonNull(index.get(id)).get(0);
     }
 
     public Tree getTree(Id id) {
@@ -76,9 +83,9 @@ public class LoadingBuffer {
 
     private void loadForest(List<Long> treeIds) {
         try(var ignored = context.getProfiler().enter("LoadingBuffer.loadForest")) {
-            var rootVersions = versionSource.getVersions(treeIds, context);
-            Map<Long, Long> versionMap = NncUtils.toMap(rootVersions, TreeVersion::id, TreeVersion::version);
-            Set<Long> misses = new HashSet<>(versionMap.keySet());
+//            var rootVersions = versionSource.getVersions(treeIds, context);
+//            Map<Long, Long> versionMap = NncUtils.toMap(rootVersions, TreeVersion::id, TreeVersion::version);
+            Set<Long> misses = new HashSet<>(treeIds);
             List<TreeSource> prevSources = new ArrayList<>();
             for (TreeSource treeSource : treeSources) {
                 if (misses.isEmpty())
@@ -86,11 +93,11 @@ public class LoadingBuffer {
                 var trees = treeSource.load(misses, context);
                 var hits = new ArrayList<Tree>();
                 for (Tree tree : trees) {
-                    if (tree.version() == versionMap.get(tree.id())) {
+//                    if (tree.version() == versionMap.get(tree.id())) {
                         addTree(tree);
                         hits.add(tree);
                         misses.remove(tree.id());
-                    }
+//                    }
                 }
                 if (!hits.isEmpty()) {
                     for (TreeSource prevSource : prevSources) {

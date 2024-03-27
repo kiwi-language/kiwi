@@ -15,8 +15,7 @@ public class ReferenceCleanupTask extends Task {
     public static final long BATCH_SIZE = 256;
 
     private final String targetId;
-    @Nullable
-    private String nextReferenceId;
+    private long nextTreeId;
 
     public ReferenceCleanupTask(String targetId, String typeName, String instanceTitle) {
         super("Reference cleanup " + instanceTitle + "/" + typeName);
@@ -30,15 +29,14 @@ public class ReferenceCleanupTask extends Task {
     @Override
     public boolean run0(IEntityContext context) {
         var instanceContext = context.getInstanceContext();
-        var next = NncUtils.get(nextReferenceId, id -> instanceContext.get(Id.parse(nextReferenceId)));
-        var instances = instanceContext.getByReferenceTargetId(Id.parse(targetId), next, BATCH_SIZE);
+        var instances = instanceContext.getByReferenceTargetId(Id.parse(targetId), nextTreeId, BATCH_SIZE);
         for (Instance instance : instances) {
             EntityUtils.ensureProxyInitialized(instance);
         }
         if(instances.size() < BATCH_SIZE) {
             return true;
         }
-        nextReferenceId = NncUtils.get(instances.get(instances.size() - 1).tryGetId(), Id::toString);
+        nextTreeId = instances.get(instances.size() - 1).getPhysicalId();
         return false;
     }
     

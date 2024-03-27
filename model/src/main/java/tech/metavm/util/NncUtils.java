@@ -526,8 +526,8 @@ public class NncUtils {
         return map == null || map.isEmpty();
     }
 
-    public static <T> long count(List<T> list, Predicate<T> filter) {
-        return list.stream().filter(filter).count();
+    public static <T> long count(Iterable<T> iterable, Predicate<T> filter) {
+        return streamOf(iterable).filter(filter).count();
     }
 
     public static <T> int count(T[] array, Predicate<T> filter) {

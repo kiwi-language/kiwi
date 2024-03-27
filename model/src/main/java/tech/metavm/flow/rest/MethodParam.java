@@ -1,7 +1,5 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.object.instance.core.Id;
-
 import javax.annotation.Nullable;
 import java.util.List;
 

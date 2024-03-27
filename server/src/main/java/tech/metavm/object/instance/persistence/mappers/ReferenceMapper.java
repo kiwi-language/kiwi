@@ -2,7 +2,6 @@ package tech.metavm.object.instance.persistence.mappers;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.persistence.TargetPO;
 
@@ -20,21 +19,21 @@ public interface ReferenceMapper {
     List<ReferencePO> selectByTargetId(
             @Param("appId") long appId,
             @Param("targetId") byte[] targetId,
-            @Param("startIdExclusive") byte[] startIdExclusive,
+            @Param("startIdExclusive") long startIdExclusive,
             @Param("limit") long limit
     );
 
     @Nullable
     ReferencePO selectFirstStrongReference(
             @Param("appId") long appId,
-            @Param("targetIds") Collection<Id> targetIds,
-            @Param("excludedSourceIds") Collection<Id> excludedSourceIds
+            @Param("targetIds") Collection<byte[]> targetIds,
+            @Param("excludedSourceIds") Collection<Long> excludedSourceIds
     );
 
     List<ReferencePO> selectAllStrongReferences(
             @Param("appId") long appId,
-            @Param("ids") Collection<Id> ids,
-            @Param("excludedSourceIds") Collection<Id> excludedSourceIds
+            @Param("ids") Collection<byte[]> ids,
+            @Param("excludedSourceIds") Collection<Long> excludedSourceIds
     );
 
     void batchInsert(Collection<ReferencePO> records);

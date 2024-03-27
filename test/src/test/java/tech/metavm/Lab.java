@@ -1,6 +1,6 @@
 package tech.metavm;
 
-import com.google.common.primitives.UnsignedBytes;
+import tech.metavm.object.instance.core.Id;
 
 import java.io.IOException;
 
@@ -19,9 +19,8 @@ public class Lab {
     };
 
     public static void main(String[] args) throws IOException {
-        System.out.println(UnsignedBytes.lexicographicalComparator().compare(MIN_ID, MAX_ID));
-        System.out.println(UnsignedBytes.lexicographicalComparator().compare(MIN_ID, ID));
-        System.out.println(UnsignedBytes.lexicographicalComparator().compare(ID, MAX_ID));
+        var id = Id.parse("01dad70301e0dc03");
+        System.out.println(id);
     }
 
 }

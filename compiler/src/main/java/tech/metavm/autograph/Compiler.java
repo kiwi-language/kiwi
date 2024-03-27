@@ -28,10 +28,7 @@ import tech.metavm.util.NncUtils;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 
@@ -50,6 +47,7 @@ public class Compiler {
     private final Project project;
     private final CompilerInstanceContextFactory contextFactory;
     private final TypeClient typeClient;
+    private final List<String> classNames = new ArrayList<>();
 
     static {
         NncUtils.ensureDirectoryExists(REQUEST_DIR);
@@ -102,6 +100,7 @@ public class Compiler {
             var typeResolver = new TypeResolverImpl(context);
             var files = NncUtils.map(sources, this::getPsiJavaFile);
             var psiClasses = NncUtils.flatMap(files, file -> List.of(file.getClasses()));
+            psiClasses.forEach(k -> classNames.add(k.getQualifiedName()));
             var psiClassTypes = NncUtils.map(
                     psiClasses, TranspileUtil.getElementFactory()::createType
             );
@@ -156,6 +155,10 @@ public class Compiler {
             saveRequest(request);
             typeClient.batchSave(request);
         }
+    }
+
+    public List<String> getClassNames() {
+        return Collections.unmodifiableList(classNames);
     }
 
     private void saveRequest(BatchSaveRequest request) {

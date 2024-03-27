@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.ReferencePO;
+import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.StreamVisitor;
 
@@ -36,11 +37,13 @@ public class ReferenceExtractor extends StreamVisitor {
     }
 
     private void addReference(Id targetId) {
-        add.accept(new ReferencePO(this.appId,
-                sourceId.toBytes(),
-                targetId.toBytes(),
-                NncUtils.get(fieldId, Id::toBytes),
-                ReferenceKind.STRONG.code()));
+        if(sourceId.getPhysicalId() != targetId.getPhysicalId()) {
+            add.accept(new ReferencePO(this.appId,
+                    sourceId.getPhysicalId(),
+                    targetId.toBytes(),
+                    NncUtils.getOrElse(fieldId, Id::toBytes, Constants.EMPTY_BYTES),
+                    ReferenceKind.STRONG.code()));
+        }
     }
 
     @Override

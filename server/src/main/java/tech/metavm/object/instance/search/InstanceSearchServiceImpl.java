@@ -74,6 +74,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
         deleteRequests.forEach(bulkRequest::add);
         try {
             var resp = restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+//            System.out.println(resp);
         } catch (IOException e) {
             throw new RuntimeException("ElasticSearch Error", e);
         }
@@ -81,7 +82,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     private IndexRequest buildIndexRequest(long appId, ClassInstance instance) {
         IndexRequest indexRequest = new IndexRequest(INDEX);
-        indexRequest.id(instance.tryGetPhysicalId() + "");
+        indexRequest.id(instance.getStringId());
         indexRequest.routing(appId + "");
         indexRequest.source(IndexSourceBuilder.buildSource(appId, instance));
         return indexRequest;

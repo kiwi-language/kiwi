@@ -8,4 +8,6 @@ public class SignatureFoo {
         list.add(element);
     }
 
+    public void test(Object o) {}
+
 }

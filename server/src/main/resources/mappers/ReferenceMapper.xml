@@ -5,25 +5,17 @@
         <!--@mbg.generated-->
         <!--@Table reference-->
         <result property="appId" jdbcType="BIGINT" column="app_id"/>
-        <result property="sourceId" jdbcType="BIGINT" column="source_id"/>
-        <result property="targetId" jdbcType="BIGINT" column="target_id"/>
-        <result property="fieldId" jdbcType="BIGINT" column="field_id"/>
+        <result property="sourceTreeId" jdbcType="BIGINT" column="source_tree_id"/>
+        <result property="targetId" jdbcType="BINARY" column="target_id"/>
+        <result property="fieldId" jdbcType="BINARY" column="field_id"/>
         <result property="kind" jdbcType="INTEGER" column="kind"/>
-        <result property="sourceTypeTag" jdbcType="SMALLINT" column="source_type_tag"/>
-        <result property="sourceTypeId" jdbcType="BIGINT" column="source_type_id"/>
-        <result property="targetTypeTag" jdbcType="SMALLINT" column="target_type_tag"/>
-        <result property="targetTypeId" jdbcType="BIGINT" column="target_type_id"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         <!--@mbg.generated-->
         app_id,
-        source_id,
-        source_type_tag,
-        source_type_id,
+        source_tree_id,
         target_id,
-        target_type_tag,
-        target_type_id,
         field_id,
         kind
     </sql>
@@ -32,20 +24,18 @@
         <!--@mbg.generated-->
         delete
         from reference
-        where (app_id, source_id, target_id, field_id) in
+        where (app_id, source_tree_id, target_id, field_id) in
         <foreach collection="collection" item="item" open="(" close=")" separator=",">
-            (#{item.appId}, #{item.sourceId}, #{item.targetId}, #{item.fieldId})
+            (#{item.appId}, #{item.sourceTreeId}, #{item.targetId}, #{item.fieldId})
         </foreach>
     </delete>
 
     <insert id="batchInsert">
         <!--@mbg.generated-->
-        insert into reference (app_id, source_id, target_id, field_id, kind, source_type_tag, source_type_id,
-        target_type_tag, target_type_id)
+        insert into reference (app_id, source_tree_id, target_id, field_id, kind)
         values
         <foreach collection="collection" item="item" separator=",">
-            (#{item.appId}, #{item.sourceId}, #{item.targetId}, #{item.fieldId}, #{item.kind},
-            #{item.sourceTypeTag}, #{item.sourceTypeId}, #{item.targetTypeTag}, #{item.targetTypeId})
+            (#{item.appId}, #{item.sourceTreeId}, #{item.targetId}, #{item.fieldId}, #{item.kind})
         </foreach>
     </insert>
 
@@ -59,7 +49,7 @@
                 </if>
             </set>
             where app_id = #{item.appId}
-            and source_id = #{item.sourceId}
+            and source_tree_id = #{item.sourceTreeId}
             and target_id = #{item.targetId}
             and kind = #{item.kind}
         </foreach>
@@ -101,7 +91,7 @@
             #{id}
         </foreach>
         <if test="excludedSourceIds != null and excludedSourceIds.size() != 0">
-            and source_id not in
+            and source_tree_id not in
             <foreach collection="excludedSourceIds" item="id" open="(" close=")" separator=",">
                 #{id}
             </foreach>
@@ -121,7 +111,7 @@
             #{id}
         </foreach>
         <if test="excludedSourceIds != null and excludedSourceIds.size() != 0">
-            and source_id not in
+            and source_tree_id not in
             <foreach collection="excludedSourceIds" item="id" open="(" close=")" separator=",">
                 #{id}
             </foreach>
@@ -134,8 +124,8 @@
         from reference
         where app_id = #{appId}
         and target_id = #{targetId}
-        and source_id > #{startIdExclusive}
-        order by source_id
+        and source_tree_id > #{startIdExclusive}
+        order by source_tree_id
         limit #{limit}
     </select>
 </mapper>

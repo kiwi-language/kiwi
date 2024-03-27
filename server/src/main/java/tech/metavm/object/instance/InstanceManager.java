@@ -10,6 +10,7 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionParser;
 import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.core.StructuralVisitor;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.query.GraphQueryExecutor;
@@ -207,27 +208,35 @@ public class InstanceManager extends EntityContextFactoryBean {
         try (var context = newInstanceContext()) {
             var id = Id.parse(stringId);
             ReferenceTree root = new ReferenceTree(context.get(id), rootMode);
-            Set<Id> visited = new HashSet<>();
+            Set<Long> visited = new HashSet<>();
             Map<Id, ReferenceTree> trees = new HashMap<>();
             trees.put(id, root);
-            visited.add(id);
+            visited.add(id.getPhysicalId());
             Set<Id> ids = new HashSet<>();
             ids.add(id);
             while (!ids.isEmpty()) {
                 var refs = instanceStore.getAllStrongReferences(context.getAppId(), ids, visited);
                 ids.clear();
                 for (ReferencePO ref : refs) {
-                    var sourceId = ref.getSourceInstanceId();
+                    var sourceId = ref.getSourceTreeId();
                     if (visited.contains(sourceId)) continue;
                     visited.add(sourceId);
-                    ids.add(sourceId);
+                    var inst = context.getRoot(sourceId);
                     var parent = trees.get(ref.getTargetInstanceId());
-                    var tree = new ReferenceTree(context.get(sourceId), rootMode);
+                    var tree = new ReferenceTree(inst, rootMode);
                     parent.addChild(tree);
-                    trees.put(sourceId, tree);
+
+                    inst.accept(new StructuralVisitor() {
+                        @Override
+                        public Void visitDurableInstance(DurableInstance instance) {
+                            ids.add(instance.getId());
+                            trees.put(instance.getId(), tree);
+                            return super.visitDurableInstance(instance);
+                        }
+                    });
                 }
             }
-            context.batchGet(visited);
+//            context.batchGet(visited);
             return root.getPaths();
         }
     }

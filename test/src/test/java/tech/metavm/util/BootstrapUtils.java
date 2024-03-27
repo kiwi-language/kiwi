@@ -141,6 +141,7 @@ public class BootstrapUtils {
                     entityContextFactory,
                     idProvider,
                     state.blockMapper(),
+                    state.regionMapper(),
                     instanceStore,
                     instanceSearchService,
                     state.allocatorStore()
@@ -190,6 +191,7 @@ public class BootstrapUtils {
                     entityContextFactory,
                     idProvider,
                     blockMapper,
+                    regionMapper,
                     instanceStore,
                     instanceSearchService,
                     allocatorStore

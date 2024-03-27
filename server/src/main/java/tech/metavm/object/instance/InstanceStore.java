@@ -10,13 +10,13 @@ import tech.metavm.object.instance.persistence.*;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapper;
 import tech.metavm.object.instance.persistence.mappers.ReferenceMapper;
+import tech.metavm.system.RegionConstants;
 import tech.metavm.util.ChangeList;
+import tech.metavm.util.Constants;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class InstanceStore extends BaseInstanceStore {
@@ -49,7 +49,14 @@ public class InstanceStore extends BaseInstanceStore {
     public List<TreeVersion> getVersions(List<Long> ids, IInstanceContext context) {
         try (var entry = context.getProfiler().enter("getRootVersions")) {
             entry.addMessage("numIds", ids.size());
-            return instanceMapper.selectVersions(context.getAppId(), ids);
+            var systemIds = NncUtils.filter(ids, RegionConstants::isSystemId);
+            var nonSystemIds = NncUtils.exclude(ids, RegionConstants::isSystemId);
+            List<TreeVersion> systemTrees = systemIds.isEmpty() ? List.of() : instanceMapper.selectVersions(Constants.ROOT_APP_ID, systemIds);
+            List<TreeVersion> nonSystemTrees = nonSystemIds.isEmpty() ? List.of() : instanceMapper.selectVersions(context.getAppId(), nonSystemIds);
+            var treeMap = new HashMap<Long, TreeVersion>();
+            systemTrees.forEach(v -> treeMap.put(v.id(), v));
+            nonSystemTrees.forEach(v -> treeMap.put(v.id(), v));
+            return NncUtils.mapAndFilter(ids, treeMap::get, Objects::nonNull);
         }
     }
 
@@ -66,18 +73,18 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
-    public ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Id> excludedSourceIds) {
+    public ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds) {
         if (targetIds.isEmpty())
             return null;
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getFirstStrongReferences")) {
-            return referenceMapper.selectFirstStrongReference(appId, targetIds, excludedSourceIds);
+            return referenceMapper.selectFirstStrongReference(appId, NncUtils.map(targetIds, Id::toBytes), excludedSourceIds);
         }
     }
 
     @Override
-    public List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Id> excludedSourceIds) {
+    public List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds) {
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getAllStrongReferences")) {
-            return referenceMapper.selectAllStrongReferences(appId, targetIds, excludedSourceIds);
+            return referenceMapper.selectAllStrongReferences(appId, NncUtils.map(targetIds, Id::toBytes), excludedSourceIds);
         }
     }
 
@@ -110,12 +117,11 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
-    public List<Id> getByReferenceTargetId(Id targetId, Id startIdExclusive, long limit, IInstanceContext context) {
+    public List<Long> getByReferenceTargetId(Id targetId, long startIdExclusive, long limit, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.getByReferenceTargetId")) {
             return NncUtils.map(
-                    referenceMapper.selectByTargetId(context.getAppId(), targetId.toBytes(),
-                            NncUtils.get(startIdExclusive, Id::toBytes), limit),
-                    ReferencePO::getSourceInstanceId
+                    referenceMapper.selectByTargetId(context.getAppId(), targetId.toBytes(), startIdExclusive, limit),
+                    ReferencePO::getSourceTreeId
             );
         }
     }

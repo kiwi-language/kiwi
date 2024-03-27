@@ -6,6 +6,7 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.IdentitySet;
+import tech.metavm.util.NncUtils;
 
 import java.util.*;
 
@@ -26,11 +27,11 @@ public class DefaultIdInitializer implements IdInitializer {
 
     @Override
     public void initializeIds(long appId, Collection<? extends DurableInstance> instancesToInitId) {
-        var countMap = Map.of(ModelDefRegistry.getType(ClassType.class), instancesToInitId.size());
-        var ids = new LinkedList<>(idProvider.allocate(appId, countMap).get(ModelDefRegistry.getType(ClassType.class)));
         var classType = ModelDefRegistry.getType(ClassType.class);
         var arrayType = ModelDefRegistry.getType(ArrayType.class);
         var fieldType = ModelDefRegistry.getType(Field.class);
+        var countMap = Map.of(classType, (int) NncUtils.count(instancesToInitId, DurableInstance::isRoot));
+        var ids = new LinkedList<>(idProvider.allocate(appId, countMap).get(classType));
         Map<Type, DurableInstance> typeInstance = new HashMap<>();
         for (DurableInstance instance : instancesToInitId) {
             if (instance.getMappedEntity() instanceof Type type)

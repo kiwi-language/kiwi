@@ -5,23 +5,23 @@
         <!--@mbg.generated-->
         <!--@Table index_entry-->
         <result property="appId" jdbcType="BIGINT" column="app_id"/>
-        <result property="indexId" jdbcType="BIGINT" column="index_id"/>
-        <result property="column0" column="column0"/>
-        <result property="column1" column="column1"/>
-        <result property="column2" column="column2"/>
-        <result property="column3" column="column3"/>
-        <result property="column4" column="column4"/>
-        <result property="column5" column="column5"/>
-        <result property="column6" column="column6"/>
-        <result property="column7" column="column7"/>
-        <result property="column8" column="column8"/>
-        <result property="column9" column="column9"/>
-        <result property="column10" column="column10"/>
-        <result property="column11" column="column11"/>
-        <result property="column12" column="column12"/>
-        <result property="column13" column="column13"/>
-        <result property="column14" column="column14"/>
-        <result property="instanceId" jdbcType="BIGINT" column="instance_id"/>
+        <result property="indexId" jdbcType="BINARY" column="index_id"/>
+        <result property="column0" jdbcType="BINARY" column="column0"/>
+        <result property="column1" jdbcType="BINARY" column="column1"/>
+        <result property="column2" jdbcType="BINARY" column="column2"/>
+        <result property="column3" jdbcType="BINARY" column="column3"/>
+        <result property="column4" jdbcType="BINARY" column="column4"/>
+        <result property="column5" jdbcType="BINARY" column="column5"/>
+        <result property="column6" jdbcType="BINARY" column="column6"/>
+        <result property="column7" jdbcType="BINARY" column="column7"/>
+        <result property="column8" jdbcType="BINARY" column="column8"/>
+        <result property="column9" jdbcType="BINARY" column="column9"/>
+        <result property="column10" jdbcType="BINARY" column="column10"/>
+        <result property="column11" jdbcType="BINARY" column="column11"/>
+        <result property="column12" jdbcType="BINARY" column="column12"/>
+        <result property="column13" jdbcType="BINARY" column="column13"/>
+        <result property="column14" jdbcType="BINARY" column="column14"/>
+        <result property="instanceId" jdbcType="BINARY" column="instance_id"/>
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -43,9 +43,7 @@
         column12,
         column13,
         column14,
-        instance_id,
-        type_tag,
-        type_id
+        instance_id
     </sql>
 
     <update id="batchDelete">
@@ -53,23 +51,28 @@
         delete
         from index_entry
         where
-            (app_id, index_id, column0, column1, column2, column3, column4,column5,column6,column7,column8,column9,column10,column11,column12,column13,column14,instance_id) in
+            (app_id, index_id, column0, column1, column2, column3, column4, column5, column6, column7, column8, column9,
+             column10, column11, column12, column13, column14, instance_id) in
         <foreach collection="collection" item="item" open="(" close=")" separator=",">
             (#{item.appId}, #{item.indexId}, #{item.column0}, #{item.column1}, #{item.column2},
-            #{item.column3}, #{item.column4}, #{item.column5}, #{item.column6}, #{item.column7}, #{item.column8}, #{item.column9}, #{item.column10}, #{item.column11}, #{item.column12}, #{item.column13}, #{item.column14},
-            #{item.instanceId})
+             #{item.column3}, #{item.column4}, #{item.column5}, #{item.column6}, #{item.column7}, #{item.column8},
+             #{item.column9}, #{item.column10}, #{item.column11}, #{item.column12}, #{item.column13}, #{item.column14},
+             #{item.instanceId})
         </foreach>
     </update>
 
     <insert id="batchInsert">
         <!--@mbg.generated-->
-        insert into index_entry (app_id, index_id, column0, column1, column2, column3, column4, column5,column6,column7,column8,column9,column10,column11,column12,column13,column14,instance_id)
+        insert into index_entry (app_id, index_id, column0, column1, column2, column3, column4, column5, column6,
+                                 column7, column8, column9, column10, column11, column12, column13, column14,
+                                 instance_id)
         values
         <foreach collection="collection" item="item" separator=",">
             (#{item.appId}, #{item.indexId}, #{item.column0}, #{item.column1}, #{item.column2},
-            #{item.column3}, #{item.column4},
-            #{item.column5}, #{item.column6}, #{item.column7}, #{item.column8}, #{item.column9}, #{item.column10}, #{item.column11}, #{item.column12}, #{item.column13}, #{item.column14},
-            #{item.instanceId})
+             #{item.column3}, #{item.column4},
+             #{item.column5}, #{item.column6}, #{item.column7}, #{item.column8}, #{item.column9}, #{item.column10},
+             #{item.column11}, #{item.column12}, #{item.column13}, #{item.column14},
+             #{item.instanceId})
         </foreach>
     </insert>
 
@@ -88,10 +91,13 @@
                 or
             </if>
             <if test="keys != null and keys.size() != 0">
-                (index_id, column0, column1, column2, column3, column4,column5,column6,column7,column8,column9,column10,column11,column12,column13,column14) in
+                (index_id, column0, column1, column2, column3, column4, column5, column6, column7, column8, column9,
+                 column10, column11, column12, column13, column14) in
                 <foreach collection="keys" item="item" open="(" close=")" separator=",">
                     (#{item.indexId}, #{item.column0}, #{item.column1}, #{item.column2}, #{item.column3},
-                    #{item.column4}, #{item.column5}, #{item.column6}, #{item.column7}, #{item.column8}, #{item.column9}, #{item.column10}, #{item.column11}, #{item.column12}, #{item.column13}, #{item.column14})
+                     #{item.column4}, #{item.column5}, #{item.column6}, #{item.column7}, #{item.column8},
+                     #{item.column9}, #{item.column10}, #{item.column11}, #{item.column12}, #{item.column13},
+                     #{item.column14})
                 </foreach>
                 or
             </if>
@@ -106,7 +112,8 @@
         where
         <include refid="condition"/>
         <if test="desc">
-            order by (column0, column1, column2, column3, column4, column5,column6,column7,column8,column9,column10,column11,column12,column13,column14) desc
+            order by (column0, column1, column2, column3, column4, column5, column6, column7, column8, column9,
+                      column10, column11, column12, column13, column14) desc
         </if>
         <if test="limit != null">
             limit #{limit}
@@ -138,7 +145,7 @@
 
     <sql id="condition">
             app_id = #{appId}
-            and index_id = #{constraintId}
+            and index_id = #{indexId}
         <if test="from != null">
             and (column0, column1, column2, column3, column4, column5, column6, column7, column8, column9, column10,
                  column11, column12, column13, column14) >=
@@ -173,23 +180,29 @@
         from index_entry
         where app_id = #{appId}
           and
-            (index_id, column0, column1, column2, column3, column4, column5,column6,column7,column8,column9,column10,column11,column12,column13,column14) in
+            (index_id, column0, column1, column2, column3, column4, column5, column6, column7, column8, column9,
+             column10, column11, column12, column13, column14) in
         <foreach collection="keys" item="item" open="(" close=")" separator=",">
             (#{item.indexId}, #{item.column0}, #{item.column1}, #{item.column2}, #{item.column3},
-             #{item.column4}, #{item.column5}, #{item.column6}, #{item.column7}, #{item.column8}, #{item.column9}, #{item.column10}, #{item.column11}, #{item.column12}, #{item.column13}, #{item.column14})
+             #{item.column4}, #{item.column5}, #{item.column6}, #{item.column7}, #{item.column8}, #{item.column9},
+             #{item.column10}, #{item.column11}, #{item.column12}, #{item.column13}, #{item.column14})
         </foreach>
     </select>
 
     <select id="countRange" resultType="long">
-        select
-        count(1)
+        select count(1)
         from index_entry
         where app_id = #{appId}
-        and index_id = #{from.indexId}
-        and (column0, column1, column2, column3, column4, column5,column6,column7,column8,column9,column10,column11,column12,column13,column14) between
-        (#{from.column0}, #{from.column1}, #{from.column2}, #{from.column3}, #{from.column4}, #{from.column5}, #{from.column6}, #{from.column7}, #{from.column8}, #{from.column9}, #{from.column10}, #{from.column11}, #{from.column12}, #{from.column13}, #{from.column14})
-        and
-        (#{to.column0}, #{to.column1}, #{to.column2}, #{to.column3}, #{to.column4}, #{to.column5}, #{to.column6}, #{to.column7}, #{to.column8}, #{to.column9}, #{to.column10}, #{to.column11}, #{to.column12}, #{to.column13}, #{to.column14})
+          and index_id = #{from.indexId}
+          and (column0, column1, column2, column3, column4, column5, column6, column7, column8, column9, column10,
+               column11, column12, column13, column14) between
+            (#{from.column0}, #{from.column1}, #{from.column2}, #{from.column3}, #{from.column4}, #{from.column5},
+             #{from.column6}, #{from.column7}, #{from.column8}, #{from.column9}, #{from.column10}, #{from.column11},
+             #{from.column12}, #{from.column13}, #{from.column14})
+            and
+            (#{to.column0}, #{to.column1}, #{to.column2}, #{to.column3}, #{to.column4}, #{to.column5}, #{to.column6},
+             #{to.column7}, #{to.column8}, #{to.column9}, #{to.column10}, #{to.column11}, #{to.column12},
+             #{to.column13}, #{to.column14})
     </select>
 
     <select id="scan" resultMap="BaseResultMap">
@@ -198,9 +211,14 @@
         from index_entry
         where app_id = #{appId}
           and index_id = #{from.indexId}
-          and (column0, column1, column2, column3, column4, column5,column6,column7,column8,column9,column10,column11,column12,column13,column14) between
-            (#{from.column0}, #{from.column1}, #{from.column2}, #{from.column3}, #{from.column4}, #{from.column5}, #{from.column6}, #{from.column7}, #{from.column8}, #{from.column9}, #{from.column10}, #{from.column11}, #{from.column12}, #{from.column13}, #{from.column14})
+          and (column0, column1, column2, column3, column4, column5, column6, column7, column8, column9, column10,
+               column11, column12, column13, column14) between
+            (#{from.column0}, #{from.column1}, #{from.column2}, #{from.column3}, #{from.column4}, #{from.column5},
+             #{from.column6}, #{from.column7}, #{from.column8}, #{from.column9}, #{from.column10}, #{from.column11},
+             #{from.column12}, #{from.column13}, #{from.column14})
             and
-            (#{to.column0}, #{to.column1}, #{to.column2}, #{to.column3}, #{to.column4}, #{to.column5}, #{to.column6}, #{to.column7}, #{to.column8}, #{to.column9}, #{to.column10}, #{to.column11}, #{to.column12}, #{to.column13}, #{to.column14})
+            (#{to.column0}, #{to.column1}, #{to.column2}, #{to.column3}, #{to.column4}, #{to.column5}, #{to.column6},
+             #{to.column7}, #{to.column8}, #{to.column9}, #{to.column10}, #{to.column11}, #{to.column12},
+             #{to.column13}, #{to.column14})
     </select>
 </mapper>

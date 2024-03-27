@@ -58,26 +58,37 @@ public class BootstrapTest extends TestCase {
 
     public void test() {
         {
+            ContextUtil.resetProfiler();
+            var profiler = ContextUtil.getProfiler();
             var bootstrap = newBootstrap();
             var result = bootstrap.boot();
             Assert.assertTrue(result.numInstancesWithNullIds() > 0);
             TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+            LOGGER.info(profiler.finish(false, true).toString());
         }
         {
+            ContextUtil.resetProfiler();
+            var profiler = ContextUtil.getProfiler();
             var bootstrap = newBootstrap();
             var result = bootstrap.boot();
             Assert.assertEquals(0, result.numInstancesWithNullIds());
             TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+            LOGGER.info(profiler.finish(false, true).toString());
         }
         // test remove field
         {
+            ContextUtil.resetProfiler();
+            var profiler = ContextUtil.getProfiler();
             var bootstrap = newBootstrap();
             bootstrap.setFieldBlacklist(Set.of(ReflectionUtils.getDeclaredField(Type.class, "dummyFlag")));
             var result = bootstrap.boot();
             Assert.assertEquals(0, result.numInstancesWithNullIds());
             TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+            LOGGER.info(profiler.finish(false, true).toString());
         }
         {
+            ContextUtil.resetProfiler();
+            var profiler = ContextUtil.getProfiler();
             var originalDefContext = ModelDefRegistry.getDefContext();
             var entities = NncUtils.filter(originalDefContext.getEntities(), e -> !EntityUtils.isEphemeral(e));
             var modelIds = NncUtils.map(entities, e -> originalDefContext.getIdentityContext().getModelId(e));
@@ -96,6 +107,7 @@ public class BootstrapTest extends TestCase {
                                     defContext.getInstance(defContext.getIdentityContext().getModel(modelId)).tryGetId()
                     )
             );
+            LOGGER.info(profiler.finish(false, true).toString());
         }
     }
 

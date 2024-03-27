@@ -37,6 +37,12 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     DurableInstance get(Id id);
 
+    List<DurableInstance> batchGetRoots(List<Long> treeIds);
+
+    default DurableInstance getRoot(long treeId) {
+        return NncUtils.first(batchGetRoots(List.of(treeId)));
+    }
+
 //    Instance get(RefDTO ref);
 
 //    Instance get(InstanceId id);
@@ -74,7 +80,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     boolean containsId(Id id);
 
-    List<DurableInstance> getByReferenceTargetId(Id targetId, DurableInstance startExclusive, long limit);
+    List<DurableInstance> getByReferenceTargetId(Id targetId, long startExclusive, long limit);
 
     void buffer(Id id);
 

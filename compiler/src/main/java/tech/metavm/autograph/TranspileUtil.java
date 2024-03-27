@@ -838,11 +838,19 @@ public class TranspileUtil {
     );
 
     public static String getInternalName(PsiMethod method) {
+        return getInternalName(method, List.of());
+    }
+
+    public static String getInternalName(PsiMethod method, List<PsiType> implicitParameterTypes) {
+        var paramTypeNames = new ArrayList<>(
+                NncUtils.map(implicitParameterTypes, t -> getInternalName(t, false, method))
+        );
+        paramTypeNames.addAll(
+                NncUtils.map(method.getParameterList().getParameters(),
+                        p -> getInternalName(p.getType(), hasAnnotation(p, Nullable.class), method))
+        );
         return getInternalName(createType(method.getContainingClass()), null) + "." +
-                method.getName() + "(" + NncUtils.join(
-                List.of(method.getParameterList().getParameters()),
-                p -> getInternalName(p.getType(), hasAnnotation(p, Nullable.class), method)
-        ) + ")";
+                method.getName() + "(" + NncUtils.join(paramTypeNames, ",") + ")";
     }
 
 
@@ -855,11 +863,10 @@ public class TranspileUtil {
     }
 
     private static String getInternalName(PsiType type, boolean nullable, PsiMethod current) {
-        if(nullable) {
+        if (nullable) {
             var names = List.of("Null", getInternalName(type, current));
             return names.stream().sorted().collect(Collectors.joining("|"));
-        }
-        else {
+        } else {
             return getInternalName(type, current);
         }
     }

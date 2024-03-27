@@ -107,7 +107,7 @@ public class Declarator extends CodeGenVisitor {
             if(method != null)
                 methodIndices.put(method, i);
         }
-        metaClass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
+        metaClass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, m.isSynthetic() ? Integer.MAX_VALUE : -1)));
         removedMethods.forEach(metaClass::removeMethod);
 //        metaClass.setStage(ResolutionStage.DECLARATION);
     }
@@ -131,7 +131,9 @@ public class Declarator extends CodeGenVisitor {
                     overriddenMethod, typeResolver)
             );
         }
-        var internalName = TranspileUtil.getInternalName(method);
+        List<PsiType> implicitTypeArgs = method.isConstructor() && currentClass().isEnum() ?
+                List.of(TranspileUtil.createType(String.class), TranspileUtil.createPrimitiveType(int.class)) : List.of();
+        var internalName = TranspileUtil.getInternalName(method, implicitTypeArgs);
         var flow = NncUtils.find(currentClass().getMethods(), f -> f.getInternalName(null).equals(internalName));
         if (flow != null)
             method.putUserData(Keys.Method, flow);
