@@ -9,6 +9,9 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.user.rest.dto.RoleDTO;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.BootstrapUtils;
+import tech.metavm.util.Constants;
+import tech.metavm.util.ContextUtil;
+import tech.metavm.util.TestConstants;
 
 import java.util.List;
 
@@ -29,6 +32,7 @@ public class PlatformUserManagerTest extends TestCase {
         platformUserManager = new PlatformUserManager(entityContextFactory,  loginService, new EntityQueryService(instanceQueryService), new MockEventQueue(),
                 new VerificationCodeService(entityContextFactory, new MockEmailService()));
         roleManager = new RoleManager(entityContextFactory, entityQueryService);
+        ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
     }
 
     @Override
