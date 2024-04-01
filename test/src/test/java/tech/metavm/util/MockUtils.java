@@ -43,7 +43,7 @@ public class MockUtils {
                 ResolutionStage.DEFINITION,
                 new MockEntityRepository(new MemTypeRegistry()),
                 new UnsupportedCompositeTypeFacade(),
-                new UnsupportedParameterizedTypeProvider(),
+                new UnsupportedParameterizedTypeRepository(),
                 new UnsupportedParameterizedFlowProvider(),
                 new MockDTOProvider()
         );

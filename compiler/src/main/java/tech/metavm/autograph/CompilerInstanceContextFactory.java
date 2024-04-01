@@ -3,9 +3,8 @@ package tech.metavm.autograph;
 import tech.metavm.entity.*;
 import tech.metavm.instance.core.CompilerIdService;
 import tech.metavm.instance.core.CompilerInstanceContext;
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
-import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.IInstanceContext;
 
 import java.util.List;
 
@@ -51,6 +50,7 @@ public class CompilerInstanceContextFactory {
                 idProvider,
                 localIndexSource,
                 stdContext,
+                bridge,
                 bridge,
                 bridge,
                 bridge,

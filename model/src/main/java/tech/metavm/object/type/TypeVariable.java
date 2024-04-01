@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 @EntityType("类型变量")
-public class TypeVariable extends Type implements LocalKey, GenericElement {
+public class TypeVariable extends Type implements LocalKey, GenericElement, ITypeVariable {
 
     @ChildEntity("类型上界")
     private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");

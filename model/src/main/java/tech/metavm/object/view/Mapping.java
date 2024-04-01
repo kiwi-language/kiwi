@@ -3,6 +3,7 @@ package tech.metavm.object.view;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.ExceptionNative;
+import tech.metavm.entity.natives.CallContext;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
@@ -51,8 +52,8 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         this.targetType = targetType;
     }
 
-    public DurableInstance mapRoot(DurableInstance instance, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
-        var view = map(instance, repository, parameterizedFlowProvider);
+    public DurableInstance mapRoot(DurableInstance instance, CallContext callContext) {
+        var view = map(instance, callContext);
         view.accept(new CollectionAwareStructuralVisitor() {
 
             @Override
@@ -90,21 +91,21 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         return view;
     }
 
-    public DurableInstance map(DurableInstance instance, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
-        var view = (DurableInstance) getMapper().execute(null, List.of(instance), repository, parameterizedFlowProvider).ret();
+    public DurableInstance map(DurableInstance instance, CallContext callContext) {
+        var view = (DurableInstance) getMapper().execute(null, List.of(instance), callContext).ret();
         requireNonNull(view).setSourceRef(new SourceRef(instance, this));
         return view;
     }
 
-    public DurableInstance unmap(DurableInstance view, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
-        var result = getUnmapper().execute(null, List.of(view), repository, parameterizedFlowProvider);
+    public DurableInstance unmap(DurableInstance view, CallContext callContext) {
+        var result = getUnmapper().execute(null, List.of(view), callContext);
         if(result.exception() != null) {
             var exceptionNative = new ExceptionNative(result.exception());
             throw new BusinessException(ErrorCode.FAIL_TO_SAVE_VIEW, exceptionNative.getMessage().getTitle());
         }
         var source = (DurableInstance) Objects.requireNonNull(result.ret());
         if (source.getContext() == null)
-            repository.bind(source);
+            callContext.instanceRepository().bind(source);
         return source;
     }
 
@@ -201,9 +202,9 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
 
     protected abstract ClassType getClassTypeForDeclaration();
 
-    protected abstract Flow generateMappingCode(FunctionTypeProvider functionTypeProvider);
+    protected abstract Flow generateMappingCode(CompositeTypeFacade compositeTypeFacade);
 
-    protected abstract Flow generateUnmappingCode(FunctionTypeProvider functionTypeProvider);
+    protected abstract Flow generateUnmappingCode(CompositeTypeFacade compositeTypeFacade);
 
     public boolean isCodeGenerated() {
         return mapper != null && mapper.isRootScopePresent();

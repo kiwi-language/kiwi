@@ -14,10 +14,4 @@ public interface ParameterizedTypeProvider {
                                    ResolutionStage stage,
                                    DTOProvider dtoProvider
     );
-
-    List<ClassType> getTemplateInstances(ClassType template);
-
-    ClassType getExisting(ClassType template, List<? extends Type> typeArguments);
-
-    void add(ClassType parameterizedType);
 }

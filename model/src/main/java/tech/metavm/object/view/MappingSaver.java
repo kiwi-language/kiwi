@@ -1,5 +1,6 @@
 package tech.metavm.object.view;
 
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.DummyGenericDeclaration;
 import tech.metavm.entity.EntityRepository;
 import tech.metavm.entity.IEntityContext;
@@ -13,6 +14,7 @@ import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.SubstitutorV2;
 import tech.metavm.object.type.generic.TypeSubstitutor;
 import tech.metavm.object.view.rest.dto.*;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NamingUtils;
 import tech.metavm.util.NncUtils;
@@ -54,7 +56,7 @@ public class MappingSaver {
 
     private final InstanceProvider instanceProvider;
     private final IndexedTypeProvider typeProvider;
-    private final ParameterizedTypeProvider parameterizedTypeProvider;
+    private final ParameterizedTypeRepository parameterizedTypeRepository;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private final CompositeTypeFacade compositeTypeFacade;
     private final MappingProvider mappingProvider;
@@ -63,13 +65,13 @@ public class MappingSaver {
     public MappingSaver(InstanceProvider instanceProvider,
                         IndexedTypeProvider typeProvider,
                         CompositeTypeFacade compositeTypeFacade,
-                        ParameterizedTypeProvider parameterizedTypeProvider,
+                        ParameterizedTypeRepository parameterizedTypeRepository,
                         ParameterizedFlowProvider parameterizedFlowProvider,
                         MappingProvider mappingProvider,
                         EntityRepository entityRepository) {
         this.instanceProvider = instanceProvider;
         this.typeProvider = typeProvider;
-        this.parameterizedTypeProvider = parameterizedTypeProvider;
+        this.parameterizedTypeRepository = parameterizedTypeRepository;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.compositeTypeFacade = compositeTypeFacade;
         this.mappingProvider = mappingProvider;
@@ -109,12 +111,12 @@ public class MappingSaver {
 
     private void retransformClassType(ClassType sourceType) {
         if (sourceType.isTemplate()) {
-            var templateInstances = parameterizedTypeProvider.getTemplateInstances(sourceType);
+            var templateInstances = parameterizedTypeRepository.getTemplateInstances(sourceType);
             for (ClassType templateInstance : templateInstances) {
                 templateInstance.setStage(ResolutionStage.INIT);
                 var subst = new SubstitutorV2(
                         sourceType, sourceType.getTypeParameters(), templateInstance.getTypeArguments(),
-                        ResolutionStage.DEFINITION, entityRepository, compositeTypeFacade, parameterizedTypeProvider,
+                        ResolutionStage.DEFINITION, entityRepository, compositeTypeFacade, parameterizedTypeRepository,
                         parameterizedFlowProvider, new MockDTOProvider()
                 );
                 sourceType.accept(subst);
@@ -278,9 +280,9 @@ public class MappingSaver {
                     .build();
         }
         if(generateCode) {
-            fromView.clearNodes();
+            fromView.clearContent();
             var scope = fromView.getRootScope();
-            var inputNode = Nodes.input(fromView);
+            var inputNode = Nodes.input(fromView, compositeTypeFacade);
             var view = Nodes.value("view", Values.nodeProperty(inputNode, inputNode.getType().getFieldByCode("view")), scope);
 
             var fieldValues = new HashMap<String, Supplier<Value>>();
@@ -291,7 +293,8 @@ public class MappingSaver {
                 else {
                     var fieldValue = nestedMapping.generateUnmappingCode(
                             () -> Values.nodeProperty(view, fieldMapping.getTargetField()),
-                            scope
+                            scope,
+                            compositeTypeFacade
                     );
                     fieldValues.put(fieldMapping.getTargetField().getCode(), fieldValue);
                 }
@@ -324,10 +327,13 @@ public class MappingSaver {
                 NncUtils.map(getAccessors(type), a -> new NameAndType(requireNonNull(a.code), a.getter.getReturnType()))
         );
         var fieldTypes = NncUtils.toMap(fields, f -> f.name, f -> f.type);
-        return NncUtils.findRequired(
+        var constructor =  NncUtils.find(
                 type.getMethods(),
                 m -> m.isConstructor() && isFromViewConstructor(m, fieldTypes)
         );
+        if(constructor == null)
+            throw new BusinessException(ErrorCode.ENTITY_STRUCT_LACKS_CANONICAL_CONSTRUCTOR, type.getName());
+        return constructor;
     }
 
     private boolean isFromViewConstructor(Method constructor, Map<String, Type> fieldTypes) {
@@ -391,7 +397,7 @@ public class MappingSaver {
                     template, template.getTypeParameters(),
                     sourceType.getTypeParameters(), ResolutionStage.INIT,
                     entityRepository, compositeTypeFacade,
-                    parameterizedTypeProvider,
+                    parameterizedTypeRepository,
                     null, new MockDTOProvider()
             );
             return (ClassType) template.accept(subst);
@@ -441,7 +447,7 @@ public class MappingSaver {
                     targetType.getTypeArguments(), ResolutionStage.DECLARATION,
                     entityRepository,
                     compositeTypeFacade,
-                    parameterizedTypeProvider,
+                    parameterizedTypeRepository,
                     null, new MockDTOProvider()
             );
             targetType.setStage(ResolutionStage.INIT);
@@ -475,11 +481,11 @@ public class MappingSaver {
                         ));
                         ;
                         yield new ListNestedMapping(classType, targetType,
-                                parameterizedTypeProvider.getParameterizedType(
+                                parameterizedTypeRepository.getParameterizedType(
                                         StandardTypes.getReadWriteListType(),
                                         List.of(classType.getListElementType())
                                 ),
-                                parameterizedTypeProvider.getParameterizedType(
+                                parameterizedTypeRepository.getParameterizedType(
                                         StandardTypes.getReadWriteListType(),
                                         List.of(targetType.getListElementType())
                                 ),

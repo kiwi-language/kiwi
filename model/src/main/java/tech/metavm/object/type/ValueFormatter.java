@@ -1,6 +1,7 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.natives.ListNative;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
@@ -18,7 +19,7 @@ public class ValueFormatter {
 
     public static final DateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public static Instance parseInstance(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
+    public static Instance parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
         Type actualType;
         if (!instanceDTO.isNew()) {
             actualType = context.get(instanceDTO.parseId()).getType();
@@ -42,7 +43,7 @@ public class ValueFormatter {
                 for (FieldValue element : param.elements()) {
                     listNative.add(
                             parseOne(element, classType.getListElementType(),
-                                    null, context, parameterizedTypeProvider));
+                                    null, context));
                 }
                 return list;
             } else {
@@ -61,7 +62,7 @@ public class ValueFormatter {
                 for (Field field : classType.getAllFields()) {
                     FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getStringId()), InstanceFieldDTO::value);
                     Instance fieldValue = rawValue != null ?
-                            parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context, parameterizedTypeProvider)
+                            parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context)
                             : Instances.nullInstance();
                     fieldValueMap.put(field, fieldValue);
                 }
@@ -90,7 +91,7 @@ public class ValueFormatter {
                 elements.add(
                         parseOne(element, arrayType.getElementType(),
                                 InstanceParentRef.ofArray(array),
-                                context, parameterizedTypeProvider)
+                                context)
                 );
             }
             array.setElements(elements);
@@ -101,9 +102,9 @@ public class ValueFormatter {
     }
 
     private static Instance parseOne(FieldValue rawValue, Type type,
-                                     @Nullable InstanceParentRef parentRef, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
+                                     @Nullable InstanceParentRef parentRef, IInstanceContext context) {
         Instance value = InstanceFactory.resolveValue(
-                rawValue, type, context::getType, parentRef, context,parameterizedTypeProvider
+                rawValue, type, context::getType, parentRef, context
         );
         if (value instanceof DurableInstance d && d.tryGetPhysicalId() == null) {
             context.bind(d);

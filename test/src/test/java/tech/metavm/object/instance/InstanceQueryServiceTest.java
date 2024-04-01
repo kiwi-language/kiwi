@@ -2,14 +2,20 @@ package tech.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.entity.*;
+import tech.metavm.entity.InstanceQuery;
+import tech.metavm.entity.InstanceQueryBuilder;
+import tech.metavm.entity.InstanceQueryField;
+import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
-import tech.metavm.object.type.*;
-import tech.metavm.object.type.mocks.TypeProviders;
+import tech.metavm.object.type.CompositeTypeFacade;
+import tech.metavm.object.type.TypeRepository;
 import tech.metavm.object.type.mocks.MockTypeRepository;
-import tech.metavm.util.*;
+import tech.metavm.object.type.mocks.TypeProviders;
+import tech.metavm.util.ContextUtil;
+import tech.metavm.util.MockUtils;
+import tech.metavm.util.TestConstants;
 
 import java.util.List;
 
@@ -22,8 +28,7 @@ public class InstanceQueryServiceTest extends TestCase {
     private MockInstanceRepository instanceRepository;
     private ParameterizedFlowProvider parameterizedFlowProvider;
     private TypeRepository typeRepository;
-    private ArrayTypeProvider arrayTypeProvider;
-    private UnionTypeProvider unionTypeProvider;
+    private CompositeTypeFacade compositeTypeFacade;
 
     @Override
     protected void setUp() throws Exception {
@@ -34,8 +39,7 @@ public class InstanceQueryServiceTest extends TestCase {
         instanceRepository = new MockInstanceRepository();
         var compositeTypeProviders = new TypeProviders();
         parameterizedFlowProvider = compositeTypeProviders.parameterizedFlowProvider;
-        arrayTypeProvider = compositeTypeProviders.arrayTypeProvider;
-        unionTypeProvider = compositeTypeProviders.unionTypeProvider;
+        compositeTypeFacade = compositeTypeProviders.createFacade();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -64,8 +68,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 instanceRepository,
                 parameterizedFlowProvider,
                 typeRepository,
-                arrayTypeProvider,
-                unionTypeProvider
+                compositeTypeFacade
         );
         Assert.assertEquals(1, page.total());
         Assert.assertEquals(foo.tryGetPhysicalId(), page.data().get(0).tryGetPhysicalId());
@@ -89,7 +92,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 ))
                 .build();
         var page2 = instanceQueryService.query(query2,
-                instanceRepository, parameterizedFlowProvider, typeRepository, arrayTypeProvider, unionTypeProvider);
+                instanceRepository, parameterizedFlowProvider, typeRepository, compositeTypeFacade);
         Assert.assertEquals(1, page2.total());
         Assert.assertEquals(foo.tryGetPhysicalId(), page2.data().get(0).tryGetPhysicalId());
     }
@@ -114,8 +117,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 instanceRepository,
                 parameterizedFlowProvider,
                 typeRepository,
-                arrayTypeProvider,
-                unionTypeProvider
+                compositeTypeFacade
         );
         Assert.assertEquals(1, page.total());
         Assert.assertEquals(foo.tryGetPhysicalId(), page.data().get(0).tryGetPhysicalId());

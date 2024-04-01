@@ -60,7 +60,7 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     }
 
     @Override
-    public Supplier<Value> generateReadCode0(SelfNode selfNode) {
+    public Supplier<Value> generateReadCode0(SelfNode selfNode, CompositeTypeFacade compositeTypeFacade) {
         return () -> Values.nodeProperty(selfNode, sourceField);
     }
 

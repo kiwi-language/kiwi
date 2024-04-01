@@ -783,6 +783,29 @@ public class TranspileUtil {
         return getAnnotation(element, annotationClass) != null;
     }
 
+    public static @Nullable PsiMethod findCanonicalConstructor(PsiClass psiClass) {
+       var fieldTypes = NncUtils.map(getAllInstanceFields(psiClass), PsiField::getType);
+       return NncUtils.find(psiClass.getMethods(),
+               m -> m.isConstructor() && NncUtils.map(m.getParameterList().getParameters(), PsiParameter::getType).equals(fieldTypes));
+    }
+
+    public static List<PsiField> getAllInstanceFields(PsiClass psiClass) {
+        List<PsiField> fields = new ArrayList<>();
+        LinkedList<PsiClass> classes = new LinkedList<>();
+        var c = psiClass;
+        while (c != null) {
+            classes.push(c);
+            c = c.getSuperClass();
+        }
+        for (PsiClass k : classes) {
+            for (PsiField field : k.getFields()) {
+                if(!requireNonNull(field.getModifierList()).hasModifierProperty(PsiModifier.STATIC))
+                    fields.add(field);
+            }
+        }
+        return fields;
+    }
+
     public static boolean hasAnnotation(PsiAnnotationOwner element, Class<? extends Annotation> annotationClass) {
         return getAnnotation(element, annotationClass) != null;
     }

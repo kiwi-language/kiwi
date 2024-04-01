@@ -9,6 +9,9 @@ import tech.metavm.flow.rest.FunctionCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.type.CompositeTypeFacadeImpl;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.Types;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -30,8 +33,10 @@ public class FunctionCallNode extends CallNode {
                         ValueFactory.create(argDTO.value(), parsingContext))
         );
         if(node == null) {
+            var outputType = function.getReturnType().isVoid() ? null
+                    : Types.tryCapture(function.getReturnType(), scope.getFlow(), CompositeTypeFacadeImpl.fromContext(context));
             return new FunctionCallNode(
-                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
+                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType,
                     prev, scope, function, arguments
             );
         }
@@ -42,8 +47,8 @@ public class FunctionCallNode extends CallNode {
         return node;
     }
 
-    public FunctionCallNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, Function subFlow, List<Argument> arguments) {
-        super(tmpId, name, code, prev, scope, subFlow, arguments);
+    public FunctionCallNode(Long tmpId, String name, @Nullable String code, @Nullable Type outputType, NodeRT prev, ScopeRT scope, Function subFlow, List<Argument> arguments) {
+        super(tmpId, name, code, outputType, prev, scope, subFlow, arguments);
     }
 
     @Override

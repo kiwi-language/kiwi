@@ -4,6 +4,7 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.Expressions;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.generic.TypeSubstitutor;
 import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TriConsumer;
@@ -91,8 +92,13 @@ public class Nodes {
                 .build();
         var list = getArray.get();
         var listType = (ClassType) list.getType();
-        var size = methodCall(
-                "列表大小_" + seq, scope, list,
+        var size = new MethodCallNode(
+                null,
+                "列表大小_" + seq,
+                null,
+                StandardTypes.getLongType(),
+                scope.getLastNode(),
+                scope, list,
                 listType.getMethodByCodeAndParamTypes("size", List.of()),
                 List.of()
         );
@@ -117,7 +123,9 @@ public class Nodes {
         var bodyScope = node.getBodyScope();
         var getMethod = ((ClassType )list.getType()).getMethodByCodeAndParamTypes("get", List.of(StandardTypes.getLongType()));
         var element = new MethodCallNode(
-                null, "获取元素_" + seq, null, bodyScope.getLastNode(), bodyScope,
+                null, "获取元素_" + seq, null,
+                ((ClassType) list.getType()).getListElementType(),
+                bodyScope.getLastNode(), bodyScope,
                 getArray.get(), getMethod,
                 List.of(Nodes.argument(getMethod, 0, Values.nodeProperty(node, indexField)))
         );
@@ -168,13 +176,15 @@ public class Nodes {
     }
 
     public static FunctionCallNode functionCall(String name, ScopeRT scope,
-                                                Function function, List<Argument> arguments) {
-        return new FunctionCallNode(null, name, null, scope.getLastNode(), scope, function, arguments);
+                                                Function function, List<Argument> arguments, CompositeTypeFacade compositeTypeFacade) {
+        var outputType = function.getReturnType().isVoid() ? null : Types.tryCapture(function.getReturnType(), function, compositeTypeFacade);
+        return new FunctionCallNode(null, name, null, outputType, scope.getLastNode(), scope, function, arguments);
     }
 
     public static MethodCallNode methodCall(String name, ScopeRT scope,
-                                            Value self, Method method, List<Argument> arguments) {
-        return new MethodCallNode(null, name, null, scope.getLastNode(), scope, self, method, arguments);
+                                            Value self, Method method, List<Argument> arguments, CompositeTypeFacade compositeTypeFacade) {
+        var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), method, compositeTypeFacade);
+        return new MethodCallNode(null, name, null, outputType, scope.getLastNode(), scope, self, method, arguments);
     }
 
     public static FunctionNode function(String name, ScopeRT scope, Value function, List<Value> arguments) {
@@ -185,12 +195,13 @@ public class Nodes {
         return new CastNode(null, name, null, outputType, scope.getLastNode(), scope, object);
     }
 
-    public static InputNode input(Flow flow) {
+    public static InputNode input(Flow flow, CompositeTypeFacade compositeTypeFacade) {
         var inputType = ClassTypeBuilder.newBuilder("输入", null)
                 .temporary()
                 .build();
         for (var parameter : flow.getParameters()) {
-            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
+            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType,
+                            Types.tryCapture(parameter.getType(), flow, compositeTypeFacade))
                     .build();
         }
         return new InputNode(
@@ -214,7 +225,7 @@ public class Nodes {
     public static void setSource(Value view, Value source, ScopeRT scope) {
         var seq = NncUtils.randomNonNegative();
         var setSourceFunc = NativeFunctions.setSource();
-        new FunctionCallNode(null, "设置来源_" + seq, "setSource_" + seq, scope.getLastNode(), scope,
+        new FunctionCallNode(null, "设置来源_" + seq, "setSource_" + seq, null, scope.getLastNode(), scope,
                 setSourceFunc, List.of(
                 Nodes.argument(setSourceFunc, 0, view),
                 Nodes.argument(setSourceFunc, 1, source)

@@ -38,6 +38,10 @@ public abstract class ElementVisitor<R> {
         return visitType(type);
     }
 
+    public R visitCapturedType(CapturedType type) {
+        return visitType(type);
+    }
+
     public R visitArrayType(ArrayType type) {
         return visitType(type);
     }

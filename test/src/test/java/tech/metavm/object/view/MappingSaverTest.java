@@ -4,13 +4,13 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import tech.metavm.entity.DummyGenericDeclaration;
+import tech.metavm.entity.EntityRepository;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
+import tech.metavm.entity.natives.CallContext;
+import tech.metavm.entity.natives.DefaultCallContext;
 import tech.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
-import tech.metavm.flow.MethodBuilder;
-import tech.metavm.flow.Nodes;
-import tech.metavm.flow.Parameter;
-import tech.metavm.flow.Values;
+import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
 import tech.metavm.object.type.*;
@@ -32,14 +32,24 @@ public class MappingSaverTest extends TestCase {
 
     public static final Logger logger = org.slf4j.LoggerFactory.getLogger(MappingSaverTest.class);
 
+    private ParameterizedTypeRepository parameterizedTypeProvider;
+    private ParameterizedFlowProvider parameterizedFlowProvider;
     private InstanceRepository instanceRepository;
+    private CompositeTypeFacade compositeTypeFacade;
     private TypeProviders typeProviders;
+    private EntityRepository entityRepository;
+    private CallContext callContext;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         instanceRepository = new MockInstanceRepository();
         typeProviders = new TypeProviders();
+        parameterizedTypeProvider = typeProviders.parameterizedTypeProvider;
+        entityRepository = typeProviders.entityRepository;
+        compositeTypeFacade = typeProviders.createFacade();
+        parameterizedFlowProvider = typeProviders.parameterizedFlowProvider;
+        callContext = new DefaultCallContext(instanceRepository, parameterizedFlowProvider, compositeTypeFacade);
         MockStandardTypesInitializer.init();
         MockNativeFunctionsInitializer.init(typeProviders.functionTypeProvider);
     }
@@ -50,11 +60,11 @@ public class MappingSaverTest extends TestCase {
         MappingSaver saver = new MappingSaver(
                 instanceRepository,
                 typeRepository,
-                typeProviders.createFacade(),
-                typeProviders.parameterizedTypeProvider,
-                typeProviders.parameterizedFlowProvider,
+                compositeTypeFacade,
+                parameterizedTypeProvider,
+                parameterizedFlowProvider,
                 mappingProvider,
-                typeProviders.entityRepository
+                entityRepository
         );
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo")
                 .build();
@@ -63,7 +73,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
         TestUtils.initEntityIds(fooType);
         var mapping = saver.saveBuiltinMapping(fooType, true);
-        var fromViewMethod = MethodBuilder.newBuilder(fooType, "从视图创建", "fromView", typeProviders.functionTypeProvider)
+        var fromViewMethod = MethodBuilder.newBuilder(fooType, "从视图创建", "fromView", compositeTypeFacade)
                 .parameters(new Parameter(null, "view", "view", mapping.getTargetType()))
                 .returnType(fooType)
                 .build();
@@ -78,8 +88,8 @@ public class MappingSaverTest extends TestCase {
         var barType = ClassTypeBuilder.newBuilder("Bar", "Bar")
                 .build();
 
-        var barChildArrayType = typeProviders.arrayTypeProvider.getArrayType(barType, ArrayKind.CHILD);
-        var barReadWriteArrayType = typeProviders.arrayTypeProvider.getArrayType(barType, ArrayKind.READ_WRITE);
+        var barChildArrayType = compositeTypeFacade.getArrayType(barType, ArrayKind.CHILD);
+        var barReadWriteArrayType = compositeTypeFacade.getArrayType(barType, ArrayKind.READ_WRITE);
 
         var fooBarsField = FieldBuilder.newBuilder("bars", "bars", fooType, barChildArrayType)
                 .access(Access.PRIVATE)
@@ -93,7 +103,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
 
         // generate getBars method
-        var getBarsMethod = MethodBuilder.newBuilder(fooType, "获取bars", "getBars", typeProviders.functionTypeProvider)
+        var getBarsMethod = MethodBuilder.newBuilder(fooType, "获取bars", "getBars", compositeTypeFacade)
                 .returnType(barReadWriteArrayType)
                 .build();
         {
@@ -105,13 +115,13 @@ public class MappingSaverTest extends TestCase {
         }
 
         // generate setBars method
-        var setBarsMethod = MethodBuilder.newBuilder(fooType, "设置bars", "setBars", typeProviders.functionTypeProvider)
+        var setBarsMethod = MethodBuilder.newBuilder(fooType, "设置bars", "setBars", compositeTypeFacade)
                 .parameters(new Parameter(null, "bars", "bars", barReadWriteArrayType))
                 .build();
         {
             var scope = setBarsMethod.getRootScope();
             var selfNode = Nodes.self("Self", null, fooType, scope);
-            var inputNode = Nodes.input(setBarsMethod);
+            var inputNode = Nodes.input(setBarsMethod, compositeTypeFacade);
             Nodes.clearArray("ClearBars", null, Values.nodeProperty(selfNode, fooBarsField), scope);
             Nodes.forEach("循环", () -> Values.inputValue(inputNode, 0),
                     (bodyScope, element, index) -> {
@@ -130,11 +140,11 @@ public class MappingSaverTest extends TestCase {
         MappingSaver saver = new MappingSaver(
                 instanceRepository,
                 typeRepository,
-                typeProviders.createFacade(),
-                typeProviders.parameterizedTypeProvider,
-                typeProviders.parameterizedFlowProvider,
+                compositeTypeFacade,
+                parameterizedTypeProvider,
+                parameterizedFlowProvider,
                 mappingProvider,
-                typeProviders.entityRepository
+                entityRepository
         );
 
         var barMapping = saver.saveBuiltinMapping(barType, true);
@@ -174,7 +184,7 @@ public class MappingSaverTest extends TestCase {
         TestUtils.initEntityIds(fooType);
 
         // Mapping
-        var fooView = (ClassInstance) fooMapping.mapRoot(foo, instanceRepository, typeProviders.parameterizedFlowProvider);
+        var fooView = (ClassInstance) fooMapping.mapRoot(foo, callContext);
 
         Assert.assertSame(fooView.getType(), fooViewType);
         Assert.assertSame(foo, fooView.tryGetSource());
@@ -211,7 +221,7 @@ public class MappingSaverTest extends TestCase {
 //        );
 
         var unmappedFoo =
-                fooMapping.unmap(fooView, instanceRepository, typeProviders.parameterizedFlowProvider);
+                fooMapping.unmap(fooView, new DefaultCallContext(instanceRepository, typeProviders.parameterizedFlowProvider, compositeTypeFacade));
         Assert.assertSame(foo, unmappedFoo);
         Assert.assertEquals(Instances.stringInstance("foo2"), foo.getField("name"));
         var bars = (ArrayInstance) foo.getField("bars");
@@ -294,7 +304,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
         logger.info(orderMapping.getReadMethod().getText());
         logger.info(orderMapping.getMapper().getText());
-        var oderView = orderMapping.mapRoot(order, instanceRepository, typeProviders.parameterizedFlowProvider);
+        var oderView = orderMapping.mapRoot(order,new DefaultCallContext(instanceRepository, typeProviders.parameterizedFlowProvider, compositeTypeFacade));
     }
 
     public void testPathId() {
@@ -312,7 +322,7 @@ public class MappingSaverTest extends TestCase {
         {
             var scope = getSkuListMethod.getRootScope();
             var self = Nodes.self("self", "self", productType, scope);
-            Nodes.input(getSkuListMethod);
+            Nodes.input(getSkuListMethod, compositeTypeFacade);
             var skuList = Nodes.newArray(
                     "skuList", "skuList", skuRwArrayType,
                     Values.nodeProperty(self, skuListField),
@@ -327,7 +337,7 @@ public class MappingSaverTest extends TestCase {
         {
             var scope = setSkuListMethod.getRootScope();
             var self = Nodes.self("self", "self", productType, scope);
-            var input = Nodes.input(setSkuListMethod);
+            var input = Nodes.input(setSkuListMethod, compositeTypeFacade);
             Nodes.clearArray("clearArray", null, Values.nodeProperty(self, skuListField), scope);
             Nodes.forEach(
                     "循环",
@@ -367,7 +377,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
         TestUtils.initInstanceIds(product);
         var viewSkuListField = productMapping.getTargetType().getFieldByCode("skuList");
-        var productView = (ClassInstance) productMapping.mapRoot(product, instanceRepository, typeProviders.parameterizedFlowProvider);
+        var productView = (ClassInstance) productMapping.mapRoot(product, callContext);
         var skuListView = (ArrayInstance) productView.getField(viewSkuListField);
         Assert.assertTrue(productView.tryGetId() instanceof ViewId);
         Assert.assertTrue(skuListView.tryGetId() instanceof FieldViewId);
@@ -375,7 +385,7 @@ public class MappingSaverTest extends TestCase {
 
         skuListView.removeElement(0);
 
-        productMapping.unmap(productView, instanceRepository, typeProviders.parameterizedFlowProvider);
+        productMapping.unmap(productView, callContext);
         var skuList = (ArrayInstance) product.getField(skuListField);
         Assert.assertTrue(skuList.isEmpty());
     }
@@ -429,17 +439,17 @@ public class MappingSaverTest extends TestCase {
                 .build();
         TestUtils.initInstanceIds(flow);
 
-        var flowView = (ClassInstance) flowMapping.mapRoot(flow, instanceRepository, typeProviders.parameterizedFlowProvider);
+        var flowView = (ClassInstance) flowMapping.mapRoot(flow, callContext);
         var flowViewScopes = (ArrayInstance) flowView.getField(flowViewScopesField);
         Assert.assertEquals(3, flowViewScopes.size());
 
         flowViewScopes.removeElement(2);
-        flowMapping.unmap(flowView, instanceRepository, typeProviders.parameterizedFlowProvider);
+        flowMapping.unmap(flowView, callContext);
         var flowScopes = (ArrayInstance) flow.getField(flowScopesField);
         Assert.assertEquals(2, flowScopes.size());
 
         flowView.setField(flowViewScopesField, Instances.nullInstance());
-        flowMapping.unmap(flowView, instanceRepository, typeProviders.parameterizedFlowProvider);
+        flowMapping.unmap(flowView, callContext);
         Assert.assertTrue(flow.getField(flowScopesField).isNull());
     }
 
@@ -510,7 +520,7 @@ public class MappingSaverTest extends TestCase {
                 ))
                 .build();
         TestUtils.initInstanceIds(listOfStr);
-        var listOfStrView = listOfStrMapping.mapRoot(listOfStr, instanceRepository, typeProviders.parameterizedFlowProvider);
+        var listOfStrView = listOfStrMapping.mapRoot(listOfStr, callContext);
         logger.info(listOfStrView.getTitle());
     }
 

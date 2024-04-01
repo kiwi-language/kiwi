@@ -6,9 +6,9 @@ import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.ContextUtil;
@@ -36,6 +36,7 @@ public class EntityContextBuilder {
     private TypeProvider typeProvider;
     private MappingProvider mappingProvider;
     private ParameterizedFlowProvider parameterizedFlowProvider;
+    private CompositeTypeFacade compositeTypeFacade;
     private Cache cache;
     private boolean readonly;
 
@@ -118,12 +119,14 @@ public class EntityContextBuilder {
             mappingProvider = dep;
         if(parameterizedFlowProvider == null)
             parameterizedFlowProvider = dep;
+        if(compositeTypeFacade == null)
+            compositeTypeFacade = dep;
         var instanceContext = new InstanceContext(
                 appId, instanceStore, idInitializer, executor,
                 asyncLogProcessing, plugins, NncUtils.get(parent, IEntityContext::getInstanceContext),
                 typeProvider , mappingProvider,
-                parameterizedFlowProvider, childrenLazyLoading, cache, eventQueue,
-                readonly);
+                parameterizedFlowProvider, compositeTypeFacade, childrenLazyLoading, cache,
+                eventQueue, readonly);
         return new EntityContext(instanceContext, parent, defContext);
     }
 

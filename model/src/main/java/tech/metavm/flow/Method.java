@@ -3,7 +3,7 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
-import tech.metavm.entity.natives.NativeCallContext;
+import tech.metavm.entity.natives.CallContext;
 import tech.metavm.entity.natives.NativeMethods;
 import tech.metavm.entity.natives.RuntimeExceptionNative;
 import tech.metavm.flow.rest.FlowParam;
@@ -11,7 +11,6 @@ import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.InstanceRepository;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -332,7 +331,7 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext) {
         try(var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName()+ "." + getName())) {
             if (_static)
                 NncUtils.requireNull(self);
@@ -341,10 +340,10 @@ public class Method extends Flow implements Property, GenericElement {
             checkArguments(arguments);
             FlowExecResult result;
             if (isNative())
-                result = NativeMethods.invoke(this, self, arguments, new NativeCallContext(instanceRepository, parameterizedFlowProvider));
+                result = NativeMethods.invoke(this, self, arguments, callContext);
             else
                 result = new MetaFrame(this.getRootNode(), declaringType, self,
-                        arguments, instanceRepository, parameterizedFlowProvider).execute();
+                        arguments, callContext.instanceRepository(), callContext.parameterizedFlowProvider(), callContext.compositeTypeFacade()).execute();
             if (isConstructor && result.ret() != null) {
                 var instance = (ClassInstance) result.ret();
                 var uninitializedField = instance.findUninitializedField(declaringType);
@@ -354,7 +353,7 @@ public class Method extends Flow implements Property, GenericElement {
                     exceptionNative.RuntimeException(Instances.stringInstance(
                                     "对象" + instance.getType().getName() + "创建失败，" +
                                             "字段" + uninitializedField.getName() + "未初始化"),
-                           new NativeCallContext(instanceRepository, parameterizedFlowProvider));
+                           callContext);
                     return new FlowExecResult(null, exception);
                 }
             }

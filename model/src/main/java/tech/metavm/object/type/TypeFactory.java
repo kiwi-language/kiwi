@@ -74,6 +74,15 @@ public abstract class TypeFactory {
         }
     }
 
+//    public Type saveCapturedType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
+//        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveCapturedType")) {
+//            var context = batch.getContext();
+//            var param = typeDTO.getCapturedTypeParam();
+//            var uncertainType = batch.get(param.uncertainTypeId())
+//            return context.getCapturedTypeContext().getCapturedType(lb, ub, typeDTO.tmpId());
+//        }
+//    }
+
     public FunctionType saveFunctionType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveFunctionType")) {
             var context = batch.getContext();
@@ -354,5 +363,6 @@ public abstract class TypeFactory {
     public boolean containsJavaType(java.lang.reflect.Type javaType) {
         return getType(javaType) != null;
     }
+
 
 }

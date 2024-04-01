@@ -6,10 +6,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.Expressions;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Field;
-import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.type.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +37,7 @@ public class ListNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
+    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
         var sourceElementType = sourceType.getListElementType();
         var constructor = targetType.isEffectiveAbstract() ? targetReadWriteListType.getDefaultConstructor() :
                 targetType.getDefaultConstructor();
@@ -61,14 +58,15 @@ public class ListNestedMapping extends NestedMapping {
                 List.of(
                         Nodes.argument(setSourceFunc, 0, Values.node(targetList)),
                         Nodes.argument(setSourceFunc, 1, getSource.get())
-                )
+                ),
+                compositeTypeFacade
         );
         Nodes.listForEach(
                 "遍历" + sourceType.getName(),
                 getSource,
                 (bodyScope, getElement, getIndex) -> {
                     var getTargetElement = elementNestedMapping.generateMappingCode(getElement,
-                            bodyScope);
+                            bodyScope, compositeTypeFacade);
                     var addMethod = targetType.getMethodByCodeAndParamTypes("add", List.of(
                             targetType.getListElementType()
                     ));
@@ -83,7 +81,8 @@ public class ListNestedMapping extends NestedMapping {
                                             0,
                                             getTargetElement.get()
                                     )
-                            )
+                            ),
+                            compositeTypeFacade
                     );
                 },
                 scope
@@ -92,9 +91,9 @@ public class ListNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
+    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
         var isSourcePresent = Nodes.functionCall("来源是否存在", scope, NativeFunctions.isSourcePresent(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())));
+                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())), compositeTypeFacade);
         var branch2sourceNode = new HashMap<Branch, Value>();
         var sourceFieldRef = new Object() {
             Field sourceField;
@@ -107,7 +106,7 @@ public class ListNestedMapping extends NestedMapping {
                 trueBranch -> {
                     var source = Nodes.functionCall(sourceType.getName() + "来源", trueBranch.getScope(),
                             NativeFunctions.getSource(),
-                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())));
+                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())), compositeTypeFacade);
                     branch2sourceNode.put(trueBranch, Values.node(source));
                 },
                 falseBranch -> {
@@ -138,12 +137,13 @@ public class ListNestedMapping extends NestedMapping {
                 scope,
                 Values.nodeProperty(mergeNode, sourceField),
                 clearMethod,
-                List.of()
+                List.of(),
+                compositeTypeFacade
         );
         Nodes.listForEach(
                 "遍历" + targetType.getName(), getView,
                 (bodyScope, getElement, getIndex) -> {
-                    var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
+                    var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope, compositeTypeFacade);
                     var addMethod = sourceType.getMethodByCodeAndParamTypes("add", List.of(sourceType.getListElementType()));
                     Nodes.methodCall(
                             "添加元素" + sourceType.getName(),
@@ -156,7 +156,8 @@ public class ListNestedMapping extends NestedMapping {
                                             0,
                                             getSourceElement.get()
                                     )
-                            )
+                            ),
+                            compositeTypeFacade
                     );
                 },
                 scope

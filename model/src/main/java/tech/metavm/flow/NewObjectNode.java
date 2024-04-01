@@ -55,7 +55,7 @@ public class NewObjectNode extends CallNode implements NewNode {
                          List<Argument> arguments,
                          NodeRT prev, ScopeRT scope,
                          @Nullable ParentRef parentRef, boolean ephemeral, boolean unbound) {
-        super(tmpId, name, code, prev, scope, subFlow, arguments);
+        super(tmpId, name, code, subFlow.getReturnType(), prev, scope, subFlow, arguments);
         setParentRef(parentRef);
         this.ephemeral = ephemeral;
         this.unbound = unbound;

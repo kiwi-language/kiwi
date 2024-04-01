@@ -1,6 +1,5 @@
 package tech.metavm.entity;
 
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -8,7 +7,7 @@ import tech.metavm.event.EventQueue;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
-import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
@@ -47,10 +46,11 @@ public class InstanceContextFactory {
     public InstanceContextBuilder newBuilder(long appId,
                                              TypeProvider typeProvider,
                                              MappingProvider mappingProvider,
-                                             ParameterizedFlowProvider parameterizedFlowProvider) {
+                                             ParameterizedFlowProvider parameterizedFlowProvider,
+                                             CompositeTypeFacade compositeTypeFacade) {
         return InstanceContextBuilder.newBuilder(appId, instanceStore,
                         new DefaultIdInitializer(idService),
-                        typeProvider, mappingProvider, parameterizedFlowProvider)
+                        typeProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade)
                 .executor(executor)
                 .eventQueue(eventQueue)
                 .cache(cache)

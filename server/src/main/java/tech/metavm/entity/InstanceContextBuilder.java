@@ -6,6 +6,7 @@ import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.core.*;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
@@ -22,9 +23,10 @@ public class InstanceContextBuilder {
                                                     IdInitializer idProvider,
                                                     TypeProvider typeProvider,
                                                     MappingProvider mappingProvider,
-                                                    ParameterizedFlowProvider parameterizedFlowProvider) {
+                                                    ParameterizedFlowProvider parameterizedFlowProvider,
+                                                    CompositeTypeFacade compositeTypeFacade) {
         return new InstanceContextBuilder(appId, instanceStore, idProvider,
-                typeProvider, mappingProvider, parameterizedFlowProvider);
+                typeProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade);
     }
 
     private final long appId;
@@ -37,6 +39,7 @@ public class InstanceContextBuilder {
     private TypeProvider typeProvider;
     private MappingProvider mappingProvider;
     private ParameterizedFlowProvider parameterizedFlowProvider;
+    private CompositeTypeFacade compositeTypeFacade;
     private boolean childLazyLoading;
     private Cache cache;
     private EventQueue eventQueue;
@@ -48,19 +51,22 @@ public class InstanceContextBuilder {
                                   IdInitializer idInitializer,
                                   TypeProvider typeProvider,
                                   MappingProvider mappingProvider,
-                                  ParameterizedFlowProvider parameterizedFlowProvider) {
+                                  ParameterizedFlowProvider parameterizedFlowProvider,
+                                  CompositeTypeFacade compositeTypeFacade) {
         this.appId = appId;
         this.instanceStore = instanceStore;
         this.idInitializer = idInitializer;
         this.typeProvider = typeProvider;
         this.mappingProvider = mappingProvider;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
+        this.compositeTypeFacade = compositeTypeFacade;
     }
 
     public InstanceContextBuilder dependency(EntityInstanceContextBridge dependency) {
         this.typeProvider = dependency;
         this.mappingProvider = dependency;
         this.parameterizedFlowProvider = dependency;
+        this.compositeTypeFacade = dependency;
         return this;
     }
 
@@ -132,8 +138,8 @@ public class InstanceContextBuilder {
         return new InstanceContext(
                 appId, instanceStore, idInitializer, executor, asyncPostProcess,
                 plugins, parent, typeProvider, mappingProvider,
-                parameterizedFlowProvider, childLazyLoading, cache, eventQueue,
-                readonly);
+                parameterizedFlowProvider, compositeTypeFacade, childLazyLoading, cache,
+                eventQueue, readonly);
     }
 
 }

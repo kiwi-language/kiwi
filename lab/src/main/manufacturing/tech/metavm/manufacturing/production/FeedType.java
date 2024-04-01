@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EnumConstant;
 
 @EntityType("投料方式")
-public enum FeedingType {
+public enum FeedType {
     // 申请投料
     @EnumConstant("申请投料")
     APPLY,

@@ -28,32 +28,24 @@ public class MethodGenerator {
     private final TypeNarrower typeNarrower = new TypeNarrower(this::getExpressionType);
     private final Map<BranchNode, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
     private final Map<String, Integer> varNames = new HashMap<>();
-    private final FunctionTypeProvider functionTypeProvider;
-    private final ParameterizedTypeProvider parameterizedTypeProvider;
-    private final ArrayTypeProvider arrayTypeProvider;
+    private final CompositeTypeFacade compositeTypeFacade;
 
     public MethodGenerator(Method method, TypeResolver typeResolver,
                            IEntityContext context,
                            VisitorBase visitor) {
-        this(method, typeResolver, new ContextArrayTypeProvider(context), context.getUnionTypeContext(),
-                context.getFunctionTypeContext(), context.getGenericContext(), context.getGenericContext(), visitor);
+        this(method, typeResolver,
+                CompositeTypeFacadeImpl.fromContext(context), context.getGenericContext(), visitor);
     }
 
     public MethodGenerator(Method method, TypeResolver typeResolver,
-                           ArrayTypeProvider arrayTypeProvider,
-                           UnionTypeProvider unionTypeProvider, FunctionTypeProvider functionTypeProvider,
-                           ParameterizedTypeProvider parameterizedTypeProvider,
+                           CompositeTypeFacade compositeTypeFacade,
                            ParameterizedFlowProvider parameterizedFlowProvider,
                            VisitorBase visitor) {
         this.method = method;
         this.typeResolver = typeResolver;
-        this.functionTypeProvider = functionTypeProvider;
-        this.parameterizedTypeProvider = parameterizedTypeProvider;
-        this.arrayTypeProvider = arrayTypeProvider;
+        this.compositeTypeFacade = compositeTypeFacade;
         expressionResolver = new ExpressionResolver(this, variableTable, typeResolver,
-                arrayTypeProvider,
-                unionTypeProvider,
-                parameterizedTypeProvider,
+                compositeTypeFacade,
                 parameterizedFlowProvider,
                 visitor);
     }
@@ -189,7 +181,7 @@ public class MethodGenerator {
                     .toList();
             var yieldType = Types.getUnionType(
                     yields.stream().map(Expression::getType).collect(Collectors.toSet()),
-                    expressionResolver.getUnionTypeProvider()
+                    expressionResolver.getCompositeTypeFacade()
             );
             var yieldField = FieldBuilder.newBuilder("yield", "yield", mergeNode.getType(), yieldType).build();
             new MergeNodeField(
@@ -379,7 +371,7 @@ public class MethodGenerator {
     }
 
     IndexScanNode createIndexScan(Index index, IndexQueryKey from, IndexQueryKey to) {
-        var arrayType = arrayTypeProvider.getArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
+        var arrayType = compositeTypeFacade.getArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
         return setNodeExprTypes(new IndexScanNode(
                 null, nextName("IndexScan"), null, arrayType, scope().getLastNode(),
                 scope(), index, from, to
@@ -387,7 +379,7 @@ public class MethodGenerator {
     }
 
     public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
-        var listType = parameterizedTypeProvider.getParameterizedType(
+        var listType = compositeTypeFacade.getParameterizedType(
                 StandardTypes.getReadWriteListType(), List.of(index.getDeclaringType()));
         return setNodeExprTypes(new IndexSelectNode(
                 null, nextName("IndexSelect"), null, listType,
@@ -414,19 +406,20 @@ public class MethodGenerator {
                 .build();
     }
 
-    MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments) {
+    MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments, CompositeTypeFacade compositeTypeFacade) {
         List<Argument> args = NncUtils.biMap(
                 method.getParameters(), arguments,
                 (param, arg) -> new Argument(null, param, Values.expression(arg))
         );
-        return setNodeExprTypes(new MethodCallNode(null, nextName(method.getName()), null,
+        var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), this.method, compositeTypeFacade);
+        return setNodeExprTypes(new MethodCallNode(null, nextName(method.getName()), null, outputType,
                 scope().getLastNode(), scope(),
                 NncUtils.get(self, Values::expression), method, args));
     }
 
     NodeRT createTypeCast(Expression operand, Type targetType) {
         if(operand.getType().isNullable() && !targetType.isNullable())
-            targetType = expressionResolver.getUnionTypeProvider().getUnionType(Set.of(targetType, StandardTypes.getNullType()));
+            targetType = compositeTypeFacade.getUnionType(Set.of(targetType, StandardTypes.getNullType()));
         return createFunctionCall(
                 expressionResolver.getParameterizedFlowProvider().getParameterizedFlow(NativeFunctions.getTypeCast(), List.of(targetType)),
                 List.of(operand)
@@ -438,23 +431,25 @@ public class MethodGenerator {
                 function.getParameters(), arguments,
                 (param, arg) -> new Argument(null, param, Values.expression(arg))
         );
+        var outputType = function.getReturnType().isVoid() ? null : Types.tryCapture(function.getReturnType(), this.method, compositeTypeFacade);
         return setNodeExprTypes(new FunctionCallNode(
                 null,
                 nextName(function.getEffectiveHorizontalTemplate().getName()),
                 null,
+                outputType,
                 scope().getLastNode(), scope(),
                 function, args));
     }
 
     LambdaNode createLambda(List<Parameter> parameters, Type returnType, ClassType functionalInterface) {
-        var funcType = functionTypeProvider.getFunctionType(
+        var funcType = compositeTypeFacade.getFunctionType(
                 NncUtils.map(parameters, Parameter::getType), returnType
         );
         var node = new LambdaNode(
                 null, nextName("Lambda"), null, scope().getLastNode(), scope(),
                 parameters, returnType, funcType, functionalInterface
         );
-        node.createSAMImpl(functionTypeProvider, parameterizedTypeProvider);
+        node.createSAMImpl(compositeTypeFacade, compositeTypeFacade);
         return node;
     }
 
@@ -482,7 +477,7 @@ public class MethodGenerator {
 
     public SelfNode createSelf() {
         return setNodeExprTypes(new SelfNode(null, nextName("Self"), null,
-                SelfNode.getSelfType((Method) scope().getFlow(), parameterizedTypeProvider),
+                SelfNode.getSelfType((Method) scope().getFlow(), compositeTypeFacade),
                 scope().getLastNode(), scope()));
     }
 

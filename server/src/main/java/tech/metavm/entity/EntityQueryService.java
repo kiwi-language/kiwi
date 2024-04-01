@@ -6,10 +6,7 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.ContextArrayTypeProvider;
-import tech.metavm.object.type.ContextTypeRepository;
-import tech.metavm.object.type.Field;
+import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
 
 import java.util.Collection;
@@ -29,8 +26,7 @@ public class EntityQueryService {
                 context.getInstanceContext(),
                 context.getGenericContext(),
                 new ContextTypeRepository(context),
-                new ContextArrayTypeProvider(context),
-                context.getUnionTypeContext()
+                CompositeTypeFacadeImpl.fromContext(context)
         );
         return new Page<>(
                 NncUtils.map(idPage.data(), inst -> context.getEntity(query.entityType(), inst)),

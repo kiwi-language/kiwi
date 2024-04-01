@@ -9,15 +9,15 @@ public class ExceptionNative extends ThrowableNative {
         super(instance);
     }
 
-    public ClassInstance Exception(NativeCallContext callContext) {
+    public ClassInstance Exception(CallContext callContext) {
         return Throwable(callContext);
     }
 
-    public ClassInstance Exception(Instance causeOrMessage, NativeCallContext callContext) {
+    public ClassInstance Exception(Instance causeOrMessage, CallContext callContext) {
         return Throwable(causeOrMessage, callContext);
     }
 
-    public ClassInstance Exception(Instance message, Instance cause, NativeCallContext callContext) {
+    public ClassInstance Exception(Instance message, Instance cause, CallContext callContext) {
         return Throwable(message, cause, callContext);
     }
 

@@ -80,7 +80,7 @@ public class IndexScanNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var result = frame.getInstanceRepository().indexScan(from.buildIndexKey(frame), to.buildIndexKey(frame));
+        var result = frame.instanceRepository().indexScan(from.buildIndexKey(frame), to.buildIndexKey(frame));
         return next(new ArrayInstance(getType(), result));
     }
 

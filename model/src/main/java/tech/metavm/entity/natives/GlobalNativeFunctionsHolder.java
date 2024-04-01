@@ -14,11 +14,10 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
 
 public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
 
-    private final Map<Function, BiFunction<Function, List<Instance>, Instance>> functions = new IdentityHashMap<>();
+    private final Map<Function, TriFunction<Function, List<Instance>, CallContext, Instance>> functions = new IdentityHashMap<>();
 
     private EmailSender emailSender;
 
@@ -66,9 +65,9 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
             throw new InternalException("Can not set source for a non-durable instance: " + instance);
     }
 
-    private static Instance functionToInstance(Function function, @NotNull FunctionInstance functionInstance) {
+    private static Instance functionToInstance(Function function, @NotNull FunctionInstance functionInstance, CallContext callContext) {
         var samInterface = (ClassType) function.getTypeArguments().get(0);
-        var type = Types.createSAMInterfaceImpl(samInterface, functionInstance);
+        var type = Types.createSAMInterfaceImpl(samInterface, functionInstance, callContext.compositeTypeFacade());
         return new ClassInstance(null, Map.of(), type);
     }
 
@@ -90,25 +89,25 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     @Override
     public void setGetSourceFunc(@NotNull Function function) {
         getSourceFunc = function;
-        functions.put(function, (func, args) -> getSource(args.get(0)));
+        functions.put(function, (func, args, callContext) -> getSource(args.get(0)));
     }
 
     @Override
     public void setIsSourcePresent(@NotNull Function function) {
         isSourcePresentFunc = function;
-        functions.put(function, (func, args) -> isSourcePresent(args.get(0)));
+        functions.put(function, (func, args, callContext) -> isSourcePresent(args.get(0)));
     }
 
     @Override
     public void setSetSourceFunc(@NotNull Function function) {
         setSourceFunc = function;
-        functions.put(function, (func, args) -> setSource(args.get(0), args.get(1)));
+        functions.put(function, (func, args, callContext) -> setSource(args.get(0), args.get(1)));
     }
 
     @Override
-    public FlowExecResult invoke(@NotNull Function flow, @NotNull List<Instance> arguments) {
+    public FlowExecResult invoke(@NotNull Function flow, @NotNull List<Instance> arguments, CallContext callContext) {
         var func = Objects.requireNonNull(functions.get(flow.getEffectiveHorizontalTemplate()));
-        return new FlowExecResult(func.apply(flow, arguments), null);
+        return new FlowExecResult(func.apply(flow, arguments, callContext), null);
     }
 
     @Override
@@ -119,13 +118,13 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     @Override
     public void setFunctionToInstance(Function function) {
         this.functionToInstance = function;
-        functions.put(function, (func, args) -> functionToInstance(func, (FunctionInstance) args.get(0)));
+        functions.put(function, (func, args, callContext) -> functionToInstance(func, (FunctionInstance) args.get(0), callContext));
     }
 
     @Override
     public void setSendEmail(Function function) {
         this.sendEmail = function;
-        functions.put(function, (func, args) -> {
+        functions.put(function, (func, args, callContext) -> {
             emailSender.send(
                     ((StringInstance) args.get(0)).getValue(),
                     ((StringInstance) args.get(1)).getValue(),
@@ -153,7 +152,7 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     @Override
     public void setGetSessionEntry(Function function) {
         this.getSessionEntry = function;
-        functions.put(function, (func, args) -> {
+        functions.put(function, (func, args, callContext) -> {
             var key = ((StringInstance) args.get(0)).getValue();
             var entityContext = ContextUtil.getEntityContext();
             var session = entityContext.selectFirstByKey(Session.IDX_TOKEN, ContextUtil.getToken());
@@ -172,7 +171,7 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     @Override
     public void setSetSessionEntry(Function function) {
         this.setSessionEntry = function;
-        functions.put(function, (func, args) -> {
+        functions.put(function, (func, args, callContext) -> {
             var key = ((StringInstance) args.get(0)).getValue();
             var value = args.get(1);
             var entityContext = ContextUtil.getEntityContext();
@@ -192,7 +191,7 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     @Override
     public void setRemoveSessionEntry(Function function) {
         this.removeSessionEntry = function;
-        functions.put(function, (func, args) -> {
+        functions.put(function, (func, args, callContext) -> {
             var key = ((StringInstance) args.get(0)).getValue();
             var entityContext = ContextUtil.getEntityContext();
             var session = entityContext.selectFirstByKey(Session.IDX_TOKEN, ContextUtil.getToken());
@@ -210,7 +209,7 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     @Override
     public void setDelete(Function function) {
         this.delete = function;
-        functions.put(function, (func, args) -> {
+        functions.put(function, (func, args, callContext) -> {
             var entityContext = ContextUtil.getEntityContext();
             var instance = args.get(0);
             if(instance instanceof DurableInstance durableInstance) {
@@ -229,7 +228,7 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     @Override
     public void setTypeCast(Function function) {
         this.typeCast = function;
-        functions.put(function, (func, args) -> {
+        functions.put(function, (func, args, callContext) -> {
             var type = func.getTypeArguments().get(0);
             var value = args.get(0);
             if(type.isInstance(value))
@@ -247,7 +246,7 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     @Override
     public void setPrint(Function function) {
         this.print = function;
-        functions.put(function, (func, args) -> {
+        functions.put(function, (func, args, callContext) -> {
             System.out.println(args.get(0).getTitle());
             return null;
         });

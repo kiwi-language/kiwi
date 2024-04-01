@@ -5,8 +5,8 @@ import tech.metavm.object.instance.core.Instance;
 
 public abstract class IterableNative extends NativeBase {
 
-    public abstract void forEach(Instance action, NativeCallContext callContext);
+    public abstract void forEach(Instance action, CallContext callContext);
 
-    public abstract ClassInstance iterator(NativeCallContext callContext);
+    public abstract ClassInstance iterator(CallContext callContext);
 
 }

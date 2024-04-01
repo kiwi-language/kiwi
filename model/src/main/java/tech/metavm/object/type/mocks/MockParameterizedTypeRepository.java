@@ -7,12 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MockParameterizedTypeProvider implements ParameterizedTypeProvider {
+public class MockParameterizedTypeRepository implements ParameterizedTypeRepository {
 
     private final Map<Key, ClassType> map = new HashMap<>();
     private final TypeProviders typeProviders;
 
-    public MockParameterizedTypeProvider(TypeProviders typeProviders) {
+    public MockParameterizedTypeRepository(TypeProviders typeProviders) {
         this.typeProviders = typeProviders;
     }
 

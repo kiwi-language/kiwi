@@ -93,11 +93,6 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
     }
 
     @Override
-    public Type visitTypeVariable(TypeVariable type) {
-        return super.visitTypeVariable(type);
-    }
-
-    @Override
     public Type visitClassType(ClassType type) {
         var subst = super.visitClassType(type);
         if (subst != type)

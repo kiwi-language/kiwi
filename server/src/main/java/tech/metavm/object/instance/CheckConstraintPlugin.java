@@ -17,7 +17,7 @@ public class CheckConstraintPlugin implements ContextPlugin {
         change.forEachInsertOrUpdate(v -> {
             var instance = context.get(v.id());
             if(instance instanceof ClassInstance classInstance)
-                checkConstraints(classInstance, context.getParameterizedFlowProvider());
+                checkConstraints(classInstance, context.parameterizedFlowProvider());
         });
         return false;
     }

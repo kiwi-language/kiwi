@@ -63,6 +63,8 @@ public enum TypeCategory {
     UNCERTAIN(TypeCategoryCodes.UNCERTAIN, ColumnKind.UNSPECIFIED, UncertainTypeParam.class, 5),
     @EnumConstant("不可能")
     NOTHING(TypeCategoryCodes.NOTHING, ColumnKind.UNSPECIFIED, 5),
+    @EnumConstant("捕获")
+    CAPTURED(TypeCategoryCodes.CAPTURED, ColumnKind.UNSPECIFIED, 5),
 
     ;
 

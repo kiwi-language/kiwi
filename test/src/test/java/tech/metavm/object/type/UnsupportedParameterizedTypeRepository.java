@@ -2,7 +2,7 @@ package tech.metavm.object.type;
 
 import java.util.List;
 
-public class UnsupportedParameterizedTypeProvider implements ParameterizedTypeProvider {
+public class UnsupportedParameterizedTypeRepository implements ParameterizedTypeRepository {
 
     @Override
     public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage, DTOProvider dtoProvider) {

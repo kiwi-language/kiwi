@@ -249,7 +249,7 @@ public class FlowManager extends EntityContextFactoryBean {
         if (flowDTO.rootScope() == null) {
             return;
         }
-        flow.clearNodes();
+        flow.clearContent();
         for (NodeDTO nodeDTO : flowDTO.rootScope().nodes()) {
             saveNode(nodeDTO, flow.getRootScope(), context);
         }
@@ -274,6 +274,7 @@ public class FlowManager extends EntityContextFactoryBean {
                 }
             }
         }
+        context.selectByKey(Flow.IDX_HORIZONTAL_TEMPLATE, flow).forEach(context::remove);
     }
 
     public void saveContent(FlowDTO flowDTO, Flow flow, IEntityContext context) {

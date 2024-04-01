@@ -17,7 +17,8 @@ import javax.annotation.Nullable;
                 @JsonSubTypes.Type(name = "6", value = FunctionTypeParam.class),
                 @JsonSubTypes.Type(name = "7", value = UncertainTypeParam.class),
                 @JsonSubTypes.Type(name = "8", value = IntersectionTypeParam.class),
-                @JsonSubTypes.Type(name = "9", value = PTypeDTO.class)
+                @JsonSubTypes.Type(name = "9", value = PTypeDTO.class),
+                @JsonSubTypes.Type(name = "10", value = CapturedTypeParam.class)
         }
 )
 public interface TypeParam {

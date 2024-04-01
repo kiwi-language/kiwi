@@ -88,15 +88,15 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     @Override
-    protected Flow generateMappingCode(FunctionTypeProvider functionTypeProvider) {
-        generateReadMethodCode();
-        return super.generateMappingCode(functionTypeProvider);
+    protected Flow generateMappingCode(CompositeTypeFacade compositeTypeFacade) {
+        generateReadMethodCode(compositeTypeFacade);
+        return super.generateMappingCode(compositeTypeFacade);
     }
 
     @Override
-    protected Flow generateUnmappingCode(FunctionTypeProvider functionTypeProvider) {
-        generateWriteMethodCode();
-        return super.generateUnmappingCode(functionTypeProvider);
+    protected Flow generateUnmappingCode(CompositeTypeFacade compositeTypeFacade) {
+        generateWriteMethodCode(compositeTypeFacade);
+        return super.generateUnmappingCode(compositeTypeFacade);
     }
 
     @Override
@@ -109,9 +109,9 @@ public class FieldsObjectMapping extends ObjectMapping {
     @Override
     public void generateCode(Flow flow, CompositeTypeFacade compositeTypeFacade) {
         if (flow == readMethod)
-            generateReadMethodCode();
+            generateReadMethodCode(compositeTypeFacade);
         else if (flow == writeMethod)
-            generateWriteMethodCode();
+            generateWriteMethodCode(compositeTypeFacade);
         else
             super.generateCode(flow, compositeTypeFacade);
     }
@@ -144,27 +144,27 @@ public class FieldsObjectMapping extends ObjectMapping {
                 .build();
     }
 
-    public void generateReadMethodCode() {
+    public void generateReadMethodCode(CompositeTypeFacade compositeTypeFacade) {
         var scope = Objects.requireNonNull(readMethod).newEphemeralRootScope();
         var selfNode = new SelfNode(null, "当前对象", "Self", getTargetType(), null, scope);
         List<FieldParam> fieldParams = new ArrayList<>();
         for (FieldMapping fieldMapping : fieldMappings)
-            fieldParams.add(fieldMapping.generateReadCode(selfNode));
+            fieldParams.add(fieldMapping.generateReadCode(selfNode, compositeTypeFacade));
         var view = new AddObjectNode(null, "视图", "View", false,
                 true, getTargetType(), scope.getLastNode(), scope);
         fieldParams.forEach(view::addField);
         new ReturnNode(null, "返回", "Return", scope.getLastNode(), scope, Values.node(view));
     }
 
-    public void generateWriteMethodCode() {
+    public void generateWriteMethodCode(CompositeTypeFacade compositeTypeFacade) {
         var scope = Objects.requireNonNull(writeMethod).newEphemeralRootScope();
         var selfNode = new SelfNode(null, "当前对象", "Self", getSourceType(), null, scope);
-        var inputNode = Nodes.input(writeMethod);
+        var inputNode = Nodes.input(writeMethod, compositeTypeFacade);
         var viewNode = new ValueNode(null, "视图", "View", getTargetType(), scope.getLastNode(), scope,
                 Values.inputValue(inputNode, 0));
         for (FieldMapping fieldMapping : fieldMappings) {
             if (!fieldMapping.isReadonly())
-                fieldMapping.generateWriteCode(selfNode, viewNode);
+                fieldMapping.generateWriteCode(selfNode, viewNode, compositeTypeFacade);
         }
         new ReturnNode(null, "返回", "Return", scope.getLastNode(), scope, null);
     }

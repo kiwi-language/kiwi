@@ -48,7 +48,7 @@ public class Declarator extends CodeGenVisitor {
 
     @Override
     public void visitClass(PsiClass psiClass) {
-        if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null) {
+        if (TranspileUtil.hasAnnotation(psiClass, EntityIndex.class)) {
             Index index = NncUtils.find(currentClass().getIndices(), idx -> Objects.equals(idx.getCode(), psiClass.getName()));
             if (index == null) {
                 index = new Index(
@@ -84,8 +84,8 @@ public class Declarator extends CodeGenVisitor {
             }
             var initMethod = Objects.requireNonNull(metaClass.findSelfMethodByCode("<init>"));
             var cinitMethod = Objects.requireNonNull(metaClass.findSelfMethodByCode("<cinit>"));
-            initMethod.clearNodes();
-            cinitMethod.clearNodes();
+            initMethod.clearContent();
+            cinitMethod.clearContent();
             visitedMethods.add(initMethod);
             visitedMethods.add(cinitMethod);
         }

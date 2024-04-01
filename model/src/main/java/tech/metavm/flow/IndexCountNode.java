@@ -73,7 +73,7 @@ public class IndexCountNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var count = frame.getInstanceRepository().indexCount(
+        var count = frame.instanceRepository().indexCount(
                 from.buildIndexKey(frame), to.buildIndexKey(frame)
         );
         return next(Instances.longInstance(count));

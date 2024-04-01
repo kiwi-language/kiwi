@@ -1,7 +1,7 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.entity.natives.CallContext;
 import tech.metavm.flow.FlowExecResult;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParam;
 import tech.metavm.object.type.FunctionType;
@@ -29,7 +29,7 @@ public abstract class FunctionInstance extends Instance {
         return null;
     }
 
-    public abstract FlowExecResult execute(List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider);
+    public abstract FlowExecResult execute(List<Instance> arguments, CallContext callContext);
 
     @Override
     public FunctionType getType() {

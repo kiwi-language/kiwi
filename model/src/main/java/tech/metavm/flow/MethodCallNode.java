@@ -6,6 +6,9 @@ import tech.metavm.flow.rest.MethodCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.type.CompositeTypeFacadeImpl;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.Types;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -29,8 +32,11 @@ public class MethodCallNode extends CallNode {
             node.setSelf(self);
             node.setSubFlow(method);
             node.setArguments(arguments);
-        } else
-            node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, self, method, arguments);
+        } else {
+            var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), scope.getFlow(),
+                    CompositeTypeFacadeImpl.fromContext(context));
+            node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, self, method, arguments);
+        }
         return node;
     }
 
@@ -38,8 +44,8 @@ public class MethodCallNode extends CallNode {
     @Nullable
     private Value self;
 
-    public MethodCallNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, Value self, Method method, List<Argument> arguments) {
-        super(tmpId, name, code, prev, scope, method, arguments);
+    public MethodCallNode(Long tmpId, String name, @Nullable String code, @Nullable Type outputType, NodeRT prev, ScopeRT scope, Value self, Method method, List<Argument> arguments) {
+        super(tmpId, name, code, outputType, prev, scope, method, arguments);
         this.self = NncUtils.get(self, s -> addChild(s, "self"));
     }
 

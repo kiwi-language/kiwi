@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.entity.natives.CallContext;
 import tech.metavm.flow.*;
 
 import javax.annotation.Nullable;
@@ -18,11 +19,11 @@ public class FlowInstance extends FunctionInstance {
     }
 
     @Override
-    public FlowExecResult execute(List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public FlowExecResult execute(List<Instance> arguments, CallContext callContext) {
         if(boundSelf != null)
-            return flow.execute(boundSelf, arguments, instanceRepository, parameterizedFlowProvider);
+            return flow.execute(boundSelf, arguments, callContext);
         else
-            return flow.execute((ClassInstance) arguments.get(0), arguments.subList(1, arguments.size()), instanceRepository, parameterizedFlowProvider);
+            return flow.execute((ClassInstance) arguments.get(0), arguments.subList(1, arguments.size()), callContext);
     }
 
 //    public Frame createFrame(FlowStack stack, List<Instance> arguments) {

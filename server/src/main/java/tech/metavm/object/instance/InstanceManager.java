@@ -9,8 +9,8 @@ import tech.metavm.common.Page;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionParser;
-import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.core.StructuralVisitor;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.query.GraphQueryExecutor;
@@ -19,7 +19,7 @@ import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.ParameterizedTypeProvider;
+import tech.metavm.object.type.ParameterizedTypeRepository;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.ValueFormatter;
 import tech.metavm.system.RegionConstants;
@@ -67,7 +67,7 @@ public class InstanceManager extends EntityContextFactoryBean {
             List<Expression> selects = NncUtils.map(request.selects(), sel -> ExpressionParser.parse(type, sel, entityContext));
             GraphQueryExecutor graphQueryExecutor = new GraphQueryExecutor();
             return new Page<>(
-                    graphQueryExecutor.execute(type, roots, selects, context.getParameterizedFlowProvider()),
+                    graphQueryExecutor.execute(type, roots, selects, context.parameterizedFlowProvider()),
                     dataPage.total()
             );
         }
@@ -140,22 +140,22 @@ public class InstanceManager extends EntityContextFactoryBean {
             if (instanceDTO.isNew()) {
                 throw BusinessException.invalidParams("Instance is new");
             }
-            update(instanceDTO, context.getInstanceContext(), context.getGenericContext());
+            update(instanceDTO, context.getInstanceContext());
             context.finish();
         }
     }
 
 
-    public void save(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
+    public void save(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeRepository parameterizedTypeRepository) {
         if (!instanceDTO.isNew()) {
-            update(instanceDTO, context, parameterizedTypeProvider);
+            update(instanceDTO, context);
         } else {
-            create(instanceDTO, context, parameterizedTypeProvider);
+            create(instanceDTO, context, parameterizedTypeRepository);
         }
     }
 
-    public Instance update(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
-        return ValueFormatter.parseInstance(instanceDTO, context, parameterizedTypeProvider);
+    public Instance update(InstanceDTO instanceDTO, IInstanceContext context) {
+        return ValueFormatter.parseInstance(instanceDTO, context);
     }
 
     @Transactional
@@ -167,8 +167,8 @@ public class InstanceManager extends EntityContextFactoryBean {
         }
     }
 
-    public Instance create(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
-        return InstanceFactory.create(instanceDTO, context, parameterizedTypeProvider);
+    public Instance create(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeRepository parameterizedTypeRepository) {
+        return InstanceFactory.create(instanceDTO, context);
     }
 
     @Transactional

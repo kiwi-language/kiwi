@@ -15,22 +15,18 @@ public class Routing {
 
     @EntityField(value = "name", asTitle = true)
     private String name;
-
-    private Material material;
-
+    private Material product;
     private Unit unit;
-
-    @ChildEntity("items")
-    private final ChildList<RoutingItem> items;
-
+    @ChildEntity("processes")
+    private final ChildList<RoutingProcess> processes;
     @ChildEntity("successions")
-    private final ChildList<RoutingItemSuccession> successions;
+    private final ChildList<RoutingSuccession> successions;
 
-    public Routing(String name, Material material, Unit unit, List<RoutingItem> items, List<RoutingItemSuccession> successions) {
+    public Routing(String name, Material product, Unit unit, List<RoutingProcess> processes, List<RoutingSuccession> successions) {
         this.name = name;
-        this.material = material;
+        this.product = product;
         this.unit = unit;
-        this.items = new ChildList<>(items);
+        this.processes = new ChildList<>(processes);
         this.successions = new ChildList<>(successions);
     }
 
@@ -42,12 +38,12 @@ public class Routing {
         this.name = name;
     }
 
-    public Material getMaterial() {
-        return material;
+    public Material getProduct() {
+        return product;
     }
 
-    public void setMaterial(Material material) {
-        this.material = material;
+    public void setProduct(Material product) {
+        this.product = product;
     }
 
     public Unit getUnit() {
@@ -58,20 +54,20 @@ public class Routing {
         this.unit = unit;
     }
 
-    public List<RoutingItem> getItems() {
-        return new ArrayList<>(items);
+    public List<RoutingProcess> getProcesses() {
+        return new ArrayList<>(processes);
     }
 
-    public void setItems(List<RoutingItem> items) {
-        this.items.clear();
-        this.items.addAll(items);
+    public void setProcesses(List<RoutingProcess> processes) {
+        this.processes.clear();
+        this.processes.addAll(processes);
     }
 
-    public List<RoutingItemSuccession> getSuccessions() {
+    public List<RoutingSuccession> getSuccessions() {
         return new ArrayList<>(successions);
     }
 
-    public void setSuccessions(List<RoutingItemSuccession> successions) {
+    public void setSuccessions(List<RoutingSuccession> successions) {
         this.successions.clear();
         this.successions.addAll(successions);
     }

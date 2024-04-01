@@ -4,10 +4,12 @@ import tech.metavm.entity.ContextAttributeKey;
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.InstanceSink;
 import tech.metavm.entity.LockMode;
+import tech.metavm.entity.natives.CallContext;
 import tech.metavm.event.EventQueue;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
@@ -20,7 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository {
+public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository, CallContext {
 
     IInstanceContext createSame(long appId);
 
@@ -70,7 +72,16 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     List<DurableInstance> scan(long start, long limit);
 
-    ParameterizedFlowProvider getParameterizedFlowProvider();
+    @Override
+    ParameterizedFlowProvider parameterizedFlowProvider();
+
+    @Override
+    CompositeTypeFacade compositeTypeFacade();
+
+    @Override
+    default InstanceRepository instanceRepository() {
+        return this;
+    }
 
     TypeProvider getTypeProvider();
 

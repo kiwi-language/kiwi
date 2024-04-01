@@ -13,7 +13,6 @@ import tech.metavm.entity.ChildList;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.ResolutionStage;
 import tech.metavm.object.type.Type;
@@ -21,6 +20,7 @@ import tech.metavm.object.type.ValueFormatter;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.system.RegionConstants;
+import tech.metavm.util.CompilerException;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -93,7 +93,7 @@ public class Compiler {
         TranspileUtil.init(project.getService(PsiElementFactory.class), project);
     }
 
-    public void compile(List<String> sources) {
+    public boolean compile(List<String> sources) {
         var profiler = ContextUtil.getProfiler();
         try (var context = newContext(); var entry = profiler.enter("compile")) {
             long start = System.currentTimeMillis();
@@ -115,8 +115,16 @@ public class Compiler {
             LOGGER.info("Compilation done in {} ms. {} types generated", elapsed, generatedTypes.size());
             deploy(generatedTypes, generatedPFlows, typeResolver);
             LOGGER.info("Deploy done");
+            return true;
         }
-        LOGGER.info(profiler.finish(false, true).output());
+        catch (CompilerException e) {
+            LOGGER.error("Compilation failed: {}", e.getMessage());
+            return false;
+        }
+        finally {
+            LOGGER.info(profiler.finish(false, true).output());
+        }
+
     }
 
     private void deploy(Collection<Type> generatedTypes,

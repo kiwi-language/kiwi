@@ -9,8 +9,8 @@ import tech.metavm.manufacturing.material.QualityInspectionState;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityStruct("BOMItem")
-public class BOMItem {
+@EntityStruct("ComponentMaterial")
+public class ComponentMaterial {
 
     private int sequence;
 
@@ -24,32 +24,43 @@ public class BOMItem {
 
     private long version;
 
-    private PickingMethod pickingMethod;
+    private PickMethod pickMethod;
 
     private boolean routingSpecified;
 
-    private RoutingItem routingItem;
+    private RoutingProcess routingProcess;
 
     private QualityInspectionState qualityInspectionState;
 
-    private FeedingType feedingType;
+    private FeedType feedType;
 
-    @ChildEntity("subItems")
-    private final ChildList<BOMSubItem> subItems;
+    @ChildEntity("items")
+    private final ChildList<ComponentMaterialItem> items;
 
-    public BOMItem(int sequence, Material material, long numerator, long denominator, double attritionRate, long version, PickingMethod pickingMethod, boolean routingSpecified, RoutingItem routingItem, QualityInspectionState qualityInspectionState, FeedingType feedingType, List<BOMSubItem> subItems) {
+    public ComponentMaterial(int sequence,
+                             Material material,
+                             long numerator,
+                             long denominator,
+                             double attritionRate,
+                             long version,
+                             PickMethod pickMethod,
+                             boolean routingSpecified,
+                             RoutingProcess routingProcess,
+                             QualityInspectionState qualityInspectionState,
+                             FeedType feedType,
+                             List<ComponentMaterialItem> items) {
         this.sequence = sequence;
         this.material = material;
         this.numerator = numerator;
         this.denominator = denominator;
         this.attritionRate = attritionRate;
         this.version = version;
-        this.pickingMethod = pickingMethod;
+        this.pickMethod = pickMethod;
         this.routingSpecified = routingSpecified;
-        this.routingItem = routingItem;
+        this.routingProcess = routingProcess;
         this.qualityInspectionState = qualityInspectionState;
-        this.feedingType = feedingType;
-        this.subItems = new ChildList<>(subItems);
+        this.feedType = feedType;
+        this.items = new ChildList<>(items);
     }
 
     public int getSequence() {
@@ -100,12 +111,12 @@ public class BOMItem {
         this.version = version;
     }
 
-    public PickingMethod getPickingMethod() {
-        return pickingMethod;
+    public PickMethod getPickMethod() {
+        return pickMethod;
     }
 
-    public void setPickingMethod(PickingMethod pickingMethod) {
-        this.pickingMethod = pickingMethod;
+    public void setPickMethod(PickMethod pickMethod) {
+        this.pickMethod = pickMethod;
     }
 
     public boolean isRoutingSpecified() {
@@ -116,12 +127,12 @@ public class BOMItem {
         this.routingSpecified = routingSpecified;
     }
 
-    public RoutingItem getRoutingItem() {
-        return routingItem;
+    public RoutingProcess getRoutingProcess() {
+        return routingProcess;
     }
 
-    public void setRoutingItem(RoutingItem routingItem) {
-        this.routingItem = routingItem;
+    public void setRoutingProcess(RoutingProcess routingProcess) {
+        this.routingProcess = routingProcess;
     }
 
     public QualityInspectionState getQualityInspectionState() {
@@ -132,21 +143,20 @@ public class BOMItem {
         this.qualityInspectionState = qualityInspectionState;
     }
 
-    public FeedingType getFeedingType() {
-        return feedingType;
+    public FeedType getFeedType() {
+        return feedType;
     }
 
-    public void setFeedingType(FeedingType feedingType) {
-        this.feedingType = feedingType;
+    public void setFeedType(FeedType feedType) {
+        this.feedType = feedType;
     }
 
-    public List<BOMSubItem> getSubItems() {
-        return new ArrayList<>(subItems);
+    public List<ComponentMaterialItem> getItems() {
+        return new ArrayList<>(items);
     }
 
-    public void setSubItems(List<BOMSubItem> subItems) {
-        this.subItems.clear();
-        this.subItems.addAll(subItems);
+    public void setItems(List<ComponentMaterialItem> items) {
+        this.items.clear();
+        this.items.addAll(items);
     }
-
 }

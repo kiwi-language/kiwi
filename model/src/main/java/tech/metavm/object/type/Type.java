@@ -277,7 +277,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     public boolean isAssignableFrom(Type that) {
         if (that instanceof NeverType)
             return true;
-        return that instanceof TypeVariable && isAssignableFrom1(that) || isAssignableFrom1(that.getUpperBound());
+        return that instanceof ITypeVariable && isAssignableFrom1(that) || isAssignableFrom1(that.getUpperBound());
     }
 
     private boolean isAssignableFrom1(Type that) {

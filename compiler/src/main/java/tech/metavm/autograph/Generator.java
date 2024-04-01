@@ -26,10 +26,12 @@ public class Generator extends CodeGenVisitor {
     private final LinkedList<ClassInfo> classInfoStack = new LinkedList<>();
     private final TypeResolver typeResolver;
     private final IEntityContext entityContext;
+    private final CompositeTypeFacade compositeTypeFacade;
 
     public Generator(TypeResolver typeResolver, IEntityContext entityContext) {
         this.typeResolver = typeResolver;
         this.entityContext = entityContext;
+        compositeTypeFacade = CompositeTypeFacadeImpl.fromContext(entityContext);
     }
 
     @Override
@@ -57,7 +59,8 @@ public class Generator extends CodeGenVisitor {
                 initFlowBuilder.createMethodCall(
                         initFlowBuilder.getVariable("this"),
                         superInit,
-                        List.of()
+                        List.of(),
+                        compositeTypeFacade
                 );
             }
         }
@@ -71,7 +74,8 @@ public class Generator extends CodeGenVisitor {
                 classInitFlowBuilder.createMethodCall(
                         null,
                         superCInit,
-                        List.of()
+                        List.of(),
+                        compositeTypeFacade
                 );
             }
         }
@@ -90,7 +94,7 @@ public class Generator extends CodeGenVisitor {
             var constructor = klass.getDefaultConstructor();
             var constructorGen = new MethodGenerator(constructor, typeResolver, entityContext, this);
             constructorGen.enterScope(constructor.getRootScope());
-            constructorGen.createMethodCall(new NodeExpression(constructorGen.createSelf()), initFlow, List.of());
+            constructorGen.createMethodCall(new NodeExpression(constructorGen.createSelf()), initFlow, List.of(), compositeTypeFacade);
             constructorGen.createReturn(new NodeExpression(constructorGen.createSelf()));
             constructorGen.exitScope();
         }
@@ -311,7 +315,7 @@ public class Generator extends CodeGenVisitor {
         if (CompilerConfig.isMethodBlacklisted(psiMethod))
             return;
         var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
-        method.clearNodes();
+        method.clearContent();
         MethodGenerator builder = new MethodGenerator(method, typeResolver, entityContext, this);
         builders.push(builder);
         builder.enterScope(method.getRootScope());
@@ -328,13 +332,15 @@ public class Generator extends CodeGenVisitor {
                     builder().createMethodCall(
                             builder().getVariable("this"),
                             superClass.getDefaultConstructor(),
-                            List.of()
+                            List.of(),
+                            compositeTypeFacade
                     );
                 }
                 builder.createMethodCall(
                         new NodeExpression(selfNode),
                         currentClassInfo().fieldBuilder.getMethod(),
-                        List.of()
+                        List.of(),
+                        compositeTypeFacade
                 );
                 if (currentClass().isEnum()) {
                     var klass = currentClass();
@@ -708,7 +714,8 @@ public class Generator extends CodeGenVisitor {
             typeResolver.ensureDeclared(collType);
             var itNode = builder().createMethodCall(
                     iteratedExpr, Objects.requireNonNull(collType.findMethodByCode("iterator")),
-                    List.of()
+                    List.of(),
+                    compositeTypeFacade
             );
             var itType = (ClassType) NncUtils.requireNonNull(itNode.getType());
             processLoop(statement, getExtraLoopTest(statement), (node, loopVar2Field) -> {
@@ -718,7 +725,8 @@ public class Generator extends CodeGenVisitor {
                 var elementNode = builder().createMethodCall(
                         new NodeExpression(itNode),
                         Objects.requireNonNull(itType.findMethodByCode("next")),
-                        List.of()
+                        List.of(),
+                        compositeTypeFacade
                 );
                 builder().setVariable(statement.getIterationParameter().getName(), new NodeExpression(elementNode));
             });

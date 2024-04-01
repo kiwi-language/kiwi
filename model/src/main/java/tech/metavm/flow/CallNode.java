@@ -29,8 +29,8 @@ public abstract class CallNode extends NodeRT {
     @ChildEntity("参数列表")
     protected final ChildArray<Argument> arguments = addChild(new ChildArray<>(Argument.class), "arguments");
 
-    public CallNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, @NotNull Flow subFlow, @NotNull List<Argument> arguments) {
-        super(tmpId, name, code, null, prev, scope);
+    public CallNode(Long tmpId, String name, @Nullable String code, @Nullable Type outputType, NodeRT prev, ScopeRT scope, @NotNull Flow subFlow, @NotNull List<Argument> arguments) {
+        super(tmpId, name, code, outputType, prev, scope);
         this.subFlow = subFlow;
         this.arguments.addChildren(arguments);
     }
@@ -87,9 +87,7 @@ public abstract class CallNode extends NodeRT {
         var self = getSelf(frame);
         if (flow instanceof Method method && method.isInstanceMethod())
             flow = requireNonNull(self).getType().resolveMethod(method, frame.parameterizedFlowProvider());
-        FlowExecResult result = flow.execute(self, argInstances,
-                frame.getInstanceRepository(),
-                frame.parameterizedFlowProvider());
+        FlowExecResult result = flow.execute(self, argInstances, frame);
         if (result.exception() != null)
             return frame.catchException(this, result.exception());
         else

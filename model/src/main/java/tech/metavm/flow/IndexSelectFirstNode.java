@@ -71,7 +71,7 @@ public class IndexSelectFirstNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var result = frame.getInstanceRepository().selectFirstByKey(key.buildIndexKey(frame));
+        var result = frame.instanceRepository().selectFirstByKey(key.buildIndexKey(frame));
         return next(NncUtils.orElse(result, Instances.nullInstance()));
     }
 

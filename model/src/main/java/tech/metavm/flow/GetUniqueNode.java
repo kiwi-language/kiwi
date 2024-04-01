@@ -66,7 +66,7 @@ public class GetUniqueNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        Instance result = frame.getInstanceRepository().selectFirstByKey(buildIndexKey(frame));
+        Instance result = frame.instanceRepository().selectFirstByKey(buildIndexKey(frame));
         if (result == null)
             result = Instances.nullInstance();
         return next(result);

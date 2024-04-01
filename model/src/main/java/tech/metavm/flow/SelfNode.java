@@ -8,6 +8,7 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.ParameterizedTypeProvider;
+import tech.metavm.object.type.ParameterizedTypeRepository;
 import tech.metavm.util.ContextUtil;
 
 import javax.annotation.Nullable;
@@ -16,10 +17,10 @@ import java.util.Objects;
 @EntityType("自身节点")
 public class SelfNode extends NodeRT {
 
-    public static ClassType getSelfType(Method method, ParameterizedTypeProvider context) {
+    public static ClassType getSelfType(Method method, ParameterizedTypeProvider parameterizedTypeProvider) {
         var declaringType = method.getDeclaringType();
         return declaringType.isTemplate() ?
-                context.getParameterizedType(declaringType, declaringType.getTypeParameters()) : declaringType;
+                parameterizedTypeProvider.getParameterizedType(declaringType, declaringType.getTypeParameters()) : declaringType;
     }
 
     public static SelfNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {

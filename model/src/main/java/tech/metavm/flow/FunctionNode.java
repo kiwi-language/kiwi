@@ -76,9 +76,7 @@ public class FunctionNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var funcInst = (FunctionInstance) func.evaluate(frame);
-        var result = funcInst.execute(NncUtils.map(arguments, arg -> arg.evaluate(frame)),
-                frame.getInstanceRepository(),
-                frame.parameterizedFlowProvider());
+        var result = funcInst.execute(NncUtils.map(arguments, arg -> arg.evaluate(frame)), frame);
         if(result.exception() != null)
             return frame.catchException(this, result.exception());
         else

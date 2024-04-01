@@ -36,7 +36,8 @@ public class Main {
             List<String> sources = new ArrayList<>();
             files.filter(path -> path.toString().endsWith(".java"))
                     .forEach(path -> sources.add(path.toString()));
-            compiler.compile(sources);
+            if(!compiler.compile(sources))
+                throw new RuntimeException("Compilation failed");
             return compiler.getClassNames();
         } catch (IOException e) {
             throw new RuntimeException("Compilation failed", e);

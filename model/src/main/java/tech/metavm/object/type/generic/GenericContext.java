@@ -1,6 +1,5 @@
 package tech.metavm.object.type.generic;
 
-import tech.metavm.entity.Entity;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.Method;
@@ -17,7 +16,7 @@ import java.util.*;
 import static tech.metavm.object.type.ResolutionStage.DEFINITION;
 import static tech.metavm.object.type.ResolutionStage.INIT;
 
-public class GenericContext implements ParameterizedFlowProvider, ParameterizedTypeProvider {
+public class GenericContext implements ParameterizedFlowProvider, ParameterizedTypeRepository {
 
     private final Map<ClassType, Map<List<? extends Type>, ClassType>> parameterizedTypes = new HashMap<>();
     private final Map<Flow, Map<List<? extends Type>, Flow>> parameterizedFlows = new HashMap<>();

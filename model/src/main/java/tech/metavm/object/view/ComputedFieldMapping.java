@@ -5,6 +5,7 @@ import tech.metavm.expression.NodeExpression;
 import tech.metavm.expression.ThisExpression;
 import tech.metavm.flow.SelfNode;
 import tech.metavm.flow.Value;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.view.rest.dto.ComputedFieldMappingParam;
@@ -68,7 +69,7 @@ public class ComputedFieldMapping extends FieldMapping {
     }
 
     @Override
-    public Supplier<Value> generateReadCode0(SelfNode selfNode) {
+    public Supplier<Value> generateReadCode0(SelfNode selfNode, CompositeTypeFacade compositeTypeFacade) {
         return () -> (Value) new CopyVisitor(value) {
             @Override
             public Element visitThisExpression(ThisExpression expression) {

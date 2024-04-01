@@ -58,7 +58,7 @@ public class NewListWithInitialResolver implements NewResolver {
         var elementType = methodGenerics.getSubstitutor().substitute(type.getParameters()[0]);
         var typeResolver = expressionResolver.getTypeResolver();
         var mvElementType = typeResolver.resolve(elementType);
-        var mvArrayType = expressionResolver.getArrayTypeProvider().getArrayType(mvElementType,
+        var mvArrayType = expressionResolver.getCompositeTypeFacade().getArrayType(mvElementType,
                 CHILD_LIST_TYPE.isAssignableFrom(type) ? ArrayKind.CHILD : ArrayKind.READ_WRITE);
         var initialValue = expressionResolver.resolve(
                 Objects.requireNonNull(methodCallExpression.getArgumentList()).getExpressions()[0]);

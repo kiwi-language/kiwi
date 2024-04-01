@@ -4,6 +4,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.flow.Value;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Type;
 
 import java.util.Objects;
@@ -20,12 +21,12 @@ public class IdentityNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
+    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
         return getSource;
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
+    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
         return getView;
     }
 

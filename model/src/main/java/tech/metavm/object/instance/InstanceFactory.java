@@ -48,14 +48,14 @@ public class InstanceFactory {
         );
     }
 
-    public static Instance create(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
-        return create(instanceDTO, context::getType, null, context, parameterizedTypeProvider);
+    public static Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
+        return create(instanceDTO, context::getType, null, context);
     }
 
     public static Instance save(InstanceDTO instanceDTO,
                                 Function<Id, Type> getType,
                                 @Nullable InstanceParentRef parentRef,
-                                IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
+                                IInstanceContext context) {
         if (!instanceDTO.isNew()) {
             var instance = context.get(instanceDTO.parseId());
             if (parentRef != null) {
@@ -63,9 +63,9 @@ public class InstanceFactory {
                         Objects.equals(instance.getParentRef(), parentRef),
                         "Trying to change parent. instance id: " + instanceDTO.id());
             }
-            return ValueFormatter.parseInstance(instanceDTO, context, parameterizedTypeProvider);
+            return ValueFormatter.parseInstance(instanceDTO, context);
         } else {
-            return create(instanceDTO, getType, parentRef, context, parameterizedTypeProvider);
+            return create(instanceDTO, getType, parentRef, context);
         }
     }
 
@@ -73,8 +73,7 @@ public class InstanceFactory {
             InstanceDTO instanceDTO,
             Function<Id, Type> getType,
             @Nullable InstanceParentRef parentRef,
-            IInstanceContext context,
-            ParameterizedTypeProvider parameterizedTypeProvider) {
+            IInstanceContext context) {
         NncUtils.requireTrue(instanceDTO.isNew(),
                 "Id of new instance must be null or zero");
         Type type = getType.apply(Id.parse(instanceDTO.typeId()));
@@ -92,8 +91,7 @@ public class InstanceFactory {
                             field.getType(),
                             getType,
                             InstanceParentRef.ofObject(object, field),
-                            context,
-                            parameterizedTypeProvider
+                            context
                     );
                     object.initField(field, fieldValue);
                 } else {
@@ -108,7 +106,7 @@ public class InstanceFactory {
             var elements = NncUtils.map(
                     arrayInstanceParam.elements(),
                     v -> resolveValue(v, arrayType.getElementType(), getType,
-                            InstanceParentRef.ofArray(array), context, parameterizedTypeProvider)
+                            InstanceParentRef.ofArray(array), context)
             );
             array.addAll(elements);
         } else if (param instanceof ListInstanceParam listInstanceParam) {
@@ -118,7 +116,8 @@ public class InstanceFactory {
             listNative.List();
             NncUtils.forEach(
                     listInstanceParam.elements(),
-                    v -> listNative.add(resolveValue(v, listType.getTypeArguments().get(0), getType, null, context, parameterizedTypeProvider))
+                    v -> listNative.add(resolveValue(v, listType.getTypeArguments().get(0), getType, null, context
+                    ))
             );
             instance = list;
         } else {
@@ -126,7 +125,7 @@ public class InstanceFactory {
         }
         if (instanceDTO.sourceMappingId() != null) {
             var sourceMapping = context.getMappingProvider().getMapping(Id.parse(instanceDTO.sourceMappingId()));
-            var source = sourceMapping.unmap(instance, context, context.getParameterizedFlowProvider());
+            var source = sourceMapping.unmap(instance, context);
             instance.setSourceRef(new SourceRef(source, sourceMapping));
             context.bind(instance);
             context.bind(source);
@@ -137,13 +136,13 @@ public class InstanceFactory {
 
     public static Instance resolveValue(FieldValue rawValue, Type type, IEntityContext context) {
         return resolveValue(rawValue, type, context::getType, null,
-                Objects.requireNonNull(context.getInstanceContext()), context.getGenericContext());
+                Objects.requireNonNull(context.getInstanceContext()));
     }
 
     public static Instance resolveValue(FieldValue rawValue, Type type,
                                         Function<Id, Type> getType,
                                         @Nullable InstanceParentRef parentRef,
-                                        IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
+                                        IInstanceContext context) {
         if (rawValue == null) {
             return Instances.nullInstance();
         }
@@ -161,7 +160,7 @@ public class InstanceFactory {
         } else if (rawValue instanceof ReferenceFieldValue referenceFieldValue) {
             return context.get(Id.parse(referenceFieldValue.getId()));
         } else if (rawValue instanceof InstanceFieldValue instanceFieldValue) {
-            return save(instanceFieldValue.getInstance(), getType, parentRef, context, parameterizedTypeProvider);
+            return save(instanceFieldValue.getInstance(), getType, parentRef, context);
         } else if (rawValue instanceof ArrayFieldValue arrayFieldValue) {
             if (arrayFieldValue.getId() != null) {
                 ArrayInstance arrayInstance = (ArrayInstance) context.get(Id.parse(arrayFieldValue.getId()));
@@ -171,7 +170,7 @@ public class InstanceFactory {
                                 arrayFieldValue.getElements(),
                                 e -> resolveValue(e, arrayInstance.getType().getElementType(), getType,
                                         InstanceParentRef.ofArray(arrayInstance),
-                                        context, parameterizedTypeProvider)
+                                        context)
                         )
                 );
                 return arrayInstance;
@@ -180,7 +179,7 @@ public class InstanceFactory {
                 var elements = NncUtils.map(
                         arrayFieldValue.getElements(),
                         e -> resolveValue(e, StandardTypes.getAnyType(), getType,
-                                InstanceParentRef.ofArray(array), context, parameterizedTypeProvider)
+                                InstanceParentRef.ofArray(array), context)
                 );
                 array.setParentInternal(parentRef);
                 array.reset(elements);
@@ -193,7 +192,7 @@ public class InstanceFactory {
                 listNative.clear();
                 NncUtils.forEach(
                         listFieldValue.getElements(),
-                        e -> listNative.add(resolveValue(e, list.getType().getListElementType(), getType, null, context, parameterizedTypeProvider))
+                        e -> listNative.add(resolveValue(e, list.getType().getListElementType(), getType, null, context))
                 );
                 return list;
             } else {
@@ -201,16 +200,16 @@ public class InstanceFactory {
                 NncUtils.requireTrue(classType.isList());
                 if(classType.getEffectiveTemplate() == StandardTypes.getListType()) {
                     if(listFieldValue.isElementAsChild())
-                        classType = parameterizedTypeProvider.getParameterizedType(StandardTypes.getChildListType(), List.of(classType.getListElementType()));
+                        classType = context.compositeTypeFacade().getParameterizedType(StandardTypes.getChildListType(), List.of(classType.getListElementType()));
                     else
-                        classType = parameterizedTypeProvider.getParameterizedType(StandardTypes.getReadWriteListType(), List.of(classType.getListElementType()));
+                        classType = context.compositeTypeFacade().getParameterizedType(StandardTypes.getReadWriteListType(), List.of(classType.getListElementType()));
                 }
                 var list = ClassInstance.allocate(classType);
                 var listNative = new ListNative(list);
                 listNative.List();
                 NncUtils.forEach(
                         listFieldValue.getElements(),
-                        e -> listNative.add(resolveValue(e, list.getType().getListElementType(), getType, null, context, parameterizedTypeProvider))
+                        e -> listNative.add(resolveValue(e, list.getType().getListElementType(), getType, null, context))
                 );
                 list.setParentInternal(parentRef);
                 return list;

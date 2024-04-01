@@ -36,13 +36,13 @@ public class SetNative extends IterableNative {
         }
     }
 
-    public Instance Set(NativeCallContext callContext) {
+    public Instance Set(CallContext callContext) {
         array = new ArrayInstance((ArrayType) arrayField.getType(),
                 new InstanceParentRef(instance, arrayField));
         return instance;
     }
 
-    public ClassInstance iterator(NativeCallContext callContext) {
+    public ClassInstance iterator(CallContext callContext) {
         var iteratorImplType = (ClassType) instance.getType().getDependency(StandardTypes.getIteratorImplType());
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
@@ -50,7 +50,7 @@ public class SetNative extends IterableNative {
         return it;
     }
 
-    public Instance add(Instance value, NativeCallContext callContext) {
+    public Instance add(Instance value, CallContext callContext) {
         if (!element2index.containsKey(value)) {
             element2index.put(value, array.size());
             array.addElement(value);
@@ -60,7 +60,7 @@ public class SetNative extends IterableNative {
         }
     }
 
-    public Instance remove(Instance value, NativeCallContext callContext) {
+    public Instance remove(Instance value, CallContext callContext) {
         Integer index = element2index.remove(value);
         if (index != null) {
             int lastIdx = array.size() - 1;
@@ -75,27 +75,27 @@ public class SetNative extends IterableNative {
         }
     }
 
-    public Instance isEmpty(NativeCallContext callContext) {
+    public Instance isEmpty(CallContext callContext) {
         return Instances.booleanInstance(element2index.isEmpty());
     }
 
-    public Instance contains(Instance value, NativeCallContext callContext) {
+    public Instance contains(Instance value, CallContext callContext) {
         return Instances.booleanInstance(element2index.containsKey(value));
     }
 
-    public Instance size(NativeCallContext callContext) {
+    public Instance size(CallContext callContext) {
         return Instances.longInstance(element2index.size());
     }
 
-    public void clear(NativeCallContext callContext) {
+    public void clear(CallContext callContext) {
         array.clear();
         element2index.clear();
     }
 
     @Override
-    public void forEach(Instance action, NativeCallContext callContext) {
+    public void forEach(Instance action, CallContext callContext) {
         if(action instanceof FunctionInstance functionInstance)
-            array.forEach(e -> functionInstance.execute(List.of(e), callContext.instanceRepository(), callContext.parameterizedFlowProvider()));
+            array.forEach(e -> functionInstance.execute(List.of(e), callContext));
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }

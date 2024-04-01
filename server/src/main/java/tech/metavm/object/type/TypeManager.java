@@ -625,7 +625,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 int ordinal = instance.getLongField(ordinalField).getValue().intValue();
                 instanceDTO = setOrdinal(instanceDTO, ordinal, type);
                 var field = type.getStaticFieldByName(instance.getTitle());
-                instanceManager.update(instanceDTO, instanceContext, context.getGenericContext());
+                instanceManager.update(instanceDTO, instanceContext);
                 field.setName(instance.getTitle());
             }
             context.finish();

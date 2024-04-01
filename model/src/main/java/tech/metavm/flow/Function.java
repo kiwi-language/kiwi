@@ -2,11 +2,11 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.entity.natives.CallContext;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.flow.rest.FunctionParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.InstanceRepository;
 import tech.metavm.object.type.FunctionType;
 import tech.metavm.object.type.MetadataState;
 import tech.metavm.object.type.Type;
@@ -66,14 +66,15 @@ public class Function extends Flow implements GlobalKey {
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext) {
         NncUtils.requireNull(self);
         checkArguments(arguments);
         if (isNative())
-            return NativeFunctions.invoke(this, arguments);
+            return NativeFunctions.invoke(this, arguments, callContext);
         else
             return new MetaFrame(this.getRootNode(), null, null,
-                    arguments, instanceRepository, parameterizedFlowProvider).execute();
+                    arguments, callContext.instanceRepository(),
+                    callContext.parameterizedFlowProvider(), callContext.compositeTypeFacade()).execute();
     }
 
     @Override

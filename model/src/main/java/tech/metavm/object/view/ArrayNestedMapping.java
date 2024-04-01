@@ -6,10 +6,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.Expressions;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.Field;
-import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.type.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +31,7 @@ public class ArrayNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
+    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
         var sourceElementType = sourceType.getElementType();
         var targetElementType = targetType.getElementType();
         var targetArray = Nodes.newArray(
@@ -53,14 +50,15 @@ public class ArrayNestedMapping extends NestedMapping {
                 List.of(
                         Nodes.argument(setSourceFunc, 0, Values.node(targetArray)),
                         Nodes.argument(setSourceFunc, 1, getSource.get())
-                )
+                ),
+                compositeTypeFacade
         );
         Nodes.forEach(
                 "遍历" + sourceType.getName(),
                 getSource,
                 (bodyScope, getElement, getIndex) -> {
                     var getTargetElement = elementNestedMapping.generateMappingCode(getElement,
-                            bodyScope);
+                            bodyScope, compositeTypeFacade);
                     Nodes.addElement(
                             "添加" + sourceElementType.getName(),
                             null,
@@ -75,9 +73,9 @@ public class ArrayNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
+    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
         var isSourcePresent = Nodes.functionCall("来源是否存在", scope, NativeFunctions.isSourcePresent(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())));
+                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())), compositeTypeFacade);
         Map<Branch, Value> branch2sourceNode = new HashMap<>();
         var sourceFieldRef = new Object() {
             Field sourceField;
@@ -90,7 +88,7 @@ public class ArrayNestedMapping extends NestedMapping {
                 trueBranch -> {
                     var source = Nodes.functionCall(sourceType.getName() + "来源", trueBranch.getScope(),
                             NativeFunctions.getSource(),
-                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())));
+                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())), compositeTypeFacade);
                     branch2sourceNode.put(trueBranch, Values.node(source));
                 },
                 falseBranch -> {
@@ -111,7 +109,7 @@ public class ArrayNestedMapping extends NestedMapping {
         Nodes.forEach(
                 "遍历" + targetType.getName(), getView,
                 (bodyScope, getElement, getIndex) -> {
-                    var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
+                    var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope, compositeTypeFacade);
                     Nodes.addElement("添加元素" + sourceType.getName(), null,
                             Values.nodeProperty(mergeNode, sourceField), getSourceElement.get(), bodyScope);
                 },

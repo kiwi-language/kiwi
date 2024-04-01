@@ -46,7 +46,7 @@ public class ListOfResolver implements MethodCallResolver {
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var listType = (ClassType) expressionResolver.getTypeResolver().resolve(
                 methodGenerics.getSubstitutor().substitute(method.getReturnType()));
-        var readWriteListType = expressionResolver.getParameterizedTypeProvider().getParameterizedType(
+        var readWriteListType = expressionResolver.getCompositeTypeFacade().getParameterizedType(
                 StandardTypes.getReadWriteListType(), List.of(listType.getListElementType())
         );
         var list = methodGenerator.createNew(
@@ -60,7 +60,8 @@ public class ListOfResolver implements MethodCallResolver {
             methodGenerator.createMethodCall(
                     Expressions.node(list),
                     addMethod,
-                    List.of(value)
+                    List.of(value),
+                    expressionResolver.getCompositeTypeFacade()
             );
         }
         return Expressions.node(list);

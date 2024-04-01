@@ -1,7 +1,7 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.natives.NativeCallContext;
+import tech.metavm.entity.natives.CallContext;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.NodeExpression;
@@ -13,7 +13,7 @@ import tech.metavm.util.*;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class MetaFrame implements EvaluationContext, Frame {
+public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
     @Nullable
     private final ClassInstance self;
@@ -24,6 +24,7 @@ public class MetaFrame implements EvaluationContext, Frame {
     private final Set<LoopNode> loopingNodes = new IdentitySet<>();
     private NodeRT entry;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
+    private final CompositeTypeFacade compositeTypeFacade;
     private final InstanceRepository instanceRepository;
     private final Map<BranchNode, Branch> selectedBranches = new IdentityHashMap<>();
     private final Map<BranchNode, Branch> exitBranches = new IdentityHashMap<>();
@@ -36,13 +37,15 @@ public class MetaFrame implements EvaluationContext, Frame {
 
     public MetaFrame(NodeRT entry, @Nullable ClassType owner, @Nullable ClassInstance self, List<Instance> arguments,
                      InstanceRepository instanceRepository,
-                     ParameterizedFlowProvider parameterizedFlowProvider) {
+                     ParameterizedFlowProvider parameterizedFlowProvider,
+                     CompositeTypeFacade compositeTypeFacade) {
         this.entry = entry;
         this.owner = owner;
         this.self = self;
         this.arguments = arguments;
         this.instanceRepository = instanceRepository;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
+        this.compositeTypeFacade = compositeTypeFacade;
     }
 
     public Instance getOutput(NodeRT node) {
@@ -194,6 +197,11 @@ public class MetaFrame implements EvaluationContext, Frame {
         return parameterizedFlowProvider;
     }
 
+    @Override
+    public CompositeTypeFacade compositeTypeFacade() {
+        return compositeTypeFacade;
+    }
+
     public @Nullable ClassInstance getSelf() {
         return self;
     }
@@ -235,12 +243,9 @@ public class MetaFrame implements EvaluationContext, Frame {
         return NncUtils.requireNonNull(exception);
     }
 
-    public InstanceRepository getInstanceRepository() {
+    @Override
+    public InstanceRepository instanceRepository() {
         return instanceRepository;
-    }
-
-    public NativeCallContext getNativeCallContext() {
-        return new NativeCallContext(instanceRepository, parameterizedFlowProvider);
     }
 
 }

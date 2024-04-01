@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.common.Page;
 import tech.metavm.entity.*;
+import tech.metavm.entity.natives.DefaultCallContext;
 import tech.metavm.expression.*;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.*;
@@ -52,32 +53,30 @@ public class InstanceQueryService {
 
     public Page<DurableInstance> query(InstanceQuery query, IEntityContext context) {
         return query(query, context.getInstanceContext(), context.getGenericContext(),
-                new ContextTypeRepository(context), new ContextArrayTypeProvider(context), context.getUnionTypeContext());
+                new ContextTypeRepository(context), CompositeTypeFacadeImpl.fromContext(context));
     }
 
     public Page<DurableInstance> query(InstanceQuery query,
                                        InstanceRepository instanceRepository,
                                        ParameterizedFlowProvider parameterizedFlowProvider,
                                        IndexedTypeProvider typeProvider,
-                                       ArrayTypeProvider arrayTypeProvider,
-                                       UnionTypeProvider unionTypeProvider
-                                       ) {
+                                       CompositeTypeFacade compositeTypeFacade) {
         var type = query.type();
         if (type instanceof ClassType classType && query.sourceMapping() != null) {
             var sourceMapping = query.sourceMapping();
             if (sourceMapping.getTargetType() != type || !(sourceMapping instanceof FieldsObjectMapping sourceObjectMapping))
                 throw new BusinessException(ErrorCode.INVALID_SOURCE_MAPPING);
             var sourceQuery = convertToSourceQuery(query, classType, sourceObjectMapping,
-                    instanceRepository, typeProvider, arrayTypeProvider, unionTypeProvider);
+                    instanceRepository, typeProvider, compositeTypeFacade, compositeTypeFacade);
             var sourcePage = query(sourceQuery, instanceRepository, parameterizedFlowProvider,
-                    typeProvider, arrayTypeProvider, unionTypeProvider);
+                    typeProvider, compositeTypeFacade);
             return new Page<>(
                     NncUtils.map(sourcePage.data(),
-                            i -> sourceObjectMapping.mapRoot(i, instanceRepository, parameterizedFlowProvider)),
+                            i -> sourceObjectMapping.mapRoot(i, new DefaultCallContext(instanceRepository, parameterizedFlowProvider, compositeTypeFacade))),
                     sourcePage.total()
             );
         } else
-            return queryPhysical(query, instanceRepository, typeProvider, instanceRepository, arrayTypeProvider, unionTypeProvider, parameterizedFlowProvider);
+            return queryPhysical(query, instanceRepository, typeProvider, instanceRepository, compositeTypeFacade, compositeTypeFacade, parameterizedFlowProvider);
     }
 
     private InstanceQuery convertToSourceQuery(InstanceQuery query, ClassType viewType,

@@ -1,15 +1,15 @@
 package tech.metavm.manufacturing.production;
 
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.EntityStruct;
 import tech.metavm.manufacturing.material.Material;
 import tech.metavm.manufacturing.material.QualityInspectionState;
 import tech.metavm.manufacturing.material.Unit;
 
-@EntityType("RoutingItemSuccession")
-public class RoutingItemSuccession {
+@EntityStruct("RoutingItemSuccession")
+public class RoutingSuccession {
 
-    private RoutingItem from;
-    private RoutingItem to;
+    private RoutingProcess from;
+    private RoutingProcess to;
     private Material product;
     private Unit unit;
     private double baseQuantity;
@@ -17,18 +17,18 @@ public class RoutingItemSuccession {
     private boolean inbound;
     private boolean autoInbound;
     private QualityInspectionState qualityInspectionState;
-    private FeedingType feedingType;
+    private FeedType feedType;
 
-    public RoutingItemSuccession(RoutingItem from,
-                                 RoutingItem to,
-                                 Material product,
-                                 Unit unit,
-                                 double baseQuantity,
-                                 boolean report,
-                                 boolean inbound,
-                                 boolean autoInbound,
-                                 QualityInspectionState qualityInspectionState,
-                                 FeedingType feedingType
+    public RoutingSuccession(RoutingProcess from,
+                             RoutingProcess to,
+                             Material product,
+                             Unit unit,
+                             double baseQuantity,
+                             boolean report,
+                             boolean inbound,
+                             boolean autoInbound,
+                             QualityInspectionState qualityInspectionState,
+                             FeedType feedType
                                  ) {
         this.from = from;
         this.to = to;
@@ -39,22 +39,22 @@ public class RoutingItemSuccession {
         this.inbound = inbound;
         this.autoInbound = autoInbound;
         this.qualityInspectionState = qualityInspectionState;
-        this.feedingType = feedingType;
+        this.feedType = feedType;
     }
 
-    public RoutingItem getFrom() {
+    public RoutingProcess getFrom() {
         return from;
     }
 
-    public void setFrom(RoutingItem from) {
+    public void setFrom(RoutingProcess from) {
         this.from = from;
     }
 
-    public RoutingItem getTo() {
+    public RoutingProcess getTo() {
         return to;
     }
 
-    public void setTo(RoutingItem to) {
+    public void setTo(RoutingProcess to) {
         this.to = to;
     }
 
@@ -114,11 +114,11 @@ public class RoutingItemSuccession {
         this.qualityInspectionState = qualityInspectionState;
     }
 
-    public FeedingType getFeedingType() {
-        return feedingType;
+    public FeedType getFeedType() {
+        return feedType;
     }
 
-    public void setFeedingType(FeedingType feedingType) {
-        this.feedingType = feedingType;
+    public void setFeedType(FeedType feedType) {
+        this.feedType = feedType;
     }
 }

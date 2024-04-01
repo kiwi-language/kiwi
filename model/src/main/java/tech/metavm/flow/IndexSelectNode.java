@@ -71,11 +71,11 @@ public class IndexSelectNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var result = frame.getInstanceRepository().indexSelect(key.buildIndexKey(frame));
+        var result = frame.instanceRepository().indexSelect(key.buildIndexKey(frame));
         var list = ClassInstance.allocate(getType());
         var listNative = new ListNative(list);
-        listNative.List(frame.getNativeCallContext());
-        result.forEach(e -> listNative.add(e, frame.getNativeCallContext()));
+        listNative.List(frame);
+        result.forEach(e -> listNative.add(e, frame));
         return next(list);
     }
 

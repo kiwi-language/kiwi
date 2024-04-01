@@ -54,6 +54,11 @@ public record TypeDTO(
     }
 
     @JsonIgnore
+    public CapturedTypeParam getCapturedTypeParam() {
+        return (CapturedTypeParam) param;
+    }
+
+    @JsonIgnore
     @Override
     public List<String> typeParameterIds() {
         if(param instanceof ClassTypeParam classTypeParam)

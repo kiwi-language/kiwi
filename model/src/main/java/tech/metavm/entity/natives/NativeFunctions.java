@@ -15,8 +15,8 @@ public class NativeFunctions {
         NativeFunctions.holder = holder;
     }
 
-    public static FlowExecResult invoke(@NotNull Function flow, @NotNull List<Instance> arguments) {
-        return holder.invoke(flow, arguments);
+    public static FlowExecResult invoke(@NotNull Function flow, @NotNull List<Instance> arguments, CallContext callContext) {
+        return holder.invoke(flow, arguments, callContext);
     }
 
     public static Function getSource() {

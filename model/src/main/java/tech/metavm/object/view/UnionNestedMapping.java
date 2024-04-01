@@ -6,10 +6,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.expression.InstanceOfExpression;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.Field;
-import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.UnionType;
+import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -37,7 +34,7 @@ public class UnionNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
+    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
         Map<Type, Type> viewType2sourceType = new HashMap<>();
         for (Type member : sourceType.getMembers()) {
             viewType2sourceType.put(getViewType(member, targetType), member);
@@ -69,7 +66,7 @@ public class UnionNestedMapping extends NestedMapping {
                                     t, branch.getScope(), Values.node(source));
                             values.put(
                                     branch,
-                                    sourceType2codeGenerator.get(t).generateMappingCode(() -> Values.node(castSource), branch.getScope()).get()
+                                    sourceType2codeGenerator.get(t).generateMappingCode(() -> Values.node(castSource), branch.getScope(), compositeTypeFacade).get()
                             );
                         }
                 ),
@@ -83,7 +80,7 @@ public class UnionNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
+    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
         var targetType2codeGenerator = new HashMap<Type, NestedMapping>();
         for (var memberCodeGenerator : memberNestedMappings) {
             targetType2codeGenerator.put(memberCodeGenerator.getTargetType(), memberCodeGenerator);
@@ -109,7 +106,7 @@ public class UnionNestedMapping extends NestedMapping {
                             var castView =  Nodes.cast("CastView" + NncUtils.randomNonNegative(), t, Values.node(view), branch.getScope());
                             values.put(
                                     branch,
-                                    targetType2codeGenerator.get(t).generateUnmappingCode(() -> Values.node(castView), branch.getScope()).get()
+                                    targetType2codeGenerator.get(t).generateUnmappingCode(() -> Values.node(castView), branch.getScope(), compositeTypeFacade).get()
                             );
                         }
                 ),

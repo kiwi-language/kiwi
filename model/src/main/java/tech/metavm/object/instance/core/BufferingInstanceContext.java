@@ -1,9 +1,13 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.IdInitializer;
+import tech.metavm.entity.LoadingBuffer;
+import tech.metavm.entity.Tree;
+import tech.metavm.entity.VersionSource;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.TreeSource;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceInput;
@@ -11,9 +15,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
-import java.util.*;
-
-import static java.util.Objects.requireNonNull;
+import java.util.List;
 
 public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
@@ -29,8 +31,8 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
                                     TypeProvider typeProvider,
                                     MappingProvider mappingProvider,
                                     ParameterizedFlowProvider parameterizedFlowProvider,
-                                    boolean readonly) {
-        super(appId, parent, readonly, indexSource, typeProvider, mappingProvider, parameterizedFlowProvider);
+                                    CompositeTypeFacade compositeTypeFacade, boolean readonly) {
+        super(appId, parent, readonly, indexSource, typeProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade);
         this.idInitializer = idInitializer;
         this.loadingBuffer = new LoadingBuffer(this, treeSources, versionSource);
     }

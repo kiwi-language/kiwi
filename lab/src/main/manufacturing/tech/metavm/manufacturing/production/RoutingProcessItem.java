@@ -2,12 +2,12 @@ package tech.metavm.manufacturing.production;
 
 import tech.metavm.entity.EntityStruct;
 
-@EntityStruct("RoutingSubItem")
-public class RoutingSubItem {
+@EntityStruct("RoutingProcessItem")
+public class RoutingProcessItem {
     private int sequence;
     private long numerator;
 
-    public RoutingSubItem(int sequence, long numerator) {
+    public RoutingProcessItem(int sequence, long numerator) {
         this.sequence = sequence;
         this.numerator = numerator;
     }

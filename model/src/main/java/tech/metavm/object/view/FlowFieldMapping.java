@@ -8,6 +8,7 @@ import tech.metavm.flow.*;
 import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.Types;
 import tech.metavm.object.view.rest.dto.FlowFieldMappingParam;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
@@ -75,11 +76,12 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     }
 
     @Override
-    public Supplier<Value> generateReadCode0(SelfNode selfNode) {
+    public Supplier<Value> generateReadCode0(SelfNode selfNode, CompositeTypeFacade compositeTypeFacade) {
         var node = new MethodCallNode(
                 null,
                 getter.getName(),
                 getter.getCode(),
+                Types.tryCapture(getter.getReturnType(), selfNode.getFlow(), compositeTypeFacade),
                 selfNode.getScope().getLastNode(),
                 selfNode.getScope(),
                 Values.node(selfNode),
@@ -96,6 +98,7 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
                 null,
                 setter.getName(),
                 setter.getCode(),
+                null,
                 selfNode.getScope().getLastNode(),
                 selfNode.getScope(),
                 Values.node(selfNode),

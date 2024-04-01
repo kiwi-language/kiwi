@@ -20,11 +20,11 @@ public class ThrowableNative extends NativeBase {
         causeField = instance.getType().getFieldByCode("cause");
     }
 
-    public ClassInstance Throwable(NativeCallContext callContext) {
+    public ClassInstance Throwable(CallContext callContext) {
         return Throwable(Instances.nullInstance(), Instances.nullInstance(), callContext);
     }
 
-    public ClassInstance Throwable(Instance causeOrMessage, NativeCallContext callContext) {
+    public ClassInstance Throwable(Instance causeOrMessage, CallContext callContext) {
         if(causeOrMessage instanceof NullInstance nullInstance) {
             return Throwable(nullInstance, nullInstance, callContext);
         }
@@ -37,13 +37,13 @@ public class ThrowableNative extends NativeBase {
         throw new InternalException("Invalid argument: " + causeOrMessage);
     }
 
-    public ClassInstance Throwable(Instance message, Instance cause, NativeCallContext callContext) {
+    public ClassInstance Throwable(Instance message, Instance cause, CallContext callContext) {
         instance.initField(messageField, message);
         instance.initField(causeField, cause);
         return instance;
     }
 
-    public Instance getMessage(NativeCallContext callContext) {
+    public Instance getMessage(CallContext callContext) {
         return getMessage();
     }
 

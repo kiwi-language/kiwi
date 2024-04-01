@@ -53,11 +53,10 @@ public class InstanceContextTest extends TestCase {
                 null,
                 entityRepository,
                 entityRepository,
-                typeProviders.parameterizedFlowProvider,
+                typeProviders.parameterizedFlowProvider, typeProviders.createFacade(),
                 false,
                 cache,
-                eventQueue,
-                false);
+                eventQueue, false);
     }
 
     public void test() {

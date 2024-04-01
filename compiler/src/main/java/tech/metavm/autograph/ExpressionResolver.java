@@ -53,10 +53,8 @@ public class ExpressionResolver {
     private final MethodGenerator methodGenerator;
     private final TypeResolver typeResolver;
     private final VariableTable variableTable;
-    private final ParameterizedTypeProvider parameterizedTypeProvider;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
-    private final ArrayTypeProvider arrayTypeProvider;
-    private final UnionTypeProvider unionTypeProvider;
+    private final CompositeTypeFacade compositeTypeFacade;
     private final VisitorBase visitor;
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
@@ -77,17 +75,13 @@ public class ExpressionResolver {
     );
 
     public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver,
-                              ArrayTypeProvider arrayTypeProvider,
-                              UnionTypeProvider unionTypeProvider,
-                              ParameterizedTypeProvider parameterizedTypeProvider,
+                              CompositeTypeFacade compositeTypeFacade,
                               ParameterizedFlowProvider parameterizedFlowProvider,
                               VisitorBase visitor) {
         this.methodGenerator = methodGenerator;
         this.typeResolver = typeResolver;
         this.variableTable = variableTable;
-        this.arrayTypeProvider = arrayTypeProvider;
-        this.unionTypeProvider = unionTypeProvider;
-        this.parameterizedTypeProvider = parameterizedTypeProvider;
+        this.compositeTypeFacade = compositeTypeFacade;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.visitor = visitor;
     }
@@ -105,20 +99,8 @@ public class ExpressionResolver {
         }
     }
 
-//    public IEntityContext getEntityContext() {
-//        return entityContext;
-//    }
-
-    public ArrayTypeProvider getArrayTypeProvider() {
-        return arrayTypeProvider;
-    }
-
-    public UnionTypeProvider getUnionTypeProvider() {
-        return unionTypeProvider;
-    }
-
-    public ParameterizedTypeProvider getParameterizedTypeProvider() {
-        return parameterizedTypeProvider;
+    public CompositeTypeFacade getCompositeTypeFacade() {
+        return compositeTypeFacade;
     }
 
     public ParameterizedFlowProvider getParameterizedFlowProvider() {
@@ -218,7 +200,7 @@ public class ExpressionResolver {
 
         var valueField = FieldBuilder
                 .newBuilder("value", "value", mergeNode.getType(),
-                        Types.getUnionType(List.of(thenExpr.getType(), elseExpr.getType()), unionTypeProvider))
+                        Types.getUnionType(List.of(thenExpr.getType(), elseExpr.getType()), compositeTypeFacade))
                 .build();
         new MergeNodeField(valueField, mergeNode, Map.of(
                 thenBranch, Values.expression(thenExpr),
@@ -483,7 +465,7 @@ public class ExpressionResolver {
         List<Expression> arguments = NncUtils.map(argumentList.getExpressions(), arg -> resolve(arg, context));
         var exprType = (ClassType) methodGenerator.getExpressionType(self);
         typeResolver.ensureDeclared(exprType);
-        return methodGenerator.createMethodCall(self, Objects.requireNonNull(exprType.findMethodByCode(flowCode)), arguments);
+        return methodGenerator.createMethodCall(self, Objects.requireNonNull(exprType.findMethodByCode(flowCode)), arguments, compositeTypeFacade);
     }
 
     private Expression invokeFlow(Expression self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
@@ -538,7 +520,7 @@ public class ExpressionResolver {
             args.add(arg);
         }
         var qualifier = isStatic ? null : getQualifier(psiSelf, context);
-        var node = methodGenerator.createMethodCall(qualifier, method, args);
+        var node = methodGenerator.createMethodCall(qualifier, method, args, compositeTypeFacade);
         if (method.getReturnType().isVoid()) {
             return null;
         } else {
@@ -572,7 +554,7 @@ public class ExpressionResolver {
                 param -> {
                     var t = typeResolver.resolveDeclaration(param.getType());
                     if (TranspileUtil.getAnnotation(param, Nullable.class) != null)
-                        t = unionTypeProvider.getUnionType(Set.of(t, StandardTypes.getNullType()));
+                        t = compositeTypeFacade.getUnionType(Set.of(t, StandardTypes.getNullType()));
                     return t;
                 }
         );
@@ -692,7 +674,7 @@ public class ExpressionResolver {
     private Type resolveParameterType(PsiParameter param, PsiSubstitutor substitutor) {
         var t = typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()));
         if (TranspileUtil.getAnnotation(param, Nullable.class) != null)
-            t = unionTypeProvider.getUnionType(Set.of(t, StandardTypes.getNullType()));
+            t = compositeTypeFacade.getUnionType(Set.of(t, StandardTypes.getNullType()));
         return t;
     }
 
@@ -861,8 +843,8 @@ public class ExpressionResolver {
         for (PsiStatement statement : statements) {
             if (statement instanceof PsiSwitchLabeledRuleStatement labeledRuleStatement) {
                 var branch = labeledRuleStatement.isDefaultCase() ?
-                                branchNode.addDefaultBranch() :
-                                branchNode.addBranch(Values.expression(resolveSwitchCaseCondition(switchExpr, labeledRuleStatement, context)));
+                        branchNode.addDefaultBranch() :
+                        branchNode.addBranch(Values.expression(resolveSwitchCaseCondition(switchExpr, labeledRuleStatement, context)));
                 methodGenerator.enterBranch(branch);
                 var caseBody = requireNonNull(labeledRuleStatement.getBody());
                 if (caseBody instanceof PsiExpressionStatement exprStmt) {

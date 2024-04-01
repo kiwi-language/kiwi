@@ -3,22 +3,27 @@ package tech.metavm.manufacturing.production;
 import tech.metavm.entity.EntityStruct;
 import tech.metavm.manufacturing.material.QualityInspectionState;
 
-@EntityStruct("BOMSubItem")
-public class BOMSubItem {
+@EntityStruct("ComponentMaterialItem")
+public class ComponentMaterialItem {
     private int sequence;
     private int numerator;
     private int denominator;
-    private RoutingItem routingItem;
+    private RoutingProcess process;
     private QualityInspectionState qualityInspectionState;
-    private FeedingType feedingType;
+    private FeedType feedType;
 
-    public BOMSubItem(int sequence, int numerator, int denominator, RoutingItem routingItem, QualityInspectionState qualityInspectionState, FeedingType feedingType) {
+    public ComponentMaterialItem(int sequence,
+                                 int numerator,
+                                 int denominator,
+                                 RoutingProcess process,
+                                 QualityInspectionState qualityInspectionState,
+                                 FeedType feedType) {
         this.sequence = sequence;
         this.numerator = numerator;
         this.denominator = denominator;
-        this.routingItem = routingItem;
+        this.process = process;
         this.qualityInspectionState = qualityInspectionState;
-        this.feedingType = feedingType;
+        this.feedType = feedType;
     }
 
     public int getSequence() {
@@ -45,12 +50,12 @@ public class BOMSubItem {
         this.denominator = denominator;
     }
 
-    public RoutingItem getRoutingItem() {
-        return routingItem;
+    public RoutingProcess getProcess() {
+        return process;
     }
 
-    public void setRoutingItem(RoutingItem routingItem) {
-        this.routingItem = routingItem;
+    public void setProcess(RoutingProcess process) {
+        this.process = process;
     }
 
     public QualityInspectionState getQualityInspectionState() {
@@ -61,11 +66,11 @@ public class BOMSubItem {
         this.qualityInspectionState = qualityInspectionState;
     }
 
-    public FeedingType getFeedingType() {
-        return feedingType;
+    public FeedType getFeedType() {
+        return feedType;
     }
 
-    public void setFeedingType(FeedingType feedingType) {
-        this.feedingType = feedingType;
+    public void setFeedType(FeedType feedType) {
+        this.feedType = feedType;
     }
 }

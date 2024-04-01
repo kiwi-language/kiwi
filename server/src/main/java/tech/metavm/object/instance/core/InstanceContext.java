@@ -6,11 +6,15 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.event.EventQueue;
 import tech.metavm.flow.ParameterizedFlowProvider;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.ContextPlugin;
+import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.StoreTreeSource;
+import tech.metavm.object.instance.StoreVersionSource;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.persistence.VersionRT;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
@@ -49,7 +53,7 @@ public class InstanceContext extends BufferingInstanceContext {
                            TypeProvider typeProvider,
                            MappingProvider mappingProvider,
                            ParameterizedFlowProvider parameterizedFlowProvider,
-                           boolean childrenLazyLoading,
+                           CompositeTypeFacade compositeTypeFacade, boolean childrenLazyLoading,
                            Cache cache,
                            @Nullable EventQueue eventQueue,
                            boolean readonly
@@ -58,7 +62,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 List.of(/*new CacheTreeSource(cache),*/new StoreTreeSource(instanceStore)),
                 new StoreVersionSource(instanceStore),
                 new StoreIndexSource(instanceStore), idInitializer,
-                parent, typeProvider, mappingProvider, parameterizedFlowProvider, readonly);
+                parent, typeProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade, readonly);
         headContext = new SubContext(appId);
         this.asyncPostProcessing = asyncPostProcessing;
         this.plugins = plugins;
@@ -557,11 +561,11 @@ public class InstanceContext extends BufferingInstanceContext {
                 getParent(),
                 getTypeProvider(),
                 getMappingProvider(),
-                getParameterizedFlowProvider(),
+                parameterizedFlowProvider(),
+                compositeTypeFacade(),
                 childrenLazyLoading,
                 cache,
-                eventQueue,
-                isReadonly());
+                eventQueue, isReadonly());
     }
 
     @Override

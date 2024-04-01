@@ -3,13 +3,13 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
+import tech.metavm.entity.natives.CallContext;
 import tech.metavm.expression.VoidStructuralVisitor;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.FlowParam;
 import tech.metavm.flow.rest.FlowSignatureDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.InstanceRepository;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.FlowInfo;
 import tech.metavm.object.type.rest.dto.ParameterizedFlowDTO;
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType("流程")
-public abstract class Flow extends Element implements GenericDeclaration, Callable, LoadAware {
+public abstract class Flow extends Element implements GenericDeclaration, Callable, LoadAware, TypeCapturingScope {
 
     public static final IndexDef<Flow> IDX_PARAMETERIZED_KEY =
             IndexDef.createUnique(Flow.class, "parameterizedKey");
@@ -70,6 +70,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @ChildEntity("模板实例列表")
     @CopyIgnore
     private @Nullable ChildArray<Flow> templateInstances;
+    @ChildEntity("捕获类型列表")
+    private final ChildArray<CapturedType> capturedTypes = addChild(new ChildArray<>(CapturedType.class), "capturedTypes");
+    @ChildEntity("私有流程列表")
+    private final ChildArray<Flow> privateFlows = addChild(new ChildArray<>(Flow.class), "privateFlows");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);
@@ -108,7 +112,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         this.state = state;
     }
 
-    public abstract FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider);
+    public abstract FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext);
 
     public List<Type> getParameterTypes() {
         return NncUtils.map(parameters, Parameter::getType);
@@ -143,7 +147,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     public void onLoad(IEntityContext context) {
         stage = ResolutionStage.INIT;
         if (codeSource != null)
-            codeSource.generateCode(this, CompositeTypeFacadeImpl.createFromContext(context));
+            codeSource.generateCode(this, CompositeTypeFacadeImpl.fromContext(context));
     }
 
     @SuppressWarnings("unused")
@@ -186,11 +190,13 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         return getState() == MetadataState.ERROR;
     }
 
-    public void clearNodes() {
+    public void clearContent() {
         if (nodes != null)
             nodes.clear();
         if (rootScope != null)
             rootScope.clearNodes();
+        privateFlows.clear();
+        capturedTypes.clear();
     }
 
     public boolean isSynthetic() {
@@ -205,13 +211,15 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         if (nodes == null) {
             nodes = new ReadWriteArray<>(new TypeReference<>() {
             });
-            accept(new VoidStructuralVisitor() {
-                @Override
-                public Void visitNode(NodeRT node) {
-                    nodes.add(node);
-                    return super.visitNode(node);
-                }
-            });
+            if(rootScope != null) {
+                rootScope.accept(new VoidStructuralVisitor() {
+                    @Override
+                    public Void visitNode(NodeRT node) {
+                        nodes.add(node);
+                        return super.visitNode(node);
+                    }
+                });
+            }
         }
         return nodes;
     }
@@ -491,6 +499,22 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
             return;
         }
         throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+    }
+
+    @Override
+    public int getCapturedTypeIndex(CapturedType capturedType) {
+        int index = 0;
+        for (var type : capturedTypes) {
+            if (type == capturedType)
+                return index;
+            if(type.getUncertainType() == capturedType.getUncertainType())
+                index++;
+        }
+        throw new InternalException("Captured type not found: " + capturedType);
+    }
+
+    public void addCapturedType(CapturedType capturedType) {
+        capturedTypes.addChild(capturedType);
     }
 
     public ResolutionStage getStage() {

@@ -2,14 +2,14 @@ package tech.metavm.object.view;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.entity.natives.CallContext;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.Expressions;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.InstanceRepository;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.FunctionTypeProvider;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.object.view.rest.dto.ObjectMappingParam;
@@ -34,13 +34,14 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     }
 
     @Override
-    protected Flow generateMappingCode(FunctionTypeProvider functionTypeProvider) {
+    protected Flow generateMappingCode(CompositeTypeFacade compositeTypeFacade) {
         var scope = Objects.requireNonNull(mapper).newEphemeralRootScope();
-        var input = Nodes.input(mapper);
+        var input = Nodes.input(mapper, compositeTypeFacade);
         var actualSourceType = (ClassType) mapper.getParameter(0).getType();
         var readMethod = getSourceMethod(actualSourceType, getReadMethod());
         var view = new MethodCallNode(
                 null, "视图", "view",
+                targetType,
                 scope.getLastNode(), scope,
                 Values.inputValue(input, 0),
                 readMethod, List.of()
@@ -50,17 +51,18 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         return mapper;
     }
 
-    protected Flow generateUnmappingCode(FunctionTypeProvider functionTypeProvider) {
+    protected Flow generateUnmappingCode(CompositeTypeFacade compositeTypeFacade) {
         Objects.requireNonNull(unmapper);
         var actualSourceType = (ClassType) unmapper.getReturnType();
         var fromViewMethod = findSourceMethod(actualSourceType, findFromViewMethod());
         var writeMethod = getSourceMethod(actualSourceType, getWriteMethod());
         var scope = unmapper.newEphemeralRootScope();
-        var input = Nodes.input(unmapper);
+        var input = Nodes.input(unmapper, compositeTypeFacade);
         var isSourcePresent = Nodes.functionCall(
                 "来源是否存在", scope,
                 NativeFunctions.isSourcePresent(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, Values.inputValue(input, 0)))
+                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, Values.inputValue(input, 0))),
+                compositeTypeFacade
         );
         Nodes.branch(
                 "分支", null, scope,
@@ -70,12 +72,14 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                     var source = Nodes.functionCall(
                             "来源", bodyScope,
                             NativeFunctions.getSource(),
-                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, Values.inputValue(input, 0)))
+                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, Values.inputValue(input, 0))),
+                            compositeTypeFacade
                     );
                     var castedSource = Nodes.cast("Casted来源", getSourceType(), Values.node(source), bodyScope);
                     Nodes.methodCall(
                             "保存视图", bodyScope, Values.node(castedSource),
-                            writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.inputValue(input, 0)))
+                            writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.inputValue(input, 0))),
+                            compositeTypeFacade
                     );
                     Nodes.ret("返回", bodyScope, Values.node(castedSource));
                 },
@@ -87,7 +91,8 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                                 null, fromViewMethod,
                                 List.of(
                                         Nodes.argument(fromViewMethod, 0, Values.inputValue(input, 0))
-                                )
+                                ),
+                                compositeTypeFacade
                         );
                         Nodes.ret("返回", bodyScope, Values.node(fromView));
                     } else
@@ -137,9 +142,9 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     }
 
     @Override
-    public ClassInstance map(DurableInstance instance, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public ClassInstance map(DurableInstance instance, CallContext callContext) {
         if (instance instanceof ClassInstance)
-            return (ClassInstance) super.map(instance, repository, parameterizedFlowProvider);
+            return (ClassInstance) super.map(instance, callContext);
         else
             throw new InternalException("Invalid source");
     }

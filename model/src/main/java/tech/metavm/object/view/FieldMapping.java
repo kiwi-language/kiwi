@@ -5,7 +5,6 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.generic.TypeSubstitutor;
 import tech.metavm.object.view.rest.dto.FieldMappingDTO;
 import tech.metavm.object.view.rest.dto.FieldMappingParam;
 import tech.metavm.util.NncUtils;
@@ -101,23 +100,23 @@ public abstract class FieldMapping extends Element {
         targetField.setReadonly(readonly);
     }
 
-    public FieldParam generateReadCode(SelfNode selfNode) {
-        var valueSupplier = generateReadCode0(selfNode);
+    public FieldParam generateReadCode(SelfNode selfNode, CompositeTypeFacade compositeTypeFacade) {
+        var valueSupplier = generateReadCode0(selfNode, compositeTypeFacade);
         var value = valueSupplier.get();
         if (nestedMapping != null) {
-            var getNestedValue = nestedMapping.generateMappingCode(valueSupplier, selfNode.getScope());
+            var getNestedValue = nestedMapping.generateMappingCode(valueSupplier, selfNode.getScope(), compositeTypeFacade);
             return new FieldParam(targetField, getNestedValue.get());
         } else
             return new FieldParam(targetField, value);
     }
 
-    protected abstract Supplier<Value> generateReadCode0(SelfNode selfNode);
+    protected abstract Supplier<Value> generateReadCode0(SelfNode selfNode, CompositeTypeFacade compositeTypeFacade);
 
-    public void generateWriteCode(SelfNode selfNode, ValueNode viewNode) {
+    public void generateWriteCode(SelfNode selfNode, ValueNode viewNode, CompositeTypeFacade compositeTypeFacade) {
         if (nestedMapping != null) {
             var scope = selfNode.getScope();
             var nestedFieldSource = nestedMapping.generateUnmappingCode(
-                    () -> Values.nodeProperty(viewNode, targetField), scope);
+                    () -> Values.nodeProperty(viewNode, targetField), scope, compositeTypeFacade);
             generateWriteCode0(selfNode, nestedFieldSource);
         } else
             generateWriteCode0(selfNode, () -> Values.nodeProperty(viewNode, targetField));

@@ -8,7 +8,7 @@ import java.util.Set;
 
 public class CompositeTypeFacadeImpl implements CompositeTypeFacade {
 
-    public static CompositeTypeFacade createFromContext(IEntityContext context) {
+    public static CompositeTypeFacade fromContext(IEntityContext context) {
         return new CompositeTypeFacadeImpl(
                 new ContextArrayTypeProvider(context),
                 context.getFunctionTypeContext(),
@@ -24,15 +24,15 @@ public class CompositeTypeFacadeImpl implements CompositeTypeFacade {
     private final UnionTypeProvider unionTypeProvider;
     private final IntersectionTypeProvider intersectionTypeProvider;
     private final UncertainTypeProvider uncertainTypeProvider;
-    private final ParameterizedTypeProvider parameterizedTypeProvider;
+    private final ParameterizedTypeRepository parameterizedTypeRepository;
 
-    public CompositeTypeFacadeImpl(ArrayTypeProvider arrayTypeProvider, FunctionTypeProvider functionTypeProvider, UnionTypeProvider unionTypeProvider, IntersectionTypeProvider intersectionTypeProvider, UncertainTypeProvider uncertainTypeProvider, ParameterizedTypeProvider parameterizedTypeProvider) {
+    public CompositeTypeFacadeImpl(ArrayTypeProvider arrayTypeProvider, FunctionTypeProvider functionTypeProvider, UnionTypeProvider unionTypeProvider, IntersectionTypeProvider intersectionTypeProvider, UncertainTypeProvider uncertainTypeProvider, ParameterizedTypeRepository parameterizedTypeRepository) {
         this.arrayTypeProvider = arrayTypeProvider;
         this.functionTypeProvider = functionTypeProvider;
         this.unionTypeProvider = unionTypeProvider;
         this.intersectionTypeProvider = intersectionTypeProvider;
         this.uncertainTypeProvider = uncertainTypeProvider;
-        this.parameterizedTypeProvider = parameterizedTypeProvider;
+        this.parameterizedTypeRepository = parameterizedTypeRepository;
     }
 
     @Override
@@ -61,8 +61,8 @@ public class CompositeTypeFacadeImpl implements CompositeTypeFacade {
     }
 
     @Override
-    public ClassType getParameterizedType(ClassType template, List<Type> typeArguments, ResolutionStage resolutionStage, DTOProvider dtoProvider) {
-        return parameterizedTypeProvider.getParameterizedType(template, typeArguments, resolutionStage, dtoProvider);
+    public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage resolutionStage, DTOProvider dtoProvider) {
+        return parameterizedTypeRepository.getParameterizedType(template, typeArguments, resolutionStage, dtoProvider);
     }
 
 }

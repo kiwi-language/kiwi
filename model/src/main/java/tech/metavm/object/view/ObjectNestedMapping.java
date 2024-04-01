@@ -6,6 +6,7 @@ import tech.metavm.flow.Nodes;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.Values;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
@@ -23,14 +24,14 @@ public class ObjectNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
+    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
         var mapNode = Nodes.map("嵌套映射", scope, getSource.get(),
                 Objects.requireNonNull(mapping, "nested mapping required"));
         return () -> Values.node(mapNode);
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
+    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
 //        if (sourceType == targetType)
 //            return getView;
         var source = Nodes.unmap("反映射" + NncUtils.randomNonNegative(), scope, getView.get(), Objects.requireNonNull(mapping));

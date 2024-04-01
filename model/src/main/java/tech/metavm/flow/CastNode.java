@@ -75,7 +75,7 @@ public class CastNode extends NodeRT {
             var exceptionNative = new ExceptionNative(exception);
             exceptionNative.Exception(Instances.stringInstance(
                     String.format("Can not cast instance '%s' to type '%s'", inst.getTitle(), type.getName())
-            ), frame.getNativeCallContext());
+            ), frame);
             return NodeExecResult.exception(exception);
         }
     }

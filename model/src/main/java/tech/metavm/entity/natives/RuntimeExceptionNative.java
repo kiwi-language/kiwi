@@ -9,15 +9,15 @@ public class RuntimeExceptionNative extends ExceptionNative {
         super(instance);
     }
 
-    public ClassInstance RuntimeException(NativeCallContext callContext) {
+    public ClassInstance RuntimeException(CallContext callContext) {
         return Exception(callContext);
     }
 
-    public ClassInstance RuntimeException(Instance causeOrMessage, NativeCallContext callContext) {
+    public ClassInstance RuntimeException(Instance causeOrMessage, CallContext callContext) {
         return Exception(causeOrMessage, callContext);
     }
 
-    public ClassInstance RuntimeException(Instance message, Instance cause, NativeCallContext callContext) {
+    public ClassInstance RuntimeException(Instance message, Instance cause, CallContext callContext) {
         return Exception(message, cause, callContext);
     }
 

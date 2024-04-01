@@ -2,7 +2,6 @@ package tech.metavm.object.type.mocks;
 
 import tech.metavm.entity.EntityRepository;
 import tech.metavm.entity.MemTypeRegistry;
-import tech.metavm.entity.TypeRegistry;
 import tech.metavm.entity.mocks.MockEntityRepository;
 import tech.metavm.flow.mocks.MockParameterizedFlowProvider;
 import tech.metavm.object.type.*;
@@ -18,7 +17,7 @@ public class TypeProviders {
     public final MockUnionTypeProvider unionTypeProvider = new MockUnionTypeProvider();
     public final MockIntersectionTypeProvider intersectionTypeProvider = new MockIntersectionTypeProvider();
     public final MockArrayTypeProvider arrayTypeProvider = new MockArrayTypeProvider();
-    public final MockParameterizedTypeProvider parameterizedTypeProvider = new MockParameterizedTypeProvider(this);
+    public final MockParameterizedTypeRepository parameterizedTypeProvider = new MockParameterizedTypeRepository(this);
     public final MockParameterizedFlowProvider parameterizedFlowProvider = new MockParameterizedFlowProvider(this);
     public final EntityRepository entityRepository = new MockEntityRepository(typeRegistry);
     public final MockTypeRepository typeRepository = new MockTypeRepository();

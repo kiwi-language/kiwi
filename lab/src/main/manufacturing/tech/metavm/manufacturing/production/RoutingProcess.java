@@ -4,27 +4,28 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ChildList;
 import tech.metavm.entity.EntityStruct;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityStruct("RoutingItem")
-public class RoutingItem {
+@EntityStruct("RoutingProcess")
+public class RoutingProcess {
 
     private String processCode;
     private int sequence;
     private Process process;
     private WorkCenter workCenter;
-    private String processDescription;
-    @ChildEntity("subItems")
-    private final ChildList<RoutingSubItem> subItems;
+    private @Nullable String processDescription;
+    @ChildEntity("items")
+    private final ChildList<RoutingProcessItem> items;
 
-    public RoutingItem(String processCode, int sequence, Process process, WorkCenter workCenter, String processDescription, List<RoutingSubItem> subItems) {
+    public RoutingProcess(String processCode, int sequence, Process process, WorkCenter workCenter, @Nullable String processDescription, List<RoutingProcessItem> items) {
         this.processCode = processCode;
         this.sequence = sequence;
         this.process = process;
         this.workCenter = workCenter;
         this.processDescription = processDescription;
-        this.subItems =  new ChildList<>(subItems);
+        this.items =  new ChildList<>(items);
     }
 
     public String getProcessCode() {
@@ -59,20 +60,21 @@ public class RoutingItem {
         this.workCenter = workCenter;
     }
 
+    @Nullable
     public String getProcessDescription() {
         return processDescription;
     }
 
-    public void setProcessDescription(String processDescription) {
+    public void setProcessDescription(@Nullable String processDescription) {
         this.processDescription = processDescription;
     }
 
-    public List<RoutingSubItem> getSubItems() {
-        return new ArrayList<>(subItems);
+    public List<RoutingProcessItem> getItems() {
+        return new ArrayList<>(items);
     }
 
-    public void setSubItems(List<RoutingSubItem> subItems) {
-        this.subItems.clear();
-        this.subItems.addAll(subItems);
+    public void setItems(List<RoutingProcessItem> items) {
+        this.items.clear();
+        this.items.addAll(items);
     }
 }

@@ -44,7 +44,7 @@ public class SubstitutorV2 extends CopyVisitor {
 
     private final TypeSubstitutor typeSubstitutor;
     private final CompositeTypeFacade compositeTypeFacade;
-    private final ParameterizedTypeProvider parameterizedTypeProvider;
+    private final ParameterizedTypeRepository parameterizedTypeRepository;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private final EntityRepository entityRepository;
     private final ResolutionStage stage;
@@ -57,13 +57,13 @@ public class SubstitutorV2 extends CopyVisitor {
                          ResolutionStage stage,
                          EntityRepository entityRepository,
                          CompositeTypeFacade compositeTypeFacade,
-                         ParameterizedTypeProvider parameterizedTypeProvider,
+                         ParameterizedTypeRepository parameterizedTypeRepository,
                          ParameterizedFlowProvider parameterizedFlowProvider,
                          DTOProvider dtoProvider) {
         super(root);
         this.entityRepository = entityRepository;
         this.compositeTypeFacade = compositeTypeFacade;
-        this.parameterizedTypeProvider = parameterizedTypeProvider;
+        this.parameterizedTypeRepository = parameterizedTypeRepository;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.typeSubstitutor = new TypeSubstitutor(typeParameters, typeArguments, compositeTypeFacade, dtoProvider);
         this.stage = stage;
@@ -80,7 +80,7 @@ public class SubstitutorV2 extends CopyVisitor {
         Object existingRoot = switch (root) {
             case Flow flow -> parameterizedFlowProvider.getExistingFlow(flow.getEffectiveHorizontalTemplate(),
                     NncUtils.map(flow.getTypeParameters(), this::substituteType));
-            case ClassType type -> parameterizedTypeProvider.getExisting(type.getEffectiveTemplate(),
+            case ClassType type -> parameterizedTypeRepository.getExisting(type.getEffectiveTemplate(),
                     NncUtils.map(type.getTypeArguments(), this::substituteType));
             default -> throw new IllegalStateException("Unexpected root: " + root);
         };
@@ -298,7 +298,7 @@ public class SubstitutorV2 extends CopyVisitor {
             var name = Types.getParameterizedName(template.getName(), typeArguments);
             var code = Types.getParameterizedCode(template.getCode(), typeArguments);
             if (copy == null) {
-                copy = ClassTypeBuilder.newBuilder(name, code)
+                copy = ClassTypeBuilder.newBuilder(name, null)
                         .category(type.getCategory())
                         .typeArguments(typeArguments)
                         .anonymous(true)
@@ -308,10 +308,9 @@ public class SubstitutorV2 extends CopyVisitor {
                         .build();
                 if(type.isEphemeralEntity() || NncUtils.anyMatch(typeArguments, Entity::isEphemeralEntity))
                     copy.setEphemeralEntity(true);
-                parameterizedTypeProvider.add(copy);
+                parameterizedTypeRepository.add(copy);
             } else {
                 copy.setName(name);
-                copy.setCode(code);
             }
             addCopy(type, copy);
             var curStage = copy.setStage(stage);

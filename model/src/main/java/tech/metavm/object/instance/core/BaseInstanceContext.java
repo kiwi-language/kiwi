@@ -7,13 +7,11 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.ContextAttributeKey;
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.LockMode;
+import tech.metavm.entity.natives.CallContext;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
-import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeProvider;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.*;
 import tech.metavm.util.profile.Profiler;
@@ -25,7 +23,7 @@ import java.util.function.Consumer;
 
 import static tech.metavm.util.NncUtils.requireNonNull;
 
-public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<DurableInstance> {
+public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<DurableInstance>, CallContext {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(BaseInstanceContext.class);
 
@@ -54,6 +52,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final IndexSource indexSource;
     private final MappingProvider mappingProvider;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
+    private final CompositeTypeFacade compositeTypeFacade;
     private int seq;
 
     public BaseInstanceContext(long appId,
@@ -62,7 +61,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                                IndexSource indexSource,
                                TypeProvider typeProvider,
                                MappingProvider mappingProvider,
-                               ParameterizedFlowProvider parameterizedFlowProvider) {
+                               ParameterizedFlowProvider parameterizedFlowProvider,
+                               CompositeTypeFacade compositeTypeFacade) {
         this.appId = appId;
         this.readonly = readonly;
         this.parent = parent;
@@ -70,6 +70,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         this.typeProvider = typeProvider;
         this.mappingProvider = mappingProvider;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
+        this.compositeTypeFacade = compositeTypeFacade;
         memIndex = new InstanceMemoryIndex(parameterizedFlowProvider);
     }
 
@@ -271,7 +272,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public ParameterizedFlowProvider getParameterizedFlowProvider() {
+    public ParameterizedFlowProvider parameterizedFlowProvider() {
         return parameterizedFlowProvider;
     }
 
@@ -300,7 +301,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         var id = (ViewId) requireNonNull(view.tryGetId());
         view = internalGet(id.getRootId());
         var mapping = mappingProvider.getMapping(view.getMappingId());
-        var r = mapping.mapRoot(view.getSource(), this, parameterizedFlowProvider);
+        var r = mapping.mapRoot(view.getSource(), this);
         r.accept(new InstanceCopier(r) {
             @Override
             protected Instance getExisting(Instance instance) {
@@ -408,7 +409,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private void saveView(ClassInstance view) {
         var mapping = mappingProvider.getMapping(view.getMappingId());
-        mapping.unmap(view, this, parameterizedFlowProvider);
+        mapping.unmap(view, this);
     }
 
     @Override
@@ -784,6 +785,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 return i;
             }
         };
+    }
+
+    @Override
+    public CompositeTypeFacade compositeTypeFacade() {
+        return compositeTypeFacade;
     }
 
 }

@@ -123,6 +123,43 @@ public class Types {
 //        }
 //    }
 
+    public static Type tryCapture(Type type, TypeCapturingScope scope, CompositeTypeFacade compositeTypeFacade) {
+        return switch (type) {
+            case UncertainType uncertainType -> new CapturedType(uncertainType, scope);
+            case ClassType classType -> {
+                if(classType.isParameterized()) {
+                    yield compositeTypeFacade.getParameterizedType(
+                            classType.getTemplate(),
+                            NncUtils.map(classType.getTypeArguments(), arg -> tryCapture(arg, scope, compositeTypeFacade)),
+                            classType.getStage(),
+                            new MockDTOProvider()
+                    );
+                }
+                else
+                    yield classType;
+            }
+            case ArrayType arrayType -> compositeTypeFacade.getArrayType(
+                    tryCapture(arrayType.getElementType(), scope, compositeTypeFacade),
+                    arrayType.getKind(),
+                    null
+            );
+            case UnionType unionType -> compositeTypeFacade.getUnionType(
+                    NncUtils.mapUnique(unionType.getMembers(), t -> tryCapture(t, scope, compositeTypeFacade)),
+                    null
+            );
+            case IntersectionType intersectionType -> compositeTypeFacade.getIntersectionType(
+                    NncUtils.mapUnique(intersectionType.getTypes(), t -> tryCapture(t, scope, compositeTypeFacade)),
+                    null
+            );
+            case FunctionType functionType -> compositeTypeFacade.getFunctionType(
+                    NncUtils.map(functionType.getParameterTypes(), t -> tryCapture(t, scope, compositeTypeFacade)),
+                    tryCapture(functionType.getReturnType(), scope, compositeTypeFacade),
+                    null
+            );
+            case TypeVariable typeVariable -> typeVariable;
+            default -> type;
+        };
+    }
 
     public static ClassType getTypeType(TypeTag tag) {
         return switch (tag) {
@@ -233,7 +270,7 @@ public class Types {
         return abstractFlows.get(0);
     }
 
-    public static ClassType createSAMInterfaceImpl(ClassType samInterface, FunctionInstance function) {
+    public static ClassType createSAMInterfaceImpl(ClassType samInterface, FunctionInstance function, CompositeTypeFacade compositeTypeFacade) {
         var klass = ClassTypeBuilder.newBuilder(
                 samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
                 .interfaces(samInterface)
@@ -255,7 +292,7 @@ public class Types {
                 .staticType(methodStaticType)
                 .build();
         var scope = method.getRootScope();
-        var input = Nodes.input(method);
+        var input = Nodes.input(method, compositeTypeFacade);
         var func = Nodes.function(
                 "function",
                 scope,
@@ -299,7 +336,11 @@ public class Types {
                 return TYPE_FACTORY.saveUncertainType(typeDTO, stage, batch);
             } else if (typeDTO.category() == TypeCategory.FUNCTION.code()) {
                 return TYPE_FACTORY.saveFunctionType(typeDTO, stage, batch);
-            } else {
+            }
+//            else if(typeDTO.category() == TypeCategory.CAPTURED.code()) {
+//                return TYPE_FACTORY.saveCapturedType(typeDTO, stage, batch);
+//            }
+            else {
                 throw new InternalException("Invalid type category: " + typeDTO.category());
             }
         }

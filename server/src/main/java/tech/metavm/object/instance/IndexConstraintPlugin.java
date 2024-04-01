@@ -42,7 +42,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
             var instance = context.get(ver.id());
             if (instance instanceof ClassInstance classInstance) {
                 instanceMap.put(classInstance.getId(), classInstance);
-                currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.getParameterizedFlowProvider(), context.getAppId()));
+                currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.parameterizedFlowProvider(), context.getAppId()));
             }
         });
         var oldVersions = NncUtils.union(change.updates(), change.deletes());

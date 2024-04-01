@@ -27,7 +27,7 @@ public class ListNative extends IterableNative {
         }
     }
 
-    public Instance List(NativeCallContext callContext) {
+    public Instance List(CallContext callContext) {
         return List();
     }
 
@@ -37,7 +37,7 @@ public class ListNative extends IterableNative {
         return instance;
     }
 
-    public Instance List(Instance c, NativeCallContext callContext) {
+    public Instance List(Instance c, CallContext callContext) {
         if(c instanceof ClassInstance collection) {
             var thatArrayField = collection.getType().getFieldByCode("array");
             var thatArray = (ArrayInstance) collection.getField(thatArrayField);
@@ -51,23 +51,23 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public Instance ChildList(NativeCallContext callContext) {
+    public Instance ChildList(CallContext callContext) {
         return List(callContext);
     }
 
-    public Instance ChildList(Instance c, NativeCallContext callContext) {
+    public Instance ChildList(Instance c, CallContext callContext) {
         return List(c, callContext);
     }
 
-    public Instance ReadWriteList(NativeCallContext callContext) {
+    public Instance ReadWriteList(CallContext callContext) {
         return List(callContext);
     }
 
-    public Instance ReadWriteList(Instance c, NativeCallContext callContext) {
+    public Instance ReadWriteList(Instance c, CallContext callContext) {
         return List(c, callContext);
     }
 
-    public ClassInstance iterator(NativeCallContext callContext) {
+    public ClassInstance iterator(CallContext callContext) {
         var iteratorImplType = (ClassType) instance.getType().getDependency(StandardTypes.getIteratorImplType());
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
@@ -75,27 +75,27 @@ public class ListNative extends IterableNative {
         return it;
     }
 
-    public Instance get(Instance index, NativeCallContext callContext) {
+    public Instance get(Instance index, CallContext callContext) {
         return array.get(getInt(index));
     }
 
-    public Instance set(Instance index, Instance value, NativeCallContext callContext) {
+    public Instance set(Instance index, Instance value, CallContext callContext) {
         return array.setElement(getInt(index), value);
     }
 
-    public BooleanInstance remove(Instance instance, NativeCallContext callContext) {
+    public BooleanInstance remove(Instance instance, CallContext callContext) {
         return Instances.booleanInstance(array.removeElement(instance));
     }
 
-    public Instance removeAt(Instance index, NativeCallContext callContext) {
+    public Instance removeAt(Instance index, CallContext callContext) {
         return array.removeElement(getInt(index));
     }
 
-    public Instance contains(Instance value, NativeCallContext callContext) {
+    public Instance contains(Instance value, CallContext callContext) {
         return Instances.booleanInstance(array.contains(value));
     }
 
-    public void clear(NativeCallContext callContext) {
+    public void clear(CallContext callContext) {
         clear();
     }
 
@@ -103,7 +103,7 @@ public class ListNative extends IterableNative {
         array.clear();
     }
 
-    public BooleanInstance add(Instance instance, NativeCallContext callContext) {
+    public BooleanInstance add(Instance instance, CallContext callContext) {
         return add(instance);
     }
 
@@ -112,7 +112,7 @@ public class ListNative extends IterableNative {
         return Instances.trueInstance();
     }
 
-    public BooleanInstance addAll(Instance c, NativeCallContext callContext) {
+    public BooleanInstance addAll(Instance c, CallContext callContext) {
         if(c instanceof ClassInstance collection && collection.isList()) {
             var thatArrayField = collection.getType().getFieldByCode("array");
             var thatArray = (ArrayInstance) collection.getField(thatArrayField);
@@ -123,7 +123,7 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public static ClassInstance of(ClassType type, Instance values, NativeCallContext callContext) {
+    public static ClassInstance of(ClassType type, Instance values, CallContext callContext) {
         if(values instanceof ArrayInstance array) {
             var list = ClassInstance.allocate(type);
             var listNative = (ListNative) NativeMethods.getNativeObject(list);
@@ -135,19 +135,19 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public Instance isEmpty(NativeCallContext callContext) {
+    public Instance isEmpty(CallContext callContext) {
         return Instances.booleanInstance(array.isEmpty());
     }
 
-    public LongInstance size(NativeCallContext callContext) {
+    public LongInstance size(CallContext callContext) {
         return Instances.longInstance(array.size());
     }
 
-    public BooleanInstance removeIf(Instance filter, NativeCallContext callContext) {
+    public BooleanInstance removeIf(Instance filter, CallContext callContext) {
         if(filter instanceof ClassInstance classInstance) {
             var method = classInstance.getType().getMethods().get(0);
             return Instances.booleanInstance(array.removeIf(e -> method.execute(
-                    classInstance, List.of(e), callContext.instanceRepository(), callContext.parameterizedFlowProvider()).booleanRet()));
+                    classInstance, List.of(e), callContext).booleanRet()));
         }
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
@@ -158,11 +158,10 @@ public class ListNative extends IterableNative {
     }
 
     @Override
-    public void forEach(Instance action, NativeCallContext callContext) {
+    public void forEach(Instance action, CallContext callContext) {
         if(action instanceof ClassInstance classInstance) {
             var method = classInstance.getType().getMethods().get(0);
-            array.forEach(e -> method.execute(
-                    classInstance, List.of(e), callContext.instanceRepository(), callContext.parameterizedFlowProvider()));
+            array.forEach(e -> method.execute(classInstance, List.of(e), callContext));
         }
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);

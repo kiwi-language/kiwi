@@ -44,7 +44,7 @@ public class UncertainType extends CompositeType implements LoadAware  {
     }
 
     @Override
-    public TypeKey getTypeKey() {
+    public UncertainTypeKey getTypeKey() {
         return new UncertainTypeKey(lowerBound.getStringId(), upperBound.getStringId());
     }
 

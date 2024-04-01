@@ -76,7 +76,7 @@ public class EntityContextFactory {
                                                       @Nullable IInstanceContext parent,
                                                       @Nullable IdInitializer idProvider,
                                                       EntityInstanceContextBridge bridge) {
-        var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge)
+        var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge, bridge)
                 .readonly(readonly)
                 .asyncPostProcess(NncUtils.orElse(asyncLogProcessing, defaultAsyncLogProcess))
                 .parent(parent)

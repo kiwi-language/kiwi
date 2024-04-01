@@ -33,6 +33,7 @@ public enum ErrorCode {
     PROPERTY_NOT_WRITABLE(316, "属性不可写"),
     TITLE_FIELD_MUST_BE_STRING(317, "标题字段必须为字符串类型"),
     CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED(318, "从对象字段不支持基础类型"),
+    ENTITY_STRUCT_LACKS_CANONICAL_CONSTRUCTOR(319, "实体结构{}缺少规范构造函数"),
 
     // 实例相关错误
     INSTANCE_NOT_FOUND(301, "对象'{}'不存在"),

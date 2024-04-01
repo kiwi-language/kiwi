@@ -20,6 +20,14 @@ public class Utils {
         return prefix + "_" + (1 + NumberUtils.random(100000000));
     }
 
+    public static <T> T findRequired(Iterable<? extends T> iterable, Predicate<? super T> predicate) {
+        T t = find(iterable, predicate);
+        if (t != null) {
+            return t;
+        }
+        throw new IllegalArgumentException("Not found");
+    }
+
     public static <T> @Nullable T find(Iterable<? extends T> iterable, Predicate<? super T> predicate) {
         for (T t : iterable) {
             if (predicate.test(t)) {
