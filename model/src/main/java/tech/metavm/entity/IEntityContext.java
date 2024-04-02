@@ -193,6 +193,14 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return getEntity(TypeVariable.class, id);
     }
 
+    default CapturedType getCapturedType(Id id) {
+        return getEntity(CapturedType.class, id);
+    }
+
+    default CapturedType getCapturedType(String id) {
+        return getEntity(CapturedType.class, id);
+    }
+
     default TypeVariable getTypeVariable(String id) {
         return getEntity(TypeVariable.class, id);
     }

@@ -55,7 +55,7 @@ public abstract class CompositeType extends Type {
     }
 
     @Override
-    protected final TypeParam getParam() {
+    protected final TypeParam getParam(SerializeContext serializeContext) {
         try(var serContext = SerializeContext.enter()) {
             getComponentTypes().forEach(serContext::writeType);
             return getParamInternal();
@@ -70,5 +70,15 @@ public abstract class CompositeType extends Type {
 
     public static String getKey(List<Type> componentTypes) {
         return NncUtils.join(componentTypes, Entity::getStringId, "-");
+    }
+
+    @Override
+    public boolean isCaptured() {
+        return NncUtils.anyMatch(getComponentTypes(), Type::isCaptured);
+    }
+
+    @Override
+    protected void getCapturedTypes(Set<CapturedType> capturedTypes) {
+        getComponentTypes().forEach(t -> t.getCapturedTypes(capturedTypes));
     }
 }

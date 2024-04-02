@@ -123,19 +123,18 @@ public class Types {
 //        }
 //    }
 
-    public static Type tryCapture(Type type, TypeCapturingScope scope, CompositeTypeFacade compositeTypeFacade) {
+    public static Type tryCapture(Type type, CapturedTypeScope scope, CompositeTypeFacade compositeTypeFacade) {
         return switch (type) {
             case UncertainType uncertainType -> new CapturedType(uncertainType, scope);
             case ClassType classType -> {
-                if(classType.isParameterized()) {
+                if (classType.isParameterized()) {
                     yield compositeTypeFacade.getParameterizedType(
                             classType.getTemplate(),
                             NncUtils.map(classType.getTypeArguments(), arg -> tryCapture(arg, scope, compositeTypeFacade)),
                             classType.getStage(),
                             new MockDTOProvider()
                     );
-                }
-                else
+                } else
                     yield classType;
             }
             case ArrayType arrayType -> compositeTypeFacade.getArrayType(
@@ -169,19 +168,19 @@ public class Types {
     }
 
     public static ClassType getTypeType(TypeCategory typeCategory) {
-        if(typeCategory.isPojo())
+        if (typeCategory.isPojo())
             return StandardTypes.getClassType(ClassType.class);
-        else if(typeCategory.isPrimitive())
+        else if (typeCategory.isPrimitive())
             return StandardTypes.getClassType(PrimitiveType.class);
-        else if(typeCategory.isArray())
+        else if (typeCategory.isArray())
             return StandardTypes.getClassType(ArrayType.class);
-        else if(typeCategory.isVariable())
+        else if (typeCategory.isVariable())
             return StandardTypes.getClassType(TypeVariable.class);
-        else if(typeCategory.isUnion())
+        else if (typeCategory.isUnion())
             return StandardTypes.getClassType(UnionType.class);
-        else if(typeCategory.isUncertain())
+        else if (typeCategory.isUncertain())
             return StandardTypes.getClassType(UncertainType.class);
-        else if(typeCategory.isFunction())
+        else if (typeCategory.isFunction())
             return StandardTypes.getClassType(FunctionType.class);
         else
             throw new InternalException("Invalid type category: " + typeCategory);
@@ -272,7 +271,7 @@ public class Types {
 
     public static ClassType createSAMInterfaceImpl(ClassType samInterface, FunctionInstance function, CompositeTypeFacade compositeTypeFacade) {
         var klass = ClassTypeBuilder.newBuilder(
-                samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
+                        samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
                 .interfaces(samInterface)
                 .ephemeral(true)
                 .anonymous(true)
@@ -320,7 +319,7 @@ public class Types {
     }
 
     public static Type saveType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try(var ignored= ContextUtil.getProfiler().enter("Types.saveType")) {
+        try (var ignored = ContextUtil.getProfiler().enter("Types.saveType")) {
             var category = TypeCategory.getByCode(typeDTO.category());
             if (typeDTO.param() instanceof PTypeDTO pTypeDTO) {
                 return TYPE_FACTORY.saveParameterized(pTypeDTO, stage, batch);
@@ -336,18 +335,16 @@ public class Types {
                 return TYPE_FACTORY.saveUncertainType(typeDTO, stage, batch);
             } else if (typeDTO.category() == TypeCategory.FUNCTION.code()) {
                 return TYPE_FACTORY.saveFunctionType(typeDTO, stage, batch);
-            }
-//            else if(typeDTO.category() == TypeCategory.CAPTURED.code()) {
-//                return TYPE_FACTORY.saveCapturedType(typeDTO, stage, batch);
-//            }
-            else {
+            } else if (typeDTO.category() == TypeCategory.CAPTURED.code()) {
+                return TYPE_FACTORY.saveCapturedType(typeDTO, stage, batch);
+            } else {
                 throw new InternalException("Invalid type category: " + typeDTO.category());
             }
         }
     }
 
     public static Type getUnionType(Collection<Type> types, UnionTypeProvider unionTypeProvider) {
-        if(types.isEmpty())
+        if (types.isEmpty())
             return StandardTypes.getNeverType();
         Set<Type> effectiveTypes = new HashSet<>();
         for (Type type : types) {
@@ -358,9 +355,10 @@ public class Types {
             }
         }
         Set<Type> members = new HashSet<>();
-        out:for (Type effectiveType : effectiveTypes) {
+        out:
+        for (Type effectiveType : effectiveTypes) {
             for (Type type : effectiveTypes) {
-                if(type != effectiveType && type.isAssignableFrom(effectiveType))
+                if (type != effectiveType && type.isAssignableFrom(effectiveType))
                     continue out;
             }
             members.add(effectiveType);

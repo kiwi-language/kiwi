@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
@@ -68,6 +69,12 @@ public class FunctionCallNode extends CallNode {
                 null,
                 NncUtils.map(arguments, Argument::toDTO)
         );
+    }
+
+    @NotNull
+    @Override
+    public Type getType() {
+        return getSubFlow().getReturnType();
     }
 
     @Override

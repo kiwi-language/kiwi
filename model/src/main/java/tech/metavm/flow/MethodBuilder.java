@@ -40,6 +40,7 @@ public class MethodBuilder {
     private Method verticalTemplate;
     private List<Type> typeArguments = List.of();
     private FunctionType type;
+    private boolean hidden;
     private FunctionType staticType;
     private Method existing;
     private boolean _static;
@@ -100,6 +101,11 @@ public class MethodBuilder {
 
     public MethodBuilder parameters(List<Parameter> parameters) {
         this.parameters = parameters;
+        return this;
+    }
+
+    public MethodBuilder hidden(boolean hidden) {
+        this.hidden = hidden;
         return this;
     }
 
@@ -169,6 +175,8 @@ public class MethodBuilder {
         if (!_static && staticType == null)
             staticType = functionTypeProvider.getFunctionType(NncUtils.prepend(declaringType, paramTypes), returnType);
         var effectiveTmpId = tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId);
+        if(!hidden && !typeArguments.isEmpty())
+            hidden = NncUtils.anyMatch(typeArguments, Type::isCaptured);
         if (existing == null) {
             if (state == null)
                 state = MetadataState.READY;
@@ -192,6 +200,7 @@ public class MethodBuilder {
                     horizontalTemplate,
                     access,
                     codeSource,
+                    hidden,
                     state
             );
         } else {

@@ -17,6 +17,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -120,6 +121,19 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     @SuppressWarnings("unused")
     public boolean isDurable() {
         return !isEphemeral();
+    }
+
+    public boolean isCaptured() {
+        return false;
+    }
+
+    public Set<CapturedType> getCapturedTypes() {
+        var capturedTypes = new HashSet<CapturedType>();
+        getCapturedTypes(capturedTypes);
+        return capturedTypes;
+    }
+
+    protected void getCapturedTypes(Set<CapturedType> capturedTypes) {
     }
 
     public Type getCertainUpperBound() {
@@ -420,11 +434,11 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
 
     public TypeDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
-            return toDTO(getParam());
+            return toDTO(getParam(serContext));
         }
     }
 
-    protected abstract TypeParam getParam();
+    protected abstract TypeParam getParam(SerializeContext serializeContext);
 
     @Override
     public final List<Object> beforeRemove(IEntityContext context) {

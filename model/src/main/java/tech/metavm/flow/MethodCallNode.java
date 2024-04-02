@@ -6,9 +6,7 @@ import tech.metavm.flow.rest.MethodCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.CompositeTypeFacadeImpl;
 import tech.metavm.object.type.Type;
-import tech.metavm.object.type.Types;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -33,8 +31,7 @@ public class MethodCallNode extends CallNode {
             node.setSubFlow(method);
             node.setArguments(arguments);
         } else {
-            var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), scope.getFlow(),
-                    CompositeTypeFacadeImpl.fromContext(context));
+            var outputType = context.getType(nodeDTO.outputTypeId());
             node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, self, method, arguments);
         }
         return node;

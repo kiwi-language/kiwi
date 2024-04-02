@@ -54,6 +54,7 @@
                                 <source>src/main/shopping</source>
                                 <source>src/main/users</source>
                                 <source>src/main/manufacturing</source>
+                                <source>src/main/capturedtypes</source>
                             </sources>
                         </configuration>
                     </execution>

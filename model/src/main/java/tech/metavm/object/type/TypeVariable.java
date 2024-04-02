@@ -122,7 +122,7 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
     }
 
     @Override
-    protected TypeVariableParam getParam() {
+    protected TypeVariableParam getParam(SerializeContext serializeContext) {
         try (var serContext = SerializeContext.enter()) {
             getBounds().forEach(serContext::writeType);
             return new TypeVariableParam(

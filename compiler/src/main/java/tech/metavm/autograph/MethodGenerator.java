@@ -29,6 +29,7 @@ public class MethodGenerator {
     private final Map<BranchNode, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
     private final Map<String, Integer> varNames = new HashMap<>();
     private final CompositeTypeFacade compositeTypeFacade;
+    private final Set<Type> capturedCompositeTypes = new HashSet<>();
 
     public MethodGenerator(Method method, TypeResolver typeResolver,
                            IEntityContext context,
@@ -43,11 +44,68 @@ public class MethodGenerator {
                            VisitorBase visitor) {
         this.method = method;
         this.typeResolver = typeResolver;
-        this.compositeTypeFacade = compositeTypeFacade;
+        this.compositeTypeFacade = new MyCompositeTypeFacade(compositeTypeFacade);
         expressionResolver = new ExpressionResolver(this, variableTable, typeResolver,
-                compositeTypeFacade,
+                this.compositeTypeFacade,
                 parameterizedFlowProvider,
                 visitor);
+    }
+
+    private class MyCompositeTypeFacade implements CompositeTypeFacade {
+
+        private final CompositeTypeFacade delegate;
+
+        private MyCompositeTypeFacade(CompositeTypeFacade delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public ArrayType getArrayType(Type elementType, ArrayKind kind, @Nullable Long tmpId) {
+            var type = delegate.getArrayType(elementType, kind, tmpId);
+            if(type.isCaptured() && capturedCompositeTypes.add(type))
+                method.addCapturedCompositeType(type);
+            return type;
+        }
+
+        @Override
+        public FunctionType getFunctionType(List<Type> parameterTypes, Type returnType, @Nullable Long tmpId) {
+            var type = delegate.getFunctionType(parameterTypes, returnType, tmpId);
+            if(type.isCaptured() && capturedCompositeTypes.add(type))
+                method.addCapturedCompositeType(type);
+            return type;
+        }
+
+        @Override
+        public UnionType getUnionType(Set<Type> types, @Nullable Long tmpId) {
+            var type = delegate.getUnionType(types, tmpId);
+            if(type.isCaptured() && capturedCompositeTypes.add(type))
+                method.addCapturedCompositeType(type);
+            return type;
+        }
+
+        @Override
+        public IntersectionType getIntersectionType(Set<Type> types, @Nullable Long tmpId) {
+            var type = delegate.getIntersectionType(types, tmpId);
+            if(type.isCaptured() && capturedCompositeTypes.add(type))
+                method.addCapturedCompositeType(type);
+            return type;
+        }
+
+        @Override
+        public UncertainType getUncertainType(Type lowerBound, Type upperBound, @Nullable Long tmpId) {
+            var type = delegate.getUncertainType(lowerBound, upperBound, tmpId);
+            if(type.isCaptured() && capturedCompositeTypes.add(type))
+                method.addCapturedCompositeType(type);
+            return type;
+        }
+
+        @Override
+        public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage, DTOProvider dtoProvider) {
+            var type = delegate.getParameterizedType(template, typeArguments, stage, dtoProvider);
+            if(type.isCaptured() && capturedCompositeTypes.add(type))
+                method.addCapturedCompositeType(type);
+            return type;
+        }
     }
 
     Method getMethod() {

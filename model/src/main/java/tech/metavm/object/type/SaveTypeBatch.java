@@ -124,6 +124,10 @@ public class SaveTypeBatch implements DTOProvider {
         return (TypeVariable) get(ref);
     }
 
+    public CapturedType getCapturedType(String ref) {
+        return (CapturedType) get(ref);
+    }
+
     public List<TypeDTO> getClassTypeDTOs() {
         return NncUtils.filter(this.typeMap.values(), t -> t.param() instanceof ClassTypeParam);
     }

@@ -1039,7 +1039,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     @Override
-    protected ClassTypeParam getParam() {
+    protected ClassTypeParam getParam(SerializeContext serializeContext) {
         try (var serContext = SerializeContext.enter()) {
             typeParameters.forEach(serContext::writeType);
             typeArguments.forEach(serContext::writeType);
@@ -1551,6 +1551,11 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public void sortMethods(Comparator<Method> comparator) {
         methods.sort(comparator);
+    }
+
+    @Override
+    public boolean isCaptured() {
+        return isParameterized() && NncUtils.anyMatch(typeArguments, Type::isCaptured);
     }
 }
 

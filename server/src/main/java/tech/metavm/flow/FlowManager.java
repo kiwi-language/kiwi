@@ -166,6 +166,7 @@ public class FlowManager extends EntityContextFactoryBean {
         }
         flow.setNative(flowDTO.isNative());
         flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), context::getTypeVariable));
+        flow.setCapturedTypes(NncUtils.map(flowDTO.capturedTypeIds(), context::getCapturedType));
 //        if (flowDTO.horizontalInstances() != null) {
 //            for (FlowDTO templateInstance : flowDTO.horizontalInstances()) {
 //                save(templateInstance, declarationOnly, context);
@@ -249,7 +250,7 @@ public class FlowManager extends EntityContextFactoryBean {
         if (flowDTO.rootScope() == null) {
             return;
         }
-        flow.clearContent();
+        flow.clearNodes();
         for (NodeDTO nodeDTO : flowDTO.rootScope().nodes()) {
             saveNode(nodeDTO, flow.getRootScope(), context);
         }

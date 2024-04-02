@@ -94,7 +94,7 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    protected PrimitiveTypeParam getParam() {
+    protected PrimitiveTypeParam getParam(SerializeContext serializeContext) {
         return new PrimitiveTypeParam(kind.code());
     }
 

@@ -20,6 +20,8 @@ import java.util.Objects;
 
 public class Method extends Flow implements Property, GenericElement {
 
+    public static final IndexDef<Method> IDX_PARAMETERIZED = IndexDef.create(Method.class, "parameterized");
+
     @EntityField("所属类型")
     private final @NotNull ClassType declaringType;
     @EntityField("是否静态")
@@ -50,6 +52,10 @@ public class Method extends Flow implements Property, GenericElement {
     @Nullable
     private FunctionType staticType;
 
+    private boolean hidden;
+
+    private final boolean parameterized;
+
     public Method(Long tmpId,
                   @NotNull ClassType declaringType,
                   String name,
@@ -69,6 +75,7 @@ public class Method extends Flow implements Property, GenericElement {
                   @Nullable Method horizontalTemplate,
                   Access access,
                   @Nullable CodeSource codeSource,
+                  boolean hidden,
                   MetadataState state) {
         super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, codeSource, state, isAbstract);
         if (isStatic && isAbstract)
@@ -80,9 +87,11 @@ public class Method extends Flow implements Property, GenericElement {
         this.staticType = staticType;
         this.access = access;
         this.overridden.addAll(overridden);
+        parameterized = horizontalTemplate != null;
+        this.hidden = hidden;
         if (horizontalTemplate == null)
             declaringType.addMethod(this);
-        else
+        else if(!hidden)
             horizontalTemplate.addTemplateInstance(this);
         checkTypes(overridden, parameters, returnType, type, staticType);
     }
@@ -217,6 +226,10 @@ public class Method extends Flow implements Property, GenericElement {
         if (verticalTemplate != null)
             NncUtils.requireTrue(verticalTemplate.declaringType == declaringType.getTemplate());
         this.verticalTemplate = verticalTemplate;
+    }
+
+    public boolean isHidden() {
+        return hidden;
     }
 
     @Override

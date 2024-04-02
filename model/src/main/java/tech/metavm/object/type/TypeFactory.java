@@ -74,14 +74,21 @@ public abstract class TypeFactory {
         }
     }
 
-//    public Type saveCapturedType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-//        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveCapturedType")) {
-//            var context = batch.getContext();
-//            var param = typeDTO.getCapturedTypeParam();
-//            var uncertainType = batch.get(param.uncertainTypeId())
-//            return context.getCapturedTypeContext().getCapturedType(lb, ub, typeDTO.tmpId());
-//        }
-//    }
+    public CapturedType saveCapturedType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveCapturedType")) {
+            var context = batch.getContext();
+            var capturedType = context.getCapturedType(Id.parse(typeDTO.id()));
+            if(capturedType == null) {
+                var param = typeDTO.getCapturedTypeParam();
+                var uncertainType = (UncertainType) batch.get(param.uncertainTypeId());
+                capturedType = new CapturedType(uncertainType, DummyCapturedTypeScope.INSTANCE);
+                if(typeDTO.tmpId() != null)
+                    capturedType.setTmpId(typeDTO.tmpId());
+                context.bind(capturedType);
+            }
+            return capturedType;
+        }
+    }
 
     public FunctionType saveFunctionType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveFunctionType")) {
@@ -225,6 +232,8 @@ public abstract class TypeFactory {
         flow.setAbstract(param.isAbstract());
         flow.setConstructor(param.isConstructor());
         flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
+        flow.setCapturedTypes(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedType));
+        flow.setCapturedCompositeTypes(NncUtils.map(flowDTO.capturedCompositeTypeIds(), batch::get));
         flow.update(
                 NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)),
                 batch.get(flowDTO.returnTypeId()),
@@ -260,6 +269,7 @@ public abstract class TypeFactory {
         }
         function.setNative(flowDTO.isNative());
         function.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
+        function.setCapturedTypes(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedType));
         function.update(
                 NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)),
                 batch.get(flowDTO.returnTypeId()),

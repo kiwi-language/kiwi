@@ -25,8 +25,11 @@ public class Lab {
     }
 
     public void test(List<? extends Number> list) {
-        var n = list.get(0);
-        n = list.get(1);
+        helper(list);
+    }
+
+    public <T> void helper(List<T> t) {
+        t.add(t.get(0));
     }
 
 }

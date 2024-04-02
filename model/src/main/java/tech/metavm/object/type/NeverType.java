@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.BuildKeyContext;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.NothingTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
@@ -33,7 +34,7 @@ public class NeverType extends Type {
     }
 
     @Override
-    protected TypeParam getParam() {
+    protected TypeParam getParam(SerializeContext serializeContext) {
         return null;
     }
 

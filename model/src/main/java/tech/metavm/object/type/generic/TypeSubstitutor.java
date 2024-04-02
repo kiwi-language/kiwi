@@ -34,6 +34,11 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
     }
 
     @Override
+    public Type visitCapturedType(CapturedType type) {
+        return super.visitCapturedType(type);
+    }
+
+    @Override
     public Type visitArrayType(ArrayType type) {
         var subst = super.visitArrayType(type);
         if (subst != type)

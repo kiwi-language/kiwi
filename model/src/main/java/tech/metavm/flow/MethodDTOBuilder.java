@@ -26,6 +26,8 @@ public class MethodDTOBuilder {
     private int access = Access.PUBLIC.code();
     private String returnTypeId;
     private List<ParameterDTO> parameters = new ArrayList<>();
+    private List<String> capturedTypeIds = new ArrayList<>();
+    private List<String> capturedCompositeTypeIds = new ArrayList<>();
     private int state = MetadataState.READY.code();
     private String id;
     private Long tmpId;
@@ -64,6 +66,16 @@ public class MethodDTOBuilder {
 
     public MethodDTOBuilder skipRootScope(boolean skipRootScope) {
         this.skipRootScope = skipRootScope;
+        return this;
+    }
+
+    public MethodDTOBuilder capturedTypeIds(List<String> capturedTypeIds) {
+        this.capturedTypeIds = capturedTypeIds;
+        return this;
+    }
+
+    public MethodDTOBuilder capturedCompositeTypeIds(List<String> capturedCompositeTypeIds) {
+        this.capturedCompositeTypeIds = capturedCompositeTypeIds;
         return this;
     }
 
@@ -143,6 +155,8 @@ public class MethodDTOBuilder {
                 List.of(),
                 null,
                 List.of(),
+                capturedTypeIds,
+                capturedCompositeTypeIds,
                 false,
                 state,
                 new MethodParam(

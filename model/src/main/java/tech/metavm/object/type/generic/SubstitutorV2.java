@@ -237,11 +237,7 @@ public class SubstitutorV2 extends CopyVisitor {
                     NncUtils.map(method.getOverridden(), this::substituteMethod),
                     compositeTypeFacade
             );
-            if (stage.isAfterOrAt(DEFINITION)) {
-                copy.getRootScope().clearNodes();
-                for (NodeRT node : method.getRootScope().getNodes())
-                    copy.getRootScope().addNode((NodeRT) copy(node));
-            }
+            processFlowBody(method, copy);
             exitElement();
             return copy;
         } else
@@ -278,15 +274,21 @@ public class SubstitutorV2 extends CopyVisitor {
                     substituteType(function.getReturnType()),
                     compositeTypeFacade
             );
-            if (stage.isAfterOrAt(DEFINITION) && function.isRootScopePresent()) {
-                copy.getRootScope().clearNodes();
-                for (NodeRT node : function.getRootScope().getNodes())
-                    copy.getRootScope().addNode((NodeRT) copy(node));
-            }
+            processFlowBody(function, copy);
             exitElement();
             return copy;
         } else
             return super.visitFunction(function);
+    }
+
+    private void processFlowBody(Flow flow, Flow copy) {
+        if (stage.isAfterOrAt(DEFINITION) && flow.isRootScopePresent()) {
+            copy.clearContent();
+            for (CapturedType capturedType : flow.getCapturedTypes())
+                copy.addCapturedType((CapturedType) copy(capturedType));
+            for (NodeRT node : flow.getRootScope().getNodes())
+                copy.getRootScope().addNode((NodeRT) copy(node));
+        }
     }
 
     @Override

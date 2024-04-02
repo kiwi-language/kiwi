@@ -105,7 +105,7 @@ public class NewObjectNode extends CallNode implements NewNode {
     @Override
     @NotNull
     public ClassType getType() {
-        return (ClassType) NncUtils.requireNonNull(super.getType());
+        return (ClassType) getSubFlow().getReturnType();
     }
 
     @Override

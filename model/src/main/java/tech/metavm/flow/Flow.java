@@ -16,11 +16,12 @@ import tech.metavm.object.type.rest.dto.ParameterizedFlowDTO;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
 @EntityType("流程")
-public abstract class Flow extends Element implements GenericDeclaration, Callable, LoadAware, TypeCapturingScope {
+public abstract class Flow extends Element implements GenericDeclaration, Callable, LoadAware, CapturedTypeScope {
 
     public static final IndexDef<Flow> IDX_PARAMETERIZED_KEY =
             IndexDef.createUnique(Flow.class, "parameterizedKey");
@@ -74,6 +75,8 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     private final ChildArray<CapturedType> capturedTypes = addChild(new ChildArray<>(CapturedType.class), "capturedTypes");
     @ChildEntity("私有流程列表")
     private final ChildArray<Flow> privateFlows = addChild(new ChildArray<>(Flow.class), "privateFlows");
+    @ChildEntity("捕获的复合类型列表")
+    private final ChildArray<Type> capturedCompositeTypes = addChild(new ChildArray<>(Type.class), "capturedCompositeTypes");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);
@@ -166,6 +169,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
             serContext.writeType(getType());
             serContext.writeType(returnType);
         }
+        capturedTypes.forEach(serContext::writeType);
         return new FlowDTO(
                 serContext.getId(this),
                 getName(),
@@ -178,6 +182,8 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                 NncUtils.map(typeParameters, serContext::getId),
                 NncUtils.get(horizontalTemplate, serContext::getId),
                 NncUtils.map(typeArguments, serContext::getId),
+                NncUtils.map(capturedTypes, serContext::getId),
+                NncUtils.map(capturedCompositeTypes, serContext::getId),
                 isTemplate(),
                 getState().code(),
                 getParam(includeCode, serContext)
@@ -191,12 +197,16 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public void clearContent() {
+        clearNodes();
+        privateFlows.clear();
+        capturedTypes.clear();
+    }
+
+    public void clearNodes() {
         if (nodes != null)
             nodes.clear();
         if (rootScope != null)
             rootScope.clearNodes();
-        privateFlows.clear();
-        capturedTypes.clear();
     }
 
     public boolean isSynthetic() {
@@ -445,6 +455,15 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
             setTypeArguments(typeParameters);
     }
 
+    public void setCapturedTypes(List<CapturedType> capturedTypes) {
+        capturedTypes.forEach(ct -> ct.setScope(this));
+        this.capturedTypes.resetChildren(capturedTypes);
+    }
+
+    public void setCapturedCompositeTypes(List<Type> capturedCompositeTypes) {
+        this.capturedCompositeTypes.resetChildren(capturedCompositeTypes);
+    }
+
     public @NotNull FunctionType getType() {
         return type;
     }
@@ -502,6 +521,11 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     @Override
+    public Collection<CapturedType> getCapturedTypes() {
+        return capturedTypes.toList();
+    }
+
+    @Override
     public int getCapturedTypeIndex(CapturedType capturedType) {
         int index = 0;
         for (var type : capturedTypes) {
@@ -515,6 +539,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public void addCapturedType(CapturedType capturedType) {
         capturedTypes.addChild(capturedType);
+    }
+
+    public void addCapturedCompositeType(Type compositeType) {
+        capturedCompositeTypes.addChild(compositeType);
     }
 
     public ResolutionStage getStage() {
