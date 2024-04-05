@@ -5,7 +5,6 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IndexDef;
 import tech.metavm.object.type.CompositeType;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.ContextUtil;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
@@ -60,6 +59,7 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
             }
         }
         T type = create(componentTypes, tmpId);
+        CompositeTypeEventRegistry.notifyTypeCreated(type);
         if(NncUtils.anyMatch(componentTypes, Entity::isEphemeralEntity))
             type.setEphemeralEntity(true);
         newTypes.put(getMemKey(componentTypes), type);

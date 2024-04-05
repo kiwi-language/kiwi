@@ -1,19 +1,25 @@
 package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.expression.ExpressionTypeMap;
 import tech.metavm.expression.TypeNarrower;
 import tech.metavm.flow.rest.ScopeDTO;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.util.DebugEnv;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("流程范围")
 public class ScopeRT extends Element {
+
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
     @EntityField("所属流程")
     private final Flow flow;
@@ -57,7 +63,21 @@ public class ScopeRT extends Element {
         );
     }
 
+    private boolean shouldDebug() {
+        if(DebugEnv.DEBUG_LOG_ON && flow.getEffectiveHorizontalTemplate().getName().equals("find")) {
+            return flow.getHorizontalTemplate() == null || flow.getTypeArguments().get(0).isCaptured();
+        }
+        else
+            return false;
+    }
+
     public void addNode(NodeRT node) {
+        if(shouldDebug()) {
+            DEBUG_LOGGER.info("adding node {} to flow {}", node.getName(), flow.getNameWithTypeArguments());
+            if(node instanceof InputNode inputNode) {
+                DebugEnv.inputNode = inputNode;
+            }
+        }
         var pred = node.getPredecessor() != null ? node.getPredecessor() : null;
         if (pred != null) {
             nodes.addChildAfter(node, pred);
@@ -71,10 +91,15 @@ public class ScopeRT extends Element {
     }
 
     public void clearNodes() {
+        if(shouldDebug()) {
+            DEBUG_LOGGER.info("clear nodes for flow {}", flow.getNameWithTypeArguments());
+        }
         this.nodes.clear();
     }
 
     public void setNodes(List<NodeRT> nodes) {
+        if(shouldDebug())
+            DEBUG_LOGGER.info("resetting nodes for flow {}", flow.getNameWithTypeArguments());
         this.nodes.resetChildren(nodes);
     }
 

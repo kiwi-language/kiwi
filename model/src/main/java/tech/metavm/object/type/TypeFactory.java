@@ -17,6 +17,8 @@ import tech.metavm.util.Null;
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
+
 public abstract class TypeFactory {
 
     public PrimitiveType createPrimitive(PrimitiveKind kind) {
@@ -166,15 +168,26 @@ public abstract class TypeFactory {
                     type.setTitleField(NncUtils.find(type.getFields(), f -> f.getStringId().equals(param.titleFieldId())));
                 type.setStage(ResolutionStage.DECLARATION);
             }
+            if(stage.isAfterOrAt(ResolutionStage.DEFINITION) && curStage.isBefore(ResolutionStage.DEFINITION)) {
+                if(param.flows() != null) {
+                    for (FlowDTO flowDTO : param.flows()) {
+                        setCapturedFlows(flowDTO, context);
+                    }
+                }
+            }
             return type;
         }
+    }
+
+    private void setCapturedFlows(FlowDTO flowDTO, IEntityContext context) {
+        context.getFlow(flowDTO.id()).setCapturedFlows(NncUtils.map(flowDTO.capturedFlowIds(), context::getFlow));
     }
 
     public TypeVariable createTypeVariable(TypeDTO typeDTO,
                                            boolean withBounds, IEntityContext context) {
         var param = (TypeVariableParam) typeDTO.param();
         var typeVariable = new TypeVariable(typeDTO.tmpId(), typeDTO.name(), typeDTO.code(),
-                Objects.requireNonNull(context.getEntity(GenericDeclaration.class, Id.parse(param.genericDeclarationId()))));
+                requireNonNull(context.getEntity(GenericDeclaration.class, Id.parse(param.genericDeclarationId()))));
         if (withBounds)
             typeVariable.setBounds(NncUtils.map(param.boundIds(), id -> context.getType(Id.parse(id))));
         context.bind(typeVariable);
@@ -270,6 +283,7 @@ public abstract class TypeFactory {
         function.setNative(flowDTO.isNative());
         function.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
         function.setCapturedTypes(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedType));
+        function.setCapturedCompositeTypes(NncUtils.map(flowDTO.capturedCompositeTypeIds(), batch::get));
         function.update(
                 NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)),
                 batch.get(flowDTO.returnTypeId()),

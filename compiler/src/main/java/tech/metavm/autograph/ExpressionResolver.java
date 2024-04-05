@@ -56,6 +56,7 @@ public class ExpressionResolver {
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private final CompositeTypeFacade compositeTypeFacade;
     private final VisitorBase visitor;
+    private final Map<PsiExpression, Expression> expressionMap = new IdentityHashMap<>();
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
             new ListOfResolver(), new ObjectsToStringResolver(), new ToStringResolver(),
@@ -92,11 +93,19 @@ public class ExpressionResolver {
     }
 
     private Expression resolve(PsiExpression psiExpression, ResolutionContext context) {
+        Expression resolved;
         if (isBoolExpression(psiExpression)) {
-            return resolveBoolExpr(psiExpression, context);
+            resolved = resolveBoolExpr(psiExpression, context);
         } else {
-            return resolveNormal(psiExpression, context);
+            resolved = resolveNormal(psiExpression, context);
         }
+        if(resolved != null && resolved.getType().isCaptured())
+            TranspileUtil.forEachCapturedTypePairs(psiExpression.getType(), resolved.getType(), typeResolver::mapCapturedType);
+        return resolved;
+    }
+
+    private CapturedType resolveCapturedType(PsiCapturedWildcardType psiCapturedWildcardType) {
+        return (CapturedType) expressionMap.get((PsiExpression) psiCapturedWildcardType.getContext()).getType();
     }
 
     public CompositeTypeFacade getCompositeTypeFacade() {
@@ -498,6 +507,7 @@ public class ExpressionResolver {
         }
         var isStatic = TranspileUtil.isStatic(rawMethod);
         PsiExpression psiSelf = (PsiExpression) ref.getQualifier();
+        var qualifier = isStatic ? null : getQualifier(psiSelf, context);
         if (psiSelf != null) {
             if (isStatic) {
                 var psiClass = (PsiClass) ((PsiReferenceExpression) psiSelf).resolve();
@@ -507,7 +517,7 @@ public class ExpressionResolver {
             }
         }
         var substitutor = expression.resolveMethodGenerics().getSubstitutor();
-        var method = resolveMethod(expression);
+
         var psiArgs = expression.getArgumentList().getExpressions();
         var args = new ArrayList<Expression>();
         for (PsiExpression psiArg : psiArgs) {
@@ -519,7 +529,7 @@ public class ExpressionResolver {
             }
             args.add(arg);
         }
-        var qualifier = isStatic ? null : getQualifier(psiSelf, context);
+        var method = resolveMethod(expression);
         var node = methodGenerator.createMethodCall(qualifier, method, args, compositeTypeFacade);
         if (method.getReturnType().isVoid()) {
             return null;

@@ -1,10 +1,13 @@
 package tech.metavm.object.instance.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.event.EventQueue;
+import tech.metavm.flow.Flow;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
@@ -101,10 +104,16 @@ public class InstanceContext extends BufferingInstanceContext {
         return eventQueue;
     }
 
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+
     @Override
     protected void finishInternal() {
         if (finished)
             throw new IllegalStateException("Already finished");
+        if (DebugEnv.DEBUG_LOG_ON && DebugEnv.inputNode != null) {
+            DEBUG_LOGGER.info("Copy source of inputNode is removed: {}",
+                    DebugEnv.isCopySourceRemoved(DebugEnv.inputNode));
+        }
         var patchContext = new PatchContext();
         var patch = buildPatch(null, patchContext);
         processRemoval(patch);
@@ -397,22 +406,83 @@ public class InstanceContext extends BufferingInstanceContext {
                         ref.changed = true;
                 }
             }, true);
+            patch.entityChange.deletes().forEach(v -> {
+                if (patchContext.changeNotified.add(v.id())) {
+                    if (onRemove(internalGet(v.id()))) {
+                        ref.changed = true;
+                    }
+                }
+            });
         }
         return ref.changed ? buildPatch(patch, patchContext) : patch;
     }
 
+    private String getInstanceDesc(DurableInstance instance) {
+        if(instance instanceof ArrayInstance)
+            return instance.getType().getName();
+        if (instance.getMappedEntity() == DebugEnv.inputNode)
+            return instance + "*";
+        else if (instance.getMappedEntity() instanceof Flow flow)
+            return flow.getNameWithTypeArguments();
+        else
+            return instance.toString();
+    }
+
+    private String getInstancePath(DurableInstance instance) {
+        var path = new LinkedList<DurableInstance>();
+        var i = instance;
+        while (i != null) {
+            path.addFirst(i);
+            i = i.getParent();
+        }
+        return NncUtils.join(path, this::getInstanceDesc, "/");
+    }
+
     private void processRemoval(Patch patch) {
         try (var ignored = getProfiler().enter("processRemoval")) {
+            if(DebugEnv.target != null) {
+                DEBUG_LOGGER.info("final check. bug detected: {}", DebugEnv.isBugPresent(DebugEnv.target));
+            }
             removeOrphans(patch);
             var entityChange = patch.entityChange;
             if (NncUtils.isEmpty(entityChange.deletes()))
                 return;
             var visitor = new GraphVisitor() {
+
+                private final LinkedList<String> path = new LinkedList<>();
+
                 @Override
                 public Void visitDurableInstance(DurableInstance instance) {
-                    if (instance.isRemoved())
+                    path.addLast(getInstancePath(instance));
+                    if (instance.isRemoved()) {
+                        if(DebugEnv.target != null) {
+                            DEBUG_LOGGER.info("On exception check. bug detected: {}", DebugEnv.isBugPresent(DebugEnv.target));
+                        }
+                        DEBUG_LOGGER.info(String.join("->", path));
                         throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, instance);
-                    return super.visitDurableInstance(instance);
+                    }
+                    try {
+                        numCalls++;
+                        if (!visited.add(instance))
+                            return null;
+                        if (instance instanceof ArrayInstance arrayInstance) {
+                            for (int i = 0; i < arrayInstance.getElements().size(); i++) {
+                                path.addLast(i + "");
+                                visit(arrayInstance.getElement(i));
+                                path.removeLast();
+                            }
+                        } else if (instance instanceof ClassInstance classInstance) {
+                            classInstance.forEachField((field, fieldValue) -> {
+                                path.addLast(field.getName());
+                                visit(fieldValue);
+                                path.removeLast();
+                            });
+                        }
+                        return null;
+//                        return super.visitDurableInstance(instance);
+                    } finally {
+                        path.removeLast();
+                    }
                 }
             };
             for (var instance : this) {

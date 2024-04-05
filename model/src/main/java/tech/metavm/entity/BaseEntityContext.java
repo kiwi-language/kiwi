@@ -294,6 +294,16 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return false;
     }
 
+    @Override
+    public boolean onRemove(DurableInstance instance) {
+        var entity = instance.getMappedEntity();
+        if (entity instanceof AfterRemovalAware removalAware) {
+            removalAware.afterRemoval(this);
+            return true;
+        }
+        return false;
+    }
+
     private final IdentitySet<Entity> notified = new IdentitySet<>();
 
     @Override

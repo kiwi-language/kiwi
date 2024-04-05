@@ -42,16 +42,20 @@ public abstract class ElementVisitor<R> {
         return visitType(type);
     }
 
-    public R visitArrayType(ArrayType type) {
+    public R visitCompositeType(CompositeType type) {
         return visitType(type);
+    }
+
+    public R visitArrayType(ArrayType type) {
+        return visitCompositeType(type);
     }
 
     public R visitUnionType(UnionType type) {
-        return visitType(type);
+        return visitCompositeType(type);
     }
 
     public R visitIntersectionType(IntersectionType type) {
-        return visitType(type);
+        return visitCompositeType(type);
     }
 
     public R visitPrimitiveType(PrimitiveType type) {
@@ -291,7 +295,7 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitFunctionType(FunctionType functionType) {
-        return visitType(functionType);
+        return visitCompositeType(functionType);
     }
 
     public R visitNothingType(NeverType neverType) {
@@ -303,7 +307,7 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitUncertainType(UncertainType uncertainType) {
-        return visitType(uncertainType);
+        return visitCompositeType(uncertainType);
     }
 
     public R visitArgument(Argument argument) {

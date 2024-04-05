@@ -22,6 +22,7 @@ public record FlowDTO(
         List<String> typeArgumentIds,
         List<String> capturedTypeIds,
         List<String> capturedCompositeTypeIds,
+        List<String> capturedFlowIds,
         boolean isTemplate,
         int state,
         FlowParam param

@@ -6,7 +6,8 @@ public interface ContextListener {
 
     default void onInstanceInitialized(DurableInstance instance) {}
 
-    default void onInstanceRemoved(DurableInstance instance) {}
+    default void onInstanceRemoved(DurableInstance instance) {
+    }
 
     default void onInstanceIdInit(DurableInstance instance) {}
 
@@ -15,6 +16,10 @@ public interface ContextListener {
     default void onPatchBuild() {}
 
     default boolean onChange(Instance instance) {
+        return false;
+    }
+
+    default boolean onRemove(DurableInstance instance) {
         return false;
     }
 

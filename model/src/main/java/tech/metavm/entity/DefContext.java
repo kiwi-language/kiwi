@@ -412,31 +412,8 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     void writeEntity(Object entity) {
         if (entities.add(entity)) {
             tryInitEntityId(entity);
-//            if (!containsModel(entity)) {
             pendingModels.add(entity);
             memoryIndex.save(entity);
-//            }
-//            var identityMap = identityContext.getIdentityMap(entity);
-//            identityMap.forEach((object, modelId) -> {
-//                if (EntityUtils.isMapper(object)) {
-//                    var func = (tech.metavm.flow.Function) object;
-//                    if (func.isRootScopePresent())
-//                        originalScopes.put(func, func.getRootScope());
-//                    else
-//                        System.out.println("Caught mapper with null root scope");
-//                }
-//                if ((object instanceof IdInitializing idInitializing) && idInitializing.getId() == null) {
-//                    Long id = getId.apply(modelId);
-//                    if (id != null) {
-//                        idInitializing.initId(id);
-//                        entityMap.put(id, idInitializing);
-//                    }
-//                }
-//                if (!containsModel(object)) {
-//                    pendingModels.add(object);
-//                    memoryIndex.save(object);
-//                }
-//            });
         } else
             throw new InternalException("Entity " + entity + " is already written to the context");
     }
@@ -607,6 +584,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             long delta = pendingModels.size() - numPending;
             LOGGER.info("{} new entities generated during flush", delta);
             generateInstances();
+            for (Object entity : entities) {
+                if(entity instanceof Entity e && e.tryGetPhysicalId() != null && e.afterContextInitIds()) {
+                    update(e);
+                }
+            }
         }
     }
 

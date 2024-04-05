@@ -12,8 +12,19 @@
         </encoder>
     </appender>
 
+    <appender name="DEBUG" class="ch.qos.logback.core.FileAppender">
+        <file>logs/debug.log</file>
+        <encoder>
+            <pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n</pattern>
+        </encoder>
+    </appender>
+
     <logger name="Assignable" level="info" additivity="false">
         <appender-ref ref="FILE" />
+    </logger>
+
+    <logger name="Debug" level="info" additivity="false">
+        <appender-ref ref="DEBUG" />
     </logger>
 
     <root level="info">

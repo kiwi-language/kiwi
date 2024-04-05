@@ -7,6 +7,8 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.generic.CompositeTypeEventRegistry;
+import tech.metavm.object.type.generic.CompositeTypeListener;
 import tech.metavm.util.CompilerConfig;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -14,6 +16,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.getEnumConstantName;
@@ -26,12 +29,10 @@ public class Generator extends CodeGenVisitor {
     private final LinkedList<ClassInfo> classInfoStack = new LinkedList<>();
     private final TypeResolver typeResolver;
     private final IEntityContext entityContext;
-    private final CompositeTypeFacade compositeTypeFacade;
 
     public Generator(TypeResolver typeResolver, IEntityContext entityContext) {
         this.typeResolver = typeResolver;
         this.entityContext = entityContext;
-        compositeTypeFacade = CompositeTypeFacadeImpl.fromContext(entityContext);
     }
 
     @Override
@@ -60,7 +61,7 @@ public class Generator extends CodeGenVisitor {
                         initFlowBuilder.getVariable("this"),
                         superInit,
                         List.of(),
-                        compositeTypeFacade
+                        initFlowBuilder.getCompositeTypeFacade()
                 );
             }
         }
@@ -75,7 +76,7 @@ public class Generator extends CodeGenVisitor {
                         null,
                         superCInit,
                         List.of(),
-                        compositeTypeFacade
+                        classInitFlowBuilder.getCompositeTypeFacade()
                 );
             }
         }
@@ -94,7 +95,7 @@ public class Generator extends CodeGenVisitor {
             var constructor = klass.getDefaultConstructor();
             var constructorGen = new MethodGenerator(constructor, typeResolver, entityContext, this);
             constructorGen.enterScope(constructor.getRootScope());
-            constructorGen.createMethodCall(new NodeExpression(constructorGen.createSelf()), initFlow, List.of(), compositeTypeFacade);
+            constructorGen.createMethodCall(new NodeExpression(constructorGen.createSelf()), initFlow, List.of(), constructorGen.getCompositeTypeFacade());
             constructorGen.createReturn(new NodeExpression(constructorGen.createSelf()));
             constructorGen.exitScope();
         }
@@ -163,11 +164,11 @@ public class Generator extends CodeGenVisitor {
             }
         } else if (field.getType().isNullable()) {
             initField(field, Expressions.nullExpression());
-        } else if(field.getType().isBoolean()) {
+        } else if (field.getType().isBoolean()) {
             initField(field, Expressions.constantBoolean(false));
         } else if (field.getType().isLong()) {
             initField(field, Expressions.constantLong(0L));
-        } else if(field.getType().isDouble()) {
+        } else if (field.getType().isDouble()) {
             initField(field, Expressions.constantDouble(0.0));
         }
     }
@@ -315,6 +316,20 @@ public class Generator extends CodeGenVisitor {
         if (CompilerConfig.isMethodBlacklisted(psiMethod))
             return;
         var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
+        var capturedTypeListener = new CompositeTypeListener() {
+            @Override
+            public void onTypeCreated(Type type) {
+                if(type.isCaptured())
+                    method.addCapturedCompositeType(type);
+            }
+
+            @Override
+            public void onFlowCreated(Flow flow) {
+                if(NncUtils.anyMatch(flow.getTypeArguments(), Type::isCaptured))
+                    method.addCapturedFlow(flow);
+            }
+        };
+        CompositeTypeEventRegistry.addListener(capturedTypeListener);
         method.clearContent();
         MethodGenerator builder = new MethodGenerator(method, typeResolver, entityContext, this);
         builders.push(builder);
@@ -333,14 +348,14 @@ public class Generator extends CodeGenVisitor {
                             builder().getVariable("this"),
                             superClass.getDefaultConstructor(),
                             List.of(),
-                            compositeTypeFacade
+                            builder().getCompositeTypeFacade()
                     );
                 }
                 builder.createMethodCall(
                         new NodeExpression(selfNode),
                         currentClassInfo().fieldBuilder.getMethod(),
                         List.of(),
-                        compositeTypeFacade
+                        builder().getCompositeTypeFacade()
                 );
                 if (currentClass().isEnum()) {
                     var klass = currentClass();
@@ -372,6 +387,7 @@ public class Generator extends CodeGenVisitor {
         }
         builder.exitScope();
         builders.pop();
+        CompositeTypeEventRegistry.removeListener(capturedTypeListener);
     }
 
     private boolean isEnumType(ClassType classType) {
@@ -450,7 +466,7 @@ public class Generator extends CodeGenVisitor {
                     cond = null;
                     for (Expression expression : expressions) {
                         var expr = new BinaryExpression(BinaryOperator.EQ, switchExpr, expression);
-                        if(cond == null)
+                        if (cond == null)
                             cond = expr;
                         else
                             cond = new BinaryExpression(BinaryOperator.OR, cond, expr);
@@ -462,7 +478,7 @@ public class Generator extends CodeGenVisitor {
                 branch = branchNode.addDefaultBranch();
             }
             builder().enterBranch(branch);
-            if(castVar != null) {
+            if (castVar != null) {
                 builder().setVariable(castVar, switchExpr);
             }
             if (labeledRuleStmt.getBody() != null) {
@@ -499,7 +515,8 @@ public class Generator extends CodeGenVisitor {
     private void processParameters(PsiParameterList parameterList, Flow flow) {
         var inputNode = builder().createInput();
         for (Parameter parameter : flow.getParameters()) {
-            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getType(), parameter.getType())
+            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getType(),
+                            Types.tryCapture(parameter.getType(), flow, builder().getCompositeTypeFacade()))
                     .build();
         }
         for (PsiParameter parameter : parameterList.getParameters()) {
@@ -715,7 +732,7 @@ public class Generator extends CodeGenVisitor {
             var itNode = builder().createMethodCall(
                     iteratedExpr, Objects.requireNonNull(collType.findMethodByCode("iterator")),
                     List.of(),
-                    compositeTypeFacade
+                    builder().getCompositeTypeFacade()
             );
             var itType = (ClassType) NncUtils.requireNonNull(itNode.getType());
             processLoop(statement, getExtraLoopTest(statement), (node, loopVar2Field) -> {
@@ -726,7 +743,7 @@ public class Generator extends CodeGenVisitor {
                         new NodeExpression(itNode),
                         Objects.requireNonNull(itType.findMethodByCode("next")),
                         List.of(),
-                        compositeTypeFacade
+                        builder().getCompositeTypeFacade()
                 );
                 builder().setVariable(statement.getIterationParameter().getName(), new NodeExpression(elementNode));
             });

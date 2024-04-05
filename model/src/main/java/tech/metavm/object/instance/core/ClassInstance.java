@@ -252,8 +252,6 @@ public class ClassInstance extends DurableInstance {
         for (; j < fields.size(); j++)
             instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
 //        }
-        if(this.fields.size() != fields.size())
-            System.out.println("Caught");
     }
 
     public ClassInstance getClassInstance(Field field) {

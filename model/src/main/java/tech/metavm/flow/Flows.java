@@ -1,15 +1,20 @@
 package tech.metavm.flow;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.Expression;
 import tech.metavm.object.type.*;
+import tech.metavm.util.DebugEnv;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 public class Flows {
+
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
     public static Type getExpressionType(Expression expression, @Nullable NodeRT prev, ScopeRT scope) {
         var exprTypeMap = prev != null ? prev.getExpressionTypes() : scope.getExpressionTypes();
@@ -17,7 +22,7 @@ public class Flows {
     }
 
     public static void retransformFlowIfRequired(Flow flow, IEntityContext context) {
-        if(flow instanceof Method method) {
+        if (flow instanceof Method method) {
             if (method.getDeclaringType().isTemplate() && context.isPersisted(method.getDeclaringType())) {
                 flow.analyze();
                 var templateInstances = context.getTemplateInstances(method.getDeclaringType());
@@ -26,9 +31,16 @@ public class Flows {
                 }
             }
         }
-        if(flow.isTemplate()) {
+        if (flow.isTemplate()) {
             for (Flow horizontalInstance : context.selectByKey(Flow.IDX_HORIZONTAL_TEMPLATE, flow)) {
+                if (DebugEnv.DEBUG_LOG_ON)
+                    DEBUG_LOGGER.info("retransforming " + EntityUtils.getEntityPath(horizontalInstance));
                 context.getGenericContext().retransformHorizontalFlowInstances(flow, horizontalInstance);
+                if (DebugEnv.DEBUG_LOG_ON && DebugEnv.isTargetFlow(horizontalInstance)) {
+                    DebugEnv.target = horizontalInstance;
+                    DEBUG_LOGGER.info("detecting bug for node: {}, result: {}",
+                            EntityUtils.getEntityPath(horizontalInstance), DebugEnv.isBugPresent(horizontalInstance));
+                }
             }
         }
     }
@@ -51,7 +63,7 @@ public class Flows {
     }
 
     public static FunctionType getStaticType(Flow flow) {
-        if(flow instanceof Method method && method.isInstanceMethod())
+        if (flow instanceof Method method && method.isInstanceMethod())
             return method.getStaticType();
         else
             throw new InternalException("Can not get static type of flow: " + flow);

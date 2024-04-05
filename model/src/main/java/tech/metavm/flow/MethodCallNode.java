@@ -31,7 +31,11 @@ public class MethodCallNode extends CallNode {
             node.setSubFlow(method);
             node.setArguments(arguments);
         } else {
-            var outputType = context.getType(nodeDTO.outputTypeId());
+            var outputType = NncUtils.getOrElse(
+                    nodeDTO.outputTypeId(),
+                    context::getType,
+                    method.getReturnType().isVoid() ? null : method.getReturnType()
+            );
             node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, self, method, arguments);
         }
         return node;
@@ -43,6 +47,7 @@ public class MethodCallNode extends CallNode {
 
     public MethodCallNode(Long tmpId, String name, @Nullable String code, @Nullable Type outputType, NodeRT prev, ScopeRT scope, Value self, Method method, List<Argument> arguments) {
         super(tmpId, name, code, outputType, prev, scope, method, arguments);
+        NncUtils.requireTrue(method.getReturnType().isVoid() == (outputType == null));
         this.self = NncUtils.get(self, s -> addChild(s, "self"));
     }
 

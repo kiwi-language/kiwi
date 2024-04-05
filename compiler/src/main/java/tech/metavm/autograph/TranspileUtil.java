@@ -12,9 +12,7 @@ import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.builtin.IndexDef;
 import tech.metavm.entity.*;
-import tech.metavm.object.type.Access;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Types;
+import tech.metavm.object.type.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
@@ -23,6 +21,7 @@ import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -286,6 +285,29 @@ public class TranspileUtil {
     public static PsiPrimitiveType createPrimitiveType(Class<?> klass) {
         NncUtils.requireTrue(klass.isPrimitive());
         return elementFactory.createPrimitiveType(klass.getName());
+    }
+
+    public static void forEachCapturedTypePairs(PsiType psiType, Type type, BiConsumer<PsiCapturedWildcardType, CapturedType> action) {
+        switch (type) {
+            case CapturedType capturedType -> {
+                if(psiType instanceof PsiCapturedWildcardType psiCapturedWildcardType)
+                    action.accept(psiCapturedWildcardType, capturedType);
+            }
+            case UncertainType uncertainType -> {
+                var psiWildcardType = (PsiWildcardType) psiType;
+                if(psiWildcardType.isSuper())
+                    forEachCapturedTypePairs(psiWildcardType.getSuperBound(), uncertainType.getLowerBound(), action);
+                else
+                    forEachCapturedTypePairs(psiWildcardType.getExtendsBound(), uncertainType.getUnderlyingType(), action);
+            }
+            case ClassType classType -> {
+                var psiClassType = (PsiClassType) psiType;
+                for (int i = 0; i < classType.getTypeArguments().size(); i++) {
+                    forEachCapturedTypePairs(psiClassType.getParameters()[i], classType.getTypeArguments().get(i), action);
+                }
+            }
+            default -> {}
+        }
     }
 
     public static PsiClassType createClassType(Class<?> klass) {

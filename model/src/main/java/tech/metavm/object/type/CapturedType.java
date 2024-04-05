@@ -2,6 +2,8 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.CapturedTypeKey;
@@ -10,7 +12,9 @@ import tech.metavm.object.type.rest.dto.CapturedTypeParam;
 import java.util.Set;
 
 @EntityType("捕获类型")
-public class CapturedType extends Type implements ITypeVariable {
+public class CapturedType extends Type implements ITypeVariable, AfterRemovalAware {
+
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
     @EntityField("范围")
     private CapturedTypeScope scope;
@@ -98,5 +102,10 @@ public class CapturedType extends Type implements ITypeVariable {
     @Override
     protected void getCapturedTypes(Set<CapturedType> capturedTypes) {
         capturedTypes.add(this);
+    }
+
+    @Override
+    public void afterRemoval(IEntityContext context) {
+        DEBUG_LOGGER.info("CapturedType.afterRemoval called");
     }
 }

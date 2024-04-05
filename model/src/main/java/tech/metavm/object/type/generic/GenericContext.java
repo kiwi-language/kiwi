@@ -123,11 +123,6 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
     }
 
     private ClassType getNew(ClassType template, List<? extends Type> typeArguments) {
-        if (parent != null) {
-            var t = parent.getNew(template, typeArguments);
-            if (t != null)
-                return t;
-        }
         return parameterizedTypes.computeIfAbsent(template, k -> new HashMap<>()).get(typeArguments);
     }
 
@@ -141,6 +136,12 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
     }
 
     public ClassType getExisting(ClassType template, List<? extends Type> typeArguments) {
+        if(parent != null && parent.getEntityContext().containsEntity(template)
+                && NncUtils.allMatch(typeArguments, typeArg -> parent.getEntityContext().containsEntity(typeArg))) {
+            var found = parent.getExisting(template, typeArguments);
+            if(found != null)
+                return found;
+        }
         var existing = getNew(template, typeArguments);
         if (existing != null)
             return existing;
@@ -174,6 +175,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         entityContext.tryBind(flow);
         parameterizedFlows.computeIfAbsent(flow.getEffectiveHorizontalTemplate(),
                 k -> new HashMap<>()).put(flow.getTypeArguments(), flow);
+        CompositeTypeEventRegistry.notifyFlowCreated(flow);
     }
 
     public ClassType load(ClassType template, List<? extends Type> typeArguments) {
@@ -198,9 +200,9 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
 
     public void add(ClassType classType) {
         var template = classType.getEffectiveTemplate();
-        if (template == null) {
+        if (template == null)
             return;
-        }
+        CompositeTypeEventRegistry.notifyTypeCreated(classType);
         parameterizedTypes.computeIfAbsent(template, k -> new HashMap<>()).put(classType.getTypeArguments(), classType);
         entityContext.tryBind(classType);
         if (typeFactory.isPutTypeSupported()) {

@@ -50,6 +50,8 @@ public class TypeResolverImpl implements TypeResolver {
 
     private final Map<ClassType, PsiClass> psiClassMap = new HashMap<>();
 
+    private final Map<PsiCapturedWildcardType, CapturedType> capturedTypeMap = new IdentityHashMap<>();
+
     private final IEntityContext context;
 
     private static final Map<PsiClassType, Supplier<ClassType>> STANDARD_CLASSES = Map.ofEntries(
@@ -119,7 +121,7 @@ public class TypeResolverImpl implements TypeResolver {
             case PsiClassType classType -> resolveClassType(classType, stage);
             case PsiWildcardType wildcardType -> resolveWildcardType(wildcardType, stage);
             case PsiArrayType arrayType -> resolveArrayType(arrayType, stage);
-            case PsiCapturedWildcardType capturedWildcardType -> resolveWildcardType(capturedWildcardType.getWildcard(), stage);
+            case PsiCapturedWildcardType capturedWildcardType -> resolveCapturedType(capturedWildcardType, stage);
             case null, default -> throw new InternalException("Invalid PsiType: " + psiType);
         };
     }
@@ -150,6 +152,11 @@ public class TypeResolverImpl implements TypeResolver {
                 );
             }
         }
+    }
+
+    private Type resolveCapturedType(PsiCapturedWildcardType capturedWildcardType, ResolutionStage stage) {
+        return requireNonNull(capturedTypeMap.get(capturedWildcardType),
+                () -> "Captured type not specified for " + capturedWildcardType.getContext().getText());
     }
 
     private Type resolveClassType(PsiClassType classType, ResolutionStage stage) {
@@ -405,6 +412,11 @@ public class TypeResolverImpl implements TypeResolver {
     @Override
     public void ensureCodeGenerated(ClassType classType) {
         processClassType(classType, DEFINITION);
+    }
+
+    @Override
+    public void mapCapturedType(PsiCapturedWildcardType psiCapturedWildcardType, CapturedType type) {
+        capturedTypeMap.put(psiCapturedWildcardType, type);
     }
 
     private void processClassType(ClassType metaClass, final ResolutionStage stage) {

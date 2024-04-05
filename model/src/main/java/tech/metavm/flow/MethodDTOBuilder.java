@@ -28,6 +28,7 @@ public class MethodDTOBuilder {
     private List<ParameterDTO> parameters = new ArrayList<>();
     private List<String> capturedTypeIds = new ArrayList<>();
     private List<String> capturedCompositeTypeIds = new ArrayList<>();
+    private List<String> capturedFlowIds = new ArrayList<>();
     private int state = MetadataState.READY.code();
     private String id;
     private Long tmpId;
@@ -76,6 +77,11 @@ public class MethodDTOBuilder {
 
     public MethodDTOBuilder capturedCompositeTypeIds(List<String> capturedCompositeTypeIds) {
         this.capturedCompositeTypeIds = capturedCompositeTypeIds;
+        return this;
+    }
+
+    public MethodDTOBuilder capturedFlowIds(List<String> capturedFlowIds) {
+        this.capturedFlowIds = capturedFlowIds;
         return this;
     }
 
@@ -157,6 +163,7 @@ public class MethodDTOBuilder {
                 List.of(),
                 capturedTypeIds,
                 capturedCompositeTypeIds,
+                capturedFlowIds,
                 false,
                 state,
                 new MethodParam(

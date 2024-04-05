@@ -74,7 +74,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @ChildEntity("捕获类型列表")
     private final ChildArray<CapturedType> capturedTypes = addChild(new ChildArray<>(CapturedType.class), "capturedTypes");
     @ChildEntity("私有流程列表")
-    private final ChildArray<Flow> privateFlows = addChild(new ChildArray<>(Flow.class), "privateFlows");
+    private final ChildArray<Flow> capturedFlows = addChild(new ChildArray<>(Flow.class), "capturedFlows");
     @ChildEntity("捕获的复合类型列表")
     private final ChildArray<Type> capturedCompositeTypes = addChild(new ChildArray<>(Type.class), "capturedCompositeTypes");
 
@@ -184,6 +184,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                 NncUtils.map(typeArguments, serContext::getId),
                 NncUtils.map(capturedTypes, serContext::getId),
                 NncUtils.map(capturedCompositeTypes, serContext::getId),
+                NncUtils.map(capturedFlows, serContext::getId),
                 isTemplate(),
                 getState().code(),
                 getParam(includeCode, serContext)
@@ -198,8 +199,9 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public void clearContent() {
         clearNodes();
-        privateFlows.clear();
+        capturedFlows.clear();
         capturedTypes.clear();
+        capturedCompositeTypes.clear();
     }
 
     public void clearNodes() {
@@ -237,6 +239,13 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @Override
     public @NotNull String getName() {
         return name;
+    }
+
+    public String getNameWithTypeArguments() {
+        if(NncUtils.allMatch(typeArguments, t -> t instanceof TypeVariable tv && tv.getGenericDeclaration() == this))
+            return name;
+        else
+            return name + "<" + NncUtils.join(typeArguments, Type::getName) + ">";
     }
 
     @Override
@@ -464,6 +473,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         this.capturedCompositeTypes.resetChildren(capturedCompositeTypes);
     }
 
+    public void setCapturedFlows(List<Flow> capturedFlows) {
+        this.capturedFlows.resetChildren(capturedFlows);
+    }
+
     public @NotNull FunctionType getType() {
         return type;
     }
@@ -525,6 +538,14 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         return capturedTypes.toList();
     }
 
+    public Collection<Type> getCapturedCompositeTypes() {
+        return capturedCompositeTypes.toList();
+    }
+
+    public Collection<Flow> getCapturedFlows() {
+        return capturedFlows.toList();
+    }
+
     @Override
     public int getCapturedTypeIndex(CapturedType capturedType) {
         int index = 0;
@@ -543,6 +564,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public void addCapturedCompositeType(Type compositeType) {
         capturedCompositeTypes.addChild(compositeType);
+    }
+
+    public void addCapturedFlow(Flow flow) {
+        capturedFlows.addChild(flow);
     }
 
     public ResolutionStage getStage() {

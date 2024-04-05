@@ -2,6 +2,7 @@ package tech.metavm.manufacturing.utils;
 
 import tech.metavm.entity.EntityType;
 import tech.metavm.lang.NumberUtils;
+import tech.metavm.lang.SystemUtils;
 
 import javax.annotation.Nullable;
 import java.util.Date;
@@ -21,6 +22,7 @@ public class Utils {
     }
 
     public static <T> T findRequired(Iterable<? extends T> iterable, Predicate<? super T> predicate) {
+        SystemUtils.print(iterable);
         T t = find(iterable, predicate);
         if (t != null) {
             return t;

@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 import javassist.util.proxy.ProxyObject;
 import tech.metavm.object.instance.core.Id;
@@ -9,6 +10,7 @@ import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,20 +67,37 @@ public class EntityProxyFactory {
 
     public final static IdentitySet<Object> DUMMIES = new IdentitySet<>();
 
-    public static Object makeDummy(Class<?> type) {
+    public static Object makeDummy(Class<?> type, Object extra) {
         Class<?> proxyClass = getProxyClass(type);
         try {
-            var dummy = ReflectionUtils.getUnsafe().allocateInstance(proxyClass);
+            var dummy = (ProxyObject) ReflectionUtils.getUnsafe().allocateInstance(proxyClass);
             DUMMIES.add(dummy);
+            dummy.setHandler(new DummyHandler(extra));
             return dummy;
         } catch (InstantiationException e) {
             throw new RuntimeException("fail to create proxy instance", e);
         }
     }
 
+    public static boolean isDummy(Object object) {
+        return object instanceof ProxyObject proxyObject && proxyObject.getHandler() instanceof DummyHandler;
+    }
+
+    public static Object getDummyExtra(Object object) {
+        return ((DummyHandler) ((ProxyObject) object).getHandler()).extra();
+    }
+
+    private record DummyHandler(Object extra) implements MethodHandler {
+
+        @Override
+            public Object invoke(Object self, Method thisMethod, Method proceed, Object[] args) throws InvocationTargetException, IllegalAccessException {
+                return proceed.invoke(self, args);
+            }
+        }
+
     public static <T extends Entity> T makeEntityDummy(Class<T> type, Id id) {
         try {
-            ProxyObject proxyInstance = (ProxyObject) makeDummy(type);
+            ProxyObject proxyInstance = (ProxyObject) makeDummy(type, id);
             FIELD_ID.set(proxyInstance, id);
             FIELD_PERSISTED.set(proxyInstance, true);
             return type.cast(proxyInstance);

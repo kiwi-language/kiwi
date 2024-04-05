@@ -180,6 +180,14 @@ public class SubstitutorV2 extends CopyVisitor {
         };
     }
 
+//    @Override
+//    public Element visitCompositeType(CompositeType type) {
+//        var copy = (CompositeType) super.visitCompositeType(type);
+//        if(!entityRepository.containsEntity(copy))
+//            entityRepository.bind(copy);
+//        return copy;
+//    }
+
     @Override
     protected @Nullable Object getExistingCopy(Object object) {
         return existingCopies.get(object);
@@ -288,6 +296,10 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy.addCapturedType((CapturedType) copy(capturedType));
             for (NodeRT node : flow.getRootScope().getNodes())
                 copy.getRootScope().addNode((NodeRT) copy(node));
+            for (Type capturedCompositeType : flow.getCapturedCompositeTypes())
+                copy.addCapturedCompositeType((Type) copy(capturedCompositeType));
+            for (Flow capturedFlow : flow.getCapturedFlows())
+                copy.addCapturedFlow((Flow) copy(capturedFlow));
         }
     }
 
@@ -347,8 +359,12 @@ public class SubstitutorV2 extends CopyVisitor {
                 check();
             entityRepository.rebind(copy);
             return copy;
-        } else
-            return super.visitClassType(type);
+        } else {
+            var copy = (ClassType) super.visitClassType(type);
+//            if(copy.isParameterized() && parameterizedTypeRepository.getExisting(copy.getTemplate(), copy.getTypeArguments()) == null)
+//                parameterizedTypeRepository.add(copy);
+            return copy;
+        }
     }
 
 }

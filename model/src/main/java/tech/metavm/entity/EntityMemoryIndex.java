@@ -99,6 +99,10 @@ public class EntityMemoryIndex {
         }
 
         public List<T> selectByKey(List<Object> values) {
+            for (Entry<T> e : index) {
+                if(e.object() instanceof Entity entity &&  "03c6ce0200-01c6ce021c03b8bf0200".equals(entity.getStringId()))
+                    System.out.println("Found");
+            }
             var key = new Key(values);
             //noinspection unchecked
             return index.subSet(new Entry<>(key, null), new Entry<>(key, (T) MAX_OBJECT)).stream().map(Entry::object).toList();

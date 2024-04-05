@@ -174,7 +174,6 @@ public class FlowManager extends EntityContextFactoryBean {
 //        }
         if (!declarationOnly)
             saveContent(flowDTO, flow, context);
-        Flows.retransformFlowIfRequired(flow, context);
         flow.check();
         return flow;
     }
@@ -287,6 +286,7 @@ public class FlowManager extends EntityContextFactoryBean {
                     initNodes(flow, context);
             } else
                 saveNodes(flowDTO, flow, context);
+            Flows.retransformFlowIfRequired(flow, context);
 //        if (flowDTO.horizontalInstances() != null) {
 //            for (FlowDTO inst : flowDTO.horizontalInstances()) {
 //                saveContent(inst, context.getFlow(inst.getRef()), context);
@@ -728,7 +728,7 @@ public class FlowManager extends EntityContextFactoryBean {
                                 null,
                                 field.getName(),
                                 field.getCode(),
-                                field.getType(),
+                                Types.tryUncapture(field.getType(), CompositeTypeFacadeImpl.fromContext(context)),
                                 cond,
                                 null,
                                 callable
@@ -737,7 +737,7 @@ public class FlowManager extends EntityContextFactoryBean {
             } else {
                 parameters.add(parameter);
                 parameter.setName(field.getName());
-                parameter.setType(field.getType());
+                parameter.setType(Types.tryUncapture(field.getType(), CompositeTypeFacadeImpl.fromContext(context)));
                 parameter.setCondition(cond);
             }
         }

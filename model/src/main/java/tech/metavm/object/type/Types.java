@@ -160,6 +160,43 @@ public class Types {
         };
     }
 
+    public static Type tryUncapture(Type type, CompositeTypeFacade compositeTypeFacade) {
+        return switch (type) {
+            case CapturedType capturedType -> capturedType.getUncertainType();
+            case ClassType classType -> {
+                if (classType.isParameterized()) {
+                    yield compositeTypeFacade.getParameterizedType(
+                            classType.getTemplate(),
+                            NncUtils.map(classType.getTypeArguments(), arg -> tryUncapture(arg, compositeTypeFacade)),
+                            classType.getStage(),
+                            new MockDTOProvider()
+                    );
+                } else
+                    yield classType;
+            }
+            case ArrayType arrayType -> compositeTypeFacade.getArrayType(
+                    tryUncapture(arrayType.getElementType(), compositeTypeFacade),
+                    arrayType.getKind(),
+                    null
+            );
+            case UnionType unionType -> compositeTypeFacade.getUnionType(
+                    NncUtils.mapUnique(unionType.getMembers(), t -> tryUncapture(t, compositeTypeFacade)),
+                    null
+            );
+            case IntersectionType intersectionType -> compositeTypeFacade.getIntersectionType(
+                    NncUtils.mapUnique(intersectionType.getTypes(), t -> tryUncapture(t, compositeTypeFacade)),
+                    null
+            );
+            case FunctionType functionType -> compositeTypeFacade.getFunctionType(
+                    NncUtils.map(functionType.getParameterTypes(), t -> tryUncapture(t, compositeTypeFacade)),
+                    tryUncapture(functionType.getReturnType(), compositeTypeFacade),
+                    null
+            );
+            case TypeVariable typeVariable -> typeVariable;
+            default -> type;
+        };
+    }
+
     public static ClassType getTypeType(TypeTag tag) {
         return switch (tag) {
             case CLASS -> StandardTypes.getClassType(ClassType.class);

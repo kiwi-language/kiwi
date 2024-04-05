@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import javassist.util.proxy.ProxyObject;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
+import tech.metavm.flow.Flow;
 import tech.metavm.flow.Function;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
@@ -524,6 +525,31 @@ public class EntityUtils {
             return new HashSet<>();
         }
     }
+
+    public static String getEntityDesc(Object entity) {
+        if(entity instanceof Flow flow)
+            return flow.getNameWithTypeArguments();
+        if(entity instanceof ReadonlyArray<?> array)
+            return getRealType(array.getClass()).getSimpleName();
+        if(entity instanceof tech.metavm.object.type.Type type)
+            return getRealType(type.getClass()).getSimpleName() + "-" + type.getName();
+        return entity.toString();
+    }
+
+    public static String getEntityPath(Object entity) {
+        if(entity instanceof Entity e) {
+            var list = new LinkedList<Entity>();
+            var e1 = e;
+            while (e1 != null) {
+                list.addFirst(e1);
+                e1 = e1.getParentEntity();
+            }
+            return NncUtils.join(list, EntityUtils::getEntityDesc, "/");
+        }
+        else
+            return getEntityDesc(entity);
+    }
+
 
     public static Object getParent(Object entity) {
         return entity instanceof Entity e ? e.getParentEntity() : null;

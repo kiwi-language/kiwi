@@ -44,7 +44,7 @@ public class MethodGenerator {
                            VisitorBase visitor) {
         this.method = method;
         this.typeResolver = typeResolver;
-        this.compositeTypeFacade = new MyCompositeTypeFacade(compositeTypeFacade);
+        this.compositeTypeFacade = compositeTypeFacade; //new MyCompositeTypeFacade(compositeTypeFacade);
         expressionResolver = new ExpressionResolver(this, variableTable, typeResolver,
                 this.compositeTypeFacade,
                 parameterizedFlowProvider,
@@ -604,6 +604,10 @@ public class MethodGenerator {
                 null, nextName("ClearArray"), null,
                 scope().getLastNode(), scope(), Values.expression(array)
         ));
+    }
+
+    public CompositeTypeFacade getCompositeTypeFacade() {
+        return compositeTypeFacade;
     }
 
     private static final class ScopeInfo {

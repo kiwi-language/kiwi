@@ -4,7 +4,7 @@ import tech.metavm.util.IdentitySet;
 
 public abstract class GraphVisitor extends VoidInstanceVisitor {
 
-    private final IdentitySet<Instance> visited = new IdentitySet<>();
+    protected final IdentitySet<Instance> visited = new IdentitySet<>();
     public int numCalls;
 
     private final VoidInstanceVisitor noRepeatVisitor = new VoidInstanceVisitor() {

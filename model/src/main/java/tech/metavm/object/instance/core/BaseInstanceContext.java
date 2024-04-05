@@ -467,6 +467,15 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return anyChange;
     }
 
+    protected boolean onRemove(DurableInstance instance) {
+        boolean anyChange = false;
+        for(var listener : listeners) {
+            if(listener.onRemove(instance))
+                anyChange = true;
+        }
+        return anyChange;
+    }
+
     protected void onPatchBuild() {
         for (ContextListener listener : listeners) {
             listener.onPatchBuild();
