@@ -421,4 +421,20 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         ensureLoaded();
         return elements.removeIf(filter);
     }
+
+    @Override
+    protected void writeTree(TreeWriter treeWriter) {
+        ensureLoaded();
+        treeWriter.writeLine(getType().getName());
+        treeWriter.indent();
+        if(isChildArray()) {
+            for (Instance element : elements)
+                element.writeTree(treeWriter);
+        }
+        else {
+            for (Instance element : elements)
+                treeWriter.writeLine(element.getTitle());
+        }
+        treeWriter.deIndent();
+    }
 }

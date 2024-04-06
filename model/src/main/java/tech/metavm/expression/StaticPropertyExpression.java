@@ -26,7 +26,7 @@ public class StaticPropertyExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         try(var serContext = SerializeContext.enter()) {
             if(serContext.isIncludeExpressionType()) {
                 serContext.writeType(property.getDeclaringType());

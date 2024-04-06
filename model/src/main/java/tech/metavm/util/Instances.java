@@ -1,8 +1,10 @@
 package tech.metavm.util;
 
+import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.entity.ReadonlyList;
 import tech.metavm.entity.StandardTypes;
+import tech.metavm.entity.natives.ListNative;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.type.*;
@@ -154,6 +156,41 @@ public class Instances {
         if (value instanceof Date date)
             return Instances.timeInstance(date.getTime(), getTypeFunc);
         return null;
+    }
+
+    public static String getInstanceDetailedDesc(Instance instance) {
+        if(instance instanceof ClassInstance clsInst && clsInst.getType().isList()) {
+            var listNative = new ListNative(clsInst);
+            var array = listNative.toArray();
+            return clsInst.getType().getName() + " [" + NncUtils.join(array, Instances::getInstanceDesc) + "]";
+        }
+        else
+            return getInstanceDesc(instance);
+    }
+
+    public static String getInstanceDesc(Instance instance) {
+        if(instance instanceof DurableInstance d && d.getMappedEntity() != null)
+            return EntityUtils.getEntityDesc(d.getMappedEntity());
+        else
+            return instance.toString();
+    }
+
+    public static String getInstancePath(Instance instance) {
+        if (instance instanceof DurableInstance d) {
+            if(d.getMappedEntity() != null)
+                return EntityUtils.getEntityPath(d.getMappedEntity());
+            else {
+                var path = new LinkedList<DurableInstance>();
+                var i = d;
+                while (i != null) {
+                    path.addFirst(i);
+                    i = i.getParent();
+                }
+                return NncUtils.join(path, Instances::getInstanceDesc, "->");
+            }
+        }
+        else
+            return getInstanceDesc(instance);
     }
 
     @SuppressWarnings("unchecked")

@@ -39,8 +39,8 @@ public class FunctionExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
-        return function.code() + "(" + NncUtils.join(arguments, arg -> arg.buildSelf(symbolType), ", ") + ")";
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
+        return function.code() + "(" + NncUtils.join(arguments, arg -> arg.buildSelf(symbolType, relaxedCheck), ", ") + ")";
     }
 
     @Override

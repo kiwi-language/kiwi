@@ -22,8 +22,8 @@ public class AsExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
-        return expression.buildSelf(symbolType) + " as " + alias;
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
+        return expression.buildSelf(symbolType, relaxedCheck) + " as " + alias;
     }
 
     @Override

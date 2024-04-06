@@ -46,7 +46,7 @@ public class PropertyExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         String fieldsExpr = switch (symbolType) {
             case ID -> idVarName(requireNonNull(property.tryGetId()));
             case NAME -> property.getName();
@@ -55,7 +55,7 @@ public class PropertyExpression extends Expression {
             return fieldsExpr;
         }
         else {
-            String instanceExpr = instance.build(symbolType, instance.precedence() > precedence());
+            String instanceExpr = instance.build(symbolType, instance.precedence() > precedence(), relaxedCheck);
             return instanceExpr + "." + fieldsExpr;
         }
     }

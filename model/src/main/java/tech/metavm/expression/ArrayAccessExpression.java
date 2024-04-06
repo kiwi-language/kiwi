@@ -28,9 +28,9 @@ public class ArrayAccessExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
-        return array.build(symbolType, false)
-                + "[" + index.build(symbolType, false) + "]";
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
+        return array.build(symbolType, false, relaxedCheck)
+                + "[" + index.build(symbolType, false, relaxedCheck) + "]";
     }
 
     @Override

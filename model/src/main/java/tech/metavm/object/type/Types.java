@@ -125,7 +125,7 @@ public class Types {
 
     public static Type tryCapture(Type type, CapturedTypeScope scope, CompositeTypeFacade compositeTypeFacade) {
         return switch (type) {
-            case UncertainType uncertainType -> new CapturedType(uncertainType, scope);
+            case UncertainType uncertainType -> new CapturedType(uncertainType, scope, NncUtils.randomNonNegative());
             case ClassType classType -> {
                 if (classType.isParameterized()) {
                     yield compositeTypeFacade.getParameterizedType(
@@ -158,6 +158,15 @@ public class Types {
             case TypeVariable typeVariable -> typeVariable;
             default -> type;
         };
+    }
+
+    public static Collection<Type> getComponentTypes(Type type) {
+        if (type instanceof ClassType classType) {
+            if (classType.isParameterized())
+                return classType.getTypeArguments();
+        } else if (type instanceof CompositeType compositeType)
+            return compositeType.getComponentTypes();
+        return List.of();
     }
 
     public static Type tryUncapture(Type type, CompositeTypeFacade compositeTypeFacade) {

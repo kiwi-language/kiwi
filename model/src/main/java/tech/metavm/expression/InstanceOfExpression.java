@@ -24,9 +24,9 @@ public class InstanceOfExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         try(var serContext = SerializeContext.enter()) {
-            return operand.build(symbolType, false) + " instanceof "
+            return operand.build(symbolType, false, relaxedCheck) + " instanceof "
                     + Constants.CONSTANT_ID_PREFIX + serContext.getId(targetType);
         }
     }

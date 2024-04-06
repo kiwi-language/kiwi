@@ -13,10 +13,7 @@ import tech.metavm.entity.ChildList;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.ResolutionStage;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.ValueFormatter;
+import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.system.RegionConstants;
@@ -109,8 +106,8 @@ public class Compiler {
                     psiClassTypes.forEach(t -> typeResolver.resolve(t, stage));
                 }
             }
-            var generatedTypes = typeResolver.getGeneratedTypes();
-            var generatedPFlows = typeResolver.getGeneratedParameterizedFlows();
+            var generatedTypes = NncUtils.exclude(typeResolver.getGeneratedTypes(), this::isCapturedByParameterizedFlow);
+            var generatedPFlows = NncUtils.exclude(typeResolver.getGeneratedParameterizedFlows(), this::isCapturedByParameterizedFlow);
             long elapsed = System.currentTimeMillis() - start;
             LOGGER.info("Compilation done in {} ms. {} types generated", elapsed, generatedTypes.size());
             deploy(generatedTypes, generatedPFlows, typeResolver);
@@ -125,6 +122,18 @@ public class Compiler {
             LOGGER.info(profiler.finish(false, true).output());
         }
 
+    }
+
+    private boolean isCapturedByParameterizedFlow(Type type) {
+        for (CapturedType capturedType : type.getCapturedTypes()) {
+            if(capturedType.getScope() instanceof Flow flow && flow.isParameterized())
+                return true;
+        }
+        return false;
+    }
+
+    private boolean isCapturedByParameterizedFlow(Flow flow) {
+        return flow.isParameterized() && NncUtils.anyMatch(flow.getTypeArguments(), this::isCapturedByParameterizedFlow);
     }
 
     private void deploy(Collection<Type> generatedTypes,

@@ -99,6 +99,11 @@ public class FunctionType extends CompositeType {
     }
 
     @Override
+    public String getTypeDesc() {
+        return "(" + NncUtils.join(parameterTypes, Type::getTypeDesc) + ")" + "->" + returnType.getTypeDesc();
+    }
+
+    @Override
     public List<Type> getComponentTypes() {
         return NncUtils.append(getParameterTypes(), returnType);
     }

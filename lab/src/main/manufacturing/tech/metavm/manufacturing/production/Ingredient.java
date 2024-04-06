@@ -102,11 +102,11 @@ public class Ingredient {
         this.attritionRate = attritionRate;
     }
 
-    public PickMethod getPickingMethod() {
+    public PickMethod getPickMethod() {
         return pickMethod;
     }
 
-    public void setPickingMethod(PickMethod pickMethod) {
+    public void setPickMethod(PickMethod pickMethod) {
         this.pickMethod = pickMethod;
     }
 
@@ -118,11 +118,11 @@ public class Ingredient {
         this.feedingProcess = feedingProcess;
     }
 
-    public FeedType getFeedingType() {
+    public FeedType getFeedType() {
         return feedType;
     }
 
-    public void setFeedingType(FeedType feedType) {
+    public void setFeedType(FeedType feedType) {
         this.feedType = feedType;
     }
 
@@ -142,11 +142,11 @@ public class Ingredient {
         this.mandatory = mandatory;
     }
 
-    public FeedBoundType getFeedingBoundType() {
+    public FeedBoundType getFeedBoundType() {
         return feedBoundType;
     }
 
-    public void setFeedingBoundType(FeedBoundType feedBoundType) {
+    public void setFeedBoundType(FeedBoundType feedBoundType) {
         this.feedBoundType = feedBoundType;
     }
 

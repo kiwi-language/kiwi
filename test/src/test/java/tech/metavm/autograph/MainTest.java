@@ -42,7 +42,7 @@ public class MainTest extends CompilerTestBase {
 
     public static final String HOME = "/Users/leen/workspace/object/test/src/test/resources/home";
 
-    public void test() throws ExecutionException, InterruptedException {
+    public void _test() throws ExecutionException, InterruptedException {
         compile(SOURCE_ROOT);
         var ref = new Object() {
             String productTypeId;

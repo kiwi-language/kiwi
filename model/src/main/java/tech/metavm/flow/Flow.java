@@ -73,10 +73,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     private @Nullable ChildArray<Flow> templateInstances;
     @ChildEntity("捕获类型列表")
     private final ChildArray<CapturedType> capturedTypes = addChild(new ChildArray<>(CapturedType.class), "capturedTypes");
-    @ChildEntity("私有流程列表")
-    private final ChildArray<Flow> capturedFlows = addChild(new ChildArray<>(Flow.class), "capturedFlows");
-    @ChildEntity("捕获的复合类型列表")
-    private final ChildArray<Type> capturedCompositeTypes = addChild(new ChildArray<>(Type.class), "capturedCompositeTypes");
+//    @ChildEntity("私有流程列表")
+//    private final ChildArray<Flow> capturedFlows = addChild(new ChildArray<>(Flow.class), "capturedFlows");
+//    @ChildEntity("捕获的复合类型列表")
+//    private final ChildArray<Type> capturedCompositeTypes = addChild(new ChildArray<>(Type.class), "capturedCompositeTypes");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);
@@ -183,8 +183,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                 NncUtils.get(horizontalTemplate, serContext::getId),
                 NncUtils.map(typeArguments, serContext::getId),
                 NncUtils.map(capturedTypes, serContext::getId),
-                NncUtils.map(capturedCompositeTypes, serContext::getId),
-                NncUtils.map(capturedFlows, serContext::getId),
+List.of(),
+List.of(),
+//                NncUtils.map(capturedCompositeTypes, serContext::getId),
+//                NncUtils.map(capturedFlows, serContext::getId),
                 isTemplate(),
                 getState().code(),
                 getParam(includeCode, serContext)
@@ -199,9 +201,9 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public void clearContent() {
         clearNodes();
-        capturedFlows.clear();
+//        capturedFlows.clear();
         capturedTypes.clear();
-        capturedCompositeTypes.clear();
+//        capturedCompositeTypes.clear();
     }
 
     public void clearNodes() {
@@ -241,11 +243,15 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         return name;
     }
 
+    public String getQualifiedName() {
+        return getNameWithTypeArguments();
+    }
+
     public String getNameWithTypeArguments() {
         if(NncUtils.allMatch(typeArguments, t -> t instanceof TypeVariable tv && tv.getGenericDeclaration() == this))
             return name;
         else
-            return name + "<" + NncUtils.join(typeArguments, Type::getName) + ">";
+            return name + "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">";
     }
 
     @Override
@@ -465,16 +471,19 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public void setCapturedTypes(List<CapturedType> capturedTypes) {
-        capturedTypes.forEach(ct -> ct.setScope(this));
+        capturedTypes.forEach(ct -> {
+            if(ct.getScope() != this)
+                ct.setScope(this);
+        });
         this.capturedTypes.resetChildren(capturedTypes);
     }
 
     public void setCapturedCompositeTypes(List<Type> capturedCompositeTypes) {
-        this.capturedCompositeTypes.resetChildren(capturedCompositeTypes);
+//        this.capturedCompositeTypes.resetChildren(capturedCompositeTypes);
     }
 
     public void setCapturedFlows(List<Flow> capturedFlows) {
-        this.capturedFlows.resetChildren(capturedFlows);
+//        this.capturedFlows.resetChildren(capturedFlows);
     }
 
     public @NotNull FunctionType getType() {
@@ -539,11 +548,13 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public Collection<Type> getCapturedCompositeTypes() {
-        return capturedCompositeTypes.toList();
+        return List.of();
+//        return capturedCompositeTypes.toList();
     }
 
     public Collection<Flow> getCapturedFlows() {
-        return capturedFlows.toList();
+        return List.of();
+//        return capturedFlows.toList();
     }
 
     @Override
@@ -559,15 +570,17 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public void addCapturedType(CapturedType capturedType) {
+        if(capturedTypes.contains(capturedType))
+            throw new InternalException("Captured type already present: " + EntityUtils.getEntityDesc(capturedType));
         capturedTypes.addChild(capturedType);
     }
 
     public void addCapturedCompositeType(Type compositeType) {
-        capturedCompositeTypes.addChild(compositeType);
+//        capturedCompositeTypes.addChild(compositeType);
     }
 
     public void addCapturedFlow(Flow flow) {
-        capturedFlows.addChild(flow);
+//        capturedFlows.addChild(flow);
     }
 
     public ResolutionStage getStage() {
@@ -586,13 +599,26 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                         + ")"
                         + ": " + getReturnType().getName()
         );
-        getRootScope().writeCode(writer);
+        if(isRootScopePresent())
+            getRootScope().writeCode(writer);
+        else
+            writer.write(";");
     }
 
     public String getText() {
         CodeWriter writer = new CodeWriter();
         writeCode(writer);
         return writer.toString();
+    }
+
+    @Override
+    public String getScopeName() {
+        return getNameWithTypeArguments();
+    }
+
+    @Override
+    public String getTypeDesc() {
+        return getNameWithTypeArguments();
     }
 
 }

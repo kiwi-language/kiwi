@@ -83,7 +83,7 @@ public abstract class TypeFactory {
             if(capturedType == null) {
                 var param = typeDTO.getCapturedTypeParam();
                 var uncertainType = (UncertainType) batch.get(param.uncertainTypeId());
-                capturedType = new CapturedType(uncertainType, DummyCapturedTypeScope.INSTANCE);
+                capturedType = new CapturedType(uncertainType, DummyCapturedTypeScope.INSTANCE, param.key());
                 if(typeDTO.tmpId() != null)
                     capturedType.setTmpId(typeDTO.tmpId());
                 context.bind(capturedType);

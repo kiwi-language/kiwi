@@ -26,7 +26,7 @@ public class NodeExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         return switch (symbolType) {
             case ID -> idVarName(node.getId());
             case NAME -> node.getName();

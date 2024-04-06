@@ -445,6 +445,23 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
+    protected void writeTree(TreeWriter treeWriter) {
+        ensureLoaded();
+        treeWriter.writeLine(getType().getName() + " " + getTitle());
+        treeWriter.indent();
+        for (InstanceField field : fields) {
+            treeWriter.writeLine(field.getName() + ":");
+            treeWriter.indent();
+            if(field.getField().isChild())
+                field.getValue().writeTree(treeWriter);
+            else
+                treeWriter.writeLine(field.getValue().getTitle());
+            treeWriter.deIndent();
+        }
+        treeWriter.deIndent();
+    }
+
+    @Override
     public FieldValue toFieldValueDTO() {
         ensureLoaded();
         if (isValue() || isList()) {

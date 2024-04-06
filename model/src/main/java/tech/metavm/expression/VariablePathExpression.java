@@ -32,8 +32,8 @@ public class VariablePathExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
-        return qualifier.build(symbolType, false) + "." + field.buildSelf(symbolType);
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
+        return qualifier.build(symbolType, false, relaxedCheck) + "." + field.buildSelf(symbolType, relaxedCheck);
     }
 
     @Override

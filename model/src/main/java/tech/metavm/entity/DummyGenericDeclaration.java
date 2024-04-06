@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.common.RefDTO;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.TypeVariable;
 
@@ -35,6 +34,11 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
 
     @Override
     public String getCode() {
+        return "DUMMY";
+    }
+
+    @Override
+    public String getTypeDesc() {
         return "DUMMY";
     }
 

@@ -5,9 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.ContextAttributeKey;
+import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.LockMode;
 import tech.metavm.entity.natives.CallContext;
+import tech.metavm.entity.natives.ListNative;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
@@ -221,7 +223,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (found != null) {
             if (found.isRemoved())
                 throw new InternalException(
-                        String.format("Can not get instance '%s' because it's already removed", found));
+                        String.format("Can not get instance '%s' because it's already removed",
+                                found.getMappedEntity() != null ? EntityUtils.getEntityDesc(found.getMappedEntity()) : found));
             return found;
         } else {
             buffer(id);
@@ -399,12 +402,14 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void saveViews() {
-        NncUtils.enhancedForEach(instanceMap.values(), value -> {
-            if (value instanceof ClassInstance classInstance) {
-                if (classInstance.isView() && !classInstance.isList() && !classInstance.isRemoved())
-                    saveView(classInstance);
-            }
-        });
+        try (var ignored = getProfiler().enter("saveViews")) {
+            NncUtils.enhancedForEach(instanceMap.values(), value -> {
+                if (value instanceof ClassInstance classInstance) {
+                    if (classInstance.isView() && !classInstance.isList() && !classInstance.isRemoved())
+                        saveView(classInstance);
+                }
+            });
+        }
     }
 
     private void saveView(ClassInstance view) {
@@ -453,8 +458,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void onContextInitializeId() {
-        for (ContextListener listener : listeners) {
-            listener.afterContextIntIds();
+        try(var ignored = getProfiler().enter("onContextInitializeId")) {
+            for (ContextListener listener : listeners) {
+                listener.afterContextIntIds();
+            }
         }
     }
 
@@ -640,7 +647,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public void batchBind(Collection<DurableInstance> instances) {
         instances.forEach(this::checkForBind);
-        for (var inst : crawNewInstances(instances)) {
+        for (var inst : doCraw(instances).newInstances) {
             if (inst.tryGetPhysicalId() == null)
                 add(inst);
         }
@@ -655,14 +662,21 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                         "See issue 0001"));
     }
 
-    protected void craw() {
+    /**
+     * @return non-persisted orphans
+     */
+    protected List<DurableInstance> craw() {
         try (var entry = getProfiler().enter("craw")) {
-            var newInstances = crawNewInstances(this);
-            entry.addMessage("numNewInstances", newInstances.size());
-            for (var inst : newInstances) {
+            var crawResult = doCraw(this);
+            var added = crawResult.newInstances;
+            entry.addMessage("numNewInstances", added.size());
+            for (var inst : added) {
                 if (inst.tryGetPhysicalId() == null && !containsInstance(inst))
                     add(inst);
             }
+            var visited = crawResult.visited;
+//            return NncUtils.filter(this, i -> i.isNew() && !visited.contains(i));
+            return List.of();
         }
     }
 
@@ -717,9 +731,15 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             return (T) attributes.get(key);
     }
 
-    private List<DurableInstance> crawNewInstances(Iterable<DurableInstance> instances) {
+    private record CrawResult(
+            Collection<DurableInstance> newInstances,
+            Set<Instance> visited
+    ) {
+    }
+
+    private CrawResult doCraw(Iterable<DurableInstance> instances) {
 //        try (var entry = getProfiler().enter("crawNewInstances")) {
-            var result = new ArrayList<DurableInstance>();
+            var added = new ArrayList<DurableInstance>();
             var visitor = new GraphVisitor() {
 
                 @Override
@@ -731,7 +751,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                         if (parent != null && parent.containsInstance(instance))
                             return null;
                         if (!containsInstance(instance))
-                            result.add(instance);
+                            added.add(instance);
                         super.visitDurableInstance(instance);
                     }
                     return null;
@@ -739,11 +759,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
             };
             for (var instance : instances) {
-                if (instance.isInitialized() && !instance.isRemoved())
+                if (instance.isRoot() && instance.isInitialized() && !instance.isRemoved())
                     visitor.visit(instance);
             }
 //            entry.addMessage("numCalls", visitor.numCalls);
-            return result;
+            return new CrawResult(added, visitor.getVisited());
 //        }
     }
 

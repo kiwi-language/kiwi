@@ -66,9 +66,9 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
     }
 
     @Override
-    public void setCopySource(Object template) {
+    public void setCopySource(Object copySource) {
         NncUtils.requireNull(this.copySource);
-        var typeVarTemplate = (TypeVariable) template;
+        var typeVarTemplate = (TypeVariable) copySource;
 //        NncUtils.requireTrue(typeVarTemplate.getGenericDeclaration() == genericDeclaration.getTemplate());
         this.copySource = typeVarTemplate;
     }
@@ -157,6 +157,11 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
         var origStage = this.stage;
         this.stage = stage;
         return origStage;
+    }
+
+    @Override
+    public String getTypeDesc() {
+        return genericDeclaration.getTypeDesc() + "_" + name;
     }
 
     @Override

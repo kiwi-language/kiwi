@@ -67,4 +67,9 @@ public abstract class FunctionInstance extends Instance {
     public Object toSearchConditionValue() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    protected void writeTree(TreeWriter treeWriter) {
+        treeWriter.writeLine("function");
+    }
 }

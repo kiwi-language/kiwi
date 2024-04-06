@@ -44,8 +44,8 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     }
 
     @Override
-    public void setCopySource(Object template) {
-        this.template = (DirectFieldMapping) template;
+    public void setCopySource(Object copySource) {
+        this.template = (DirectFieldMapping) copySource;
     }
 
     @Override

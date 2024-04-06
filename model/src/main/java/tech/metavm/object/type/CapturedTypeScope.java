@@ -17,4 +17,6 @@ public interface CapturedTypeScope {
 
     void addCapturedType(CapturedType capturedType);
 
+    String getScopeName();
+
 }

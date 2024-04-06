@@ -52,6 +52,7 @@ public enum ErrorCode {
     NOT_A_PHYSICAL_INSTANCE(413, "对象'{}'不是物理对象"),
     NOT_A_CLASS_INSTANCE(414, "对象'{}'不是类对象"),
     DELETE_NON_DURABLE_INSTANCE(415, "无法删除非持久化对象"),
+    INCORRECT_INSTANCE_FIELD_VALUE(416, "字段'{}'非法，原因:{}"),
 
     // Flow相关错误
     FLOW_NOT_FOUND(401, "流程{}不存在"),

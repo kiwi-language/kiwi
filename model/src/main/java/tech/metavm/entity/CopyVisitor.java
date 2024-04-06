@@ -75,6 +75,10 @@ public class CopyVisitor extends ElementVisitor<Element> {
         return (Element) defaultCopy(element, getExistingCopy(element));
     }
 
+    protected Object getCopy(Object original) {
+        return map.get(original);
+    }
+
     protected Object getValue(Object value, Consumer<Object> setter) {
         if (descendants.contains(value)) {
             var existing = map.get(value);

@@ -16,7 +16,7 @@ public class ExpressionPlaceholder extends Expression {
     }
 
     @Override
-    protected String buildSelf(VarType symbolType) {
+    protected String buildSelf(VarType symbolType, boolean relaxedCheck) {
         throw new UnsupportedOperationException();
     }
 

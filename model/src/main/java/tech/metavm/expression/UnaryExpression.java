@@ -29,9 +29,9 @@ public class UnaryExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         boolean operandParenthesized = operand.precedence() >= precedence();
-        String operandExpr = operand.build(symbolType, operandParenthesized);
+        String operandExpr = operand.build(symbolType, operandParenthesized, relaxedCheck);
         if(operator.isPrefix()) {
             return operator.operator() + " " + operandExpr;
         }

@@ -345,19 +345,24 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     @Override
-    public void setCopySource(@Nullable Object template) {
-        this.copySource = (Field) template;
+    public void setCopySource(@Nullable Object copySource) {
+        this.copySource = (Field) copySource;
     }
 
     @Override
     public void onChange(ClassInstance instance, IEntityContext context) {
-        if (isStatic()) {
+        if (_static) {
             var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
             var value = instance.getField(staticValueField);
             if (!getType().isInstance(value)) {
                 throw new BusinessException(ErrorCode.STATIC_FIELD_CAN_NOT_BE_NULL, getQualifiedName());
             }
         }
+    }
+
+    @Override
+    public boolean isChangeAware() {
+        return _static;
     }
 
     @Override

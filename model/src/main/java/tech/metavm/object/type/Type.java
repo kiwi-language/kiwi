@@ -87,6 +87,10 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return name;
     }
 
+    public String getTypeDesc() {
+        return name;
+    }
+
     public void setName(String name) {
         this.name = name;
     }

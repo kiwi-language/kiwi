@@ -110,10 +110,6 @@ public class InstanceContext extends BufferingInstanceContext {
     protected void finishInternal() {
         if (finished)
             throw new IllegalStateException("Already finished");
-        if (DebugEnv.DEBUG_LOG_ON && DebugEnv.inputNode != null) {
-            DEBUG_LOGGER.info("Copy source of inputNode is removed: {}",
-                    DebugEnv.isCopySourceRemoved(DebugEnv.inputNode));
-        }
         var patchContext = new PatchContext();
         var patch = buildPatch(null, patchContext);
         processRemoval(patch);
@@ -147,40 +143,52 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private Patch buildPatch(@Nullable Patch prevPatch, PatchContext patchContext) {
-        patchContext.incBuild();
-        onPatchBuild();
-        saveViews();
-        craw();
-        check();
-        initIds();
-        var bufferedTrees = getBufferedTrees();
-        var difference = buildDifference(bufferedTrees.keySet());
-        var entityChange = difference.getEntityChange();
-        var refChange = difference.getReferenceChange();
-        var treeChanges = difference.getTreeChanges();
-        onContextInitializeId();
-        if (prevPatch != null) {
-            prevPatch.entityChange.getAttributes().forEach((key, value) -> {
-                //noinspection rawtypes,unchecked
-                entityChange.setAttribute((DifferenceAttributeKey) key, value);
-            });
+        try( var ignored = getProfiler().enter("buildPatch")) {
+            patchContext.incBuild();
+            onPatchBuild();
+            saveViews();
+            var nonPersistedOrphans = craw();
+            check();
+            initIds();
+            var bufferedTrees = getBufferedTrees();
+            var difference = buildDifference(bufferedTrees.keySet());
+            var entityChange = difference.getEntityChange();
+            var refChange = difference.getReferenceChange();
+            var treeChanges = difference.getTreeChanges();
+            onContextInitializeId();
+            if (prevPatch != null) {
+                prevPatch.entityChange.getAttributes().forEach((key, value) -> {
+                    //noinspection rawtypes,unchecked
+                    entityChange.setAttribute((DifferenceAttributeKey) key, value);
+                });
+            }
+            return processChanges(new Patch(bufferedTrees, entityChange, treeChanges, refChange), nonPersistedOrphans, patchContext);
         }
-        return processChanges(new Patch(bufferedTrees, entityChange, treeChanges, refChange), patchContext);
     }
 
-    private void removeOrphans(Patch patch) {
+    private boolean removeOrphans(Patch patch, List<DurableInstance> nonPersistedOrphans) {
         var orphans = new ArrayList<DurableInstance>();
         for (var version : patch.entityChange.deletes()) {
             var instance = Objects.requireNonNull(getSelfBuffered(version.id()));
             if (!instance.isRemoved())
                 orphans.add(instance);
         }
-        if (!orphans.isEmpty())
+//        for (DurableInstance instance : nonPersistedOrphans) {
+//            if (!instance.isRemoved())
+//                orphans.add(instance);
+//        }
+        if (!orphans.isEmpty()) {
             batchRemove(orphans);
+            return true;
+        }
+        else
+            return false;
     }
 
     private void check() {
-        forEachInitialized(i -> i.accept(new ForestChecker()));
+        try(var ignored = getProfiler().enter("check")) {
+            forEachInitialized(i -> i.accept(new ForestChecker()));
+        }
     }
 
     @Override
@@ -282,11 +290,28 @@ public class InstanceContext extends BufferingInstanceContext {
 
         final LinkedList<InstanceParentRef> ancestorRefs = new LinkedList<>();
         final IdentitySet<Instance> visited = new IdentitySet<>();
+        final Map<Instance, String> pathMap = new IdentityHashMap<>();
 
         @Override
         public Void visitDurableInstance(DurableInstance instance) {
-            if (!visited.add(instance))
-                throw new BusinessException(ErrorCode.MULTI_PARENT, instance);
+            if(DebugEnv.DEBUG_LOG_ON) {
+                var refs = new LinkedList<InstanceParentRef>();
+                ancestorRefs.forEach(refs::addFirst);
+                String path = NncUtils.join(
+                        refs,
+                        r -> r.field() != null ?
+                                Instances.getInstanceDesc(r.parent()) + "." + r.field().getName()
+                                : Instances.getInstanceDesc(r.parent()),
+                        "->"
+                );
+                var existingPath = pathMap.put(instance, path);
+                if(existingPath != null) {
+                    DEBUG_LOGGER.info("Duplicate path detected. {} and {}", existingPath, path);
+                }
+            }
+            if (!visited.add(instance)) {
+                throw new BusinessException(ErrorCode.MULTI_PARENT, Instances.getInstanceDesc(instance));
+            }
             if (!ancestorRefs.isEmpty()) {
                 var parentRef = ancestorRefs.peek();
                 if (!Objects.equals(parentRef.parent(), instance.getParent()) ||
@@ -365,12 +390,14 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private ContextDifference buildDifference(Collection<Tree> bufferedTrees) {
-        ContextDifference difference =
-                new ContextDifference(appId, id -> internalGet(id).getType().getId());
-        difference.diff(headContext.trees(), bufferedTrees);
-        difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedTrees));
+        try(var ignored = getProfiler().enter("buildDifference")) {
+            ContextDifference difference =
+                    new ContextDifference(appId, id -> internalGet(id).getType().getId());
+            difference.diff(headContext.trees(), bufferedTrees);
+            difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedTrees));
 //        computeVirtualUpdates(difference.getEntityChange());
-        return difference;
+            return difference;
+        }
     }
 
 //    private void computeVirtualUpdates(EntityChange<InstancePO> change) {
@@ -395,26 +422,34 @@ public class InstanceContext extends BufferingInstanceContext {
 //        }
 //    }
 
-    private Patch processChanges(Patch patch, PatchContext patchContext) {
-        var ref = new Object() {
-            boolean changed = false;
-        };
+    private Patch processChanges(Patch patch, List<DurableInstance> nonPersistedOrphans, PatchContext patchContext) {
         try (var ignored = getProfiler().enter("processChanges")) {
+            var ref = new Object() {
+                boolean changed = false;
+            };
+//        if(removeOrphans(patch, nonPersistedOrphans))
+//            ref.changed = true;
             patch.entityChange.forEachInsertOrUpdate(v -> {
                 if (patchContext.changeNotified.add(v.id())) {
-                    if (onChange(internalGet(v.id())))
+                    if (onChange(internalGet(v.id()))) {
+                        if(DebugEnv.DEBUG_LOG_ON && !ref.changed)
+                            DEBUG_LOGGER.info("insert/update change detected {}, numBuilds: {}", Instances.getInstancePath(internalGet(v.id())), patchContext.numBuild);
                         ref.changed = true;
+                    }
                 }
             }, true);
             patch.entityChange.deletes().forEach(v -> {
                 if (patchContext.changeNotified.add(v.id())) {
                     if (onRemove(internalGet(v.id()))) {
+                        if(DebugEnv.DEBUG_LOG_ON && !ref.changed)
+                            DEBUG_LOGGER.info("removal change detected {}, numBuilds: {}", Instances.getInstancePath(internalGet(v.id())), patchContext.numBuild);
                         ref.changed = true;
                     }
                 }
             });
+            return ref.changed ? buildPatch(patch, patchContext) : patch;
         }
-        return ref.changed ? buildPatch(patch, patchContext) : patch;
+
     }
 
     private String getInstanceDesc(DurableInstance instance) {
@@ -443,7 +478,7 @@ public class InstanceContext extends BufferingInstanceContext {
             if(DebugEnv.target != null) {
                 DEBUG_LOGGER.info("final check. bug detected: {}", DebugEnv.isBugPresent(DebugEnv.target));
             }
-            removeOrphans(patch);
+            removeOrphans(patch, List.of());
             var entityChange = patch.entityChange;
             if (NncUtils.isEmpty(entityChange.deletes()))
                 return;
@@ -453,13 +488,15 @@ public class InstanceContext extends BufferingInstanceContext {
 
                 @Override
                 public Void visitDurableInstance(DurableInstance instance) {
-                    path.addLast(getInstancePath(instance));
+                    if(DebugEnv.DEBUG_LOG_ON)
+                        path.addLast(getInstancePath(instance));
                     if (instance.isRemoved()) {
-                        if(DebugEnv.target != null) {
+                        if(DebugEnv.DEBUG_LOG_ON && DebugEnv.target != null) {
                             DEBUG_LOGGER.info("On exception check. bug detected: {}", DebugEnv.isBugPresent(DebugEnv.target));
                         }
-                        DEBUG_LOGGER.info(String.join("->", path));
-                        throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, instance);
+                        if(DebugEnv.DEBUG_LOG_ON)
+                            DEBUG_LOGGER.info(String.join("->", path));
+                        throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(instance));
                     }
                     try {
                         numCalls++;
@@ -481,7 +518,8 @@ public class InstanceContext extends BufferingInstanceContext {
                         return null;
 //                        return super.visitDurableInstance(instance);
                     } finally {
-                        path.removeLast();
+                        if(DebugEnv.DEBUG_LOG_ON)
+                            path.removeLast();
                     }
                 }
             };
@@ -520,34 +558,36 @@ public class InstanceContext extends BufferingInstanceContext {
     public static final int MAX_ITERATION = 5;
 
     private IdentityHashMap<Tree, Instance> getBufferedTrees() {
-        IdentityHashMap<Tree, Instance> trees = new IdentityHashMap<>();
-        Set<Instance> processed = new IdentitySet<>();
-        int it = 0;
-        for (; ; ) {
-            if (it++ >= MAX_ITERATION) {
-                throw new InternalException(
-                        String.format("getBufferedEntityPOs reached max number of iteration (%d)", MAX_ITERATION));
-            }
-            boolean added = false;
-            for (var instance : this) {
-                if (instance.isInitialized() && instance.isRoot()
-                        && !instance.isRemoved() && !instance.isEphemeral()
-                        && (instance.isNew() || !instance.isLoadedFromCache()) && !processed.contains(instance)) {
-                    var tree = new Tree(
-                            instance.getPhysicalId(),
-                            instance.getVersion(),
-                            instance.getNextNodeId(),
-                            InstanceOutput.toMessage(instance)
-                    );
-                    trees.put(tree, instance);
-                    processed.add(instance);
-                    added = true;
+        try(var ignored = getProfiler().enter("getBufferedTrees")) {
+            IdentityHashMap<Tree, Instance> trees = new IdentityHashMap<>();
+            Set<Instance> processed = new IdentitySet<>();
+            int it = 0;
+            for (; ; ) {
+                if (it++ >= MAX_ITERATION) {
+                    throw new InternalException(
+                            String.format("getBufferedEntityPOs reached max number of iteration (%d)", MAX_ITERATION));
                 }
+                boolean added = false;
+                for (var instance : this) {
+                    if (instance.isInitialized() && instance.isRoot()
+                            && !instance.isRemoved() && !instance.isEphemeral()
+                            && (instance.isNew() || !instance.isLoadedFromCache()) && !processed.contains(instance)) {
+                        var tree = new Tree(
+                                instance.getPhysicalId(),
+                                instance.getVersion(),
+                                instance.getNextNodeId(),
+                                InstanceOutput.toMessage(instance)
+                        );
+                        trees.put(tree, instance);
+                        processed.add(instance);
+                        added = true;
+                    }
+                }
+                if (!added)
+                    break;
             }
-            if (!added)
-                break;
+            return trees;
         }
-        return trees;
     }
 
     private Set<ReferencePO> getBufferedReferences(Collection<Tree> trees) {

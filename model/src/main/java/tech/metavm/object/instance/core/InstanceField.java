@@ -1,8 +1,10 @@
 package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.type.Field;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
 
 public class InstanceField {
@@ -60,8 +62,15 @@ public class InstanceField {
         } else {
             if(value.isNull() && !field.isReady())
                 return value;
-            else
-                return value.convert(field.getType());
+            else {
+                try {
+                    return value.convert(field.getType());
+                }
+                catch (BusinessException e) {
+                    throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
+                            field.getQualifiedName(), e.getMessage());
+                }
+            }
         }
     }
 

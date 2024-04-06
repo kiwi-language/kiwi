@@ -59,7 +59,7 @@ public abstract class Value extends Element {
     public abstract Value copy();
 
     public String getText() {
-        return expression.build(VarType.NAME);
+        return expression.build(VarType.NAME,  true);
     }
 
     @Override

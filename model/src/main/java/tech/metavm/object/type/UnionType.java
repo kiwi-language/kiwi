@@ -150,6 +150,11 @@ public class UnionType extends CompositeType {
     }
 
     @Override
+    public String getTypeDesc() {
+        return NncUtils.join(members, Type::getTypeDesc, "|");
+    }
+
+    @Override
     public List<Type> getComponentTypes() {
         return members.toList();
     }

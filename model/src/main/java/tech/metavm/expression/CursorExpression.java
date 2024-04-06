@@ -28,7 +28,7 @@ public class CursorExpression extends Expression{
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         return alias;
     }
 

@@ -1,15 +1,22 @@
 package tech.metavm.object.type.generic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityUtils;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.*;
+import tech.metavm.util.DebugEnv;
 import tech.metavm.util.NncUtils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class TypeSubstitutor extends ElementVisitor<Type> {
+
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
     private final Map<Type, Type> variableMap;
     private final CompositeTypeFacade compositeTypeFacade;
@@ -20,22 +27,27 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
                            CompositeTypeFacade compositeTypeFacade,
                            DTOProvider dtoProvider) {
         this.compositeTypeFacade = compositeTypeFacade;
-        this.variableMap = NncUtils.zip(typeVariables, typeArguments);
+        this.variableMap = new HashMap<>(NncUtils.zip(typeVariables, typeArguments));
         this.dtoProvider = dtoProvider;
     }
 
-    public void addMapping(TypeVariable from, Type to) {
+    public void addMapping(Type from, Type to) {
         variableMap.put(from, to);
+        if(DebugEnv.DEBUG_LOG_ON)
+            DEBUG_LOGGER.info("added mapping: {} -> {}", EntityUtils.getEntityDesc(from), EntityUtils.getEntityDesc(to));
     }
 
     @Override
     public Type visitType(Type type) {
-        return variableMap.getOrDefault(type, type);
-    }
-
-    @Override
-    public Type visitCapturedType(CapturedType type) {
-        return super.visitCapturedType(type);
+//        if(type instanceof CapturedType capturedType && capturedType.getScope().getScopeName().equals("find") && variableMap.size() == 2) {
+//            System.out.println("Caught");
+//        }
+        var subst =  variableMap.getOrDefault(type, type);
+        if(DebugEnv.DEBUG_LOG_ON) {
+            DEBUG_LOGGER.info("substituting type {} to {}", EntityUtils.getEntityDesc(type), EntityUtils.getEntityDesc(subst));
+            logVariableMap();
+        }
+        return subst;
     }
 
     @Override
@@ -80,10 +92,27 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
             return subst;
         var paramTypes = NncUtils.map(functionType.getParameterTypes(), t -> t.accept(this));
         var returnType = functionType.getReturnType().accept(this);
+        if(DebugEnv.DEBUG_LOG_ON && functionType.isCaptured()) {
+            DEBUG_LOGGER.info("substituting function type: {}, id: {}", EntityUtils.getEntityDesc(functionType), functionType.getStringId());
+            logVariableMap();
+            DEBUG_LOGGER.info("current parameter types: {}", NncUtils.join(functionType.getParameterTypes(), EntityUtils::getEntityDesc));
+            DEBUG_LOGGER.info("substituted parameter types: {}", NncUtils.join(paramTypes, EntityUtils::getEntityDesc));
+            DEBUG_LOGGER.info("current return type: {}", EntityUtils.getEntityDesc(functionType.getReturnType()));
+            DEBUG_LOGGER.info("substituted return type: {}", EntityUtils.getEntityDesc(returnType));
+        }
         return compositeTypeFacade.getFunctionType(
                 paramTypes, returnType,
                 dtoProvider.getTmpId(new FunctionTypeKey(NncUtils.map(paramTypes, Entity::getStringId), returnType.getStringId()))
         );
+    }
+
+    private void logVariableMap() {
+        if(DebugEnv.DEBUG_LOG_ON) {
+            DEBUG_LOGGER.info("variable map:");
+            for (var entry : variableMap.entrySet()) {
+                DEBUG_LOGGER.info("key: {}, value: {}", EntityUtils.getEntityDesc(entry.getKey()), EntityUtils.getEntityDesc(entry.getValue()));
+            }
+        }
     }
 
     @Override
@@ -105,9 +134,16 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         if (type.getTypeArguments().isEmpty())
             return type;
         else {
+            var substitutedTypeArgs = NncUtils.map(type.getTypeArguments(), t -> t.accept(this));
+            if(DebugEnv.DEBUG_LOG_ON && type.isCaptured()) {
+                DEBUG_LOGGER.info("substituting class type: {}", EntityUtils.getEntityDesc(type));
+                logVariableMap();
+                DEBUG_LOGGER.info("current type arguments: {}", NncUtils.join(type.getTypeArguments(), EntityUtils::getEntityDesc));
+                DEBUG_LOGGER.info("substituted type arguments: {}", NncUtils.join(substitutedTypeArgs, EntityUtils::getEntityDesc));
+            }
             return compositeTypeFacade.getParameterizedType(
                     type.getEffectiveTemplate(),
-                    NncUtils.map(type.getTypeArguments(), t -> t.accept(this)),
+                    substitutedTypeArgs,
                     ResolutionStage.DECLARATION,
                     dtoProvider
             );

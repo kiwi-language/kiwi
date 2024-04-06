@@ -2,6 +2,9 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.util.IdentitySet;
 
+import java.util.Collections;
+import java.util.Set;
+
 public abstract class GraphVisitor extends VoidInstanceVisitor {
 
     protected final IdentitySet<Instance> visited = new IdentitySet<>();
@@ -31,4 +34,7 @@ public abstract class GraphVisitor extends VoidInstanceVisitor {
         return super.visitInstance(instance);
     }
 
+    public Set<Instance> getVisited() {
+        return Collections.unmodifiableSet(visited);
+    }
 }

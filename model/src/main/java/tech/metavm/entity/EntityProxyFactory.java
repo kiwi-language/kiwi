@@ -4,7 +4,6 @@ import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 import javassist.util.proxy.ProxyObject;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.util.IdentitySet;
 import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
 
@@ -65,13 +64,10 @@ public class EntityProxyFactory {
         }
     }
 
-    public final static IdentitySet<Object> DUMMIES = new IdentitySet<>();
-
     public static Object makeDummy(Class<?> type, Object extra) {
         Class<?> proxyClass = getProxyClass(type);
         try {
             var dummy = (ProxyObject) ReflectionUtils.getUnsafe().allocateInstance(proxyClass);
-            DUMMIES.add(dummy);
             dummy.setHandler(new DummyHandler(extra));
             return dummy;
         } catch (InstantiationException e) {

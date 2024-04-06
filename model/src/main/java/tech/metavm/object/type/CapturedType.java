@@ -1,18 +1,24 @@
 package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.CapturedTypeKey;
 import tech.metavm.object.type.rest.dto.CapturedTypeParam;
+import tech.metavm.util.DebugEnv;
+import tech.metavm.util.IdentitySet;
+import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 @EntityType("捕获类型")
-public class CapturedType extends Type implements ITypeVariable, AfterRemovalAware {
+public class CapturedType extends Type implements ITypeVariable, AfterRemovalAware, GenericElement {
 
     public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
@@ -22,12 +28,27 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
     @EntityField("不确定类型")
     private final UncertainType uncertainType;
 
-    public CapturedType(UncertainType uncertainType, CapturedTypeScope scope) {
+    private final long randomKey;
+
+    @ChildEntity("捕获流程列表")
+    private final ReadWriteArray<Flow> capturedFlows = addChild(new ReadWriteArray<>(Flow.class), "capturedFlows");
+
+    @ChildEntity("捕获复合类型列表")
+    private final ReadWriteArray<Type> capturedCompositeTypes = addChild(new ReadWriteArray<>(Type.class), "capturedCompositeTypes");
+
+    @CopyIgnore
+    @EntityField("复制来源")
+    private @Nullable CapturedType copySource;
+
+    public CapturedType(@NotNull UncertainType uncertainType, @NotNull CapturedTypeScope scope, long key) {
         super("CaptureOf" + uncertainType.getName(), null,
                 true, true, TypeCategory.CAPTURED);
         this.scope = scope;
         this.uncertainType = uncertainType;
+        this.randomKey = key;
         scope.addCapturedType(this);
+        if (DebugEnv.DEBUG_LOG_ON)
+            DEBUG_LOGGER.info("Captured type created, scope: {}, key: {}", scope.getScopeName(), randomKey);
     }
 
     @Override
@@ -54,6 +75,22 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
         return uncertainType.getLowerBound();
     }
 
+    public void setCapturedFlows(List<Flow> capturedFlows) {
+        this.capturedFlows.reset(capturedFlows);
+    }
+
+    public void setCapturedCompositeTypes(List<Type> capturedCompositeTypes) {
+        this.capturedCompositeTypes.reset(capturedCompositeTypes);
+    }
+
+    public void addCapturedFlow(Flow flow) {
+        capturedFlows.add(flow);
+    }
+
+    public void addCapturedCompositeType(Type type) {
+        capturedCompositeTypes.add(type);
+    }
+
     @Override
     public boolean isCaptured() {
         return true;
@@ -69,19 +106,27 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
         return new CapturedTypeParam(
                 serializeContext.getId(scope),
                 serializeContext.getId(uncertainType),
-                scope.getCapturedTypeIndex(this)
+                scope.getCapturedTypeIndex(this),
+                randomKey
         );
     }
 
     public void setScope(CapturedTypeScope scope) {
-        if(this.scope != DummyCapturedTypeScope.INSTANCE)
+        if (this.scope != DummyCapturedTypeScope.INSTANCE)
             throw new IllegalStateException("Scope is already set");
         this.scope = scope;
         scope.addCapturedType(this);
+        if (DebugEnv.DEBUG_LOG_ON)
+            DEBUG_LOGGER.info("Set scope to {}, key: {}", scope.getScopeName(), randomKey);
     }
 
     public CapturedTypeScope getScope() {
         return scope;
+    }
+
+    @Override
+    public String getTypeDesc() {
+        return scope.getScopeName() + "_" + name;
     }
 
     @Override
@@ -106,6 +151,46 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
 
     @Override
     public void afterRemoval(IEntityContext context) {
-        DEBUG_LOGGER.info("CapturedType.afterRemoval called");
+        List<Entity> removals = new ArrayList<>(capturedFlows);
+        removals.addAll(capturedCompositeTypes);
+        if (DebugEnv.DEBUG_LOG_ON) {
+            DEBUG_LOGGER.info("{}.afterRemoval called", EntityUtils.getEntityPath(this));
+            for (Entity removal : removals) {
+                boolean alreadyRemoved = context.isRemoved(removal);
+                DEBUG_LOGGER.info("Removing entity {}, already removed: {}",
+                        EntityUtils.getEntityDesc(removal) + "/" + removal.getStringId(), alreadyRemoved);
+                if (alreadyRemoved && removal instanceof Type removedType) {
+                    var capturedTypes = new IdentitySet<CapturedType>();
+                    for (Type componentType : Types.getComponentTypes(removedType)) {
+                        capturedTypes.addAll(componentType.getCapturedTypes());
+                    }
+                    DEBUG_LOGGER.info("Component captured types: {}", NncUtils.join(capturedTypes, EntityUtils::getEntityPath));
+                }
+            }
+        }
+        context.batchRemove(removals);
+    }
+
+    public long getRandomKey() {
+        return randomKey;
+    }
+
+    @Nullable
+    @Override
+    public CapturedType getCopySource() {
+        return copySource;
+    }
+
+    @Override
+    public void setCopySource(Object copySource) {
+        this.copySource = (CapturedType) copySource;
+    }
+
+    public Collection<Type> getCapturedCompositeTypes() {
+        return capturedCompositeTypes.toList();
+    }
+
+    public Collection<Flow> getCapturedFlows() {
+        return capturedFlows.toList();
     }
 }

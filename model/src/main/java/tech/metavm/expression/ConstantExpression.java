@@ -28,7 +28,7 @@ public class ConstantExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         if(value instanceof StringInstance stringInstance) {
             return "\"" + NncUtils.escape(stringInstance.getValue()) + "\"";
         }
@@ -36,7 +36,11 @@ public class ConstantExpression extends Expression {
             return primitiveInstance.getValue() + "";
         }
         else {
-            return Constants.CONSTANT_ID_PREFIX + NncUtils.requireNonNull(value.getInstanceIdString());
+            if(relaxedCheck)
+                return Constants.CONSTANT_ID_PREFIX + NncUtils.orElse(value.getInstanceIdString(), "<uninitializedId>");
+            else
+                return Constants.CONSTANT_ID_PREFIX + NncUtils.requireNonNull(value.getInstanceIdString());
+
         }
     }
 

@@ -286,7 +286,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public boolean onChange(Instance instance) {
         if (instance instanceof ClassInstance classInstance) {
             var entity = getEntity(Object.class, classInstance);
-            if (entity instanceof ChangeAware changeAware) {
+            if (entity instanceof ChangeAware changeAware && changeAware.isChangeAware()) {
                 changeAware.onChange(classInstance, this);
                 return true;
             }

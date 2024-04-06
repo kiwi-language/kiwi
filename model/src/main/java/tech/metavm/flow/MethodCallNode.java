@@ -64,6 +64,18 @@ public class MethodCallNode extends CallNode {
         }
     }
 
+    @Override
+    public Method getSubFlow() {
+        return (Method) super.getSubFlow();
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        var method = getSubFlow();
+        writer.write(method.getDeclaringType().getName() + "." + method.getNameWithTypeArguments()
+                + "(" + NncUtils.join(arguments, Argument::getText, ", ") + ")");
+    }
+
     private Method getMethod() {
         return (Method) super.getSubFlow();
     }

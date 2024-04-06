@@ -1400,6 +1400,14 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     @Override
+    public String getTypeDesc() {
+        if(isParameterized())
+            return Objects.requireNonNull(template).getName() + "<" + NncUtils.join(typeArguments, Type::getTypeDesc, ",") + ">";
+        else
+            return getName();
+    }
+
+    @Override
     public TypeKey getTypeKey() {
         return template != null ?
                 new ParameterizedTypeKey(template.getStringId(), NncUtils.map(typeArguments, Entity::getStringId))
@@ -1435,9 +1443,18 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         getMethodTable().rebuild();
     }
 
+    public void removeErrors(Element element) {
+        errors.removeIf(e -> e.getElement() == element);
+    }
+
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitClassType(this);
+    }
+
+    @Override
+    protected void getCapturedTypes(Set<CapturedType> capturedTypes) {
+        typeArguments.forEach(t -> t.getCapturedTypes(capturedTypes));
     }
 
     public ClassType findInClosure(long id) {
@@ -1460,13 +1477,18 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         saveMapping(context);
     }
 
+    @Override
+    public boolean isChangeAware() {
+        return !anonymous;
+    }
+
     public void saveMapping(IEntityContext context) {
         if (!(context instanceof DefContext) && shouldGenerateBuiltinMapping())
             MappingSaver.create(context).saveBuiltinMapping(this, true);
     }
 
     public boolean shouldGenerateBuiltinMapping() {
-        return isClass() && !isAnonymous();
+        return isClass() && !anonymous;
     }
 
     public void setDefaultMapping(@Nullable ObjectMapping mapping) {

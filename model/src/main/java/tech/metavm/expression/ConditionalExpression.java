@@ -46,10 +46,10 @@ public class ConditionalExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
-        return condition.build(symbolType, condition.precedence() > precedence())
-                + " ? " + trueValue.build(symbolType, trueValue.precedence() >= precedence())
-                + " : " + falseValue.build(symbolType, falseValue.precedence() >= precedence());
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
+        return condition.build(symbolType, condition.precedence() > precedence(), relaxedCheck)
+                + " ? " + trueValue.build(symbolType, trueValue.precedence() >= precedence(), relaxedCheck)
+                + " : " + falseValue.build(symbolType, falseValue.precedence() >= precedence(), relaxedCheck);
     }
 
     @Override

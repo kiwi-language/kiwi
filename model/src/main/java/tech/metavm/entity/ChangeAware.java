@@ -6,4 +6,8 @@ public interface ChangeAware {
 
     void onChange(ClassInstance instance, IEntityContext context);
 
+    default boolean isChangeAware() {
+        return true;
+    }
+
 }

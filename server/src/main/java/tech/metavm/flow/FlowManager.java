@@ -68,7 +68,7 @@ public class FlowManager extends EntityContextFactoryBean {
                             tryEndNode.getType(), context.getNullableType(StandardTypes.getThrowableType()))
                     .build();
             context.bind(tryEndNode);
-            Flows.retransformFlowIfRequired(scope.getFlow(), context);
+            afterFlowChange(scope.getFlow(), context);
             context.finish();
             try (var ignored = SerializeContext.enter()) {
                 return List.of(tryNode.toDTO(serContext), tryEndNode.toDTO(serContext));
@@ -85,7 +85,7 @@ public class FlowManager extends EntityContextFactoryBean {
                     branchNode, ClassTypeBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
                     scope);
             context.bind(mergeNode);
-            Flows.retransformFlowIfRequired(branchNode.getFlow(), context);
+            afterFlowChange(scope.getFlow(), context);
             context.finish();
             try (var ignored = SerializeContext.enter()) {
                 return List.of(branchNode.toDTO(serContext), mergeNode.toDTO(serContext));
@@ -286,7 +286,8 @@ public class FlowManager extends EntityContextFactoryBean {
                     initNodes(flow, context);
             } else
                 saveNodes(flowDTO, flow, context);
-            Flows.retransformFlowIfRequired(flow, context);
+            afterFlowChange(flow, context);
+//            Flows.retransformFlowIfRequired(flow, context);
 //        if (flowDTO.horizontalInstances() != null) {
 //            for (FlowDTO inst : flowDTO.horizontalInstances()) {
 //                saveContent(inst, context.getFlow(inst.getRef()), context);
@@ -379,8 +380,17 @@ public class FlowManager extends EntityContextFactoryBean {
                 throw BusinessException.flowNotFound(nodeDTO.flowId());
             }
             var node = createNode(nodeDTO, context.getScope(Id.parse(nodeDTO.scopeId())), context);
+            afterFlowChange(flow, context);
             context.finish();
             return node.toDTO(serContext);
+        }
+    }
+
+    private void afterFlowChange(Flow flow, IEntityContext context) {
+        Flows.retransformFlowIfRequired(flow, context);
+        try (var ignored1 = context.getProfiler().enter("Flow.check")) {
+            flow.analyze();
+            flow.check();
         }
     }
 
@@ -392,10 +402,11 @@ public class FlowManager extends EntityContextFactoryBean {
             }
             var node = NodeFactory.save(nodeDTO, scope, context);
             afterNodeChange(nodeDTO, node, context);
-            Flows.retransformFlowIfRequired(scope.getFlow(), context);
-            try (var ignored1 = context.getProfiler().enter("Flow.check")) {
-                node.getFlow().check();
-            }
+//            Flows.retransformFlowIfRequired(scope.getFlow(), context);
+//            try (var ignored1 = context.getProfiler().enter("Flow.check")) {
+//                node.getFlow().analyze();
+//                node.getFlow().check();
+//            }
             return node;
         }
     }
@@ -449,6 +460,7 @@ public class FlowManager extends EntityContextFactoryBean {
     public NodeDTO updateNode(NodeDTO nodeDTO) {
         try (var context = newContext(); var serContext = SerializeContext.enter()) {
             var node = updateNode(nodeDTO, context);
+            afterFlowChange(node.getFlow(), context);
             context.finish();
             return node.toDTO(serContext);
         }
@@ -465,10 +477,10 @@ public class FlowManager extends EntityContextFactoryBean {
         nodeDTO = beforeNodeChange(nodeDTO, node, scope, context);
         NodeFactory.save(nodeDTO, scope, context);
         afterNodeChange(nodeDTO, node, context);
-        Flows.retransformFlowIfRequired(scope.getFlow(), context);
-        try (var ignored = context.getProfiler().enter("Flow.check")) {
-            node.getFlow().check();
-        }
+//        Flows.retransformFlowIfRequired(scope.getFlow(), context);
+//        try (var ignored = context.getProfiler().enter("Flow.check")) {
+//            node.getFlow().check();
+//        }
         return node;
     }
 

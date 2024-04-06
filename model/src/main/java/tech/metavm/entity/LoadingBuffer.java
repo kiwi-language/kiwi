@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.object.instance.TreeNotFoundException;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
@@ -50,7 +51,8 @@ public class LoadingBuffer {
     public Tree getTree(Id id) {
         return NncUtils.requireNonNull(
                 tryGetTree(id),
-                () -> new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id)
+                TreeNotFoundException::new
+//                () -> new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id)
         );
     }
 

@@ -37,9 +37,9 @@ public class BinaryExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
-        String firstExpr = left.build(symbolType, left.precedence() > precedence());
-        String secondExpr = right.build(symbolType, right.precedence() >= precedence());
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
+        String firstExpr = left.build(symbolType, left.precedence() > precedence(), relaxedCheck);
+        String secondExpr = right.build(symbolType, right.precedence() >= precedence(), relaxedCheck);
         return firstExpr + " " + operator + " " + secondExpr;
     }
 

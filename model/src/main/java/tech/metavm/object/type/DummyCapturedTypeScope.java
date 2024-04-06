@@ -34,4 +34,9 @@ public enum DummyCapturedTypeScope implements CapturedTypeScope {
     @Override
     public void addCapturedType(CapturedType capturedType) {
     }
+
+    @Override
+    public String getScopeName() {
+        return "Dummy";
+    }
 }

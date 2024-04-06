@@ -146,4 +146,12 @@ public abstract class Instance {
 
     public abstract <R> void acceptChildren(InstanceVisitor<R> visitor);
 
+    public String getTree() {
+        var treeWriter = new TreeWriter();
+        writeTree(treeWriter);
+        return treeWriter.toString();
+    }
+
+    protected abstract void writeTree(TreeWriter treeWriter);
+
 }

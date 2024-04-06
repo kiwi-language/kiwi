@@ -11,7 +11,7 @@ public interface GenericElement {
 
     Object getCopySource();
 
-    void setCopySource(Object template);
+    void setCopySource(Object copySource);
 
     default GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
         return new GenericElementDTO(

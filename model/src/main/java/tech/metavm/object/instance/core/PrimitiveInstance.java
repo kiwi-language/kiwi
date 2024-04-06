@@ -100,4 +100,9 @@ public abstract class PrimitiveInstance extends Instance implements Comparable<P
         //noinspection unchecked
         return v1.compareTo(v2);
     }
+
+    @Override
+    protected void writeTree(TreeWriter treeWriter) {
+        treeWriter.writeLine(Objects.toString(getValue()));
+    }
 }

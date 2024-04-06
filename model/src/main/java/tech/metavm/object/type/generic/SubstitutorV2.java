@@ -1,5 +1,7 @@
 package tech.metavm.object.type.generic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.Id;
@@ -18,6 +20,8 @@ import java.util.Map;
 import static tech.metavm.object.type.ResolutionStage.*;
 
 public class SubstitutorV2 extends CopyVisitor {
+
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
     public static SubstitutorV2 create(Object root,
                                        List<TypeVariable> typeParameters,
@@ -85,7 +89,7 @@ public class SubstitutorV2 extends CopyVisitor {
             default -> throw new IllegalStateException("Unexpected root: " + root);
         };
         if (existingRoot != null) {
-            existingCopies.put(root, existingRoot);
+            addExistingCopy(root, existingRoot);
             EntityUtils.forEachDescendant(existingRoot, d -> {
                 var temp = d == existingRoot ? root : (
                         d instanceof GenericElement genericElement ? genericElement.getCopySource() : null
@@ -93,20 +97,28 @@ public class SubstitutorV2 extends CopyVisitor {
                 if (temp != null) {
                     var parentTemp = ((Entity) temp).getParentEntity();
                     if (existingRoot == d || parentTemp == null || existingCopies.containsKey(parentTemp)) {
-                        existingCopies.put(temp, d);
+                        addExistingCopy(temp, d);
                         var childMap = ((Entity) d).getChildMap();
                         var tempChildMap = ((Entity) temp).getChildMap();
                         childMap.forEach((field, child) -> {
                             var tempChild = tempChildMap.get(field);
                             if (tempChild != null
                                     && EntityUtils.getRealType(tempChild) == EntityUtils.getRealType(child.getClass()))
-                                existingCopies.put(tempChild, child);
+                                addExistingCopy(tempChild, child);
                         });
                     }
                 }
             });
         }
+//        if(root instanceof Flow flow && flow.getName().equals("findRequired")) {
+//            DEBUG_LOGGER.info("Substituting {}, with type arguments: {}", EntityUtils.getEntityDesc(root),
+//                    NncUtils.join(typeArguments, EntityUtils::getEntityDesc));
+//            existingCopies.forEach((s, t) -> {
+//                DEBUG_LOGGER.info("source: {}, target: {}", EntityUtils.getEntityDesc(s), EntityUtils.getEntityDesc(t));
+//            });
+//        }
     }
+
 
     private void addCopyTmpId(GenericElementDTO member) {
         if (member.getTemplateId() != null && member.getId() != null)
@@ -172,11 +184,18 @@ public class SubstitutorV2 extends CopyVisitor {
         return switch (reference) {
             case Type type -> substituteType(type);
             case Field field -> substituteField(field);
-            case Method method -> substituteMethod(method);
-            case Function function -> substituteFunction(function);
+            case Flow flow -> substituteFlow(flow);
             case Parameter parameter -> substituteParameter(parameter);
             case ObjectMapping objectMapping -> substituteObjectMapping(objectMapping);
             case null, default -> super.substituteReference(reference);
+        };
+    }
+
+    protected Flow substituteFlow(Flow flow) {
+        return switch (flow) {
+            case Method method -> substituteMethod(method);
+            case Function function -> substituteFunction(function);
+            default -> throw new IllegalStateException("Unexpected flow: " + flow);
         };
     }
 
@@ -289,11 +308,32 @@ public class SubstitutorV2 extends CopyVisitor {
             return super.visitFunction(function);
     }
 
+
+    private void addExistingCopy(Object original, Object copy) {
+        existingCopies.put(original, copy);
+//        onCopyAdded(original, copy);
+    }
+
+//    @Override
+//    protected void addCopy(Object original, Object copy) {
+//        super.addCopy(original, copy);
+//        onCopyAdded(original, copy);
+//    }
+
+//    private void onCopyAdded(Object original, Object copy) {
+//        if (original instanceof CapturedType capturedType)
+//            typeSubstitutor.addMapping(capturedType, (CapturedType) copy);
+//    }
+
     private void processFlowBody(Flow flow, Flow copy) {
         if (stage.isAfterOrAt(DEFINITION) && flow.isRootScopePresent()) {
             copy.clearContent();
-            for (CapturedType capturedType : flow.getCapturedTypes())
-                copy.addCapturedType((CapturedType) copy(capturedType));
+//            for (CapturedType capturedType : flow.getCapturedTypes()) {
+//                var ctCopy = (CapturedType) copy(capturedType);
+//                typeSubstitutor.addMapping(capturedType, ctCopy);
+//                copy.addCapturedType(ctCopy);
+//            }
+            copy.setCapturedTypes(NncUtils.map(flow.getCapturedTypes(), ct -> (CapturedType) copy(ct)));
             for (NodeRT node : flow.getRootScope().getNodes())
                 copy.getRootScope().addNode((NodeRT) copy(node));
             for (Type capturedCompositeType : flow.getCapturedCompositeTypes())
@@ -301,6 +341,27 @@ public class SubstitutorV2 extends CopyVisitor {
             for (Flow capturedFlow : flow.getCapturedFlows())
                 copy.addCapturedFlow((Flow) copy(capturedFlow));
         }
+    }
+
+    @Override
+    public Element visitCapturedType(CapturedType type) {
+        var copy = (CapturedType) getExistingCopy(type);
+        if (copy == null) {
+            copy = new CapturedType(
+                    (UncertainType) substituteType(type.getUncertainType()),
+                    (CapturedTypeScope) getCopy(type.getScope()),
+                    NncUtils.randomNonNegative()
+            );
+            copy.setCopySource(type);
+        }
+        addCopy(type, copy);
+        typeSubstitutor.addMapping(type, copy);
+        /*
+         TODO the substitution should be done after all captured types are copied because a composite type may depend on another captured type that is not yet copied.
+         */
+        copy.setCapturedCompositeTypes(NncUtils.map(type.getCapturedCompositeTypes(), this::substituteType));
+        copy.setCapturedFlows(NncUtils.map(type.getCapturedFlows(), this::substituteFlow));
+        return copy;
     }
 
     @Override

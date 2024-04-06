@@ -1,15 +1,18 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.IdInitializer;
 import tech.metavm.entity.LoadingBuffer;
 import tech.metavm.entity.Tree;
 import tech.metavm.entity.VersionSource;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexSource;
+import tech.metavm.object.instance.TreeNotFoundException;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.NncUtils;
 
@@ -55,10 +58,15 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     @Override
     protected void initializeInstance(DurableInstance instance) {
-        var tree = loadingBuffer.getTree(instance.tryGetId());
-        onTreeLoaded(tree);
-        var input = new InstanceInput(new ByteArrayInputStream(tree.data()), this::internalGet);
-        readInstance(input);
+        try {
+            var tree = loadingBuffer.getTree(instance.tryGetId());
+            onTreeLoaded(tree);
+            var input = new InstanceInput(new ByteArrayInputStream(tree.data()), this::internalGet);
+            readInstance(input);
+        }
+        catch (TreeNotFoundException e) {
+            throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getType().getName() + "-" + instance.getId());
+        }
     }
 
     protected void onTreeLoaded(Tree tree) {

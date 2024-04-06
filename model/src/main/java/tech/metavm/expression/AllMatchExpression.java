@@ -36,10 +36,10 @@ public class AllMatchExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         return "allmatch(" +
-                getArray().build(symbolType, false) + ", "
-                + condition.build(symbolType, false)
+                getArray().build(symbolType, false, relaxedCheck) + ", "
+                + condition.build(symbolType, false, relaxedCheck)
                 + ")";
     }
 

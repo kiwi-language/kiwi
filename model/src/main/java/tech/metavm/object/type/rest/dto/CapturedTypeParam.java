@@ -3,7 +3,8 @@ package tech.metavm.object.type.rest.dto;
 public record CapturedTypeParam(
         String scopeId,
         String uncertainTypeId,
-        int index
+        int index,
+        long key
 ) implements TypeParam {
 
     @Override

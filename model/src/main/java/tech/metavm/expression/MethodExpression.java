@@ -38,8 +38,8 @@ public class MethodExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
-        return self.buildSelf(symbolType) + "." + method.getName()
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
+        return self.buildSelf(symbolType, relaxedCheck) + "." + method.getName()
                 + "(" + NncUtils.join(method.getParameters(), Parameter::getName, ", ") + ")";
     }
 

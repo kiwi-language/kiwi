@@ -106,9 +106,9 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     }
 
     @Override
-    public void setCopySource(Object template) {
+    public void setCopySource(Object copySource) {
         NncUtils.requireNull(this.copySource);
-        this.copySource = (Parameter) template;
+        this.copySource = (Parameter) copySource;
     }
 
     public @Nullable Value getCondition() {

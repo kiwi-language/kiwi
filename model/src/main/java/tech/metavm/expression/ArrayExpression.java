@@ -46,8 +46,8 @@ public class ArrayExpression extends Expression {
     }
 
     @Override
-    public String buildSelf(VarType symbolType) {
-        return "[" + NncUtils.join(expressions, expr -> expr.buildSelf(symbolType), ", ") + "]";
+    public String buildSelf(VarType symbolType, boolean relaxedCheck) {
+        return "[" + NncUtils.join(expressions, expr -> expr.buildSelf(symbolType, relaxedCheck), ", ") + "]";
     }
 
     @Override

@@ -26,6 +26,8 @@ public interface GenericDeclaration {
 
     @Nullable String getCode();
 
+    String getTypeDesc();
+
     String getStringId();
 
     String getInternalName(@Nullable Flow current);

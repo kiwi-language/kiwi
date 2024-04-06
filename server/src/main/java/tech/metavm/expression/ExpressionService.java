@@ -74,7 +74,7 @@ public class ExpressionService extends EntityContextFactoryBean {
 
     private void parseExpression0(Expression expression, List<InstanceSearchItemDTO> result) {
         if (!(expression instanceof BinaryExpression binaryExpression)) {
-            throw BusinessException.invalidExpression(expression.buildSelf(VarType.NAME));
+            throw BusinessException.invalidExpression(expression.buildSelf(VarType.NAME, false));
         }
         if (binaryExpression.getOperator() == BinaryOperator.AND) {
             parseExpression0(binaryExpression.getLeft(), result);
@@ -93,7 +93,7 @@ public class ExpressionService extends EntityContextFactoryBean {
         if (!SEARCH_EXPR_OPERATORS.contains(operator)
                 || !(first instanceof PropertyExpression fieldExpr)
                 || !(second instanceof ConstantExpression constExpr)) {
-            throw BusinessException.invalidExpression(binaryExpression.buildSelf(VarType.NAME));
+            throw BusinessException.invalidExpression(binaryExpression.buildSelf(VarType.NAME,false ));
         }
         Object searchValue;
         if (constExpr.getValue() instanceof PrimitiveInstance primitiveInstance)
@@ -204,7 +204,7 @@ public class ExpressionService extends EntityContextFactoryBean {
         if (expression instanceof PropertyExpression || expression instanceof NodeExpression) {
             return parseRefValue(expression);
         } else {
-            return ValueDTO.exprValue(expression.buildSelf(VarType.NAME));
+            return ValueDTO.exprValue(expression.buildSelf(VarType.NAME, false));
         }
     }
 

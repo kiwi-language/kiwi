@@ -104,6 +104,11 @@ public class UncertainType extends CompositeType implements LoadAware  {
     }
 
     @Override
+    public String getTypeDesc() {
+        return "[" + lowerBound.getTypeDesc() + "," + upperBound.getTypeDesc() + "]";
+    }
+
+    @Override
     public List<Type> getComponentTypes() {
         return List.of(lowerBound, upperBound);
     }

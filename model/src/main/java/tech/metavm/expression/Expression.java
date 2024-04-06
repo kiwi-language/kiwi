@@ -15,19 +15,23 @@ import java.util.List;
 @EntityType("表达式")
 public abstract class Expression extends Element {
 
-    protected abstract String buildSelf(VarType symbolType);
+    protected abstract String buildSelf(VarType symbolType, boolean relaxedCheck);
 
     public abstract int precedence();
 
     public final String build(VarType symbolType) {
-        return build(symbolType, false);
+        return build(symbolType, false, false);
     }
 
-    protected final String build(VarType symbolType, boolean withParenthesis) {
+    public final String build(VarType symbolType, boolean relaxedCheck) {
+        return build(symbolType, false, relaxedCheck);
+    }
+
+    protected final String build(VarType symbolType, boolean withParenthesis, boolean relaxedCheck) {
         try (var serContext = SerializeContext.enter()) {
             if (serContext.isIncludeExpressionType())
                 serContext.writeType(getType());
-            String expr = buildSelf(symbolType);
+            String expr = buildSelf(symbolType, relaxedCheck);
             return withParenthesis ? "(" + expr + ")" : expr;
         }
     }

@@ -1,11 +1,15 @@
 package tech.metavm.object.type.generic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.Method;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.type.*;
 import tech.metavm.object.view.ObjectMapping;
+import tech.metavm.util.DebugEnv;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ParameterizedTypeImpl;
@@ -176,6 +180,9 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         parameterizedFlows.computeIfAbsent(flow.getEffectiveHorizontalTemplate(),
                 k -> new HashMap<>()).put(flow.getTypeArguments(), flow);
         CompositeTypeEventRegistry.notifyFlowCreated(flow);
+        for (Type typeArgument : flow.getTypeArguments()) {
+            typeArgument.getCapturedTypes().forEach(ct -> ct.addCapturedFlow(flow));
+        }
     }
 
     public ClassType load(ClassType template, List<? extends Type> typeArguments) {
@@ -203,6 +210,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         if (template == null)
             return;
         CompositeTypeEventRegistry.notifyTypeCreated(classType);
+        classType.getCapturedTypes().forEach(ct -> ct.addCapturedCompositeType(classType));
         parameterizedTypes.computeIfAbsent(template, k -> new HashMap<>()).put(classType.getTypeArguments(), classType);
         entityContext.tryBind(classType);
         if (typeFactory.isPutTypeSupported()) {
@@ -278,6 +286,8 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         return getParameterizedFlow(template, typeArguments, DEFINITION, emptyBatch);
     }
 
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+
     public <T extends Flow> T getParameterizedFlow(T template, List<? extends Type> typeArguments, ResolutionStage stage, SaveTypeBatch batch) {
         if(template.getTypeArguments().equals(typeArguments))
             return template;
@@ -293,7 +303,15 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         );
         if (template instanceof Method method)
             substitutor.enterElement(method.getDeclaringType());
+        if(DebugEnv.DEBUG_LOG_ON && template.getName().equals("find") && NncUtils.anyMatch(typeArguments, Type::isCaptured))
+            DEBUG_LOGGER.info("Start substituting flow: {} with type arguments: {}",
+                    EntityUtils.getEntityPath(template),
+                    NncUtils.join(typeArguments, EntityUtils::getEntityPath));
         var transformed = (Flow) template.accept(substitutor);
+        if(DebugEnv.DEBUG_LOG_ON && template.getName().equals("find") && NncUtils.anyMatch(typeArguments, Type::isCaptured))
+            DEBUG_LOGGER.info("Finish substituting flow: {} with type arguments: {}",
+                    EntityUtils.getEntityPath(template),
+                    NncUtils.join(typeArguments, EntityUtils::getEntityPath));
         if (template instanceof Method)
             substitutor.exitElement();
         if(existing == null)

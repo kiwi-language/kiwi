@@ -1,6 +1,8 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.CallContext;
@@ -91,7 +93,7 @@ public class Method extends Flow implements Property, GenericElement {
         this.hidden = hidden;
         if (horizontalTemplate == null)
             declaringType.addMethod(this);
-        else if(!hidden)
+        else
             horizontalTemplate.addTemplateInstance(this);
         checkTypes(overridden, parameters, returnType, type, staticType);
     }
@@ -206,6 +208,7 @@ public class Method extends Flow implements Property, GenericElement {
     @Override
     public List<Object> beforeRemove(IEntityContext context) {
         declaringType.rebuildMethodTable();
+        declaringType.removeErrors(this);
         return super.beforeRemove(context);
     }
 
@@ -233,9 +236,9 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     @Override
-    public void setCopySource(Object template) {
+    public void setCopySource(Object copySource) {
         NncUtils.requireNull(this.verticalTemplate);
-        this.verticalTemplate = (Method) template;
+        this.verticalTemplate = (Method) copySource;
     }
 
     public void setOverridden(List<Method> overridden) {
@@ -343,8 +346,16 @@ public class Method extends Flow implements Property, GenericElement {
         }
     }
 
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext) {
+        if(DebugEnv.DEBUG_LOG_ON) {
+            DEBUG_LOGGER.info("Method.execute: " + getDeclaringType().getName() + "." + getNameWithTypeArguments());
+            DEBUG_LOGGER.info("Arguments: ");
+            arguments.forEach(arg -> DEBUG_LOGGER.info(arg.getTree()));
+            DEBUG_LOGGER.info(getText());
+        }
         try(var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName()+ "." + getName())) {
             if (_static)
                 NncUtils.requireNull(self);
@@ -372,6 +383,11 @@ public class Method extends Flow implements Property, GenericElement {
             }
             return result;
         }
+    }
+
+    @Override
+    public String getQualifiedName() {
+        return declaringType.getName() + "." + getNameWithTypeArguments();
     }
 
     @Override

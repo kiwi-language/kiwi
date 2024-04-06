@@ -72,6 +72,11 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
+    public String getTypeDesc() {
+        return NncUtils.join(types, Type::getTypeDesc, "&");
+    }
+
+    @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
         var names = NncUtils.mapAndSort(types, type -> type.getInternalName(current), String::compareTo);
         return NncUtils.join(names, "&");
