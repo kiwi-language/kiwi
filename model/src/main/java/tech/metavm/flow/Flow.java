@@ -76,10 +76,6 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     private @Nullable ChildArray<Flow> templateInstances;
     @ChildEntity("捕获类型列表")
     private final ChildArray<CapturedType> capturedTypes = addChild(new ChildArray<>(CapturedType.class), "capturedTypes");
-//    @ChildEntity("私有流程列表")
-//    private final ChildArray<Flow> capturedFlows = addChild(new ChildArray<>(Flow.class), "capturedFlows");
-//    @ChildEntity("捕获的复合类型列表")
-//    private final ChildArray<Type> capturedCompositeTypes = addChild(new ChildArray<>(Type.class), "capturedCompositeTypes");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);

@@ -337,8 +337,7 @@ public class SubstitutorV2 extends CopyVisitor {
         if (copy == null) {
             copy = new CapturedType(
                     (UncertainType) substituteType(type.getUncertainType()),
-                    (CapturedTypeScope) getCopy(type.getScope()),
-                    NncUtils.randomNonNegative()
+                    (CapturedTypeScope) getCopy(type.getScope())
             );
             copy.setCopySource(type);
         }

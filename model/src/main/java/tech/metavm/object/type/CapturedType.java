@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
-import tech.metavm.flow.Parameter;
 import tech.metavm.object.type.rest.dto.CapturedTypeKey;
 import tech.metavm.object.type.rest.dto.CapturedTypeParam;
 import tech.metavm.util.DebugEnv;
@@ -26,10 +25,6 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
     @EntityField("不确定类型")
     private final UncertainType uncertainType;
 
-    private @Nullable Parameter parameter;
-
-    private final long randomKey;
-
     @ChildEntity("捕获流程列表")
     private final ReadWriteArray<Flow> capturedFlows = addChild(new ReadWriteArray<>(Flow.class), "capturedFlows");
 
@@ -41,17 +36,12 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
     private @Nullable CapturedType copySource;
 
     public CapturedType(@NotNull UncertainType uncertainType,
-                        @NotNull CapturedTypeScope scope,
-                        long key
-                        ) {
+                        @NotNull CapturedTypeScope scope) {
         super("CaptureOf" + uncertainType.getName(), null,
                 true, true, TypeCategory.CAPTURED);
         this.scope = scope;
         this.uncertainType = uncertainType;
-        this.randomKey = key;
         scope.addCapturedType(this);
-        if (DebugEnv.DEBUG_LOG_ON)
-            DEBUG_LOGGER.info("Captured type created, scope: {}, key: {}", scope.getScopeName(), randomKey);
     }
 
     @Override
@@ -115,9 +105,7 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
         return new CapturedTypeParam(
                 serializeContext.getId(scope),
                 serializeContext.getId(uncertainType),
-                scope.getCapturedTypeIndex(this),
-                randomKey,
-                NncUtils.get(parameter, serializeContext::getId)
+                scope.getCapturedTypeIndex(this)
         );
     }
 
@@ -126,8 +114,6 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
             throw new IllegalStateException("Scope is already set");
         this.scope = scope;
         scope.addCapturedType(this);
-        if (DebugEnv.DEBUG_LOG_ON)
-            DEBUG_LOGGER.info("Set scope to {}, key: {}", scope.getScopeName(), randomKey);
     }
 
     public CapturedTypeScope getScope() {
@@ -179,10 +165,6 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
             }
         }
         context.batchRemove(removals);
-    }
-
-    public long getRandomKey() {
-        return randomKey;
     }
 
     @Nullable
