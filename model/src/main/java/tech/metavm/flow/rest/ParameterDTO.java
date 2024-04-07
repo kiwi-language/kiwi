@@ -3,7 +3,6 @@ package tech.metavm.flow.rest;
 import tech.metavm.common.BaseDTO;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 public record ParameterDTO(
         String id,
@@ -12,10 +11,9 @@ public record ParameterDTO(
         String typeId,
         @Nullable ValueDTO condition,
         @Nullable String templateId,
-        String callableId,
-        List<String> capturedTypeIds
+        String callableId
 ) implements BaseDTO {
     public static ParameterDTO create(String id, String name, String typeId) {
-        return new ParameterDTO(id, name, null, typeId, null, null, null, List.of());
+        return new ParameterDTO(id, name, null, typeId, null, null, null);
     }
 }

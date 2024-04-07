@@ -165,8 +165,7 @@ public class TypeResolverImpl implements TypeResolver {
         var capturedType = new CapturedType(
                 resolveWildcardType(psiCapturedType.getWildcard(), stage),
                 method,
-                NncUtils.randomNonNegative(),
-                null
+                NncUtils.randomNonNegative()
         );
         capturedTypeMap.put(psiCapturedType, capturedType);
         capturedTypeReverseMap.put(capturedType, psiCapturedType);

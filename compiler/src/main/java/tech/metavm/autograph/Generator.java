@@ -514,7 +514,6 @@ public class Generator extends CodeGenVisitor {
     private void processParameters(PsiParameterList parameterList, Flow flow) {
         var inputNode = builder().createInput();
         for (Parameter parameter : flow.getParameters()) {
-            parameter.clearCapturedTypes();
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getType(),
                             Types.tryCapture(parameter.getType(), flow, builder().getCompositeTypeFacade(), parameter))
                     .build();

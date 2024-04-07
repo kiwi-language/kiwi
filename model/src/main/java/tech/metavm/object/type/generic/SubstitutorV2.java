@@ -317,10 +317,6 @@ public class SubstitutorV2 extends CopyVisitor {
         if (stage.isAfterOrAt(DEFINITION) && flow.isRootScopePresent()) {
             copy.clearContent();
             copy.setCapturedTypes(NncUtils.map(flow.getCapturedTypes(), ct -> (CapturedType) copy(ct)));
-            for (Parameter param : flow.getParameters()) {
-                var paramCopy = (Parameter) getCopy(param);
-                paramCopy.setCapturedTypes(NncUtils.map(param.getCapturedTypes(), ct -> (CapturedType) getCopy(ct)));
-            }
             for (CapturedType ct : flow.getCapturedTypes()) {
                 var ctCopy = (CapturedType) getCopy(ct);
                 ctCopy.setCapturedCompositeTypes(NncUtils.map(ct.getCapturedCompositeTypes(), this::substituteType));
@@ -342,8 +338,7 @@ public class SubstitutorV2 extends CopyVisitor {
             copy = new CapturedType(
                     (UncertainType) substituteType(type.getUncertainType()),
                     (CapturedTypeScope) getCopy(type.getScope()),
-                    NncUtils.randomNonNegative(),
-                    null
+                    NncUtils.randomNonNegative()
             );
             copy.setCopySource(type);
         }

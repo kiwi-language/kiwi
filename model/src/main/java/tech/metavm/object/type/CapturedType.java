@@ -42,19 +42,14 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
 
     public CapturedType(@NotNull UncertainType uncertainType,
                         @NotNull CapturedTypeScope scope,
-                        long key,
-                        @Nullable Parameter parameter
+                        long key
                         ) {
         super("CaptureOf" + uncertainType.getName(), null,
                 true, true, TypeCategory.CAPTURED);
         this.scope = scope;
         this.uncertainType = uncertainType;
         this.randomKey = key;
-        this.parameter = parameter;
         scope.addCapturedType(this);
-        if(parameter != null) {
-            parameter.addCapturedType(this);
-        }
         if (DebugEnv.DEBUG_LOG_ON)
             DEBUG_LOGGER.info("Captured type created, scope: {}, key: {}", scope.getScopeName(), randomKey);
     }
@@ -113,19 +108,6 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
             return captured.isAssignableFrom(that, capturedTypes);
         else
             return false;
-    }
-
-    @Nullable
-    public Parameter getParameter() {
-        return parameter;
-    }
-
-    public void setParameter(@Nullable Parameter parameter) {
-        if(this.parameter != null)
-            throw new IllegalStateException("Parameter is already set");
-        this.parameter = parameter;
-        if(parameter != null)
-            parameter.addCapturedType(this);
     }
 
     @Override

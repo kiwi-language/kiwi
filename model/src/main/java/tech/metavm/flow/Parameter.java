@@ -29,8 +29,6 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     @Nullable
     @CopyIgnore
     private Parameter copySource;
-    @ChildEntity("捕获类型列表")
-    private final ReadWriteArray<CapturedType> capturedTypes = addChild(new ReadWriteArray<>(CapturedType.class), "capturedTypes");
 
     public Parameter(Long tmpId, String name, @Nullable String code, Type type) {
         this(tmpId, name, code, type, null, null, DummyCallable.INSTANCE);
@@ -99,8 +97,7 @@ public class Parameter extends Element implements GenericElement, LocalKey {
                     serContext.getId(type),
                     NncUtils.get(condition, Value::toDTO),
                     NncUtils.get(copySource, serContext::getId),
-                    serContext.getId(callable),
-                    NncUtils.map(capturedTypes, serContext::getId)
+                    serContext.getId(callable)
             );
         }
     }
@@ -122,26 +119,6 @@ public class Parameter extends Element implements GenericElement, LocalKey {
 
     public void setCondition(@Nullable Value condition) {
         this.condition = NncUtils.get(condition, c -> addChild(c, "condition"));
-    }
-
-    public void clearCapturedTypes() {
-        this.capturedTypes.clear();
-    }
-
-    public void addCapturedType(CapturedType capturedType) {
-        this.capturedTypes.add(capturedType);
-    }
-
-    public void setCapturedTypes(List<CapturedType> capturedTypes) {
-        capturedTypes.forEach(ct -> {
-            if(ct.getParameter() != this)
-                ct.setParameter(this);
-        });
-        this.capturedTypes.reset(capturedTypes);
-    }
-
-    public List<CapturedType> getCapturedTypes() {
-        return capturedTypes.toList();
     }
 
     @Override

@@ -89,8 +89,7 @@ public abstract class TypeFactory {
                 capturedType = new CapturedType(
                         uncertainType,
                         DummyCapturedTypeScope.INSTANCE,
-                        param.key(),
-                        null
+                        param.key()
                 );
                 if (typeDTO.tmpId() != null)
                     capturedType.setTmpId(typeDTO.tmpId());
@@ -324,7 +323,6 @@ public abstract class TypeFactory {
             param.setName(parameterDTO.name());
             param.setCode(parameterDTO.code());
         }
-        param.setCapturedTypes(NncUtils.map(parameterDTO.capturedTypeIds(), batch::getCapturedType));
         return param;
     }
 
