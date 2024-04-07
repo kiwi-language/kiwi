@@ -1,7 +1,9 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
+import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.FlowParsingContext;
+import tech.metavm.expression.VarType;
 import tech.metavm.flow.rest.MethodCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -38,6 +40,8 @@ public class MethodCallNode extends CallNode {
             );
             node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, self, method, arguments);
         }
+        node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypeIds(), context::getType));
+        node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
         return node;
     }
 
@@ -45,7 +49,15 @@ public class MethodCallNode extends CallNode {
     @Nullable
     private Value self;
 
-    public MethodCallNode(Long tmpId, String name, @Nullable String code, @Nullable Type outputType, NodeRT prev, ScopeRT scope, Value self, Method method, List<Argument> arguments) {
+    public MethodCallNode(Long tmpId,
+                          String name,
+                          @Nullable String code,
+                          @Nullable Type outputType,
+                          NodeRT prev,
+                          ScopeRT scope,
+                          Value self,
+                          Method method,
+                          List<Argument> arguments) {
         super(tmpId, name, code, outputType, prev, scope, method, arguments);
         NncUtils.requireTrue(method.getReturnType().isVoid() == (outputType == null));
         this.self = NncUtils.get(self, s -> addChild(s, "self"));
@@ -59,7 +71,9 @@ public class MethodCallNode extends CallNode {
                     NncUtils.get(self, Value::toDTO),
                     serContext.getId(method),
                     serContext.getId(method.getDeclaringType()),
-                    NncUtils.map(arguments, Argument::toDTO)
+                    NncUtils.map(arguments, Argument::toDTO),
+                    NncUtils.map(capturedExpressionTypes, serContext::getId),
+                    NncUtils.map(capturedExpressions, e -> e.build(VarType.NAME))
             );
         }
     }

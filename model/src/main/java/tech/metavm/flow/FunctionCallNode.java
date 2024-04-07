@@ -5,7 +5,9 @@ import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
+import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.FlowParsingContext;
+import tech.metavm.expression.VarType;
 import tech.metavm.flow.rest.FunctionCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -45,6 +47,8 @@ public class FunctionCallNode extends CallNode {
             node.setSubFlow(function);
             node.setArguments(arguments);
         }
+        node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypeIds(), context::getType));
+        node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
         return node;
     }
 
@@ -67,7 +71,9 @@ public class FunctionCallNode extends CallNode {
         return new FunctionCallNodeParam(
                 serializeContext.getId(getSubFlow()),
                 null,
-                NncUtils.map(arguments, Argument::toDTO)
+                NncUtils.map(arguments, Argument::toDTO),
+                NncUtils.map(capturedExpressionTypes, serializeContext::getId),
+                NncUtils.map(capturedExpressions, e -> e.build(VarType.NAME))
         );
     }
 

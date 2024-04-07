@@ -68,10 +68,7 @@ public class InputNode extends ChildTypeNode {
     public NodeExecResult execute(MetaFrame frame) {
         try(var ignored = ContextUtil.getProfiler().enter("InputNode.execute")) {
             Map<Field, Instance> fieldValues = new HashMap<>();
-            NncUtils.biForEach(getType().getReadyFields(), frame.getArguments(), (field, arg) -> {
-                Types.extractCapturedType(field.getType(), arg.getType(), frame::setCapturedType);
-                fieldValues.put(field, arg);
-            });
+            NncUtils.biForEach(getType().getReadyFields(), frame.getArguments(), fieldValues::put);
             return next(ClassInstance.create(fieldValues, getType()));
         }
     }

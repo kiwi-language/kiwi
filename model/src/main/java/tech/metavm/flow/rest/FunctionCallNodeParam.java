@@ -7,8 +7,10 @@ import java.util.List;
 public class FunctionCallNodeParam extends CallNodeParam {
     public FunctionCallNodeParam(String flowId,
                                  @Nullable String typeId,
-                                 List<ArgumentDTO> arguments) {
-        super(flowId, typeId, arguments);
+                                 List<ArgumentDTO> arguments,
+                                 List<String> capturedExpressionTypeIds,
+                                 List<String> capturedExpressions) {
+        super(flowId, typeId, arguments, capturedExpressionTypeIds, capturedExpressions);
     }
 
     @Override

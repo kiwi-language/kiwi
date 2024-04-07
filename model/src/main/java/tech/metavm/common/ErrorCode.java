@@ -79,7 +79,7 @@ public enum ErrorCode {
     NODE_FIELD_DEF_AND_FIELD_VALUE_MISMATCH(423, "节点'{}'的字段值与字段定义不匹配"),
     NOT_A_FUNCTION(424, "表达式'{}'不是函数"),
     ILLEGAL_ARGUMENT(425, "函数调用参数错误"),
-    ILLEGAL_FUNCTION_ARGUMENT(425, "函数'{}'调用参数错误, 实际参数类型: {}"),
+    ILLEGAL_FUNCTION_ARGUMENT(425, "函数'{}'调用参数错误, 形参类型: {}, 实参类型: {}"),
     INCORRECT_FUNCTION_ARGUMENT(426, "函数'{}'调用参数错误"),
     CONFLICTING_FLOW(427, "流程签名冲突：流程名称和参数类型相同，但编号不同"),
     OVERRIDE_FLOW_RETURN_TYPE_INCORRECT(428, "复写流程返回类型不正确"),

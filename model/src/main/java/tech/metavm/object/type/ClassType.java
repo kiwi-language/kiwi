@@ -1169,7 +1169,9 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     public Method resolveMethod(@NotNull Method methodRef, @NotNull ParameterizedFlowProvider parameterizedFlowProvider) {
         return Objects.requireNonNull(
                 tryResolveMethod(methodRef, parameterizedFlowProvider),
-                () -> String.format("Fail to resolve method %s in type %s", methodRef, this)
+                () -> String.format("Fail to resolve method %s.%s in type %s",
+                        methodRef.getDeclaringType().getTypeDesc(),
+                        methodRef.getTypeDesc(), this)
         );
     }
 
@@ -1453,7 +1455,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     @Override
-    protected void getCapturedTypes(Set<CapturedType> capturedTypes) {
+    public void getCapturedTypes(Set<CapturedType> capturedTypes) {
         typeArguments.forEach(t -> t.getCapturedTypes(capturedTypes));
     }
 

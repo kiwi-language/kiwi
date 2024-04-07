@@ -211,7 +211,7 @@ public class NodeDTOFactory {
                 NodeKind.METHOD_CALL.code(),
                 null,
                 null,
-                new MethodCallNodeParam(self, methodId, null, arguments),
+                new MethodCallNodeParam(self, methodId, null, arguments, List.of(), List.of()),
                 null,
                 null,
                 null
@@ -227,7 +227,7 @@ public class NodeDTOFactory {
                 NodeKind.FUNCTION_CALL.code(),
                 prevId,
                 null,
-                new FunctionCallNodeParam(functionId, null, arguments),
+                new FunctionCallNodeParam(functionId, null, arguments, List.of(), List.of()),
                 null,
                 null,
                 null

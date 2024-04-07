@@ -2,7 +2,9 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.FlowParsingContext;
+import tech.metavm.expression.VarType;
 import tech.metavm.flow.rest.NewObjectNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -37,6 +39,8 @@ public class NewObjectNode extends CallNode implements NewNode {
         } else
             node = new NewObjectNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), subFlow,
                     arguments, prev, scope, parentRef, param.isEphemeral(), param.isUnbound());
+        node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypeIds(), context::getType));
+        node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
         return node;
     }
 
@@ -70,7 +74,9 @@ public class NewObjectNode extends CallNode implements NewNode {
                     NncUtils.map(arguments, Argument::toDTO),
                     NncUtils.get(parentRef, ParentRef::toDTO),
                     ephemeral,
-                    unbound
+                    unbound,
+                    NncUtils.map(capturedExpressionTypes, serContext::getId),
+                    NncUtils.map(capturedExpressions, e -> e.build(VarType.NAME))
             );
         }
     }

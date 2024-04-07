@@ -551,6 +551,7 @@ List.of(),
             return;
         }
         throw new BusinessException(ErrorCode.ILLEGAL_FUNCTION_ARGUMENT, getTypeDesc(),
+                NncUtils.join(getParameterTypes(), Type::getTypeDesc),
                 NncUtils.join(arguments, arg -> EntityUtils.getEntityDesc(arg.getType())));
     }
 

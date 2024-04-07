@@ -463,16 +463,24 @@ public class MethodGenerator {
                 .ephemeral(true)
                 .build();
     }
-
     MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments, CompositeTypeFacade compositeTypeFacade) {
+        return createMethodCall(self, method, arguments, compositeTypeFacade, List.of(), List.of());
+    }
+
+    MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments, CompositeTypeFacade compositeTypeFacade,
+                                    List<Type> capturedExpressionTypes,
+                                    List<Expression> capturedExpressions) {
         List<Argument> args = NncUtils.biMap(
                 method.getParameters(), arguments,
                 (param, arg) -> new Argument(null, param, Values.expression(arg))
         );
         var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), this.method, compositeTypeFacade, null);
-        return setNodeExprTypes(new MethodCallNode(null, nextName(method.getName()), null, outputType,
+        var node = new MethodCallNode(null, nextName(method.getName()), null, outputType,
                 scope().getLastNode(), scope(),
-                NncUtils.get(self, Values::expression), method, args));
+                NncUtils.get(self, Values::expression), method, args);
+        node.setCapturedExpressions(capturedExpressions);
+        node.setCapturedExpressionTypes(capturedExpressionTypes);
+        return setNodeExprTypes(node);
     }
 
     NodeRT createTypeCast(Expression operand, Type targetType) {

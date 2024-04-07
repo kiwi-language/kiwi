@@ -115,7 +115,7 @@ public class Generator extends CodeGenVisitor {
         ));
         var expr = builder.getExpressionResolver().newInstance(currentClass(), args,
                 List.of(TranspileUtil.createClassType(String.class), TranspileUtil.createClassType(Long.class)),
-                enumConstant);
+                enumConstant, new ExpressionResolver.ResolutionContext());
         builder.createUpdateStatic(currentClass(), Map.of(field, expr));
     }
 

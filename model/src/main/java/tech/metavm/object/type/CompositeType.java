@@ -78,7 +78,7 @@ public abstract class CompositeType extends Type {
     }
 
     @Override
-    protected void getCapturedTypes(Set<CapturedType> capturedTypes) {
+    public void getCapturedTypes(Set<CapturedType> capturedTypes) {
         getComponentTypes().forEach(t -> t.getCapturedTypes(capturedTypes));
     }
 }

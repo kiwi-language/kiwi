@@ -171,40 +171,41 @@ public class Types {
     }
 
     public static Type tryCapture(Type type, CapturedTypeScope scope, CompositeTypeFacade compositeTypeFacade, @Nullable Parameter parameter) {
-        return switch (type) {
-            case UncertainType uncertainType -> new CapturedType(uncertainType, scope, NncUtils.randomNonNegative(), parameter);
-            case ClassType classType -> {
-                if (classType.isParameterized()) {
-                    yield compositeTypeFacade.getParameterizedType(
-                            classType.getTemplate(),
-                            NncUtils.map(classType.getTypeArguments(), arg -> tryCapture(arg, scope, compositeTypeFacade, parameter)),
-                            classType.getStage(),
-                            new MockDTOProvider()
-                    );
-                } else
-                    yield classType;
-            }
-            case ArrayType arrayType -> compositeTypeFacade.getArrayType(
-                    tryCapture(arrayType.getElementType(), scope, compositeTypeFacade, parameter),
-                    arrayType.getKind(),
-                    null
-            );
-            case UnionType unionType -> compositeTypeFacade.getUnionType(
-                    NncUtils.mapUnique(unionType.getMembers(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
-                    null
-            );
-            case IntersectionType intersectionType -> compositeTypeFacade.getIntersectionType(
-                    NncUtils.mapUnique(intersectionType.getTypes(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
-                    null
-            );
-            case FunctionType functionType -> compositeTypeFacade.getFunctionType(
-                    NncUtils.map(functionType.getParameterTypes(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
-                    tryCapture(functionType.getReturnType(), scope, compositeTypeFacade, parameter),
-                    null
-            );
-            case TypeVariable typeVariable -> typeVariable;
-            default -> type;
-        };
+        return type;
+//        return switch (type) {
+//            case UncertainType uncertainType -> new CapturedType(uncertainType, scope, NncUtils.randomNonNegative(), parameter);
+//            case ClassType classType -> {
+//                if (classType.isParameterized()) {
+//                    yield compositeTypeFacade.getParameterizedType(
+//                            classType.getTemplate(),
+//                            NncUtils.map(classType.getTypeArguments(), arg -> tryCapture(arg, scope, compositeTypeFacade, parameter)),
+//                            classType.getStage(),
+//                            new MockDTOProvider()
+//                    );
+//                } else
+//                    yield classType;
+//            }
+//            case ArrayType arrayType -> compositeTypeFacade.getArrayType(
+//                    tryCapture(arrayType.getElementType(), scope, compositeTypeFacade, parameter),
+//                    arrayType.getKind(),
+//                    null
+//            );
+//            case UnionType unionType -> compositeTypeFacade.getUnionType(
+//                    NncUtils.mapUnique(unionType.getMembers(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
+//                    null
+//            );
+//            case IntersectionType intersectionType -> compositeTypeFacade.getIntersectionType(
+//                    NncUtils.mapUnique(intersectionType.getTypes(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
+//                    null
+//            );
+//            case FunctionType functionType -> compositeTypeFacade.getFunctionType(
+//                    NncUtils.map(functionType.getParameterTypes(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
+//                    tryCapture(functionType.getReturnType(), scope, compositeTypeFacade, parameter),
+//                    null
+//            );
+//            case TypeVariable typeVariable -> typeVariable;
+//            default -> type;
+//        };
     }
 
     public static Collection<Type> getComponentTypes(Type type) {

@@ -99,8 +99,8 @@ public class ExpressionResolver {
         } else {
             resolved = resolveNormal(psiExpression, context);
         }
-        if(resolved != null && resolved.getType().isCaptured())
-            TranspileUtil.forEachCapturedTypePairs(psiExpression.getType(), resolved.getType(), typeResolver::mapCapturedType);
+//        if(resolved != null && resolved.getType().isCaptured())
+//            TranspileUtil.forEachCapturedTypePairs(psiExpression.getType(), resolved.getType(), typeResolver::mapCapturedType);
         return resolved;
     }
 
@@ -531,11 +531,28 @@ public class ExpressionResolver {
         }
         var method = resolveMethod(expression);
         var node = methodGenerator.createMethodCall(qualifier, method, args, compositeTypeFacade);
+        setCapturedExpressions(node, context);
         if (method.getReturnType().isVoid()) {
             return null;
         } else {
             return createNodeExpression(node);
         }
+    }
+
+    private void setCapturedExpressions(CallNode node, ResolutionContext context) {
+        var flow = node.getSubFlow();
+        var capturedTypeSet = new HashSet<CapturedType>();
+        if(flow instanceof Method method)
+            method.getDeclaringType().getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
+        flow.getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
+        var capturedTypes = new ArrayList<>(capturedTypeSet);
+        var psiCapturedTypes = NncUtils.map(capturedTypes, typeResolver::getPsiCapturedType);
+        var capturedPsiExpressions = NncUtils.map(psiCapturedTypes, t -> (PsiExpression) t.getContext());
+        var capturedExpressions = NncUtils.map(capturedPsiExpressions, e -> resolve(e, context));
+        var captureExpressionTypes = NncUtils.map(
+                capturedPsiExpressions, e -> typeResolver.resolveDeclaration(e.getType()));
+        node.setCapturedExpressions(capturedExpressions);
+        node.setCapturedExpressionTypes(captureExpressionTypes);
     }
 
     private NodeRT createSAMConversion(ClassType samInterface, Expression function) {
@@ -627,7 +644,7 @@ public class ExpressionResolver {
                     requireNonNull(expression.getArgumentList()).getExpressions(),
                     expr -> resolve(expr, context)
             );
-            return newInstance(klass, args, List.of(), expression);
+            return newInstance(klass, args, List.of(), expression, context);
         } else {
             // TODO support new array instance
             throw new InternalException("Unsupported NewExpression: " + expression);
@@ -658,11 +675,13 @@ public class ExpressionResolver {
     }
 
     public Expression newInstance(ClassType declaringType, List<Expression> arguments,
-                                  List<PsiType> prefixTypes, PsiConstructorCall constructorCall) {
+                                  List<PsiType> prefixTypes, PsiConstructorCall constructorCall, ResolutionContext context) {
         var methodGenerics = constructorCall.resolveMethodGenerics();
+        NewObjectNode node;
         if (methodGenerics.getElement() == null) {
             var flow = declaringType.getDefaultConstructor();
-            return new NodeExpression(methodGenerator.createNew(flow, arguments, false));
+            node = methodGenerator.createNew(flow, arguments, false);
+
         } else {
             var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
             var substitutor = methodGenerics.getSubstitutor();
@@ -676,9 +695,10 @@ public class ExpressionResolver {
             );
             paramTypes = NncUtils.union(prefixParamTypes, paramTypes);
             var flow = declaringType.getMethodByCodeAndParamTypes(Types.getConstructorCode(declaringType), paramTypes);
-            var newNode = methodGenerator.createNew(flow, arguments, false);
-            return new NodeExpression(newNode);
+            node = methodGenerator.createNew(flow, arguments, false);
         }
+        setCapturedExpressions(node, context);
+        return new NodeExpression(node);
     }
 
     private Type resolveParameterType(PsiParameter param, PsiSubstitutor substitutor) {

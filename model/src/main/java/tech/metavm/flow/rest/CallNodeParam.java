@@ -16,14 +16,17 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "callKind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class CallNodeParam {
     private final String flowId;
-    @Nullable
-    private final String typeId;
+    private final @Nullable String typeId;
     private final List<ArgumentDTO> arguments;
+    private final List<String> capturedExpressionTypeIds;
+    private final List<String> capturedExpressions;
 
-    public CallNodeParam(String flowId, @Nullable String typeId, List<ArgumentDTO> arguments) {
+    public CallNodeParam(String flowId, @Nullable String typeId, List<ArgumentDTO> arguments, List<String> capturedExpressionTypeIds, List<String> capturedExpressions) {
         this.flowId = flowId;
         this.typeId = typeId;
         this.arguments = arguments;
+        this.capturedExpressionTypeIds = capturedExpressionTypeIds;
+        this.capturedExpressions = capturedExpressions;
     }
 
     public String getFlowId() {
@@ -41,4 +44,11 @@ public abstract class CallNodeParam {
 
     public abstract int getCallKind();
 
+    public List<String> getCapturedExpressionTypeIds() {
+        return capturedExpressionTypeIds;
+    }
+
+    public List<String> getCapturedExpressions() {
+        return capturedExpressions;
+    }
 }

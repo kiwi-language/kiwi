@@ -52,6 +52,8 @@ public class TypeResolverImpl implements TypeResolver {
 
     private final Map<PsiCapturedWildcardType, CapturedType> capturedTypeMap = new IdentityHashMap<>();
 
+    private final Map<CapturedType, PsiCapturedWildcardType> capturedTypeReverseMap = new IdentityHashMap<>();
+
     private final IEntityContext context;
 
     private static final Map<PsiClassType, Supplier<ClassType>> STANDARD_CLASSES = Map.ofEntries(
@@ -132,7 +134,7 @@ public class TypeResolverImpl implements TypeResolver {
         }
     }
 
-    private Type resolveWildcardType(PsiWildcardType wildcardType, ResolutionStage stage) {
+    private UncertainType resolveWildcardType(PsiWildcardType wildcardType, ResolutionStage stage) {
         try (var entry = ContextUtil.getProfiler().enter("resolveWildcardType: " + stage)) {
             if (wildcardType.isBounded()) {
                 if (wildcardType.isExtends()) {
@@ -154,9 +156,27 @@ public class TypeResolverImpl implements TypeResolver {
         }
     }
 
-    private Type resolveCapturedType(PsiCapturedWildcardType capturedWildcardType, ResolutionStage stage) {
-        return requireNonNull(capturedTypeMap.get(capturedWildcardType),
-                () -> "Captured type not specified for " + capturedWildcardType.getContext().getText());
+    private Type resolveCapturedType(PsiCapturedWildcardType psiCapturedType, ResolutionStage stage) {
+        var resolved = capturedTypeMap.get(psiCapturedType);
+        if(resolved != null)
+            return resolved;
+        var psiMethod = Objects.requireNonNull(TranspileUtil.getParent(psiCapturedType.getContext(), PsiMethod.class));
+        var method = Objects.requireNonNull(psiMethod.getUserData(Keys.Method));
+        var capturedType = new CapturedType(
+                resolveWildcardType(psiCapturedType.getWildcard(), stage),
+                method,
+                NncUtils.randomNonNegative(),
+                null
+        );
+        capturedTypeMap.put(psiCapturedType, capturedType);
+        capturedTypeReverseMap.put(capturedType, psiCapturedType);
+        return capturedType;
+//        return requireNonNull(capturedTypeMap.get(psiCapturedType),
+//                () -> "Captured type not specified for " + psiCapturedType.getContext().getText());
+    }
+
+    public PsiCapturedWildcardType getPsiCapturedType(CapturedType capturedType) {
+        return requireNonNull(capturedTypeReverseMap.get(capturedType));
     }
 
     private Type resolveClassType(PsiClassType classType, ResolutionStage stage) {

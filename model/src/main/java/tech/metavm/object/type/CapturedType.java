@@ -173,7 +173,7 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
     }
 
     @Override
-    protected void getCapturedTypes(Set<CapturedType> capturedTypes) {
+    public void getCapturedTypes(Set<CapturedType> capturedTypes) {
         capturedTypes.add(this);
     }
 

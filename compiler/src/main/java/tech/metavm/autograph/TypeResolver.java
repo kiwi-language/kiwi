@@ -25,4 +25,6 @@ public interface TypeResolver {
 
     Set<Type> getGeneratedTypes();
 
+    PsiCapturedWildcardType getPsiCapturedType(CapturedType capturedType);
+
 }

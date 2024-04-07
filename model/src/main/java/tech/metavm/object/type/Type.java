@@ -134,7 +134,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return capturedTypes;
     }
 
-    protected void getCapturedTypes(Set<CapturedType> capturedTypes) {
+    public void getCapturedTypes(Set<CapturedType> capturedTypes) {
     }
 
     public Type getCertainUpperBound() {
