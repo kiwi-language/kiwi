@@ -4,6 +4,7 @@ import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 import javassist.util.proxy.ProxyObject;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
 
@@ -100,6 +101,19 @@ public class EntityProxyFactory {
         }
         catch (Exception e) {
             throw new RuntimeException("fail to create proxy instance", e);
+        }
+    }
+
+    public static EntityMethodHandler<?> getHandler(ProxyObject object) {
+        try {
+            return (EntityMethodHandler<?>) object.getHandler();
+        } catch (ClassCastException e) {
+            if (EntityProxyFactory.isDummy(object)) {
+                throw new InternalException("Trying to get handler from a dummy object, " +
+                        "dummy source: " + EntityUtils.getEntityDesc(EntityProxyFactory.getDummyExtra(object))
+                );
+            } else
+                throw e;
         }
     }
 

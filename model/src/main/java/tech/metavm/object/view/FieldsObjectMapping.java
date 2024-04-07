@@ -18,6 +18,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @EntityType("字段对象映射")
@@ -47,7 +48,7 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     private void checkOverridden(ObjectMapping overridden) {
         if (!overridden.getTargetType().equals(getTargetType())
-                || !overridden.getSourceType().isAssignableFrom(getSourceType())) {
+                || !overridden.getSourceType().isAssignableFrom(getSourceType(), Map.of())) {
             throw new BusinessException(ErrorCode.INVALID_OVERRIDDEN_MAPPING);
         }
     }

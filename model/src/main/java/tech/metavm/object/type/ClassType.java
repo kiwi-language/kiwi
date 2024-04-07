@@ -935,7 +935,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that) {
+    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
         if (equals(that)) {
             return true;
         }
@@ -943,15 +943,15 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             if (template != null) {
                 var s = thatClass.findAncestorType(template);
                 if (s != null)
-                    return NncUtils.biAllMatch(typeArguments, s.typeArguments, Type::contains);
+                    return NncUtils.biAllMatch(typeArguments, s.typeArguments, (type, that1) -> type.contains(that1, capturedTypes));
                 else
                     return false;
             } else {
-                if (thatClass.getSuperClass() != null && isAssignableFrom(thatClass.getSuperClass()))
+                if (thatClass.getSuperClass() != null && isAssignableFrom(thatClass.getSuperClass(), capturedTypes))
                     return true;
                 if (isInterface()) {
                     for (ClassType it : thatClass.interfaces) {
-                        if (isAssignableFrom(it)) {
+                        if (isAssignableFrom(it, capturedTypes)) {
                             return true;
                         }
                     }

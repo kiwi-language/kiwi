@@ -15,7 +15,10 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
@@ -29,7 +32,7 @@ public abstract class TypeFactory {
     }
 
     public TypeVariable saveTypeVariable(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveTypeVariable")) {
+        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveTypeVariable")) {
             var param = typeDTO.getTypeVariableParam();
             var context = batch.getContext();
             var type = batch.getContext().getTypeVariable(Id.parse(typeDTO.id()));
@@ -48,7 +51,7 @@ public abstract class TypeFactory {
     }
 
     public ArrayType saveArrayType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveArrayType")) {
+        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveArrayType")) {
             var context = batch.getContext();
             var param = typeDTO.getArrayTypeParam();
             var elementType = context.getType(Id.parse(param.elementTypeId()));
@@ -58,7 +61,7 @@ public abstract class TypeFactory {
     }
 
     public UnionType saveUnionType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveUnionType")) {
+        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveUnionType")) {
             var context = batch.getContext();
             var param = typeDTO.getUnionParam();
             var members = NncUtils.mapUnique(param.memberIds(), batch::get);
@@ -67,7 +70,7 @@ public abstract class TypeFactory {
     }
 
     public UncertainType saveUncertainType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveUncertainType")) {
+        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveUncertainType")) {
             var context = batch.getContext();
             var param = typeDTO.getUncertainTypeParam();
             var lb = batch.get(param.lowerBoundId());
@@ -77,14 +80,19 @@ public abstract class TypeFactory {
     }
 
     public CapturedType saveCapturedType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveCapturedType")) {
+        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveCapturedType")) {
             var context = batch.getContext();
             var capturedType = context.getCapturedType(Id.parse(typeDTO.id()));
-            if(capturedType == null) {
+            if (capturedType == null) {
                 var param = typeDTO.getCapturedTypeParam();
                 var uncertainType = (UncertainType) batch.get(param.uncertainTypeId());
-                capturedType = new CapturedType(uncertainType, DummyCapturedTypeScope.INSTANCE, param.key());
-                if(typeDTO.tmpId() != null)
+                capturedType = new CapturedType(
+                        uncertainType,
+                        DummyCapturedTypeScope.INSTANCE,
+                        param.key(),
+                        null
+                );
+                if (typeDTO.tmpId() != null)
                     capturedType.setTmpId(typeDTO.tmpId());
                 context.bind(capturedType);
             }
@@ -93,7 +101,7 @@ public abstract class TypeFactory {
     }
 
     public FunctionType saveFunctionType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveFunctionType")) {
+        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveFunctionType")) {
             var context = batch.getContext();
             var param = typeDTO.getFunctionTypeParam();
             var paramTypes = NncUtils.map(param.parameterTypeIds(), batch::get);
@@ -103,7 +111,7 @@ public abstract class TypeFactory {
     }
 
     public ClassType saveParameterized(PTypeDTO pTypeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveParameterized")) {
+        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveParameterized")) {
             var template = batch.getClassType(pTypeDTO.getTemplateId());
             var typeArgs = NncUtils.map(pTypeDTO.getTypeArgumentIds(), batch::get);
             return batch.getContext().getGenericContext()
@@ -112,7 +120,7 @@ public abstract class TypeFactory {
     }
 
     public ClassType saveClassType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveClassType")) {
+        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveClassType")) {
             var param = typeDTO.getClassParam();
             var type = batch.getContext().getClassType(typeDTO.id());
             var context = batch.getContext();
@@ -168,8 +176,8 @@ public abstract class TypeFactory {
                     type.setTitleField(NncUtils.find(type.getFields(), f -> f.getStringId().equals(param.titleFieldId())));
                 type.setStage(ResolutionStage.DECLARATION);
             }
-            if(stage.isAfterOrAt(ResolutionStage.DEFINITION) && curStage.isBefore(ResolutionStage.DEFINITION)) {
-                if(param.flows() != null) {
+            if (stage.isAfterOrAt(ResolutionStage.DEFINITION) && curStage.isBefore(ResolutionStage.DEFINITION)) {
+                if (param.flows() != null) {
                     for (FlowDTO flowDTO : param.flows()) {
                         setCapturedFlows(flowDTO, context);
                     }
@@ -228,7 +236,7 @@ public abstract class TypeFactory {
     public Method saveMethod(FlowDTO flowDTO, ResolutionStage stage, SaveTypeBatch batch) {
         var context = batch.getContext();
         var flow = context.getMethod(flowDTO.id());
-        var param  = (MethodParam) flowDTO.param();
+        var param = (MethodParam) flowDTO.param();
         if (flow == null) {
             var declaringType = batch.getClassType(param.declaringTypeId());
             flow = MethodBuilder.newBuilder(declaringType, flowDTO.name(), flowDTO.code(), context.getFunctionTypeContext())
@@ -316,6 +324,7 @@ public abstract class TypeFactory {
             param.setName(parameterDTO.name());
             param.setCode(parameterDTO.code());
         }
+        param.setCapturedTypes(NncUtils.map(parameterDTO.capturedTypeIds(), batch::getCapturedType));
         return param;
     }
 

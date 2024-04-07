@@ -469,7 +469,7 @@ public class MethodGenerator {
                 method.getParameters(), arguments,
                 (param, arg) -> new Argument(null, param, Values.expression(arg))
         );
-        var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), this.method, compositeTypeFacade);
+        var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), this.method, compositeTypeFacade, null);
         return setNodeExprTypes(new MethodCallNode(null, nextName(method.getName()), null, outputType,
                 scope().getLastNode(), scope(),
                 NncUtils.get(self, Values::expression), method, args));
@@ -489,7 +489,7 @@ public class MethodGenerator {
                 function.getParameters(), arguments,
                 (param, arg) -> new Argument(null, param, Values.expression(arg))
         );
-        var outputType = function.getReturnType().isVoid() ? null : Types.tryCapture(function.getReturnType(), this.method, compositeTypeFacade);
+        var outputType = function.getReturnType().isVoid() ? null : Types.tryCapture(function.getReturnType(), this.method, compositeTypeFacade, null);
         return setNodeExprTypes(new FunctionCallNode(
                 null,
                 nextName(function.getEffectiveHorizontalTemplate().getName()),

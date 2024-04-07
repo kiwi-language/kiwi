@@ -4,13 +4,13 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.IteratorImplNative;
 import tech.metavm.entity.natives.NativeMethods;
-import tech.metavm.lang.NumberUtils;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.*;
 
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -190,7 +190,7 @@ public class FunctionMethods {
     }
 
     public static boolean isAssignable(Type from, Type to) {
-        return from.isAssignableFrom(to);
+        return from.isAssignableFrom(to, Map.of());
     }
 
     public static LongInstance LEN(Instance instance) {

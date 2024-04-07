@@ -7,7 +7,6 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.AddElementNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
@@ -15,6 +14,7 @@ import tech.metavm.util.AssertUtils;
 import tech.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 
 @EntityType("添加数组元素节点")
 public class AddElementNode extends NodeRT {
@@ -48,7 +48,7 @@ public class AddElementNode extends NodeRT {
         if (array.getType() instanceof ArrayType arrayType) {
             AssertUtils.assertTrue(arrayType.getKind() != ArrayKind.READ_ONLY,
                     ErrorCode.ADD_ELEMENT_NOT_SUPPORTED);
-            AssertUtils.assertTrue(arrayType.getElementType().isAssignableFrom(element.getType()),
+            AssertUtils.assertTrue(arrayType.getElementType().isAssignableFrom(element.getType(), Map.of()),
                     ErrorCode.INCORRECT_ELEMENT_TYPE);
         } else {
             throw new BusinessException(ErrorCode.NOT_AN_ARRAY_VALUE);

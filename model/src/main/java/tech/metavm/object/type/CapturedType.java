@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
+import tech.metavm.flow.Parameter;
 import tech.metavm.object.type.rest.dto.CapturedTypeKey;
 import tech.metavm.object.type.rest.dto.CapturedTypeParam;
 import tech.metavm.util.DebugEnv;
@@ -12,10 +13,7 @@ import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @EntityType("捕获类型")
 public class CapturedType extends Type implements ITypeVariable, AfterRemovalAware, GenericElement {
@@ -27,6 +25,8 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
 
     @EntityField("不确定类型")
     private final UncertainType uncertainType;
+
+    private @Nullable Parameter parameter;
 
     private final long randomKey;
 
@@ -40,13 +40,21 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
     @EntityField("复制来源")
     private @Nullable CapturedType copySource;
 
-    public CapturedType(@NotNull UncertainType uncertainType, @NotNull CapturedTypeScope scope, long key) {
+    public CapturedType(@NotNull UncertainType uncertainType,
+                        @NotNull CapturedTypeScope scope,
+                        long key,
+                        @Nullable Parameter parameter
+                        ) {
         super("CaptureOf" + uncertainType.getName(), null,
                 true, true, TypeCategory.CAPTURED);
         this.scope = scope;
         this.uncertainType = uncertainType;
         this.randomKey = key;
+        this.parameter = parameter;
         scope.addCapturedType(this);
+        if(parameter != null) {
+            parameter.addCapturedType(this);
+        }
         if (DebugEnv.DEBUG_LOG_ON)
             DEBUG_LOGGER.info("Captured type created, scope: {}, key: {}", scope.getScopeName(), randomKey);
     }
@@ -97,8 +105,27 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that) {
-        return this == that;
+    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
+        if(this == that)
+            return true;
+        var captured = capturedTypes.get(this);
+        if(captured != null)
+            return captured.isAssignableFrom(that, capturedTypes);
+        else
+            return false;
+    }
+
+    @Nullable
+    public Parameter getParameter() {
+        return parameter;
+    }
+
+    public void setParameter(@Nullable Parameter parameter) {
+        if(this.parameter != null)
+            throw new IllegalStateException("Parameter is already set");
+        this.parameter = parameter;
+        if(parameter != null)
+            parameter.addCapturedType(this);
     }
 
     @Override
@@ -107,7 +134,8 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
                 serializeContext.getId(scope),
                 serializeContext.getId(uncertainType),
                 scope.getCapturedTypeIndex(this),
-                randomKey
+                randomKey,
+                NncUtils.get(parameter, serializeContext::getId)
         );
     }
 

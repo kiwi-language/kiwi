@@ -7,6 +7,7 @@ import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.util.MockUtils;
 
 import java.util.List;
+import java.util.Map;
 
 public class ClassTypeTest extends TestCase {
 
@@ -36,7 +37,7 @@ public class ClassTypeTest extends TestCase {
     public void testIsAssignable() {
         ClassType type1 = ClassTypeBuilder.newBuilder("Foo", null).build();
         ClassType type2 = ClassTypeBuilder.newBuilder("Foo", null).superClass(type1).build();
-        Assert.assertTrue(type1.isAssignableFrom(type2));
+        Assert.assertTrue(type1.isAssignableFrom(type2, Map.of()));
     }
 
     public void testIsInstance() {

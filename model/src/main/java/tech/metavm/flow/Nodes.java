@@ -4,7 +4,6 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.Expressions;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.generic.TypeSubstitutor;
 import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TriConsumer;
@@ -177,13 +176,13 @@ public class Nodes {
 
     public static FunctionCallNode functionCall(String name, ScopeRT scope,
                                                 Function function, List<Argument> arguments, CompositeTypeFacade compositeTypeFacade) {
-        var outputType = function.getReturnType().isVoid() ? null : Types.tryCapture(function.getReturnType(), function, compositeTypeFacade);
+        var outputType = function.getReturnType().isVoid() ? null : Types.tryCapture(function.getReturnType(), function, compositeTypeFacade, null);
         return new FunctionCallNode(null, name, null, outputType, scope.getLastNode(), scope, function, arguments);
     }
 
     public static MethodCallNode methodCall(String name, ScopeRT scope,
                                             Value self, Method method, List<Argument> arguments, CompositeTypeFacade compositeTypeFacade) {
-        var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), method, compositeTypeFacade);
+        var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), method, compositeTypeFacade, null);
         return new MethodCallNode(null, name, null, outputType, scope.getLastNode(), scope, self, method, arguments);
     }
 
@@ -201,7 +200,7 @@ public class Nodes {
                 .build();
         for (var parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType,
-                            Types.tryCapture(parameter.getType(), flow, compositeTypeFacade))
+                            Types.tryCapture(parameter.getType(), flow, compositeTypeFacade, null))
                     .build();
         }
         return new InputNode(

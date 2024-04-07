@@ -8,6 +8,7 @@ import tech.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
 
+import java.util.Map;
 import java.util.Objects;
 
 @EntityType("基础类型")
@@ -27,7 +28,7 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that) {
+    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
         return equals(that);
     }
 

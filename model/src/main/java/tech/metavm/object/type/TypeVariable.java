@@ -10,10 +10,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @EntityType("类型变量")
 public class TypeVariable extends Type implements LocalKey, GenericElement, ITypeVariable {
@@ -74,8 +71,8 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
     }
 
     @Override
-    public boolean isAssignableFrom(Type that) {
-        return that == this || super.isAssignableFrom(that);
+    public boolean isAssignableFrom(Type that, Map<CapturedType, Type> capturedTypes) {
+        return that == this || super.isAssignableFrom(that, capturedTypes);
     }
 
     @Override
@@ -92,7 +89,7 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that) {
+    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
         return this == that;
     }
 

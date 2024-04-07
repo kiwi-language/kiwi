@@ -16,7 +16,6 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.getEnumConstantName;
@@ -515,8 +514,9 @@ public class Generator extends CodeGenVisitor {
     private void processParameters(PsiParameterList parameterList, Flow flow) {
         var inputNode = builder().createInput();
         for (Parameter parameter : flow.getParameters()) {
+            parameter.clearCapturedTypes();
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getType(),
-                            Types.tryCapture(parameter.getType(), flow, builder().getCompositeTypeFacade()))
+                            Types.tryCapture(parameter.getType(), flow, builder().getCompositeTypeFacade(), parameter))
                     .build();
         }
         for (PsiParameter parameter : parameterList.getParameters()) {
@@ -597,7 +597,7 @@ public class Generator extends CodeGenVisitor {
             }
             var memberTypes = new HashSet<Type>();
             for (var value : branch2value.values()) {
-                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
+                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType(), Map.of())))
                     memberTypes.add(value.getType());
             }
             var fieldType =

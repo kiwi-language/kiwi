@@ -147,7 +147,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
                     addCopy(entity, copy);
                     for (int i = 0; i < readWriteArray.size(); i++) {
                         final int _i = i;
-                        copy.add(getValue(readWriteArray.get(i), v -> readWriteArray.set(_i, v)));
+                        copy.add(getValue(readWriteArray.get(i), v -> copy.set(_i, v)));
                     }
                     yield copy;
                 }

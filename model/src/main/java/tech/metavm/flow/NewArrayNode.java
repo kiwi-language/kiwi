@@ -12,6 +12,7 @@ import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 
 @EntityType("创建数组节点")
 public class NewArrayNode extends NodeRT implements NewNode {
@@ -72,7 +73,7 @@ public class NewArrayNode extends NodeRT implements NewNode {
         } else {
             NncUtils.requireTrue(value.getType() instanceof ArrayType);
             var valueType = (ArrayType) value.getType();
-            NncUtils.requireTrue(getType().getElementType().isAssignableFrom(valueType.getElementType()));
+            NncUtils.requireTrue(getType().getElementType().isAssignableFrom(valueType.getElementType(), Map.of()));
         }
         return value;
     }

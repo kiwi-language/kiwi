@@ -15,6 +15,7 @@ import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 
 @EntityType("删除数组元素节点")
 public class RemoveElementNode extends NodeRT {
@@ -50,7 +51,7 @@ public class RemoveElementNode extends NodeRT {
         if (array.getType() instanceof ArrayType arrayType) {
             AssertUtils.assertTrue(arrayType.getKind() != ArrayKind.READ_ONLY,
                     ErrorCode.MODIFYING_READ_ONLY_ARRAY);
-            AssertUtils.assertTrue(arrayType.getElementType().isAssignableFrom(element.getType()),
+            AssertUtils.assertTrue(arrayType.getElementType().isAssignableFrom(element.getType(), Map.of()),
                     ErrorCode.INCORRECT_ELEMENT_TYPE);
         } else {
             throw new BusinessException(ErrorCode.NOT_AN_ARRAY_VALUE);

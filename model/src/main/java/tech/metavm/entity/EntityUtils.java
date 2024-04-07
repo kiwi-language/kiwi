@@ -309,8 +309,17 @@ public class EntityUtils {
 
     public static void ensureProxyInitialized(Object object) {
         if (object instanceof ProxyObject proxyObject) {
-            EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
-            handler.ensureInitialized(object);
+            try {
+                EntityMethodHandler<?> handler = EntityProxyFactory.getHandler(proxyObject);
+                handler.ensureInitialized(object);
+            } catch (ClassCastException e) {
+                if (EntityProxyFactory.isDummy(object)) {
+                    throw new InternalException("Trying to initialize a dummy object: " + object
+                            + ", dummy source: " + EntityUtils.getEntityDesc(EntityProxyFactory.getDummyExtra(object))
+                    );
+                } else
+                    throw e;
+            }
         }
     }
 
@@ -320,7 +329,7 @@ public class EntityUtils {
 
     public static EntityMethodHandler.State getProxyState(Object object) {
         if (object instanceof ProxyObject proxyObject) {
-            var handler = (EntityMethodHandler<?>) proxyObject.getHandler();
+            var handler = EntityProxyFactory.getHandler(proxyObject);
             return handler.getState();
         } else
             throw new InternalException(String.format("%s is not a proxy object", object));
@@ -333,7 +342,7 @@ public class EntityUtils {
 
     public static boolean trySetProxyState(Object object, EntityMethodHandler.State state) {
         if (object instanceof ProxyObject proxyObject) {
-            var handler = (EntityMethodHandler<?>) proxyObject.getHandler();
+            var handler = EntityProxyFactory.getHandler(proxyObject);
             handler.setState(state);
             return true;
         } else
@@ -342,7 +351,7 @@ public class EntityUtils {
 
     public static boolean isModelInitialized(Object object) {
         if (object instanceof ProxyObject proxyObject) {
-            EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
+            EntityMethodHandler<?> handler = EntityProxyFactory.getHandler(proxyObject);
             return handler.isInitialized();
         } else {
             return true;
@@ -527,17 +536,17 @@ public class EntityUtils {
     }
 
     public static String getEntityDesc(Object entity) {
-        if(entity instanceof Flow flow)
+        if (entity instanceof Flow flow)
             return flow.getNameWithTypeArguments();
-        if(entity instanceof ReadonlyArray<?> array)
+        if (entity instanceof ReadonlyArray<?> array)
             return getRealType(array.getClass()).getSimpleName();
-        if(entity instanceof tech.metavm.object.type.Type type)
+        if (entity instanceof tech.metavm.object.type.Type type)
             return type.getTypeDesc();
         return entity.toString();
     }
 
     public static String getEntityPath(Object entity) {
-        if(entity instanceof Entity e) {
+        if (entity instanceof Entity e) {
             var list = new LinkedList<Entity>();
             var e1 = e;
             while (e1 != null) {
@@ -545,8 +554,7 @@ public class EntityUtils {
                 e1 = e1.getParentEntity();
             }
             return NncUtils.join(list, EntityUtils::getEntityDesc, "/");
-        }
-        else
+        } else
             return getEntityDesc(entity);
     }
 

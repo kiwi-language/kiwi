@@ -35,7 +35,7 @@ public class FunctionCallNode extends CallNode {
         );
         if(node == null) {
             var outputType = function.getReturnType().isVoid() ? null
-                    : Types.tryCapture(function.getReturnType(), scope.getFlow(), CompositeTypeFacadeImpl.fromContext(context));
+                    : Types.tryCapture(function.getReturnType(), scope.getFlow(), CompositeTypeFacadeImpl.fromContext(context), null);
             return new FunctionCallNode(
                     nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType,
                     prev, scope, function, arguments

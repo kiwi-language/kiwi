@@ -12,6 +12,7 @@ import tech.metavm.object.type.Field;
 import tech.metavm.util.AssertUtils;
 import tech.metavm.util.NncUtils;
 
+import java.util.Map;
 import java.util.Objects;
 
 @EntityType("字段值")
@@ -62,7 +63,7 @@ public class FieldParam extends Entity implements LocalKey {
     public void update(FieldParamDTO fieldParamDTO, ParsingContext parsingContext) {
         if(fieldParamDTO.value() != null) {
             var value = ValueFactory.create(fieldParamDTO.value(), parsingContext);
-            AssertUtils.assertTrue(field.getType().isAssignableFrom(value.getType()),
+            AssertUtils.assertTrue(field.getType().isAssignableFrom(value.getType(), Map.of()),
                     ErrorCode.INCORRECT_FIELD_VALUE, field.getName());
             setValue(value);
         }

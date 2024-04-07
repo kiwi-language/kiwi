@@ -202,7 +202,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
 
     private Instance checkElement(Instance element) {
         var elementType = getType().getElementType();
-        if (elementType.isAssignableFrom(element.getType()))
+        if (elementType.isAssignableFrom(element.getType(), Map.of()))
             return element;
         else
             return element.convert(elementType);

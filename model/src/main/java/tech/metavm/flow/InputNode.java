@@ -12,6 +12,7 @@ import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Types;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
@@ -67,7 +68,10 @@ public class InputNode extends ChildTypeNode {
     public NodeExecResult execute(MetaFrame frame) {
         try(var ignored = ContextUtil.getProfiler().enter("InputNode.execute")) {
             Map<Field, Instance> fieldValues = new HashMap<>();
-            NncUtils.biForEach(getType().getReadyFields(), frame.getArguments(), fieldValues::put);
+            NncUtils.biForEach(getType().getReadyFields(), frame.getArguments(), (field, arg) -> {
+                Types.extractCapturedType(field.getType(), arg.getType(), frame::setCapturedType);
+                fieldValues.put(field, arg);
+            });
             return next(ClassInstance.create(fieldValues, getType()));
         }
     }

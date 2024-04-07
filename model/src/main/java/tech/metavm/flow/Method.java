@@ -18,6 +18,7 @@ import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class Method extends Flow implements Property, GenericElement {
@@ -116,7 +117,7 @@ public class Method extends Flow implements Property, GenericElement {
                     overridenFlow.getParameterTypes()
             );
             NncUtils.requireTrue(overridenFlow.getReturnType() == getReturnType() ||
-                    overridenFlow.getReturnType().isAssignableFrom(getReturnType()));
+                    overridenFlow.getReturnType().isAssignableFrom(getReturnType(), Map.of()));
         }
     }
 
@@ -296,7 +297,7 @@ public class Method extends Flow implements Property, GenericElement {
             if (!paramTypes.equals(overriddenFlow.getParameterTypes())) {
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
             }
-            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType)) {
+            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType, Map.of())) {
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT);
             }
         }
@@ -357,17 +358,22 @@ public class Method extends Flow implements Property, GenericElement {
             DEBUG_LOGGER.info(getText());
         }
         try(var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName()+ "." + getName())) {
+            if(isRootScopePresent()) {
+                var rootScope = getRootScope();
+                var inputNode = _static ? rootScope.getNodeByIndex(0) : rootScope.getNodeByIndex(1);
+
+            }
             if (_static)
                 NncUtils.requireNull(self);
             else
                 Objects.requireNonNull(self);
-            checkArguments(arguments);
+            checkArguments(arguments, callContext.capturedTypes());
             FlowExecResult result;
             if (isNative())
                 result = NativeMethods.invoke(this, self, arguments, callContext);
             else
                 result = new MetaFrame(this.getRootNode(), declaringType, self,
-                        arguments, callContext.instanceRepository(), callContext.parameterizedFlowProvider(), callContext.compositeTypeFacade()).execute();
+                        arguments, callContext.instanceRepository(), callContext.parameterizedFlowProvider(), callContext.compositeTypeFacade(), callContext.capturedTypes()).execute();
             if (isConstructor && result.ret() != null) {
                 var instance = (ClassInstance) result.ret();
                 var uninitializedField = instance.findUninitializedField(declaringType);

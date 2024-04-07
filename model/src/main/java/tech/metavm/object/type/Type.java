@@ -16,10 +16,7 @@ import tech.metavm.util.NamingUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @EntityType("类型")
 public abstract class Type extends Element implements LoadAware, GlobalKey {
@@ -175,7 +172,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public boolean isNullable() {
-        return isAssignableFrom(NULL_TYPE);
+        return isAssignableFrom(NULL_TYPE, Map.of());
     }
 
     public boolean isBinaryNullable() {
@@ -190,7 +187,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return this;
     }
 
-    protected abstract boolean isAssignableFrom0(Type that);
+    protected abstract boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes);
 
     public boolean isError() {
         return error;
@@ -292,18 +289,18 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return false;
     }
 
-    public boolean isAssignableFrom(Type that) {
+    public boolean isAssignableFrom(Type that, Map<CapturedType, Type> capturedTypes) {
         if (that instanceof NeverType)
             return true;
-        return that instanceof ITypeVariable && isAssignableFrom1(that) || isAssignableFrom1(that.getUpperBound());
+        return that instanceof ITypeVariable && isAssignableFrom1(that, capturedTypes) || isAssignableFrom1(that.getUpperBound(), capturedTypes);
     }
 
-    private boolean isAssignableFrom1(Type that) {
+    private boolean isAssignableFrom1(Type that, Map<CapturedType, Type> capturedTypes) {
         return switch (that) {
-            case UnionType unionType -> NncUtils.allMatch(unionType.getMembers(), this::isAssignableFrom);
+            case UnionType unionType -> NncUtils.allMatch(unionType.getMembers(), that1 -> isAssignableFrom(that1, capturedTypes));
             case IntersectionType intersectionType ->
-                    NncUtils.anyMatch(intersectionType.getTypes(), this::isAssignableFrom);
-            default -> isAssignableFrom0(that);
+                    NncUtils.anyMatch(intersectionType.getTypes(), that1 -> isAssignableFrom(that1, capturedTypes));
+            default -> isAssignableFrom0(that, capturedTypes);
         };
     }
 
@@ -311,9 +308,9 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return false;
     }
 
-    public final boolean contains(Type that) {
-        return getUpperBound().isAssignableFrom(that.getUpperBound()) &&
-                that.getLowerBound().isAssignableFrom(getLowerBound());
+    public final boolean contains(Type that, Map<CapturedType, Type> capturedTypes) {
+        return getUpperBound().isAssignableFrom(that.getUpperBound(), capturedTypes) &&
+                that.getLowerBound().isAssignableFrom(getLowerBound(), capturedTypes);
     }
 
     public boolean isVariable() {
@@ -333,7 +330,11 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public boolean isInstance(Instance value) {
-        return isAssignableFrom(value.getType());
+        return isInstance(value, Map.of());
+    }
+
+    public boolean isInstance(Instance value,Map<CapturedType,Type> capturedTypes) {
+        return isAssignableFrom(value.getType(), capturedTypes);
     }
 
     @NoProxy

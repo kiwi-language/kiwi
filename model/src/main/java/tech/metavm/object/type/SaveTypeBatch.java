@@ -116,16 +116,16 @@ public class SaveTypeBatch implements DTOProvider {
         return Types.saveType(typeDTO, ResolutionStage.INIT, this);
     }
 
-    public ClassType getClassType(String ref) {
-        return (ClassType) get(ref);
+    public ClassType getClassType(String id) {
+        return (ClassType) get(id);
     }
 
-    public TypeVariable getTypeVariable(String ref) {
-        return (TypeVariable) get(ref);
+    public TypeVariable getTypeVariable(String id) {
+        return (TypeVariable) get(id);
     }
 
-    public CapturedType getCapturedType(String ref) {
-        return (CapturedType) get(ref);
+    public CapturedType getCapturedType(String id) {
+        return (CapturedType) get(id);
     }
 
     public List<TypeDTO> getClassTypeDTOs() {
@@ -195,11 +195,11 @@ public class SaveTypeBatch implements DTOProvider {
             }
         }
 
-        public void visitId(String ref) {
-            if (ref == null || ref.isEmpty()) {
+        public void visitId(String id) {
+            if (id == null || id.isEmpty()) {
                 return;
             }
-            var baseDTO = map.get(ref);
+            var baseDTO = map.get(id);
             if (baseDTO != null) {
                 visit(baseDTO);
             }
@@ -265,8 +265,8 @@ public class SaveTypeBatch implements DTOProvider {
         }
     }
 
-    private List<ParameterizedFlowDTO> getPFlowsByDeclaringType(String ref) {
-        var typeDTO = getTypeDTO(ref);
+    private List<ParameterizedFlowDTO> getPFlowsByDeclaringType(String id) {
+        var typeDTO = getTypeDTO(id);
         if(typeDTO.param() instanceof ClassTypeParam classParam) {
             return NncUtils.flatMap(
                     classParam.flows(),

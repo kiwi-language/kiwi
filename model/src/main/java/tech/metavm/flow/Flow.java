@@ -1,6 +1,8 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.CallContext;
@@ -18,6 +20,7 @@ import tech.metavm.util.*;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @EntityType("流程")
@@ -526,7 +529,9 @@ List.of(),
         this.state = state;
     }
 
-    protected void checkArguments(List<Instance> arguments) {
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+
+    protected void checkArguments(List<Instance> arguments, Map<CapturedType, Type> capturedTypes) {
         out:
         if (arguments.size() == parameters.size()) {
             var paramIt = parameters.iterator();
@@ -534,12 +539,19 @@ List.of(),
             while (paramIt.hasNext() && argIt.hasNext()) {
                 var param = paramIt.next();
                 var arg = argIt.next();
-                if (!param.getType().isInstance(arg))
+                if (!param.getType().isInstance(arg, capturedTypes)) {
+                    if(DebugEnv.DEBUG_LOG_ON) {
+                        DEBUG_LOGGER.info("Argument type mismatch: {} is not assignable from {}",
+                                param.getType().getTypeDesc(),
+                                arg.getType().getTypeDesc());
+                    }
                     break out;
+                }
             }
             return;
         }
-        throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+        throw new BusinessException(ErrorCode.ILLEGAL_FUNCTION_ARGUMENT, getTypeDesc(),
+                NncUtils.join(arguments, arg -> EntityUtils.getEntityDesc(arg.getType())));
     }
 
     @Override

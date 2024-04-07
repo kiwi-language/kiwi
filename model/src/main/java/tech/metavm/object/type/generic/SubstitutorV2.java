@@ -311,29 +311,21 @@ public class SubstitutorV2 extends CopyVisitor {
 
     private void addExistingCopy(Object original, Object copy) {
         existingCopies.put(original, copy);
-//        onCopyAdded(original, copy);
     }
-
-//    @Override
-//    protected void addCopy(Object original, Object copy) {
-//        super.addCopy(original, copy);
-//        onCopyAdded(original, copy);
-//    }
-
-//    private void onCopyAdded(Object original, Object copy) {
-//        if (original instanceof CapturedType capturedType)
-//            typeSubstitutor.addMapping(capturedType, (CapturedType) copy);
-//    }
 
     private void processFlowBody(Flow flow, Flow copy) {
         if (stage.isAfterOrAt(DEFINITION) && flow.isRootScopePresent()) {
             copy.clearContent();
-//            for (CapturedType capturedType : flow.getCapturedTypes()) {
-//                var ctCopy = (CapturedType) copy(capturedType);
-//                typeSubstitutor.addMapping(capturedType, ctCopy);
-//                copy.addCapturedType(ctCopy);
-//            }
             copy.setCapturedTypes(NncUtils.map(flow.getCapturedTypes(), ct -> (CapturedType) copy(ct)));
+            for (Parameter param : flow.getParameters()) {
+                var paramCopy = (Parameter) getCopy(param);
+                paramCopy.setCapturedTypes(NncUtils.map(param.getCapturedTypes(), ct -> (CapturedType) getCopy(ct)));
+            }
+            for (CapturedType ct : flow.getCapturedTypes()) {
+                var ctCopy = (CapturedType) getCopy(ct);
+                ctCopy.setCapturedCompositeTypes(NncUtils.map(ct.getCapturedCompositeTypes(), this::substituteType));
+                ctCopy.setCapturedFlows(NncUtils.map(ct.getCapturedFlows(), this::substituteFlow));
+            }
             for (NodeRT node : flow.getRootScope().getNodes())
                 copy.getRootScope().addNode((NodeRT) copy(node));
             for (Type capturedCompositeType : flow.getCapturedCompositeTypes())
@@ -350,17 +342,13 @@ public class SubstitutorV2 extends CopyVisitor {
             copy = new CapturedType(
                     (UncertainType) substituteType(type.getUncertainType()),
                     (CapturedTypeScope) getCopy(type.getScope()),
-                    NncUtils.randomNonNegative()
+                    NncUtils.randomNonNegative(),
+                    null
             );
             copy.setCopySource(type);
         }
         addCopy(type, copy);
         typeSubstitutor.addMapping(type, copy);
-        /*
-         TODO the substitution should be done after all captured types are copied because a composite type may depend on another captured type that is not yet copied.
-         */
-        copy.setCapturedCompositeTypes(NncUtils.map(type.getCapturedCompositeTypes(), this::substituteType));
-        copy.setCapturedFlows(NncUtils.map(type.getCapturedFlows(), this::substituteFlow));
         return copy;
     }
 

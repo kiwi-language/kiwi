@@ -13,6 +13,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 @EntityType("函数节点")
 public class FunctionNode extends NodeRT {
@@ -64,7 +65,7 @@ public class FunctionNode extends NodeRT {
                 throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
             }
             for (int i = 0; i < arguments.size(); i++) {
-                if (!functionType.getParameterTypes().get(i).isAssignableFrom(arguments.get(i).getType())) {
+                if (!functionType.getParameterTypes().get(i).isAssignableFrom(arguments.get(i).getType(), Map.of())) {
                     throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
                 }
             }

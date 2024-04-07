@@ -117,7 +117,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     private PojoDef<? extends T> getSubTypeDef(ClassType subType) {
         if (subType == type ||
-                !type.isAssignableFrom(subType)) {
+                !type.isAssignableFrom(subType, Map.of())) {
             throw new InternalException("type: " + subType + " is not a sub type of current type: " + getJavaClass());
         }
         ClassType t = subType;

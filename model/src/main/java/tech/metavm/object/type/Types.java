@@ -1,6 +1,7 @@
 package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expressions;
 import tech.metavm.expression.NodeExpression;
@@ -22,6 +23,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class Types {
@@ -123,14 +125,59 @@ public class Types {
 //        }
 //    }
 
-    public static Type tryCapture(Type type, CapturedTypeScope scope, CompositeTypeFacade compositeTypeFacade) {
+    public static void extractCapturedType(Type formalType, Type actualType, BiConsumer<CapturedType, Type> setCaptureType) {
+        // TODO: to be more rigorous
+        switch (formalType) {
+            case CapturedType capturedType -> setCaptureType.accept(capturedType, actualType);
+            case ClassType classType -> {
+                if (classType.isParameterized() && actualType instanceof ClassType actualClassType) {
+                    var formalTypeArguments = classType.getTypeArguments();
+                    var alignedActualClassType = Objects.requireNonNull(actualClassType.findAncestorType(classType.getEffectiveTemplate()));
+                    var actualTypeArguments = alignedActualClassType.getTypeArguments();
+                    for (int i = 0; i < formalTypeArguments.size(); i++) {
+                        extractCapturedType(formalTypeArguments.get(i), actualTypeArguments.get(i), setCaptureType);
+                    }
+                }
+            }
+            case FunctionType functionType -> {
+                if(actualType instanceof FunctionType actualFunctionType) {
+                    var formalParameterTypes = functionType.getParameterTypes();
+                    var actualParameterTypes = actualFunctionType.getParameterTypes();
+                    for (int i = 0; i < formalParameterTypes.size(); i++) {
+                        extractCapturedType(formalParameterTypes.get(i), actualParameterTypes.get(i), setCaptureType);
+                    }
+                    extractCapturedType(functionType.getReturnType(), actualFunctionType.getReturnType(), setCaptureType);
+                }
+            }
+            case UnionType unionType -> {
+                var actualMembers = actualType instanceof UnionType actualUt ?
+                        actualUt.getMembers() : Set.of(actualType);
+                actualMembers = new HashSet<>(actualMembers);
+                for (Type member : unionType.getMembers()) {
+                    var actualMember = NncUtils.find(actualMembers, that -> member.isAssignableFrom(that, Map.of()));
+                    if(actualMember == null)
+                        actualMember = StandardTypes.getNeverType();
+                    extractCapturedType(member, actualMember, setCaptureType);
+                    actualMembers.remove(actualMember);
+                }
+            }
+            case ArrayType arrayType -> {
+                if(actualType instanceof ArrayType actualArrayType)
+                    extractCapturedType(arrayType.getElementType(), actualArrayType.getElementType(), setCaptureType);
+            }
+            case UncertainType uncertainType -> throw new InternalException("Uncertain type not expected");
+            default -> {}
+        }
+    }
+
+    public static Type tryCapture(Type type, CapturedTypeScope scope, CompositeTypeFacade compositeTypeFacade, @Nullable Parameter parameter) {
         return switch (type) {
-            case UncertainType uncertainType -> new CapturedType(uncertainType, scope, NncUtils.randomNonNegative());
+            case UncertainType uncertainType -> new CapturedType(uncertainType, scope, NncUtils.randomNonNegative(), parameter);
             case ClassType classType -> {
                 if (classType.isParameterized()) {
                     yield compositeTypeFacade.getParameterizedType(
                             classType.getTemplate(),
-                            NncUtils.map(classType.getTypeArguments(), arg -> tryCapture(arg, scope, compositeTypeFacade)),
+                            NncUtils.map(classType.getTypeArguments(), arg -> tryCapture(arg, scope, compositeTypeFacade, parameter)),
                             classType.getStage(),
                             new MockDTOProvider()
                     );
@@ -138,21 +185,21 @@ public class Types {
                     yield classType;
             }
             case ArrayType arrayType -> compositeTypeFacade.getArrayType(
-                    tryCapture(arrayType.getElementType(), scope, compositeTypeFacade),
+                    tryCapture(arrayType.getElementType(), scope, compositeTypeFacade, parameter),
                     arrayType.getKind(),
                     null
             );
             case UnionType unionType -> compositeTypeFacade.getUnionType(
-                    NncUtils.mapUnique(unionType.getMembers(), t -> tryCapture(t, scope, compositeTypeFacade)),
+                    NncUtils.mapUnique(unionType.getMembers(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
                     null
             );
             case IntersectionType intersectionType -> compositeTypeFacade.getIntersectionType(
-                    NncUtils.mapUnique(intersectionType.getTypes(), t -> tryCapture(t, scope, compositeTypeFacade)),
+                    NncUtils.mapUnique(intersectionType.getTypes(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
                     null
             );
             case FunctionType functionType -> compositeTypeFacade.getFunctionType(
-                    NncUtils.map(functionType.getParameterTypes(), t -> tryCapture(t, scope, compositeTypeFacade)),
-                    tryCapture(functionType.getReturnType(), scope, compositeTypeFacade),
+                    NncUtils.map(functionType.getParameterTypes(), t -> tryCapture(t, scope, compositeTypeFacade, parameter)),
+                    tryCapture(functionType.getReturnType(), scope, compositeTypeFacade, parameter),
                     null
             );
             case TypeVariable typeVariable -> typeVariable;
@@ -241,13 +288,13 @@ public class Types {
     }
 
     private static @NotNull Type getLeastUpperBound(Type type1, Type type2) {
-        if (type1.isAssignableFrom(type2))
+        if (type1.isAssignableFrom(type2, Map.of()))
             return type1;
-        if (type2.isAssignableFrom(type1))
+        if (type2.isAssignableFrom(type1, Map.of()))
             return type2;
         return switch (type1) {
             case ClassType classType -> NncUtils.orElse(
-                    classType.getClosure().find(anc -> anc.isAssignableFrom(type2)),
+                    classType.getClosure().find(anc -> anc.isAssignableFrom(type2, Map.of())),
                     StandardTypes.getAnyType(type2.isNullable()));
             case UnionType unionType -> getLeastUpperBound(getLeastUpperBound(unionType.getMembers()), type2);
             case IntersectionType intersectionType ->
@@ -261,7 +308,7 @@ public class Types {
         Set<Type> hasDescendant = new HashSet<>();
         for (Type type : types)
             for (Type type1 : types)
-                if (!type1.equals(type) && type1.isAssignableFrom(type))
+                if (!type1.equals(type) && type1.isAssignableFrom(type, Map.of()))
                     hasDescendant.add(type1);
         return NncUtils.findRequired(types, t -> !hasDescendant.contains(t));
     }
@@ -404,7 +451,7 @@ public class Types {
         out:
         for (Type effectiveType : effectiveTypes) {
             for (Type type : effectiveTypes) {
-                if (type != effectiveType && type.isAssignableFrom(effectiveType))
+                if (type != effectiveType && type.isAssignableFrom(effectiveType, Map.of()))
                     continue out;
             }
             members.add(effectiveType);

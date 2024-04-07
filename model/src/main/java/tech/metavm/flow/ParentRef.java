@@ -16,6 +16,7 @@ import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 
 @EntityType("父引用")
 public class ParentRef extends Element {
@@ -57,13 +58,13 @@ public class ParentRef extends Element {
 
     public void ensureChildAssignable(Type childType) {
         if (field != null) {
-            if (!field.getType().isAssignableFrom(childType)) {
+            if (!field.getType().isAssignableFrom(childType, Map.of())) {
                 throw new BusinessException(ErrorCode.INVALID_MASTER,
                         parent.getType().getName() + "." + field.getName());
             }
         } else {
             var arrayType = (ArrayType) parent.getType();
-            if (!arrayType.getElementType().isAssignableFrom(childType)) {
+            if (!arrayType.getElementType().isAssignableFrom(childType, Map.of())) {
                 throw new BusinessException(ErrorCode.INVALID_MASTER, parent.getType().getName());
             }
         }

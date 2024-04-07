@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 public class CtUtils {
 
     public static <T> T findRequired(Iterable<? extends T> iterable, Predicate<? super T> predicate) {
+        var it = iterable;
         SystemUtils.print(iterable);
         T t = find(iterable, predicate);
         if (t != null) {

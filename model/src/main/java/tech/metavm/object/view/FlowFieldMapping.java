@@ -81,7 +81,7 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
                 null,
                 getter.getName(),
                 getter.getCode(),
-                Types.tryCapture(getter.getReturnType(), selfNode.getFlow(), compositeTypeFacade),
+                Types.tryCapture(getter.getReturnType(), selfNode.getFlow(), compositeTypeFacade, null),
                 selfNode.getScope().getLastNode(),
                 selfNode.getScope(),
                 Values.node(selfNode),

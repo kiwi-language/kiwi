@@ -24,10 +24,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class FlowManager extends EntityContextFactoryBean {
@@ -219,7 +216,7 @@ public class FlowManager extends EntityContextFactoryBean {
                 var candidate = NncUtils.find(
                         type.getMethods(),
                         f -> f.getParameterTypes().equals(overridden.getParameterTypes())
-                                && overridden.getReturnType().isAssignableFrom(f.getReturnType())
+                                && overridden.getReturnType().isAssignableFrom(f.getReturnType(), Map.of())
                 );
                 if (candidate != null) {
                     candidate.addOverridden(overridden);

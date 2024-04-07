@@ -5,6 +5,7 @@ import org.junit.Assert;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.util.MockUtils;
 
+import java.util.Map;
 import java.util.Set;
 
 public class TypeUnionTest extends TestCase {
@@ -24,12 +25,12 @@ public class TypeUnionTest extends TestCase {
         var humanType = livingBeingTypes.humanType();
 
         UnionType unionType = new UnionType(null, Set.of(fooType, barType, livingBeingType));
-        Assert.assertTrue(unionType.isAssignableFrom(fooType));
-        Assert.assertTrue(unionType.isAssignableFrom(barType));
-        Assert.assertFalse(unionType.isAssignableFrom(bazType));
-        Assert.assertTrue(unionType.isAssignableFrom(new UnionType(null, Set.of(fooType, barType))));
-        Assert.assertFalse(unionType.isAssignableFrom(new UnionType(null, Set.of(fooType, bazType))));
-        Assert.assertTrue(unionType.isAssignableFrom(humanType));
+        Assert.assertTrue(unionType.isAssignableFrom(fooType, Map.of()));
+        Assert.assertTrue(unionType.isAssignableFrom(barType, Map.of()));
+        Assert.assertFalse(unionType.isAssignableFrom(bazType, Map.of()));
+        Assert.assertTrue(unionType.isAssignableFrom(new UnionType(null, Set.of(fooType, barType)), Map.of()));
+        Assert.assertFalse(unionType.isAssignableFrom(new UnionType(null, Set.of(fooType, bazType)), Map.of()));
+        Assert.assertTrue(unionType.isAssignableFrom(humanType, Map.of()));
     }
 
 }
