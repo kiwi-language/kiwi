@@ -18,6 +18,7 @@ import tech.metavm.object.type.rest.dto.ParameterizedFlowDTO;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -526,7 +527,8 @@ List.of(),
 
     public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
-    protected void checkArguments(List<Instance> arguments) {
+    protected List<Instance> checkArguments(List<Instance> arguments) {
+        List<Instance> convertedArgs = new ArrayList<>();
         out:
         if (arguments.size() == parameters.size()) {
             var paramIt = parameters.iterator();
@@ -534,16 +536,24 @@ List.of(),
             while (paramIt.hasNext() && argIt.hasNext()) {
                 var param = paramIt.next();
                 var arg = argIt.next();
-                if (!param.getType().isInstance(arg)) {
-                    if(DebugEnv.DEBUG_LOG_ON) {
-                        DEBUG_LOGGER.info("Argument type mismatch: {} is not assignable from {}",
-                                param.getType().getTypeDesc(),
-                                arg.getType().getTypeDesc());
+                if (param.getType().isInstance(arg)) {
+                    convertedArgs.add(arg);
+                }
+                else {
+                    try {
+                        convertedArgs.add(arg.convert(param.getType()));
                     }
-                    break out;
+                    catch (BusinessException e) {
+                        if(DebugEnv.DEBUG_LOG_ON) {
+                            DEBUG_LOGGER.info("Argument type mismatch: {} is not assignable from {}",
+                                    param.getType().getTypeDesc(),
+                                    arg.getType().getTypeDesc());
+                        }
+                        break out;
+                    }
                 }
             }
-            return;
+            return convertedArgs;
         }
         throw new BusinessException(ErrorCode.ILLEGAL_FUNCTION_ARGUMENT, getTypeDesc(),
                 NncUtils.join(getParameterTypes(), Type::getTypeDesc),

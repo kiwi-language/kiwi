@@ -1,7 +1,9 @@
 package tech.metavm.manufacturing.production;
 
+import tech.metavm.entity.ChildList;
 import tech.metavm.entity.EntityField;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class OrderProcess {
@@ -21,13 +23,13 @@ public class OrderProcess {
 
     private OrderProcessState state = OrderProcessState.CREATED;
 
-    private List<ProductOrderOutput> outputs;
+    private final ChildList<ProductOrderOutput> outputs = new ChildList<>();
 
-    private List<Ingredient> ingredients;
+    private final ChildList<Ingredient> ingredients = new ChildList<>();
 
-    private OrderSuccession previousSuccession;
+    private @Nullable OrderSuccession previousSuccession;
 
-    private OrderSuccession nextSuccession;
+    private @Nullable OrderSuccession nextSuccession;
 
     public OrderProcess(String code, Process process, long planedQuantity, WorkCenter workCenter, ProductionOrder order) {
         this.code = code;
@@ -99,7 +101,8 @@ public class OrderProcess {
     }
 
     public void setOutputs(List<ProductOrderOutput> outputs) {
-        this.outputs = outputs;
+        this.outputs.clear();
+        this.outputs.addAll(outputs);
     }
 
     public List<Ingredient> getIngredients() {
@@ -107,22 +110,23 @@ public class OrderProcess {
     }
 
     public void setIngredients(List<Ingredient> ingredients) {
-        this.ingredients = ingredients;
+        this.ingredients.clear();
+        this.ingredients.addAll(ingredients);
     }
 
-    public OrderSuccession getPreviousSuccession() {
+    public @Nullable OrderSuccession getPreviousSuccession() {
         return previousSuccession;
     }
 
-    public void setPreviousSuccession(OrderSuccession previousSuccession) {
+    public void setPreviousSuccession(@Nullable OrderSuccession previousSuccession) {
         this.previousSuccession = previousSuccession;
     }
 
-    public OrderSuccession getNextSuccession() {
+    public @Nullable OrderSuccession getNextSuccession() {
         return nextSuccession;
     }
 
-    public void setNextSuccession(OrderSuccession nextSuccession) {
+    public void setNextSuccession(@Nullable OrderSuccession nextSuccession) {
         this.nextSuccession = nextSuccession;
     }
 }

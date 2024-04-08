@@ -1071,6 +1071,24 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                         )
                 )
         ));
+
+        // create production order
+        var bomId = ((DefaultViewId) Id.parse(bomView)).getSourceId().toString();
+        var createProductionOrderMethodId = TestUtils.getMethodIdByCode(bomType, "createProductionOrder");
+        long startTime = System.currentTimeMillis();
+        var productionOrder = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                createProductionOrderMethodId,
+                bomId,
+                List.of(
+                        PrimitiveFieldValue.createTime(startTime),
+                        PrimitiveFieldValue.createTime(startTime + 3 * 24 * 60 * 60 * 1000),
+                        PrimitiveFieldValue.createLong(10)
+                )
+        )));
+        var productionOrderType = getClassTypeByCode("tech.metavm.manufacturing.production.ProductionOrder");
+        var startTimeFieldId = TestUtils.getFieldIdByCode(productionOrderType, "plannedStartTime");
+        var loadedStartTime = (long) ((PrimitiveFieldValue) productionOrder.getFieldValue(startTimeFieldId)).getValue();
+        Assert.assertEquals(startTime, loadedStartTime);
     }
 
 }

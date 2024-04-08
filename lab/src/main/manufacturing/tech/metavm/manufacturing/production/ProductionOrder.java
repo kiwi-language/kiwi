@@ -11,7 +11,7 @@ import java.util.List;
 public class ProductionOrder {
 
     @EntityField(value = "code", asTitle = true)
-    private String code;
+    private final String code;
 
     private Date plannedStartTime;
 
@@ -57,4 +57,35 @@ public class ProductionOrder {
         outputs.add(output);
     }
 
+    public Date getPlannedStartTime() {
+        return plannedStartTime;
+    }
+
+    public void setPlannedStartTime(Date plannedStartTime) {
+        this.plannedStartTime = plannedStartTime;
+    }
+
+    public Date getPlannedFinishTime() {
+        return plannedFinishTime;
+    }
+
+    public void setPlannedFinishTime(Date plannedFinishTime) {
+        this.plannedFinishTime = plannedFinishTime;
+    }
+
+    public ProductionOrderState getState() {
+        return state;
+    }
+
+    public List<ProductOrderOutput> getOutputs() {
+        return new ArrayList<>(outputs);
+    }
+
+    public List<Ingredient> getIngredients() {
+        return new ArrayList<>(ingredients);
+    }
+
+    public List<OrderSuccession> getSuccessions() {
+        return new ArrayList<>(successions);
+    }
 }

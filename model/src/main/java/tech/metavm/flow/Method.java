@@ -350,23 +350,18 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext) {
-        if(DebugEnv.DEBUG_LOG_ON) {
-            DEBUG_LOGGER.info("Method.execute: " + getDeclaringType().getName() + "." + getNameWithTypeArguments());
-            DEBUG_LOGGER.info("Arguments: ");
-            arguments.forEach(arg -> DEBUG_LOGGER.info(arg.getTree()));
-            DEBUG_LOGGER.info(getText());
-        }
         try(var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName()+ "." + getName())) {
-            if(isRootScopePresent()) {
-                var rootScope = getRootScope();
-                var inputNode = _static ? rootScope.getNodeByIndex(0) : rootScope.getNodeByIndex(1);
-
+            if(DebugEnv.DEBUG_LOG_ON) {
+                DEBUG_LOGGER.info("Method.execute: " + getDeclaringType().getName() + "." + getNameWithTypeArguments());
+                DEBUG_LOGGER.info("Arguments: ");
+                arguments.forEach(arg -> DEBUG_LOGGER.info(arg.getTree()));
+                DEBUG_LOGGER.info(getText());
             }
             if (_static)
                 NncUtils.requireNull(self);
             else
                 Objects.requireNonNull(self);
-            checkArguments(arguments);
+            arguments = checkArguments(arguments);
             FlowExecResult result;
             if (isNative())
                 result = NativeMethods.invoke(this, self, arguments, callContext);
