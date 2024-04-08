@@ -45,6 +45,8 @@ public enum LabErrorCode {
 
     APPLICATION_NOT_SELECTED(414, "未选择应用"),
 
+    COMPONENT_MATERIAL_LACK_VIRTUAL_BOM(415, "虚拟物料BOM组件需要虚拟BOM"),
+
     ;
 
 

@@ -11,26 +11,41 @@ import static java.util.Objects.requireNonNull;
 public class AstToCfg extends JavaRecursiveElementVisitor {
 
     private final LinkedList<GraphBuilder> builderStack = new LinkedList<>();
-    private final Map<PsiMethod, Graph> graphs = new HashMap<>();
+    private final Map<PsiParameterListOwner, Graph> graphs = new HashMap<>();
     private final LinkedList<PsiElement> lexicalScopes = new LinkedList<>();
     private GraphBuilder builder;
 
     @Override
     public void visitMethod(PsiMethod method) {
-        if (builder != null) builder.addOrdinaryNode(method);
+        processFunction(method.getName(), method);
+    }
+
+    @Override
+    public void visitLambdaExpression(PsiLambdaExpression expression) {
+        processFunction("<lambda>", expression);
+    }
+
+    private void processFunction(String name, PsiParameterListOwner function) {
+//     commented
+//        if (builder != null) builder.addOrdinaryNode(function);
         builderStack.push(builder);
-        builder = new GraphBuilder(method.getName());
-        enterLexicalScope(method);
-        builder.enterSection(method);
-        processBasicElement(method.getParameterList());
-        if (method.getBody() != null) {
-            for (PsiStatement statement : method.getBody().getStatements()) {
-                statement.accept(this);
+        builder = new GraphBuilder(name);
+        enterLexicalScope(function);
+        builder.enterSection(function);
+        processBasicElement(function.getParameterList());
+        if (function.getBody() != null) {
+            if(function.getBody() instanceof PsiCodeBlock codeBlock) {
+                for (PsiStatement statement : codeBlock.getStatements()) {
+                    statement.accept(this);
+                }
+            }
+            else {
+                processExitStatement(function.getBody(), Set.of(PsiLambdaExpression.class), false, null);
             }
         }
-        builder.exitSection(method);
+        builder.exitSection(function);
         exitLexicalScope();
-        graphs.put(method, builder.build());
+        graphs.put(function, builder.build());
         builder = builderStack.pop();
     }
 
@@ -179,7 +194,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
         return statements;
     }
 
-    private void processExitStatement(PsiStatement statement,
+    private void processExitStatement(PsiElement statement,
                                       Set<Class<? extends PsiElement>> exitsNodesOfType,
                                       boolean mayExitViaExcept,
                                       @Nullable PsiIdentifier label) {
@@ -327,7 +342,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
         if (builder != null) builder.addOrdinaryNode(element);
     }
 
-    public Map<PsiMethod, Graph> getGraphs() {
+    public Map<PsiParameterListOwner, Graph> getGraphs() {
         return graphs;
     }
 

@@ -346,4 +346,14 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
         return TL.get().getIllegalStateExceptionType();
     }
 
+    @Override
+    public ClassType getNullPointerExceptionType() {
+        return TL.get().getNullPointerExceptionType();
+    }
+
+    @Override
+    public void setNullPointerExceptionType(ClassType nullPointerExceptionType) {
+        TL.get().setNullPointerExceptionType(nullPointerExceptionType);
+    }
+
 }

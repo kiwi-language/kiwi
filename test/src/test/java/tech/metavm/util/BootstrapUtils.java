@@ -82,6 +82,9 @@ public class BootstrapUtils {
             StandardTypes.setIteratorType(defContext.getClassType(MetaIterator.class));
             StandardTypes.setRecordType(defContext.getClassType(Record.class));
             StandardTypes.setExceptionType(defContext.getClassType(Exception.class));
+            StandardTypes.setIllegalArgumentExceptionType(defContext.getClassType(IllegalArgumentException.class));
+            StandardTypes.setIllegalStateExceptionType(defContext.getClassType(IllegalStateException.class));
+            StandardTypes.setNullPointerExceptionType(defContext.getClassType(NullPointerException.class));
             NativeFunctions.setIsSourcePresent(requireNonNull(defContext.selectFirstByKey(
                     Function.UNIQUE_IDX_CODE, "isSourcePResent"
             )));

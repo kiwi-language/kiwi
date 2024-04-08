@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.util.ContextUtil;
+import tech.metavm.util.DebugEnv;
 
 public class CodeGenerator {
 
@@ -42,13 +43,20 @@ public class CodeGenerator {
     private void resolveQnAndActivity(PsiClass psiClass) {
         psiClass.accept(new QnResolver());
         psiClass.accept(new ActivityAnalyzer());
+        if(DebugEnv.DEBUG_LOG_ON)
+            psiClass.accept(new ActivityPrinter());
     }
 
     void generateDecl(PsiClass psiClass, TypeResolver typeResolver) {
         psiClass.accept(new QnResolver());
         psiClass.accept(new ActivityAnalyzer());
+        if(DebugEnv.DEBUG_LOG_ON)
+            psiClass.accept(new ActivityPrinter());
         var astToCfg = new AstToCfg();
         psiClass.accept(astToCfg);
+        if(DebugEnv.DEBUG_LOG_ON) {
+            astToCfg.getGraphs().values().forEach(Graph::log);
+        }
         psiClass.accept(new ReachingDefAnalyzer(astToCfg.getGraphs()));
         psiClass.accept(new LivenessAnalyzer(astToCfg.getGraphs()));
         psiClass.accept(new Declarator(typeResolver, context));

@@ -4,8 +4,12 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ChildList;
 import tech.metavm.entity.EntityStruct;
 import tech.metavm.manufacturing.material.Material;
+import tech.metavm.manufacturing.material.MaterialKind;
 import tech.metavm.manufacturing.material.QualityInspectionState;
+import tech.metavm.manufacturing.material.Unit;
+import tech.metavm.manufacturing.utils.MtBusinessException;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,19 +20,21 @@ public class ComponentMaterial {
 
     private Material material;
 
+    private Unit unit;
+
     private long numerator;
 
     private long denominator;
 
     private double attritionRate;
 
-    private long version;
+    private @Nullable BOM version;
 
     private PickMethod pickMethod;
 
     private boolean routingSpecified;
 
-    private RoutingProcess routingProcess;
+    private @Nullable RoutingProcess process;
 
     private QualityInspectionState qualityInspectionState;
 
@@ -39,25 +45,29 @@ public class ComponentMaterial {
 
     public ComponentMaterial(int sequence,
                              Material material,
+                             Unit unit,
                              long numerator,
                              long denominator,
                              double attritionRate,
-                             long version,
+                             @Nullable BOM version,
                              PickMethod pickMethod,
                              boolean routingSpecified,
-                             RoutingProcess routingProcess,
+                             @Nullable RoutingProcess process,
                              QualityInspectionState qualityInspectionState,
                              FeedType feedType,
                              List<ComponentMaterialItem> items) {
+        if(material.getKind() == MaterialKind.VIRTUAL && version == null)
+            throw new MtBusinessException("Virtual material must have a virtual BOM");
         this.sequence = sequence;
         this.material = material;
+        this.unit = unit;
         this.numerator = numerator;
         this.denominator = denominator;
         this.attritionRate = attritionRate;
         this.version = version;
         this.pickMethod = pickMethod;
         this.routingSpecified = routingSpecified;
-        this.routingProcess = routingProcess;
+        this.process = process;
         this.qualityInspectionState = qualityInspectionState;
         this.feedType = feedType;
         this.items = new ChildList<>(items);
@@ -77,6 +87,14 @@ public class ComponentMaterial {
 
     public void setMaterial(Material material) {
         this.material = material;
+    }
+
+    public Unit getUnit() {
+        return unit;
+    }
+
+    public void setUnit(Unit unit) {
+        this.unit = unit;
     }
 
     public long getNumerator() {
@@ -103,11 +121,11 @@ public class ComponentMaterial {
         this.attritionRate = attritionRate;
     }
 
-    public long getVersion() {
+    public @Nullable BOM getVersion() {
         return version;
     }
 
-    public void setVersion(long version) {
+    public void setVersion(@Nullable BOM version) {
         this.version = version;
     }
 
@@ -127,12 +145,12 @@ public class ComponentMaterial {
         this.routingSpecified = routingSpecified;
     }
 
-    public RoutingProcess getRoutingProcess() {
-        return routingProcess;
+    public @Nullable RoutingProcess getProcess() {
+        return process;
     }
 
-    public void setRoutingProcess(RoutingProcess routingProcess) {
-        this.routingProcess = routingProcess;
+    public void setProcess(@Nullable RoutingProcess process) {
+        this.process = process;
     }
 
     public QualityInspectionState getQualityInspectionState() {

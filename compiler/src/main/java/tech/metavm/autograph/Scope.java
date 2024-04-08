@@ -10,13 +10,16 @@ public class Scope {
     private final Set<QualifiedName> defined = new HashSet<>();
     private final Set<QualifiedName> read = new HashSet<>();
     private final Set<QualifiedName> isolatedNames = new HashSet<>();
+    private final boolean isolated;
     private final Scope parent;
     private final String methodName;
     private final List<Scope> children = new ArrayList<>();
+    private boolean finished;
 
-    public Scope(Scope parent, String methodName) {
+    public Scope(Scope parent, String methodName, boolean isolated) {
         this.parent = parent;
         this.methodName = methodName;
+        this.isolated = isolated;
     }
 
     void addModified(QualifiedName qualifiedName) {
@@ -56,11 +59,15 @@ public class Scope {
     }
 
     public static Scope copyOf(Scope scope) {
-        return scope != null ? scope.copy() : new Scope(null, null);
+        return scope != null ? scope.copy() : new Scope(null, null, false);
+    }
+
+    public boolean isIsolated() {
+        return isolated;
     }
 
     public Scope copy() {
-        var copy = new Scope(NncUtils.get(parent, Scope::copy), methodName);
+        var copy = new Scope(NncUtils.get(parent, Scope::copy), methodName, isolated);
         copy.copyFrom(this);
         return copy;
     }
@@ -78,13 +85,19 @@ public class Scope {
         read.addAll(from.read);
     }
 
-
-    public void complete() {
+    public void finish() {
+        if(finished)
+            throw new IllegalStateException("Scope already finished");
+        finished = true;
         if (parent != null) {
             // TODO: check correctness
-            parent.defined.addAll(defined);
-            parent.read.addAll(NncUtils.diffSet(read, isolatedNames));
-            parent.modified.addAll(NncUtils.diffSet(modified, isolatedNames));
+            if(isolated)
+                parent.read.addAll(NncUtils.diffSet(read, defined));
+            else {
+                parent.defined.addAll(defined);
+                parent.read.addAll(NncUtils.diffSet(read, isolatedNames));
+                parent.modified.addAll(NncUtils.diffSet(modified, isolatedNames));
+            }
         }
     }
 

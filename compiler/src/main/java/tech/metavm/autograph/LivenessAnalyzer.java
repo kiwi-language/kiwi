@@ -2,6 +2,9 @@ package tech.metavm.autograph;
 
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tech.metavm.util.DebugEnv;
 import tech.metavm.util.InternalException;
 
 import java.util.HashMap;
@@ -14,10 +17,12 @@ import static tech.metavm.util.NncUtils.unionSet;
 
 public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
 
-    private Analyzer currentAnalyzer;
-    private final Map<PsiMethod, Graph> graphMap;
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
-    public LivenessAnalyzer(Map<PsiMethod, Graph> graphMap) {
+    private Analyzer currentAnalyzer;
+    private final Map<PsiParameterListOwner, Graph> graphMap;
+
+    public LivenessAnalyzer(Map<PsiParameterListOwner, Graph> graphMap) {
         this.graphMap = new HashMap<>(graphMap);
     }
 
@@ -35,6 +40,10 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
     public void visitMethod(PsiMethod method) {
         var parentAnalyzer = currentAnalyzer;
         currentAnalyzer = new Analyzer(graphMap.get(method));
+        if(DebugEnv.DEBUG_LOG_ON) {
+            DEBUG_LOGGER.info("Start liveness analysis for method {}", method.getName());
+            DEBUG_LOGGER.info(method.getText());
+        }
         currentAnalyzer.visitReverse();
         super.visitMethod(method);
         currentAnalyzer = parentAnalyzer;
@@ -169,6 +178,10 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
             }
             setIn(node, liveIn);
             setOut(node, liveOut);
+            if(DebugEnv.DEBUG_LOG_ON) {
+                DEBUG_LOGGER.info("{}, live in: {}, live out: {}",
+                        node.getElement().getText(), liveIn, liveOut);
+            }
             return !prevLiveIn.equals(liveIn);
         }
     }

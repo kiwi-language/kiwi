@@ -85,7 +85,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitLambdaExpression(PsiLambdaExpression expression) {
-        enterScope();
+        enterIsolatedScope();
         {
             enterScope();
             expression.getParameterList().accept(this);
@@ -264,12 +264,16 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     }
 
     private void enterScope(String methodName) {
-        scope = new Scope(scope, methodName);
+        scope = new Scope(scope, methodName, false);
+    }
+
+    private void enterIsolatedScope() {
+        scope = new Scope(scope, null, true);
     }
 
     private Scope exitScope() {
         Scope curScope = scope;
-        scope.complete();
+        scope.finish();
         scope = scope.getParent();
         return curScope;
     }

@@ -38,6 +38,7 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private ClassType predicateType;
     private ClassType illegalArgumentExceptionType;
     private ClassType illegalStateExceptionType;
+    private ClassType nullPointerExceptionType;
 
     @Override
     public PrimitiveType getLongType() {
@@ -377,6 +378,16 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public ClassType getIllegalStateExceptionType() {
         return illegalStateExceptionType;
+    }
+
+    @Override
+    public ClassType getNullPointerExceptionType() {
+        return nullPointerExceptionType;
+    }
+
+    @Override
+    public void setNullPointerExceptionType(ClassType nullPointerExceptionType) {
+        this.nullPointerExceptionType = nullPointerExceptionType;
     }
 
 }

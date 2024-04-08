@@ -959,7 +959,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                         PrimitiveFieldValue.createBoolean(true)
                                 ),
                                 InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(bomViewType, "items"),
+                                        TestUtils.getFieldIdByCode(bomViewType, "components"),
                                         new ListFieldValue(
                                                 null,
                                                 true,
@@ -978,6 +978,10 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                                         ReferenceFieldValue.create(material)
                                                                                 ),
                                                                                 InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "unit"),
+                                                                                        ReferenceFieldValue.create(unit)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
                                                                                         TestUtils.getFieldIdByCode(componentMaterialViewType, "numerator"),
                                                                                         PrimitiveFieldValue.createLong(1L)
                                                                                 ),
@@ -991,7 +995,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                                 ),
                                                                                 InstanceFieldDTO.create(
                                                                                         TestUtils.getFieldIdByCode(componentMaterialViewType, "version"),
-                                                                                        PrimitiveFieldValue.createLong(1L)
+                                                                                        PrimitiveFieldValue.createNull()
                                                                                 ),
                                                                                 InstanceFieldDTO.create(
                                                                                         TestUtils.getFieldIdByCode(componentMaterialViewType, "pickMethod"),
@@ -1002,7 +1006,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                                         PrimitiveFieldValue.createBoolean(false)
                                                                                 ),
                                                                                 InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "routingProcess"),
+                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "process"),
                                                                                         ReferenceFieldValue.create(routingProcess)
                                                                                 ),
                                                                                 InstanceFieldDTO.create(
@@ -1086,9 +1090,12 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 )
         )));
         var productionOrderType = getClassTypeByCode("tech.metavm.manufacturing.production.ProductionOrder");
-        var startTimeFieldId = TestUtils.getFieldIdByCode(productionOrderType, "plannedStartTime");
-        var loadedStartTime = (long) ((PrimitiveFieldValue) productionOrder.getFieldValue(startTimeFieldId)).getValue();
+        var orderStartTimeFieldId = TestUtils.getFieldIdByCode(productionOrderType, "plannedStartTime");
+        var orderIngredientsFieldId = TestUtils.getFieldIdByCode(productionOrderType, "ingredients");
+        var loadedStartTime = (long) ((PrimitiveFieldValue) productionOrder.getFieldValue(orderStartTimeFieldId)).getValue();
+        var ingredients = ((InstanceFieldValue) productionOrder.getFieldValue(orderIngredientsFieldId)).getInstance();
         Assert.assertEquals(startTime, loadedStartTime);
+        Assert.assertEquals(1, ingredients.getListSize());
     }
 
 }

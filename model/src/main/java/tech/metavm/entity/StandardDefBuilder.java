@@ -48,7 +48,8 @@ public class StandardDefBuilder {
             Map.entry(Exception.class, ExceptionNative.class),
             Map.entry(RuntimeException.class, RuntimeExceptionNative.class),
             Map.entry(IllegalArgumentException.class, IllegalArgumentExceptionNative.class),
-            Map.entry(IllegalStateException.class, IllegalStateExceptionNative.class)
+            Map.entry(IllegalStateException.class, IllegalStateExceptionNative.class),
+            Map.entry(NullPointerException.class, NullPointerExceptionNative.class)
     );
 
     public StandardDefBuilder(DefContext defContext) {
@@ -268,6 +269,13 @@ public class StandardDefBuilder {
         createIllegalStateExceptionFlows(StandardTypes.getIllegalStateExceptionType());
         defContext.addDef(new DirectDef<>(
                 IllegalStateException.class, StandardTypes.getIllegalStateExceptionType(), IllegalStateExceptionNative.class));
+
+        StandardTypes.setNullPointerExceptionType(ClassTypeBuilder.newBuilder("空指针异常", NullPointerException.class.getSimpleName())
+                .superClass(StandardTypes.getRuntimeExceptionType())
+                .source(ClassSource.BUILTIN).build());
+        createNullPointerExceptionFlows(StandardTypes.getNullPointerExceptionType());
+        defContext.addDef(new DirectDef<>(
+                NullPointerException.class, StandardTypes.getNullPointerExceptionType(), NullPointerException.class));
     }
 
     private ClassType createConsumerType() {
@@ -1013,6 +1021,10 @@ public class StandardDefBuilder {
 
     private void createIllegalStateExceptionFlows(ClassType exceptionType) {
         createExceptionFlows("IllegalStateException", "IllegalStateException", exceptionType);
+    }
+
+    private void createNullPointerExceptionFlows(ClassType exceptionType) {
+        createExceptionFlows("NullPointerException", "NullPointerException", exceptionType);
     }
 
     private void createExceptionFlows(String name, String code, ClassType runtimeExceptionType) {

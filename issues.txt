@@ -7,3 +7,5 @@
         }
         return t;
     }
+
+2 Simplify the process of adding standard exception types

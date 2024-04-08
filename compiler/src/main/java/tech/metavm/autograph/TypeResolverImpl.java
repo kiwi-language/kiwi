@@ -65,6 +65,7 @@ public class TypeResolverImpl implements TypeResolver {
             Map.entry(TranspileUtil.createClassType(RuntimeException.class), StandardTypes::getRuntimeExceptionType),
             Map.entry(TranspileUtil.createClassType(IllegalArgumentException.class), StandardTypes::getIllegalArgumentExceptionType),
             Map.entry(TranspileUtil.createClassType(IllegalStateException.class), StandardTypes::getIllegalStateExceptionType),
+            Map.entry(TranspileUtil.createClassType(NullPointerException.class), StandardTypes::getNullPointerExceptionType),
             Map.entry(TranspileUtil.createClassType(IteratorImpl.class), StandardTypes::getIteratorImplType),
             Map.entry(TranspileUtil.createClassType(Iterator.class), StandardTypes::getIteratorType),
             Map.entry(TranspileUtil.createClassType(Iterable.class), StandardTypes::getIterableType),

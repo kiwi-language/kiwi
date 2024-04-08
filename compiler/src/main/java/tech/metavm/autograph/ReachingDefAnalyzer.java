@@ -9,9 +9,9 @@ public class ReachingDefAnalyzer extends JavaRecursiveElementVisitor {
 
     private Analyzer currentAnalyzer;
     private CfgNode currentCfgNode;
-    private final Map<PsiMethod, Graph> graphs;
+    private final Map<PsiParameterListOwner, Graph> graphs;
 
-    public ReachingDefAnalyzer(Map<PsiMethod, Graph> graphs) {
+    public ReachingDefAnalyzer(Map<PsiParameterListOwner, Graph> graphs) {
         this.graphs = new HashMap<>(graphs);
     }
 

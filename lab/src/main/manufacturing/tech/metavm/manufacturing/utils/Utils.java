@@ -47,4 +47,10 @@ public class Utils {
         return new Date(time.getTime() / 86400000 * 86400000);
     }
 
+    public static <T> T requireNonNull(@Nullable T object) {
+        if(object != null)
+            return object;
+        throw new NullPointerException();
+    }
+
 }

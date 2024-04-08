@@ -6,7 +6,9 @@ import tech.metavm.entity.EntityStruct;
 import tech.metavm.lang.NumberUtils;
 import tech.metavm.manufacturing.GeneralState;
 import tech.metavm.manufacturing.material.Material;
+import tech.metavm.manufacturing.material.MaterialKind;
 import tech.metavm.manufacturing.material.Unit;
+import tech.metavm.manufacturing.utils.Utils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -23,12 +25,12 @@ public class BOM {
     private GeneralState state;
     private boolean inbound;
     private boolean autoInbound;
-    @ChildEntity("items")
-    private final ChildList<ComponentMaterial> items;
+    @ChildEntity("components")
+    private final ChildList<ComponentMaterial> components;
     @ChildEntity("secondaryOutputs")
     private final ChildList<SecondaryOutput> secondaryOutputs;
 
-    public BOM(Material product, Unit unit, @Nullable Routing routing, RoutingProcess reportingProcess, GeneralState state, boolean inbound, boolean autoInbound, List<ComponentMaterial> items, List<SecondaryOutput> secondaryOutputs) {
+    public BOM(Material product, Unit unit, @Nullable Routing routing, RoutingProcess reportingProcess, GeneralState state, boolean inbound, boolean autoInbound, List<ComponentMaterial> components, List<SecondaryOutput> secondaryOutputs) {
         this.product = product;
         this.unit = unit;
         this.routing = routing;
@@ -36,7 +38,7 @@ public class BOM {
         this.state = state;
         this.inbound = inbound;
         this.autoInbound = autoInbound;
-        this.items = new ChildList<>(items);
+        this.components = new ChildList<>(components);
         this.secondaryOutputs = new ChildList<>(secondaryOutputs);
     }
 
@@ -97,13 +99,13 @@ public class BOM {
         this.autoInbound = autoInbound;
     }
 
-    public List<ComponentMaterial> getItems() {
-        return new ArrayList<>(items);
+    public List<ComponentMaterial> getComponents() {
+        return new ArrayList<>(components);
     }
 
-    public void setItems(List<ComponentMaterial> items) {
-        this.items.clear();
-        this.items.addAll(items);
+    public void setComponents(List<ComponentMaterial> components) {
+        this.components.clear();
+        this.components.addAll(components);
     }
 
     public List<SecondaryOutput> getSecondaryOutputs() {
@@ -146,6 +148,14 @@ public class BOM {
                 );
             }
         }
+        for (ComponentMaterial component : components) {
+            if(component.getMaterial().getKind() == MaterialKind.VIRTUAL) {
+                var virtualBOM = Utils.requireNonNull(component.getVersion());
+                virtualBOM.getComponents().forEach(c -> createIngredient(c, order));
+            }
+            else
+                createIngredient(component, order);
+        }
         var orderReportingProcess = order.getProcess(reportingProcess.getProcess());
         new ProductOrderOutput(
                 0,
@@ -174,6 +184,54 @@ public class BOM {
             );
         }
         return order;
+    }
+
+    private void createIngredient(ComponentMaterial component, ProductionOrder productionOrder) {
+        var material = component.getMaterial();
+        if(component.getItems().isEmpty()) {
+            var feedProcess = component.getProcess() != null ?
+                    productionOrder.getProcess(component.getProcess().getProcess()) : null;
+            new Ingredient(
+                    component.getSequence(),
+                    material,
+                    component.getNumerator(),
+                    component.getDenominator(),
+                    component.getUnit(),
+                    component.getAttritionRate(),
+                    component.getPickMethod(),
+                    feedProcess,
+                    component.getFeedType(),
+                    component.getQualityInspectionState(),
+                    true,
+                    FeedBoundType.NONE,
+                    0,
+                    0,
+                    null,
+                    productionOrder
+            );
+        }
+        else {
+            for (ComponentMaterialItem item : component.getItems()) {
+                new Ingredient(
+                        component.getSequence(),
+                        material,
+                        item.getNumerator(),
+                        item.getDenominator(),
+                        component.getUnit(),
+                        component.getAttritionRate(),
+                        component.getPickMethod(),
+                        productionOrder.getProcess(item.getProcess().getProcess()),
+                        item.getFeedType(),
+                        item.getQualityInspectionState(),
+                        true,
+                        FeedBoundType.NONE,
+                        0,
+                        0,
+                        null,
+                        productionOrder
+                );
+            }
+        }
     }
 
 }

@@ -4,15 +4,17 @@ import tech.metavm.manufacturing.material.Material;
 import tech.metavm.manufacturing.material.QualityInspectionState;
 import tech.metavm.manufacturing.material.Unit;
 
+import javax.annotation.Nullable;
+
 public class Ingredient {
 
-    private String itemNumber;
+    private int seq;
 
     private Material material;
 
-    private int numerator;
+    private long numerator;
 
-    private int denominator;
+    private long denominator;
 
     private Unit unit;
 
@@ -20,7 +22,7 @@ public class Ingredient {
 
     private PickMethod pickMethod;
 
-    private OrderProcess feedingProcess;
+    private @Nullable OrderProcess feedProcess;
 
     private FeedType feedType;
 
@@ -34,17 +36,19 @@ public class Ingredient {
 
     private double feedingLowerBound;
 
-    private OrderAlternativePlan alternativePlan;
+    private @Nullable OrderAlternativePlan alternativePlan;
 
-    public Ingredient(String itemNumber, Material material, int numerator, int denominator, Unit unit, double attritionRate, PickMethod pickMethod, OrderProcess feedingProcess, FeedType feedType, QualityInspectionState feedingQualityInspectionState, boolean mandatory, FeedBoundType feedBoundType, double feedingUpperBound, double feedingLowerBound, OrderAlternativePlan alternativePlan) {
-        this.itemNumber = itemNumber;
+    public Ingredient(int seq, Material material, long numerator, long denominator, Unit unit, double attritionRate, PickMethod pickMethod,
+                      @Nullable OrderProcess feedProcess, FeedType feedType, QualityInspectionState feedingQualityInspectionState, boolean mandatory, FeedBoundType feedBoundType, double feedingUpperBound, double feedingLowerBound,
+                      @Nullable OrderAlternativePlan alternativePlan, ProductionOrder productionOrder) {
+        this.seq = seq;
         this.material = material;
         this.numerator = numerator;
         this.denominator = denominator;
         this.unit = unit;
         this.attritionRate = attritionRate;
         this.pickMethod = pickMethod;
-        this.feedingProcess = feedingProcess;
+        this.feedProcess = feedProcess;
         this.feedType = feedType;
         this.feedingQualityInspectionState = feedingQualityInspectionState;
         this.mandatory = mandatory;
@@ -52,14 +56,15 @@ public class Ingredient {
         this.feedingUpperBound = feedingUpperBound;
         this.feedingLowerBound = feedingLowerBound;
         this.alternativePlan = alternativePlan;
+        productionOrder.addIngredient(this);
     }
 
-    public String getItemNumber() {
-        return itemNumber;
+    public int getSeq() {
+        return seq;
     }
 
-    public void setItemNumber(String itemNumber) {
-        this.itemNumber = itemNumber;
+    public void setSeq(int seq) {
+        this.seq = seq;
     }
 
     public Material getMaterial() {
@@ -70,19 +75,19 @@ public class Ingredient {
         this.material = material;
     }
 
-    public int getNumerator() {
+    public long getNumerator() {
         return numerator;
     }
 
-    public void setNumerator(int numerator) {
+    public void setNumerator(long numerator) {
         this.numerator = numerator;
     }
 
-    public int getDenominator() {
+    public long getDenominator() {
         return denominator;
     }
 
-    public void setDenominator(int denominator) {
+    public void setDenominator(long denominator) {
         this.denominator = denominator;
     }
 
@@ -110,12 +115,12 @@ public class Ingredient {
         this.pickMethod = pickMethod;
     }
 
-    public OrderProcess getFeedingProcess() {
-        return feedingProcess;
+    public @Nullable OrderProcess getFeedProcess() {
+        return feedProcess;
     }
 
-    public void setFeedingProcess(OrderProcess feedingProcess) {
-        this.feedingProcess = feedingProcess;
+    public void setFeedProcess(@Nullable OrderProcess feedProcess) {
+        this.feedProcess = feedProcess;
     }
 
     public FeedType getFeedType() {
@@ -166,11 +171,11 @@ public class Ingredient {
         this.feedingLowerBound = feedingLowerBound;
     }
 
-    public OrderAlternativePlan getAlternativePlan() {
+    public @Nullable OrderAlternativePlan getAlternativePlan() {
         return alternativePlan;
     }
 
-    public void setAlternativePlan(OrderAlternativePlan alternativePlan) {
+    public void setAlternativePlan(@Nullable OrderAlternativePlan alternativePlan) {
         this.alternativePlan = alternativePlan;
     }
 }

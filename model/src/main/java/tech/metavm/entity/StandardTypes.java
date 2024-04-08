@@ -296,6 +296,14 @@ public class StandardTypes {
         holder.setIllegalStateExceptionType(illegalStateExceptionType);
     }
 
+    public static ClassType getNullPointerExceptionType() {
+        return holder.getNullPointerExceptionType();
+    }
+
+    public static void setNullPointerExceptionType(ClassType nullPointerExceptionType) {
+        holder.setNullPointerExceptionType(nullPointerExceptionType);
+    }
+
     public static ClassType getIllegalArgumentExceptionType() {
         return holder.getIllegalArgumentExceptionType();
     }

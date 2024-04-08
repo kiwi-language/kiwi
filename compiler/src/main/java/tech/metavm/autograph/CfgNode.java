@@ -46,6 +46,6 @@ public class CfgNode {
 
     @Override
     public String toString() {
-        return element.toString();
+        return element.getClass().getSimpleName() + ":" + element.getText();
     }
 }

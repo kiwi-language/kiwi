@@ -139,4 +139,8 @@ public interface StandardTypesHolder {
     ClassType getIllegalArgumentExceptionType();
 
     ClassType getIllegalStateExceptionType();
+
+    ClassType getNullPointerExceptionType();
+
+    void setNullPointerExceptionType(ClassType nullPointerExceptionType);
 }

@@ -57,6 +57,10 @@ public class ProductionOrder {
         outputs.add(output);
     }
 
+    public void addIngredient(Ingredient ingredient) {
+        this.ingredients.add(ingredient);
+    }
+
     public Date getPlannedStartTime() {
         return plannedStartTime;
     }
