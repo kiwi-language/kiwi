@@ -154,7 +154,7 @@ public class Types {
                         actualUt.getMembers() : Set.of(actualType);
                 actualMembers = new HashSet<>(actualMembers);
                 for (Type member : unionType.getMembers()) {
-                    var actualMember = NncUtils.find(actualMembers, that -> member.isAssignableFrom(that, Map.of()));
+                    var actualMember = NncUtils.find(actualMembers, that -> member.isAssignableFrom(that));
                     if(actualMember == null)
                         actualMember = StandardTypes.getNeverType();
                     extractCapturedType(member, actualMember, setCaptureType);
@@ -289,13 +289,13 @@ public class Types {
     }
 
     private static @NotNull Type getLeastUpperBound(Type type1, Type type2) {
-        if (type1.isAssignableFrom(type2, Map.of()))
+        if (type1.isAssignableFrom(type2))
             return type1;
-        if (type2.isAssignableFrom(type1, Map.of()))
+        if (type2.isAssignableFrom(type1))
             return type2;
         return switch (type1) {
             case ClassType classType -> NncUtils.orElse(
-                    classType.getClosure().find(anc -> anc.isAssignableFrom(type2, Map.of())),
+                    classType.getClosure().find(anc -> anc.isAssignableFrom(type2)),
                     StandardTypes.getAnyType(type2.isNullable()));
             case UnionType unionType -> getLeastUpperBound(getLeastUpperBound(unionType.getMembers()), type2);
             case IntersectionType intersectionType ->
@@ -309,7 +309,7 @@ public class Types {
         Set<Type> hasDescendant = new HashSet<>();
         for (Type type : types)
             for (Type type1 : types)
-                if (!type1.equals(type) && type1.isAssignableFrom(type, Map.of()))
+                if (!type1.equals(type) && type1.isAssignableFrom(type))
                     hasDescendant.add(type1);
         return NncUtils.findRequired(types, t -> !hasDescendant.contains(t));
     }
@@ -452,7 +452,7 @@ public class Types {
         out:
         for (Type effectiveType : effectiveTypes) {
             for (Type type : effectiveTypes) {
-                if (type != effectiveType && type.isAssignableFrom(effectiveType, Map.of()))
+                if (type != effectiveType && type.isAssignableFrom(effectiveType))
                     continue out;
             }
             members.add(effectiveType);

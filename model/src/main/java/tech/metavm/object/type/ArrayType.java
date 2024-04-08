@@ -10,7 +10,6 @@ import tech.metavm.object.type.rest.dto.TypeKey;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 
 @EntityType("数组类型")
 public class ArrayType extends CompositeType {
@@ -65,9 +64,9 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
+    protected boolean isAssignableFrom0(Type that) {
         if (that instanceof ArrayType arrayType) {
-            return kind.isAssignableFrom(arrayType.kind, elementType, arrayType.elementType, capturedTypes);
+            return kind.isAssignableFrom(arrayType.kind, elementType, arrayType.elementType);
         } else {
             return false;
         }

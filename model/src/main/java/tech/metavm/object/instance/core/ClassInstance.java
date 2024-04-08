@@ -302,7 +302,7 @@ public class ClassInstance extends DurableInstance {
 
     private void setFieldInternal(Field field, Instance value) {
         ensureLoaded();
-        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType(), Map.of()));
+        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
         if (field.isReadonly())
             throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD);
         if (field.isChild() && value.isNotNull())
@@ -313,7 +313,7 @@ public class ClassInstance extends DurableInstance {
 
     public boolean isFieldInitialized(Field field) {
         ensureLoaded();
-        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType(), Map.of()));
+        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
         return fields.get(InstanceField::getField, field) != null;
     }
 
@@ -324,7 +324,7 @@ public class ClassInstance extends DurableInstance {
 
     public @Nullable Field findUninitializedField(ClassType type) {
         ensureLoaded();
-        NncUtils.requireTrue(type.isAssignableFrom(getType(), Map.of()));
+        NncUtils.requireTrue(type.isAssignableFrom(getType()));
         return type.findField(f -> !isFieldInitialized(f));
     }
 
@@ -335,7 +335,7 @@ public class ClassInstance extends DurableInstance {
 
     private void initFieldInternal(Field field, Instance value) {
 //        try (var ignored = ContextUtil.getProfiler().enter("ClassInstance.initFieldInternal")) {
-        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType(), Map.of()));
+        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
         NncUtils.requireFalse(isFieldInitialized(field));
         if (field.isChild() && value.isNotNull())
             ((DurableInstance) value).setParent(this, field);

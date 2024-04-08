@@ -71,8 +71,8 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
     }
 
     @Override
-    public boolean isAssignableFrom(Type that, Map<CapturedType, Type> capturedTypes) {
-        return that == this || super.isAssignableFrom(that, capturedTypes);
+    public boolean isAssignableFrom(Type that) {
+        return that == this || super.isAssignableFrom(that);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
+    protected boolean isAssignableFrom0(Type that) {
         return this == that;
     }
 

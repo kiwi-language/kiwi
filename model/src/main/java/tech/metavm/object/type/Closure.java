@@ -70,7 +70,7 @@ public class Closure<T extends Type> {
         Set<Type> skips = new HashSet<>();
         for (Type type : types) {
             for (Type type1 : types) {
-                if (type != type1 && type.isAssignableFrom(type1, Map.of()))
+                if (type != type1 && type.isAssignableFrom(type1))
                     skips.add(type);
             }
         }

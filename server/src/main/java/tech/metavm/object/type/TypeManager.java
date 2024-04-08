@@ -577,7 +577,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 types = typeList;
                 while (!queue.isEmpty()) {
                     var t = queue.poll();
-                    if (t.isAssignableFrom(lowerBound, Map.of())) {
+                    if (t.isAssignableFrom(lowerBound)) {
                         if (t.isTemplate() == request.isTemplate()
                                 && categories.contains(t.category)
                                 && t.isParameterized() == request.includeParameterized()) {

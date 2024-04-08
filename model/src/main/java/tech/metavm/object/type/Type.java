@@ -172,7 +172,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public boolean isNullable() {
-        return isAssignableFrom(NULL_TYPE, Map.of());
+        return isAssignableFrom(NULL_TYPE);
     }
 
     public boolean isBinaryNullable() {
@@ -187,7 +187,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return this;
     }
 
-    protected abstract boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes);
+    protected abstract boolean isAssignableFrom0(Type that);
 
     public boolean isError() {
         return error;
@@ -289,18 +289,18 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return false;
     }
 
-    public boolean isAssignableFrom(Type that, Map<CapturedType, Type> capturedTypes) {
+    public boolean isAssignableFrom(Type that) {
         if (that instanceof NeverType)
             return true;
-        return that instanceof ITypeVariable && isAssignableFrom1(that, capturedTypes) || isAssignableFrom1(that.getUpperBound(), capturedTypes);
+        return that instanceof ITypeVariable && isAssignableFrom1(that) || isAssignableFrom1(that.getUpperBound());
     }
 
-    private boolean isAssignableFrom1(Type that, Map<CapturedType, Type> capturedTypes) {
+    private boolean isAssignableFrom1(Type that) {
         return switch (that) {
-            case UnionType unionType -> NncUtils.allMatch(unionType.getMembers(), that1 -> isAssignableFrom(that1, capturedTypes));
+            case UnionType unionType -> NncUtils.allMatch(unionType.getMembers(), this::isAssignableFrom);
             case IntersectionType intersectionType ->
-                    NncUtils.anyMatch(intersectionType.getTypes(), that1 -> isAssignableFrom(that1, capturedTypes));
-            default -> isAssignableFrom0(that, capturedTypes);
+                    NncUtils.anyMatch(intersectionType.getTypes(), this::isAssignableFrom);
+            default -> isAssignableFrom0(that);
         };
     }
 
@@ -308,9 +308,9 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return false;
     }
 
-    public final boolean contains(Type that, Map<CapturedType, Type> capturedTypes) {
-        return getUpperBound().isAssignableFrom(that.getUpperBound(), capturedTypes) &&
-                that.getLowerBound().isAssignableFrom(getLowerBound(), capturedTypes);
+    public final boolean contains(Type that) {
+        return getUpperBound().isAssignableFrom(that.getUpperBound()) &&
+                that.getLowerBound().isAssignableFrom(getLowerBound());
     }
 
     public boolean isVariable() {
@@ -330,11 +330,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public boolean isInstance(Instance value) {
-        return isInstance(value, Map.of());
-    }
-
-    public boolean isInstance(Instance value,Map<CapturedType,Type> capturedTypes) {
-        return isAssignableFrom(value.getType(), capturedTypes);
+        return isAssignableFrom(value.getType());
     }
 
     @NoProxy

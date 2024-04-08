@@ -13,8 +13,6 @@ import tech.metavm.object.type.Type;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.util.AssertUtils;
 
-import java.util.Map;
-
 @EntityType("映射节点")
 public class MapNode extends NodeRT {
 
@@ -54,7 +52,7 @@ public class MapNode extends NodeRT {
     }
 
     public void update(Value source, Mapping mapping) {
-        AssertUtils.assertTrue(mapping.getSourceType().isAssignableFrom(source.getType(), Map.of()),
+        AssertUtils.assertTrue(mapping.getSourceType().isAssignableFrom(source.getType()),
                 ErrorCode.INCORRECT_MAPPING);
         this.source = addChild(source, "source");
         this.mapping = mapping;

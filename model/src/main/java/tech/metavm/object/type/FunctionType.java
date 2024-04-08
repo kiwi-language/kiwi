@@ -10,7 +10,6 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 
 @EntityType("函数类型")
 public class FunctionType extends CompositeType {
@@ -58,15 +57,15 @@ public class FunctionType extends CompositeType {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
+    protected boolean isAssignableFrom0(Type that) {
         if (that instanceof FunctionType functionType) {
             if (parameterTypes.size() == functionType.parameterTypes.size()) {
                 for (int i = 0; i < parameterTypes.size(); i++) {
-                    if (!parameterTypes.get(i).isAssignableFrom(((FunctionType) that).parameterTypes.get(i), capturedTypes)) {
+                    if (!parameterTypes.get(i).isAssignableFrom(((FunctionType) that).parameterTypes.get(i))) {
                         return false;
                     }
                 }
-                return functionType.returnType.isAssignableFrom(returnType, capturedTypes);
+                return functionType.returnType.isAssignableFrom(returnType);
             }
         }
         return false;

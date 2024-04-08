@@ -20,7 +20,6 @@ import tech.metavm.util.*;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @EntityType("流程")
@@ -527,7 +526,7 @@ List.of(),
 
     public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
-    protected void checkArguments(List<Instance> arguments, Map<CapturedType, Type> capturedTypes) {
+    protected void checkArguments(List<Instance> arguments) {
         out:
         if (arguments.size() == parameters.size()) {
             var paramIt = parameters.iterator();
@@ -535,7 +534,7 @@ List.of(),
             while (paramIt.hasNext() && argIt.hasNext()) {
                 var param = paramIt.next();
                 var arg = argIt.next();
-                if (!param.getType().isInstance(arg, capturedTypes)) {
+                if (!param.getType().isInstance(arg)) {
                     if(DebugEnv.DEBUG_LOG_ON) {
                         DEBUG_LOGGER.info("Argument type mismatch: {} is not assignable from {}",
                                 param.getType().getTypeDesc(),

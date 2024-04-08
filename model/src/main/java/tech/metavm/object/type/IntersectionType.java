@@ -42,8 +42,8 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
-        return NncUtils.allMatch(this.types, t -> t.isAssignableFrom(that, capturedTypes));
+    protected boolean isAssignableFrom0(Type that) {
+        return NncUtils.allMatch(this.types, t -> t.isAssignableFrom(that));
     }
 
     @Override

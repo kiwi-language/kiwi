@@ -596,7 +596,7 @@ public class Generator extends CodeGenVisitor {
             }
             var memberTypes = new HashSet<Type>();
             for (var value : branch2value.values()) {
-                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType(), Map.of())))
+                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
                     memberTypes.add(value.getType());
             }
             var fieldType =

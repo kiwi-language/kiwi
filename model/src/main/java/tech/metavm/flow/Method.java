@@ -18,7 +18,6 @@ import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 public class Method extends Flow implements Property, GenericElement {
@@ -117,7 +116,7 @@ public class Method extends Flow implements Property, GenericElement {
                     overridenFlow.getParameterTypes()
             );
             NncUtils.requireTrue(overridenFlow.getReturnType() == getReturnType() ||
-                    overridenFlow.getReturnType().isAssignableFrom(getReturnType(), Map.of()));
+                    overridenFlow.getReturnType().isAssignableFrom(getReturnType()));
         }
     }
 
@@ -297,7 +296,7 @@ public class Method extends Flow implements Property, GenericElement {
             if (!paramTypes.equals(overriddenFlow.getParameterTypes())) {
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
             }
-            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType, Map.of())) {
+            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType)) {
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT);
             }
         }
@@ -367,13 +366,13 @@ public class Method extends Flow implements Property, GenericElement {
                 NncUtils.requireNull(self);
             else
                 Objects.requireNonNull(self);
-            checkArguments(arguments, callContext.capturedTypes());
+            checkArguments(arguments);
             FlowExecResult result;
             if (isNative())
                 result = NativeMethods.invoke(this, self, arguments, callContext);
             else
                 result = new MetaFrame(this.getRootNode(), declaringType, self,
-                        arguments, callContext.instanceRepository(), callContext.parameterizedFlowProvider(), callContext.compositeTypeFacade(), callContext.capturedTypes()).execute();
+                        arguments, callContext.instanceRepository(), callContext.parameterizedFlowProvider(), callContext.compositeTypeFacade()).execute();
             if (isConstructor && result.ret() != null) {
                 var instance = (ClassInstance) result.ret();
                 var uninitializedField = instance.findUninitializedField(declaringType);

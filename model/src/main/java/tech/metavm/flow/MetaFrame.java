@@ -37,14 +37,13 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     private FrameState state = FrameState.RUNNING;
     private final LinkedList<TryNode> tryNodes = new LinkedList<>();
     private ClassInstance exception;
-    private final Map<CapturedType, Type> capturedTypes = new IdentityHashMap<>();
 
     private final Map<TryNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
 
     public MetaFrame(NodeRT entry, @Nullable ClassType owner, @Nullable ClassInstance self, List<Instance> arguments,
                      InstanceRepository instanceRepository,
                      ParameterizedFlowProvider parameterizedFlowProvider,
-                     CompositeTypeFacade compositeTypeFacade, Map<CapturedType, Type> capturedTypes) {
+                     CompositeTypeFacade compositeTypeFacade) {
         this.entry = entry;
         this.owner = owner;
         this.self = self;
@@ -52,7 +51,6 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         this.instanceRepository = instanceRepository;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.compositeTypeFacade = compositeTypeFacade;
-        this.capturedTypes.putAll(capturedTypes);
     }
 
     public Instance getOutput(NodeRT node) {
@@ -151,12 +149,6 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         }
     }
 
-    public void setCapturedType(CapturedType capturedType, Type type) {
-        if(DebugEnv.DEBUG_LOG_ON)
-            DEBUG_LOGGER.info("Setting captured type {} to {}", EntityUtils.getEntityDesc(capturedType), EntityUtils.getEntityDesc(type));
-        capturedTypes.put(capturedType, type);
-    }
-
     public static final int MAX_STEPS = 100000;
 
     public @NotNull FlowExecResult execute() {
@@ -213,11 +205,6 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     @Override
     public CompositeTypeFacade compositeTypeFacade() {
         return compositeTypeFacade;
-    }
-
-    @Override
-    public Map<CapturedType, Type> capturedTypes() {
-        return capturedTypes;
     }
 
     public @Nullable ClassInstance getSelf() {

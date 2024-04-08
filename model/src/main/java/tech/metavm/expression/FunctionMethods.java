@@ -10,7 +10,6 @@ import tech.metavm.util.*;
 
 import java.text.DecimalFormat;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -190,7 +189,7 @@ public class FunctionMethods {
     }
 
     public static boolean isAssignable(Type from, Type to) {
-        return from.isAssignableFrom(to, Map.of());
+        return from.isAssignableFrom(to);
     }
 
     public static LongInstance LEN(Instance instance) {

@@ -68,13 +68,13 @@ public class Function extends Flow implements GlobalKey {
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext) {
         NncUtils.requireNull(self);
-        checkArguments(arguments, callContext.capturedTypes());
+        checkArguments(arguments);
         if (isNative())
             return NativeFunctions.invoke(this, arguments, callContext);
         else
             return new MetaFrame(this.getRootNode(), null, null,
                     arguments, callContext.instanceRepository(),
-                    callContext.parameterizedFlowProvider(), callContext.compositeTypeFacade(), callContext.capturedTypes()).execute();
+                    callContext.parameterizedFlowProvider(), callContext.compositeTypeFacade()).execute();
     }
 
     @Override

@@ -11,7 +11,6 @@ import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.Map;
 import java.util.Objects;
 
 @EntityType("返回节点")
@@ -75,7 +74,7 @@ public class ReturnNode extends NodeRT {
         if (!callable.getReturnType().isVoid()) {
             if (value == null)
                 return "未配置返回结果";
-            else if (!callable.getReturnType().isAssignableFrom(getExpressionTypes().getType(value.getExpression()), Map.of()))
+            else if (!callable.getReturnType().isAssignableFrom(getExpressionTypes().getType(value.getExpression())))
                 return "返回结果错误";
         }
         return null;

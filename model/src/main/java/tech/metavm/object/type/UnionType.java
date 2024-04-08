@@ -61,8 +61,8 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
-        return NncUtils.anyMatch(members, m -> m.isAssignableFrom(that, capturedTypes));
+    protected boolean isAssignableFrom0(Type that) {
+        return NncUtils.anyMatch(members, m -> m.isAssignableFrom(that));
     }
 
     @Override

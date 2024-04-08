@@ -216,7 +216,7 @@ public class FlowManager extends EntityContextFactoryBean {
                 var candidate = NncUtils.find(
                         type.getMethods(),
                         f -> f.getParameterTypes().equals(overridden.getParameterTypes())
-                                && overridden.getReturnType().isAssignableFrom(f.getReturnType(), Map.of())
+                                && overridden.getReturnType().isAssignableFrom(f.getReturnType())
                 );
                 if (candidate != null) {
                     candidate.addOverridden(overridden);

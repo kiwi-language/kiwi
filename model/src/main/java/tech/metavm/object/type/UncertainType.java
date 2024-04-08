@@ -8,7 +8,6 @@ import tech.metavm.object.type.rest.dto.UncertainTypeParam;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 
 @EntityType("不确定类型")
 public class UncertainType extends CompositeType implements LoadAware  {
@@ -49,8 +48,8 @@ public class UncertainType extends CompositeType implements LoadAware  {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
-        return getLowerBound().isAssignableFrom0(that, capturedTypes);
+    protected boolean isAssignableFrom0(Type that) {
+        return getLowerBound().isAssignableFrom0(that);
     }
 
     @Override

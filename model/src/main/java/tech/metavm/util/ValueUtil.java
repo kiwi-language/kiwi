@@ -263,7 +263,7 @@ public class ValueUtil {
     }
 
     public static boolean isAssignable(Type from, Type to) {
-        if (to.isAssignableFrom(from, Map.of())) {
+        if (to.isAssignableFrom(from)) {
             return true;
         }
         if (from.isPrimitive() && to.isPrimitive()) {

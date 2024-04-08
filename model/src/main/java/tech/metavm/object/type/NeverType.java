@@ -11,8 +11,6 @@ import tech.metavm.object.type.rest.dto.NothingTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
 
-import java.util.Map;
-
 @EntityType("不可能类型")
 public class NeverType extends Type {
 
@@ -31,7 +29,7 @@ public class NeverType extends Type {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
+    protected boolean isAssignableFrom0(Type that) {
         return false;
     }
 

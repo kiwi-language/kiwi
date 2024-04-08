@@ -5,8 +5,6 @@ import org.junit.Assert;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
 
-import java.util.Map;
-
 public class ArrayTypeTest extends TestCase {
 
     @Override
@@ -17,17 +15,17 @@ public class ArrayTypeTest extends TestCase {
     public void testIsAssignable() {
         var anyType = StandardTypes.getAnyType();
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        Assert.assertTrue(anyType.isAssignableFrom(fooType, Map.of()));
+        Assert.assertTrue(anyType.isAssignableFrom(fooType));
 
         var objectArrayType = new ArrayType(null, anyType, ArrayKind.READ_WRITE);
         var fooArrayType = new ArrayType(null, fooType, ArrayKind.READ_WRITE);
 
-        Assert.assertFalse(objectArrayType.isAssignableFrom(fooArrayType, Map.of()));
-        Assert.assertTrue(anyType.isAssignableFrom(objectArrayType, Map.of()));
+        Assert.assertFalse(objectArrayType.isAssignableFrom(fooArrayType));
+        Assert.assertTrue(anyType.isAssignableFrom(objectArrayType));
 
         var fooChildArrayType = new ArrayType(null, fooType, ArrayKind.CHILD);
-        Assert.assertTrue(fooArrayType.isAssignableFrom(fooChildArrayType, Map.of()));
-        Assert.assertFalse(fooChildArrayType.isAssignableFrom(fooArrayType, Map.of()));
+        Assert.assertTrue(fooArrayType.isAssignableFrom(fooChildArrayType));
+        Assert.assertFalse(fooChildArrayType.isAssignableFrom(fooArrayType));
     }
 
 }

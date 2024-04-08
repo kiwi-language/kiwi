@@ -13,8 +13,6 @@ import tech.metavm.object.type.Type;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.util.AssertUtils;
 
-import java.util.Map;
-
 @EntityType("反映射节点")
 public class UnmapNode extends NodeRT {
 
@@ -54,7 +52,7 @@ public class UnmapNode extends NodeRT {
     }
 
     public void update(Value view, Mapping mapping) {
-        AssertUtils.assertTrue(mapping.getTargetType().isAssignableFrom(view.getType(), Map.of()),
+        AssertUtils.assertTrue(mapping.getTargetType().isAssignableFrom(view.getType()),
                 ErrorCode.INCORRECT_MAPPING);
         this.view = addChild(view, "view");
         this.mapping = mapping;

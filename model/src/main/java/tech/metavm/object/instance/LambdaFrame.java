@@ -18,7 +18,7 @@ public class LambdaFrame extends MetaFrame {
                        List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider,
                        CompositeTypeFacade compositeTypeFacade,
                        MetaFrame containingFrame) {
-        super(entry, declaringType, containingFrame.getSelf(), arguments, instanceRepository, parameterizedFlowProvider, compositeTypeFacade, containingFrame.capturedTypes());
+        super(entry, declaringType, containingFrame.getSelf(), arguments, instanceRepository, parameterizedFlowProvider, compositeTypeFacade);
         this.containingFrame = containingFrame;
     }
 

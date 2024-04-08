@@ -90,14 +90,8 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, Map<CapturedType, Type> capturedTypes) {
-        if(this == that)
-            return true;
-        var captured = capturedTypes.get(this);
-        if(captured != null)
-            return captured.isAssignableFrom(that, capturedTypes);
-        else
-            return false;
+    protected boolean isAssignableFrom0(Type that) {
+        return this == that;
     }
 
     @Override
