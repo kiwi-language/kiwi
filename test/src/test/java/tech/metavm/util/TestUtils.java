@@ -13,6 +13,7 @@ import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
 import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
+import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.instance.InstanceManager;
@@ -342,6 +343,10 @@ public class TestUtils {
 
     public static String getMethodIdByCode(TypeDTO typeDTO, String methodCode) {
         return NncUtils.findRequired(typeDTO.getClassParam().flows(), f -> methodCode.equals(f.code())).id();
+    }
+
+    public static FlowDTO getMethodByCode(TypeDTO typeDTO, String methodCode) {
+        return NncUtils.findRequired(typeDTO.getClassParam().flows(), f -> methodCode.equals(f.code()));
     }
 
     public static String getStaticMethodIdByCode(TypeDTO typeDTO, String methodCode) {

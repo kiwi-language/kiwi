@@ -1,5 +1,6 @@
 package tech.metavm.manufacturing.production;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ChildList;
 import tech.metavm.entity.EntityField;
 import tech.metavm.manufacturing.utils.Utils;
@@ -19,12 +20,16 @@ public class ProductionOrder {
 
     private ProductionOrderState state = ProductionOrderState.DRAFT;
 
+    @ChildEntity("outputs")
     private final ChildList<ProductOrderOutput> outputs = new ChildList<>();
 
+    @ChildEntity("ingredients")
     private final ChildList<Ingredient> ingredients = new ChildList<>();
 
+    @ChildEntity("processes")
     private final ChildList<OrderProcess> processes = new ChildList<>();
 
+    @ChildEntity("successions")
     private final ChildList<OrderSuccession> successions = new ChildList<>();
 
     public ProductionOrder(String code, Date plannedStartTime, Date plannedFinishTime) {

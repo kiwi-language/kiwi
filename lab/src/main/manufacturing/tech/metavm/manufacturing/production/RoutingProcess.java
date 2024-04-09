@@ -2,6 +2,7 @@ package tech.metavm.manufacturing.production;
 
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ChildList;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityStruct;
 
 import javax.annotation.Nullable;
@@ -11,15 +12,16 @@ import java.util.List;
 @EntityStruct("RoutingProcess")
 public class RoutingProcess {
 
+    @EntityField(value ="processCode", asTitle = true)
     private String processCode;
     private int sequence;
     private Process process;
-    private WorkCenter workCenter;
+    private @Nullable WorkCenter workCenter;
     private @Nullable String processDescription;
     @ChildEntity("items")
     private final ChildList<RoutingProcessItem> items;
 
-    public RoutingProcess(String processCode, int sequence, Process process, WorkCenter workCenter, @Nullable String processDescription, List<RoutingProcessItem> items) {
+    public RoutingProcess(String processCode, int sequence, Process process, @Nullable WorkCenter workCenter, @Nullable String processDescription, List<RoutingProcessItem> items) {
         this.processCode = processCode;
         this.sequence = sequence;
         this.process = process;
@@ -52,11 +54,11 @@ public class RoutingProcess {
         this.process = process;
     }
 
-    public WorkCenter getWorkCenter() {
+    public @Nullable WorkCenter getWorkCenter() {
         return workCenter;
     }
 
-    public void setWorkCenter(WorkCenter workCenter) {
+    public void setWorkCenter(@Nullable WorkCenter workCenter) {
         this.workCenter = workCenter;
     }
 

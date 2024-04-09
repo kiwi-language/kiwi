@@ -455,10 +455,8 @@ public class InstanceContext extends BufferingInstanceContext {
     private String getInstanceDesc(DurableInstance instance) {
         if(instance instanceof ArrayInstance)
             return instance.getType().getName();
-        if (instance.getMappedEntity() == DebugEnv.inputNode)
-            return instance + "*";
-        else if (instance.getMappedEntity() instanceof Flow flow)
-            return flow.getNameWithTypeArguments();
+        else if (instance.getMappedEntity() != null)
+            return EntityUtils.getEntityDesc(instance.getMappedEntity());
         else
             return instance.toString();
     }
@@ -491,40 +489,44 @@ public class InstanceContext extends BufferingInstanceContext {
                     if(DebugEnv.DEBUG_LOG_ON)
                         path.addLast(getInstancePath(instance));
                     if (instance.isRemoved()) {
-                        if(DebugEnv.DEBUG_LOG_ON && DebugEnv.target != null) {
-                            DEBUG_LOGGER.info("On exception check. bug detected: {}", DebugEnv.isBugPresent(DebugEnv.target));
-                        }
                         if(DebugEnv.DEBUG_LOG_ON)
                             DEBUG_LOGGER.info(String.join("->", path));
                         throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(instance));
                     }
-                    try {
-                        numCalls++;
-                        if (!visited.add(instance))
-                            return null;
-                        if (instance instanceof ArrayInstance arrayInstance) {
-                            for (int i = 0; i < arrayInstance.getElements().size(); i++) {
-                                path.addLast(i + "");
-                                visit(arrayInstance.getElement(i));
-                                path.removeLast();
+                    if(DebugEnv.DEBUG_LOG_ON) {
+                        try {
+                            numCalls++;
+                            if (!visited.add(instance))
+                                return null;
+                            if (instance instanceof ArrayInstance arrayInstance) {
+                                for (int i = 0; i < arrayInstance.getElements().size(); i++) {
+                                    path.addLast(i + "");
+                                    visit(arrayInstance.getElement(i));
+                                    path.removeLast();
+                                }
+                            } else if (instance instanceof ClassInstance classInstance) {
+                                classInstance.forEachField((field, fieldValue) -> {
+                                    path.addLast(field.getName());
+                                    visit(fieldValue);
+                                    path.removeLast();
+                                });
+                                classInstance.forEachUnknownField((fieldValue) -> {
+                                    path.addLast("<unknown>");
+                                    visit(fieldValue);
+                                    path.removeLast();
+                                });
                             }
-                        } else if (instance instanceof ClassInstance classInstance) {
-                            classInstance.forEachField((field, fieldValue) -> {
-                                path.addLast(field.getName());
-                                visit(fieldValue);
-                                path.removeLast();
-                            });
-                        }
-                        return null;
-//                        return super.visitDurableInstance(instance);
-                    } finally {
-                        if(DebugEnv.DEBUG_LOG_ON)
+                            return null;
+                        } finally {
                             path.removeLast();
+                        }
                     }
+                    else
+                        return super.visitDurableInstance(instance);
                 }
             };
             for (var instance : this) {
-                if (!instance.isRemoved() && !instance.isEphemeral())
+                if (instance.isRoot() && !instance.isRemoved() && !instance.isEphemeral())
                     visitor.visit(instance);
             }
             var idsToRemove = NncUtils.mapUnique(entityChange.deletes(), VersionRT::id);

@@ -102,6 +102,10 @@ public class ClassInstance extends DurableInstance {
         }
     }
 
+    public void forEachUnknownField(Consumer<Instance> action) {
+        ensureLoaded();
+        unknownFields.forEach(f -> action.accept(f.getValue()));
+    }
 
     public Set<IndexKeyRT> getIndexKeys(ParameterizedFlowProvider parameterizedFlowProvider) {
         ensureLoaded();

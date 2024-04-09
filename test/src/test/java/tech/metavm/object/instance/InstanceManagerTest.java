@@ -26,6 +26,7 @@ public class InstanceManagerTest extends TestCase {
     private InstanceManager instanceManager;
     private EntityContextFactory entityContextFactory;
     private TypeManager typeManager;
+    private FlowManager flowManager;
     private FlowExecutionService flowExecutionService;
 
     @Override
@@ -44,7 +45,7 @@ public class InstanceManagerTest extends TestCase {
                 new TaskManager(entityContextFactory, transactionOperations),
                 transactionOperations
         );
-        var flowManager = new FlowManager(entityContextFactory);
+        flowManager = new FlowManager(entityContextFactory);
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         flowExecutionService = new FlowExecutionService(entityContextFactory);
@@ -56,6 +57,7 @@ public class InstanceManagerTest extends TestCase {
         instanceManager = null;
         entityContextFactory = null;
         typeManager = null;
+        flowManager = null;
         flowExecutionService = null;
         FlowSavingContext.clearConfig();
     }
@@ -257,6 +259,20 @@ public class InstanceManagerTest extends TestCase {
         catch (BusinessException e) {
             Assert.assertEquals(String.format("对象被其他对象关联，无法删除: %s-%s", childType.name(), child.title()), e.getMessage());
         }
+    }
+
+    public void testRemovingNonPersistedChild() {
+        var typeIds = MockUtils.createParentChildTypes(typeManager, flowManager);
+        var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                typeIds.parentConstructorId(),
+                null,
+                List.of()
+        )));
+        TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                typeIds.parentTestMethodId(),
+                parent.id(),
+                List.of()
+        )));
     }
 
 }

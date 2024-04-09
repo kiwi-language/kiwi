@@ -1,5 +1,6 @@
 package tech.metavm;
 
+import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
 
 import java.io.IOException;
@@ -20,8 +21,8 @@ public class Lab {
     };
 
     public static void main(String[] args) throws IOException {
-        var id = Id.parse("01dad70301e0dc03");
-        System.out.println(id);
+        var id = (DefaultViewId) Id.parse("0b01a6f3beda0dcc0203d699060001f4b4bfda0d0003a6f3beda0d00");
+        System.out.println(id.getSourceId());
     }
 
     public void test(List<? extends Number> list) {

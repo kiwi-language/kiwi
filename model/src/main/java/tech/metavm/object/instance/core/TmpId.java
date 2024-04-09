@@ -15,6 +15,10 @@ public final class TmpId extends Id {
         return new TmpId(NncUtils.randomNonNegative());
     }
 
+    public static String randomString() {
+        return random().toString();
+    }
+
     private final long tmpId;
 
     public TmpId(long tmpId) {

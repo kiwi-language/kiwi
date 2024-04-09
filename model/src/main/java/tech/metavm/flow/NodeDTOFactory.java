@@ -202,6 +202,25 @@ public class NodeDTOFactory {
         );
     }
 
+    public static NodeDTO createNewObjectNode(Long tmpId, String name,
+                                              String typeId, String methodId, List<ArgumentDTO> arguments) {
+        return new NodeDTO(
+                getStringTmpId(tmpId),
+                null,
+                name,
+                null,
+                NodeKind.NEW.code(),
+                null,
+                null,
+                new NewObjectNodeParam(methodId, typeId,
+                        arguments, null,
+                        false, false, List.of(), List.of()),
+                null,
+                null,
+                null
+        );
+    }
+
     public static NodeDTO createMethodCallNode(Long tmpId, String name, String methodId, ValueDTO self, List<ArgumentDTO> arguments) {
         return new NodeDTO(
                 getStringTmpId(tmpId),

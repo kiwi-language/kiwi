@@ -68,7 +68,8 @@ public class Declarator extends CodeGenVisitor {
         }
         visitedFields.clear();
         visitedMethods.clear();
-        var metaClass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
+        var metaClass = Objects.requireNonNull(psiClass.getUserData(Keys.MV_CLASS),
+                () -> "Meta class not found for '" + psiClass.getQualifiedName() + "'");
         metaClass.setStage(ResolutionStage.DECLARATION);
         if (!metaClass.isInterface()) {
             if (metaClass.findSelfMethodByCode("<init>") == null) {
