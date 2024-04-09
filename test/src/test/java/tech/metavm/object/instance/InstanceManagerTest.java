@@ -273,6 +273,9 @@ public class InstanceManagerTest extends TestCase {
                 parent.id(),
                 List.of()
         )));
+        var reloadedParent = instanceManager.get(parent.id(), 2).instance();
+        var children = ((InstanceFieldValue) reloadedParent.getFieldValue(typeIds.parentChildrenFieldId())).getInstance();
+        Assert.assertEquals(0, children.getListSize());
     }
 
 }
