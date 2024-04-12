@@ -388,8 +388,8 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private Patch beforeSaving(Patch patch, PatchContext patchContext) {
-        try (var ignored = getProfiler().enter("InstanceContext.beforeSaving")) {
-            for (ContextPlugin plugin : plugins) {
+        for (ContextPlugin plugin : plugins) {
+            try (var ignored = getProfiler().enter(plugin.getClass().getSimpleName() + ".beforeSaving")) {
                 if (plugin.beforeSaving(patch.entityChange, this))
                     patch = buildPatch(patch, patchContext);
             }
@@ -415,7 +415,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private Patch processChanges(Patch patch, List<DurableInstance> nonPersistedOrphans, PatchContext patchContext) {
         try (var ignored = getProfiler().enter("processChanges")) {
-            if(DebugEnv.DEBUG_ON) {
+            if (DebugEnv.DEBUG_ON) {
                 DEBUG_LOGGER.info("nonPersistedOrphans: [{}]", NncUtils.join(nonPersistedOrphans, i -> Instances.getInstanceDesc(i) + "/" + i.getStringId()));
             }
             var ref = new Object() {
@@ -472,10 +472,8 @@ public class InstanceContext extends BufferingInstanceContext {
 
             @Override
             public Void visitDurableInstance(DurableInstance instance) {
-                if (DebugEnv.DEBUG_ON) {
+                if (DebugEnv.DEBUG_ON)
                     path.addLast(getInstancePath(instance));
-                    DEBUG_LOGGER.info("visiting: {}", String.join("->", path));
-                }
                 if (instance.isRemoved()) {
                     if (DebugEnv.DEBUG_ON)
                         DEBUG_LOGGER.info(String.join("->", path));

@@ -13,6 +13,8 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
 
     private byte[] indexId;
     private final byte[][] columns = new byte[MAX_KEY_COLUMNS][];
+    private transient int hash;
+    private transient boolean hashIsZero;
 
     public IndexKeyPO() {
         fillNull();
@@ -170,14 +172,30 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IndexKeyPO that = (IndexKeyPO) o;
-        return Arrays.equals(indexId, that.indexId) && Arrays.deepEquals(columns, that.columns);
+        if(Arrays.equals(indexId, that.indexId)) {
+            for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
+                if(!Arrays.equals(columns[i], that.columns[i]))
+                    return false;
+            }
+            return true;
+        }
+        else
+            return false;
     }
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(indexId);
-        result = 31 * result + Arrays.deepHashCode(columns);
-        return result;
+        int h = hash;
+        if(h == 0 && !hashIsZero) {
+            h = Arrays.hashCode(indexId);
+            for (int i = 0; i < MAX_KEY_COLUMNS; i++)
+                h = 31 * h + Arrays.hashCode(columns[i]);
+            if(h == 0)
+                hashIsZero = true;
+            else
+                hash = h;
+        }
+        return h;
     }
 
     @Override
@@ -191,9 +209,10 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
     public IndexKeyPO copy() {
         var copy = new IndexKeyPO();
         copy.indexId = indexId;
-        for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
+        for (int i = 0; i < MAX_KEY_COLUMNS; i++)
             copy.columns[i] = Arrays.copyOf(columns[i], columns[i].length);
-        }
+        copy.hash = hash;
+        copy.hashIsZero = hashIsZero;
         return copy;
     }
 

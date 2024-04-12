@@ -13,6 +13,8 @@ public class IndexEntryPO implements Comparable<IndexEntryPO> {
     private long appId;
     private final IndexKeyPO key;
     private byte[] instanceId;
+    private transient int hash;
+    private transient boolean hashIsZero;
 
     public IndexEntryPO(long appId, IndexKeyPO key, byte[] instanceId) {
         this.appId = appId;
@@ -190,7 +192,15 @@ public class IndexEntryPO implements Comparable<IndexEntryPO> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, Arrays.hashCode(instanceId));
+        int h = hash;
+        if(h == 0 && !hashIsZero) {
+            h = Objects.hash(key, Arrays.hashCode(instanceId));
+            if(h == 0)
+                hashIsZero = true;
+            else
+                hash = h;
+        }
+        return h;
     }
 
     @Override
@@ -203,7 +213,10 @@ public class IndexEntryPO implements Comparable<IndexEntryPO> {
     }
 
     public IndexEntryPO copy() {
-        return new IndexEntryPO(appId, key.copy(), instanceId);
+        var copy = new IndexEntryPO(appId, key.copy(), instanceId);
+        copy.hash = hash;
+        copy.hashIsZero = hashIsZero;
+        return copy;
     }
 
     @Override

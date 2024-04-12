@@ -13,6 +13,8 @@ import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
+import tech.metavm.object.instance.core.DefaultViewId;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.TypeManager;
@@ -305,5 +307,24 @@ public class InstanceManagerTest extends TestCase {
         }
     }
 
+    public void testRemoveRoot() {
+        final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
+        var assembler = AssemblerFactory.createWitStandardTypes();
+        var types = assembler.assemble(List.of(parentChildMasm));
+        FlowSavingContext.initConfig();
+        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(types, List.of(), List.of(), false)));
+        var parentType = typeManager.getTypeByCode("Parent").type();
+        var parentConstructorId = TestUtils.getMethodByCode(parentType, "Parent").id();
+        var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                parentConstructorId,
+                null,
+                List.of()
+        )));
+        var mappingId = Id.parse(TestUtils.getDefaultMapping(parentType).id());
+        var viewId = new DefaultViewId(false, mappingId, Id.parse(parent.id()));
+//        var parentMapping = instanceManager.get(viewId.toString(), 2);
+//        DebugEnv.DEBUG_ON = true;
+        TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(viewId.toString()));
+    }
 
 }

@@ -406,7 +406,7 @@ public class Assembler {
                                     ValueDTOFactory.createExpression(parseExpression(statement.expression())) : null
                     );
                 }
-                if (statement.NEW() != null) {
+                if (statement.NEW() != null || statement.NEW_UNBOUND() != null || statement.NEW_EPHEMERAL() != null) {
                     var type = (ClassAsmType) parseClassType(statement.creator().classOrInterfaceType(), currentClass);
                     var methodName = type.name;
                     List<AssemblyParser.ExpressionContext> arguments =
@@ -420,7 +420,9 @@ public class Assembler {
                             name,
                             getTypeId(type),
                             methodName,
-                            NncUtils.map(arguments, arg -> ValueDTOFactory.createExpression(parseExpression(arg)))
+                            NncUtils.map(arguments, arg -> ValueDTOFactory.createExpression(parseExpression(arg))),
+                            statement.NEW_UNBOUND() != null,
+                            statement.NEW_EPHEMERAL() != null
                     );
                 }
                 if (statement.methodCall() != null) {

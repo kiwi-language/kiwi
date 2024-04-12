@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static tech.metavm.util.NncUtils.requireNonNull;
 
@@ -504,22 +505,24 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return typeProvider.getType(id);
     }
 
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+
     @Override
     public void batchRemove(Collection<DurableInstance> instances) {
-        var removalBatch = getRemovalBatch(instances);
-        var referencesByTarget = new HashMap<DurableInstance, List<ReferenceRT>>();
-        instances.forEach(i -> referencesByTarget.put(i, new ArrayList<>()));
-        for (var instance : instanceMap.values()) {
-            for (ReferenceRT ref : instance.getOutgoingReferences()) {
-                var refs = referencesByTarget.get(ref.target());
-                if (refs != null)
-                    refs.add(ref);
+        if(DebugEnv.DEBUG_ON) {
+            for (DurableInstance instance : instances) {
+                if(instance.isView() && !instance.isLoaded())
+                    instance.ensureLoaded();
             }
+        }
+        var removalBatch = getRemovalBatch(instances);
+        if (DebugEnv.DEBUG_ON) {
+            DEBUG_LOGGER.info("removalBatch: [{}]", NncUtils.join(removalBatch, Instances::getInstanceDesc));
         }
         // remove views first otherwise uninitialized views in the removal batch may fail to initialize
         var sortedRemovalBatch = NncUtils.sort(removalBatch, Comparator.comparingInt(i -> i.isView() ? 0 : 1));
         for (var toRemove : sortedRemovalBatch) {
-            remove0(toRemove, removalBatch, referencesByTarget);
+            remove0(toRemove, removalBatch);
         }
     }
 
@@ -530,7 +533,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return true;
     }
 
-    private void remove0(DurableInstance instance, Set<DurableInstance> removalBatch, Map<DurableInstance, List<ReferenceRT>> referencesByTarget) {
+    private void remove0(DurableInstance instance, Set<DurableInstance> removalBatch) {
         if (instance.isRemoved())
             return;
         var parent = instance.getParent();
@@ -576,20 +579,29 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private Set<DurableInstance> getRemovalBatch(Collection<DurableInstance> instances) {
         var result = new IdentitySet<DurableInstance>();
+        var newlyAdded = new ArrayList<DurableInstance>();
+        Predicate<DurableInstance> addResult = inst -> {
+            if(result.add(inst)) {
+                newlyAdded.add(inst);
+                return true;
+            }
+            else
+                return false;
+        };
         var visitor = new InstanceVisitor<Boolean>() {
 
-            @Override
-            public Boolean visitClassInstance(ClassInstance instance) {
-                if (instance.isView())
-                    return Objects.requireNonNull(instance.tryGetSource()).accept(this);
-                else {
-                    if (super.visitClassInstance(instance)) {
-                        forEachView(instance, result::add);
-                        return true;
-                    } else
-                        return false;
-                }
-            }
+//            @Override
+//            public Boolean visitClassInstance(ClassInstance instance) {
+//                if (instance.isView())
+//                    return Objects.requireNonNull(instance.tryGetSource()).accept(this);
+//                else {
+//                    if (super.visitClassInstance(instance)) {
+//                        forEachView(instance, result::add);
+//                        return true;
+//                    } else
+//                        return false;
+//                }
+//            }
 
             @Override
             public Boolean visitInstance(Instance instance) {
@@ -598,7 +610,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
             @Override
             public Boolean visitDurableInstance(DurableInstance instance) {
-                if (result.add(instance)) {
+                if (addResult.test(instance)) {
                     instance.acceptChildren(this);
                     return true;
                 } else
@@ -610,7 +622,21 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 return false;
             }
         };
-        instances.forEach(visitor::visit);
+        var next = new ArrayList<>(instances);
+        Consumer<DurableInstance> addNext = i -> {
+            if(!result.contains(i))
+                next.add(i);
+        };
+        while (!next.isEmpty()) {
+            next.forEach(visitor::visit);
+            next.clear();
+            newlyAdded.forEach(i -> {
+                if(i instanceof ClassInstance k && k.tryGetSource() != null)
+                    addNext.accept(k.getSource());
+                forEachView(i, addNext);
+            });
+            newlyAdded.clear();
+        }
         return result;
     }
 

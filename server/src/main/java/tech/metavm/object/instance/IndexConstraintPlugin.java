@@ -36,8 +36,8 @@ public class IndexConstraintPlugin implements ContextPlugin {
 
     @Override
     public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
-        Map<Id, ClassInstance> instanceMap = new HashMap<>();
-        List<IndexEntryPO> currentEntries = new ArrayList<>();
+        var instanceMap = new HashMap<Id, ClassInstance>();
+        var currentEntries = new ArrayList<IndexEntryPO>();
         change.forEachInsertOrUpdate(ver -> {
             var instance = context.get(ver.id());
             if (instance instanceof ClassInstance classInstance) {
@@ -45,24 +45,21 @@ public class IndexConstraintPlugin implements ContextPlugin {
                 currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.parameterizedFlowProvider(), context.getAppId()));
             }
         });
-        var oldVersions = NncUtils.union(change.updates(), change.deletes());
-        var oldIdSet = NncUtils.mapUnique(oldVersions, VersionRT::id);
+        List<VersionRT> oldVersions = NncUtils.union(change.updates(), change.deletes());
+        Set<Id> oldIdSet = NncUtils.mapUnique(oldVersions, VersionRT::id);
         Set<IndexEntryPO> relatedEntries = new HashSet<>();
         NncUtils.doInBatch(NncUtils.map(oldVersions, v -> v.id().toBytes()),
                 ids -> relatedEntries.addAll(indexEntryMapper.selectByInstanceIds(context.getAppId(), ids)));
         NncUtils.doInBatch(NncUtils.map(currentEntries, IndexEntryPO::getKey),
                 keys -> relatedEntries.addAll(indexEntryMapper.selectByKeys(context.getAppId(), keys)));
-
         List<IndexEntryPO> oldEntries = NncUtils.filter(
                 relatedEntries,
                 e -> oldIdSet.contains(e.getId())
         );
-
         List<IndexEntryPO> conflictingEntries = NncUtils.exclude(
                 relatedEntries,
                 e -> oldIdSet.contains(e.getId())
         );
-
         Map<IndexKeyPO, List<Id>> newKeyMap = NncUtils.toMultiMap(
                 currentEntries, IndexEntryPO::getKey, IndexEntryPO::getId
         );

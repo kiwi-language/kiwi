@@ -35,6 +35,11 @@ class Parent {
         return this;
     }
 
+    public List<Child> getChildren() {
+        children: new_unbound ReadWriteList<Child>(this.children);
+        return children;
+    }
+
     public void test() {
         child1: this.children.get(0);
         child2: new Child("Child002");

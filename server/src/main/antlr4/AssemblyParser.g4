@@ -163,7 +163,7 @@ statement
     | SEMI
     | statementExpression=expression ';'
     | methodCall ';'
-    | NEW creator ';'
+    | (NEW | NEW_UNBOUND | NEW_EPHEMERAL) creator ';'
     | (THIS | IDENTIFIER) '.' IDENTIFIER
       bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
       expression ';'

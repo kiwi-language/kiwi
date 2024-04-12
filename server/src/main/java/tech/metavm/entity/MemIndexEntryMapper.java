@@ -5,6 +5,7 @@ import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.IndexQueryPO;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -91,13 +92,17 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     @Override
     public List<IndexEntryPO> selectByInstanceIds(long appId, Collection<byte[]> instanceIds) {
-        return NncUtils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id)));
+        try (var ignored = ContextUtil.getProfiler().enter("MemIndexEntryMapper.selectByInstanceIds")) {
+            return NncUtils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id)));
+        }
     }
 
     @Override
     public List<IndexEntryPO> selectByKeys(long appId, Collection<IndexKeyPO> keys) {
-        var globalKeys = NncUtils.map(keys, k -> new GlobalKey(appId, k));
-        return NncUtils.flatMap(globalKeys, this::getItems);
+        try (var ignored = ContextUtil.getProfiler().enter("MemIndexEntryMapper.selectByKeys")) {
+            var globalKeys = NncUtils.map(keys, k -> new GlobalKey(appId, k));
+            return NncUtils.flatMap(globalKeys, this::getItems);
+        }
     }
 
     @Override

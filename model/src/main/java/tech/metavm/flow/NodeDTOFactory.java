@@ -202,7 +202,8 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createUnresolvedNewObjectNode(Long tmpId, String name, String typeId, String methodName, List<ValueDTO> arguments) {
+    public static NodeDTO createUnresolvedNewObjectNode(Long tmpId, String name, String typeId, String methodName, List<ValueDTO> arguments,
+                                                        boolean unbound, boolean ephemeral) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
                 null,
@@ -213,7 +214,7 @@ public class NodeDTOFactory {
                 null,
                 new NewObjectNodeParam(null, methodName, typeId,
                         null, arguments, null,
-                        false, false, List.of(), List.of()),
+                        ephemeral, unbound, List.of(), List.of()),
                 null,
                 null,
                 null
