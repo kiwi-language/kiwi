@@ -9,7 +9,6 @@ import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.LockMode;
 import tech.metavm.entity.natives.CallContext;
-import tech.metavm.entity.natives.ListNative;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
@@ -405,7 +404,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         try (var ignored = getProfiler().enter("saveViews")) {
             NncUtils.enhancedForEach(instanceMap.values(), value -> {
                 if (value instanceof ClassInstance classInstance) {
-                    if (classInstance.isView() && !classInstance.isList() && !classInstance.isRemoved())
+                    if (classInstance.isView() && !classInstance.isList() && !classInstance.isRemoved() && !classInstance.viewSaved)
                         saveView(classInstance);
                 }
             });
@@ -413,6 +412,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private void saveView(ClassInstance view) {
+        view.viewSaved = true;
         var mapping = mappingProvider.getMapping(view.getMappingId());
         mapping.unmap(view, this);
     }
@@ -533,8 +533,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private void remove0(DurableInstance instance, Set<DurableInstance> removalBatch, Map<DurableInstance, List<ReferenceRT>> referencesByTarget) {
         if (instance.isRemoved())
             return;
-        if (instance.getParent() != null && !removalBatch.contains(instance.getParent())) {
-            switch (instance.getParent()) {
+        var parent = instance.getParent();
+        if (parent != null && !parent.removed && !removalBatch.contains(parent)) {
+            switch (parent) {
                 case ClassInstance classParent -> {
                     var parentField = requireNonNull(instance.getParentField());
                     if (classParent.getField(parentField) == instance) {
@@ -550,9 +551,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                     }
                 }
                 case ArrayInstance arrayParent -> arrayParent.removeChild(instance);
-                case null -> {
-                }
-                default -> throw new IllegalStateException("Unexpected value: " + instance.getParent());
+                default -> throw new IllegalStateException("Unexpected value: " + instance);
             }
         }
 //        Set<ReferenceRT> refsOutsideOfRemoval = NncUtils.filterUnique(
@@ -662,10 +661,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                         "See issue 0001"));
     }
 
-    /**
-     * @return non-persisted orphans
-     */
-    protected List<DurableInstance> craw() {
+    protected void craw() {
         try (var entry = getProfiler().enter("craw")) {
             var crawResult = doCraw(this);
             var added = crawResult.newInstances;
@@ -674,10 +670,29 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 if (inst.tryGetPhysicalId() == null && !containsInstance(inst))
                     add(inst);
             }
-            var visited = crawResult.visited;
-//            return NncUtils.filter(this, i -> i.isNew() && !visited.contains(i));
-            return List.of();
         }
+    }
+
+    protected List<DurableInstance> computeNonPersistedOrphans() {
+        for (var instance : this)
+            instance.marked = false;
+        var marker = new StructuralVisitor() {
+            @Override
+            public Void visitDurableInstance(DurableInstance instance) {
+                instance.marked = true;
+                return super.visitDurableInstance(instance);
+            }
+        };
+        for (var instance : this) {
+            if(instance.isRoot() && !instance.removed)
+                instance.accept(marker);
+        }
+        var orphans = new ArrayList<DurableInstance>();
+        for (var instance : this) {
+            if(!instance.removed && !instance.marked)
+                orphans.add(instance);
+        }
+        return orphans;
     }
 
     private void add(DurableInstance instance) {

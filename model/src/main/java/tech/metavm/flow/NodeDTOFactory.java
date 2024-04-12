@@ -202,8 +202,7 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createNewObjectNode(Long tmpId, String name,
-                                              String typeId, String methodId, List<ArgumentDTO> arguments) {
+    public static NodeDTO createUnresolvedNewObjectNode(Long tmpId, String name, String typeId, String methodName, List<ValueDTO> arguments) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
                 null,
@@ -212,8 +211,8 @@ public class NodeDTOFactory {
                 NodeKind.NEW.code(),
                 null,
                 null,
-                new NewObjectNodeParam(methodId, typeId,
-                        arguments, null,
+                new NewObjectNodeParam(null, methodName, typeId,
+                        null, arguments, null,
                         false, false, List.of(), List.of()),
                 null,
                 null,
@@ -221,7 +220,33 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createMethodCallNode(Long tmpId, String name, String methodId, ValueDTO self, List<ArgumentDTO> arguments) {
+    public static NodeDTO createNewObjectNode(Long tmpId,
+                                              String name,
+                                              String typeId,
+                                              String methodId,
+                                              List<ArgumentDTO> arguments) {
+        return new NodeDTO(
+                getStringTmpId(tmpId),
+                null,
+                name,
+                null,
+                NodeKind.NEW.code(),
+                null,
+                null,
+                new NewObjectNodeParam(methodId, null, typeId,
+                        arguments, null, null,
+                        false, false, List.of(), List.of()),
+                null,
+                null,
+                null
+        );
+    }
+
+    public static NodeDTO createUnresolvedMethodCallNode(Long tmpId, String name,
+                                                         String methodName,
+                                                         @Nullable String typeId,
+                                                         @Nullable ValueDTO self,
+                                                         List<ValueDTO> arguments) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
                 null,
@@ -230,7 +255,23 @@ public class NodeDTOFactory {
                 NodeKind.METHOD_CALL.code(),
                 null,
                 null,
-                new MethodCallNodeParam(self, methodId, null, arguments, List.of(), List.of()),
+                new MethodCallNodeParam(self, null, methodName, typeId, null, arguments, List.of(), List.of()),
+                null,
+                null,
+                null
+        );
+    }
+
+    public static NodeDTO createMethodCallNode(Long tmpId, String name, String methodId, @Nullable ValueDTO self, List<ArgumentDTO> arguments) {
+        return new NodeDTO(
+                getStringTmpId(tmpId),
+                null,
+                name,
+                null,
+                NodeKind.METHOD_CALL.code(),
+                null,
+                null,
+                new MethodCallNodeParam(self, methodId, null, null, arguments, null, List.of(), List.of()),
                 null,
                 null,
                 null
@@ -308,7 +349,7 @@ public class NodeDTOFactory {
                 null
         );
     }
-    
+
     private static @Nullable String getStringTmpId(Long tmpId) {
         return tmpId != null ? TmpId.of(tmpId).toString() : null;
     }

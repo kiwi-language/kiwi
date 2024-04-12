@@ -8,25 +8,61 @@ import tech.metavm.flow.rest.MethodCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("方法调用节点")
 public class MethodCallNode extends CallNode {
 
     public static MethodCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         MethodCallNodeParam param = nodeDTO.getParam();
-        var method = context.getMethod(Id.parse(param.getFlowId()));
-        FlowParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
-        var self = NncUtils.get(param.getSelf(), s -> ValueFactory.create(s, parsingContext));
-        List<Argument> arguments = NncUtils.biMap(
-                method.getParameters(),
-                param.getArguments(),
-                (p, a) -> new Argument(a.tmpId(), p, ValueFactory.create(a.value(), parsingContext))
-        );
+        var parsingContext = FlowParsingContext.create(scope, prev, context);
+        if (param.isResolved()) {
+            var method = context.getMethod(Id.parse(param.getFlowId()));
+            var self = NncUtils.get(param.getSelf(), s -> ValueFactory.create(s, parsingContext));
+            List<Argument> arguments = NncUtils.biMap(
+                    method.getParameters(),
+                    param.getArguments(),
+                    (p, a) -> new Argument(a.tmpId(), p, ValueFactory.create(a.value(), parsingContext))
+            );
+            //noinspection DuplicatedCode
+            var node = saveNode0(nodeDTO, self, method, arguments, prev, scope, context);
+            node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypeIds(), context::getType));
+            node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
+            return node;
+        } else {
+            var isStatic = param.getSelf() == null;
+            var self = NncUtils.get(param.getSelf(), s -> ValueFactory.create(s, parsingContext));
+            var declaringType = self != null ?
+                    (ClassType) self.getType() : context.getClassType(Objects.requireNonNull(param.getTypeId()));
+            var argumentValues = NncUtils.map(
+                    param.getArgumentValues(),
+                    arg -> ValueFactory.create(arg, parsingContext)
+            );
+            var argumentTypes = NncUtils.map(argumentValues, Value::getType);
+
+            var method = declaringType.resolveMethod(param.getFlowName(), argumentTypes, isStatic);
+
+            var arguments = new ArrayList<Argument>();
+            NncUtils.biForEach(method.getParameters(), argumentValues, (p, v) ->
+                    arguments.add(new Argument(null, p, v))
+            );
+            return saveNode0(nodeDTO, self, method, arguments, prev, scope, context);
+        }
+    }
+
+    private static MethodCallNode saveNode0(NodeDTO nodeDTO, Value self,
+                                            Method method,
+                                            List<Argument> arguments,
+                                            NodeRT prev,
+                                            ScopeRT scope,
+                                            IEntityContext context) {
         var node = (MethodCallNode) context.getNode(nodeDTO.id());
         if (node != null) {
             node.setSelf(self);
@@ -40,8 +76,6 @@ public class MethodCallNode extends CallNode {
             );
             node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, self, method, arguments);
         }
-        node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypeIds(), context::getType));
-        node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
         return node;
     }
 
@@ -70,8 +104,10 @@ public class MethodCallNode extends CallNode {
             return new MethodCallNodeParam(
                     NncUtils.get(self, Value::toDTO),
                     serContext.getId(method),
+                    null,
                     serContext.getId(method.getDeclaringType()),
                     NncUtils.map(arguments, Argument::toDTO),
+                    null,
                     NncUtils.map(capturedExpressionTypes, serContext::getId),
                     NncUtils.map(capturedExpressions, e -> e.build(VarType.NAME))
             );

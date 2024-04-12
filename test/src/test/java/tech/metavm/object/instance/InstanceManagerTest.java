@@ -3,6 +3,8 @@ package tech.metavm.object.instance;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
+import tech.metavm.asm.AssemblerFactory;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.FlowExecutionRequest;
@@ -14,6 +16,7 @@ import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.TypeManager;
+import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
 import tech.metavm.task.TaskManager;
@@ -202,11 +205,13 @@ public class InstanceManagerTest extends TestCase {
                                                         List.of(
                                                                 new UpdateFieldDTO(
                                                                         childFieldTmpId,
+                                                                        null,
                                                                         UpdateOp.SET.code(),
                                                                         ValueDTOFactory.createReference("child")
                                                                 ),
                                                                 new UpdateFieldDTO(
                                                                         childRefFieldTmpId,
+                                                                        null,
                                                                         UpdateOp.SET.code(),
                                                                         ValueDTOFactory.createReference("child")
                                                                 )
@@ -261,21 +266,44 @@ public class InstanceManagerTest extends TestCase {
         }
     }
 
-    public void testRemovingNonPersistedChild() {
-        var typeIds = MockUtils.createParentChildTypes(typeManager, flowManager);
+    public void testRemoveNonPersistedChild() {
+        final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
+        var assembler = AssemblerFactory.createWitStandardTypes();
+        var types = assembler.assemble(List.of(parentChildMasm));
+        FlowSavingContext.initConfig();
+        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(types, List.of(), List.of(), false)));
+        var parentType = typeManager.getTypeByCode("Parent").type();
+        var parentConstructorId = TestUtils.getMethodByCode(parentType, "Parent").id();
         var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                typeIds.parentConstructorId(),
+                parentConstructorId,
                 null,
                 List.of()
         )));
+        var parentTestMethodId = TestUtils.getMethodIdByCode(parentType, "test");
         TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                typeIds.parentTestMethodId(),
+                parentTestMethodId,
                 parent.id(),
                 List.of()
         )));
         var reloadedParent = instanceManager.get(parent.id(), 2).instance();
-        var children = ((InstanceFieldValue) reloadedParent.getFieldValue(typeIds.parentChildrenFieldId())).getInstance();
+        var parentChildrenFieldId = TestUtils.getFieldIdByCode(parentType, "children");
+        var children = ((InstanceFieldValue) reloadedParent.getFieldValue(parentChildrenFieldId)).getInstance();
         Assert.assertEquals(0, children.getListSize());
+
+//        DebugEnv.DEBUG_ON = true;
+        var parentTest2MethodId = TestUtils.getMethodIdByCode(parentType, "test2");
+        try {
+            TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                    parentTest2MethodId,
+                    parent.id(),
+                    List.of()
+            )));
+            Assert.fail("Should not be able to delete non-persisted child when it's referenced");
+        }
+        catch (BusinessException e) {
+            Assert.assertSame(e.getErrorCode(), ErrorCode.STRONG_REFS_PREVENT_REMOVAL);
+        }
     }
+
 
 }

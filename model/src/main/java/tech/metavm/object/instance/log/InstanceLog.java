@@ -58,4 +58,14 @@ public class InstanceLog {
     public boolean isDelete() {
         return changeType == ChangeType.DELETE;
     }
+
+    @Override
+    public String toString() {
+        return "InstanceLog{" +
+                "appId=" + appId +
+                ", id=" + id +
+                ", changeType=" + changeType +
+                ", version=" + version +
+                '}';
+    }
 }

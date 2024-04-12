@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.jetbrains.annotations.Debug;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
@@ -14,7 +15,6 @@ import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Objects;
 
 @EntityType("流程范围")
 public class ScopeRT extends Element {
@@ -64,7 +64,7 @@ public class ScopeRT extends Element {
     }
 
     private boolean shouldDebug() {
-        if(DebugEnv.DEBUG_LOG_ON && flow.getEffectiveHorizontalTemplate().getName().equals("find")) {
+        if(DebugEnv.DEBUG_ON && flow.getEffectiveHorizontalTemplate().getName().equals("find")) {
             return flow.getHorizontalTemplate() == null || flow.getTypeArguments().get(0).isCaptured();
         }
         else
@@ -72,15 +72,10 @@ public class ScopeRT extends Element {
     }
 
     public void addNode(NodeRT node) {
-        if(shouldDebug()) {
-            DEBUG_LOGGER.info("adding node {} to flow {}", node.getName(), flow.getNameWithTypeArguments());
-            if(node instanceof InputNode inputNode) {
-                DebugEnv.inputNode = inputNode;
-            }
-        }
-        var pred = node.getPredecessor() != null ? node.getPredecessor() : null;
-        if (pred != null) {
-            nodes.addChildAfter(node, pred);
+        onNodeChange();
+        var prev = node.getPredecessor() != null ? node.getPredecessor() : null;
+        if (prev != null) {
+            nodes.addChildAfter(node, prev);
         } else {
             var nodes = this.nodes;
             if (!nodes.isEmpty())
@@ -91,15 +86,12 @@ public class ScopeRT extends Element {
     }
 
     public void clearNodes() {
-        if(shouldDebug()) {
-            DEBUG_LOGGER.info("clear nodes for flow {}", flow.getNameWithTypeArguments());
-        }
+        onNodeChange();
         this.nodes.clear();
     }
 
     public void setNodes(List<NodeRT> nodes) {
-        if(shouldDebug())
-            DEBUG_LOGGER.info("resetting nodes for flow {}", flow.getNameWithTypeArguments());
+        onNodeChange();
         this.nodes.resetChildren(nodes);
     }
 
@@ -177,6 +169,7 @@ public class ScopeRT extends Element {
     }
 
     public void removeNode(NodeRT node) {
+        onNodeChange();
         nodes.remove(node);
         flow.removeNode(node);
     }
@@ -213,6 +206,12 @@ public class ScopeRT extends Element {
 
     public void mergeExpressionTypes(ExpressionTypeMap expressionTypes) {
         this.expressionTypes = getExpressionTypes().merge(expressionTypes);
+    }
+
+    private void onNodeChange() {
+        if(DebugEnv.DEBUG_ON && getFlow() == DebugEnv.m0) {
+            DebugEnv.onM0NodesChange();
+        }
     }
 
     @Override

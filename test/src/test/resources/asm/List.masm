@@ -1,0 +1,43 @@
+
+struct Node<T> {
+    private string label;
+    private T value;
+
+    public Node(string label, T value) {
+        this.label = _input.label;
+        this.value = _input.value;
+        return this;
+    }
+
+    public string getLabel() {
+        return this.label;
+    }
+
+    public T getValue() {
+        return this.value;
+    }
+
+}
+
+struct MyList<T> {
+
+    private string label;
+    private readonly child ChildList<Node<T>> nodes;
+
+    public MyList(string label, List<Node<T>> nodes) {
+        this.label = _input.label;
+        nodes: new ChildList<Node<T>>(_input.nodes);
+        this.nodes = nodes;
+        return this;
+    }
+
+    public string getLabel() {
+        return this.label;
+    }
+
+    public List<Node<T>> getNodes() {
+        nodes: new ReadWriteList<Node<T>>(this.nodes);
+        return nodes;
+    }
+
+}

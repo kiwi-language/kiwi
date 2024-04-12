@@ -374,176 +374,6 @@ public class MockUtils {
         );
     }
 
-    public static ParentChildTypeIds createParentChildTypes(TypeManager typeManager, FlowManager flowManager) {
-        var childType = TestUtils.doInTransaction(() -> typeManager.saveType(ClassTypeDTOBuilder.newBuilder("Child")
-                .id(TmpId.random().toString())
-                .code("Child")
-                .addField(FieldDTOBuilder.newBuilder("name", StandardTypes.getStringType().getStringId())
-                        .id(TmpId.randomString())
-                        .code("name")
-                        .asTitle(true)
-                        .build())
-                .build()));
-        var childNameFieldId = TestUtils.getFieldIdByCode(childType, "name");
-        var nullableChildType = typeManager.getUnionType(List.of(childType.id(), StandardTypes.getNullType().getStringId())).type();
-        var childNextFieldId = TestUtils.doInTransaction(() -> typeManager.saveField(
-                FieldDTOBuilder.newBuilder("next", nullableChildType.id())
-                        .declaringTypeId(childType.id())
-                        .id(TmpId.randomString())
-                        .code("next")
-                        .build())
-        );
-        var childChildListType = typeManager.getParameterizedType(
-                new GetParameterizedTypeRequest(
-                        StandardTypes.getChildListType().getStringId(),
-                        List.of(childType.id()),
-                        List.of()
-                )
-        ).type();
-        var listConstructorId = TestUtils.getMethodIdByCode(childChildListType, "ChildList");
-        var listAddMethod = TestUtils.getMethodByCode(childChildListType, "add");
-        var listGetMethod = TestUtils.getMethodByCode(childChildListType, "get");
-        var listClearMethod = TestUtils.getMethodByCode(childChildListType, "clear");
-        var parentType = TestUtils.doInTransaction(() -> typeManager.saveType(
-                ClassTypeDTOBuilder.newBuilder("Parent")
-                        .id(TmpId.randomString())
-                        .code("Parent")
-                        .addField(FieldDTOBuilder.newBuilder("children", childChildListType.id())
-                                .id(TmpId.randomString())
-                                .code("children")
-                                .build())
-                        .build()));
-        var parentChildrenFieldId = TestUtils.getFieldIdByCode(parentType, "children");
-        FlowSavingContext.initConfig();
-        var parentConstructorId = TestUtils.doInTransaction(() -> flowManager.save(
-                MethodDTOBuilder.newBuilder(parentType.id(), "Parent")
-                        .id(TmpId.randomString())
-                        .code("Parent")
-                        .isConstructor(true)
-                        .returnTypeId(parentType.id())
-                        .addNode(NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "self", parentType.id()))
-                        .addNode(NodeDTOFactory.createNewObjectNode(NncUtils.randomNonNegative(), "children",
-                                childChildListType.id(), listConstructorId, List.of()))
-                        .addNode(NodeDTOFactory.createAddObjectNode(
-                                NncUtils.randomNonNegative(), "child", childType.id(),
-                                List.of(
-                                        FieldParamDTO.create(
-                                                childNameFieldId,
-                                                ValueDTOFactory.createConstant("Child001")
-                                        )
-                                )
-                        ))
-                        .addNode(NodeDTOFactory.createMethodCallNode(
-                                NncUtils.randomNonNegative(), "addChild", listAddMethod.id(),
-                                ValueDTOFactory.createReference("children"),
-                                List.of(
-                                        new ArgumentDTO(
-                                                NncUtils.randomNonNegative(),
-                                                listAddMethod.parameters().get(0).id(),
-                                                ValueDTOFactory.createReference("child")
-                                        )
-                                )
-                        ))
-                        .addNode(NodeDTOFactory.createUpdateObjectNode(
-                                NncUtils.randomNonNegative(), "init",
-                                ValueDTOFactory.createReference("self"),
-                                List.of(
-                                        new UpdateFieldDTO(
-                                                parentChildrenFieldId,
-                                                UpdateOp.SET.code(),
-                                                ValueDTOFactory.createReference("children")
-                                        )
-                                )
-                        ))
-                        .addNode(NodeDTOFactory.createReturnNode(
-                                NncUtils.randomNonNegative(), "return", ValueDTOFactory.createReference("self")
-                        ))
-                        .build()
-        )).getStringId();
-
-        var parentTestMethodId = TestUtils.doInTransaction(() -> flowManager.save(
-                MethodDTOBuilder.newBuilder(parentType.id(), "test")
-                        .id(TmpId.randomString())
-                        .code("test")
-                        .returnTypeId(StandardTypes.getVoidType().getStringId())
-                        .addNode(
-                                NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "self", parentType.id())
-                        )
-                        .addNode(
-                                NodeDTOFactory.createAddObjectNode(
-                                        NncUtils.randomNonNegative(),
-                                        "newChild",
-                                        childType.id(),
-                                        List.of(
-                                                new FieldParamDTO(
-                                                        null,
-                                                        childNameFieldId,
-                                                        ValueDTOFactory.createConstant("Child002")
-                                                )
-                                        )
-                                )
-                        )
-                        .addNode(
-                                NodeDTOFactory.createMethodCallNode(
-                                        NncUtils.randomNonNegative(),
-                                        "oldChild",
-                                        listGetMethod.id(),
-                                        ValueDTOFactory.createReference("self.children"),
-                                        List.of(
-                                                new ArgumentDTO(
-                                                        NncUtils.randomNonNegative(),
-                                                        listGetMethod.parameters().get(0).id(),
-                                                        ValueDTOFactory.createConstant(0L)
-                                                )
-                                        )
-                                )
-                        )
-                        .addNode(
-                                NodeDTOFactory.createUpdateObjectNode(
-                                        NncUtils.randomNonNegative(), "setNext",
-                                        ValueDTOFactory.createReference("newChild"),
-                                        List.of(
-                                                new UpdateFieldDTO(
-                                                        childNextFieldId,
-                                                        UpdateOp.SET.code(),
-                                                        ValueDTOFactory.createReference("oldChild")
-                                                )
-                                        )
-                                )
-                        )
-                        .addNode(
-                                NodeDTOFactory.createMethodCallNode(
-                                        NncUtils.randomNonNegative(), "addChild",
-                                        listAddMethod.id(),
-                                        ValueDTOFactory.createReference("self.children"),
-                                        List.of(
-                                                new ArgumentDTO(
-                                                        NncUtils.randomNonNegative(),
-                                                        listAddMethod.parameters().get(0).id(),
-                                                        ValueDTOFactory.createReference("newChild")
-                                                )
-                                        )
-                                )
-                        )
-                        .addNode(
-                                NodeDTOFactory.createMethodCallNode(
-                                        NncUtils.randomNonNegative(), "clear",
-                                        listClearMethod.id(),
-                                        ValueDTOFactory.createReference("self.children"),
-                                        List.of()
-                                )
-                        )
-                        .addNode(NodeDTOFactory.createReturnNode(NncUtils.randomNonNegative(), "return", null))
-                        .build()
-        )).getStringId();
-        FlowSavingContext.clearConfig();
-        return new ParentChildTypeIds(
-                parentType.id(), parentChildrenFieldId,
-                parentConstructorId, parentTestMethodId,
-                childType.id(), childNameFieldId, childNextFieldId
-        );
-    }
-
     public static ListTypeIds createListType(TypeManager typeManager, FlowManager flowManager) {
         var nodeTypeIds = createNodeTypes(typeManager, flowManager);
         var listTypeTmpId = TmpId.of(NncUtils.randomNonNegative()).toString();
@@ -818,7 +648,7 @@ public class MockUtils {
     private static List<String> batchSaveTypes(TypeManager typeManager, List<TypeDTO> typeDTOs) {
         FlowSavingContext.initConfig();
         return TestUtils.doInTransaction(() -> typeManager.batchSave(
-                new BatchSaveRequest(typeDTOs, List.of(), List.of())
+                new BatchSaveRequest(typeDTOs, List.of(), List.of(), false)
         ));
     }
 
@@ -931,6 +761,7 @@ public class MockUtils {
                                                 List.of(
                                                         new UpdateFieldDTO(
                                                                 skuAmountFieldTmpId,
+                                                                null,
                                                                 UpdateOp.SET.code(),
                                                                 ValueDTOFactory.createReference("流程输入.库存")
                                                         )
@@ -983,6 +814,7 @@ public class MockUtils {
                                                                         List.of(
                                                                                 new UpdateFieldDTO(
                                                                                         skuAmountFieldTmpId,
+                                                                                        null,
                                                                                         UpdateOp.DEC.code(),
                                                                                         ValueDTOFactory.createReference("流程输入.数量")
                                                                                 )
@@ -1424,6 +1256,7 @@ public class MockUtils {
                         List.of(
                                 new UpdateFieldDTO(
                                         couponStateFieldId,
+                                        null,
                                         UpdateOp.SET.code(),
                                         new ValueDTO(
                                                 ValueKind.CONSTANT.code(),
@@ -1706,7 +1539,7 @@ public class MockUtils {
                         .build())
                 .build();
         var typeIds = TestUtils.doInTransaction(() -> typeManager.batchSave(
-                new BatchSaveRequest(List.of(platformUserTypeDTO, applicationTypeDTO), List.of(), List.of())
+                new BatchSaveRequest(List.of(platformUserTypeDTO, applicationTypeDTO), List.of(), List.of(), false)
         ));
         var applicationType = typeManager.getType(new GetTypeRequest(typeIds.get(1), false)).type();
         var applicationNameFieldId = TestUtils.getFieldIdByCode(applicationType, "name");

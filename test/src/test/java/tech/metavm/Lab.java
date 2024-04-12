@@ -1,28 +1,19 @@
 package tech.metavm;
 
-import tech.metavm.object.instance.core.DefaultViewId;
-import tech.metavm.object.instance.core.Id;
-
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class Lab {
 
-    public static final byte[] MIN_ID = new byte[0];
-    public static final byte[] MAX_ID = new byte[]{
-            -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1
-    };
-
-    public static final byte[] ID = {
-            1, 2, 3
-    };
+    public static final Pattern ptn = Pattern.compile("对象'.+\\-(.+)'不存在");
 
     public static void main(String[] args) throws IOException {
-        var id = (DefaultViewId) Id.parse("0b01a6f3beda0dcc0203d699060001f4b4bfda0d0003a6f3beda0d00");
-        System.out.println(id.getSourceId());
+        var str = "对象'字段-058aa8d6b9078a03'不存在";
+        var m = ptn.matcher(str);
+        System.out.println(m.matches());
+        System.out.println(m.group(1));
+
     }
 
     public void test(List<? extends Number> list) {

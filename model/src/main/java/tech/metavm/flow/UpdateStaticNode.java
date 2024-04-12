@@ -28,7 +28,7 @@ public class UpdateStaticNode extends NodeRT {
                 NncUtils.map(
                         param.fields(),
                         field -> new UpdateField(
-                                context.getField(Id.parse(field.fieldId())),
+                                field.getStaticField(type),
                                 UpdateOp.getByCode(field.opCode()),
                                 ValueFactory.create(field.value(), parsingContext)
                         )

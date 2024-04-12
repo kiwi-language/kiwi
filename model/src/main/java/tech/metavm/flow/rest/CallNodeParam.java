@@ -16,21 +16,40 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "callKind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class CallNodeParam {
     private final String flowId;
+    private final @Nullable String flowName;
     private final @Nullable String typeId;
     private final List<ArgumentDTO> arguments;
+    private final List<ValueDTO> argumentValues;
     private final List<String> capturedExpressionTypeIds;
     private final List<String> capturedExpressions;
 
-    public CallNodeParam(String flowId, @Nullable String typeId, List<ArgumentDTO> arguments, List<String> capturedExpressionTypeIds, List<String> capturedExpressions) {
+    public CallNodeParam(@Nullable String flowId,
+                         @Nullable String flowName,
+                         @Nullable String typeId,
+                         List<ArgumentDTO> arguments,
+                         List<ValueDTO> argumentValues,
+                         List<String> capturedExpressionTypeIds,
+                         List<String> capturedExpressions) {
         this.flowId = flowId;
+        this.flowName = flowName;
         this.typeId = typeId;
         this.arguments = arguments;
+        this.argumentValues = argumentValues;
         this.capturedExpressionTypeIds = capturedExpressionTypeIds;
         this.capturedExpressions = capturedExpressions;
     }
 
-    public String getFlowId() {
+    public boolean isResolved() {
+        return flowId != null;
+    }
+
+    public @Nullable String getFlowId() {
         return flowId;
+    }
+
+    @Nullable
+    public String getFlowName() {
+        return flowName;
     }
 
     @Nullable
@@ -42,6 +61,10 @@ public abstract class CallNodeParam {
         return arguments;
     }
 
+    public List<ValueDTO> getArgumentValues() {
+        return argumentValues;
+    }
+
     public abstract int getCallKind();
 
     public List<String> getCapturedExpressionTypeIds() {
@@ -51,4 +74,5 @@ public abstract class CallNodeParam {
     public List<String> getCapturedExpressions() {
         return capturedExpressions;
     }
+
 }

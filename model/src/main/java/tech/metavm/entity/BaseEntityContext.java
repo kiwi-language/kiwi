@@ -297,8 +297,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     @Override
     public boolean onRemove(DurableInstance instance) {
         var entity = instance.getMappedEntity();
-        if (entity instanceof AfterRemovalAware removalAware) {
-            removalAware.afterRemoval(this);
+        if (entity instanceof PostRemovalAware removalAware) {
+            removalAware.postRemove(this);
             return true;
         }
         return false;
@@ -437,6 +437,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             instanceContext.initIds();
         }
     }
+
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
     public void finish() {
         instanceContext.finish();

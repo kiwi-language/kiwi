@@ -4,24 +4,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.EntityChange;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.VersionRT;
-import tech.metavm.object.type.CapturedType;
+import tech.metavm.util.DebugEnv;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static tech.metavm.entity.ContextAttributeKey.CHANGE_LOGS;
 
 @Component
 @Order(100)
 public class ChangeLogPlugin implements ContextPlugin {
+
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
     private final InstanceLogService instanceLogService;
 
@@ -31,6 +31,8 @@ public class ChangeLogPlugin implements ContextPlugin {
 
     @Override
     public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
+        if(DebugEnv.DEBUG_ON)
+            DEBUG_LOGGER.info("generating change logs");
         List<InstanceLog> logs = new ArrayList<>();
         for (var instance : change.inserts()) {
             logs.add(InstanceLog.insert(instance));
@@ -56,7 +58,7 @@ public class ChangeLogPlugin implements ContextPlugin {
     public void postProcess(IInstanceContext context) {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
         if(NncUtils.isNotEmpty(logs)) {
-            instanceLogService.process(logs, context.getClientId());
+        instanceLogService.process(logs, context.getClientId());
         }
     }
 

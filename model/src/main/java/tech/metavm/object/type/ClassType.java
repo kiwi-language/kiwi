@@ -2,6 +2,8 @@ package tech.metavm.object.type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Var;
@@ -25,6 +27,8 @@ import static tech.metavm.util.NncUtils.*;
 
 @EntityType("Class类型")
 public class ClassType extends Type implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity {
+
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
     public static final IndexDef<ClassType> IDX_NAME = IndexDef.create(ClassType.class, "name");
 
@@ -1188,6 +1192,34 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             return tryResolveNonParameterizedMethod(methodRef);
     }
 
+    public Method resolveMethod(String code, List<Type> argumentTypes, boolean staticOnly) {
+        return Objects.requireNonNull(tryResolveMethod(code, argumentTypes, staticOnly), () ->
+                String.format("Can not find method %s(%s) in type %s", code,
+                        NncUtils.join(argumentTypes, Type::getName, ","), getName()));
+    }
+
+    public @Nullable Method tryResolveMethod(String code, List<Type> argumentTypes, boolean staticOnly) {
+        var candidates = new ArrayList<Method>();
+        getCallCandidates(code, argumentTypes, staticOnly, candidates);
+        out: for (Method m1 : candidates) {
+            for (Method m2 : candidates) {
+                if(m1 != m2 && m1.isHiddenBy(m2))
+                    continue out;
+            }
+            return m1;
+        }
+        return null;
+    }
+
+    private void getCallCandidates(String code, List<Type> argumentTypes, boolean staticOnly, List<Method> candidates) {
+        methods.forEach(m -> {
+            if((m.isStatic() || !staticOnly) && m.matches(code, argumentTypes))
+                candidates.add(m);
+        });
+        if(superClass != null)
+            superClass.getCallCandidates(code, argumentTypes, staticOnly, candidates);
+    }
+
     @Nullable
     public Method tryResolveNonParameterizedMethod(Method methodref) {
         NncUtils.requireFalse(methodref.isParameterized());
@@ -1459,7 +1491,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         typeArguments.forEach(t -> t.getCapturedTypes(capturedTypes));
     }
 
-    public ClassType findInClosure(long id) {
+    public ClassType findInClosure(Id id) {
         return getClosure().find(t -> Objects.equals(t.tryGetId(), id));
     }
 
@@ -1485,8 +1517,9 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public void saveMapping(IEntityContext context) {
-        if (!(context instanceof DefContext) && shouldGenerateBuiltinMapping())
+        if (!(context instanceof DefContext) && shouldGenerateBuiltinMapping()) {
             MappingSaver.create(context).saveBuiltinMapping(this, true);
+        }
     }
 
     public boolean shouldGenerateBuiltinMapping() {

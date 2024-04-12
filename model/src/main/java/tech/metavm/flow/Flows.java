@@ -33,11 +33,10 @@ public class Flows {
         }
         if (flow.isTemplate()) {
             for (Flow horizontalInstance : context.selectByKey(Flow.IDX_HORIZONTAL_TEMPLATE, flow)) {
-                if (DebugEnv.DEBUG_LOG_ON)
+                if (DebugEnv.DEBUG_ON)
                     DEBUG_LOGGER.info("retransforming " + EntityUtils.getEntityPath(horizontalInstance));
                 context.getGenericContext().retransformHorizontalFlowInstances(flow, horizontalInstance);
-                if (DebugEnv.DEBUG_LOG_ON && DebugEnv.isTargetFlow(horizontalInstance)) {
-                    DebugEnv.target = horizontalInstance;
+                if (DebugEnv.DEBUG_ON && DebugEnv.isTargetFlow(horizontalInstance)) {
                     DEBUG_LOGGER.info("detecting bug for node: {}, result: {}",
                             EntityUtils.getEntityPath(horizontalInstance), DebugEnv.isBugPresent(horizontalInstance));
                 }

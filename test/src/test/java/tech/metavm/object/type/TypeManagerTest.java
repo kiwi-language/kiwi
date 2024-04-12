@@ -133,7 +133,8 @@ public class TypeManagerTest extends TestCase {
                 new BatchSaveRequest(
                         List.of(productTypeDTO),
                         List.of(),
-                        List.of()
+                        List.of(),
+                        false
                 )
         ));
     }

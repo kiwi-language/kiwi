@@ -1,0 +1,57 @@
+class Child {
+    private string name;
+    private Child|null next;
+
+    public Child(string name) {
+        this.name = _input.name;
+        this.next = null;
+        return this;
+    }
+
+    public string getName() {
+        return this.name;
+    }
+
+    public Child|null getNext() {
+        return this.next;
+    }
+
+    public void setNext(Child|null next) {
+        this.next = _input.next;
+        return;
+    }
+
+}
+
+class Parent {
+
+    private readonly child ChildList<Child> children;
+
+    public Parent() {
+        children: new ChildList<Child>();
+        this.children = children;
+        child1: new Child("child001");
+        children.add(child1);
+        return this;
+    }
+
+    public void test() {
+        child1: this.children.get(0);
+        child2: new Child("Child002");
+        child2.setNext(child1);
+        this.children.add(child2);
+        this.children.clear();
+        return;
+    }
+
+    public void test2() {
+        child2: new Child("Child002");
+        child3: new Child("Child003");
+        child2.setNext(child3);
+        this.children.add(child2);
+        this.children.add(child3);
+        this.children.remove(child3);
+        return;
+    }
+
+}

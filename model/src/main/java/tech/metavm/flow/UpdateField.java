@@ -88,6 +88,7 @@ public class UpdateField extends Entity implements LocalKey {
         try(var serContext = SerializeContext.enter()) {
             return new UpdateFieldDTO(
                     serContext.getId(field),
+                    field.getName(),
                     op.code(),
                     value.toDTO()
             );

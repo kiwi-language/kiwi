@@ -106,7 +106,7 @@ public abstract class CallNode extends NodeRT {
             var declaringType = method.getDeclaringType();
             var actualTypeArgs = NncUtils.map(declaringType.getTypeArguments(), t -> t.accept(typeSubst));
             var actualDeclaringType = frame.compositeTypeFacade().getParameterizedType(declaringType.getEffectiveTemplate(), actualTypeArgs);
-            if(DebugEnv.DEBUG_LOG_ON)
+            if(DebugEnv.DEBUG_ON)
                 DEBUG_LOGGER.info("uncapture flow declaring type from {} to {}",
                         declaringType.getTypeDesc(),
                         actualDeclaringType.getTypeDesc());
@@ -116,7 +116,7 @@ public abstract class CallNode extends NodeRT {
         if(NncUtils.anyMatch(flow.getTypeArguments(), Type::isCaptured)) {
             var actualTypeArgs = NncUtils.map(flow.getTypeArguments(), t -> t.accept(typeSubst));
             var uncapturedFlow =  frame.parameterizedFlowProvider().getParameterizedFlow(flow.getHorizontalTemplate(), actualTypeArgs);
-            if(DebugEnv.DEBUG_LOG_ON) {
+            if(DebugEnv.DEBUG_ON) {
                 DEBUG_LOGGER.info("uncapture flow from {} to {}, captured expressions: {}, captured expression types: {}, " +
                                 "actual expression types: {}, captured types: {}, actual types: {}",
                         flow.getTypeDesc(), uncapturedFlow.getTypeDesc(),

@@ -10,6 +10,7 @@ import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.GenericElementDTO;
 import tech.metavm.object.view.FieldsObjectMapping;
 import tech.metavm.object.view.ObjectMapping;
+import tech.metavm.util.DebugEnv;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -65,6 +66,11 @@ public class SubstitutorV2 extends CopyVisitor {
                          ParameterizedFlowProvider parameterizedFlowProvider,
                          DTOProvider dtoProvider) {
         super(root);
+        if(DebugEnv.DEBUG_ON) {
+            DEBUG_LOGGER.info("substituting {}, type parameters: {}, type arguments: {}",
+                    EntityUtils.getEntityDesc(root), NncUtils.map(typeParameters, Type::getTypeDesc),
+                    NncUtils.map(typeArguments, Type::getTypeDesc));
+        }
         this.entityRepository = entityRepository;
         this.compositeTypeFacade = compositeTypeFacade;
         this.parameterizedTypeRepository = parameterizedTypeRepository;

@@ -12,6 +12,7 @@ import tech.metavm.flow.rest.FlowParam;
 import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
@@ -351,8 +352,12 @@ public class Method extends Flow implements Property, GenericElement {
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext) {
         try(var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName()+ "." + getName())) {
-            if(DebugEnv.DEBUG_LOG_ON) {
-                DEBUG_LOGGER.info("Method.execute: " + getDeclaringType().getName() + "." + getNameWithTypeArguments());
+            if(DebugEnv.DEBUG_ON) {
+                var methodName = getDeclaringType().getName() + "." + getNameWithTypeArguments();
+                if(methodName.equals("子对象列表<Child>.删除")) {
+                    DebugEnv.target = (ClassInstance) arguments.get(0);
+                }
+                DEBUG_LOGGER.info("Method.execute: {}", methodName);
                 DEBUG_LOGGER.info("Arguments: ");
                 arguments.forEach(arg -> DEBUG_LOGGER.info(arg.getTree()));
                 DEBUG_LOGGER.info(getText());
@@ -407,4 +412,24 @@ public class Method extends Flow implements Property, GenericElement {
         return declaringType.getInternalName(null) + "." + getCodeRequired() + "(" +
                 NncUtils.join(getParameterTypes(), type -> type.getInternalName(this)) + ")";
     }
+
+    public boolean isHiddenBy(Method that) {
+        var paramTypes = getParameterTypes();
+        var thatParamTypes = that.getParameterTypes();
+        if(paramTypes.size() != thatParamTypes.size())
+            return false;
+        if(paramTypes.equals(thatParamTypes)) {
+            if(declaringType.equals(that.getDeclaringType()))
+                throw new InternalException(
+                        String.format("Methods with the same signature defined in the same type: %s(%s)",
+                                getName(), NncUtils.join(paramTypes, Type::getTypeDesc)));
+            return declaringType.isAssignableFrom(that.getDeclaringType());
+        }
+        for (int i = 0; i < paramTypes.size(); i++) {
+            if(!paramTypes.get(i).isAssignableFrom(thatParamTypes.get(i)))
+                return false;
+        }
+        return true;
+    }
+
 }

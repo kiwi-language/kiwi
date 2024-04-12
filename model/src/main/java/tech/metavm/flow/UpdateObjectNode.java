@@ -41,7 +41,7 @@ public class UpdateObjectNode extends NodeRT {
     }
 
     private static UpdateField saveField(UpdateObjectNode node, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext, ClassType type) {
-        var field = type.getField(Id.parse(updateFieldDTO.fieldId()));
+        var field = updateFieldDTO.getField(type);
         var op = UpdateOp.getByCode(updateFieldDTO.opCode());
         var value = ValueFactory.create(updateFieldDTO.value(), parsingContext);
         var existing = node.getField(field);

@@ -8,6 +8,7 @@ import tech.metavm.entity.EntityUtils;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.util.DebugEnv;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
@@ -27,27 +28,23 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
                            CompositeTypeFacade compositeTypeFacade,
                            DTOProvider dtoProvider) {
         this.compositeTypeFacade = compositeTypeFacade;
+        if(typeVariables.size() != typeArguments.size())
+            throw new InternalException("Type variables and type arguments have different sizes. " +
+                    "type variables: [" + NncUtils.join(typeVariables, Type::getTypeDesc) + "]"
+                    + ", type arguments: [" + NncUtils.join(typeArguments, Type::getTypeDesc) + "]");
         this.variableMap = new HashMap<>(NncUtils.zip(typeVariables, typeArguments));
         this.dtoProvider = dtoProvider;
     }
 
     public void addMapping(Type from, Type to) {
         variableMap.put(from, to);
-        if(DebugEnv.DEBUG_LOG_ON)
+        if(DebugEnv.DEBUG_ON)
             DEBUG_LOGGER.info("added mapping: {} -> {}", EntityUtils.getEntityDesc(from), EntityUtils.getEntityDesc(to));
     }
 
     @Override
     public Type visitType(Type type) {
-//        if(type instanceof CapturedType capturedType && capturedType.getScope().getScopeName().equals("find") && variableMap.size() == 2) {
-//            System.out.println("Caught");
-//        }
-        var subst =  variableMap.getOrDefault(type, type);
-        if(DebugEnv.DEBUG_LOG_ON) {
-            DEBUG_LOGGER.info("substituting type {} to {}", EntityUtils.getEntityDesc(type), EntityUtils.getEntityDesc(subst));
-            logVariableMap();
-        }
-        return subst;
+        return variableMap.getOrDefault(type, type);
     }
 
     @Override
@@ -92,14 +89,6 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
             return subst;
         var paramTypes = NncUtils.map(functionType.getParameterTypes(), t -> t.accept(this));
         var returnType = functionType.getReturnType().accept(this);
-        if(DebugEnv.DEBUG_LOG_ON && functionType.isCaptured()) {
-            DEBUG_LOGGER.info("substituting function type: {}, id: {}", EntityUtils.getEntityDesc(functionType), functionType.getStringId());
-            logVariableMap();
-            DEBUG_LOGGER.info("current parameter types: {}", NncUtils.join(functionType.getParameterTypes(), EntityUtils::getEntityDesc));
-            DEBUG_LOGGER.info("substituted parameter types: {}", NncUtils.join(paramTypes, EntityUtils::getEntityDesc));
-            DEBUG_LOGGER.info("current return type: {}", EntityUtils.getEntityDesc(functionType.getReturnType()));
-            DEBUG_LOGGER.info("substituted return type: {}", EntityUtils.getEntityDesc(returnType));
-        }
         return compositeTypeFacade.getFunctionType(
                 paramTypes, returnType,
                 dtoProvider.getTmpId(new FunctionTypeKey(NncUtils.map(paramTypes, Entity::getStringId), returnType.getStringId()))
@@ -107,7 +96,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
     }
 
     private void logVariableMap() {
-        if(DebugEnv.DEBUG_LOG_ON) {
+        if(DebugEnv.DEBUG_ON) {
             DEBUG_LOGGER.info("variable map:");
             for (var entry : variableMap.entrySet()) {
                 DEBUG_LOGGER.info("key: {}, value: {}", EntityUtils.getEntityDesc(entry.getKey()), EntityUtils.getEntityDesc(entry.getValue()));
@@ -135,12 +124,6 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
             return type;
         else {
             var substitutedTypeArgs = NncUtils.map(type.getTypeArguments(), t -> t.accept(this));
-            if(DebugEnv.DEBUG_LOG_ON && type.isCaptured()) {
-                DEBUG_LOGGER.info("substituting class type: {}", EntityUtils.getEntityDesc(type));
-                logVariableMap();
-                DEBUG_LOGGER.info("current type arguments: {}", NncUtils.join(type.getTypeArguments(), EntityUtils::getEntityDesc));
-                DEBUG_LOGGER.info("substituted type arguments: {}", NncUtils.join(substitutedTypeArgs, EntityUtils::getEntityDesc));
-            }
             return compositeTypeFacade.getParameterizedType(
                     type.getEffectiveTemplate(),
                     substitutedTypeArgs,

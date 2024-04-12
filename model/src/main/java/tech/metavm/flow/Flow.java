@@ -162,6 +162,19 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         this.scopes().add(scope);
     }
 
+    public boolean matches(String code, List<Type> argumentTypes) {
+        if(this.code != null && this.code.equals(code)) {
+            if(parameters.size() == argumentTypes.size()) {
+                for(int i = 0; i < parameters.size(); i++) {
+                    if(!parameters.get(i).getType().isAssignableFrom(argumentTypes.get(i)))
+                        return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
     public FlowDTO toDTO(boolean includeCode, SerializeContext serContext) {
         if (includeCode) {
             getTypeParameters().forEach(serContext::writeType);
@@ -544,7 +557,7 @@ List.of(),
                         convertedArgs.add(arg.convert(param.getType()));
                     }
                     catch (BusinessException e) {
-                        if(DebugEnv.DEBUG_LOG_ON) {
+                        if(DebugEnv.DEBUG_ON) {
                             DEBUG_LOGGER.info("Argument type mismatch: {} is not assignable from {}",
                                     param.getType().getTypeDesc(),
                                     arg.getType().getTypeDesc());

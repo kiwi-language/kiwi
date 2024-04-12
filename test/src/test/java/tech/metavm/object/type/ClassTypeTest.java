@@ -3,16 +3,29 @@ package tech.metavm.object.type;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.entity.MockStandardTypesInitializer;
+import tech.metavm.entity.StandardTypes;
+import tech.metavm.flow.MethodBuilder;
+import tech.metavm.flow.Parameter;
 import tech.metavm.object.instance.ColumnKind;
+import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.util.MockUtils;
 
 import java.util.List;
 
 public class ClassTypeTest extends TestCase {
 
+    private TypeProviders typeProviders;
+
     @Override
     protected void setUp() throws Exception {
         MockStandardTypesInitializer.init();
+        typeProviders = new TypeProviders();
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        typeProviders = null;
     }
 
     public void testAllocateColumn() {
@@ -75,6 +88,38 @@ public class ClassTypeTest extends TestCase {
         i4.setInterfaces(List.of(i5));
 
         Assert.assertEquals(List.of(c3, c2, c1, i4, i1, i2, i3, i5), c3.getClosure().getTypes());
+    }
+
+    public void testResolveMethod() {
+        var baseType = ClassTypeBuilder.newBuilder("Base", "Base").build();
+
+        MethodBuilder.newBuilder(baseType, "test", "test", typeProviders.functionTypeProvider)
+                .parameters(new Parameter(null, "p1", "p1", StandardTypes.getStringType()))
+                .build();
+
+        var m1 = MethodBuilder.newBuilder(baseType, "test", "test", typeProviders.functionTypeProvider)
+                .parameters(new Parameter(null, "p1", "p1", StandardTypes.getBooleanType()))
+                .build();
+
+        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo")
+                .superClass(baseType)
+                .build();
+
+        var m2 = MethodBuilder.newBuilder(fooType, "test", "test", typeProviders.functionTypeProvider)
+                .parameters(new Parameter(null, "p1", "p1", StandardTypes.getAnyType()))
+                .build();
+
+        var m3 = MethodBuilder.newBuilder(fooType, "test", "test", typeProviders.functionTypeProvider)
+                .parameters(new Parameter(null, "p1", "p1", StandardTypes.getStringType()))
+                .build();
+
+        MethodBuilder.newBuilder(fooType, "test", "test", typeProviders.functionTypeProvider)
+                .parameters(new Parameter(null, "p1", "p1", StandardTypes.getDoubleType()))
+                .build();
+
+        Assert.assertSame(m1, fooType.resolveMethod("test", List.of(StandardTypes.getBooleanType()), false));
+        Assert.assertSame(m2, fooType.resolveMethod("test", List.of(StandardTypes.getLongType()), false));
+        Assert.assertSame(m3, fooType.resolveMethod("test", List.of(StandardTypes.getStringType()), false));
     }
 
 }

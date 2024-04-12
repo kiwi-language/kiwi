@@ -40,7 +40,7 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
     public void visitMethod(PsiMethod method) {
         var parentAnalyzer = currentAnalyzer;
         currentAnalyzer = new Analyzer(graphMap.get(method));
-        if(DebugEnv.DEBUG_LOG_ON) {
+        if(DebugEnv.DEBUG_ON) {
             DEBUG_LOGGER.info("Start liveness analysis for method {}", method.getName());
             DEBUG_LOGGER.info(method.getText());
         }
@@ -178,7 +178,7 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
             }
             setIn(node, liveIn);
             setOut(node, liveOut);
-            if(DebugEnv.DEBUG_LOG_ON) {
+            if(DebugEnv.DEBUG_ON) {
                 DEBUG_LOGGER.info("{}, live in: {}, live out: {}",
                         node.getElement().getText(), liveIn, liveOut);
             }

@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 @EntityType("捕获类型")
-public class CapturedType extends Type implements ITypeVariable, AfterRemovalAware, GenericElement {
+public class CapturedType extends Type implements ITypeVariable, PostRemovalAware, GenericElement {
 
     public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
 
@@ -140,10 +140,10 @@ public class CapturedType extends Type implements ITypeVariable, AfterRemovalAwa
     }
 
     @Override
-    public void afterRemoval(IEntityContext context) {
+    public void postRemove(IEntityContext context) {
         List<Entity> removals = new ArrayList<>(capturedFlows);
         removals.addAll(capturedCompositeTypes);
-        if (DebugEnv.DEBUG_LOG_ON) {
+        if (DebugEnv.DEBUG_ON) {
             DEBUG_LOGGER.info("{}.afterRemoval called", EntityUtils.getEntityPath(this));
             for (Entity removal : removals) {
                 boolean alreadyRemoved = context.isRemoved(removal);

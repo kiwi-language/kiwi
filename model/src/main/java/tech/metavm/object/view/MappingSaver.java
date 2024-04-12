@@ -1,5 +1,7 @@
 package tech.metavm.object.view;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.DummyGenericDeclaration;
 import tech.metavm.entity.EntityRepository;
@@ -14,10 +16,7 @@ import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.SubstitutorV2;
 import tech.metavm.object.type.generic.TypeSubstitutor;
 import tech.metavm.object.view.rest.dto.*;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NamingUtils;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -110,9 +109,15 @@ public class MappingSaver {
     }
 
     private void retransformClassType(ClassType sourceType) {
+        if(DebugEnv.DEBUG_ON) {
+            DEBUG_LOGGER.info("MappingSaver.retransformClassType sourceType: {}", sourceType.getTypeDesc());
+        }
         if (sourceType.isTemplate()) {
             var templateInstances = parameterizedTypeRepository.getTemplateInstances(sourceType);
             for (ClassType templateInstance : templateInstances) {
+                if(DebugEnv.DEBUG_ON && templateInstance.getName().equals("Node<MyList_T>")) {
+                    DebugEnv.checkBug("MappingSaver.retransformClassType.before", templateInstance);
+                }
                 templateInstance.setStage(ResolutionStage.INIT);
                 var subst = new SubstitutorV2(
                         sourceType, sourceType.getTypeParameters(), templateInstance.getTypeArguments(),
@@ -120,6 +125,9 @@ public class MappingSaver {
                         parameterizedFlowProvider, new MockDTOProvider()
                 );
                 sourceType.accept(subst);
+                if(DebugEnv.DEBUG_ON && templateInstance.getName().equals("Node<MyList_T>")) {
+                    DebugEnv.checkBug("MappingSaver.retransformClassType.after", templateInstance);
+                }
             }
         }
     }
@@ -231,7 +239,12 @@ public class MappingSaver {
         );
     }
 
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+
     public FieldsObjectMapping saveBuiltinMapping(ClassType type, boolean generateCode) {
+        if(DebugEnv.DEBUG_ON) {
+            DEBUG_LOGGER.info("saveBuiltinMapping. type: {}, generateCode: {}", type.getTypeDesc(), generateCode);
+        }
         NncUtils.requireTrue(type.isClass());
         var mapping = (FieldsObjectMapping) NncUtils.find(type.getMappings(), ObjectMapping::isBuiltin);
         if (mapping == null) {
@@ -260,10 +273,10 @@ public class MappingSaver {
                 fieldMappings.add(saveBuiltinFlowFieldMapping(accessor, mapping, propertyFieldMappings));
             mapping.setFieldMappings(fieldMappings);
             mapping.generateCode(compositeTypeFacade);
-            retransformClassType(mapping.getTargetType().getEffectiveTemplate());
-            retransformClassType(type);
             if (type.isStruct())
                 saveFromViewMethod(type, mapping, true);
+            retransformClassType(mapping.getTargetType().getEffectiveTemplate());
+            retransformClassType(type);
         }
         return mapping;
     }
@@ -311,7 +324,8 @@ public class MappingSaver {
                             (f, p) -> new Argument(
                                     null,
                                     p,
-                                    fieldValues.get(p.getCode()).get()
+                                    Objects.requireNonNull(fieldValues.get(p.getCode()),
+                                                    () -> "Can not find field value for: " + p.getCode()).get()
                             )
                     ),
                     false,

@@ -265,6 +265,7 @@ public class MappingTest extends TestCase {
                         )
                 )
         );
+//        DebugEnv.DEBUG_ON = true;
         saveInstance(productView);
         var loadedProductView = instanceManager.get(viewId.toString(), 1).instance();
         skuListView = ((InstanceFieldValue) (loadedProductView.getFieldValue(productViewSkuListFieldId))).getInstance();

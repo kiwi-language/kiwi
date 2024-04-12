@@ -303,12 +303,12 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         );
         if (template instanceof Method method)
             substitutor.enterElement(method.getDeclaringType());
-        if(DebugEnv.DEBUG_LOG_ON && template.getName().equals("find") && NncUtils.anyMatch(typeArguments, Type::isCaptured))
+        if(DebugEnv.DEBUG_ON && template.getName().equals("find") && NncUtils.anyMatch(typeArguments, Type::isCaptured))
             DEBUG_LOGGER.info("Start substituting flow: {} with type arguments: {}",
                     EntityUtils.getEntityPath(template),
                     NncUtils.join(typeArguments, EntityUtils::getEntityPath));
         var transformed = (Flow) template.accept(substitutor);
-        if(DebugEnv.DEBUG_LOG_ON && template.getName().equals("find") && NncUtils.anyMatch(typeArguments, Type::isCaptured))
+        if(DebugEnv.DEBUG_ON && template.getName().equals("find") && NncUtils.anyMatch(typeArguments, Type::isCaptured))
             DEBUG_LOGGER.info("Finish substituting flow: {} with type arguments: {}",
                     EntityUtils.getEntityPath(template),
                     NncUtils.join(typeArguments, EntityUtils::getEntityPath));

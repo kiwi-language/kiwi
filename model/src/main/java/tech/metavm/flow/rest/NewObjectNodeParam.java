@@ -13,16 +13,18 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
 
     private final boolean unbound;
 
-    public NewObjectNodeParam(String flowId,
+    public NewObjectNodeParam(@Nullable String flowId,
+                              @Nullable String flowName,
                               @Nullable String typeId,
                               List<ArgumentDTO> arguments,
+                              List<ValueDTO> argumentValues,
                               @Nullable ParentRefDTO parent,
                               boolean ephemeral,
                               boolean unbound,
                               List<String> capturedExpressionTypeIds,
                               List<String> capturedExpressions
     ) {
-        super(flowId, typeId, arguments, capturedExpressionTypeIds, capturedExpressions);
+        super(flowId, flowName, typeId, arguments, argumentValues, capturedExpressionTypeIds, capturedExpressions);
         this.parent = parent;
         this.ephemeral = ephemeral;
         this.unbound = unbound;
@@ -44,7 +46,7 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
     @Override
     public NewObjectNodeParam copyWithParentRef(ParentRefDTO parentRef) {
         return new NewObjectNodeParam(
-                getFlowId(), getTypeId(), getArguments(), parentRef, ephemeral, unbound,
+                getFlowId(), getFlowName(), getTypeId(), getArguments(), getArgumentValues(), parentRef, ephemeral, unbound,
                 new ArrayList<>(getCapturedExpressionTypeIds()), new ArrayList<>(getCapturedExpressions())
         );
     }

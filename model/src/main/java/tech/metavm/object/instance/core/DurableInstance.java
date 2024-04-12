@@ -2,16 +2,15 @@ package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.Tree;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.system.RegionConstants;
-import tech.metavm.util.InstanceInput;
-import tech.metavm.util.InstanceOutput;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
@@ -24,10 +23,14 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     public static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(DurableInstance.class);
 
+    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+
+    transient boolean marked;
+    transient boolean viewSaved;
     private transient boolean _new;
     private transient boolean loaded;
     transient boolean loadedFromCache;
-    private transient boolean removed;
+    transient boolean removed;
     private transient IInstanceContext context;
     @Nullable
     private transient DurableInstance prev;
@@ -68,6 +71,10 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     public DurableInstance(@Nullable Id id, Type type, long version, long syncVersion, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
         super(type);
+        if(DebugEnv.DEBUG_ON) {
+            if(EntityUtils.isModelInitialized(type) && "SKU".equals(type.getName()))
+                DEBUG_LOGGER.info("creating an SKU instance");
+        }
         this.version = version;
         this.syncVersion = syncVersion;
         this.load = load;

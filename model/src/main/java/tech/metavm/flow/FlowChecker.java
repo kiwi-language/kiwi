@@ -51,7 +51,7 @@ public class FlowChecker extends StructuralVisitor<Boolean> {
         node.check();
         if (node.getError() != null) {
             flow.setState(MetadataState.ERROR);
-            if(DebugEnv.DEBUG_LOG_ON)
+            if(DebugEnv.DEBUG_ON)
                 DEBUG_LOGGER.error("Error in node {}: {}",
                         node.getFlow().getQualifiedName() + "." + node.getName(),
                         node.getError());

@@ -168,7 +168,7 @@ public class Compiler {
             );
             var pFlowDTOs = NncUtils.map(generatedPFlows, f -> f.toPFlowDTO(serContext));
             LOGGER.info("Compile successful");
-            var request = new BatchSaveRequest(typeDTOs, List.of(), pFlowDTOs);
+            var request = new BatchSaveRequest(typeDTOs, List.of(), pFlowDTOs, true);
             saveRequest(request);
             typeClient.batchSave(request);
         }

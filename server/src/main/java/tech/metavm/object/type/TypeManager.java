@@ -348,7 +348,7 @@ public class TypeManager extends EntityContextFactoryBean {
     @Transactional
     public List<String> batchSave(BatchSaveRequest request) {
         List<TypeDTO> typeDTOs = request.types();
-        FlowSavingContext.skipPreprocessing(true);
+        FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
         try (var context = newContext()) {
             batchSave(typeDTOs, request.functions(), request.parameterizedFlows(), context);
             List<ClassType> newClasses = NncUtils.filterAndMap(

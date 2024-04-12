@@ -7,6 +7,7 @@ import java.util.List;
 public record BatchSaveRequest(
         List<TypeDTO> types,
         List<FlowDTO> functions,
-        List<ParameterizedFlowDTO> parameterizedFlows
+        List<ParameterizedFlowDTO> parameterizedFlows,
+        boolean skipFlowPreprocess
 ) {
 }

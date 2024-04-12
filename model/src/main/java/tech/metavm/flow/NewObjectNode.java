@@ -1,6 +1,8 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.FlowParsingContext;
@@ -10,37 +12,64 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.ClassInstanceBuilder;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 @EntityType("创建对象节点")
 public class NewObjectNode extends CallNode implements NewNode {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(NewObjectNode.class);
+
     public static NewObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         NewObjectNodeParam param = nodeDTO.getParam();
-        Flow subFlow = getFlow(param, context);
-        FlowParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
-        List<Argument> arguments = NncUtils.biMap(
-                subFlow.getParameters(),
-                param.getArguments(),
-                (parameter, argDTO) -> new Argument(argDTO.tmpId(), parameter,
-                        ValueFactory.create(argDTO.value(), parsingContext))
-        );
-        var parentRef = NncUtils.get(param.getParent(),
-                p -> ParentRef.create(p, parsingContext, context, subFlow.getReturnType()));
+        if (param.isResolved()) {
+            var subFlow = (Method) getFlow(param, context);
+            var parsingContext = FlowParsingContext.create(scope, prev, context);
+            List<Argument> arguments = NncUtils.biMap(
+                    subFlow.getParameters(),
+                    param.getArguments(),
+                    (parameter, argDTO) -> new Argument(argDTO.tmpId(), parameter,
+                            ValueFactory.create(argDTO.value(), parsingContext))
+            );
+            var parentRef = NncUtils.get(param.getParent(),
+                    p -> ParentRef.create(p, parsingContext, context, subFlow.getReturnType()));
+            //noinspection DuplicatedCode
+            var node = saveNode0(nodeDTO, subFlow, parentRef, arguments, prev, scope, context);
+            node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypeIds(), context::getType));
+            node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
+            return node;
+        } else {
+            var declaringType = context.getClassType(param.getTypeId());
+            LOGGER.info("declaringTypeId: {}, declaringType: {}", param.getTypeId(), NncUtils.get(declaringType, Type::getTypeDesc));
+            var parsingContext = FlowParsingContext.create(scope, prev, context);
+            var argumentValues = NncUtils.map(param.getArgumentValues(), arg -> ValueFactory.create(arg, parsingContext));
+            var subFlow = declaringType.resolveMethod(param.getFlowName(), NncUtils.map(argumentValues, Value::getType), false);
+            var arguments = new ArrayList<Argument>();
+            NncUtils.biForEach(subFlow.getParameters(), argumentValues, (p, v) ->
+                    arguments.add(new Argument(null, p, v))
+            );
+            return saveNode0(nodeDTO, subFlow, null, arguments, prev, scope, context);
+        }
+    }
+
+    private static NewObjectNode saveNode0(NodeDTO nodeDTO, Method subFlow, ParentRef parentRef, List<Argument> arguments,
+                                           NodeRT prev, ScopeRT scope, IEntityContext context) {
+        NewObjectNodeParam param = nodeDTO.getParam();
         var node = (NewObjectNode) context.getNode(nodeDTO.id());
         if (node != null) {
             node.setSubFlow(subFlow);
-            node.setArguments(arguments);
             node.setParentRef(parentRef);
+            node.setArguments(arguments);
+            node.setEphemeral(param.isEphemeral());
+            node.setUnbound(param.isUnbound());
         } else
             node = new NewObjectNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), subFlow,
                     arguments, prev, scope, parentRef, param.isEphemeral(), param.isUnbound());
-        node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypeIds(), context::getType));
-        node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
         return node;
     }
 
@@ -70,8 +99,10 @@ public class NewObjectNode extends CallNode implements NewNode {
         try (var serContext = SerializeContext.enter()) {
             return new NewObjectNodeParam(
                     serContext.getId(getSubFlow()),
+                    null,
                     serContext.getId(getSubFlow().getDeclaringType()),
                     NncUtils.map(arguments, Argument::toDTO),
+                    null,
                     NncUtils.get(parentRef, ParentRef::toDTO),
                     ephemeral,
                     unbound,
@@ -129,6 +160,10 @@ public class NewObjectNode extends CallNode implements NewNode {
 
     public void setEphemeral(boolean ephemeral) {
         this.ephemeral = ephemeral;
+    }
+
+    public void setUnbound(boolean unbound) {
+        this.unbound = unbound;
     }
 
     @Override
