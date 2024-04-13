@@ -1,7 +1,6 @@
 package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.jetbrains.annotations.Debug;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
@@ -19,7 +18,7 @@ import java.util.List;
 @EntityType("流程范围")
 public class ScopeRT extends Element {
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
 
     @EntityField("所属流程")
     private final Flow flow;
@@ -64,7 +63,7 @@ public class ScopeRT extends Element {
     }
 
     private boolean shouldDebug() {
-        if(DebugEnv.DEBUG_ON && flow.getEffectiveHorizontalTemplate().getName().equals("find")) {
+        if(DebugEnv.debugging && flow.getEffectiveHorizontalTemplate().getName().equals("find")) {
             return flow.getHorizontalTemplate() == null || flow.getTypeArguments().get(0).isCaptured();
         }
         else
@@ -209,9 +208,6 @@ public class ScopeRT extends Element {
     }
 
     private void onNodeChange() {
-        if(DebugEnv.DEBUG_ON && getFlow() == DebugEnv.m0) {
-            DebugEnv.onM0NodesChange();
-        }
     }
 
     @Override

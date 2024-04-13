@@ -87,6 +87,10 @@ public abstract class Instance {
         return false;
     }
 
+    public boolean shouldSkipWrite() {
+        return false;
+    }
+
     public abstract @Nullable Id tryGetId();
 
     public @Nullable String getInstanceIdString() {

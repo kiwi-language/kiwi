@@ -30,10 +30,6 @@ public class IndexEntryPO implements Comparable<IndexEntryPO> {
         this.appId = appId;
     }
 
-    public IndexEntryPO() {
-        key = new IndexKeyPO();
-    }
-
     public byte[] getIndexId() {
         return key.getIndexId();
     }

@@ -13,7 +13,6 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
     private final List<T> inserts = new ArrayList<>();
     private final List<T> updates = new ArrayList<>();
     private final List<T> deletes = new ArrayList<>();
-    private final List<T> virtualUpdates = new ArrayList<>();
 
     private final Map<DifferenceAttributeKey<?>, Object> attributes = new HashMap<>();
 
@@ -33,10 +32,6 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
         deletes.add(entity);
     }
 
-    public void addVirtualUpdate(T entity) {
-        this.virtualUpdates.add(entity);
-    }
-
     public List<T> inserts() {
         return inserts;
     }
@@ -45,30 +40,14 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
         return updates;
     }
     
-    public List<T> virtualUpdates() {
-        return virtualUpdates;
-    }
-    
     public void forEachInsertOrUpdate(Consumer<T> action) {
-        forEachInsertOrUpdate(action, false);
-    }
-    
-    public void forEachInsertOrUpdate(Consumer<T> action, boolean includeVirtualUpdates) {
         inserts.forEach(action);
         updates.forEach(action);
-        if(includeVirtualUpdates)
-            virtualUpdates.forEach(action);
     }
 
     public void forEachUpdateOrDelete(Consumer<T> action) {
-        forEachUpdateOrDelete(action, false);
-    }
-    
-    public void forEachUpdateOrDelete(Consumer<T> action, boolean includeVirtualUpdates) {
         updates.forEach(action);
         deletes.forEach(action);
-        if(includeVirtualUpdates)
-            virtualUpdates.forEach(action);
     }
 
     public List<T> deletes() {

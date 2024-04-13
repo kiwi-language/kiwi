@@ -25,7 +25,7 @@ import static java.util.Objects.requireNonNull;
 @EntityType("调用节点")
 public abstract class CallNode extends NodeRT {
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     public static Flow getFlow(CallNodeParam param, IEntityContext context) {
         return context.getEntity(Method.class, Id.parse(param.getFlowId()));
@@ -106,8 +106,8 @@ public abstract class CallNode extends NodeRT {
             var declaringType = method.getDeclaringType();
             var actualTypeArgs = NncUtils.map(declaringType.getTypeArguments(), t -> t.accept(typeSubst));
             var actualDeclaringType = frame.compositeTypeFacade().getParameterizedType(declaringType.getEffectiveTemplate(), actualTypeArgs);
-            if(DebugEnv.DEBUG_ON)
-                DEBUG_LOGGER.info("uncapture flow declaring type from {} to {}",
+            if(DebugEnv.debugging)
+                debugLogger.info("uncapture flow declaring type from {} to {}",
                         declaringType.getTypeDesc(),
                         actualDeclaringType.getTypeDesc());
             flow = NncUtils.requireNonNull(actualDeclaringType.findSelfMethod(
@@ -116,8 +116,8 @@ public abstract class CallNode extends NodeRT {
         if(NncUtils.anyMatch(flow.getTypeArguments(), Type::isCaptured)) {
             var actualTypeArgs = NncUtils.map(flow.getTypeArguments(), t -> t.accept(typeSubst));
             var uncapturedFlow =  frame.parameterizedFlowProvider().getParameterizedFlow(flow.getHorizontalTemplate(), actualTypeArgs);
-            if(DebugEnv.DEBUG_ON) {
-                DEBUG_LOGGER.info("uncapture flow from {} to {}, captured expressions: {}, captured expression types: {}, " +
+            if(DebugEnv.debugging) {
+                debugLogger.info("uncapture flow from {} to {}, captured expressions: {}, captured expression types: {}, " +
                                 "actual expression types: {}, captured types: {}, actual types: {}",
                         flow.getTypeDesc(), uncapturedFlow.getTypeDesc(),
                         NncUtils.join(capturedExpressions, e -> e.build(VarType.NAME), ", "),

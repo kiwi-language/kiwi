@@ -23,7 +23,7 @@ public class SubtreeExtractor extends StreamVisitor {
 
     @Override
     public void visitRecordBody(Id id) {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.write(WireTypes.RECORD);
         output.writeId(id);

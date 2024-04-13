@@ -13,7 +13,7 @@ public class LabCompilingTest extends CompilerTestBase {
     public void test() {
 //        compile(LAB_SOURCE_ROOT);
 //        submit(() -> {
-////            DebugEnv.DEBUG_LOG_ON = true;
+////            DebugEnv.debugLogger_ON = true;
 //            var fooType = getClassTypeByCode("Foo");
 //            var fooConstructorId = TestUtils.getMethodIdByCode(fooType, "Foo");
 //            var foo = TestUtils.doInTransaction(() ->

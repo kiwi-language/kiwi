@@ -1,6 +1,7 @@
 package tech.metavm;
 
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -9,10 +10,15 @@ public class Lab {
     public static final Pattern ptn = Pattern.compile("对象'.+\\-(.+)'不存在");
 
     public static void main(String[] args) throws IOException {
-        var str = "对象'字段-058aa8d6b9078a03'不存在";
-        var m = ptn.matcher(str);
-        System.out.println(m.matches());
-        System.out.println(m.group(1));
+        var enumSet = EnumSet.noneOf(Lab.Options.class);
+        enumSet.add(Options.op1);
+        System.out.println(enumSet);
+    }
+
+    private enum Options {
+
+        op1,
+        op2;
 
     }
 

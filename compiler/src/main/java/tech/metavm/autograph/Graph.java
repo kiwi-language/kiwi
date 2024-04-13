@@ -18,16 +18,16 @@ public record Graph(
         Map<PsiElement, Set<CfgNode>> stmtNext
 ) {
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger degugLogger = LoggerFactory.getLogger("Debug");
 
     public void log() {
-        DEBUG_LOGGER.info("Cfg for {}", title);
+        degugLogger.info("Cfg for {}", title);
         logNodeDfs(entry, new IdentitySet<>());
     }
 
     private void logNodeDfs(CfgNode node, IdentitySet<CfgNode> visited) {
         if(visited.add(node)) {
-            DEBUG_LOGGER.info("{} -> {}", node, node.getNext());
+            degugLogger.info("{} -> {}", node, node.getNext());
             node.getNext().forEach(next -> logNodeDfs(next, visited));
         }
     }

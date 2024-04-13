@@ -19,6 +19,7 @@ import tech.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.BiConsumer;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.entity.EntityUtils.*;
@@ -26,7 +27,8 @@ import static tech.metavm.entity.EntityUtils.*;
 public abstract class BaseEntityContext implements CompositeTypeFactory, IEntityContext, ContextListener {
 
     @SuppressWarnings("unused")
-    private static final Logger LOGGER = LoggerFactory.getLogger(BaseEntityContext.class);
+    private static final Logger logger = LoggerFactory.getLogger(BaseEntityContext.class);
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private final Map<Long, Object> entityMap = new HashMap<>();
     private final IInstanceContext instanceContext;
@@ -304,17 +306,15 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return false;
     }
 
-    private final IdentitySet<Entity> notified = new IdentitySet<>();
-
     @Override
     public void afterContextIntIds() {
         try (var ignored = getProfiler().enter("BaseEntityContext.afterContextIntIds", true)) {
-            for (Object object : new ArrayList<>(model2instance.keySet())) {
-                if (isNewEntity(object) && (object instanceof Entity entity) && notified.add(entity)) {
+            forEachEntityInstancePair((object, instance) -> {
+                if(isNewEntity(object) && (object instanceof Entity entity) && instance.setAfterContextInitIdsNotified()) {
                     if (entity.afterContextInitIds())
                         updateInstance(object, getInstance(object));
                 }
-            }
+            });
         }
     }
 
@@ -438,8 +438,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
-
     public void finish() {
         instanceContext.finish();
     }
@@ -488,24 +486,22 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public void updateInstances() {
         try (var profilerEntry = getProfiler().enter("updateInstances")) {
             profilerEntry.addMessage("numInstances", model2instance.size());
-            var list = new ArrayList<>(model2instance.entrySet());
-            for (var entry : list) {
-                updateInstance(entry.getKey(), entry.getValue());
-            }
+//            var list = new ArrayList<>(model2instance.entrySet());
+            forEachEntityInstancePair(this::updateInstance);
+//            for (var entry : list) {
+//                updateInstance(entry.getKey(), entry.getValue());
+//            }
 //            new IdentityHashMap<>(model2instance).forEach(this::updateInstance);
         }
     }
 
-//    validation is migrated to InstanceContext.finishInternal
-//    private void validateInstances() {
-//        try(var ignored = getProfiler().enter("validateInstances", true)) {
-//            for (Object model : new ArrayList<>(model2instance.keySet())) {
-//                if (model instanceof Entity entity) {
-//                    entity.validate();
-//                }
-//            }
-//        }
-//    }
+    private void forEachEntityInstancePair(BiConsumer<Object, DurableInstance> action) {
+        instanceContext.forEach(instance -> {
+            var entity = instance.getMappedEntity();
+            if(entity != null)
+                action.accept(entity, instance);
+        });
+    }
 
     @Override
     public void update(Object object) {

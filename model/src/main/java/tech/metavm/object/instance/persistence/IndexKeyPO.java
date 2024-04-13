@@ -207,10 +207,7 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
     }
 
     public IndexKeyPO copy() {
-        var copy = new IndexKeyPO();
-        copy.indexId = indexId;
-        for (int i = 0; i < MAX_KEY_COLUMNS; i++)
-            copy.columns[i] = Arrays.copyOf(columns[i], columns[i].length);
+        var copy = new IndexKeyPO(indexId, columns);
         copy.hash = hash;
         copy.hashIsZero = hashIsZero;
         return copy;

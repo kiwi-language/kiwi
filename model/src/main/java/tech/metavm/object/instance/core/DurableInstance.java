@@ -3,7 +3,6 @@ package tech.metavm.object.instance.core;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.Tree;
 import tech.metavm.object.type.Field;
@@ -13,32 +12,35 @@ import tech.metavm.system.RegionConstants;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class DurableInstance extends Instance/* implements IdInitializing*/ {
+public abstract class DurableInstance extends Instance {
 
     public static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(DurableInstance.class);
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
 
-    transient boolean marked;
-    transient boolean viewSaved;
+    private transient boolean marked;
+    private transient boolean viewSaved;
     private transient boolean _new;
     private transient boolean loaded;
-    transient boolean loadedFromCache;
-    transient boolean removed;
-    private transient IInstanceContext context;
+    private transient boolean loadedFromCache;
+    private transient boolean removed;
+    private transient boolean modified;
+    private transient boolean ephemeral;
+    private transient boolean changeNotified;
+    private transient boolean removalNotified;
+
+    transient IInstanceContext context;
+    private transient boolean afterContextInitIdsNotified;
     @Nullable
     private transient DurableInstance prev;
     @Nullable
     private transient DurableInstance next;
     private transient Object mappedEntity;
-    private transient boolean modified;
-    private transient boolean ephemeral;
 
     private Id id;
 
@@ -71,10 +73,6 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     public DurableInstance(@Nullable Id id, Type type, long version, long syncVersion, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
         super(type);
-        if(DebugEnv.DEBUG_ON) {
-            if(EntityUtils.isModelInitialized(type) && "SKU".equals(type.getName()))
-                DEBUG_LOGGER.info("creating an SKU instance");
-        }
         this.version = version;
         this.syncVersion = syncVersion;
         this.load = load;
@@ -94,6 +92,11 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
     @Override
     public boolean isEphemeral() {
         return ephemeral || getType().isEphemeral();
+    }
+
+    @Override
+    public boolean shouldSkipWrite() {
+        return isInitialized() && isEphemeral();
     }
 
     public @Nullable DurableInstance tryGetSource() {
@@ -261,7 +264,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
             throw new InternalException(String.format("Instance %d is already loaded", getPhysicalId()));
         loaded = true;
         _new = false;
-        loadedFromCache = fromCache;
+        setLoadedFromCache(fromCache);
     }
 
     @NoProxy
@@ -322,7 +325,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     @NoProxy
     void ensureMutable() {
-        if (loadedFromCache)
+        if (isLoadedFromCache())
             throw new IllegalStateException(String.format("Instance %s is immutable", this));
     }
 
@@ -510,5 +513,42 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     public void setNextNodeId(int nextNodeId) {
         this.nextNodeId = nextNodeId;
+    }
+
+    boolean isMarked() {
+        return marked;
+    }
+
+    void setMarked(boolean marked) {
+        this.marked = marked;
+    }
+
+    boolean isViewSaved() {
+        return viewSaved;
+    }
+
+    void setViewSaved() {
+        this.viewSaved = true;
+    }
+
+    public boolean setChangeNotified() {
+        if(changeNotified)
+            return false;
+        changeNotified = true;
+        return true;
+    }
+
+    public boolean setRemovalNotified() {
+        if(removalNotified)
+            return false;
+        removalNotified = true;
+        return true;
+    }
+
+    public boolean setAfterContextInitIdsNotified() {
+        if(afterContextInitIdsNotified)
+            return false;
+        afterContextInitIdsNotified = true;
+        return true;
     }
 }

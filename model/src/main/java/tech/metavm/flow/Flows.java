@@ -14,7 +14,7 @@ import java.util.List;
 
 public class Flows {
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
 
     public static Type getExpressionType(Expression expression, @Nullable NodeRT prev, ScopeRT scope) {
         var exprTypeMap = prev != null ? prev.getExpressionTypes() : scope.getExpressionTypes();
@@ -33,13 +33,9 @@ public class Flows {
         }
         if (flow.isTemplate()) {
             for (Flow horizontalInstance : context.selectByKey(Flow.IDX_HORIZONTAL_TEMPLATE, flow)) {
-                if (DebugEnv.DEBUG_ON)
-                    DEBUG_LOGGER.info("retransforming " + EntityUtils.getEntityPath(horizontalInstance));
+                if (DebugEnv.debugging)
+                    debugLoggerGER.info("retransforming " + EntityUtils.getEntityPath(horizontalInstance));
                 context.getGenericContext().retransformHorizontalFlowInstances(flow, horizontalInstance);
-                if (DebugEnv.DEBUG_ON && DebugEnv.isTargetFlow(horizontalInstance)) {
-                    DEBUG_LOGGER.info("detecting bug for node: {}, result: {}",
-                            EntityUtils.getEntityPath(horizontalInstance), DebugEnv.isBugPresent(horizontalInstance));
-                }
             }
         }
     }

@@ -89,18 +89,18 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         var elements = this.elements;
         int size = 0;
         for (Instance element : elements) {
-            if (!element.isEphemeral())
+            if (!element.shouldSkipWrite())
                 size++;
         }
         output.writeInt(size);
         if (isChildArray() && includeChildren) {
             for (Instance element : elements) {
-                if (!element.isEphemeral())
+                if (!element.shouldSkipWrite())
                     output.writeValue(element);
             }
         } else {
             for (Instance element : elements) {
-                if (!element.isEphemeral())
+                if (!element.shouldSkipWrite())
                     output.writeInstance(element);
             }
         }

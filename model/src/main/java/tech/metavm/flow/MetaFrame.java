@@ -18,7 +18,7 @@ import java.util.*;
 
 public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
 
     @Nullable
     private final ClassInstance self;

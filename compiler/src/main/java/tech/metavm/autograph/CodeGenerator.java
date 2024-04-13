@@ -43,18 +43,18 @@ public class CodeGenerator {
     private void resolveQnAndActivity(PsiClass psiClass) {
         psiClass.accept(new QnResolver());
         psiClass.accept(new ActivityAnalyzer());
-        if(DebugEnv.DEBUG_ON)
+        if(DebugEnv.debugging)
             psiClass.accept(new ActivityPrinter());
     }
 
     void generateDecl(PsiClass psiClass, TypeResolver typeResolver) {
         psiClass.accept(new QnResolver());
         psiClass.accept(new ActivityAnalyzer());
-        if(DebugEnv.DEBUG_ON)
+        if(DebugEnv.debugging)
             psiClass.accept(new ActivityPrinter());
         var astToCfg = new AstToCfg();
         psiClass.accept(astToCfg);
-        if(DebugEnv.DEBUG_ON) {
+        if(DebugEnv.debugging) {
             astToCfg.getGraphs().values().forEach(Graph::log);
         }
         psiClass.accept(new ReachingDefAnalyzer(astToCfg.getGraphs()));

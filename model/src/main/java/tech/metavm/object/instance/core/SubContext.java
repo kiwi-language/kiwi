@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ReferenceExtractor;
 import tech.metavm.entity.Tree;
 import tech.metavm.entity.Value;
@@ -9,8 +10,7 @@ import java.util.*;
 
 public final class SubContext {
     private final Set<Value> values = new LinkedHashSet<>();
-    private final IdentityHashMap<Tree, Tree> entities = new IdentityHashMap<>();
-    private final Map<Long, Tree> entityMap = new HashMap<>();
+    private final Map<Long, Tree> trees = new HashMap<>();
     private final Set<ReferencePO> references = new HashSet<>();
     private final long appId;
 
@@ -19,19 +19,13 @@ public final class SubContext {
     }
 
     public Tree get(long id) {
-        return entityMap.get(id);
+        return trees.get(id);
     }
 
-    public void add(Tree tree) {
-        if(entities.containsKey(tree))
-            return;
-        Objects.requireNonNull(tree);
-        Tree existing = entityMap.remove(tree.id());
-        if (existing != null) {
-            entities.remove(existing);
-        }
-        entityMap.put(tree.id(), tree);
-        entities.put(tree, tree);
+    public void add(@NotNull Tree tree) {
+        if (trees.containsKey(tree.id()))
+            throw new IllegalArgumentException("Tree " + tree.id() + " already exists in the HeadContext");
+        trees.put(tree.id(), tree);
         new ReferenceExtractor(tree.openInput(), appId, references::add).visitMessage();
     }
 
@@ -47,24 +41,10 @@ public final class SubContext {
         return values;
     }
 
-    public Collection<Tree> entities() {
-        return entities.values();
-    }
-
     public void clear() {
-        entities.clear();
-        entityMap.clear();
+        trees.clear();
+        values.clear();
         references.clear();
-    }
-
-    public boolean remove(Tree entity) {
-        var removed = entities.remove(entity);
-        if (removed != null) {
-            entityMap.remove(removed.id());
-            return true;
-        } else {
-            return false;
-        }
     }
 
     public boolean remove(Value value) {
@@ -72,7 +52,7 @@ public final class SubContext {
     }
 
     Collection<Tree> trees() {
-        return Collections.unmodifiableCollection(entities.values());
+        return Collections.unmodifiableCollection(trees.values());
     }
 
 }

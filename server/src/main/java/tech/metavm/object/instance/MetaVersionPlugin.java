@@ -2,13 +2,10 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.EntityChange;
 import tech.metavm.entity.TypeRegistry;
-import tech.metavm.flow.Function;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.persistence.VersionRT;
-import tech.metavm.object.type.Type;
 import tech.metavm.object.version.VersionRepository;
 import tech.metavm.object.version.Versions;
-import tech.metavm.object.view.Mapping;
 
 import java.util.HashSet;
 
@@ -28,34 +25,34 @@ public class MetaVersionPlugin implements ContextPlugin {
 //            return false;
 //        var entityContext = context.getEntityContext();
 //        var changedEntities = new ArrayList<>();
-        var typeType = typeRegistry.getType(Type.class);
-        var mappingType = typeRegistry.getType(Mapping.class);
-        var functionType = typeRegistry.getType(Function.class);
+//        var typeType = typeRegistry.getType(Type.class);
+//        var mappingType = typeRegistry.getType(Mapping.class);
+//        var functionType = typeRegistry.getType(Function.class);
         var changedTypeIds = new HashSet<String>();
         var changedMappingIds = new HashSet<String>();
         var changedFunctionIds = new HashSet<String>();
         change.forEachInsertOrUpdate(v -> {
-            var id = v.id().toString();
             var instance = context.get(v.id());
-            if (typeType.isInstance(instance))
-                changedTypeIds.add(id);
-            else if (mappingType.isInstance(instance))
-                changedMappingIds.add(id);
-            else if (functionType.isInstance(instance))
-                changedFunctionIds.add(id);
-        }, true);
+            var type = instance.getType();
+            if (typeRegistry.isTypeType(type))
+                changedTypeIds.add(v.id().toString());
+            else if (typeRegistry.isMappingType(type))
+                changedMappingIds.add(v.id().toString());
+            else if (typeRegistry.isFunctionType(type))
+                changedFunctionIds.add(v.id().toString());
+        });
         var removedTypeIds = new HashSet<String>();
         var removedMappingIds = new HashSet<String>();
         var removedFunctionIds = new HashSet<String>();
         change.deletes().forEach(v -> {
-            var id = v.id().toString();
             var instance = context.getRemoved(v.id());
-            if(typeType.isInstance(instance))
-                removedTypeIds.add(id);
-            else if(mappingType.isInstance(instance))
-                removedMappingIds.add(id);
-            else if(functionType.isInstance(instance))
-                removedFunctionIds.add(id);
+            var type = instance.getType();
+            if (typeRegistry.isTypeType(type))
+                removedTypeIds.add(v.id().toString());
+            else if (typeRegistry.isMappingType(type))
+                removedMappingIds.add(v.id().toString());
+            else if (typeRegistry.isFunctionType(type))
+                removedFunctionIds.add(v.id().toString());
         });
         if (!changedTypeIds.isEmpty() || !removedTypeIds.isEmpty()) {
             Versions.create(

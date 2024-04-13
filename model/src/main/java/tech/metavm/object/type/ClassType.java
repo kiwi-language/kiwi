@@ -28,7 +28,7 @@ import static tech.metavm.util.NncUtils.*;
 @EntityType("Class类型")
 public class ClassType extends Type implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity {
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
 
     public static final IndexDef<ClassType> IDX_NAME = IndexDef.create(ClassType.class, "name");
 

@@ -32,7 +32,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected final long appId;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
     private final Map<Id, DurableInstance> instanceMap = new HashMap<>();
-    private final Set<Id> creatingIds = new HashSet<>();
     private final IdentityHashMap<DurableInstance, List<DurableInstance>> source2views = new IdentityHashMap<>();
     private DurableInstance head;
     private DurableInstance tail;
@@ -43,10 +42,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final Set<ContextListener> listeners = new LinkedHashSet<>();
     @Nullable
     private Consumer<Object> bindHook;
-    //    private final Map<IndexKeyRT, Set<ClassInstance>> memIndex = new HashMap<>();
-//    private final Map<ClassInstance, Set<IndexKeyRT>> indexKeys = new HashMap<>();
     private final InstanceMemoryIndex memIndex;
-    //    private final Map<Long, Instance> tmpId2Instance = new HashMap<>();
     private boolean closed;
     private final boolean readonly;
     private final String clientId = ContextUtil.getClientId();
@@ -177,9 +173,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //                memIndex.get(key).remove(instance);
 //            }
 //        }
-    }
-
-    protected void onReplace(List<DurableInstance> replacements) {
     }
 
 //    @Override
@@ -405,7 +398,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         try (var ignored = getProfiler().enter("saveViews")) {
             NncUtils.enhancedForEach(instanceMap.values(), value -> {
                 if (value instanceof ClassInstance classInstance) {
-                    if (classInstance.isView() && !classInstance.isList() && !classInstance.isRemoved() && !classInstance.viewSaved)
+                    if (classInstance.isView() && !classInstance.isList() && !classInstance.isRemoved() && !classInstance.isViewSaved())
                         saveView(classInstance);
                 }
             });
@@ -413,7 +406,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private void saveView(ClassInstance view) {
-        view.viewSaved = true;
+        view.setViewSaved();
         var mapping = mappingProvider.getMapping(view.getMappingId());
         mapping.unmap(view, this);
     }
@@ -505,19 +498,19 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return typeProvider.getType(id);
     }
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
 
     @Override
     public void batchRemove(Collection<DurableInstance> instances) {
-        if(DebugEnv.DEBUG_ON) {
+        if(DebugEnv.debugging) {
             for (DurableInstance instance : instances) {
                 if(instance.isView() && !instance.isLoaded())
                     instance.ensureLoaded();
             }
         }
         var removalBatch = getRemovalBatch(instances);
-        if (DebugEnv.DEBUG_ON) {
-            DEBUG_LOGGER.info("removalBatch: [{}]", NncUtils.join(removalBatch, Instances::getInstanceDesc));
+        if (DebugEnv.debugging) {
+            debugLoggerGER.info("removalBatch: [{}]", NncUtils.join(removalBatch, Instances::getInstanceDesc));
         }
         // remove views first otherwise uninitialized views in the removal batch may fail to initialize
         var sortedRemovalBatch = NncUtils.sort(removalBatch, Comparator.comparingInt(i -> i.isView() ? 0 : 1));
@@ -537,7 +530,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (instance.isRemoved())
             return;
         var parent = instance.getParent();
-        if (parent != null && !parent.removed && !removalBatch.contains(parent)) {
+        if (parent != null && !parent.isRemoved() && !removalBatch.contains(parent)) {
             switch (parent) {
                 case ClassInstance classParent -> {
                     var parentField = requireNonNull(instance.getParentField());
@@ -672,7 +665,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public void batchBind(Collection<DurableInstance> instances) {
         instances.forEach(this::checkForBind);
-        for (var inst : doCraw(instances).newInstances) {
+        for (var inst : doCraw(instances)) {
             if (inst.tryGetPhysicalId() == null)
                 add(inst);
         }
@@ -689,8 +682,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     protected void craw() {
         try (var entry = getProfiler().enter("craw")) {
-            var crawResult = doCraw(this);
-            var added = crawResult.newInstances;
+            var added = doCraw(this);
             entry.addMessage("numNewInstances", added.size());
             for (var inst : added) {
                 if (inst.tryGetPhysicalId() == null && !containsInstance(inst))
@@ -699,23 +691,26 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
     }
 
+    protected void clearMarks() {
+        this.forEach(i -> i.setMarked(false));
+    }
+
     protected List<DurableInstance> computeNonPersistedOrphans() {
-        for (var instance : this)
-            instance.marked = false;
+        clearMarks();
         var marker = new StructuralVisitor() {
             @Override
             public Void visitDurableInstance(DurableInstance instance) {
-                instance.marked = true;
+                instance.setMarked(true);
                 return super.visitDurableInstance(instance);
             }
         };
         for (var instance : this) {
-            if(instance.isRoot() && !instance.removed)
+            if(instance.isRoot() && !instance.isRemoved())
                 instance.accept(marker);
         }
         var orphans = new ArrayList<DurableInstance>();
         for (var instance : this) {
-            if(!instance.removed && !instance.marked)
+            if(!instance.isRemoved() && !instance.isMarked())
                 orphans.add(instance);
         }
         return orphans;
@@ -726,6 +721,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 () -> new InternalException(String.format("Can not add a removed instance: %d", instance.tryGetPhysicalId())));
         NncUtils.requireTrue(instance.getContext() == null
                 && instance.getNext() == null && instance.getPrev() == null);
+        if(DebugEnv.gettingBufferedTrees)
+            System.out.println("Caught");
         if (tail == null)
             head = tail = instance;
         else {
@@ -778,7 +775,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     ) {
     }
 
-    private CrawResult doCraw(Iterable<DurableInstance> instances) {
+    private List<DurableInstance> doCraw(Iterable<DurableInstance> instances) {
 //        try (var entry = getProfiler().enter("crawNewInstances")) {
             var added = new ArrayList<DurableInstance>();
             var visitor = new GraphVisitor() {
@@ -788,10 +785,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                     if (instance.isInitialized()) {
                         if (instance.isRemoved())
                             return null;
-//                            throw new InternalException("Can not reference a removed instance: " + instance);
-                        if (parent != null && parent.containsInstance(instance))
+                        if(instance.context != null && instance.context != BaseInstanceContext.this)
                             return null;
-                        if (!containsInstance(instance))
+                        if (instance.context == null)
                             added.add(instance);
                         super.visitDurableInstance(instance);
                     }
@@ -803,8 +799,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 if (instance.isRoot() && instance.isInitialized() && !instance.isRemoved())
                     visitor.visit(instance);
             }
-//            entry.addMessage("numCalls", visitor.numCalls);
-            return new CrawResult(added, visitor.getVisited());
+            return added;
 //        }
     }
 

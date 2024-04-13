@@ -79,7 +79,7 @@ public class InstanceField {
     }
 
     public boolean shouldSkipWrite() {
-        return value.isNull() || value instanceof DurableInstance d && d.isEphemeral();
+        return value.isNull() || value.shouldSkipWrite();
     }
 
     @SuppressWarnings("unused")

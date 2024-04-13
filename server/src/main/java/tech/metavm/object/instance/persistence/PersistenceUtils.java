@@ -10,29 +10,28 @@ import tech.metavm.system.RegionConstants;
 import tech.metavm.util.*;
 
 import java.io.ByteArrayInputStream;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
 public class PersistenceUtils {
 
-    public static Set<IndexEntryPO> getIndexEntries(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider, long appId) {
+    public static void forEachIndexEntries(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider, long appId, Consumer<IndexEntryPO> action,
+                                           Consumer<IndexEntryPO> actionForUnique) {
         instance.ensureLoaded();
-        return NncUtils.flatMapUnique(
-                instance.getType().getConstraints(Index.class),
-                c -> getIndexEntries(c, instance, parameterizedFlowProvider, appId)
-        );
+        instance.getType().getConstraints(Index.class).forEach(index -> forEachIndexEntries(index, instance, parameterizedFlowProvider, appId, action, actionForUnique));
     }
 
-    private static List<IndexEntryPO> getIndexEntries(Index index, ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider, long appId) {
-        List<IndexKeyRT> keys = index.createIndexKey(instance, parameterizedFlowProvider);
-        return NncUtils.map(
-                keys,
-                key -> new IndexEntryPO(appId, key.toPO(), requireNonNull(instance.tryGetId()).toBytes())
-        );
+    private static void forEachIndexEntries(Index index, ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider,
+                                                          long appId, Consumer<IndexEntryPO> action, Consumer<IndexEntryPO> actionForUnique) {
+        index.forEachIndexKey(instance, parameterizedFlowProvider,
+                key -> {
+                    var entryPO = new IndexEntryPO(appId, key.toPO(), requireNonNull(instance.tryGetId()).toBytes());
+                    action.accept(entryPO);
+                    if(key.getIndex().isUnique() && !containsNull(key.getIndex(), entryPO.getKey()))
+                        actionForUnique.accept(entryPO);
+                });
     }
 
     public static InstancePO toInstancePO(DurableInstance instance, long appId) {
@@ -68,7 +67,12 @@ public class PersistenceUtils {
     }
 
     public static boolean containsNull(Index index, IndexKeyPO key) {
-        return NncUtils.anyMatch(index.getFields(), item -> isItemNull(item, key));
+        for (int i = 0; i < index.getNumFields(); i++) {
+           if(Arrays.equals(key.getColumn(i), IndexKeyPO.NULL))
+               return true;
+        }
+        return false;
+//        return NncUtils.anyMatch(index.getFields(), item -> isItemNull(item, key));
     }
 
     private static boolean isItemNull(IndexField field, IndexKeyPO key) {

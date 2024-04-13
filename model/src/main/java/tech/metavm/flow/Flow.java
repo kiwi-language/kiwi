@@ -26,6 +26,8 @@ import java.util.Objects;
 @EntityType("流程")
 public abstract class Flow extends Element implements GenericDeclaration, Callable, LoadAware, CapturedTypeScope {
 
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
+
     public static final IndexDef<Flow> IDX_PARAMETERIZED_KEY =
             IndexDef.createUnique(Flow.class, "parameterizedKey");
 
@@ -538,8 +540,6 @@ List.of(),
         this.state = state;
     }
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
-
     protected List<Instance> checkArguments(List<Instance> arguments) {
         List<Instance> convertedArgs = new ArrayList<>();
         out:
@@ -557,8 +557,8 @@ List.of(),
                         convertedArgs.add(arg.convert(param.getType()));
                     }
                     catch (BusinessException e) {
-                        if(DebugEnv.DEBUG_ON) {
-                            DEBUG_LOGGER.info("Argument type mismatch: {} is not assignable from {}",
+                        if(DebugEnv.debugging) {
+                            debugLogger.info("Argument type mismatch: {} is not assignable from {}",
                                     param.getType().getTypeDesc(),
                                     arg.getType().getTypeDesc());
                         }

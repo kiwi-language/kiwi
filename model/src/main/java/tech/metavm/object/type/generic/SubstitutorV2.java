@@ -22,7 +22,7 @@ import static tech.metavm.object.type.ResolutionStage.*;
 
 public class SubstitutorV2 extends CopyVisitor {
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
 
     public static SubstitutorV2 create(Object root,
                                        List<TypeVariable> typeParameters,
@@ -66,8 +66,8 @@ public class SubstitutorV2 extends CopyVisitor {
                          ParameterizedFlowProvider parameterizedFlowProvider,
                          DTOProvider dtoProvider) {
         super(root);
-        if(DebugEnv.DEBUG_ON) {
-            DEBUG_LOGGER.info("substituting {}, type parameters: {}, type arguments: {}",
+        if(DebugEnv.debugging) {
+            debugLoggerGER.info("substituting {}, type parameters: {}, type arguments: {}",
                     EntityUtils.getEntityDesc(root), NncUtils.map(typeParameters, Type::getTypeDesc),
                     NncUtils.map(typeArguments, Type::getTypeDesc));
         }
@@ -117,10 +117,10 @@ public class SubstitutorV2 extends CopyVisitor {
             });
         }
 //        if(root instanceof Flow flow && flow.getName().equals("findRequired")) {
-//            DEBUG_LOGGER.info("Substituting {}, with type arguments: {}", EntityUtils.getEntityDesc(root),
+//            debugLoggerGER.info("Substituting {}, with type arguments: {}", EntityUtils.getEntityDesc(root),
 //                    NncUtils.join(typeArguments, EntityUtils::getEntityDesc));
 //            existingCopies.forEach((s, t) -> {
-//                DEBUG_LOGGER.info("source: {}, target: {}", EntityUtils.getEntityDesc(s), EntityUtils.getEntityDesc(t));
+//                debugLoggerGER.info("source: {}, target: {}", EntityUtils.getEntityDesc(s), EntityUtils.getEntityDesc(t));
 //            });
 //        }
     }

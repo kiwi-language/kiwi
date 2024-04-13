@@ -17,7 +17,7 @@ import static tech.metavm.util.NncUtils.unionSet;
 
 public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private Analyzer currentAnalyzer;
     private final Map<PsiParameterListOwner, Graph> graphMap;
@@ -40,9 +40,9 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
     public void visitMethod(PsiMethod method) {
         var parentAnalyzer = currentAnalyzer;
         currentAnalyzer = new Analyzer(graphMap.get(method));
-        if(DebugEnv.DEBUG_ON) {
-            DEBUG_LOGGER.info("Start liveness analysis for method {}", method.getName());
-            DEBUG_LOGGER.info(method.getText());
+        if(DebugEnv.debugging) {
+            debugLogger.info("Start liveness analysis for method {}", method.getName());
+            debugLogger.info(method.getText());
         }
         currentAnalyzer.visitReverse();
         super.visitMethod(method);
@@ -178,8 +178,8 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
             }
             setIn(node, liveIn);
             setOut(node, liveOut);
-            if(DebugEnv.DEBUG_ON) {
-                DEBUG_LOGGER.info("{}, live in: {}, live out: {}",
+            if(DebugEnv.debugging) {
+                debugLogger.info("{}, live in: {}, live out: {}",
                         node.getElement().getText(), liveIn, liveOut);
             }
             return !prevLiveIn.equals(liveIn);

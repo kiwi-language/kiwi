@@ -57,9 +57,10 @@ public class InstanceOutput extends OutputStream {
             write(primitiveInstance.getWireType());
             primitiveInstance.writeTo(this, includeChildren);
         } else if (instance instanceof DurableInstance d) {
-            if (d.isEphemeral())
+            /*if (d.isEphemeral())
                 write(WireTypes.NULL);
-            else if (isReference) {
+            else*/
+            if (isReference) {
                 write(WireTypes.REFERENCE);
                 writeId(requireNonNull(d.tryGetId()));
             } else {

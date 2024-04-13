@@ -21,10 +21,10 @@ public class CapturedTypesCompileTest extends CompilerTestBase {
 
     public void test() {
 //        compile(SOURCE_ROOT);
-////        DebugEnv.DEBUG_LOG_ON = true;
+////        DebugEnv.debugLogger_ON = true;
 //        compile(SOURCE_ROOT);
 //        submit(() -> {
-////            DebugEnv.DEBUG_LOG_ON = true;
+////            DebugEnv.debugLogger_ON = true;
 //            var utilsType = getClassTypeByCode("CtUtils");
 //            for (ErrorDTO error : utilsType.getClassParam().errors()) {
 //                LOGGER.info("Utils error: {}", error.message());

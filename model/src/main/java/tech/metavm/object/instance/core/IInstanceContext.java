@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository, CallContext {
+public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository, CallContext, Iterable<DurableInstance> {
 
     IInstanceContext createSame(long appId);
 

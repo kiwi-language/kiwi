@@ -3,12 +3,14 @@ package tech.metavm.entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.flow.Flow;
+import tech.metavm.flow.Function;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.Index;
+import tech.metavm.object.view.Mapping;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -42,6 +44,9 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final EntityMemoryIndex memoryIndex = new EntityMemoryIndex();
     private final Map<Id, Object> entityMap = new HashMap<>();
     private final Set<java.lang.reflect.Field> fieldBlacklist = new HashSet<>();
+    private final Set<tech.metavm.object.type.Type> typeTypes = new IdentitySet<>();
+    private final Set<tech.metavm.object.type.Type> mappingTypes = new IdentitySet<>();
+    private final Set<tech.metavm.object.type.Type> functionTypes = new IdentitySet<>();
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
             Map.entry(Byte.class, Long.class),
@@ -589,7 +594,40 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                     update(e);
                 }
             }
+            recordHotTypes();
         }
+    }
+
+    @Override
+    public boolean isTypeType(tech.metavm.object.type.Type type) {
+        return typeTypes.contains(type);
+    }
+
+    @Override
+    public boolean isMappingType(tech.metavm.object.type.Type type) {
+        return mappingTypes.contains(type);
+    }
+
+    @Override
+    public boolean isFunctionType(tech.metavm.object.type.Type type) {
+        return functionTypes.contains(type);
+    }
+
+    private void recordHotTypes() {
+        typeTypes.clear();
+        mappingTypes.clear();
+        functionTypes.clear();
+        var typeType = getType(tech.metavm.object.type.Type.class);
+        var mappingType = getType(Mapping.class);
+        var functionType = getType(Function.class);
+        type2Def.keySet().forEach(type -> {
+            if(typeType.isAssignableFrom(type))
+                typeTypes.add(type);
+            else if(mappingType.isAssignableFrom(type))
+                mappingTypes.add(type);
+            else if(functionType.isAssignableFrom(type))
+                functionTypes.add(type);
+        });
     }
 
     private void crawNewEntities() {

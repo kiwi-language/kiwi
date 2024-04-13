@@ -12,7 +12,6 @@ import tech.metavm.flow.rest.FlowParam;
 import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
@@ -347,20 +346,17 @@ public class Method extends Flow implements Property, GenericElement {
         }
     }
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
 
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext) {
         try(var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName()+ "." + getName())) {
-            if(DebugEnv.DEBUG_ON) {
+            if(DebugEnv.debugging) {
                 var methodName = getDeclaringType().getName() + "." + getNameWithTypeArguments();
-                if(methodName.equals("子对象列表<Child>.删除")) {
-                    DebugEnv.target = (ClassInstance) arguments.get(0);
-                }
-                DEBUG_LOGGER.info("Method.execute: {}", methodName);
-                DEBUG_LOGGER.info("Arguments: ");
-                arguments.forEach(arg -> DEBUG_LOGGER.info(arg.getTree()));
-                DEBUG_LOGGER.info(getText());
+                debugLoggerGER.info("Method.execute: {}", methodName);
+                debugLoggerGER.info("Arguments: ");
+                arguments.forEach(arg -> debugLoggerGER.info(arg.getTree()));
+                debugLoggerGER.info(getText());
             }
             if (_static)
                 NncUtils.requireNull(self);

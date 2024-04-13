@@ -829,19 +829,18 @@ public class NncUtils {
 
     public static <T, K> void forEachPair(Collection<T> list1, Collection<T> list2,
                                           Function<T, K> keyMapper, BiConsumer<T, T> action) {
-        Map<K, T> map = new HashMap<>();
+        var map = new HashMap<K, T>();
         list1.forEach(t1 -> map.put(keyMapper.apply(t1), t1));
-        for (T t2 : list2) {
+        for (T t2 : list2)
             action.accept(map.remove(keyMapper.apply(t2)), t2);
-        }
         map.values().forEach(t1 -> action.accept(t1, null));
     }
 
     @SuppressWarnings({"ReassignedVariable", "unchecked"})
     public static <T extends Comparable<T>> void forEachPair
-            (List<T> list1, List<T> list2, BiConsumer<T, T> action) {
-        var array1 = list1.toArray();
-        var array2 = list2.toArray();
+            (Collection<T> coll1, Collection<T> coll2, BiConsumer<T, T> action) {
+        var array1 = coll1.toArray();
+        var array2 = coll2.toArray();
         Arrays.sort(array1);
         Arrays.sort(array2);
         int i = 0, j = 0;

@@ -34,7 +34,4 @@ public abstract class GraphVisitor extends VoidInstanceVisitor {
         return super.visitInstance(instance);
     }
 
-    public Set<Instance> getVisited() {
-        return Collections.unmodifiableSet(visited);
-    }
 }

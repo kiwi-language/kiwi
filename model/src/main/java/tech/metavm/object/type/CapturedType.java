@@ -17,7 +17,7 @@ import java.util.*;
 @EntityType("捕获类型")
 public class CapturedType extends Type implements ITypeVariable, PostRemovalAware, GenericElement {
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
 
     @EntityField("范围")
     private CapturedTypeScope scope;
@@ -143,18 +143,18 @@ public class CapturedType extends Type implements ITypeVariable, PostRemovalAwar
     public void postRemove(IEntityContext context) {
         List<Entity> removals = new ArrayList<>(capturedFlows);
         removals.addAll(capturedCompositeTypes);
-        if (DebugEnv.DEBUG_ON) {
-            DEBUG_LOGGER.info("{}.afterRemoval called", EntityUtils.getEntityPath(this));
+        if (DebugEnv.debugging) {
+            debugLoggerGER.info("{}.afterRemoval called", EntityUtils.getEntityPath(this));
             for (Entity removal : removals) {
                 boolean alreadyRemoved = context.isRemoved(removal);
-                DEBUG_LOGGER.info("Removing entity {}, already removed: {}",
+                debugLoggerGER.info("Removing entity {}, already removed: {}",
                         EntityUtils.getEntityDesc(removal) + "/" + removal.getStringId(), alreadyRemoved);
                 if (alreadyRemoved && removal instanceof Type removedType) {
                     var capturedTypes = new IdentitySet<CapturedType>();
                     for (Type componentType : Types.getComponentTypes(removedType)) {
                         capturedTypes.addAll(componentType.getCapturedTypes());
                     }
-                    DEBUG_LOGGER.info("Component captured types: {}", NncUtils.join(capturedTypes, EntityUtils::getEntityPath));
+                    debugLoggerGER.info("Component captured types: {}", NncUtils.join(capturedTypes, EntityUtils::getEntityPath));
                 }
             }
         }

@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory;
 
 public class ActivityPrinter extends JavaRecursiveElementVisitor {
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     @Override
     public void visitElement(@NotNull PsiElement element) {
         var scope = element.getUserData(Keys.SCOPE);
         if (scope != null)
-            DEBUG_LOGGER.info("Scope for node {}: {}", element.getText(), scope);
+            debugLogger.info("Scope for node {}: {}", element.getText(), scope);
         super.visitElement(element);
     }
 }

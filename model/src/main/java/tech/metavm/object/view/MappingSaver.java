@@ -109,15 +109,12 @@ public class MappingSaver {
     }
 
     private void retransformClassType(ClassType sourceType) {
-        if(DebugEnv.DEBUG_ON) {
-            DEBUG_LOGGER.info("MappingSaver.retransformClassType sourceType: {}", sourceType.getTypeDesc());
+        if(DebugEnv.debugging) {
+            debugLoggerGER.info("MappingSaver.retransformClassType sourceType: {}", sourceType.getTypeDesc());
         }
         if (sourceType.isTemplate()) {
             var templateInstances = parameterizedTypeRepository.getTemplateInstances(sourceType);
             for (ClassType templateInstance : templateInstances) {
-                if(DebugEnv.DEBUG_ON && templateInstance.getName().equals("Node<MyList_T>")) {
-                    DebugEnv.checkBug("MappingSaver.retransformClassType.before", templateInstance);
-                }
                 templateInstance.setStage(ResolutionStage.INIT);
                 var subst = new SubstitutorV2(
                         sourceType, sourceType.getTypeParameters(), templateInstance.getTypeArguments(),
@@ -125,9 +122,6 @@ public class MappingSaver {
                         parameterizedFlowProvider, new MockDTOProvider()
                 );
                 sourceType.accept(subst);
-                if(DebugEnv.DEBUG_ON && templateInstance.getName().equals("Node<MyList_T>")) {
-                    DebugEnv.checkBug("MappingSaver.retransformClassType.after", templateInstance);
-                }
             }
         }
     }
@@ -239,11 +233,11 @@ public class MappingSaver {
         );
     }
 
-    public static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
 
     public FieldsObjectMapping saveBuiltinMapping(ClassType type, boolean generateCode) {
-        if(DebugEnv.DEBUG_ON) {
-            DEBUG_LOGGER.info("saveBuiltinMapping. type: {}, generateCode: {}", type.getTypeDesc(), generateCode);
+        if(DebugEnv.debugging) {
+            debugLoggerGER.info("saveBuiltinMapping. type: {}, generateCode: {}", type.getTypeDesc(), generateCode);
         }
         NncUtils.requireTrue(type.isClass());
         var mapping = (FieldsObjectMapping) NncUtils.find(type.getMappings(), ObjectMapping::isBuiltin);

@@ -15,6 +15,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Consumer;
 
 @EntityType("索引")
 public class Index extends Constraint implements LocalKey {
@@ -71,6 +72,12 @@ public class Index extends Constraint implements LocalKey {
     }
 
     public List<IndexKeyRT> createIndexKey(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
+        var result = new ArrayList<IndexKeyRT>();
+        forEachIndexKey(instance, parameterizedFlowProvider, result::add);
+        return result;
+    }
+
+    public void forEachIndexKey(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider, Consumer<IndexKeyRT> action) {
         EvaluationContext evaluationContext = new InstanceEvaluationContext(instance, parameterizedFlowProvider);
         Map<IndexField, Instance> values = new HashMap<>();
         for (int i = 0; i < fields.size() - 1; i++) {
@@ -84,12 +91,11 @@ public class Index extends Constraint implements LocalKey {
             List<IndexKeyRT> keys = new ArrayList<>();
             for (Instance lastValue : lastValues) {
                 values.put(lastField, lastValue);
-                keys.add(createIndexKey(values));
+                action.accept(createIndexKey(values));
             }
-            return keys;
         } else {
             values.put(lastField, lastField.getValue().evaluate(evaluationContext));
-            return List.of(new IndexKeyRT(this, values));
+            action.accept(new IndexKeyRT(this, values));
         }
     }
 
@@ -137,6 +143,10 @@ public class Index extends Constraint implements LocalKey {
 
     public List<IndexField> getFields() {
         return fields.toList();
+    }
+
+    public int getNumFields() {
+        return fields.size();
     }
 
     public boolean isFieldIndex(Field field) {

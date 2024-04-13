@@ -25,7 +25,6 @@ public class LocalIndex {
             -1, -1, -1, -1, -1, -1, -1, -1
     };
 
-    public static final int NUM_COLS = 5;
     private final String path;
     private NavigableSet<IndexEntryPO> indexMap = new TreeSet<>();
     private final long appId;
@@ -43,7 +42,7 @@ public class LocalIndex {
             indexMap.forEach(entry -> {
                 var key = entry.getKey();
                 instOutput.writeId(Id.fromBytes(key.getIndexId()));
-                for (int i = 0; i < NUM_COLS; i++) {
+                for (int i = 0; i < IndexKeyPO.MAX_KEY_COLUMNS; i++) {
                     var bytes = key.getColumn(i);
                     instOutput.writeInt(bytes.length);
                     instOutput.write(bytes);
@@ -66,7 +65,7 @@ public class LocalIndex {
             for (int i = 0; i < size; i++) {
                 var key = new IndexKeyPO();
                 key.setIndexId(instInput.readId().toBytes());
-                for (int j = 0; j < NUM_COLS; j++) {
+                for (int j = 0; j < IndexKeyPO.MAX_KEY_COLUMNS; j++) {
                     int n = instInput.readInt();
                     var bytes = new byte[n];
                     //noinspection ResultOfMethodCallIgnored
