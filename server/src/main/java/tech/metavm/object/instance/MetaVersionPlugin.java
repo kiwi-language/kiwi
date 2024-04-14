@@ -25,9 +25,6 @@ public class MetaVersionPlugin implements ContextPlugin {
 //            return false;
 //        var entityContext = context.getEntityContext();
 //        var changedEntities = new ArrayList<>();
-//        var typeType = typeRegistry.getType(Type.class);
-//        var mappingType = typeRegistry.getType(Mapping.class);
-//        var functionType = typeRegistry.getType(Function.class);
         var changedTypeIds = new HashSet<String>();
         var changedMappingIds = new HashSet<String>();
         var changedFunctionIds = new HashSet<String>();

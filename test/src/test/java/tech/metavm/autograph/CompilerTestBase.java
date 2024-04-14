@@ -170,8 +170,9 @@ public abstract class CompilerTestBase extends TestCase  {
 
     protected void compileTwice(String sourceRoot) {
         compile(sourceRoot);
-//        DebugEnv.debugLogger_ON = true;
+//        DebugEnv.buildPatchLog = true;
         compile(sourceRoot);
+//        DebugEnv.buildPatchLog = false;
     }
 
     protected List<String> compile(String sourceRoot) {

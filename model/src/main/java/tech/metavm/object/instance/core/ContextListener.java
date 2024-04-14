@@ -6,6 +6,10 @@ public interface ContextListener {
 
     default void onInstanceInitialized(DurableInstance instance) {}
 
+    /**
+     * The implementation shall not make changes to entities or instances in the contexts.
+     * If changes are made, the changes may not be saved.
+     */
     default void onInstanceRemoved(DurableInstance instance) {
     }
 

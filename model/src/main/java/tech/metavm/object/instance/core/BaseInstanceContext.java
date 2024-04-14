@@ -452,7 +452,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void onContextInitializeId() {
-        try(var ignored = getProfiler().enter("onContextInitializeId")) {
+        try(var ignored = getProfiler().enter("BaseInstanceContext.onContextInitializeId")) {
             for (ContextListener listener : listeners) {
                 listener.afterContextIntIds();
             }
@@ -478,8 +478,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void onPatchBuild() {
-        for (ContextListener listener : listeners) {
-            listener.onPatchBuild();
+        try (var ignored = getProfiler().enter("onPatchBuild")) {
+            for (ContextListener listener : listeners) {
+                listener.onPatchBuild();
+            }
         }
     }
 

@@ -7,6 +7,8 @@ public class DebugEnv {
 
     public static volatile boolean debugging = false;
 
+    public static volatile boolean buildPatchLog = false;
+
     public static boolean gettingBufferedTrees;
 
     public static final Logger logger = LoggerFactory.getLogger("Debug");

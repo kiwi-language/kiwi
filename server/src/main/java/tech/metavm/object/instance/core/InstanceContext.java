@@ -131,9 +131,9 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private Patch buildPatch(@Nullable Patch prevPatch, PatchContext patchContext) {
         try (var ignored = getProfiler().enter("buildPatch")) {
-            if (DebugEnv.debugging)
-                debugLogger.info("building patch. numBuild: {}", patchContext.numBuild);
             patchContext.incBuild();
+            if (DebugEnv.buildPatchLog)
+                debugLogger.info("building patch. numBuild: {}", patchContext.numBuild);
             onPatchBuild();
             saveViews();
             craw();
@@ -146,31 +146,31 @@ public class InstanceContext extends BufferingInstanceContext {
             var treeChanges = difference.getTreeChanges();
             onContextInitializeId();
             if (prevPatch != null) {
-                prevPatch.entityChange.getAttributes().forEach((key, value) -> {
-                    //noinspection rawtypes,unchecked
-                    entityChange.setAttribute((DifferenceAttributeKey) key, value);
-                });
+                try(var ignored2 = getProfiler().enter("InstanceContext.buildPatch.setAttributes")) {
+                    prevPatch.entityChange.getAttributes().forEach((key, value) -> {
+                        //noinspection rawtypes,unchecked
+                        entityChange.setAttribute((DifferenceAttributeKey) key, value);
+                    });
+                }
             }
             return processChanges(new Patch(bufferedTrees, entityChange, treeChanges, refChange), computeNonPersistedOrphans(), patchContext);
         }
     }
 
-    private boolean removeOrphans(Patch patch, List<DurableInstance> nonPersistedOrphans) {
-        var orphans = new ArrayList<>(nonPersistedOrphans);
-        for (var version : patch.entityChange.deletes()) {
-            var instance = Objects.requireNonNull(getSelfBuffered(version.id()));
-            if (!instance.isRemoved())
-                orphans.add(instance);
+    private void removeOrphans(Patch patch, List<DurableInstance> nonPersistedOrphans) {
+        try(var ignored = getProfiler().enter("InstanceContext.removeOrphans")) {
+            var orphans = new ArrayList<>(nonPersistedOrphans);
+            for (var version : patch.entityChange.deletes()) {
+                var instance = Objects.requireNonNull(getSelfBuffered(version.id()));
+                if (!instance.isRemoved())
+                    orphans.add(instance);
+            }
+            if(DebugEnv.buildPatchLog)
+                debugLogger.info("removeOrphans, numOrphans: {}, numNonPersistedOrphans: {}", orphans.size(), nonPersistedOrphans.size());
+            if (!orphans.isEmpty()) {
+                batchRemove(orphans);
+            }
         }
-//        for (DurableInstance instance : nonPersistedOrphans) {
-//            if (!instance.isRemoved())
-//                orphans.add(instance);
-//        }
-        if (!orphans.isEmpty()) {
-            batchRemove(orphans);
-            return true;
-        } else
-            return false;
     }
 
     private void check() {
@@ -267,44 +267,45 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private ContextDifference buildDifference(Collection<Tree> bufferedTrees) {
-        var difference = new ContextDifference(appId);
-        difference.diff(headContext.trees(), bufferedTrees);
-        difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedTrees));
-        return difference;
+        try (var ignored = getProfiler().enter("InstanceContext.buildDifference")) {
+            var difference = new ContextDifference(appId);
+            difference.diff(headContext.trees(), bufferedTrees);
+            difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedTrees));
+            return difference;
+        }
     }
 
     private Patch processChanges(Patch patch, List<DurableInstance> nonPersistedOrphans, PatchContext patchContext) {
-        try (var ignored = getProfiler().enter("processChanges")) {
+        try (var ignored = getProfiler().enter("InstanceContext.processChanges")) {
             if (DebugEnv.debugging)
                 debugLogger.info("nonPersistedOrphans: [{}]", NncUtils.join(nonPersistedOrphans, i -> Instances.getInstanceDesc(i) + "/" + i.getStringId()));
             var ref = new Object() {
                 boolean changed = false;
             };
-            if (removeOrphans(patch, nonPersistedOrphans))
-                ref.changed = true;
+            removeOrphans(patch, nonPersistedOrphans);
             patch.entityChange.forEachInsertOrUpdate(v -> {
                 var instance = internalGet(v.id());
                 if (instance.setChangeNotified()) {
                     if (onChange(instance)) {
-                        if (DebugEnv.debugging && !ref.changed)
+                        if (DebugEnv.buildPatchLog && !ref.changed)
                             debugLogger.info("insert/update change detected {}, numBuilds: {}", Instances.getInstancePath(instance), patchContext.numBuild);
                         ref.changed = true;
                     }
                 }
             });
-            patch.entityChange.deletes().forEach(v -> {
-                var instance = internalGet(v.id());
+            Consumer<DurableInstance> processRemove = instance -> {
                 if (instance.setRemovalNotified()) {
                     if (onRemove(instance)) {
-                        if (DebugEnv.debugging && !ref.changed)
+                        if (DebugEnv.buildPatchLog && !ref.changed)
                             debugLogger.info("removal change detected {}, numBuilds: {}", Instances.getInstancePath(instance), patchContext.numBuild);
                         ref.changed = true;
                     }
                 }
-            });
+            };
+            patch.entityChange.deletes().forEach(v -> processRemove.accept(internalGet(v.id())));
+            nonPersistedOrphans.forEach(processRemove);
             return ref.changed ? buildPatch(patch, patchContext) : patch;
         }
-
     }
 
     private String getInstanceDesc(DurableInstance instance) {
