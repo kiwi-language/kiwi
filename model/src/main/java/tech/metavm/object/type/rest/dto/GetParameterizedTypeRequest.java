@@ -7,4 +7,9 @@ public record GetParameterizedTypeRequest(
         List<String> typeArgumentIds,
         List<TypeDTO> contextTypes
 ) {
+
+    public static GetParameterizedTypeRequest create(String templateId, List<String> typeArgumentIds) {
+        return new GetParameterizedTypeRequest(templateId, typeArgumentIds, List.of());
+    }
+
 }

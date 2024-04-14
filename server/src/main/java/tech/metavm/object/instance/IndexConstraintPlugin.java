@@ -65,8 +65,9 @@ public class IndexConstraintPlugin implements ContextPlugin {
                 keys -> indexEntryMapper.selectByKeys(context.getAppId(), keys).forEach(entry -> {
                     var id = entry.getId();
                     if (!oldIds.contains(id)) {
+                        var currentEntry = NncUtils.findRequired(currentEntries, e -> e.getKey().equals(entry.getKey()));
                         var index = indexProvider.getIndex(Id.fromBytes(entry.getIndexId()));
-                        throw BusinessException.constraintCheckFailed(instanceMap.get(id), index);
+                        throw BusinessException.constraintCheckFailed(instanceMap.get(currentEntry.getId()), index);
                     }
                 }));
         change.setAttribute(OLD_INDEX_ITEMS, oldEntries);

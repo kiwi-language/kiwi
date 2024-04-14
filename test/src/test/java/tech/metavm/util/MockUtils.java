@@ -1,5 +1,6 @@
 package tech.metavm.util;
 
+import tech.metavm.asm.AssemblerFactory;
 import tech.metavm.entity.MemTypeRegistry;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.mocks.MockEntityRepository;
@@ -374,255 +375,39 @@ public class MockUtils {
         );
     }
 
-    public static ListTypeIds createListType(TypeManager typeManager, FlowManager flowManager) {
-        var nodeTypeIds = createNodeTypes(typeManager, flowManager);
-        var listTypeTmpId = TmpId.of(NncUtils.randomNonNegative()).toString();
-        var listValueTypeTmpId = TmpId.of(NncUtils.randomNonNegative()).toString();
-        var ids = batchSaveTypes(typeManager, List.of(
-                ClassTypeDTOBuilder.newBuilder("列表")
-                        .code("List")
-                        .id(listTypeTmpId)
-                        .isTemplate(true)
-                        .typeParameterIds(List.of(listValueTypeTmpId))
-                        .build(),
-                new TypeDTO(
-                        listValueTypeTmpId,
-                        "值",
-                        "T",
-                        TypeCategory.VARIABLE.code(),
-                        true,
-                        true,
-                        new TypeVariableParam(
-                                listTypeTmpId,
-                                0,
-                                List.of(StandardTypes.getAnyType().getStringId())
-                        )
-                )
-        ));
-        var listTypeId = ids.get(0);
-        var listValueTypeId = ids.get(1);
-        var listLabelFieldId = saveField(typeManager, FieldDTOBuilder.newBuilder("标签", getStringType().getStringId())
-                .code("label")
-                .declaringTypeId(listTypeId)
-                .build()
-        );
-        var nodeTypeDTO = typeManager.getParameterizedType(
-                new GetParameterizedTypeRequest(
-                        nodeTypeIds.nodeTypeId(),
-                        List.of(listValueTypeId),
-                        List.of()
-                )
-        ).type();
-        var nodeChildArrayType = typeManager.getArrayType(nodeTypeDTO.id(), ArrayKind.CHILD.code()).type();
-        var listNodesFieldId = saveField(typeManager, FieldDTOBuilder.newBuilder("节点列表", nodeChildArrayType.id())
-                .isChild(true)
-                .code("nodes")
-                .declaringTypeId(listTypeId)
-                .build()
-        );
-        var listTypeDTO = typeManager.getType(new GetTypeRequest(listTypeId, false)).type();
-        var listViewTypeId = TestUtils.getDefaultViewTypeId(listTypeDTO);
-        var nodeViewTypeId = TestUtils.getDefaultViewTypeId(nodeTypeDTO);
-        var nodeFromViewMethod = NncUtils.findRequired(
-                nodeTypeDTO.getClassParam().flows(),
-                m -> "fromView".equals(m.code())
-        );
-        createFlow(flowManager, MethodDTOBuilder.newBuilder(listTypeId, "从视图创建")
-                .tmpId(NncUtils.randomNonNegative())
-                .code("fromView")
-                .isStatic(true)
-                .returnTypeId(listTypeId)
-                .parameters(List.of(
-                        ParameterDTO.create(TmpId.random().toString(), "视图", listViewTypeId)
-                ))
-                .addNode(
-                        NodeDTOFactory.createInputNode(
-                                NncUtils.randomNonNegative(),
-                                "流程输入",
-                                List.of(
-                                        InputFieldDTO.create("视图", listViewTypeId)
-                                )
-                        )
-                )
-                .addNode(NodeDTOFactory.createNewArrayNode(
-                                NncUtils.randomNonNegative(),
-                                "节点列表",
-                                nodeChildArrayType.id()
-                        )
-                )
-                .addNode(NodeDTOFactory.createWhileNode(
-                                NncUtils.randomNonNegative(),
-                                "循环",
-                                ValueDTOFactory.createExpression("循环.索引 < LEN(流程输入.视图.节点列表)"),
-                                List.of(
-                                        NodeDTOFactory.createGetElementNode(
-                                                NncUtils.randomNonNegative(),
-                                                "节点视图",
-                                                ValueDTOFactory.createReference("流程输入.视图.节点列表"),
-                                                ValueDTOFactory.createReference("循环.索引")
-                                        ),
-                                        NodeDTOFactory.createMethodCallNode(
-                                                NncUtils.randomNonNegative(),
-                                                "节点",
-                                                nodeFromViewMethod.id(),
-                                                null,
-                                                List.of(
-                                                        new ArgumentDTO(
-                                                                NncUtils.randomNonNegative(),
-                                                                nodeFromViewMethod.parameters().get(0).id(),
-                                                                ValueDTOFactory.createReference("节点视图")
-                                                        )
-                                                )
-                                        ),
-                                        NodeDTOFactory.createAddElementNode(
-                                                NncUtils.randomNonNegative(),
-                                                "添加节点",
-                                                ValueDTOFactory.createReference("节点列表"),
-                                                ValueDTOFactory.createReference("节点")
-                                        )
-                                ),
-                                List.of(
-                                        new LoopFieldDTO(
-                                                TmpId.random().toString(),
-                                                "索引",
-                                                getLongType().getStringId(),
-                                                ValueDTOFactory.createConstant(0L),
-                                                ValueDTOFactory.createExpression("循环.索引 + 1")
+    public static final String PROJECT_ROOT = "/Users/leen/workspace/object";
 
-                                        )
-                                )
-                        )
-                )
-                .addNode(
-                        NodeDTOFactory.createAddObjectNode(
-                                NncUtils.randomNonNegative(),
-                                "列表",
-                                listTypeId,
-                                List.of(
-                                        FieldParamDTO.create(
-                                                listLabelFieldId,
-                                                ValueDTOFactory.createReference("流程输入.视图.标签")
-                                        ),
-                                        FieldParamDTO.create(
-                                                listNodesFieldId,
-                                                ValueDTOFactory.createReference("节点列表")
-                                        )
-                                )
-                        )
-                )
-                .addNode(
-                        NodeDTOFactory.createReturnNode(
-                                NncUtils.randomNonNegative(),
-                                "返回",
-                                ValueDTOFactory.createReference("列表")
-                        )
-                )
-                .build()
-        );
+    public static ListTypeIds createListType(TypeManager typeManager) {
+        saveListTypes(typeManager);
+        var listType = typeManager.getTypeByCode("MyList").type();
         return new ListTypeIds(
-                listTypeId,
-                listValueTypeId,
-                listLabelFieldId,
-                listNodesFieldId,
-                nodeTypeIds
+                listType.id(),
+                listType.typeParameterIds().get(0),
+                TestUtils.getFieldIdByCode(listType, "label"),
+                TestUtils.getFieldIdByCode(listType, "nodes"),
+                getNodeTypeIds(typeManager)
         );
     }
 
-    public static NodeTypeIds createNodeTypes(TypeManager typeManager, FlowManager flowManager) {
-        var nodeTypeTmpId = TmpId.of(NncUtils.randomNonNegative()).toString();
-        var valueTypeTmpId = TmpId.of(NncUtils.randomNonNegative()).toString();
-        var ids = batchSaveTypes(typeManager,
-                List.of(
-                        ClassTypeDTOBuilder.newBuilder("节点")
-                                .code("Node")
-                                .id(nodeTypeTmpId)
-                                .isTemplate(true)
-                                .typeParameterIds(List.of(valueTypeTmpId))
-                                .build(),
-                        new TypeDTO(
-                                valueTypeTmpId,
-                                "值",
-                                "T",
-                                TypeCategory.VARIABLE.code(),
-                                true,
-                                true,
-                                new TypeVariableParam(
-                                        nodeTypeTmpId,
-                                        0,
-                                        List.of(StandardTypes.getAnyType().getStringId())
-                                )
-                        )
-                )
-        );
-        var nodeTypeId = ids.get(0);
-        var valueTypeId = ids.get(1);
-        var nodeLabelFieldId = TestUtils.doInTransaction(() -> typeManager.saveField(
-                FieldDTOBuilder.newBuilder("标签", getStringType().getStringId())
-                        .tmpId(NncUtils.randomNonNegative())
-                        .code("label")
-                        .declaringTypeId(nodeTypeId)
-                        .build()
-        ));
-        var nodeValueFieldId = TestUtils.doInTransaction(() -> typeManager.saveField(
-                FieldDTOBuilder.newBuilder("值", valueTypeId)
-                        .tmpId(NncUtils.randomNonNegative())
-                        .code("value")
-                        .declaringTypeId(nodeTypeId)
-                        .build()
-        ));
-        var nodeTypeDTO = typeManager.getType(new GetTypeRequest(nodeTypeId, false)).type();
-        var defaultMapping = NncUtils.findRequired(
-                nodeTypeDTO.getClassParam().mappings(),
-                m -> m.id().equals(nodeTypeDTO.getClassParam().defaultMappingId())
-        );
-        var viewTypeRef = defaultMapping.targetTypeId();
-        createFlow(flowManager, MethodDTOBuilder.newBuilder(nodeTypeId, "从视图创建")
-                .tmpId(NncUtils.randomNonNegative())
-                .code("fromView")
-                .isStatic(true)
-                .returnTypeId(nodeTypeId)
-                .parameters(List.of(
-                        ParameterDTO.create(TmpId.random().toString(), "视图", viewTypeRef)
-                ))
-                .addNode(
-                        NodeDTOFactory.createInputNode(
-                                NncUtils.randomNonNegative(),
-                                "流程输入",
-                                List.of(
-                                        InputFieldDTO.create("视图", viewTypeRef)
-                                )
-                        )
-                )
-                .addNode(
-                        NodeDTOFactory.createAddObjectNode(
-                                NncUtils.randomNonNegative(),
-                                "节点",
-                                nodeTypeId,
-                                List.of(
-                                        FieldParamDTO.create(
-                                                nodeLabelFieldId,
-                                                ValueDTOFactory.createReference("流程输入.视图.标签")
-                                        ),
-                                        FieldParamDTO.create(
-                                                nodeValueFieldId,
-                                                ValueDTOFactory.createReference("流程输入.视图.值")
-                                        )
-                                )
-                        )
-                )
-                .addNode(
-                        NodeDTOFactory.createReturnNode(
-                                NncUtils.randomNonNegative(),
-                                "返回",
-                                ValueDTOFactory.createReference("节点")
-                        )
-                )
-                .build());
+    public static NodeTypeIds createNodeTypes(TypeManager typeManager) {
+        saveListTypes(typeManager);
+        return getNodeTypeIds(typeManager);
+    }
+
+    private static void saveListTypes(TypeManager typeManager) {
+        var assembler = AssemblerFactory.createWitStandardTypes();
+        var sources = List.of(PROJECT_ROOT + "/test/src/test/resources/asm/List.masm");
+        var typeDTOs = assembler.assemble(sources);
+        batchSaveTypes(typeManager, typeDTOs);
+    }
+
+    private static NodeTypeIds getNodeTypeIds(TypeManager typeManager) {
+        var nodeType = typeManager.getTypeByCode("Node").type();
         return new NodeTypeIds(
-                nodeTypeId,
-                valueTypeId,
-                nodeLabelFieldId,
-                nodeValueFieldId
+                nodeType.id(),
+                nodeType.typeParameterIds().get(0),
+                TestUtils.getFieldIdByCode(nodeType, "label"),
+                TestUtils.getFieldIdByCode(nodeType, "value")
         );
     }
 
@@ -634,10 +419,6 @@ public class MockUtils {
                 .isStatic(true)
                 .staticValue(enumConstant)
                 .build();
-    }
-
-    private static String saveField(TypeManager typeManager, FieldDTO fieldDTO) {
-        return TestUtils.doInTransaction(() -> typeManager.saveField(fieldDTO));
     }
 
     private static TypeDTO saveType(TypeManager typeManager, TypeDTO typeDTO) {

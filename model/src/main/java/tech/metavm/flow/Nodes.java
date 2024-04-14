@@ -46,7 +46,7 @@ public class Nodes {
             Supplier<Value>> action,
             ScopeRT scope) {
         var seq = NncUtils.randomNonNegative();
-        var whileOutputType = ClassTypeBuilder.newBuilder("循环输出", "LoopOutput")
+        var whileOutputType = ClassTypeBuilder.newBuilder("循环输出", null)
                 .temporary()
                 .build();
         var indexField = FieldBuilder.newBuilder("索引", "index", whileOutputType, StandardTypes.getLongType())
@@ -84,7 +84,7 @@ public class Nodes {
             Supplier<Value>> action,
             ScopeRT scope) {
         var seq = NncUtils.randomNonNegative();
-        var whileOutputType = ClassTypeBuilder.newBuilder("循环输出", "LoopOutput")
+        var whileOutputType = ClassTypeBuilder.newBuilder("循环输出", null)
                 .temporary()
                 .build();
         var indexField = FieldBuilder.newBuilder("索引", "index", whileOutputType, StandardTypes.getLongType())

@@ -3,6 +3,8 @@ package tech.metavm.object.view;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.EntityQueryService;
 import tech.metavm.entity.StandardTypes;
@@ -26,6 +28,8 @@ import java.util.Objects;
 import java.util.Set;
 
 public class MappingTest extends TestCase {
+
+    public static final Logger logger = LoggerFactory.getLogger(MappingTest.class);
 
     private TypeManager typeManager;
     private FlowManager flowManager;
@@ -399,7 +403,7 @@ public class MappingTest extends TestCase {
     }
 
     public void testGeneric() {
-        var listTypeIds = MockUtils.createListType(typeManager, flowManager);
+        var listTypeIds = MockUtils.createListType(typeManager);
         var nodeTypeIds = listTypeIds.nodeTypeIds();
         var listOfStringType = typeManager.getParameterizedType(new GetParameterizedTypeRequest(
                 listTypeIds.listTypeId(),
@@ -417,7 +421,8 @@ public class MappingTest extends TestCase {
         var nodeDefaultMapping = TestUtils.getDefaultMapping(nodeOfStringType);
         var nodeViewTypeId = nodeDefaultMapping.targetTypeId();
         var nodeViewType = typeManager.getType(new GetTypeRequest(nodeViewTypeId, false)).type();
-        var nodeViewChildArrayTypeId = typeManager.getArrayType(nodeViewTypeId, ArrayKind.CHILD.code()).type().id();
+        var nodeViewChildListType = typeManager.getParameterizedType(
+                GetParameterizedTypeRequest.create(StandardTypes.getChildListType().getStringId(), List.of(nodeViewTypeId))).type();
         var listView = new InstanceDTO(
                 null,
                 listViewTypeId,
@@ -433,8 +438,8 @@ public class MappingTest extends TestCase {
                                 InstanceFieldDTO.create(
                                         TestUtils.getFieldIdByCode(listViewType, "nodes"),
                                         InstanceFieldValue.of(
-                                                InstanceDTO.createArrayInstance(
-                                                        nodeViewChildArrayTypeId,
+                                                InstanceDTO.createListInstance(
+                                                        nodeViewChildListType.id(),
                                                         true,
                                                         List.of(
                                                                 InstanceFieldValue.of(

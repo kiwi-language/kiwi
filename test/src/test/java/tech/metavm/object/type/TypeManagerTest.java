@@ -140,7 +140,7 @@ public class TypeManagerTest extends TestCase {
     }
 
     public void testAddFieldWithDefaultValueToTemplate() {
-        var nodeTypeIds = MockUtils.createNodeTypes(typeManager, flowManager);
+        var nodeTypeIds = MockUtils.createNodeTypes(typeManager);
         var nodeType = typeManager.getParameterizedType(
                 new GetParameterizedTypeRequest(
                         nodeTypeIds.nodeTypeId(),
