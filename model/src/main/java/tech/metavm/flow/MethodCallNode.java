@@ -39,16 +39,19 @@ public class MethodCallNode extends CallNode {
         } else {
             var isStatic = param.getSelf() == null;
             var self = NncUtils.get(param.getSelf(), s -> ValueFactory.create(s, parsingContext));
-            var declaringType = self != null ?
-                    (ClassType) self.getType() : context.getClassType(Objects.requireNonNull(param.getTypeId()));
+            ClassType declaringType;
+            if(self != null) {
+                var exprTypes = prev != null ? prev.getExpressionTypes() : scope.getExpressionTypes();
+                declaringType = (ClassType) exprTypes.getType(self.getExpression());
+            }
+            else
+                declaringType = context.getClassType(Objects.requireNonNull(param.getTypeId()));
             var argumentValues = NncUtils.map(
                     param.getArgumentValues(),
                     arg -> ValueFactory.create(arg, parsingContext)
             );
             var argumentTypes = NncUtils.map(argumentValues, Value::getType);
-
             var method = declaringType.resolveMethod(param.getFlowName(), argumentTypes, isStatic);
-
             var arguments = new ArrayList<Argument>();
             NncUtils.biForEach(method.getParameters(), argumentValues, (p, v) ->
                     arguments.add(new Argument(null, p, v))

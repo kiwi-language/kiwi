@@ -2,7 +2,6 @@ package tech.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.EntityQueryService;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.flow.FlowExecutionService;
@@ -43,6 +42,7 @@ public class ShoppingTest extends TestCase {
         instanceManager = new InstanceManager(entityContextFactory, instanceStore, instanceQueryService);
         typeManager.setInstanceManager(instanceManager);
         flowExecutionService = new FlowExecutionService(entityContextFactory);
+        typeManager.setFlowExecutionService(flowExecutionService);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class ShoppingTest extends TestCase {
     }
 
     public void testDecAmount() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager);
         var productDTO = MockUtils.createProductDTO(shoppingTypeIds);
         var productId = TestUtils.doInTransaction(() -> instanceManager.create(productDTO));
         var loadedProductDTO = instanceManager.get(productId, 1).instance();
@@ -86,15 +86,15 @@ public class ShoppingTest extends TestCase {
     }
 
     public void testBuy() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager);
         var productDTO = MockUtils.createProductDTO(instanceManager, shoppingTypeIds);
         var couponsDTOs = MockUtils.createCouponDTOs(instanceManager, shoppingTypeIds);
         var firstSkuDTO = productDTO.getFieldValue(shoppingTypeIds.productSkuListFieldId()).underlyingInstance()
                 .getElement(0).underlyingInstance();
         var arguments = List.of(PrimitiveFieldValue.createLong(1L),
                 InstanceFieldValue.of(
-                        InstanceDTO.createArrayInstance(
-                                shoppingTypeIds.couponArrayTypeId(),
+                        InstanceDTO.createListInstance(
+                                shoppingTypeIds.couponListTypeId(),
                                 false,
                                 NncUtils.map(couponsDTOs, ReferenceFieldValue::create)
                         ))

@@ -16,4 +16,8 @@ public record ParameterDTO(
     public static ParameterDTO create(String id, String name, String typeId) {
         return new ParameterDTO(id, name, null, typeId, null, null, null);
     }
+
+    public static ParameterDTO create(String id, String name, @Nullable String code, String typeId) {
+        return new ParameterDTO(id, name, code, typeId, null, null, null);
+    }
 }

@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
+import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceManager;
@@ -53,6 +54,8 @@ public class TypeManagerTest extends TestCase {
         flowManager = new FlowManager(entityContextFactory);
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
+        var flowExecutionService = new FlowExecutionService(entityContextFactory);
+        typeManager.setFlowExecutionService(flowExecutionService);
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -124,7 +127,7 @@ public class TypeManagerTest extends TestCase {
     }
 
     public void testShopping() {
-        var typeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
+        var typeIds = MockUtils.createShoppingTypes(typeManager);
         var productTypeDTO = typeManager.getType(new GetTypeRequest(typeIds.productTypeId(), false)).type();
         Assert.assertEquals(2, productTypeDTO.getClassParam().fields().size());
         var couponStateType = typeManager.getType(new GetTypeRequest(typeIds.couponStateTypeId(), false)).type();

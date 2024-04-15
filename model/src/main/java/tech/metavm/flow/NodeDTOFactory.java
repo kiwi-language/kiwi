@@ -144,6 +144,22 @@ public class NodeDTOFactory {
         );
     }
 
+    public static NodeDTO createUpdateStaticNode(Long tmpId, String name, String typeId, List<UpdateFieldDTO> fields) {
+        return new NodeDTO(
+                getStringTmpId(tmpId),
+                null,
+                name,
+                null,
+                NodeKind.UPDATE_STATIC.code(),
+                null,
+                null,
+                new UpdateStaticNodeParam(typeId, fields),
+                null,
+                null,
+                null
+        );
+    }
+
     public static NodeDTO createAddObjectNode(Long tmpId, String name, String typeId, List<FieldParamDTO> fields) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
@@ -332,6 +348,22 @@ public class NodeDTOFactory {
                 new ScopeDTO(null, setPrevId(nodes)),
                 preselected,
                 false
+        );
+    }
+
+    public static NodeDTO createRaiseNodeWithException(Long tmpId, String name, ValueDTO exception) {
+        return new NodeDTO(
+                getStringTmpId(tmpId),
+                null,
+                name,
+                null,
+                NodeKind.EXCEPTION.code(),
+                null,
+                null,
+                new RaiseNodeParam(RaiseParameterKind.THROWABLE.getCode(), null, exception),
+                null,
+                null,
+                null
         );
     }
 

@@ -368,6 +368,56 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 */
 	void exitStatement(AssemblyParser.StatementContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#forControl}.
+	 * @param ctx the parse tree
+	 */
+	void enterForControl(AssemblyParser.ForControlContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#forControl}.
+	 * @param ctx the parse tree
+	 */
+	void exitForControl(AssemblyParser.ForControlContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#loopVariableDeclarators}.
+	 * @param ctx the parse tree
+	 */
+	void enterLoopVariableDeclarators(AssemblyParser.LoopVariableDeclaratorsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#loopVariableDeclarators}.
+	 * @param ctx the parse tree
+	 */
+	void exitLoopVariableDeclarators(AssemblyParser.LoopVariableDeclaratorsContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#loopVariableDeclarator}.
+	 * @param ctx the parse tree
+	 */
+	void enterLoopVariableDeclarator(AssemblyParser.LoopVariableDeclaratorContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#loopVariableDeclarator}.
+	 * @param ctx the parse tree
+	 */
+	void exitLoopVariableDeclarator(AssemblyParser.LoopVariableDeclaratorContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#loopVariableUpdates}.
+	 * @param ctx the parse tree
+	 */
+	void enterLoopVariableUpdates(AssemblyParser.LoopVariableUpdatesContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#loopVariableUpdates}.
+	 * @param ctx the parse tree
+	 */
+	void exitLoopVariableUpdates(AssemblyParser.LoopVariableUpdatesContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#loopVariableUpdate}.
+	 * @param ctx the parse tree
+	 */
+	void enterLoopVariableUpdate(AssemblyParser.LoopVariableUpdateContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#loopVariableUpdate}.
+	 * @param ctx the parse tree
+	 */
+	void exitLoopVariableUpdate(AssemblyParser.LoopVariableUpdateContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#qualifiedFieldName}.
 	 * @param ctx the parse tree
 	 */

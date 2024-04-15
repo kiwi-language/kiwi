@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.StandardTypes;
 
 import java.util.HashMap;
-import java.util.List;
 
 public class AssemblerFactory {
 
@@ -23,9 +22,11 @@ public class AssemblerFactory {
         stdTypeIds.put(new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.PASSWORD), StandardTypes.getPasswordType().getStringId());
         stdTypeIds.put(new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.NULL), StandardTypes.getNullType().getStringId());
         stdTypeIds.put(new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.VOID), StandardTypes.getVoidType().getStringId());
-        stdTypeIds.put(new Assembler.ClassAsmType("ChildList", List.of()), StandardTypes.getChildListType().getStringId());
-        stdTypeIds.put(new Assembler.ClassAsmType("List", List.of()), StandardTypes.getListType().getStringId());
-        stdTypeIds.put(new Assembler.ClassAsmType("ReadWriteList", List.of()), StandardTypes.getReadWriteListType().getStringId());
+        stdTypeIds.put(Assembler.ClassAsmType.create("ChildList"), StandardTypes.getChildListType().getStringId());
+        stdTypeIds.put(Assembler.ClassAsmType.create("List"), StandardTypes.getListType().getStringId());
+        stdTypeIds.put(Assembler.ClassAsmType.create("ReadWriteList"), StandardTypes.getReadWriteListType().getStringId());
+        stdTypeIds.put(Assembler.ClassAsmType.create("Enum"), StandardTypes.getEnumType().getStringId());
+        stdTypeIds.put(Assembler.ClassAsmType.create("RuntimeException"), StandardTypes.getRuntimeExceptionType().getStringId());
         return stdTypeIds;
     }
 

@@ -18,10 +18,7 @@ import tech.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
 import tech.metavm.object.type.rest.dto.TypeDTO;
-import tech.metavm.util.AssertUtils;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -276,6 +273,8 @@ public class FlowManager extends EntityContextFactoryBean {
 
     public void saveContent(FlowDTO flowDTO, Flow flow, IEntityContext context) {
         try(var ignored = context.getProfiler().enter("FlowManager.saveContent")) {
+            if(DebugEnv.debugging)
+                DebugEnv.logger.info("FlowManager.saveContent flow: {}", flow.getQualifiedName());
             if (flow.isNative() || (flow instanceof Method method && method.isAbstract()))
                 return;
             if (flow.getNodes().isEmpty() && flowDTO.rootScope() == null) {

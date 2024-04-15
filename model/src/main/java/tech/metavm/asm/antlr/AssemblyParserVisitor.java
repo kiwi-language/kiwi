@@ -227,6 +227,36 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitStatement(AssemblyParser.StatementContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#forControl}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitForControl(AssemblyParser.ForControlContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#loopVariableDeclarators}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLoopVariableDeclarators(AssemblyParser.LoopVariableDeclaratorsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#loopVariableDeclarator}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLoopVariableDeclarator(AssemblyParser.LoopVariableDeclaratorContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#loopVariableUpdates}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLoopVariableUpdates(AssemblyParser.LoopVariableUpdatesContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#loopVariableUpdate}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLoopVariableUpdate(AssemblyParser.LoopVariableUpdateContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#qualifiedFieldName}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

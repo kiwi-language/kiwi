@@ -36,7 +36,7 @@ struct MyList<T> {
     }
 
     public List<Node<T>> getNodes() {
-        nodes: new_unbound ReadWriteList<Node<T>>(this.nodes);
+        nodes: unew ReadWriteList<Node<T>>(this.nodes);
         return nodes;
     }
 

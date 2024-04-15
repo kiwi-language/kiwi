@@ -54,6 +54,7 @@ public class InstanceManagerTest extends TestCase {
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         flowExecutionService = new FlowExecutionService(entityContextFactory);
+        typeManager.setFlowExecutionService(flowExecutionService);
         FlowSavingContext.initConfig();
     }
 

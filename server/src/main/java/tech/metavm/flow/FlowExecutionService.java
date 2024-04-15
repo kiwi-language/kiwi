@@ -13,6 +13,7 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.FlowExecutionException;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -70,6 +71,12 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
                 String message = nativeObject.getMessage() instanceof StringInstance str ? str.getValue() : "执行失败";
                 throw new FlowExecutionException(message);
             }
+        }
+        catch(FlowExecutionException e) {
+            throw e;
+        }
+        catch (Exception e) {
+           throw new InternalException("Fail to invoke flow: " + flow.getQualifiedName(), e);
         }
     }
 

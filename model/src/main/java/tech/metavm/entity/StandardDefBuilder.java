@@ -728,7 +728,7 @@ public class StandardDefBuilder {
         MethodBuilder.newBuilder(listType, "查询", "get", defContext.getFunctionTypeContext())
                 .parameters(new Parameter(null, "索引", "index", StandardTypes.getLongType()))
                 .isNative(true)
-                .returnType(nullableElementType)
+                .returnType(elementType)
                 .build();
 
         var uncertainType = defContext.getUncertainType(StandardTypes.getNeverType(), elementType);

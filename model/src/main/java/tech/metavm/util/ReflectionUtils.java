@@ -998,7 +998,7 @@ public class ReflectionUtils {
         try {
             return method.invoke(object, arguments);
         } catch (Exception e) {
-            throw new RuntimeException("Fail to invoke method", e);
+            throw new RuntimeException("Fail to invoke method: " + method.getName(), e);
         }
     }
 

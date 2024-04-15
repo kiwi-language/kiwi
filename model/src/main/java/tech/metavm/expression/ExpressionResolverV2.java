@@ -4,6 +4,7 @@ import tech.metavm.entity.CopyVisitor;
 import tech.metavm.entity.Element;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.*;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.NncUtils;
 
@@ -41,10 +42,15 @@ public class ExpressionResolverV2 extends CopyVisitor {
         if (context.isContextVar(variable)) {
             return context.resolveVar(variable);
         } else {
-            var qualifier = context.getDefaultExpr();
-            var qualifierType = (ClassType) qualifier.getType();
-            var property = qualifierType.getPropertyByVar(Var.parse(expr.getVariable()));
-            return new PropertyExpression(qualifier, property);
+            try {
+                var qualifier = context.getDefaultExpr();
+                var qualifierType = (ClassType) qualifier.getType();
+                var property = qualifierType.getPropertyByVar(Var.parse(expr.getVariable()));
+                return new PropertyExpression(qualifier, property);
+            }
+            catch (InternalException e) {
+                throw new InternalException("Fail to resolve variable: " + expr.getVariable());
+            }
         }
     }
 
@@ -107,6 +113,8 @@ public class ExpressionResolverV2 extends CopyVisitor {
             var qualifier = (Expression) copy(expression.getQualifier());
             var qualifierType = (ClassType) context.getExpressionType(qualifier);
             var property = qualifierType.getPropertyByVar(Var.parse(expression.getField().getVariable()));
+            if(property == null)
+                throw new InternalException("Property not found: " + expression.getField().getVariable() + " in type " + qualifierType);
             return new PropertyExpression(qualifier, property);
         } finally {
             assignedTypeStack.pop();

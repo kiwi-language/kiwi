@@ -156,6 +156,8 @@ labeledStatement: (IDENTIFIER ':')? statement;
 
 statement
     : WHILE parExpression block
+    | FOR '(' forControl ')'  block
+    | IF parExpression block (ELSE block)?
     | TRY block catchClause
     | SWITCH '{' branchCase* '}'
     | RETURN expression? ';'
@@ -163,12 +165,28 @@ statement
     | SEMI
     | statementExpression=expression ';'
     | methodCall ';'
-    | (NEW | NEW_UNBOUND | NEW_EPHEMERAL) creator ';'
+    | (NEW | UNEW | ENEW) creator ';'
     | (THIS | IDENTIFIER) '.' IDENTIFIER
       bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
       expression ';'
     | statementExpression=expression ';'
     ;
+
+forControl
+    : loopVariableDeclarators? ';' expression? ';' forUpdate=loopVariableUpdates?
+    ;
+
+loopVariableDeclarators
+    : loopVariableDeclarator (',' loopVariableDeclarator)*
+    ;
+
+loopVariableDeclarator
+    : typeType IDENTIFIER '=' expression
+    ;
+
+loopVariableUpdates: loopVariableUpdate (',' loopVariableUpdate)*;
+
+loopVariableUpdate: IDENTIFIER '=' expression;
 
 qualifiedFieldName: qualifiedName '.' IDENTIFIER;
 
@@ -231,7 +249,7 @@ expression
       (
          IDENTIFIER
        | THIS
-       | SUPER superSuffix
+//       | SUPER superSuffix
 //       | explicitGenericInvocation
       )
     | expression '[' expression ']'
@@ -256,6 +274,7 @@ expression
 //      expression
     // Java 8 methodReference
     | expression '::' typeArguments? IDENTIFIER
+    | IDENTIFIER arguments
 //    | typeType '::' (typeArguments? IDENTIFIER | NEW)
 //    | classType '::' typeArguments? NEW
     ;

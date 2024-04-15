@@ -40,6 +40,11 @@ public class AssemblerTest extends TestCase {
         deploy(List.of(source));
     }
 
+    public void testShopping() {
+        final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm";
+        deploy(List.of(source));
+    }
+
     private List<TypeDTO> assemble(List<String> sources) {
         var stdTypeIds = new HashMap<AsmType, String>();
         for (AsmPrimitiveKind primitiveKind : AsmPrimitiveKind.values()) {
@@ -48,6 +53,8 @@ public class AssemblerTest extends TestCase {
         stdTypeIds.put(ClassAsmType.create("ChildList"), TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("List"), TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("ReadWriteList"), TmpId.randomString());
+        stdTypeIds.put(ClassAsmType.create("Enum"), TmpId.randomString());
+        stdTypeIds.put(ClassAsmType.create("RuntimeException"), TmpId.randomString());
         var assembler = new Assembler(stdTypeIds);
         return assemble(sources, assembler);
     }

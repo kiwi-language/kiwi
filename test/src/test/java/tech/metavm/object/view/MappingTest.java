@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.EntityQueryService;
 import tech.metavm.entity.StandardTypes;
+import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.object.instance.InstanceManager;
@@ -15,7 +16,6 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.GetParameterizedTypeRequest;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
@@ -52,6 +52,8 @@ public class MappingTest extends TestCase {
         flowManager = new FlowManager(bootResult.entityContextFactory());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
+        var flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());
+        typeManager.setFlowExecutionService(flowExecutionService);
         FlowSavingContext.initConfig();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
@@ -68,27 +70,37 @@ public class MappingTest extends TestCase {
         return typeManager.getType(new GetTypeRequest(id, false)).type();
     }
 
-    private String getArrayTypeId(String id, int kind) {
-        return typeManager.getArrayType(id, kind).type().id();
+    private String getChildListTypeId(String id) {
+        return typeManager.getParameterizedType(GetParameterizedTypeRequest.create(
+                StandardTypes.getChildListType().getStringId(),
+                List.of(id)
+        )).type().id();
+    }
+
+    private String getReadWriteListTypeId(String id) {
+        return typeManager.getParameterizedType(GetParameterizedTypeRequest.create(
+                StandardTypes.getReadWriteListType().getStringId(),
+                List.of(id)
+        )).type().id();
     }
 
     public void test() {
-        var typeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
+        var typeIds = MockUtils.createShoppingTypes(typeManager);
         var productTypeDTO = getType(typeIds.productTypeId());
         var skuTypeDTO = getType(typeIds.skuTypeId());
         var productDefaultMapping = NncUtils.findRequired(productTypeDTO.getClassParam().mappings(),
                 m -> Objects.equals(m.id(), productTypeDTO.getClassParam().defaultMappingId()));
         var productViewTypeDTO = getType(productDefaultMapping.targetTypeId());
-        var productViewTitleFieldId = TestUtils.getFieldIdByCode(productViewTypeDTO, "title");
+        var productViewTitleFieldId = TestUtils.getFieldIdByCode(productViewTypeDTO, "name");
         var productViewSkuListFieldId = TestUtils.getFieldIdByCode(productViewTypeDTO, "skuList");
         var skuDefaultMapping = NncUtils.findRequired(
                 skuTypeDTO.getClassParam().mappings(),
                 m -> Objects.equals(skuTypeDTO.getClassParam().defaultMappingId(), m.id()));
         var skuViewTypeDTO = getType(skuDefaultMapping.targetTypeId());
-        var skuViewTitleFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "title");
+        var skuViewTitleFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "name");
         var skuViewPriceFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "price");
-        var skuViewAmountFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "amount");
-        var skuViewChildArrayTypeId = getArrayTypeId(skuViewTypeDTO.id(), ArrayKind.CHILD.code());
+        var skuViewAmountFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "quantity");
+        var skuViewChildListTypeId = getChildListTypeId(skuViewTypeDTO.id());
 
         var productId = saveInstance(InstanceDTO.createClassInstance(
                 typeIds.productTypeId(),
@@ -100,7 +112,7 @@ public class MappingTest extends TestCase {
                         InstanceFieldDTO.create(
                                 typeIds.productSkuListFieldId(),
                                 InstanceFieldValue.of(
-                                        InstanceDTO.createArrayInstance(
+                                        InstanceDTO.createListInstance(
                                                 typeIds.skuChildArrayTypeId(),
                                                 true,
                                                 List.of(
@@ -198,9 +210,9 @@ public class MappingTest extends TestCase {
                         InstanceFieldDTO.create(
                                 productViewSkuListFieldId,
                                 InstanceFieldValue.of(
-                                        InstanceDTO.createArrayInstance(
+                                        InstanceDTO.createListInstance(
                                                 skuListView.id(),
-                                                skuViewChildArrayTypeId,
+                                                skuViewChildListTypeId,
                                                 true,
                                                 List.of(
                                                         InstanceFieldValue.of(
@@ -273,7 +285,7 @@ public class MappingTest extends TestCase {
         saveInstance(productView);
         var loadedProductView = instanceManager.get(viewId.toString(), 1).instance();
         skuListView = ((InstanceFieldValue) (loadedProductView.getFieldValue(productViewSkuListFieldId))).getInstance();
-        Assert.assertEquals(3, skuListView.getArraySize());
+        Assert.assertEquals(3, skuListView.getListSize());
         var newSkuId = Objects.requireNonNull(skuListView.getElement(2).underlyingInstance().id());
         MatcherAssert.assertThat(loadedProductView, new InstanceDTOMatcher(productView, Set.of(newSkuId)));
 
@@ -282,14 +294,14 @@ public class MappingTest extends TestCase {
         // assert that the sku is actually removed
         loadedProductView = instanceManager.get(viewId.toString(), 1).instance();
         skuListView = ((InstanceFieldValue) (loadedProductView.getFieldValue(productViewSkuListFieldId))).getInstance();
-        Assert.assertEquals(2, skuListView.arraySize());
+        Assert.assertEquals(2, skuListView.getListSize());
 
         // test removing product view
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(viewId.toString()));
     }
 
     public void testOrderQuery() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager);
         var skuId = TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
                 null, shoppingTypeIds.skuTypeId(), null, null, null,
                 new ClassInstanceParam(
@@ -342,7 +354,7 @@ public class MappingTest extends TestCase {
                                         shoppingTypeIds.orderSkuFieldId(), ReferenceFieldValue.create(skuId)
                                 ),
                                 InstanceFieldDTO.create(
-                                        shoppingTypeIds.orderCouponsFieldId(), new ArrayFieldValue(
+                                        shoppingTypeIds.orderCouponsFieldId(), new ListFieldValue(
                                                 null, false,
                                                 List.of(
                                                         ReferenceFieldValue.create(coupon1Id),
@@ -356,7 +368,6 @@ public class MappingTest extends TestCase {
                         )
                 )
         )));
-
         var productTypeDTO = typeManager.getType(new GetTypeRequest(shoppingTypeIds.orderTypeId(), false)).type();
         var mapping = TestUtils.getDefaultMapping(productTypeDTO);
         var productViewTypeId = TestUtils.getDefaultViewTypeId(productTypeDTO);
@@ -368,7 +379,7 @@ public class MappingTest extends TestCase {
     }
 
     public void testNewRootView() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager);
         var skuTypeDTO = getType(shoppingTypeIds.skuTypeId());
         var skuDefaultMapping = NncUtils.findRequired(
                 skuTypeDTO.getClassParam().mappings(),
@@ -384,7 +395,7 @@ public class MappingTest extends TestCase {
                         new ClassInstanceParam(
                                 List.of(
                                         InstanceFieldDTO.create(
-                                                TestUtils.getFieldIdByCode(skuViewTypeDTO, "title"),
+                                                TestUtils.getFieldIdByCode(skuViewTypeDTO, "name"),
                                                 PrimitiveFieldValue.createString("40")
                                         ),
                                         InstanceFieldDTO.create(
@@ -392,7 +403,7 @@ public class MappingTest extends TestCase {
                                                 PrimitiveFieldValue.createDouble(100.0)
                                         ),
                                         InstanceFieldDTO.create(
-                                                TestUtils.getFieldIdByCode(skuViewTypeDTO, "amount"),
+                                                TestUtils.getFieldIdByCode(skuViewTypeDTO, "quantity"),
                                                 PrimitiveFieldValue.createLong(100)
                                         )
                                 )

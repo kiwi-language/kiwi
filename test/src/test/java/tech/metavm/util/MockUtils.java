@@ -5,8 +5,6 @@ import tech.metavm.entity.MemTypeRegistry;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.mocks.MockEntityRepository;
 import tech.metavm.flow.*;
-import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.flow.rest.*;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
@@ -133,7 +131,7 @@ public class MockUtils {
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponDiscountFieldId(),
-                                        PrimitiveFieldValue.createLong(5L)
+                                        PrimitiveFieldValue.createDouble(5.0)
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponStateFieldId(),
@@ -156,7 +154,7 @@ public class MockUtils {
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponDiscountFieldId(),
-                                        PrimitiveFieldValue.createLong(10L)
+                                        PrimitiveFieldValue.createDouble(10.0)
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponStateFieldId(),
@@ -179,7 +177,7 @@ public class MockUtils {
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponDiscountFieldId(),
-                                        PrimitiveFieldValue.createLong(15L)
+                                        PrimitiveFieldValue.createDouble(15.0)
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponStateFieldId(),
@@ -214,7 +212,7 @@ public class MockUtils {
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.productSkuListFieldId(),
                                         InstanceFieldValue.of(
-                                                InstanceDTO.createArrayInstance(
+                                                InstanceDTO.createListInstance(
                                                         shoppingTypeIds.skuChildArrayTypeId(),
                                                         true,
                                                         List.of(
@@ -433,654 +431,49 @@ public class MockUtils {
         ));
     }
 
-    public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, FlowManager flowManager) {
-        var titleFieldTmpId = TmpId.random().toString();
-        var skuTypeTmpId = TmpId.random().toString();
-        var skuAmountFieldTmpId = TmpId.random().toString();
-        var skuDecAmountMethodTmpId = TmpId.random().toString();
-
-        var couponStateTypeDTO = saveType(typeManager, ClassTypeDTOBuilder.newBuilder("优惠券状态")
-                .code("CouponState")
-                .tmpId(NncUtils.randomNonNegative())
-                .category(TypeCategory.ENUM.code())
-                .build()
-        );
-        var couponNormalStateId = saveEnumConstant(typeManager, couponStateTypeDTO, "正常", 0);
-        var couponUsedStateId = saveEnumConstant(typeManager, couponStateTypeDTO, "已使用", 1);
-        couponStateTypeDTO = typeManager.getType(new GetTypeRequest(couponStateTypeDTO.id(), false)).type();
-        var couponTypeDTO = saveType(typeManager, ClassTypeDTOBuilder.newBuilder("优惠券")
-                        .code("Coupon")
-                        .tmpId(NncUtils.randomNonNegative())
-                        .titleFieldId(titleFieldTmpId)
-                        .addField(FieldDTOBuilder.newBuilder("标题", getStringType().getStringId())
-                                .code("title")
-                                .id(titleFieldTmpId)
-                                .build()
-                        )
-                        .addField(FieldDTOBuilder.newBuilder("折扣", getDoubleType().getStringId())
-                                .code("discount")
-                                .tmpId(NncUtils.randomNonNegative())
-                                .build()
-                        )
-                        .addField(FieldDTOBuilder.newBuilder("状态", couponStateTypeDTO.id())
-                                        .code("state")
-                                        .tmpId(NncUtils.randomNonNegative())
-//                        .defaultValue(new ReferenceFieldValue(null, PhysicalId.of(couponNormalStateId).toString()))
-                                        .build()
-                        )
-                        .build()
-        );
-        var couponTitleFieldId = TestUtils.getFieldIdByCode(couponTypeDTO, "title");
-        var couponDiscountFieldId = TestUtils.getFieldIdByCode(couponTypeDTO, "discount");
-        var couponStateFieldId = TestUtils.getFieldIdByCode(couponTypeDTO, "state");
-        var couponArrayTypeId = typeManager.getArrayType(couponTypeDTO.id(), ArrayKind.READ_WRITE.code()).type().id();
-        var couponUseMethodId = createFlow(flowManager, createCouponUseMethod(couponTypeDTO, couponStateTypeDTO));
-
-        var skuTypeDTO = saveType(typeManager, ClassTypeDTOBuilder.newBuilder("SKU")
-                .code("SKU")
-                .id(skuTypeTmpId)
-                .titleFieldId(titleFieldTmpId)
-                .addField(FieldDTOBuilder.newBuilder("标题", getStringType().getStringId())
-                        .code("title")
-                        .id(titleFieldTmpId)
-                        .build())
-                .addField(FieldDTOBuilder.newBuilder("价格", getDoubleType().getStringId())
-                        .code("price")
-                        .build())
-                .addField(FieldDTOBuilder.newBuilder("库存", getLongType().getStringId())
-                        .code("amount")
-                        .access(Access.PRIVATE.code())
-                        .id(skuAmountFieldTmpId)
-                        .build())
-                .addMethod(
-                        MethodDTOBuilder.newBuilder(skuTypeTmpId, "获取库存")
-                                .tmpId(NncUtils.randomNonNegative())
-                                .code("getAmount")
-                                .returnTypeId(getLongType().getStringId())
-                                .addNode(
-                                        NodeDTOFactory.createSelfNode(
-                                                NncUtils.randomNonNegative(),
-                                                "当前记录",
-                                                skuTypeTmpId
-                                        )
-                                )
-                                .addNode(
-                                        NodeDTOFactory.createReturnNode(
-                                                NncUtils.randomNonNegative(),
-                                                "返回",
-                                                ValueDTOFactory.createReference("当前记录.库存")
-                                        )
-                                )
-                                .build()
-                )
-                .addMethod(
-                        MethodDTOBuilder.newBuilder(skuTypeTmpId, "设置库存")
-                                .tmpId(NncUtils.randomNonNegative())
-                                .code("setAmount")
-                                .returnTypeId(getVoidType().getStringId())
-                                .addNode(
-                                        NodeDTOFactory.createSelfNode(
-                                                NncUtils.randomNonNegative(),
-                                                "当前记录",
-                                                skuTypeTmpId
-                                        )
-                                )
-                                .addNode(
-                                        NodeDTOFactory.createInputNode(
-                                                NncUtils.randomNonNegative(),
-                                                "流程输入",
-                                                List.of(
-                                                        InputFieldDTO.create("库存", getLongType().getStringId())
-                                                )
-                                        )
-                                )
-                                .addNode(
-                                        NodeDTOFactory.createUpdateObjectNode(
-                                                NncUtils.randomNonNegative(),
-                                                "更新库存",
-                                                ValueDTOFactory.createReference("当前记录"),
-                                                List.of(
-                                                        new UpdateFieldDTO(
-                                                                skuAmountFieldTmpId,
-                                                                null,
-                                                                UpdateOp.SET.code(),
-                                                                ValueDTOFactory.createReference("流程输入.库存")
-                                                        )
-                                                )
-                                        )
-                                )
-                                .addNode(
-                                        NodeDTOFactory.createReturnNode(
-                                                NncUtils.randomNonNegative(),
-                                                "返回",
-                                                null
-                                        )
-                                )
-                                .build()
-                )
-                .addMethod(
-                        MethodDTOBuilder.newBuilder(skuTypeTmpId, "扣减库存")
-                                .code("decAmount")
-                                .id(skuDecAmountMethodTmpId)
-                                .parameters(List.of(
-                                        ParameterDTO.create(TmpId.random().toString(), "数量", getLongType().getStringId())
-                                ))
-                                .returnTypeId(getVoidType().getStringId())
-                                .addNode(NodeDTOFactory.createSelfNode(
-                                        NncUtils.randomNonNegative(),
-                                        "当前记录",
-                                        skuTypeTmpId
-                                ))
-                                .addNode(NodeDTOFactory.createInputNode(
-                                        NncUtils.randomNonNegative(),
-                                        "流程输入",
-                                        List.of(
-                                                InputFieldDTO.create("数量", getLongType().getStringId())
-                                        )
-                                ))
-                                .addNode(NodeDTOFactory.createBranchNode(
-                                        NncUtils.randomNonNegative(),
-                                        "判断库存是否足够",
-                                        List.of(
-                                                NodeDTOFactory.createBranch(
-                                                        NncUtils.randomNonNegative(),
-                                                        1,
-                                                        ValueDTOFactory.createExpression("流程输入.数量 <= 当前记录.库存"),
-                                                        false,
-                                                        List.of(
-                                                                NodeDTOFactory.createUpdateObjectNode(
-                                                                        NncUtils.randomNonNegative(),
-                                                                        "更新库存",
-                                                                        ValueDTOFactory.createReference("当前记录"),
-                                                                        List.of(
-                                                                                new UpdateFieldDTO(
-                                                                                        skuAmountFieldTmpId,
-                                                                                        null,
-                                                                                        UpdateOp.DEC.code(),
-                                                                                        ValueDTOFactory.createReference("流程输入.数量")
-                                                                                )
-                                                                        )
-                                                                ),
-                                                                NodeDTOFactory.createReturnNode(
-                                                                        NncUtils.randomNonNegative(),
-                                                                        "返回",
-                                                                        null
-                                                                )
-                                                        )
-                                                ),
-                                                NodeDTOFactory.createBranch(
-                                                        NncUtils.randomNonNegative(),
-                                                        100,
-                                                        ValueDTOFactory.createConstant(true),
-                                                        true,
-                                                        List.of(
-                                                                NodeDTOFactory.createRaiseNode(
-                                                                        NncUtils.randomNonNegative(),
-                                                                        "抛出异常",
-                                                                        ValueDTOFactory.createConstant("库存不足")
-                                                                )
-                                                        )
-                                                )
-                                        )
-                                ))
-                                .build()
-                )
-                .build()
-        );
-
-        var skuTitleFieldId = TestUtils.getFieldIdByCode(skuTypeDTO, "title");
-        var skuPriceFieldId = TestUtils.getFieldIdByCode(skuTypeDTO, "price");
-        var skuAmountFieldId = TestUtils.getFieldIdByCode(skuTypeDTO, "amount");
-        var skuDecAmountMethodId = TestUtils.getMethodIdByCode(skuTypeDTO, "decAmount");
-        var skuChildArrayTypeId = typeManager.getArrayType(skuTypeDTO.id(), ArrayKind.CHILD.code()).type().id();
-        var skuArrayTypeId = typeManager.getArrayType(skuTypeDTO.id(), ArrayKind.READ_WRITE.code()).type().id();
-
-        var productTypeDTO = saveType(typeManager, ClassTypeDTOBuilder.newBuilder("商品")
-                .code("Product")
-                .tmpId(NncUtils.randomNonNegative())
-                .titleFieldId(titleFieldTmpId)
-                .addField(FieldDTOBuilder.newBuilder("标题", getStringType().getStringId())
-                        .code("title")
-                        .id(titleFieldTmpId)
-                        .build())
-                .addField(FieldDTOBuilder.newBuilder("sku列表", skuChildArrayTypeId)
-                        .isChild(true)
-                        .code("skuList")
-                        .access(Access.PRIVATE.code())
-                        .tmpId(NncUtils.randomNonNegative())
-                        .build())
-                .build()
-        );
-
-        createFlow(flowManager,
-                MethodDTOBuilder.newBuilder(productTypeDTO.id(), "获取sku列表")
-                        .tmpId(NncUtils.randomNonNegative())
-                        .code("getSkuList")
-                        .returnTypeId(skuArrayTypeId)
-                        .addNode(NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(),
-                                "当前记录", productTypeDTO.id()))
-                        .addNode(NodeDTOFactory.createNewArrayNode(
-                                NncUtils.randomNonNegative(),
-                                "sku列表",
-                                skuArrayTypeId,
-                                ValueDTOFactory.createExpression("当前记录.sku列表")
-                        ))
-                        .addNode(NodeDTOFactory.createReturnNode(
-                                NncUtils.randomNonNegative(),
-                                "返回",
-                                ValueDTOFactory.createReference("sku列表")
-                        ))
-                        .build()
-        );
-
-        createFlow(flowManager,
-                MethodDTOBuilder.newBuilder(productTypeDTO.id(), "设置sku列表")
-                        .tmpId(NncUtils.randomNonNegative())
-                        .code("setSkuList")
-                        .parameters(List.of(
-                                ParameterDTO.create(TmpId.of(NncUtils.randomNonNegative()).toString(), "sku列表", skuArrayTypeId)
-                        ))
-                        .returnTypeId(StandardTypes.getVoidType().getStringId())
-                        .addNode(NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "当前记录", productTypeDTO.id()))
-                        .addNode(NodeDTOFactory.createInputNode(NncUtils.randomNonNegative(), "流程输入",
-                                List.of(
-                                        InputFieldDTO.create("sku列表", skuArrayTypeId)
-                                )))
-                        .addNode(NodeDTOFactory.createClearArrayNode(NncUtils.randomNonNegative(), "清空sku列表",
-                                ValueDTOFactory.createReference("当前记录.sku列表")))
-                        .addNode(NodeDTOFactory.createWhileNode(
-                                NncUtils.randomNonNegative(),
-                                "循环",
-                                ValueDTOFactory.createExpression("循环.索引 < LEN(流程输入.sku列表)"),
-                                List.of(
-                                        NodeDTOFactory.createGetElementNode(
-                                                NncUtils.randomNonNegative(),
-                                                "sku",
-                                                ValueDTOFactory.createReference("流程输入.sku列表"),
-                                                ValueDTOFactory.createReference("循环.索引")
-                                        ),
-                                        NodeDTOFactory.createAddElementNode(
-                                                NncUtils.randomNonNegative(),
-                                                "添加sku",
-                                                ValueDTOFactory.createReference("当前记录.sku列表"),
-                                                ValueDTOFactory.createReference("sku")
-                                        )
-                                ),
-                                List.of(
-                                        new LoopFieldDTO(
-                                                null,
-                                                "索引",
-                                                StandardTypes.getLongType().getStringId(),
-                                                ValueDTOFactory.createConstant(0L),
-                                                ValueDTOFactory.createExpression("循环.索引 + 1")
-                                        )
-                                )
-                        ))
-                        .build()
-        );
-
-        var productTitleFieldId = TestUtils.getFieldIdByCode(productTypeDTO, "title");
-        var productSkuListFieldId = TestUtils.getFieldIdByCode(productTypeDTO, "skuList");
-        var orderTypeDTO = saveType(typeManager, ClassTypeDTOBuilder.newBuilder("订单")
-                .code("Order")
-                .tmpId(NncUtils.randomNonNegative())
-                .titleFieldId(titleFieldTmpId)
-                .addField(FieldDTOBuilder.newBuilder("编号", getStringType().getStringId())
-                        .tmpId(NncUtils.randomNonNegative())
-                        .code("code")
-                        .id(titleFieldTmpId)
-                        .build()
-                )
-                .addField(FieldDTOBuilder.newBuilder("sku", skuTypeDTO.id())
-                        .tmpId(NncUtils.randomNonNegative())
-                        .code("sku")
-                        .build()
-                )
-                .addField(FieldDTOBuilder.newBuilder("数量", getLongType().getStringId())
-                        .tmpId(NncUtils.randomNonNegative())
-                        .code("amount")
-                        .build()
-                )
-                .addField(FieldDTOBuilder.newBuilder("价格", getDoubleType().getStringId())
-                        .code("price")
-                        .tmpId(NncUtils.randomNonNegative())
-                        .build()
-                )
-                .addField(FieldDTOBuilder.newBuilder("优惠券列表", couponArrayTypeId)
-                        .code("coupons")
-                        .isChild(true)
-                        .tmpId(NncUtils.randomNonNegative())
-                        .build()
-                )
-                .addField(FieldDTOBuilder.newBuilder("时间", getTimeType().getStringId())
-                        .code("time")
-                        .tmpId(NncUtils.randomNonNegative())
-                        .build()
-                )
-                .build()
-        );
-        var orderCodeFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "code");
-        var orderSkuFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "sku");
-        var orderAmountFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "amount");
-        var orderPriceFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "price");
-        var orderCouponsFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "coupons");
-        var orderTimeFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "time");
-        createFlow(flowManager, createSkuFromViewMethod(skuTypeDTO));
-
-        var skuBuyMethodId = createFlow(
-                flowManager,
-                createBuyMethod(
-                        skuTypeDTO,
-                        couponArrayTypeId,
-                        orderTypeDTO,
-                        couponUseMethodId
-                )
-        );
-
+    public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager) {
+        var source = "/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm";
+        var assembler = AssemblerFactory.createWitStandardTypes();
+        batchSaveTypes(typeManager, assembler.assemble(List.of(source)));
+        var productType = typeManager.getTypeByCode("Product").type();
+        var skuType = typeManager.getTypeByCode("SKU").type();
+        var couponType = typeManager.getTypeByCode("Coupon").type();
+        var couponStateType = typeManager.getTypeByCode("CouponState").type();
+        var orderType = typeManager.getTypeByCode("Order").type();
+        var skuChildListType = typeManager.getParameterizedType(GetParameterizedTypeRequest.create(
+              StandardTypes.getChildListType().getStringId(), List.of(skuType.id())
+        )).type();
+        var couponListType = typeManager.getParameterizedType(GetParameterizedTypeRequest.create(
+                StandardTypes.getReadWriteListType().getStringId(),
+                List.of(couponType.id())
+        )).type();
         return new ShoppingTypeIds(
-                productTypeDTO.id(),
-                skuTypeDTO.id(),
-                couponStateTypeDTO.id(),
-                couponTypeDTO.id(),
-                orderTypeDTO.id(),
-                skuChildArrayTypeId,
-                couponArrayTypeId,
-                productTitleFieldId,
-                productSkuListFieldId,
-                skuTitleFieldId,
-                skuPriceFieldId,
-                skuAmountFieldId,
-                skuDecAmountMethodId,
-                skuBuyMethodId,
-                couponTitleFieldId,
-                couponDiscountFieldId,
-                couponStateFieldId,
-                orderCodeFieldId,
-                orderSkuFieldId,
-                orderAmountFieldId,
-                orderPriceFieldId,
-                orderTimeFieldId,
-                orderCouponsFieldId,
-                couponNormalStateId,
-                couponUsedStateId
+                productType.id(),
+                skuType.id(),
+                couponStateType.id(),
+                couponType.id(),
+                orderType.id(),
+                skuChildListType.id(),
+                couponListType.id(),
+                TestUtils.getFieldIdByCode(productType, "name"),
+                TestUtils.getFieldIdByCode(productType, "skuList"),
+                TestUtils.getFieldIdByCode(skuType, "name"),
+                TestUtils.getFieldIdByCode(skuType, "price"),
+                TestUtils.getFieldIdByCode(skuType, "quantity"),
+                TestUtils.getMethodIdByCode(skuType, "decQuantity"),
+                TestUtils.getMethodIdByCode(skuType, "buy"),
+                TestUtils.getFieldIdByCode(couponType, "name"),
+                TestUtils.getFieldIdByCode(couponType, "discount"),
+                TestUtils.getFieldIdByCode(couponType, "state"),
+                TestUtils.getFieldIdByCode(orderType, "code"),
+                TestUtils.getFieldIdByCode(orderType, "sku"),
+                TestUtils.getFieldIdByCode(orderType, "quantity"),
+                TestUtils.getFieldIdByCode(orderType, "price"),
+                TestUtils.getFieldIdByCode(orderType, "orderTime"),
+                TestUtils.getFieldIdByCode(orderType, "coupons"),
+                TestUtils.getEnumConstantIdByName(couponStateType, "NORMAL"),
+                TestUtils.getEnumConstantIdByName(couponStateType, "USED")
         );
-    }
-
-    private static String createFlow(FlowManager flowManager, FlowDTO flow) {
-        FlowSavingContext.initConfig();
-        return TestUtils.doInTransaction((() -> flowManager.save(flow))).getStringId();
-    }
-
-    private static FlowDTO createBuyMethod(TypeDTO skuTypeDTO, String couponArrayTypeId, TypeDTO orderTypeDTO, String couponUseMethodId) {
-        var amountParameterTmpId = TmpId.of(NncUtils.randomNonNegative()).toString();
-        var orderCodeFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "code");
-        var orderSkuFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "sku");
-        var orderAmountFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "amount");
-        var orderPriceFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "price");
-        var orderCouponsFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "coupons");
-        var orderTimeFieldId = TestUtils.getFieldIdByCode(orderTypeDTO, "time");
-
-        return MethodDTOBuilder.newBuilder(skuTypeDTO.id(), "购买")
-                .tmpId(NncUtils.randomNonNegative())
-                .code("buy")
-                .returnTypeId(orderTypeDTO.id())
-                .parameters(List.of(
-                        ParameterDTO.create(amountParameterTmpId, "数量", getLongType().getStringId()),
-                        ParameterDTO.create(TmpId.random().toString(), "优惠券列表", couponArrayTypeId)
-                ))
-                .addNode(NodeDTOFactory.createSelfNode(
-                        NncUtils.randomNonNegative(),
-                        "当前记录",
-                        skuTypeDTO.id()
-                ))
-                .addNode(NodeDTOFactory.createInputNode(
-                                NncUtils.randomNonNegative(),
-                                "流程输入",
-                                List.of(
-                                        InputFieldDTO.create("数量", getLongType().getStringId()),
-                                        InputFieldDTO.create("优惠券列表", couponArrayTypeId)
-                                )
-                        )
-                )
-                .addNode(NodeDTOFactory.createMethodCallNode(
-                                NncUtils.randomNonNegative(),
-                                "调用扣减库存方法",
-                                TestUtils.getMethodIdByCode(skuTypeDTO, "decAmount"),
-                                ValueDTOFactory.createReference("当前记录"),
-                                List.of(
-                                        new ArgumentDTO(
-                                                NncUtils.randomNonNegative(),
-                                                amountParameterTmpId,
-                                                ValueDTOFactory.createReference("流程输入.数量")
-                                        )
-                                )
-                        )
-                )
-                .addNode(NodeDTOFactory.createWhileNode(
-                                NncUtils.randomNonNegative(),
-                                "遍历优惠券列表",
-                                ValueDTOFactory.createExpression("遍历优惠券列表.索引 < len(流程输入.优惠券列表)"),
-                                List.of(
-                                        NodeDTOFactory.createValueNode(
-                                                NncUtils.randomNonNegative(),
-                                                "优惠券",
-                                                ValueDTOFactory.createExpression("流程输入.优惠券列表[遍历优惠券列表.索引]")
-                                        ),
-                                        NodeDTOFactory.createMethodCallNode(
-                                                NncUtils.randomNonNegative(),
-                                                "调用优惠券使用方法",
-                                                couponUseMethodId,
-                                                ValueDTOFactory.createReference("优惠券"),
-                                                List.of()
-                                        )
-                                ),
-                                List.of(
-                                        new LoopFieldDTO(
-                                                TmpId.random().toString(),
-                                                "索引",
-                                                getLongType().getStringId(),
-                                                ValueDTOFactory.createConstant(0L),
-                                                ValueDTOFactory.createReference("遍历优惠券列表.索引 + 1")
-                                        ),
-                                        new LoopFieldDTO(
-                                                TmpId.random().toString(),
-                                                "总折扣",
-                                                getDoubleType().getStringId(),
-                                                ValueDTOFactory.createConstant(0.0),
-                                                ValueDTOFactory.createReference("遍历优惠券列表.总折扣 + 优惠券.折扣")
-                                        )
-                                )
-                        )
-                )
-                .addNode(
-                        NodeDTOFactory.createAddObjectNode(
-                                NncUtils.randomNonNegative(),
-                                "创建订单",
-                                orderTypeDTO.id(),
-                                List.of(
-                                        new FieldParamDTO(
-                                                TmpId.random().toString(),
-                                                orderCodeFieldId,
-                                                ValueDTOFactory.createReference("当前记录.标题")
-                                        ),
-                                        new FieldParamDTO(
-                                                TmpId.random().toString(),
-                                                orderSkuFieldId,
-                                                ValueDTOFactory.createReference("当前记录")
-                                        ),
-                                        new FieldParamDTO(
-                                                TmpId.random().toString(),
-                                                orderAmountFieldId,
-                                                ValueDTOFactory.createReference("流程输入.数量")
-                                        ),
-                                        new FieldParamDTO(
-                                                TmpId.random().toString(),
-                                                orderPriceFieldId,
-                                                ValueDTOFactory.createExpression("当前记录.价格 * 流程输入.数量 - 遍历优惠券列表.总折扣")
-                                        ),
-                                        new FieldParamDTO(
-                                                TmpId.random().toString(),
-                                                orderCouponsFieldId,
-                                                ValueDTOFactory.createReference("流程输入.优惠券列表")
-                                        ),
-                                        new FieldParamDTO(
-                                                TmpId.random().toString(),
-                                                orderTimeFieldId,
-                                                ValueDTOFactory.createExpression("now()")
-                                        )
-                                )
-                        )
-                )
-                .addNode(
-                        NodeDTOFactory.createReturnNode(
-                                NncUtils.randomNonNegative(),
-                                "返回",
-                                ValueDTOFactory.createReference("创建订单")
-                        )
-                )
-                .build();
-    }
-
-    private static FlowDTO createSkuFromViewMethod(TypeDTO skuTypeDTO) {
-        var defaultMapping = NncUtils.findRequired(
-                skuTypeDTO.getClassParam().mappings(),
-                m -> m.id().equals(skuTypeDTO.getClassParam().defaultMappingId())
-        );
-        var viewTypeId = defaultMapping.targetTypeId();
-        return MethodDTOBuilder.newBuilder(skuTypeDTO.id(), "从视图创建")
-                .tmpId(NncUtils.randomNonNegative())
-                .isStatic(true)
-                .code("fromView")
-                .returnTypeId(skuTypeDTO.id())
-                .parameters(List.of(
-                        ParameterDTO.create(null, "视图", viewTypeId)
-                ))
-                .addNode(NodeDTOFactory.createInputNode(
-                        NncUtils.randomNonNegative(),
-                        "流程输入",
-                        List.of(
-                                InputFieldDTO.create("视图", viewTypeId)
-                        )
-                ))
-                .addNode(NodeDTOFactory.createAddObjectNode(
-                        NncUtils.randomNonNegative(),
-                        "对象",
-                        skuTypeDTO.id(),
-                        List.of(
-                                new FieldParamDTO(
-                                        TmpId.random().toString(),
-                                        TestUtils.getFieldIdByCode(skuTypeDTO, "title"),
-                                        ValueDTOFactory.createExpression("流程输入.视图.标题")
-                                ),
-                                new FieldParamDTO(
-                                        TmpId.random().toString(),
-                                        TestUtils.getFieldIdByCode(skuTypeDTO, "price"),
-                                        ValueDTOFactory.createExpression("流程输入.视图.价格")
-                                ),
-                                new FieldParamDTO(
-                                        TmpId.random().toString(),
-                                        TestUtils.getFieldIdByCode(skuTypeDTO, "amount"),
-                                        ValueDTOFactory.createExpression("流程输入.视图.库存")
-                                )
-                        )
-                ))
-                .addNode(NodeDTOFactory.createReturnNode(
-                        NncUtils.randomNonNegative(),
-                        "返回",
-                        ValueDTOFactory.createReference("对象")
-                ))
-                .build();
-    }
-
-    private static FlowDTO createCouponUseMethod(TypeDTO couponTypeDTO, TypeDTO couponStateTypeDTO) {
-        var couponStateFieldId = TestUtils.getFieldIdByCode(couponTypeDTO, "state");
-        var couponStateUsed = TestUtils.getEnumConstantByName(couponStateTypeDTO, "已使用");
-        return MethodDTOBuilder.newBuilder(couponTypeDTO.id(), "使用")
-                .tmpId(NncUtils.randomNonNegative())
-                .returnTypeId(getVoidType().getStringId())
-                .code("use")
-                .addNode(NodeDTOFactory.createSelfNode(
-                        NncUtils.randomNonNegative(),
-                        "当前记录",
-                        couponTypeDTO.id()
-                ))
-                .addNode(NodeDTOFactory.createBranchNode(
-                        NncUtils.randomNonNegative(),
-                        "判断是否已使用",
-                        List.of(
-                                NodeDTOFactory.createBranch(
-                                        NncUtils.randomNonNegative(),
-                                        1,
-                                        ValueDTOFactory.createExpression("当前记录.状态 = $$" + couponStateUsed.id()),
-                                        false,
-                                        List.of(
-                                                NodeDTOFactory.createRaiseNode(
-                                                        NncUtils.randomNonNegative(),
-                                                        "抛出异常",
-                                                        ValueDTOFactory.createConstant("优惠券已使用")
-                                                )
-                                        )
-                                ),
-                                NodeDTOFactory.createBranch(
-                                        NncUtils.randomNonNegative(),
-                                        100,
-                                        ValueDTOFactory.createConstant(true),
-                                        true,
-                                        List.of()
-                                )
-                        )
-                ))
-                .addNode(NodeDTOFactory.createUpdateObjectNode(
-                        NncUtils.randomNonNegative(),
-                        "更新状态",
-                        ValueDTOFactory.createReference("当前记录"),
-                        List.of(
-                                new UpdateFieldDTO(
-                                        couponStateFieldId,
-                                        null,
-                                        UpdateOp.SET.code(),
-                                        new ValueDTO(
-                                                ValueKind.CONSTANT.code(),
-                                                ReferenceFieldValue.create(couponStateUsed)
-                                        )
-                                )
-                        )
-                ))
-                .addNode(NodeDTOFactory.createReturnNode(
-                        NncUtils.randomNonNegative(),
-                        "返回",
-                        null
-                ))
-                .build();
-    }
-
-    private static String saveEnumConstant(TypeManager typeManager, TypeDTO enumType, String name, int ordinal) {
-        var enumSuperType =
-                typeManager.getType(new GetTypeRequest(enumType.getClassParam().superClassId(), false))
-                        .type();
-        var enumNameFieldId = TestUtils.getFieldIdByCode(enumSuperType, "name");
-        var enumOrdinalField = TestUtils.getFieldIdByCode(enumSuperType, "ordinal");
-        return TestUtils.doInTransaction(() -> typeManager.saveEnumConstant(
-                new InstanceDTO(
-                        null,
-                        enumType.id(),
-                        enumType.name(),
-                        name,
-                        null,
-                        new ClassInstanceParam(
-                                List.of(
-                                        InstanceFieldDTO.create(
-                                                enumNameFieldId,
-                                                PrimitiveFieldValue.createString(name)
-                                        ),
-                                        InstanceFieldDTO.create(
-                                                enumOrdinalField,
-                                                PrimitiveFieldValue.createLong(ordinal)
-                                        )
-                                )
-                        )
-                )
-        ));
     }
 
     public static FooTypes createFooTypes() {

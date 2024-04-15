@@ -22,7 +22,7 @@ import static tech.metavm.object.type.ResolutionStage.*;
 
 public class SubstitutorV2 extends CopyVisitor {
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     public static SubstitutorV2 create(Object root,
                                        List<TypeVariable> typeParameters,
@@ -67,9 +67,11 @@ public class SubstitutorV2 extends CopyVisitor {
                          DTOProvider dtoProvider) {
         super(root);
         if(DebugEnv.debugging) {
-            debugLoggerGER.info("substituting {}, type parameters: {}, type arguments: {}",
+            if(root instanceof ClassType ct && ct.getTypeDesc().equals("Node") && typeArguments.get(0).getTypeDesc().equals("MyList_T") && stage == DEFINITION)
+                System.out.println("Caught");
+            debugLogger.info("substituting {}, type parameters: {}, type arguments: {}, stage: {}",
                     EntityUtils.getEntityDesc(root), NncUtils.map(typeParameters, Type::getTypeDesc),
-                    NncUtils.map(typeArguments, Type::getTypeDesc));
+                    NncUtils.map(typeArguments, Type::getTypeDesc), stage.name());
         }
         this.entityRepository = entityRepository;
         this.compositeTypeFacade = compositeTypeFacade;

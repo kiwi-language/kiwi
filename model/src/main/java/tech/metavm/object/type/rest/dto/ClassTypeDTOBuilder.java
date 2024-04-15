@@ -80,6 +80,11 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
+    public ClassTypeDTOBuilder typeCategory(int typeCategory) {
+        this.category = typeCategory;
+        return this;
+    }
+
     public ClassTypeDTOBuilder source(int source) {
         this.source = source;
         return this;
@@ -106,7 +111,14 @@ public class ClassTypeDTOBuilder {
     }
 
     public ClassTypeDTOBuilder addField(FieldDTO field) {
+        NncUtils.requireFalse(field.isStatic(), "FieldDTO must not be static");
         this.fields.add(field);
+        return this;
+    }
+
+    public ClassTypeDTOBuilder addStaticField(FieldDTO field) {
+        NncUtils.requireTrue(field.isStatic(), "FieldDTO must be static");
+        this.staticFields.add(field);
         return this;
     }
 
@@ -145,7 +157,7 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder classFields(List<FieldDTO> staticFields) {
+    public ClassTypeDTOBuilder staticFields(List<FieldDTO> staticFields) {
         this.staticFields = staticFields;
         return this;
     }

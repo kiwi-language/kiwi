@@ -1218,6 +1218,9 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         });
         if(superClass != null)
             superClass.getCallCandidates(code, argumentTypes, staticOnly, candidates);
+        if(isInterface() || isAbstract || staticOnly) {
+            interfaces.forEach(it -> it.getCallCandidates(code, argumentTypes, staticOnly, candidates));
+        }
     }
 
     @Nullable

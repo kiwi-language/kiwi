@@ -4,6 +4,7 @@ import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.type.Access;
 import tech.metavm.object.type.MetadataState;
+import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +96,14 @@ public class MethodDTOBuilder {
             node = node.copyWithPrevId(this.nodes.get(this.nodes.size() - 1).id());
         this.nodes.add(node);
         return this;
+    }
+
+    public MethodDTOBuilder autoCreateInputNode(Long tmpId, String name) {
+        return addNode(NodeDTOFactory.createInputNode(
+                tmpId,
+                name,
+                NncUtils.map(parameters, p -> InputFieldDTO.create(p.name(), p.typeId()))
+        ));
     }
 
     public MethodDTOBuilder access(int access) {

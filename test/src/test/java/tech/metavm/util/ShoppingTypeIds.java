@@ -7,7 +7,7 @@ public record ShoppingTypeIds(
         String couponTypeId,
         String orderTypeId,
         String skuChildArrayTypeId,
-        String couponArrayTypeId,
+        String couponListTypeId,
         String productTitleFieldId,
         String productSkuListFieldId,
         String skuTitleFieldId,

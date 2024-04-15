@@ -1,8 +1,10 @@
 package tech.metavm.expression;
 
+import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.IEntityContext;
@@ -16,6 +18,7 @@ import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Constants;
 import tech.metavm.util.Instances;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -37,18 +40,26 @@ public class ExpressionParser {
         return new ExpressionParser(expression, context).parse(assignedType);
     }
 
+    private final String expression;
     private final MetaVMParser parser;
     private final ParsingContext context;
 
     public ExpressionParser(String expression, ParsingContext context) {
+        this.expression = expression;
         this.context = context;
         CharStream input = CharStreams.fromString(expression);
         parser = new MetaVMParser(new CommonTokenStream(new MetaVMLexer(input)));
+        parser.setErrorHandler(new BailErrorStrategy());
     }
 
     public Expression parse(@Nullable Type assignedType) {
-        Expression expression = antlrPreparse();
-        return resolve(expression, assignedType);
+        try {
+            Expression expression = antlrPreparse();
+            return resolve(expression, assignedType);
+        }
+        catch (ParseCancellationException e) {
+            throw new InternalException("fail to parse expression: " + expression, e);
+        }
     }
 
     private Expression resolve(Expression expression, @Nullable Type assignedType) {

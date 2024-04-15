@@ -800,7 +800,7 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     private void retransformClassTypeIfRequired(ClassType classType, IEntityContext context) {
-        if (classType.isTemplate() && context.isPersisted(classType)) {
+        if (classType.isTemplate()) {
             var templateInstances = context.getTemplateInstances(classType);
             for (ClassType templateInstance : templateInstances) {
                 context.getGenericContext().retransformClass(classType, templateInstance);

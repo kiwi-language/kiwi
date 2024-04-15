@@ -13,6 +13,7 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.ClassInstanceBuilder;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.DebugEnv;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -121,6 +122,8 @@ public class NewObjectNode extends CallNode implements NewNode {
                 .ephemeral(ephemeral)
                 .parentRef(parentRef)
                 .build();
+        if(DebugEnv.debugging)
+            DebugEnv.logger.info("getSelf for node {}, ephemeral: {}, unbound: {}", this.getName(), instance.isEphemeral(), unbound);
         if (!instance.isEphemeral() && !unbound)
             frame.addInstance(instance);
         return instance;

@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.util.*;
@@ -15,7 +14,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     private transient boolean removed;
     private transient boolean persisted;
-//    private transient Long tmpId;
+    //    private transient Long tmpId;
     @Nullable
     protected transient Id id;
     @Nullable
@@ -80,9 +79,9 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     public void setEphemeralEntity(boolean ephemeralEntity) {
         this.ephemeralEntity = ephemeralEntity;
-        if(ephemeralEntity) {
+        if (ephemeralEntity) {
             EntityUtils.forEachDescendant(this, e -> {
-                if(e instanceof Entity entity)
+                if (e instanceof Entity entity)
                     entity.ephemeralEntity = true;
             });
         }
@@ -151,7 +150,11 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     void setParent(Entity parent, @Nullable Field parentField) {
         if (this.parentEntity != null) {
             if (!Objects.equals(parent, parentEntity) || !Objects.equals(this.parentEntityField, parentField))
-                throw new InternalException("Can not change parent");
+                throw new InternalException(
+                        String.format("Can not change parent. entity: %s, currentParent: %s, newParent: %s",
+                                EntityUtils.getEntityDesc(this),
+                                EntityUtils.getEntityPath(this.parentEntity),
+                                EntityUtils.getEntityPath(parent)));
         } else {
             this.parentEntity = parent;
             this.parentEntityField = parentField;
@@ -316,7 +319,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     @NoProxy
     public Long getTmpId() {
-        if(id instanceof TmpId tmpId)
+        if (id instanceof TmpId tmpId)
             return tmpId.getTmpId();
         else
             return null;
