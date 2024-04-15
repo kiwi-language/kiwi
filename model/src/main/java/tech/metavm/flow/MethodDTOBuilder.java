@@ -121,6 +121,10 @@ public class MethodDTOBuilder {
         return this;
     }
 
+    public List<ParameterDTO> getParameters() {
+        return parameters;
+    }
+
     public MethodDTOBuilder addParameter(ParameterDTO parameter) {
         this.parameters.add(parameter);
         return this;

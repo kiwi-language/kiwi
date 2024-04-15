@@ -5,7 +5,6 @@ class Child {
     public Child(string name) {
         this.name = _input.name;
         this.next = null;
-        return this;
     }
 
     public string getName() {
@@ -18,7 +17,6 @@ class Child {
 
     public void setNext(Child|null next) {
         this.next = _input.next;
-        return;
     }
 
 }
@@ -32,7 +30,6 @@ class Parent {
         this.children = children;
         child1: new Child("child001");
         children.add(child1);
-        return this;
     }
 
     public List<Child> getChildren() {
@@ -46,7 +43,6 @@ class Parent {
         child2.setNext(child1);
         this.children.add(child2);
         this.children.clear();
-        return;
     }
 
     public void test2() {
@@ -56,7 +52,6 @@ class Parent {
         this.children.add(child2);
         this.children.add(child3);
         this.children.remove(child3);
-        return;
     }
 
 }

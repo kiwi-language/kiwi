@@ -29,12 +29,12 @@ public class AssemblerTest extends TestCase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(AssemblerTest.class);
 
-    public void test() {
+    public void testParentChild() {
         final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
         assemble(List.of(source));
     }
 
-    public void testGeneric() {
+    public void testMyList() {
         final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/List.masm";
 //        assemble(List.of(source));
         deploy(List.of(source));

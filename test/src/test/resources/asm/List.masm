@@ -4,9 +4,8 @@ struct Node<T> {
     private T value;
 
     public Node(string label, T value) {
-        this.label = _input.label;
-        this.value = _input.value;
-        return this;
+        this.label = label;
+        this.value = value;
     }
 
     public string getLabel() {
@@ -25,10 +24,9 @@ struct MyList<T> {
     private readonly child ChildList<Node<T>> nodes;
 
     public MyList(string label, List<Node<T>> nodes) {
-        this.label = _input.label;
-        nodes: new ChildList<Node<T>>(_input.nodes);
-        this.nodes = nodes;
-        return this;
+        this.label = label;
+        nodesCopy: new ChildList<Node<T>>(nodes);
+        this.nodes = nodesCopy;
     }
 
     public string getLabel() {

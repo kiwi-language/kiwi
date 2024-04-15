@@ -3,10 +3,9 @@ struct Product {
     private readonly child ChildList<SKU> skuList;
 
     public Product(string name, List<SKU> skuList) {
-        this.name = _input.name;
-        skuList: new ChildList<SKU>(_input.skuList);
-        this.skuList = skuList;
-        return this;
+        this.name = name;
+        skuListCopy: new ChildList<SKU>(skuList);
+        this.skuList = skuListCopy;
     }
 
     public string getName() {
@@ -14,8 +13,7 @@ struct Product {
     }
 
     public void setName(string name) {
-        this.name = _input.name;
-        return;
+        this.name = name;
     }
 
     public List<SKU> getSkuList() {
@@ -25,8 +23,7 @@ struct Product {
 
     public void setSkuList(List<SKU> skuList) {
         this.skuList.clear();
-        this.skuList.addAll(_input.skuList);
-        return;
+        this.skuList.addAll(skuList);
     }
 
 }
@@ -38,29 +35,27 @@ struct SKU {
     private int quantity;
 
     public SKU(string name, double price, int quantity) {
-        this.name = _input.name;
-        this.price = _input.price;
-        this.quantity = _input.quantity;
-        return this;
+        this.name = name;
+        this.price = price;
+        this.quantity = quantity;
     }
 
     public void decQuantity(int quantity) {
-        if (this.quantity < _input.quantity) {
+        if (this.quantity < quantity) {
             exception: new RuntimeException("库存不足");
             throw exception;
         }
-        this.quantity -= _input.quantity;
-        return;
+        this.quantity -= quantity;
     }
 
     public Order buy(int quantity, List<Coupon> coupons) {
-        this.decQuantity(_input.quantity);
-        size: _input.coupons.size();
+        this.decQuantity(quantity);
+        size: coupons.size();
         loop: for(int i = 0, double totalDiscount = 0; loop.i < size; i = loop.i + 1, totalDiscount = loop.totalDiscount + discount) {
-            coupon: _input.coupons.get(loop.i);
+            coupon: coupons.get(loop.i);
             discount: coupon.use();
         }
-        order: new Order(this.name, _input.quantity, this.price * _input.quantity - loop.totalDiscount, this, _input.coupons);
+        order: new Order(this.name, quantity, this.price * quantity - loop.totalDiscount, this, coupons);
         return order;
     }
 
@@ -69,8 +64,7 @@ struct SKU {
     }
 
     public void setName(string name) {
-        this.name = _input.name;
-        return;
+        this.name = name;
     }
 
     public double getPrice() {
@@ -78,8 +72,7 @@ struct SKU {
     }
 
     public void setPrice(double price) {
-        this.price = _input.price;
-        return;
+        this.price = price;
     }
 
     public int getQuantity() {
@@ -87,8 +80,7 @@ struct SKU {
     }
 
     public void setQuantity(int quantity) {
-        this.quantity = _input.quantity;
-        return;
+        this.quantity = quantity;
     }
 
 }
@@ -99,10 +91,9 @@ class Coupon {
     private CouponState state;
 
     public Coupon(string name, double discount) {
-        this.name = _input.name;
-        this.discount = _input.discount;
+        this.name = name;
+        this.discount = discount;
         this.state = CouponState.NORMAL;
-        return this;
     }
 
     public string getName() {
@@ -134,7 +125,6 @@ enum CouponState {
     ;
 
     CouponState() {
-        return this;
     }
 
 }
@@ -148,14 +138,13 @@ class Order {
     private readonly time orderTime;
 
     public Order(string code, int quantity, double price, SKU sku, List<Coupon> coupons) {
-        this.code = _input.code;
-        this.quantity = _input.quantity;
-        this.price = _input.price;
-        this.sku = _input.sku;
-        coupons: new ReadWriteList<Coupon>(_input.coupons);
-        this.coupons = coupons;
+        this.code = code;
+        this.quantity = quantity;
+        this.price = price;
+        this.sku = sku;
+        couponsCopy: new ReadWriteList<Coupon>(coupons);
+        this.coupons = couponsCopy;
         this.orderTime = NOW();
-        return this;
     }
 
     public string getCode() {

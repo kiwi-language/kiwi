@@ -468,24 +468,46 @@ public class Assembler {
                 methodBuilder.returnTypeId(classBuilder.getId());
             } else
                 methodBuilder.returnTypeId(getTypeId(parseType(requireNonNull(returnType), currentClass)));
-            if (mods.contains(Modifiers.STATIC))
+            var isStatic = mods.contains(Modifiers.STATIC);
+            if (isStatic)
                 methodBuilder.isStatic(true);
-            else
-                methodBuilder.addNode(NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "this", classBuilder.getId()));
-            methodBuilder.autoCreateInputNode(NncUtils.randomNonNegative(), "_input");
-            if (isConstructor && currentClass.isEnum) {
-                methodBuilder.addNode(NodeDTOFactory.createUpdateObjectNode(
-                        NncUtils.randomNonNegative(),
-                        "initEnum",
-                        ValueDTOFactory.createReference("this"),
-                        List.of(
-                                new UpdateFieldDTO(null, "名称", UpdateOp.SET.code(), ValueDTOFactory.createReference("_input._name")),
-                                new UpdateFieldDTO(null, "序号", UpdateOp.SET.code(), ValueDTOFactory.createReference("_input._ordinal"))
-                        )
-                ));
-            }
-            if (block != null)
+            if (block != null) {
+                if (!isStatic)
+                    methodBuilder.addNode(NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "this", classBuilder.getId()));
+                methodBuilder.autoCreateInputNode(NncUtils.randomNonNegative(), "_input");
+                for (var parameter : methodBuilder.getParameters()) {
+                    methodBuilder.addNode(NodeDTOFactory.createValueNode(
+                            NncUtils.randomNonNegative(),
+                            parameter.name(),
+                            ValueDTOFactory.createReference("_input." + parameter.name())
+                    ));
+                }
+                if (isConstructor && currentClass.isEnum) {
+                    methodBuilder.addNode(NodeDTOFactory.createUpdateObjectNode(
+                            NncUtils.randomNonNegative(),
+                            nextNodeName(),
+                            ValueDTOFactory.createReference("this"),
+                            List.of(
+                                    new UpdateFieldDTO(null, "名称", UpdateOp.SET.code(), ValueDTOFactory.createReference("_input._name")),
+                                    new UpdateFieldDTO(null, "序号", UpdateOp.SET.code(), ValueDTOFactory.createReference("_input._ordinal"))
+                            )
+                    ));
+                }
                 processMethodBlock(block, methodBuilder);
+                if (isConstructor) {
+                    methodBuilder.addNode(NodeDTOFactory.createReturnNode(
+                            NncUtils.randomNonNegative(),
+                            nextNodeName(),
+                            ValueDTOFactory.createReference("this")
+                    ));
+                } else if (returnType.VOID() != null) {
+                    methodBuilder.addNode(NodeDTOFactory.createReturnNode(
+                            NncUtils.randomNonNegative(),
+                            nextNodeName(),
+                            null
+                    ));
+                }
+            }
             classBuilder.addMethod(methodBuilder.build());
         }
 
@@ -632,7 +654,7 @@ public class Assembler {
                             requireNonNull(initialValues.get(fieldName)),
                             requireNonNull(updatedValues.get(fieldName))
                     ));
-                    if(DebugEnv.debugging) {
+                    if (DebugEnv.debugging) {
                         DebugEnv.logger.info("loopFields: {}", NncUtils.toJSONString(fields));
                         DebugEnv.logger.info("loopCond: {}", NncUtils.toJSONString(parseValue(forCtl.expression())));
                     }
