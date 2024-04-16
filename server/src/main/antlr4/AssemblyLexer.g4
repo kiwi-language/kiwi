@@ -44,6 +44,7 @@ THROWS:             'throws';
 TRY:                'try';
 VOID:               'void';
 WHILE:              'while';
+ANY:                'any';
 
 // Operators
 

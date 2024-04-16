@@ -1,0 +1,97 @@
+class LivingBeing {
+
+    private int age;
+    private any|null extra;
+    private child List<LivingBeing> offsprings;
+    private child List<LivingBeing> ancestors;
+
+    public LivingBeing(int age, any|null extra) {
+        this.age = age;
+        this.extra = extra;
+        offsprings: new ReadWriteList<LivingBeing>();
+        this.offsprings = offsprings;
+        ancestors: new ReadWriteList<LivingBeing>();
+        this.ancestors = ancestors;
+    }
+
+    public int getAge() {
+        return this.age;
+    }
+
+    public any|null getExtra() {
+        return this.extra;
+    }
+
+    public List<LivingBeing> getOffsprings() {
+        offsprings: new ReadWriteList<LivingBeing>(this.offsprings);
+        return offsprings;
+    }
+
+    public List<LivingBeing> getAncestors() {
+        ancestors: new ReadWriteList<LivingBeing>(this.ancestors);
+        return ancestors;
+    }
+
+    public void addOffspring(LivingBeing offspring) {
+        this.offsprings.add(offspring);
+    }
+
+    public void addAncestor(LivingBeing ancestor) {
+        this.ancestors.add(ancestor);
+    }
+
+    public string makeSound() {
+        return "Gu gu gu gu";
+    }
+
+}
+
+class Animal extends LivingBeing {
+
+    private int intelligence;
+
+    public Animal(int age, any|null extra, int intelligence) {
+        super(age, extra);
+        this.intelligence = intelligence;
+    }
+
+    public int getIntelligence() {
+        return this.intelligence;
+    }
+
+    public string makeSound() {
+        return "Howl~";
+    }
+
+}
+
+class Human extends Animal implements Sentient {
+
+    private string occupation;
+    private boolean thinking;
+
+    public Human(int age, any|null extra, int intelligence, string occupation) {
+        super(age, extra, intelligence);
+        this.occupation = occupation;
+        this.thinking = false;
+    }
+
+   public string getOccupation() {
+        return this.occupation;
+   }
+
+   public string makeSound() {
+        return "I am a human being";
+   }
+
+   public void think() {
+        this.thinking = true;
+   }
+
+}
+
+interface Sentient {
+
+    public void think();
+
+}

@@ -24,6 +24,7 @@ import tech.metavm.util.TestUtils;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 public class AssemblerTest extends TestCase {
 
@@ -45,11 +46,19 @@ public class AssemblerTest extends TestCase {
         deploy(List.of(source));
     }
 
+    public void testLivingBeing() {
+        final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm";
+        deploy(List.of(source));
+    }
+
     private List<TypeDTO> assemble(List<String> sources) {
         var stdTypeIds = new HashMap<AsmType, String>();
         for (AsmPrimitiveKind primitiveKind : AsmPrimitiveKind.values()) {
             stdTypeIds.put(new PrimitiveAsmType(primitiveKind), TmpId.randomString());
         }
+        stdTypeIds.put(Assembler.AnyAsmType.INSTANCE, TmpId.randomString());
+        stdTypeIds.put(new Assembler.UnionAsmType(Set.of(Assembler.AnyAsmType.INSTANCE, new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.NULL))),
+               TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("ChildList"), TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("List"), TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("ReadWriteList"), TmpId.randomString());

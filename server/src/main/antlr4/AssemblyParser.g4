@@ -345,6 +345,7 @@ typeTypeOrVoid
 typeType
     : classOrInterfaceType
     | primitiveType
+    | ANY
     | typeType ('|' typeType)+
     | typeType ('&' typeType)+
     | typeType '[' arrayKind ']'

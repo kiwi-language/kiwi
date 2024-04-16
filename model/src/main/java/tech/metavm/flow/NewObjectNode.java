@@ -46,7 +46,6 @@ public class NewObjectNode extends CallNode implements NewNode {
             return node;
         } else {
             var declaringType = context.getClassType(param.getTypeId());
-            LOGGER.info("declaringTypeId: {}, declaringType: {}", param.getTypeId(), NncUtils.get(declaringType, Type::getTypeDesc));
             var parsingContext = FlowParsingContext.create(scope, prev, context);
             var argumentValues = NncUtils.map(param.getArgumentValues(), arg -> ValueFactory.create(arg, parsingContext));
             var subFlow = declaringType.resolveMethod(param.getFlowName(), NncUtils.map(argumentValues, Value::getType), false);

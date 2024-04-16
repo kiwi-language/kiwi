@@ -158,6 +158,44 @@ public class InstanceManagerTest extends TestCase {
         Assert.assertNotNull(shoppingInstances.shoesProduct());
     }
 
+    public void testLivingBeing() {
+        var typeIds = MockUtils.createLivingBeingTypes(typeManager);
+        var human = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        typeIds.humanConstructorId(),
+                        null,
+                        List.of(
+                                PrimitiveFieldValue.createLong(30),
+                                PrimitiveFieldValue.createNull(),
+                                PrimitiveFieldValue.createLong(180),
+                                PrimitiveFieldValue.createString("Inventor")
+                        )
+                )
+        ));
+        Assert.assertEquals("30", human.getFieldValue(typeIds.livingBeingAgeFieldId()).getDisplayValue());
+        Assert.assertEquals("空", human.getFieldValue(typeIds.livingBeingExtraFieldId()).getDisplayValue());
+        Assert.assertEquals("180", human.getFieldValue(typeIds.animalIntelligenceFieldId()).getDisplayValue());
+        Assert.assertEquals("Inventor", human.getFieldValue(typeIds.humanOccupationFieldId()).getDisplayValue());
+        Assert.assertEquals("否", human.getFieldValue(typeIds.humanThinkingFieldId()).getDisplayValue());
+        var isMultiCellular = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        typeIds.makeSoundMethodId(),
+                        human.id(),
+                        List.of()
+                )
+        ));
+        Assert.assertEquals("I am a human being", isMultiCellular.title());
+        TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        typeIds.thinkMethodId(),
+                        human.id(),
+                        List.of()
+                )
+        ));
+        var reloadedHuman = instanceManager.get(human.id(), 2).instance();
+        Assert.assertEquals("是", reloadedHuman.getFieldValue(typeIds.humanThinkingFieldId()).getDisplayValue());
+    }
+
     public void testRemoveChildInUse() {
         var childType = TestUtils.doInTransaction(() -> typeManager.saveType(
                 ClassTypeDTOBuilder.newBuilder("Child")

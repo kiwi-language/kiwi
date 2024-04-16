@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.StandardTypes;
 
 import java.util.HashMap;
+import java.util.Set;
 
 public class AssemblerFactory {
 
@@ -22,6 +23,9 @@ public class AssemblerFactory {
         stdTypeIds.put(new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.PASSWORD), StandardTypes.getPasswordType().getStringId());
         stdTypeIds.put(new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.NULL), StandardTypes.getNullType().getStringId());
         stdTypeIds.put(new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.VOID), StandardTypes.getVoidType().getStringId());
+        stdTypeIds.put(Assembler.AnyAsmType.INSTANCE, StandardTypes.getAnyType().getStringId());
+        stdTypeIds.put(new Assembler.UnionAsmType(Set.of(Assembler.AnyAsmType.INSTANCE, new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.NULL))),
+                StandardTypes.getNullableAnyType().getStringId());
         stdTypeIds.put(Assembler.ClassAsmType.create("ChildList"), StandardTypes.getChildListType().getStringId());
         stdTypeIds.put(Assembler.ClassAsmType.create("List"), StandardTypes.getListType().getStringId());
         stdTypeIds.put(Assembler.ClassAsmType.create("ReadWriteList"), StandardTypes.getReadWriteListType().getStringId());

@@ -77,7 +77,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this._static = isStatic;
         this.access = access;
         this.state = state;
-        this.type = Objects.requireNonNull(type);
+        this.type = Objects.requireNonNull(type, () -> "type is missing for field: " + declaringType.getTypeDesc() + "." + name);
         this.readonly = readonly;
         if (column != null) {
             NncUtils.requireTrue(declaringType.checkColumnAvailable(column));

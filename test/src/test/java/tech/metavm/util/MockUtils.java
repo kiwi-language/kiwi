@@ -476,6 +476,34 @@ public class MockUtils {
         );
     }
 
+    public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager) {
+        var source = "/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm";
+        var assembler = AssemblerFactory.createWitStandardTypes();
+        TestUtils.doInTransaction(() -> typeManager.batchSave(
+                new BatchSaveRequest(assembler.assemble(List.of(source)), List.of(), List.of(), false)));
+        var livingBeingType = typeManager.getTypeByCode("LivingBeing").type();
+        var animalType = typeManager.getTypeByCode("Animal").type();
+        var humanType = typeManager.getTypeByCode("Human").type();
+        var sentientType = typeManager.getTypeByCode("Sentient").type();
+        return new LivingBeingTypeIds(
+                livingBeingType.id(),
+                animalType.id(),
+                humanType.id(),
+                TestUtils.getFieldIdByCode(livingBeingType, "age"),
+                TestUtils.getFieldIdByCode(livingBeingType, "extra"),
+                TestUtils.getFieldIdByCode(livingBeingType, "offsprings"),
+                TestUtils.getFieldIdByCode(livingBeingType, "ancestors"),
+                TestUtils.getFieldIdByCode(animalType, "intelligence"),
+                TestUtils.getFieldIdByCode(humanType, "occupation"),
+                TestUtils.getFieldIdByCode(humanType, "thinking"),
+                TestUtils.getMethodIdByCode(livingBeingType, "LivingBeing"),
+                TestUtils.getMethodIdByCode(animalType, "Animal"),
+                TestUtils.getMethodIdByCode(humanType, "Human"),
+                TestUtils.getMethodIdByCode(livingBeingType, "makeSound"),
+                TestUtils.getMethodIdByCode(sentientType, "think")
+        );
+    }
+
     public static FooTypes createFooTypes() {
         return createFooTypes(false);
     }
