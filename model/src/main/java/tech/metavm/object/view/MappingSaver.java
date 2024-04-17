@@ -110,7 +110,7 @@ public class MappingSaver {
 
     private void retransformClassType(ClassType sourceType) {
         if(DebugEnv.debugging) {
-            debugLoggerGER.info("MappingSaver.retransformClassType sourceType: {}", sourceType.getTypeDesc());
+            debugLogger.info("MappingSaver.retransformClassType sourceType: {}", sourceType.getTypeDesc());
         }
         if (sourceType.isTemplate()) {
             var templateInstances = parameterizedTypeRepository.getTemplateInstances(sourceType);
@@ -233,11 +233,11 @@ public class MappingSaver {
         );
     }
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     public FieldsObjectMapping saveBuiltinMapping(ClassType type, boolean generateCode) {
         if(DebugEnv.debugging) {
-            debugLoggerGER.info("saveBuiltinMapping. type: {}, generateCode: {}", type.getTypeDesc(), generateCode);
+            debugLogger.info("saveBuiltinMapping. type: {}, generateCode: {}", type.getTypeDesc(), generateCode);
         }
         NncUtils.requireTrue(type.isClass());
         var mapping = (FieldsObjectMapping) NncUtils.find(type.getMappings(), ObjectMapping::isBuiltin);

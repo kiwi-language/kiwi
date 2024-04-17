@@ -14,7 +14,7 @@ import java.util.List;
 
 public class Flows {
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     public static Type getExpressionType(Expression expression, @Nullable NodeRT prev, ScopeRT scope) {
         var exprTypeMap = prev != null ? prev.getExpressionTypes() : scope.getExpressionTypes();
@@ -34,7 +34,7 @@ public class Flows {
         if (flow.isTemplate()) {
             for (Flow horizontalInstance : context.selectByKey(Flow.IDX_HORIZONTAL_TEMPLATE, flow)) {
                 if (DebugEnv.debugging)
-                    debugLoggerGER.info("retransforming " + EntityUtils.getEntityPath(horizontalInstance));
+                    debugLogger.info("retransforming " + EntityUtils.getEntityPath(horizontalInstance));
                 context.getGenericContext().retransformHorizontalFlowInstances(flow, horizontalInstance);
             }
         }

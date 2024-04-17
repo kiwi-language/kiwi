@@ -13,6 +13,7 @@ import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -23,6 +24,7 @@ import java.util.Objects;
 public class Method extends Flow implements Property, GenericElement {
 
     public static final IndexDef<Method> IDX_PARAMETERIZED = IndexDef.create(Method.class, "parameterized");
+    public static final Logger logger = LoggerFactory.getLogger(Method.class);
 
     @EntityField("所属类型")
     private final @NotNull ClassType declaringType;
@@ -346,17 +348,15 @@ public class Method extends Flow implements Property, GenericElement {
         }
     }
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
-
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext) {
         try(var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName()+ "." + getName())) {
             if(DebugEnv.debugging) {
                 var methodName = getDeclaringType().getName() + "." + getNameWithTypeArguments();
-                debugLoggerGER.info("Method.execute: {}", methodName);
-                debugLoggerGER.info("Arguments: ");
-                arguments.forEach(arg -> debugLoggerGER.info(arg.getTree()));
-                debugLoggerGER.info(getText());
+                debugLogger.info("Method.execute: {}", methodName);
+                debugLogger.info("Arguments: ");
+                arguments.forEach(arg -> debugLogger.info(arg.getTree()));
+                debugLogger.info(getText());
             }
             if (_static)
                 NncUtils.requireNull(self);
@@ -366,9 +366,12 @@ public class Method extends Flow implements Property, GenericElement {
             FlowExecResult result;
             if (isNative())
                 result = NativeMethods.invoke(this, self, arguments, callContext);
-            else
+            else {
+                if(!isRootScopePresent())
+                    throw new InternalException("fail to invoke method: " + getQualifiedName() + ". root scope not present");
                 result = new MetaFrame(this.getRootNode(), declaringType, self,
                         arguments, callContext.instanceRepository(), callContext.parameterizedFlowProvider(), callContext.compositeTypeFacade()).execute();
+            }
             if (isConstructor && result.ret() != null) {
                 var instance = (ClassInstance) result.ret();
                 var uninitializedField = instance.findUninitializedField(declaringType);

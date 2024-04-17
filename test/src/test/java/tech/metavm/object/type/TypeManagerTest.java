@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
+import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
@@ -132,6 +133,7 @@ public class TypeManagerTest extends TestCase {
         Assert.assertEquals(2, productTypeDTO.getClassParam().fields().size());
         var couponStateType = typeManager.getType(new GetTypeRequest(typeIds.couponStateTypeId(), false)).type();
         Assert.assertEquals(2, couponStateType.getClassParam().enumConstants().size());
+        FlowSavingContext.initConfig();
         TestUtils.doInTransaction(() -> typeManager.batchSave(
                 new BatchSaveRequest(
                         List.of(productTypeDTO),

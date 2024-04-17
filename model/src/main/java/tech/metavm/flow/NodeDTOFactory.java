@@ -218,7 +218,8 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createUnresolvedNewObjectNode(Long tmpId, String name, String typeId, String methodName, List<ValueDTO> arguments,
+    public static NodeDTO createUnresolvedNewObjectNode(Long tmpId, String name, String typeId, String methodName, List<String> typeArgumentIds,
+                                                        List<ValueDTO> arguments,
                                                         boolean unbound, boolean ephemeral) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
@@ -228,7 +229,7 @@ public class NodeDTOFactory {
                 NodeKind.NEW.code(),
                 null,
                 null,
-                new NewObjectNodeParam(null, methodName, typeId,
+                new NewObjectNodeParam(null, methodName, typeArgumentIds, typeId,
                         null, arguments, null,
                         ephemeral, unbound, List.of(), List.of()),
                 null,
@@ -250,7 +251,7 @@ public class NodeDTOFactory {
                 NodeKind.NEW.code(),
                 null,
                 null,
-                new NewObjectNodeParam(methodId, null, typeId,
+                new NewObjectNodeParam(methodId, null, null, typeId,
                         arguments, null, null,
                         false, false, List.of(), List.of()),
                 null,
@@ -261,6 +262,7 @@ public class NodeDTOFactory {
 
     public static NodeDTO createUnresolvedMethodCallNode(Long tmpId, String name,
                                                          String methodName,
+                                                         List<String> typeArgumentIds,
                                                          @Nullable String typeId,
                                                          @Nullable ValueDTO self,
                                                          List<ValueDTO> arguments) {
@@ -272,7 +274,7 @@ public class NodeDTOFactory {
                 NodeKind.METHOD_CALL.code(),
                 null,
                 null,
-                new MethodCallNodeParam(self, null, methodName, typeId, null, arguments, List.of(), List.of()),
+                new MethodCallNodeParam(self, null, methodName, typeArgumentIds, typeId, null, arguments, List.of(), List.of()),
                 null,
                 null,
                 null
@@ -288,7 +290,7 @@ public class NodeDTOFactory {
                 NodeKind.METHOD_CALL.code(),
                 null,
                 null,
-                new MethodCallNodeParam(self, methodId, null, null, arguments, null, List.of(), List.of()),
+                new MethodCallNodeParam(self, methodId, null, null, null, arguments, null, List.of(), List.of()),
                 null,
                 null,
                 null

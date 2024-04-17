@@ -393,10 +393,7 @@ public class MockUtils {
     }
 
     private static void saveListTypes(TypeManager typeManager) {
-        var assembler = AssemblerFactory.createWitStandardTypes();
-        var sources = List.of(PROJECT_ROOT + "/test/src/test/resources/asm/List.masm");
-        var typeDTOs = assembler.assemble(sources);
-        batchSaveTypes(typeManager, typeDTOs);
+        assemble(PROJECT_ROOT + "/test/src/test/resources/asm/List.masm", typeManager);
     }
 
     private static NodeTypeIds getNodeTypeIds(TypeManager typeManager) {
@@ -432,9 +429,7 @@ public class MockUtils {
     }
 
     public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager) {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm";
-        var assembler = AssemblerFactory.createWitStandardTypes();
-        batchSaveTypes(typeManager, assembler.assemble(List.of(source)));
+        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm", typeManager);
         var productType = typeManager.getTypeByCode("Product").type();
         var skuType = typeManager.getTypeByCode("SKU").type();
         var couponType = typeManager.getTypeByCode("Coupon").type();
@@ -477,10 +472,7 @@ public class MockUtils {
     }
 
     public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager) {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm";
-        var assembler = AssemblerFactory.createWitStandardTypes();
-        TestUtils.doInTransaction(() -> typeManager.batchSave(
-                new BatchSaveRequest(assembler.assemble(List.of(source)), List.of(), List.of(), false)));
+        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm", typeManager);
         var livingBeingType = typeManager.getTypeByCode("LivingBeing").type();
         var animalType = typeManager.getTypeByCode("Animal").type();
         var humanType = typeManager.getTypeByCode("Human").type();
@@ -502,6 +494,23 @@ public class MockUtils {
                 TestUtils.getMethodIdByCode(livingBeingType, "makeSound"),
                 TestUtils.getMethodIdByCode(sentientType, "think")
         );
+    }
+
+    public static UtilsTypeIds createUtilsTypes(TypeManager typeManager) {
+        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm", typeManager);
+        var utilsType = typeManager.getTypeByCode("Utils").type();
+        return new UtilsTypeIds(
+                utilsType.id(),
+                TestUtils.getStaticMethodIdByCode(utilsType, "containsAny"),
+                TestUtils.getStaticMethodIdByCode(utilsType, "test")
+        );
+    }
+
+    private static void assemble(String source, TypeManager typeManager) {
+        var assembler = AssemblerFactory.createWithStandardTypes();
+        assembler.assemble(List.of(source));
+        FlowSavingContext.initConfig();
+        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypes(), List.of(), assembler.getParameterizedFlows(), false)));
     }
 
     public static FooTypes createFooTypes() {

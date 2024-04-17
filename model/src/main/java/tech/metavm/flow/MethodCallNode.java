@@ -40,18 +40,22 @@ public class MethodCallNode extends CallNode {
             var isStatic = param.getSelf() == null;
             var self = NncUtils.get(param.getSelf(), s -> ValueFactory.create(s, parsingContext));
             ClassType declaringType;
-            if(self != null) {
+            if (self != null) {
                 var exprTypes = prev != null ? prev.getExpressionTypes() : scope.getExpressionTypes();
                 declaringType = (ClassType) exprTypes.getType(self.getExpression());
-            }
-            else
+            } else
                 declaringType = context.getClassType(Objects.requireNonNull(param.getTypeId()));
             var argumentValues = NncUtils.map(
                     param.getArgumentValues(),
                     arg -> ValueFactory.create(arg, parsingContext)
             );
             var argumentTypes = NncUtils.map(argumentValues, Value::getType);
-            var method = declaringType.resolveMethod(param.getFlowName(), argumentTypes, isStatic);
+            var method = NncUtils.isEmpty(param.getTypeArgumentIds()) ?
+                    declaringType.resolveMethod(param.getFlowCode(), argumentTypes, isStatic)
+                    : declaringType.getMethodByCode(param.getFlowCode());
+            if (NncUtils.isNotEmpty(param.getTypeArgumentIds())) {
+                method = context.getGenericContext().getParameterizedFlow(method, NncUtils.map(param.getTypeArgumentIds(), context::getType));
+            }
             var arguments = new ArrayList<Argument>();
             NncUtils.biForEach(method.getParameters(), argumentValues, (p, v) ->
                     arguments.add(new Argument(null, p, v))
@@ -107,6 +111,7 @@ public class MethodCallNode extends CallNode {
             return new MethodCallNodeParam(
                     NncUtils.get(self, Value::toDTO),
                     serContext.getId(method),
+                    null,
                     null,
                     serContext.getId(method.getDeclaringType()),
                     NncUtils.map(arguments, Argument::toDTO),

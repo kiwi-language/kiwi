@@ -158,6 +158,36 @@ public class InstanceManagerTest extends TestCase {
         Assert.assertNotNull(shoppingInstances.shoesProduct());
     }
 
+    public void testUtils() {
+        var typeIds = MockUtils.createUtilsTypes(typeManager);
+        var contains = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        typeIds.testMethodId(),
+                        null,
+                        List.of(
+                                new ListFieldValue(
+                                        null,
+                                        false,
+                                        List.of(
+                                                PrimitiveFieldValue.createString("a"),
+                                                PrimitiveFieldValue.createString("b"),
+                                                PrimitiveFieldValue.createString("c")
+                                        )
+                                ),
+                                new ListFieldValue(
+                                        null,
+                                        false,
+                                        List.of(
+                                                PrimitiveFieldValue.createString("d"),
+                                                PrimitiveFieldValue.createString("b")
+                                        )
+                                )
+                        )
+                )
+        ));
+        Assert.assertEquals("是", contains.title());
+    }
+
     public void testLivingBeing() {
         var typeIds = MockUtils.createLivingBeingTypes(typeManager);
         var human = TestUtils.doInTransaction(() -> flowExecutionService.execute(
@@ -309,7 +339,7 @@ public class InstanceManagerTest extends TestCase {
 
     public void testRemoveNonPersistedChild() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
-        var assembler = AssemblerFactory.createWitStandardTypes();
+        var assembler = AssemblerFactory.createWithStandardTypes();
         var types = assembler.assemble(List.of(parentChildMasm));
         FlowSavingContext.initConfig();
         TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(types, List.of(), List.of(), false)));
@@ -348,7 +378,7 @@ public class InstanceManagerTest extends TestCase {
 
     public void testRemoveRoot() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
-        var assembler = AssemblerFactory.createWitStandardTypes();
+        var assembler = AssemblerFactory.createWithStandardTypes();
         var types = assembler.assemble(List.of(parentChildMasm));
         FlowSavingContext.initConfig();
         TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(types, List.of(), List.of(), false)));

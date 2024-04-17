@@ -2,6 +2,9 @@ package tech.metavm.entity;
 
 import tech.metavm.object.type.*;
 
+import java.util.List;
+import java.util.Map;
+
 public interface StandardTypesHolder {
     
     PrimitiveType getLongType();
@@ -143,4 +146,11 @@ public interface StandardTypesHolder {
     ClassType getNullPointerExceptionType();
 
     void setNullPointerExceptionType(ClassType nullPointerExceptionType);
+
+    ClassType getParameterizedType(ClassType template, List<Type> typeArguments);
+
+    void addParameterizedType(ClassType type);
+
+    void clearParameterizedTypes();
+
 }

@@ -19,6 +19,7 @@ import tech.metavm.system.persistence.MemRegionMapper;
 import tech.metavm.task.JobSchedulerStatus;
 import tech.metavm.task.TaskSignal;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -80,11 +81,23 @@ public class BootstrapUtils {
             StandardTypes.setMapType(defContext.getClassType(MetaMap.class));
             StandardTypes.setIteratorImplType(defContext.getClassType(IteratorImpl.class));
             StandardTypes.setIteratorType(defContext.getClassType(MetaIterator.class));
+            StandardTypes.setIterableType(defContext.getClassType(MetaIterable.class));
             StandardTypes.setRecordType(defContext.getClassType(Record.class));
             StandardTypes.setExceptionType(defContext.getClassType(Exception.class));
             StandardTypes.setIllegalArgumentExceptionType(defContext.getClassType(IllegalArgumentException.class));
             StandardTypes.setIllegalStateExceptionType(defContext.getClassType(IllegalStateException.class));
             StandardTypes.setNullPointerExceptionType(defContext.getClassType(NullPointerException.class));
+            StandardTypes.clearParameterizedTypes();
+            var collClasses = List.of(
+                    MetaList.class, ReadWriteMetaList.class, ChildMetaList.class, MetaSet.class);
+            var primitiveClasses = List.of(Long.class, Double.class, Boolean.class, String.class, Date.class);
+            for (Class<?> collClass : collClasses) {
+                var collType = defContext.getClassType(collClass);
+                for (var primitiveClass : primitiveClasses) {
+                    var primitiveType = defContext.getType(primitiveClass);
+                    StandardTypes.addParameterizedType(defContext.getParameterizedType(collType, List.of(primitiveType)));
+                }
+            }
             NativeFunctions.setIsSourcePresent(requireNonNull(defContext.selectFirstByKey(
                     Function.UNIQUE_IDX_CODE, "isSourcePResent"
             )));

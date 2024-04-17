@@ -1,13 +1,18 @@
 package tech.metavm.entity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
 public class StandardTypes {
+
+    public static final Logger logger = LoggerFactory.getLogger(StandardTypes.class);
 
     private static StandardTypesHolder holder = new GlobalStandardTypesHolder();
 
@@ -365,4 +370,17 @@ public class StandardTypes {
         holder.setIteratorImplType(iteratorImplType);
         return iteratorImplType;
     }
+
+    public static ClassType getParameterizedType(ClassType template, List<Type> typeArguments) {
+        return holder.getParameterizedType(template, typeArguments);
+    }
+
+    public static void addParameterizedType(ClassType type) {
+        holder.addParameterizedType(type);
+    }
+
+    public static void clearParameterizedTypes() {
+        holder.clearParameterizedTypes();
+    }
+
 }

@@ -500,7 +500,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return typeProvider.getType(id);
     }
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     @Override
     public void batchRemove(Collection<DurableInstance> instances) {
@@ -512,7 +512,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
         var removalBatch = getRemovalBatch(instances);
         if (DebugEnv.debugging) {
-            debugLoggerGER.info("removalBatch: [{}]", NncUtils.join(removalBatch, Instances::getInstanceDesc));
+            debugLogger.info("removalBatch: [{}]", NncUtils.join(removalBatch, Instances::getInstanceDesc));
         }
         // remove views first otherwise uninitialized views in the removal batch may fail to initialize
         var sortedRemovalBatch = NncUtils.sort(removalBatch, Comparator.comparingInt(i -> i.isView() ? 0 : 1));

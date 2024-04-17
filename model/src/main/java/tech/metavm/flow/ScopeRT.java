@@ -18,7 +18,7 @@ import java.util.List;
 @EntityType("流程范围")
 public class ScopeRT extends Element {
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     @EntityField("所属流程")
     private final Flow flow;

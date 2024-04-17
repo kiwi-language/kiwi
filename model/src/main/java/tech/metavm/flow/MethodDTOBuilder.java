@@ -35,6 +35,7 @@ public class MethodDTOBuilder {
     private Long tmpId;
     private String rootScopeId;
     private boolean skipRootScope;
+    private List<String> typeParameterIds = new ArrayList<>();
 
     public MethodDTOBuilder(String declaringTypeId, String name) {
         this.declaringTypeId = declaringTypeId;
@@ -156,6 +157,11 @@ public class MethodDTOBuilder {
         return this;
     }
 
+    public MethodDTOBuilder typeParameterIds(List<String> typeParameterIds) {
+        this.typeParameterIds = typeParameterIds;
+        return this;
+    }
+
     public FlowDTO build() {
         if (id == null && tmpId != null)
             id = TmpId.of(tmpId).toString();
@@ -171,7 +177,7 @@ public class MethodDTOBuilder {
                 returnTypeId,
                 parameters,
                 null,
-                List.of(),
+                typeParameterIds,
                 null,
                 List.of(),
                 capturedTypeIds,

@@ -62,11 +62,11 @@ interfaceBodyDeclaration
 
 interfaceMemberDeclaration
     : interfaceMethodDeclaration
-    | genericInterfaceMethodDeclaration
+//    | genericInterfaceMethodDeclaration
     ;
 
 interfaceMethodDeclaration
-    : interfaceMethodModifier* interfaceCommonBodyDeclaration
+    : interfaceMethodModifier* typeParameters? interfaceCommonBodyDeclaration
     ;
 
 interfaceMethodModifier
@@ -76,9 +76,9 @@ interfaceMethodModifier
     | STATIC
     ;
 
-genericInterfaceMethodDeclaration
-    : interfaceMethodModifier* typeParameters interfaceCommonBodyDeclaration
-    ;
+//genericInterfaceMethodDeclaration
+//    : interfaceMethodModifier* typeParameters interfaceCommonBodyDeclaration
+//    ;
 
 interfaceCommonBodyDeclaration
     : typeTypeOrVoid IDENTIFIER formalParameters ('[' ']')* (THROWS qualifiedNameList)? ';'
@@ -86,29 +86,29 @@ interfaceCommonBodyDeclaration
 
 memberDeclaration
     : methodDeclaration
-    | genericMethodDeclaration
+//    | genericMethodDeclaration
     | fieldDeclaration
     | constructorDeclaration
-    | genericConstructorDeclaration
+//    | genericConstructorDeclaration
     ;
 
 fieldDeclaration: typeType IDENTIFIER ';';
 
 methodDeclaration
-    : typeTypeOrVoid IDENTIFIER formalParameters methodBody
+    : typeParameters? typeTypeOrVoid IDENTIFIER formalParameters methodBody
     ;
 
-genericMethodDeclaration
-    : typeParameters methodDeclaration
-    ;
+//genericMethodDeclaration
+//    : typeParameters methodDeclaration
+//    ;
 
 constructorDeclaration
-    : IDENTIFIER formalParameters (THROWS qualifiedNameList)? constructorBody=block
+    : typeParameters? IDENTIFIER formalParameters (THROWS qualifiedNameList)? constructorBody=block
     ;
 
-genericConstructorDeclaration
-    : typeParameters constructorDeclaration
-    ;
+//genericConstructorDeclaration
+//    : typeParameters constructorDeclaration
+//    ;
 
 typeParameters
     : '<' typeParameter (',' typeParameter)* '>'
@@ -190,7 +190,7 @@ loopVariableUpdate: IDENTIFIER '=' expression;
 
 qualifiedFieldName: qualifiedName '.' IDENTIFIER;
 
-creator: classOrInterfaceType arguments
+creator: typeArguments? classOrInterfaceType arguments
 //    : typeArguments createdName classCreatorRest
 //    : createdName (arrayCreatorRest | classCreatorRest)
     ;
@@ -310,7 +310,7 @@ classType
     ;
 
 methodCall
-    : expression '.' IDENTIFIER '(' expressionList? ')'
+    : expression '.' typeArguments? IDENTIFIER '(' expressionList? ')'
     | THIS '(' expressionList? ')'
     | SUPER '(' expressionList? ')'
     ;
@@ -346,6 +346,7 @@ typeType
     : classOrInterfaceType
     | primitiveType
     | ANY
+    | NEVER
     | typeType ('|' typeType)+
     | typeType ('&' typeType)+
     | typeType '[' arrayKind ']'

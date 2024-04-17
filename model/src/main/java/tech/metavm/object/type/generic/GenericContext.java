@@ -286,7 +286,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         return getParameterizedFlow(template, typeArguments, DEFINITION, emptyBatch);
     }
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     public <T extends Flow> T getParameterizedFlow(T template, List<? extends Type> typeArguments, ResolutionStage stage, SaveTypeBatch batch) {
         if(template.getTypeArguments().equals(typeArguments))
@@ -304,12 +304,12 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         if (template instanceof Method method)
             substitutor.enterElement(method.getDeclaringType());
         if(DebugEnv.debugging && template.getName().equals("find") && NncUtils.anyMatch(typeArguments, Type::isCaptured))
-            debugLoggerGER.info("Start substituting flow: {} with type arguments: {}",
+            debugLogger.info("Start substituting flow: {} with type arguments: {}",
                     EntityUtils.getEntityPath(template),
                     NncUtils.join(typeArguments, EntityUtils::getEntityPath));
         var transformed = (Flow) template.accept(substitutor);
         if(DebugEnv.debugging && template.getName().equals("find") && NncUtils.anyMatch(typeArguments, Type::isCaptured))
-            debugLoggerGER.info("Finish substituting flow: {} with type arguments: {}",
+            debugLogger.info("Finish substituting flow: {} with type arguments: {}",
                     EntityUtils.getEntityPath(template),
                     NncUtils.join(typeArguments, EntityUtils::getEntityPath));
         if (template instanceof Method)

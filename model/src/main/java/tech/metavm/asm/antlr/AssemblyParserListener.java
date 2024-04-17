@@ -168,16 +168,6 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 */
 	void exitInterfaceMethodModifier(AssemblyParser.InterfaceMethodModifierContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link AssemblyParser#genericInterfaceMethodDeclaration}.
-	 * @param ctx the parse tree
-	 */
-	void enterGenericInterfaceMethodDeclaration(AssemblyParser.GenericInterfaceMethodDeclarationContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link AssemblyParser#genericInterfaceMethodDeclaration}.
-	 * @param ctx the parse tree
-	 */
-	void exitGenericInterfaceMethodDeclaration(AssemblyParser.GenericInterfaceMethodDeclarationContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#interfaceCommonBodyDeclaration}.
 	 * @param ctx the parse tree
 	 */
@@ -218,16 +208,6 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 */
 	void exitMethodDeclaration(AssemblyParser.MethodDeclarationContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link AssemblyParser#genericMethodDeclaration}.
-	 * @param ctx the parse tree
-	 */
-	void enterGenericMethodDeclaration(AssemblyParser.GenericMethodDeclarationContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link AssemblyParser#genericMethodDeclaration}.
-	 * @param ctx the parse tree
-	 */
-	void exitGenericMethodDeclaration(AssemblyParser.GenericMethodDeclarationContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#constructorDeclaration}.
 	 * @param ctx the parse tree
 	 */
@@ -237,16 +217,6 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitConstructorDeclaration(AssemblyParser.ConstructorDeclarationContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link AssemblyParser#genericConstructorDeclaration}.
-	 * @param ctx the parse tree
-	 */
-	void enterGenericConstructorDeclaration(AssemblyParser.GenericConstructorDeclarationContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link AssemblyParser#genericConstructorDeclaration}.
-	 * @param ctx the parse tree
-	 */
-	void exitGenericConstructorDeclaration(AssemblyParser.GenericConstructorDeclarationContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#typeParameters}.
 	 * @param ctx the parse tree

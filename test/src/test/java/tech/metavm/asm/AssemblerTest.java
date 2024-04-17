@@ -16,7 +16,6 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
-import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.task.TaskManager;
 import tech.metavm.util.BootstrapUtils;
 import tech.metavm.util.MockTransactionOperations;
@@ -51,27 +50,37 @@ public class AssemblerTest extends TestCase {
         deploy(List.of(source));
     }
 
-    private List<TypeDTO> assemble(List<String> sources) {
+    public void testUtils() {
+        final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm";
+        deploy(List.of(source));
+    }
+
+    private void assemble(List<String> sources) {
         var stdTypeIds = new HashMap<AsmType, String>();
         for (AsmPrimitiveKind primitiveKind : AsmPrimitiveKind.values()) {
             stdTypeIds.put(new PrimitiveAsmType(primitiveKind), TmpId.randomString());
         }
         stdTypeIds.put(Assembler.AnyAsmType.INSTANCE, TmpId.randomString());
+        stdTypeIds.put(Assembler.NeverAsmType.INSTANCE, TmpId.randomString());
         stdTypeIds.put(new Assembler.UnionAsmType(Set.of(Assembler.AnyAsmType.INSTANCE, new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.NULL))),
-               TmpId.randomString());
+                TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("ChildList"), TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("List"), TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("ReadWriteList"), TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("Enum"), TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("RuntimeException"), TmpId.randomString());
+        stdTypeIds.put(ClassAsmType.create("Iterable"), TmpId.randomString());
+        stdTypeIds.put(ClassAsmType.create("Iterator"), TmpId.randomString());
+        stdTypeIds.put(ClassAsmType.create("Predicate"), TmpId.randomString());
         var assembler = new Assembler(stdTypeIds);
-        return assemble(sources, assembler);
+        assemble(sources, assembler);
     }
 
-    private List<TypeDTO> assemble(List<String> sources, Assembler assembler) {
-        var types = assembler.assemble(sources);
-        TestUtils.writeJson("/Users/leen/workspace/object/test.json", types);
-        return types;
+    private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {
+        assembler.assemble(sources);
+        var request = new BatchSaveRequest(assembler.getAllTypes(), List.of(), assembler.getParameterizedFlows(), false);
+                TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
+        return request;
     }
 
     private void deploy(List<String> sources) {
@@ -92,10 +101,10 @@ public class AssemblerTest extends TestCase {
         var flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());
         typeManager.setFlowExecutionService(flowExecutionService);
         FlowSavingContext.initConfig();
-        var assembler = AssemblerFactory.createWitStandardTypes();
-        var types = assemble(sources, assembler);
+        var assembler = AssemblerFactory.createWithStandardTypes();
+        var request = assemble(sources, assembler);
 //        DebugEnv.DEBUG_ON = true;
-        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(types, List.of(), List.of(), false)));
+        TestUtils.doInTransaction(() -> typeManager.batchSave(request));
     }
 
 }

@@ -10,7 +10,7 @@ public class FunctionCallNodeParam extends CallNodeParam {
                                  List<ArgumentDTO> arguments,
                                  List<String> capturedExpressionTypeIds,
                                  List<String> capturedExpressions) {
-        super(flowId, null, typeId, arguments, null, capturedExpressionTypeIds, capturedExpressions);
+        super(flowId, null, null, typeId, arguments, null, capturedExpressionTypeIds, capturedExpressions);
     }
 
     @Override

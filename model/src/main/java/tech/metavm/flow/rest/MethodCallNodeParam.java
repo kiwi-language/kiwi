@@ -11,14 +11,15 @@ public class MethodCallNodeParam extends CallNodeParam {
 
     public MethodCallNodeParam(@JsonProperty("self") ValueDTO self,
                                @JsonProperty("flowId") String flowId,
-                               @JsonProperty("flowName") String flowName,
+                               @JsonProperty("flowCode") String flowCode,
+                               @JsonProperty("typeArgumentIds") List<String> typeArgumentIds,
                                @JsonProperty("typeId") @Nullable String typeId,
                                @JsonProperty("arguments") List<ArgumentDTO> arguments,
                                @JsonProperty("argumentValues") List<ValueDTO> argumentValues,
                                @JsonProperty("capturedExpressionTypeIds") List<String> capturedExpressionTypeIds,
                                @JsonProperty("capturedExpressions") List<String> capturedExpressions
     ) {
-        super(flowId, flowName, typeId, arguments, argumentValues, capturedExpressionTypeIds, capturedExpressions);
+        super(flowId, flowCode, typeArgumentIds, typeId, arguments, argumentValues, capturedExpressionTypeIds, capturedExpressions);
         this.self = self;
     }
 

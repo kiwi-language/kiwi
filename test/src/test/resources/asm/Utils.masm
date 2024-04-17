@@ -1,0 +1,27 @@
+class Utils {
+
+    public static boolean test(List<string> list, List<string> tests) {
+       contains: Utils.<string>containsAny(list, tests);
+       return contains;
+    }
+
+    public static <T> int containsAny(Iterable<[never, T]> iterable, Iterable<[never, T]> values) {
+        it: iterable.iterator();
+        hasNext: it.hasNext();
+        loop: for(boolean hasNext = hasNext; loop.hasNext; hasNext = hasNext3) {
+            next: it.next();
+            it1: values.iterator();
+            hasNext1: it1.hasNext();
+            loop1: for(boolean hasNext = hasNext1; loop1.hasNext; hasNext = hasNext2) {
+                next1: it1.next();
+                if(next == next1) {
+                    return true;
+                }
+                hasNext2: it1.hasNext();
+            }
+            hasNext3: it.hasNext();
+        }
+        return false;
+    }
+
+}

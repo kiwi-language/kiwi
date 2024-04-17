@@ -24,7 +24,7 @@ import java.util.List;
 @EntityType("创建对象节点")
 public class NewObjectNode extends CallNode implements NewNode {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(NewObjectNode.class);
+    public static final Logger logger = LoggerFactory.getLogger(NewObjectNode.class);
 
     public static NewObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         NewObjectNodeParam param = nodeDTO.getParam();
@@ -48,12 +48,22 @@ public class NewObjectNode extends CallNode implements NewNode {
             var declaringType = context.getClassType(param.getTypeId());
             var parsingContext = FlowParsingContext.create(scope, prev, context);
             var argumentValues = NncUtils.map(param.getArgumentValues(), arg -> ValueFactory.create(arg, parsingContext));
-            var subFlow = declaringType.resolveMethod(param.getFlowName(), NncUtils.map(argumentValues, Value::getType), false);
+            var constructor = NncUtils.isEmpty(param.getTypeArgumentIds()) ?
+                    declaringType.resolveMethod(param.getFlowCode(), NncUtils.map(argumentValues, Value::getType), false)
+                    : declaringType.getMethodByCode(param.getFlowCode());
+            if (NncUtils.isNotEmpty(param.getArguments())) {
+                constructor = context.getGenericContext().getParameterizedFlow(constructor, NncUtils.map(param.getTypeArgumentIds(), context::getType));
+            }
             var arguments = new ArrayList<Argument>();
-            NncUtils.biForEach(subFlow.getParameters(), argumentValues, (p, v) ->
-                    arguments.add(new Argument(null, p, v))
-            );
-            return saveNode0(nodeDTO, subFlow, null, arguments, prev, scope, context);
+            try {
+                NncUtils.biForEach(constructor.getParameters(), argumentValues, (p, v) ->
+                        arguments.add(new Argument(null, p, v))
+                );
+            } catch (RuntimeException e) {
+                logger.info("error constructor: " + constructor.getName() + "(" + NncUtils.join(constructor.getParameterTypes(), Type::getTypeDesc) + ")");
+                throw e;
+            }
+            return saveNode0(nodeDTO, constructor, null, arguments, prev, scope, context);
         }
     }
 
@@ -100,6 +110,7 @@ public class NewObjectNode extends CallNode implements NewNode {
             return new NewObjectNodeParam(
                     serContext.getId(getSubFlow()),
                     null,
+                    null,
                     serContext.getId(getSubFlow().getDeclaringType()),
                     NncUtils.map(arguments, Argument::toDTO),
                     null,
@@ -121,7 +132,7 @@ public class NewObjectNode extends CallNode implements NewNode {
                 .ephemeral(ephemeral)
                 .parentRef(parentRef)
                 .build();
-        if(DebugEnv.debugging)
+        if (DebugEnv.debugging)
             DebugEnv.logger.info("getSelf for node {}, ephemeral: {}, unbound: {}", this.getName(), instance.isEphemeral(), unbound);
         if (!instance.isEphemeral() && !unbound)
             frame.addInstance(instance);

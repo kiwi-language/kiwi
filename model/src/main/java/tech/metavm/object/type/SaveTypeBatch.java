@@ -266,7 +266,7 @@ public class SaveTypeBatch implements DTOProvider {
     }
 
     private List<ParameterizedFlowDTO> getPFlowsByDeclaringType(String id) {
-        var typeDTO = getTypeDTO(id);
+        var typeDTO = getTypeDTONotNull(id);
         if(typeDTO.param() instanceof ClassTypeParam classParam) {
             return NncUtils.flatMap(
                     classParam.flows(),
@@ -288,6 +288,10 @@ public class SaveTypeBatch implements DTOProvider {
     @Override
     public @Nullable TypeDTO getTypeDTO(String id) {
         return typeMap.get(id);
+    }
+
+    public TypeDTO getTypeDTONotNull(String id) {
+        return Objects.requireNonNull(getTypeDTO(id), () -> "Can not find typeDTO with id '" + id + "'");
     }
 
     public static SaveTypeBatch empty(IEntityContext context) {

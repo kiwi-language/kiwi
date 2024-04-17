@@ -16,7 +16,8 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "callKind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class CallNodeParam {
     private final String flowId;
-    private final @Nullable String flowName;
+    private final @Nullable String flowCode;
+    private final @Nullable List<String> typeArgumentIds;
     private final @Nullable String typeId;
     private final List<ArgumentDTO> arguments;
     private final List<ValueDTO> argumentValues;
@@ -24,14 +25,16 @@ public abstract class CallNodeParam {
     private final List<String> capturedExpressions;
 
     public CallNodeParam(@Nullable String flowId,
-                         @Nullable String flowName,
+                         @Nullable String flowCode,
+                         @Nullable List<String> typeArgumentIds,
                          @Nullable String typeId,
                          List<ArgumentDTO> arguments,
                          List<ValueDTO> argumentValues,
                          List<String> capturedExpressionTypeIds,
                          List<String> capturedExpressions) {
         this.flowId = flowId;
-        this.flowName = flowName;
+        this.flowCode = flowCode;
+        this.typeArgumentIds = typeArgumentIds;
         this.typeId = typeId;
         this.arguments = arguments;
         this.argumentValues = argumentValues;
@@ -48,8 +51,13 @@ public abstract class CallNodeParam {
     }
 
     @Nullable
-    public String getFlowName() {
-        return flowName;
+    public String getFlowCode() {
+        return flowCode;
+    }
+
+    @Nullable
+    public List<String> getTypeArgumentIds() {
+        return typeArgumentIds;
     }
 
     @Nullable

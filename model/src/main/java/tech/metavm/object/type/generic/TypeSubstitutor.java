@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class TypeSubstitutor extends ElementVisitor<Type> {
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private final Map<Type, Type> variableMap;
     private final CompositeTypeFacade compositeTypeFacade;
@@ -39,7 +39,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
     public void addMapping(Type from, Type to) {
         variableMap.put(from, to);
         if(DebugEnv.debugging)
-            debugLoggerGER.info("added mapping: {} -> {}", EntityUtils.getEntityDesc(from), EntityUtils.getEntityDesc(to));
+            debugLogger.info("added mapping: {} -> {}", EntityUtils.getEntityDesc(from), EntityUtils.getEntityDesc(to));
     }
 
     @Override
@@ -97,9 +97,9 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
 
     private void logVariableMap() {
         if(DebugEnv.debugging) {
-            debugLoggerGER.info("variable map:");
+            debugLogger.info("variable map:");
             for (var entry : variableMap.entrySet()) {
-                debugLoggerGER.info("key: {}, value: {}", EntityUtils.getEntityDesc(entry.getKey()), EntityUtils.getEntityDesc(entry.getValue()));
+                debugLogger.info("key: {}, value: {}", EntityUtils.getEntityDesc(entry.getKey()), EntityUtils.getEntityDesc(entry.getValue()));
             }
         }
     }

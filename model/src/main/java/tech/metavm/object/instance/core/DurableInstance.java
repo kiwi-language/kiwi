@@ -21,7 +21,7 @@ public abstract class DurableInstance extends Instance {
 
     public static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(DurableInstance.class);
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private transient boolean marked;
     private transient boolean viewSaved;

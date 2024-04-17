@@ -107,12 +107,6 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitInterfaceMethodModifier(AssemblyParser.InterfaceMethodModifierContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link AssemblyParser#genericInterfaceMethodDeclaration}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitGenericInterfaceMethodDeclaration(AssemblyParser.GenericInterfaceMethodDeclarationContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#interfaceCommonBodyDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -137,23 +131,11 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMethodDeclaration(AssemblyParser.MethodDeclarationContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link AssemblyParser#genericMethodDeclaration}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitGenericMethodDeclaration(AssemblyParser.GenericMethodDeclarationContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#constructorDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitConstructorDeclaration(AssemblyParser.ConstructorDeclarationContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link AssemblyParser#genericConstructorDeclaration}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitGenericConstructorDeclaration(AssemblyParser.GenericConstructorDeclarationContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#typeParameters}.
 	 * @param ctx the parse tree

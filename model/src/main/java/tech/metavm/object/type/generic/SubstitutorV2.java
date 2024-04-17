@@ -119,10 +119,10 @@ public class SubstitutorV2 extends CopyVisitor {
             });
         }
 //        if(root instanceof Flow flow && flow.getName().equals("findRequired")) {
-//            debugLoggerGER.info("Substituting {}, with type arguments: {}", EntityUtils.getEntityDesc(root),
+//            debugLogger.info("Substituting {}, with type arguments: {}", EntityUtils.getEntityDesc(root),
 //                    NncUtils.join(typeArguments, EntityUtils::getEntityDesc));
 //            existingCopies.forEach((s, t) -> {
-//                debugLoggerGER.info("source: {}, target: {}", EntityUtils.getEntityDesc(s), EntityUtils.getEntityDesc(t));
+//                debugLogger.info("source: {}, target: {}", EntityUtils.getEntityDesc(s), EntityUtils.getEntityDesc(t));
 //            });
 //        }
     }

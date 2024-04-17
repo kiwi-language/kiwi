@@ -10,7 +10,7 @@ import tech.metavm.util.DebugEnv;
 
 public class FlowChecker extends StructuralVisitor<Boolean> {
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private Flow flow;
 
@@ -52,7 +52,7 @@ public class FlowChecker extends StructuralVisitor<Boolean> {
         if (node.getError() != null) {
             flow.setState(MetadataState.ERROR);
             if(DebugEnv.debugging)
-                debugLoggerGER.error("Error in node {}: {}",
+                debugLogger.error("Error in node {}: {}",
                         node.getFlow().getQualifiedName() + "." + node.getName(),
                         node.getError());
         }

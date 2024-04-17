@@ -1,6 +1,12 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.type.*;
+import tech.metavm.util.NncUtils;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class GlobalStandardTypesHolder implements StandardTypesHolder {
 
@@ -39,6 +45,7 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private ClassType illegalArgumentExceptionType;
     private ClassType illegalStateExceptionType;
     private ClassType nullPointerExceptionType;
+    private Map<PTypeKey, ClassType> parameterizedTypes = new HashMap<>();
 
     @Override
     public PrimitiveType getLongType() {
@@ -390,4 +397,19 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
         this.nullPointerExceptionType = nullPointerExceptionType;
     }
 
+    @Override
+    public ClassType getParameterizedType(ClassType template, List<Type> typeArguments) {
+        return Objects.requireNonNull(parameterizedTypes.get(new PTypeKey(template, typeArguments)),
+                () -> "Parameterized type not found: " + template.getName() + "<" + NncUtils.join(typeArguments, Type::getName) + ">");
+}
+
+    @Override
+    public void addParameterizedType(ClassType type) {
+        parameterizedTypes.put(new PTypeKey(Objects.requireNonNull(type.getTemplate()), type.getTypeArguments()), type);
+    }
+
+    @Override
+    public void clearParameterizedTypes() {
+        parameterizedTypes.clear();
+    }
 }

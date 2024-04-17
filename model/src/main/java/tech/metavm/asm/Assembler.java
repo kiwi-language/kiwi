@@ -26,16 +26,17 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 import static java.util.Objects.requireNonNull;
 
 public class Assembler {
 
     public static final Logger logger = LoggerFactory.getLogger(Assembler.class);
+    public static final Pattern CLASS_NAME_PTN = Pattern.compile("[A-Z][a-z0-9_]*");
 
     private final char[] buf = new char[1024 * 1024];
 
@@ -75,6 +76,30 @@ public class Assembler {
         return requireNonNull(typeIds.get(type), () -> "Can not find id for type: " + type.name());
     }
 
+    private String getMethodId(MethodKey methodKey) {
+        return requireNonNull(methodIds.get(methodKey), () -> "method '" + methodKey.name() + "' is not defined");
+    }
+
+    private MethodInfo createMethodInfo(AsmScope parentScope, String name, @Nullable AssemblyParser.TypeParametersContext typeParameters) {
+        if (parentScope instanceof ClassInfo classInfo) {
+            return new MethodInfo(classInfo, new MethodKey(classInfo.rawName(), name), parseTypeParameters(typeParameters));
+        } else
+            throw new InternalException("Method '" + name + "' is not defined in a class scope");
+    }
+
+    private static List<String> parseTypeParameters(@Nullable AssemblyParser.TypeParametersContext typeParameters) {
+        return typeParameters != null ? NncUtils.map(typeParameters.typeParameter(), tv -> tv.IDENTIFIER().getText()) : List.of();
+    }
+
+    private String getGenericDeclarationId(AsmGenericDeclaration genericDeclaration) {
+        if (genericDeclaration instanceof ClassAsmType k)
+            return getTypeId(k);
+        else if (genericDeclaration instanceof MethodKey m)
+            return getMethodId(m);
+        else
+            throw new InternalException("Invalid GenericDeclaration: " + genericDeclaration);
+    }
+
     public List<TypeDTO> getTypes() {
         return types;
     }
@@ -91,9 +116,28 @@ public class Assembler {
         public static final String TITLE = "title";
     }
 
-    private static final class ClassInfo {
+    private interface AsmScope {
+
         @Nullable
-        private final ClassInfo parent;
+        AsmScope parent();
+
+        List<String> typeParameters();
+
+        AsmGenericDeclaration genericDeclaration();
+
+        default <T extends AsmScope> T getAncestor(Class<T> klass) {
+            var s = this;
+            while (s != null && !klass.isInstance(s)) {
+                s = s.parent();
+            }
+            return klass.cast(Objects.requireNonNull(s));
+        }
+
+    }
+
+    private static final class ClassInfo implements AsmScope {
+        @Nullable
+        private final AsmScope parent;
         private final ClassAsmType type;
         private final List<String> typeParameters;
         private final boolean isEnum;
@@ -101,7 +145,7 @@ public class Assembler {
         int enumConstantOrdinal;
 
         private ClassInfo(
-                @Nullable ClassInfo parent,
+                @Nullable AsmScope parent,
                 ClassAsmType type,
                 List<String> typeParameters,
                 boolean isEnum
@@ -112,7 +156,7 @@ public class Assembler {
             this.isEnum = isEnum;
         }
 
-        public static ClassInfo fromContext(AssemblyParser.ClassDeclarationContext classDeclaration, @Nullable ClassInfo parent) {
+        public static ClassInfo fromContext(AssemblyParser.ClassDeclarationContext classDeclaration, @Nullable AsmScope parent) {
             var type = new ClassAsmType(classDeclaration.IDENTIFIER().getText(), List.of());
             var classInfo = new ClassInfo(
                     parent,
@@ -122,13 +166,13 @@ public class Assembler {
                             : List.of(),
                     false
             );
-            if(classDeclaration.EXTENDS() != null) {
+            if (classDeclaration.EXTENDS() != null) {
                 classInfo.superType = (ClassAsmType) parseType(classDeclaration.typeType(), classInfo);
             }
             return classInfo;
         }
 
-        public static ClassInfo fromContext(AssemblyParser.InterfaceDeclarationContext interfaceDecl, @Nullable ClassInfo parent) {
+        public static ClassInfo fromContext(AssemblyParser.InterfaceDeclarationContext interfaceDecl, @Nullable AsmScope parent) {
             var type = new ClassAsmType(interfaceDecl.IDENTIFIER().getText(), List.of());
             return new ClassInfo(
                     parent,
@@ -140,7 +184,7 @@ public class Assembler {
             );
         }
 
-        public static ClassInfo fromContext(AssemblyParser.EnumDeclarationContext classDeclaration, @Nullable ClassInfo parent) {
+        public static ClassInfo fromContext(AssemblyParser.EnumDeclarationContext classDeclaration, @Nullable AsmScope parent) {
             var type = new ClassAsmType(classDeclaration.IDENTIFIER().getText(), List.of());
             return new ClassInfo(
                     parent,
@@ -158,6 +202,25 @@ public class Assembler {
             return type.name();
         }
 
+        public String rawName() {
+            return type.rawName;
+        }
+
+        @Nullable
+        @Override
+        public AsmScope parent() {
+            return parent;
+        }
+
+        public List<String> typeParameters() {
+            return typeParameters;
+        }
+
+        @Override
+        public AsmGenericDeclaration genericDeclaration() {
+            return type;
+        }
+
         @Override
         public String toString() {
             return "ClassInfo[" +
@@ -168,20 +231,108 @@ public class Assembler {
 
     }
 
-    private class Preprocessor extends AssemblyParserBaseVisitor<Void> {
+    private record MethodInfo(@Nullable ClassInfo parent, MethodKey method,
+                              List<String> typeParameters) implements AsmScope {
+        private MethodInfo(@Nullable ClassInfo parent, MethodKey method, List<String> typeParameters) {
+            this.parent = parent;
+            this.method = method;
+            this.typeParameters = new ArrayList<>(typeParameters);
+        }
 
-        private ClassInfo currentClass;
+        @Override
+        public AsmGenericDeclaration genericDeclaration() {
+            return method;
+        }
+
+    }
+
+    private class VisitorBase extends AssemblyParserBaseVisitor<Void> {
+
+        protected AsmScope scope;
+
+        @Override
+        public Void visitClassDeclaration(AssemblyParser.ClassDeclarationContext ctx) {
+            scope = ClassInfo.fromContext(ctx, scope);
+            super.visitClassDeclaration(ctx);
+            scope = scope.parent();
+            return null;
+        }
+
+        @Override
+        public Void visitEnumDeclaration(AssemblyParser.EnumDeclarationContext ctx) {
+            scope = ClassInfo.fromContext(ctx, scope);
+            super.visitEnumDeclaration(ctx);
+            scope = scope.parent();
+            return null;
+        }
+
+        @Override
+        public Void visitInterfaceDeclaration(AssemblyParser.InterfaceDeclarationContext ctx) {
+            scope = ClassInfo.fromContext(ctx, scope);
+            super.visitInterfaceDeclaration(ctx);
+            scope = scope.parent();
+            return null;
+        }
+
+        @Override
+        public Void visitMethodDeclaration(AssemblyParser.MethodDeclarationContext ctx) {
+            visitFunction(ctx.IDENTIFIER().getText(),
+                    ctx.typeParameters(),
+                    ctx.formalParameters().formalParameterList(),
+                    ctx.typeTypeOrVoid(),
+                    ctx.methodBody().block(),
+                    false, () -> super.visitMethodDeclaration(ctx));
+            return null;
+        }
+
+        @Override
+        public Void visitConstructorDeclaration(AssemblyParser.ConstructorDeclarationContext ctx) {
+            visitFunction(ctx.IDENTIFIER().getText(),
+                    ctx.typeParameters(),
+                    ctx.formalParameters().formalParameterList(),
+                    null,
+                    ctx.block(),
+                    true, () -> super.visitConstructorDeclaration(ctx));
+            return null;
+        }
+
+        @Override
+        public Void visitInterfaceMethodDeclaration(AssemblyParser.InterfaceMethodDeclarationContext ctx) {
+            var commonDecl = ctx.interfaceCommonBodyDeclaration();
+            visitFunction(commonDecl.IDENTIFIER().getText(),
+                    ctx.typeParameters(),
+                    commonDecl.formalParameters().formalParameterList(),
+                    commonDecl.typeTypeOrVoid(),
+                    null,
+                    false, () -> super.visitInterfaceMethodDeclaration(ctx));
+            return null;
+        }
+
+        protected void visitFunction(String name,
+                                     @Nullable AssemblyParser.TypeParametersContext typeParameters,
+                                     @Nullable AssemblyParser.FormalParameterListContext formalParameterList,
+                                     @Nullable AssemblyParser.TypeTypeOrVoidContext returnType,
+                                     @Nullable AssemblyParser.BlockContext block,
+                                     boolean isConstructor, Runnable processBody) {
+            scope = createMethodInfo(scope, name, typeParameters);
+            processBody.run();
+            scope = scope.parent();
+        }
+
+    }
+
+    private class Preprocessor extends VisitorBase {
 
         @Override
         public Void visitClassDeclaration(AssemblyParser.ClassDeclarationContext ctx) {
             var classInfo = enterClass(ctx);
             typeIds.put(classInfo.type, TmpId.randomString());
             var supers = new ArrayList<ClassAsmType>();
-            superTypes.put(classInfo.type.rawName, supers);
-            if(ctx.EXTENDS() != null)
-                supers.add((ClassAsmType) parseType(ctx.typeType(), currentClass));
-            if(ctx.IMPLEMENTS() != null)
-                ctx.typeList().typeType().forEach(t -> supers.add((ClassAsmType) parseType(t, currentClass)));
+            superTypes.put(classInfo.rawName(), supers);
+            if (ctx.EXTENDS() != null)
+                supers.add((ClassAsmType) parseType(ctx.typeType(), scope));
+            if (ctx.IMPLEMENTS() != null)
+                ctx.typeList().typeType().forEach(t -> supers.add((ClassAsmType) parseType(t, scope)));
             super.visitClassDeclaration(ctx);
             exitClass();
             return null;
@@ -190,10 +341,10 @@ public class Assembler {
         @Override
         public Void visitEnumDeclaration(AssemblyParser.EnumDeclarationContext ctx) {
             var classInfo = enterClass(ctx);
-            var supers = addSupers(classInfo.type.rawName);
+            var supers = addSupers(classInfo.rawName());
             var pEnumType = new ClassAsmType("Enum", List.of(classInfo.type));
             supers.add(pEnumType);
-            if(ctx.IMPLEMENTS() != null)
+            if (ctx.IMPLEMENTS() != null)
                 forEachClass(ctx.typeList(), supers::add);
             typeIds.put(classInfo.type, TmpId.randomString());
             typeIds.put(pEnumType, TmpId.randomString());
@@ -205,8 +356,8 @@ public class Assembler {
         @Override
         public Void visitInterfaceDeclaration(AssemblyParser.InterfaceDeclarationContext ctx) {
             var classInfo = enterClass(ctx);
-            var supers = addSupers(classInfo.type.rawName);
-            if(ctx.EXTENDS() != null)
+            var supers = addSupers(classInfo.rawName());
+            if (ctx.EXTENDS() != null)
                 forEachClass(ctx.typeList(), supers::add);
             typeIds.put(classInfo.type, TmpId.randomString());
             super.visitInterfaceDeclaration(ctx);
@@ -221,7 +372,7 @@ public class Assembler {
         }
 
         private void forEachClass(AssemblyParser.TypeListContext typeList, Consumer<ClassAsmType> action) {
-            typeList.typeType().forEach(t -> action.accept((ClassAsmType) parseType(t, currentClass)));
+            typeList.typeType().forEach(t -> action.accept((ClassAsmType) parseType(t, scope)));
         }
 
         @Override
@@ -232,28 +383,8 @@ public class Assembler {
         }
 
         @Override
-        public Void visitConstructorDeclaration(AssemblyParser.ConstructorDeclarationContext ctx) {
-            processFunction(ctx.IDENTIFIER().getText(), ctx.formalParameters());
-            return super.visitConstructorDeclaration(ctx);
-        }
-
-        @Override
-        public Void visitMethodDeclaration(AssemblyParser.MethodDeclarationContext ctx) {
-            var name = ctx.IDENTIFIER().getText();
-            processFunction(name, ctx.formalParameters());
-            return super.visitMethodDeclaration(ctx);
-        }
-
-        @Override
-        public Void visitInterfaceMethodDeclaration(AssemblyParser.InterfaceMethodDeclarationContext ctx) {
-            var name = ctx.interfaceCommonBodyDeclaration().IDENTIFIER().getText();
-            processFunction(name, ctx.interfaceCommonBodyDeclaration().formalParameters());
-            return super.visitInterfaceMethodDeclaration(ctx);
-        }
-
-        @Override
         public Void visitTypeParameter(AssemblyParser.TypeParameterContext ctx) {
-            var typeVariable = new AsmTypeVariable(currentClass().name(), ctx.IDENTIFIER().getText());
+            var typeVariable = new AsmTypeVariable(scope.genericDeclaration(), ctx.IDENTIFIER().getText());
             typeIds.put(typeVariable, TmpId.randomString());
             return super.visitTypeParameter(ctx);
         }
@@ -261,7 +392,7 @@ public class Assembler {
         @Override
         public Void visitTypeType(AssemblyParser.TypeTypeContext ctx) {
             if (ctx.primitiveType() == null && ctx.classOrInterfaceType() == null) {
-                var type = parseType(ctx, currentClass);
+                var type = parseType(ctx, scope);
                 if (!typeIds.containsKey(type))
                     typeIds.put(type, TmpId.randomString());
             }
@@ -270,52 +401,54 @@ public class Assembler {
 
         @Override
         public Void visitClassOrInterfaceType(AssemblyParser.ClassOrInterfaceTypeContext ctx) {
-            var type = parseClassType(ctx, currentClass);
-            if (type instanceof ClassAsmType classAsmType && classAsmType.isParameterized() && !typeIds.containsKey(type))
+            var type = parseClassType(ctx, scope);
+            if (type instanceof ClassAsmType classAsmType && classAsmType.isParameterized() && !typeIds.containsKey(type)) {
+                logger.info("generating id for parameterized type: {}", ctx.getText());
                 typeIds.put(type, TmpId.randomString());
+            }
             return super.visitClassOrInterfaceType(ctx);
         }
 
-        private void processFunction(String name, AssemblyParser.FormalParametersContext parameters) {
-            List<AsmType> types = parameters.formalParameterList() != null ? NncUtils.map(
-                    parameters.formalParameterList().formalParameter(),
-                    p -> parseType(p.typeType(), currentClass)
-            ) : List.of();
-            methodIds.put(new MethodKey(currentClass().name(), name, types), TmpId.randomString());
+        @Override
+        protected void visitFunction(String name, @Nullable AssemblyParser.TypeParametersContext typeParameters, AssemblyParser.FormalParameterListContext formalParameterList, AssemblyParser.TypeTypeOrVoidContext returnType, AssemblyParser.BlockContext block, boolean isConstructor, Runnable processBody) {
+            methodIds.put(new MethodKey(currentClass().rawName(), name), TmpId.randomString());
+            super.visitFunction(name, typeParameters, formalParameterList, returnType, block, isConstructor, processBody);
         }
 
         private ClassInfo enterClass(AssemblyParser.ClassDeclarationContext classDecl) {
-            return currentClass = ClassInfo.fromContext(classDecl, currentClass);
+            var classInfo = ClassInfo.fromContext(classDecl, scope);
+            scope = classInfo;
+            return classInfo;
         }
 
         private ClassInfo enterClass(AssemblyParser.EnumDeclarationContext enumDecl) {
-            return currentClass = ClassInfo.fromContext(enumDecl, currentClass);
+            var classInfo = ClassInfo.fromContext(enumDecl, scope);
+            scope = classInfo;
+            return classInfo;
         }
 
         private ClassInfo enterClass(AssemblyParser.InterfaceDeclarationContext interfaceDecl) {
-            return currentClass = ClassInfo.fromContext(interfaceDecl, currentClass);
+            var classInfo = ClassInfo.fromContext(interfaceDecl, scope);
+            scope = classInfo;
+            return classInfo;
         }
 
         private void exitClass() {
-            currentClass = currentClass.parent;
+            scope = scope.parent();
         }
 
         private ClassInfo currentClass() {
-            return requireNonNull(currentClass);
+            return scope.getAncestor(ClassInfo.class);
         }
 
     }
 
-    private class Emitter extends AssemblyParserBaseVisitor<Void> {
+    private class Emitter extends VisitorBase {
 
         private final LinkedList<ClassTypeDTOBuilder> builders = new LinkedList<>();
         private final LinkedList<Set<String>> modsStack = new LinkedList<>();
-        private ClassInfo currentClass;
+        //        private ClassInfo currentClass;
         private final LinkedList<MethodDTOBuilder> staticBuilders = new LinkedList<>();
-
-//        private final LinkedList<MethodDTOBuilder> methodBuilders = new LinkedList<>();
-//        private final LinkedList<ScopeDTO> scopes = new LinkedList<>();
-
         private int nextNodeNum = 0;
 
         @Override
@@ -358,6 +491,7 @@ public class Assembler {
                                   @Nullable AssemblyParser.TypeListContext interfaces,
                                   Runnable processBody
         ) {
+            var type = new ClassAsmType(name, List.of());
             var builder = ClassTypeDTOBuilder.newBuilder(name)
                     .code(name)
                     .struct(isStruct)
@@ -365,27 +499,28 @@ public class Assembler {
                     .typeParameterIds(
                             typeParameters != null ?
                                     NncUtils.map(typeParameters.typeParameter(),
-                                            tp -> getTypeId(new AsmTypeVariable(name, tp.IDENTIFIER().getText()))) :
+                                            tp -> getTypeId(new AsmTypeVariable(type, tp.IDENTIFIER().getText()))) :
                                     List.of()
                     );
             builders.push(builder);
-            currentClass = new ClassInfo(
-                    currentClass,
-                    new ClassAsmType(name, List.of()),
+            var currentClass = new ClassInfo(
+                    scope,
+                    type,
                     typeParameters != null ?
                             NncUtils.map(typeParameters.typeParameter(), tp -> tp.IDENTIFIER().getText()) :
                             List.of(),
                     typeCategory.isEnum()
             );
+            scope = currentClass;
             builder.typeCategory(typeCategory.code());
             if (typeCategory.isEnum())
                 currentClass.superType = new ClassAsmType("Enum", List.of(currentClass.type));
-            else if(superType != null)
+            else if (superType != null)
                 currentClass.superType = (ClassAsmType) parseType(superType, currentClass);
-            if(currentClass.superType != null)
+            if (currentClass.superType != null)
                 builder.superClassId(getTypeId(currentClass.superType));
-            if(interfaces != null)
-                builder.interfaceIds(NncUtils.map(interfaces.typeType(), t -> getTypeId(parseType(t, currentClass))));
+            if (interfaces != null)
+                builder.interfaceIds(NncUtils.map(interfaces.typeType(), t -> getTypeId(parseType(t, scope))));
             var staticBuilder = MethodDTOBuilder.newBuilder(getTypeId(currentClass.type), "类型初始化")
                     .isStatic(true)
                     .id(TmpId.randomString())
@@ -396,7 +531,7 @@ public class Assembler {
             processBody.run();
             staticBuilder.addNode(NodeDTOFactory.createReturnNode(NncUtils.randomNonNegative(), "return", null));
             builder.addMethod(staticBuilder.build());
-            currentClass = currentClass.parent;
+            scope = currentClass.parent;
             types.add(builder.build());
             staticBuilders.pop();
             builders.pop();
@@ -406,12 +541,20 @@ public class Assembler {
             return requireNonNull(staticBuilders.peek());
         }
 
+        private ClassInfo currentClass() {
+            var s = scope;
+            while (s != null && !(s instanceof ClassInfo)) {
+                s = s.parent();
+            }
+            return Objects.requireNonNull((ClassInfo) s, "Not in any class scope");
+        }
+
         @Override
         public Void visitEnumConstant(AssemblyParser.EnumConstantContext ctx) {
             var classBuilder = builder();
             var staticBuilder = staticBuilder();
             var name = ctx.IDENTIFIER().getText();
-            var typeId = getTypeId(currentClass.type);
+            var typeId = getTypeId(currentClass().type);
             classBuilder.addStaticField(
                     FieldDTOBuilder.newBuilder(name, typeId)
                             .id(TmpId.randomString())
@@ -421,14 +564,15 @@ public class Assembler {
             );
             var args = new ArrayList<ValueDTO>();
             args.add(ValueDTOFactory.createConstant(name));
-            args.add(ValueDTOFactory.createConstant(currentClass.nextEnumConstantOrdinal()));
+            args.add(ValueDTOFactory.createConstant(currentClass().nextEnumConstantOrdinal()));
             if (ctx.arguments() != null && ctx.arguments().expressionList() != null)
                 NncUtils.forEach(ctx.arguments().expressionList().expression(), e -> args.add(parseValue(e)));
             staticBuilder.addNode(NodeDTOFactory.createUnresolvedNewObjectNode(
                     NncUtils.randomNonNegative(),
                     "value" + name,
                     typeId,
-                    currentClass.name(),
+                    currentClass().name(),
+                    List.of(),
                     args,
                     false,
                     false
@@ -445,8 +589,8 @@ public class Assembler {
         @Override
         public Void visitTypeParameter(AssemblyParser.TypeParameterContext ctx) {
             var name = ctx.IDENTIFIER().getText();
-            var typeVariable = new AsmTypeVariable(currentClass.name(), name);
-            var boundId = ctx.typeType() != null ? getTypeId(parseType(ctx.typeType(), currentClass)) : null;
+            var typeVariable = new AsmTypeVariable(scope.genericDeclaration(), name);
+            var boundId = ctx.typeType() != null ? getTypeId(parseType(ctx.typeType(), scope)) : null;
             types.add(new TypeDTO(
                     getTypeId(typeVariable),
                     name,
@@ -455,8 +599,8 @@ public class Assembler {
                     false,
                     false,
                     new TypeVariableParam(
-                            getTypeId(currentClass.type),
-                            currentClass.typeParameters.indexOf(name),
+                            getGenericDeclarationId(typeVariable.owner),
+                            scope.typeParameters().indexOf(name),
                             boundId != null ? List.of(boundId) : List.of()
                     )
             ));
@@ -466,7 +610,7 @@ public class Assembler {
         @Override
         public Void visitFieldDeclaration(AssemblyParser.FieldDeclarationContext ctx) {
             var classBuilder = builder();
-            var typeId = getTypeId(parseType(ctx.typeType(), currentClass));
+            var typeId = getTypeId(parseType(ctx.typeType(), scope));
             var name = ctx.IDENTIFIER().getText();
             var mods = currentMods();
             var fieldBuilder = FieldDTOBuilder.newBuilder(name, typeId)
@@ -486,25 +630,9 @@ public class Assembler {
         }
 
         @Override
-        public Void visitConstructorDeclaration(AssemblyParser.ConstructorDeclarationContext ctx) {
-            processFunction(ctx.IDENTIFIER().getText(), ctx.formalParameters().formalParameterList(),
-                    null, ctx.block(), currentMods(), true);
-            return null;
-        }
-
-        @Override
-        public Void visitMethodDeclaration(AssemblyParser.MethodDeclarationContext ctx) {
-            processFunction(ctx.IDENTIFIER().getText(), ctx.formalParameters().formalParameterList(),
-                    ctx.typeTypeOrVoid(), ctx.methodBody().block(), currentMods(), false);
-            return null;
-        }
-
-        @Override
         public Void visitInterfaceMethodDeclaration(AssemblyParser.InterfaceMethodDeclarationContext ctx) {
             modsStack.push(NncUtils.mapUnique(ctx.interfaceMethodModifier(), RuleContext::getText));
-            var commonDecl = ctx.interfaceCommonBodyDeclaration();
-            processFunction(commonDecl.IDENTIFIER().getText(), commonDecl.formalParameters().formalParameterList(),
-                    commonDecl.typeTypeOrVoid(), null, currentMods(), false);
+            super.visitInterfaceMethodDeclaration(ctx);
             modsStack.pop();
             return null;
         }
@@ -517,104 +645,116 @@ public class Assembler {
             return null;
         }
 
-        private void processFunction(String name,
-                                     @Nullable AssemblyParser.FormalParameterListContext formalParameterList,
-                                     @Nullable AssemblyParser.TypeTypeOrVoidContext returnType,
-                                     @Nullable AssemblyParser.BlockContext block,
-                                     Set<String> mods, boolean isConstructor) {
+        @Override
+        protected void visitFunction(String name, @Nullable AssemblyParser.TypeParametersContext typeParameters, @Nullable AssemblyParser.FormalParameterListContext formalParameterList, @Nullable AssemblyParser.TypeTypeOrVoidContext returnType, @Nullable AssemblyParser.BlockContext block, boolean isConstructor, Runnable processBody) {
             var classBuilder = builder();
-            List<AssemblyParser.FormalParameterContext> params = NncUtils.getOrElse(
-                    formalParameterList, AssemblyParser.FormalParameterListContext::formalParameter, List.of()
-            );
-            var paramTypes = NncUtils.map(params, p -> parseType(p.typeType(), currentClass));
-            var methodBuilder = MethodDTOBuilder.newBuilder(classBuilder.getId(), name)
-                    .code(name)
-                    .isAbstract(block == null)
-                    .id(methodIds.get(new MethodKey(classBuilder.getName(), name, paramTypes)))
-                    .access(getAccess(mods).code());
-            if(!isConstructor) {
-                var overriddenIds = new ArrayList<String>();
-                var supers = new LinkedList<>(superTypes.get(currentClass.type.rawName));
-                while(!supers.isEmpty()) {
-                    var s = supers.poll();
-                    var overriddenId = methodIds.get(new MethodKey(s.rawName, name, paramTypes));
-                    if(overriddenId != null)
-                        overriddenIds.add(overriddenId);
-                    else
-                        supers.addAll(superTypes.getOrDefault(s.rawName, List.of()));
-                }
-                methodBuilder.overriddenIds(overriddenIds);
-            }
-            if (isConstructor && currentClass.isEnum) {
-                methodBuilder.addParameter(ParameterDTO.create(
-                        TmpId.randomString(),
-                        "_name",
-                        "_name",
-                        getTypeId(new PrimitiveAsmType(AsmPrimitiveKind.STRING))
-                ));
-                methodBuilder.addParameter(ParameterDTO.create(
-                        TmpId.randomString(),
-                        "_ordinal",
-                        "_ordinal",
-                        getTypeId(new PrimitiveAsmType(AsmPrimitiveKind.LONG))
-                ));
-            }
-            for (var param : params) {
-                methodBuilder.addParameter(
-                        ParameterDTO.create(
-                                TmpId.randomString(),
-                                param.IDENTIFIER().getText(),
-                                param.IDENTIFIER().getText(),
-                                getTypeId(parseType(param.typeType(), currentClass))
-                        )
+            var methodKey = new MethodKey(classBuilder.getName(), name);
+            List<String> typeParams = typeParameters != null ? NncUtils.map(typeParameters.typeParameter(), tv -> tv.IDENTIFIER().getText()) : List.of();
+            scope = new MethodInfo((ClassInfo) scope, methodKey, typeParams);
+            try {
+                List<AssemblyParser.FormalParameterContext> params = NncUtils.getOrElse(
+                        formalParameterList, AssemblyParser.FormalParameterListContext::formalParameter, List.of()
                 );
-            }
-            if (isConstructor) {
-                methodBuilder.isConstructor(true);
-                methodBuilder.returnTypeId(classBuilder.getId());
-            } else
-                methodBuilder.returnTypeId(getTypeId(parseType(requireNonNull(returnType), currentClass)));
-            var isStatic = mods.contains(Modifiers.STATIC);
-            if (isStatic)
-                methodBuilder.isStatic(true);
-            if (block != null) {
-                if (!isStatic)
-                    methodBuilder.addNode(NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "this", classBuilder.getId()));
-                methodBuilder.autoCreateInputNode(NncUtils.randomNonNegative(), "_input");
-                for (var parameter : methodBuilder.getParameters()) {
-                    methodBuilder.addNode(NodeDTOFactory.createValueNode(
-                            NncUtils.randomNonNegative(),
-                            parameter.name(),
-                            ValueDTOFactory.createReference("_input." + parameter.name())
-                    ));
+                var mods = currentMods();
+                var methodBuilder = MethodDTOBuilder.newBuilder(classBuilder.getId(), name)
+                        .code(name)
+                        .isAbstract(block == null)
+                        .id(getMethodId(methodKey))
+                        .access(getAccess(mods).code());
+                if (typeParameters != null) {
+                    methodBuilder.typeParameterIds(
+                            NncUtils.map(typeParameters.typeParameter(), tv -> getTypeId(new AsmTypeVariable(methodKey, tv.IDENTIFIER().getText())))
+                    );
                 }
+                if (!isConstructor) {
+                    var overriddenIds = new ArrayList<String>();
+                    var supers = new LinkedList<>(superTypes.get(currentClass().type.rawName));
+                    while (!supers.isEmpty()) {
+                        var s = supers.poll();
+                        var overriddenId = methodIds.get(new MethodKey(s.rawName, name));
+                        if (overriddenId != null)
+                            overriddenIds.add(overriddenId);
+                        else
+                            supers.addAll(superTypes.getOrDefault(s.rawName, List.of()));
+                    }
+                    methodBuilder.overriddenIds(overriddenIds);
+                }
+                var currentClass = currentClass();
                 if (isConstructor && currentClass.isEnum) {
-                    methodBuilder.addNode(NodeDTOFactory.createUpdateObjectNode(
-                            NncUtils.randomNonNegative(),
-                            nextNodeName(),
-                            ValueDTOFactory.createReference("this"),
-                            List.of(
-                                    new UpdateFieldDTO(null, "名称", UpdateOp.SET.code(), ValueDTOFactory.createReference("_input._name")),
-                                    new UpdateFieldDTO(null, "序号", UpdateOp.SET.code(), ValueDTOFactory.createReference("_input._ordinal"))
+                    methodBuilder.addParameter(ParameterDTO.create(
+                            TmpId.randomString(),
+                            "_name",
+                            "_name",
+                            getTypeId(new PrimitiveAsmType(AsmPrimitiveKind.STRING))
+                    ));
+                    methodBuilder.addParameter(ParameterDTO.create(
+                            TmpId.randomString(),
+                            "_ordinal",
+                            "_ordinal",
+                            getTypeId(new PrimitiveAsmType(AsmPrimitiveKind.LONG))
+                    ));
+                }
+                for (var param : params) {
+                    methodBuilder.addParameter(
+                            ParameterDTO.create(
+                                    TmpId.randomString(),
+                                    param.IDENTIFIER().getText(),
+                                    param.IDENTIFIER().getText(),
+                                    getTypeId(parseType(param.typeType(), scope))
                             )
-                    ));
+                    );
                 }
-                processMethodBlock(block, methodBuilder);
                 if (isConstructor) {
-                    methodBuilder.addNode(NodeDTOFactory.createReturnNode(
-                            NncUtils.randomNonNegative(),
-                            nextNodeName(),
-                            ValueDTOFactory.createReference("this")
-                    ));
-                } else if (returnType.VOID() != null) {
-                    methodBuilder.addNode(NodeDTOFactory.createReturnNode(
-                            NncUtils.randomNonNegative(),
-                            nextNodeName(),
-                            null
-                    ));
+                    methodBuilder.isConstructor(true);
+                    methodBuilder.returnTypeId(classBuilder.getId());
+                } else
+                    methodBuilder.returnTypeId(getTypeId(parseType(requireNonNull(returnType), scope)));
+                var isStatic = mods.contains(Modifiers.STATIC);
+                if (isStatic)
+                    methodBuilder.isStatic(true);
+                if (block != null) {
+                    if (!isStatic)
+                        methodBuilder.addNode(NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "this", classBuilder.getId()));
+                    methodBuilder.autoCreateInputNode(NncUtils.randomNonNegative(), "_input");
+                    for (var parameter : methodBuilder.getParameters()) {
+                        methodBuilder.addNode(NodeDTOFactory.createValueNode(
+                                NncUtils.randomNonNegative(),
+                                parameter.name(),
+                                ValueDTOFactory.createReference("_input." + parameter.name())
+                        ));
+                    }
+                    if (isConstructor && currentClass.isEnum) {
+                        methodBuilder.addNode(NodeDTOFactory.createUpdateObjectNode(
+                                NncUtils.randomNonNegative(),
+                                nextNodeName(),
+                                ValueDTOFactory.createReference("this"),
+                                List.of(
+                                        new UpdateFieldDTO(null, "名称", UpdateOp.SET.code(), ValueDTOFactory.createReference("_input._name")),
+                                        new UpdateFieldDTO(null, "序号", UpdateOp.SET.code(), ValueDTOFactory.createReference("_input._ordinal"))
+                                )
+                        ));
+                    }
+                    processMethodBlock(block, methodBuilder);
+                    if (isConstructor) {
+                        methodBuilder.addNode(NodeDTOFactory.createReturnNode(
+                                NncUtils.randomNonNegative(),
+                                nextNodeName(),
+                                ValueDTOFactory.createReference("this")
+                        ));
+                    } else if (returnType.VOID() != null) {
+                        methodBuilder.addNode(NodeDTOFactory.createReturnNode(
+                                NncUtils.randomNonNegative(),
+                                nextNodeName(),
+                                null
+                        ));
+                    }
                 }
+                classBuilder.addMethod(methodBuilder.build());
+                if (typeParameters != null)
+                    typeParameters.accept(this);
+            } finally {
+                scope = scope.parent();
             }
-            classBuilder.addMethod(methodBuilder.build());
         }
 
         private Set<String> currentMods() {
@@ -643,6 +783,7 @@ public class Assembler {
 
         private NodeDTO processStatement(String name, AssemblyParser.StatementContext statement) {
             try {
+                var currentClass = currentClass();
                 if (statement.statementExpression != null) {
                     return NodeDTOFactory.createValueNode(
                             NncUtils.randomNonNegative(),
@@ -676,11 +817,12 @@ public class Assembler {
                     );
                 }
                 if (statement.NEW() != null || statement.UNEW() != null || statement.ENEW() != null) {
-                    var type = (ClassAsmType) parseClassType(statement.creator().classOrInterfaceType(), currentClass);
+                    var creator = statement.creator();
+                    var type = (ClassAsmType) parseClassType(creator.classOrInterfaceType(), currentClass);
                     var methodName = type.rawName;
                     List<AssemblyParser.ExpressionContext> arguments =
                             NncUtils.getOrElse(
-                                    statement.creator().arguments().expressionList(),
+                                    creator.arguments().expressionList(),
                                     AssemblyParser.ExpressionListContext::expression,
                                     List.of()
                             );
@@ -689,6 +831,8 @@ public class Assembler {
                             name,
                             getTypeId(type),
                             methodName,
+                            creator.typeArguments() != null ?
+                                NncUtils.map(creator.typeArguments().typeType(), t -> getTypeId(parseType(t, scope))) : List.of(),
                             NncUtils.map(arguments, arg -> ValueDTOFactory.createExpression(parseExpression(arg))),
                             statement.UNEW() != null,
                             statement.ENEW() != null
@@ -700,25 +844,32 @@ public class Assembler {
                             NncUtils.map(methodCall.expressionList().expression(), this::parseValue) : List.of();
                     ValueDTO self;
                     String methodName;
-                    if(methodCall.IDENTIFIER() != null) {
+                    String typeId = null;
+                    if (methodCall.IDENTIFIER() != null) {
                         methodName = methodCall.IDENTIFIER().getText();
-                        self = parseValue(methodCall.expression());
-                    }
-                    else if(methodCall.SUPER() != null) {
+                        var expr = parseExpression(methodCall.expression());
+                        if(CLASS_NAME_PTN.matcher(expr).matches()) {
+                            typeId = getTypeId(ClassAsmType.create(expr));
+                            self = null;
+                            logger.info("Detecting static method call: " + methodCall.getText());
+                        }
+                        else
+                            self = ValueDTOFactory.createExpression(expr);
+                    } else if (methodCall.SUPER() != null) {
                         methodName = requireNonNull(currentClass.superType).rawName;
                         self = ValueDTOFactory.createReference("this");
-                    }
-                    else if(methodCall.THIS() != null) {
+                    } else if (methodCall.THIS() != null) {
                         methodName = currentClass.type.rawName;
                         self = ValueDTOFactory.createReference("this");
-                    }
-                    else
+                    } else
                         throw new InternalException("methodCall syntax error: " + methodCall.getText());
                     return NodeDTOFactory.createUnresolvedMethodCallNode(
                             NncUtils.randomNonNegative(),
                             name,
                             methodName,
-                            null,
+                            methodCall.typeArguments() != null ?
+                                    NncUtils.map(methodCall.typeArguments().typeType(), t -> getTypeId(parseType(t, scope))) : List.of(),
+                            typeId,
                             self,
                             arguments
                     );
@@ -828,22 +979,12 @@ public class Assembler {
 
     }
 
-    private class CompositeTypeEmitter extends AssemblyParserBaseVisitor<Void> {
-
-        private ClassInfo currentClass;
-
-        @Override
-        public Void visitClassDeclaration(AssemblyParser.ClassDeclarationContext ctx) {
-            currentClass = ClassInfo.fromContext(ctx, currentClass);
-            super.visitClassDeclaration(ctx);
-            currentClass = currentClass.parent;
-            return null;
-        }
+    private class CompositeTypeEmitter extends VisitorBase {
 
         @Override
         public Void visitEnumDeclaration(AssemblyParser.EnumDeclarationContext ctx) {
-            currentClass = ClassInfo.fromContext(ctx, currentClass);
-            var pEnumType = new ClassAsmType("Enum", List.of(currentClass.type));
+            var type = ClassAsmType.create(ctx.IDENTIFIER().getText());
+            var pEnumType = new ClassAsmType("Enum", List.of(type));
             var pEnumTypeId = getTypeId(pEnumType);
             types.add(new TypeDTO(
                     pEnumTypeId,
@@ -855,30 +996,20 @@ public class Assembler {
                     new PTypeDTO(
                             pEnumTypeId,
                             getTypeId(ClassAsmType.create("Enum")),
-                            List.of(getTypeId(currentClass.type)),
+                            List.of(getTypeId(type)),
                             List.of(),
                             List.of(),
                             List.of(),
                             List.of()
                     )
             ));
-            super.visitEnumDeclaration(ctx);
-            currentClass = currentClass.parent;
-            return null;
-        }
-
-        @Override
-        public Void visitInterfaceDeclaration(AssemblyParser.InterfaceDeclarationContext ctx) {
-            currentClass = ClassInfo.fromContext(ctx, currentClass);
-            super.visitInterfaceDeclaration(ctx);
-            currentClass = currentClass.parent;
-            return null;
+            return super.visitEnumDeclaration(ctx);
         }
 
         @Override
         public Void visitTypeType(AssemblyParser.TypeTypeContext ctx) {
             if (ctx.classOrInterfaceType() == null) {
-                var type = parseType(ctx, currentClass);
+                var type = parseType(ctx, scope);
                 if (!compositeTypes.containsKey(type)) {
                     var id = getTypeId(type);
                     var typeDTO = switch (type) {
@@ -934,7 +1065,7 @@ public class Assembler {
 
         @Override
         public Void visitClassOrInterfaceType(AssemblyParser.ClassOrInterfaceTypeContext ctx) {
-            var type = parseClassType(ctx, currentClass);
+            var type = parseClassType(ctx, scope);
             if (type instanceof ClassAsmType classAsmType && classAsmType.isParameterized() && !compositeTypes.containsKey(type)) {
                 var id = getTypeId(classAsmType);
                 compositeTypes.put(type, new TypeDTO(
@@ -969,23 +1100,25 @@ public class Assembler {
         return parser.compilationUnit();
     }
 
-    private AsmType parseType(AssemblyParser.TypeTypeOrVoidContext typeTypeOrVoid, ClassInfo currentClass) {
+    private AsmType parseType(AssemblyParser.TypeTypeOrVoidContext typeTypeOrVoid, AsmScope scope) {
         if (typeTypeOrVoid.VOID() != null)
             return new PrimitiveAsmType(AsmPrimitiveKind.VOID);
-        return parseType(typeTypeOrVoid.typeType(), currentClass);
+        return parseType(typeTypeOrVoid.typeType(), scope);
     }
 
-    private static AsmType parseType(AssemblyParser.TypeTypeContext typeType, ClassInfo currentClass) {
-        if(typeType.ANY() != null)
+    private static AsmType parseType(AssemblyParser.TypeTypeContext typeType, AsmScope scope) {
+        if (typeType.ANY() != null)
             return AnyAsmType.INSTANCE;
+        if (typeType.NEVER() != null)
+            return NeverAsmType.INSTANCE;
         if (typeType.primitiveType() != null)
             return parsePrimitiveType(typeType.primitiveType());
         if (typeType.classOrInterfaceType() != null) {
-            return parseClassType(typeType.classOrInterfaceType(), currentClass);
+            return parseClassType(typeType.classOrInterfaceType(), scope);
         }
         if (typeType.arrayKind() != null) {
             var arrayKind = typeType.arrayKind();
-            var elementType = parseType(typeType.typeType(0), currentClass);
+            var elementType = parseType(typeType.typeType(0), scope);
             var kind = arrayKind.R() != null ? AsmArrayKind.READ_ONLY :
                     arrayKind.RW() != null ? AsmArrayKind.READ_WRITE :
                             arrayKind.C() != null ? AsmArrayKind.CHILD : null;
@@ -997,14 +1130,14 @@ public class Assembler {
         if (!typeType.BITOR().isEmpty()) {
             var members = NncUtils.map(
                     typeType.typeType(),
-                    typeType1 -> parseType(typeType1, currentClass)
+                    typeType1 -> parseType(typeType1, scope)
             );
             return new UnionAsmType(new HashSet<>(members));
         }
         if (!typeType.BITAND().isEmpty()) {
             var types = NncUtils.map(
                     typeType.typeType(),
-                    typeType1 -> parseType(typeType1, currentClass)
+                    typeType1 -> parseType(typeType1, scope)
             );
             return new IntersectionAsmType(new HashSet<>(types));
         }
@@ -1012,14 +1145,14 @@ public class Assembler {
             int numParams = typeType.typeType().size() - 1;
             var parameterTypes = NncUtils.map(
                     typeType.typeType().subList(0, numParams),
-                    typeType1 -> parseType(typeType1, currentClass)
+                    typeType1 -> parseType(typeType1, scope)
             );
-            var returnType = parseType(typeType.typeType(numParams), currentClass);
+            var returnType = parseType(typeType.typeType(numParams), scope);
             return new FunctionAsmType(parameterTypes, returnType);
         }
         if (typeType.LBRACK() != null) {
-            var lowerBound = parseType(typeType.typeType(0), currentClass);
-            var upperBound = parseType(typeType.typeType(1), currentClass);
+            var lowerBound = parseType(typeType.typeType(0), scope);
+            var upperBound = parseType(typeType.typeType(1), scope);
             return new UncertainAsmType(lowerBound, upperBound);
         }
         throw new InternalException("Unknown type: " + typeType.getText());
@@ -1048,19 +1181,19 @@ public class Assembler {
         return new PrimitiveAsmType(kind);
     }
 
-    private static AsmType parseClassType(AssemblyParser.ClassOrInterfaceTypeContext classOrInterfaceType, @Nullable ClassInfo currentClass) {
+    private static AsmType parseClassType(AssemblyParser.ClassOrInterfaceTypeContext classOrInterfaceType, @Nullable AsmScope scope) {
         var name = classOrInterfaceType.qualifiedName().getText();
         if (!name.contains(".")) {
-            var k = currentClass;
+            var k = scope;
             while (k != null) {
-                if (k.typeParameters.contains(name))
-                    return new AsmTypeVariable(k.name(), name);
-                k = k.parent;
+                if (k.typeParameters().contains(name))
+                    return new AsmTypeVariable(k.genericDeclaration(), name);
+                k = k.parent();
             }
         }
         List<AsmType> typeArguments = classOrInterfaceType.typeArguments() != null ? NncUtils.map(
                 classOrInterfaceType.typeArguments().typeType(),
-                typeType1 -> parseType(typeType1, currentClass)
+                typeType1 -> parseType(typeType1, scope)
         ) : List.of();
         return new ClassAsmType(name, typeArguments);
     }
@@ -1071,7 +1204,7 @@ public class Assembler {
 
     }
 
-    public record ClassAsmType(String rawName, List<AsmType> typeArguments) implements AsmType {
+    public record ClassAsmType(String rawName, List<AsmType> typeArguments) implements AsmType, AsmGenericDeclaration {
 
         public static ClassAsmType create(String name) {
             return new ClassAsmType(name, List.of());
@@ -1133,10 +1266,10 @@ public class Assembler {
         }
     }
 
-    public record AsmTypeVariable(String ownerName, String name) implements AsmType {
+    public record AsmTypeVariable(AsmGenericDeclaration owner, String name) implements AsmType {
         @Override
         public String name() {
-            return ownerName + "." + name;
+            return owner.name() + "." + name;
         }
     }
 
@@ -1147,6 +1280,16 @@ public class Assembler {
         @Override
         public String name() {
             return "any";
+        }
+    }
+
+    public record NeverAsmType() implements AsmType {
+
+        public static final NeverAsmType INSTANCE = new NeverAsmType();
+
+        @Override
+        public String name() {
+            return "never";
         }
     }
 
@@ -1187,7 +1330,18 @@ public class Assembler {
     private record FieldKey(String typeName, String fieldName) {
     }
 
-    private record MethodKey(String typeName, String methodName, List<AsmType> parameterTypes) {
+    private record MethodKey(String typeName, String methodName) implements AsmGenericDeclaration {
+
+        public String name() {
+            return typeName + "." + methodName; //+ "(" + NncUtils.join(parameterTypes, AsmType::name) + ")";
+        }
+
+    }
+
+    public interface AsmGenericDeclaration {
+
+        String name();
+
     }
 
     public List<TypeDTO> getAllTypes() {
@@ -1196,23 +1350,14 @@ public class Assembler {
         return allTypes;
     }
 
+    public List<ParameterizedFlowDTO> getParameterizedFlows() {
+        return List.of();
+    }
+
     public void logIds() {
         logger.info("Type IDs: {}", typeIds);
         logger.info("Field IDs: {}", fieldIds);
         logger.info("Method IDs: {}", methodIds);
-    }
-
-    public void logTypes(String file) {
-        try (var writer = new FileWriter(file)) {
-            var json = NncUtils.toJSONString(getAllTypes());
-            writer.write(json);
-        } catch (IOException e) {
-            throw new InternalException("fail to write to file: '" + file + "'");
-        }
-    }
-
-    public void writeTypes(String path) {
-
     }
 
 }

@@ -45,6 +45,7 @@ TRY:                'try';
 VOID:               'void';
 WHILE:              'while';
 ANY:                'any';
+NEVER:              'never';
 
 // Operators
 

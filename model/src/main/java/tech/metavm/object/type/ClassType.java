@@ -28,7 +28,7 @@ import static tech.metavm.util.NncUtils.*;
 @EntityType("Class类型")
 public class ClassType extends Type implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity {
 
-    public static final Logger debugLoggerGER = LoggerFactory.getLogger("Debug");
+    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     public static final IndexDef<ClassType> IDX_NAME = IndexDef.create(ClassType.class, "name");
 
@@ -494,6 +494,10 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public Method findMethodBySignatureString(String signatureString) {
         return methods.get(Flow::getSignatureString, signatureString);
+    }
+
+    public Method getMethodByCode(String code) {
+        return Objects.requireNonNull(findMethodByCode(code), () -> "Can not find method with code '" + code + "' in type '" + name + "'");
     }
 
     public @Nullable Method findMethodByCode(String code) {
@@ -1420,6 +1424,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     public void setMethods(List<Method> methods) {
         requireTrue(allMatch(methods, f -> f.getDeclaringType() == this));
         this.methods.resetChildren(methods);
+        rebuildMethodTable();
     }
 
     @Override

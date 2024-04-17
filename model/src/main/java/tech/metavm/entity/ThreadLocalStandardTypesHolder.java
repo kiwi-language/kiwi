@@ -2,6 +2,8 @@ package tech.metavm.entity;
 
 import tech.metavm.object.type.*;
 
+import java.util.List;
+
 public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
 
     private final ThreadLocal<GlobalStandardTypesHolder> TL = ThreadLocal.withInitial(GlobalStandardTypesHolder::new);
@@ -356,4 +358,18 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
         TL.get().setNullPointerExceptionType(nullPointerExceptionType);
     }
 
+    @Override
+    public void addParameterizedType(ClassType type) {
+        TL.get().addParameterizedType(type);
+    }
+
+    @Override
+    public ClassType getParameterizedType(ClassType template, List<Type> typeArguments) {
+        return TL.get().getParameterizedType(template, typeArguments);
+    }
+
+    @Override
+    public void clearParameterizedTypes() {
+        TL.get().clearParameterizedTypes();
+    }
 }
