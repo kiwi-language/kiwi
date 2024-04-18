@@ -1196,15 +1196,17 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             return tryResolveNonParameterizedMethod(methodRef);
     }
 
-    public Method resolveMethod(String code, List<Type> argumentTypes, boolean staticOnly) {
-        return Objects.requireNonNull(tryResolveMethod(code, argumentTypes, staticOnly), () ->
-                String.format("Can not find method %s(%s) in type %s", code,
+    public Method resolveMethod(String code, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly, ParameterizedFlowProvider parameterizedFlowProvider) {
+        return Objects.requireNonNull(tryResolveMethod(code, argumentTypes, typeArguments, staticOnly, parameterizedFlowProvider), () ->
+                String.format("Can not find method %s%s(%s) in type %s",
+                        NncUtils.isNotEmpty(typeArguments) ? "<" + NncUtils.join(typeArguments, Type::getName) + ">" : "",
+                        code,
                         NncUtils.join(argumentTypes, Type::getName, ","), getName()));
     }
 
-    public @Nullable Method tryResolveMethod(String code, List<Type> argumentTypes, boolean staticOnly) {
+    public @Nullable Method tryResolveMethod(String code, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly, ParameterizedFlowProvider parameterizedFlowProvider) {
         var candidates = new ArrayList<Method>();
-        getCallCandidates(code, argumentTypes, staticOnly, candidates);
+        getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates, parameterizedFlowProvider);
         out: for (Method m1 : candidates) {
             for (Method m2 : candidates) {
                 if(m1 != m2 && m1.isHiddenBy(m2))
@@ -1215,15 +1217,31 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return null;
     }
 
-    private void getCallCandidates(String code, List<Type> argumentTypes, boolean staticOnly, List<Method> candidates) {
+    private void getCallCandidates(String code,
+                                   List<Type> argumentTypes,
+                                   List<Type> typeArguments,
+                                   boolean staticOnly,
+                                   List<Method> candidates,
+                                   ParameterizedFlowProvider parameterizedFlowProvider) {
         methods.forEach(m -> {
-            if((m.isStatic() || !staticOnly) && m.matches(code, argumentTypes))
-                candidates.add(m);
+            if((m.isStatic() || !staticOnly) && code.equals(m.getCode()) && m.getParameters().size() == argumentTypes.size()){
+                if(NncUtils.isNotEmpty(typeArguments)) {
+                    if(m.getTypeParameters().size() == typeArguments.size()) {
+                        var pMethod = parameterizedFlowProvider.getParameterizedFlow(m, typeArguments);
+                        if (pMethod.matches(code, argumentTypes))
+                            candidates.add(pMethod);
+                    }
+                }
+                else {
+                    if(m.matches(code, argumentTypes))
+                        candidates.add(m);
+                }
+            }
         });
         if(superClass != null)
-            superClass.getCallCandidates(code, argumentTypes, staticOnly, candidates);
+            superClass.getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates, parameterizedFlowProvider);
         if(isInterface() || isAbstract || staticOnly) {
-            interfaces.forEach(it -> it.getCallCandidates(code, argumentTypes, staticOnly, candidates));
+            interfaces.forEach(it -> it.getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates, parameterizedFlowProvider));
         }
     }
 

@@ -117,9 +117,9 @@ public class ClassTypeTest extends TestCase {
                 .parameters(new Parameter(null, "p1", "p1", StandardTypes.getDoubleType()))
                 .build();
 
-        Assert.assertSame(m1, fooType.resolveMethod("test", List.of(StandardTypes.getBooleanType()), false));
-        Assert.assertSame(m2, fooType.resolveMethod("test", List.of(StandardTypes.getLongType()), false));
-        Assert.assertSame(m3, fooType.resolveMethod("test", List.of(StandardTypes.getStringType()), false));
+        Assert.assertSame(m1, fooType.resolveMethod("test", List.of(StandardTypes.getBooleanType()), List.of(), false, typeProviders.parameterizedFlowProvider));
+        Assert.assertSame(m2, fooType.resolveMethod("test", List.of(StandardTypes.getLongType()), List.of(), false, typeProviders.parameterizedFlowProvider));
+        Assert.assertSame(m3, fooType.resolveMethod("test", List.of(StandardTypes.getStringType()), List.of(), false, typeProviders.parameterizedFlowProvider));
     }
 
 }

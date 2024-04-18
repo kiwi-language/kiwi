@@ -48,12 +48,13 @@ public class NewObjectNode extends CallNode implements NewNode {
             var declaringType = context.getClassType(param.getTypeId());
             var parsingContext = FlowParsingContext.create(scope, prev, context);
             var argumentValues = NncUtils.map(param.getArgumentValues(), arg -> ValueFactory.create(arg, parsingContext));
-            var constructor = NncUtils.isEmpty(param.getTypeArgumentIds()) ?
-                    declaringType.resolveMethod(param.getFlowCode(), NncUtils.map(argumentValues, Value::getType), false)
-                    : declaringType.getMethodByCode(param.getFlowCode());
-            if (NncUtils.isNotEmpty(param.getArguments())) {
+            var constructor = declaringType.resolveMethod(param.getFlowCode(),
+                    NncUtils.map(argumentValues, Value::getType),
+                    NncUtils.map(param.getTypeArgumentIds(), context::getType),
+                    false,
+                    context.getGenericContext());
+            if (NncUtils.isNotEmpty(param.getArguments()))
                 constructor = context.getGenericContext().getParameterizedFlow(constructor, NncUtils.map(param.getTypeArgumentIds(), context::getType));
-            }
             var arguments = new ArrayList<Argument>();
             try {
                 NncUtils.biForEach(constructor.getParameters(), argumentValues, (p, v) ->

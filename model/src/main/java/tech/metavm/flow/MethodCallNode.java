@@ -50,9 +50,11 @@ public class MethodCallNode extends CallNode {
                     arg -> ValueFactory.create(arg, parsingContext)
             );
             var argumentTypes = NncUtils.map(argumentValues, Value::getType);
-            var method = NncUtils.isEmpty(param.getTypeArgumentIds()) ?
-                    declaringType.resolveMethod(param.getFlowCode(), argumentTypes, isStatic)
-                    : declaringType.getMethodByCode(param.getFlowCode());
+            var method = declaringType.resolveMethod(param.getFlowCode(),
+                    argumentTypes,
+                    NncUtils.map(param.getTypeArgumentIds(), context::getType),
+                    isStatic,
+                    context.getGenericContext());
             if (NncUtils.isNotEmpty(param.getTypeArgumentIds())) {
                 method = context.getGenericContext().getParameterizedFlow(method, NncUtils.map(param.getTypeArgumentIds(), context::getType));
             }

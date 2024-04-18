@@ -291,7 +291,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
     public <T extends Flow> T getParameterizedFlow(T template, List<? extends Type> typeArguments, ResolutionStage stage, SaveTypeBatch batch) {
         if(template.getTypeArguments().equals(typeArguments))
             return template;
-        NncUtils.requireTrue(template.isTemplate(), "Not a flow template");
+        NncUtils.requireTrue(template.isTemplate(), () -> new InternalException(template.getQualifiedName() + " is not a flow template"));
         if (template.getTypeParameters().isEmpty())
             return template;
         var existing = getExistingFlow(template, typeArguments);
