@@ -506,7 +506,7 @@ public class MockUtils {
         );
     }
 
-    private static void assemble(String source, TypeManager typeManager) {
+    public static void assemble(String source, TypeManager typeManager) {
         var assembler = AssemblerFactory.createWithStandardTypes();
         assembler.assemble(List.of(source));
         FlowSavingContext.initConfig();

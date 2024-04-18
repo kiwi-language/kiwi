@@ -159,10 +159,11 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testUtils() {
-        var typeIds = MockUtils.createUtilsTypes(typeManager);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm", typeManager);
+        var utilsType = typeManager.getTypeByCode("Utils").type();
         var contains = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        typeIds.testMethodId(),
+                        TestUtils.getMethodByCode(utilsType, "test").id(),
                         null,
                         List.of(
                                 new ListFieldValue(
@@ -186,6 +187,27 @@ public class InstanceManagerTest extends TestCase {
                 )
         ));
         Assert.assertEquals("是", contains.title());
+
+        var contains2 = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        TestUtils.getMethodIdByCode(utilsType, "test2"),
+                        null,
+                        List.of(
+                                new ListFieldValue(
+                                        null,
+                                        false,
+                                        List.of(
+                                                PrimitiveFieldValue.createString("a"),
+                                                PrimitiveFieldValue.createString("b"),
+                                                PrimitiveFieldValue.createString("c")
+                                        )
+                                ),
+                                PrimitiveFieldValue.createString("b"),
+                                PrimitiveFieldValue.createString("d")
+                        )
+                )
+        ));
+        Assert.assertEquals("是", contains2.title());
     }
 
     public void testLivingBeing() {

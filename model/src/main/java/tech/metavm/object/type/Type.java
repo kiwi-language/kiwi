@@ -309,8 +309,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public final boolean contains(Type that) {
-        return getUpperBound().isAssignableFrom(that.getUpperBound()) &&
-                that.getLowerBound().isAssignableFrom(getLowerBound());
+        return getUpperBound().isAssignableFrom(that) && that.isAssignableFrom(getLowerBound());
     }
 
     public boolean isVariable() {

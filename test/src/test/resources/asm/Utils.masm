@@ -5,7 +5,12 @@ class Utils {
        return contains;
     }
 
-    public static <T> int containsAny(Iterable<[never, T]> iterable, Iterable<[never, T]> values) {
+    public static boolean test2(List<string> list, string s1, string s2) {
+        contains: Utils.<string>containsAny(list, s1, s2);
+        return contains;
+    }
+
+    public static <T> boolean containsAny(Iterable<[never, T]> iterable, Iterable<[never, T]> values) {
         it: iterable.iterator();
         hasNext: it.hasNext();
         loop: for(boolean hasNext = hasNext; loop.hasNext; hasNext = hasNext3) {
@@ -22,6 +27,14 @@ class Utils {
             hasNext3: it.hasNext();
         }
         return false;
+    }
+
+    public static <T> boolean containsAny(Iterable<[never, T]> iterable, T value1, T value2) {
+        list: unew ReadWriteList<T>();
+        list.add(value1);
+        list.add(value2);
+        contains: Utils.<T>containsAny(iterable, list);
+        return contains;
     }
 
 }
