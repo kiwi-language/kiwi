@@ -295,7 +295,7 @@ public class Method extends Flow implements Property, GenericElement {
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
         for (Method overriddenFlow : overridden) {
             if(getTypeParameters().size() != overriddenFlow.getTypeParameters().size()) {
-                logger.info("Method {} has an overridden {} with different number of type parameters. {} != {}",
+                logger.error("Method {} has an overridden {} with different number of type parameters. {} != {}",
                         getQualifiedName(), overriddenFlow.getQualifiedName(), getTypeParameters().size(), overriddenFlow.getTypeParameters().size());
             }
             var typeParamMapping = NncUtils.zip(getTypeParameters(), overriddenFlow.getTypeParameters());

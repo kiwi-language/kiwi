@@ -1,3 +1,5 @@
+package capturedtypes;
+
 import tech.metavm.lang.SystemUtils;
 
 import javax.annotation.Nullable;

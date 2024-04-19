@@ -23,7 +23,7 @@ import static tech.metavm.autograph.TranspileUtil.*;
 
 public class Declarator extends CodeGenVisitor {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(Declarator.class);
+    public static final Logger logger = LoggerFactory.getLogger(Declarator.class);
 
     private final TypeResolver typeResolver;
 
@@ -150,7 +150,6 @@ public class Declarator extends CodeGenVisitor {
                     .isAbstract(method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT))
                     .parameters(resolvedParams)
                     .returnType(getReturnType(method))
-                    .overridden(overridden)
                     .build();
             method.putUserData(Keys.Method, flow);
         } else {
@@ -162,7 +161,7 @@ public class Declarator extends CodeGenVisitor {
             flow.update(
                     flow.getParameters(),
                     getReturnType(method),
-                    overridden,
+                    List.of(),
                     context.getFunctionTypeContext()
             );
         }
@@ -172,6 +171,7 @@ public class Declarator extends CodeGenVisitor {
             if (typeVar.getGenericDeclaration() != flow)
                 typeVar.setGenericDeclaration(flow);
         }
+        flow.setOverridden(overridden);
     }
 
     private Access resolveAccess(PsiModifierList modifierList) {

@@ -250,23 +250,28 @@ public class TranspileUtil {
         return overriddenMethods;
     }
 
-    public static boolean isOverrideOf(PsiMethod override, PsiMethod overridden) {
-        if (!override.getName().equals(overridden.getName())) {
+    public static boolean isOverrideOf(PsiMethod method, PsiMethod overridden) {
+        if (!method.getName().equals(overridden.getName())) {
             return false;
         }
-        var overrideDeclClass = NncUtils.requireNonNull(override.getContainingClass());
+        var overrideDeclClass = NncUtils.requireNonNull(method.getContainingClass());
         var overriddenDeclClass = NncUtils.requireNonNull(overridden.getContainingClass());
         if (!overrideDeclClass.isInheritor(overriddenDeclClass, true)) {
             return false;
         }
-        int paramCount = override.getParameterList().getParametersCount();
-        if (overridden.getParameterList().getParametersCount() != paramCount) {
+        int paramCount = method.getParameterList().getParametersCount();
+        if (overridden.getParameterList().getParametersCount() != paramCount
+                || method.getTypeParameters().length != overridden.getTypeParameters().length) {
             return false;
         }
+        var subst = PsiSubstitutor.createSubstitutor(
+                NncUtils.zip(List.of(overridden.getTypeParameters()),
+                        NncUtils.map(List.of(method.getTypeParameters()), TranspileUtil::createType))
+        );
         for (int i = 0; i < paramCount; i++) {
-            var overrideParamType = NncUtils.requireNonNull(override.getParameterList().getParameter(i)).getType();
-            var overriddenParamType = NncUtils.requireNonNull(overridden.getParameterList().getParameter(i)).getType();
-            if (!overrideParamType.equals(overriddenParamType)) {
+            var paramType = NncUtils.requireNonNull(method.getParameterList().getParameter(i)).getType();
+            var overriddenParamType = subst.substitute(NncUtils.requireNonNull(overridden.getParameterList().getParameter(i)).getType());
+            if (!paramType.equals(overriddenParamType)) {
                 return false;
             }
         }
@@ -290,12 +295,12 @@ public class TranspileUtil {
     public static void forEachCapturedTypePairs(PsiType psiType, Type type, BiConsumer<PsiCapturedWildcardType, CapturedType> action) {
         switch (type) {
             case CapturedType capturedType -> {
-                if(psiType instanceof PsiCapturedWildcardType psiCapturedWildcardType)
+                if (psiType instanceof PsiCapturedWildcardType psiCapturedWildcardType)
                     action.accept(psiCapturedWildcardType, capturedType);
             }
             case UncertainType uncertainType -> {
                 var psiWildcardType = (PsiWildcardType) psiType;
-                if(psiWildcardType.isSuper())
+                if (psiWildcardType.isSuper())
                     forEachCapturedTypePairs(psiWildcardType.getSuperBound(), uncertainType.getLowerBound(), action);
                 else
                     forEachCapturedTypePairs(psiWildcardType.getExtendsBound(), uncertainType.getUnderlyingType(), action);
@@ -306,7 +311,8 @@ public class TranspileUtil {
                     forEachCapturedTypePairs(psiClassType.getParameters()[i], classType.getTypeArguments().get(i), action);
                 }
             }
-            default -> {}
+            default -> {
+            }
         }
     }
 
@@ -761,6 +767,10 @@ public class TranspileUtil {
         return modifierListOwner.hasModifierProperty(PsiModifier.STATIC);
     }
 
+    public static String getQualifiedName(PsiMethod psiMethod) {
+        return requireNonNull(psiMethod.getContainingClass()).getName() + "." + psiMethod.getName();
+    }
+
     public static String getFlowName(PsiMethod method) {
         String bizName = tryGetNameFromAnnotation(method, EntityFlow.class);
         return bizName != null ? bizName : getFlowCode(method);
@@ -806,9 +816,9 @@ public class TranspileUtil {
     }
 
     public static @Nullable PsiMethod findCanonicalConstructor(PsiClass psiClass) {
-       var fieldTypes = NncUtils.map(getAllInstanceFields(psiClass), PsiField::getType);
-       return NncUtils.find(psiClass.getMethods(),
-               m -> m.isConstructor() && NncUtils.map(m.getParameterList().getParameters(), PsiParameter::getType).equals(fieldTypes));
+        var fieldTypes = NncUtils.map(getAllInstanceFields(psiClass), PsiField::getType);
+        return NncUtils.find(psiClass.getMethods(),
+                m -> m.isConstructor() && NncUtils.map(m.getParameterList().getParameters(), PsiParameter::getType).equals(fieldTypes));
     }
 
     public static List<PsiField> getAllInstanceFields(PsiClass psiClass) {
@@ -821,7 +831,7 @@ public class TranspileUtil {
         }
         for (PsiClass k : classes) {
             for (PsiField field : k.getFields()) {
-                if(!requireNonNull(field.getModifierList()).hasModifierProperty(PsiModifier.STATIC))
+                if (!requireNonNull(field.getModifierList()).hasModifierProperty(PsiModifier.STATIC))
                     fields.add(field);
             }
         }

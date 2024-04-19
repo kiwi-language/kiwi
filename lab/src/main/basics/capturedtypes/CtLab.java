@@ -1,3 +1,5 @@
+package capturedtypes;
+
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ChildList;
 

@@ -1,3 +1,5 @@
+package capturedtypes;
+
 public class CtFoo {
 
     private final String name;

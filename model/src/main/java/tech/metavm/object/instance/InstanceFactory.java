@@ -197,7 +197,8 @@ public class InstanceFactory {
                 return list;
             } else {
                 var classType = (ClassType) type;
-                NncUtils.requireTrue(classType.isList());
+                if(!classType.isList())
+                    throw new InternalException(classType.getTypeDesc() + " is not a list type");
                 if(classType.getEffectiveTemplate() == StandardTypes.getListType()) {
                     if(listFieldValue.isElementAsChild())
                         classType = context.compositeTypeFacade().getParameterizedType(StandardTypes.getChildListType(), List.of(classType.getListElementType()));
