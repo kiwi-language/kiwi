@@ -377,6 +377,12 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMethodCall(AssemblyParser.MethodCallContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#functionCall}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFunctionCall(AssemblyParser.FunctionCallContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#literal}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -442,4 +448,22 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitClassOrInterfaceModifier(AssemblyParser.ClassOrInterfaceModifierContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#lambda}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLambda(AssemblyParser.LambdaContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#lambdaParameters}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLambdaParameters(AssemblyParser.LambdaParametersContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#lambdaBody}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLambdaBody(AssemblyParser.LambdaBodyContext ctx);
 }

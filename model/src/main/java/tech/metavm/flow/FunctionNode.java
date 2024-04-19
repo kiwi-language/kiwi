@@ -22,8 +22,8 @@ public class FunctionNode extends NodeRT {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var func = ValueFactory.create(param.func(), parsingContext);
         var args = NncUtils.map(param.arguments(), arg -> ValueFactory.create(arg, parsingContext));
-        FunctionNode node = (FunctionNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (nodeDTO.id() != null)
+        var node = (FunctionNode) context.getNode(nodeDTO.id());
+        if (node != null)
             node.update(func, args);
         else
             node = new FunctionNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, func, args);

@@ -618,6 +618,16 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 */
 	void exitMethodCall(AssemblyParser.MethodCallContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#functionCall}.
+	 * @param ctx the parse tree
+	 */
+	void enterFunctionCall(AssemblyParser.FunctionCallContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#functionCall}.
+	 * @param ctx the parse tree
+	 */
+	void exitFunctionCall(AssemblyParser.FunctionCallContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#literal}.
 	 * @param ctx the parse tree
 	 */
@@ -727,4 +737,34 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitClassOrInterfaceModifier(AssemblyParser.ClassOrInterfaceModifierContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#lambda}.
+	 * @param ctx the parse tree
+	 */
+	void enterLambda(AssemblyParser.LambdaContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#lambda}.
+	 * @param ctx the parse tree
+	 */
+	void exitLambda(AssemblyParser.LambdaContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#lambdaParameters}.
+	 * @param ctx the parse tree
+	 */
+	void enterLambdaParameters(AssemblyParser.LambdaParametersContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#lambdaParameters}.
+	 * @param ctx the parse tree
+	 */
+	void exitLambdaParameters(AssemblyParser.LambdaParametersContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#lambdaBody}.
+	 * @param ctx the parse tree
+	 */
+	void enterLambdaBody(AssemblyParser.LambdaBodyContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#lambdaBody}.
+	 * @param ctx the parse tree
+	 */
+	void exitLambdaBody(AssemblyParser.LambdaBodyContext ctx);
 }

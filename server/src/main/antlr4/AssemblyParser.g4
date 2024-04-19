@@ -163,13 +163,14 @@ statement
     | RETURN expression? ';'
     | THROW expression ';'
     | SEMI
-    | statementExpression=expression ';'
+//    | statementExpression=expression ';'
     | methodCall ';'
+    | functionCall ';'
     | (NEW | UNEW | ENEW) creator ';'
     | (THIS | IDENTIFIER) '.' IDENTIFIER
       bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
       expression ';'
-    | statementExpression=expression ';'
+    | lambda
     ;
 
 forControl
@@ -315,6 +316,8 @@ methodCall
     | SUPER '(' expressionList? ')'
     ;
 
+functionCall: expression '(' expressionList? ')';
+
 literal
     : integerLiteral
     | floatLiteral
@@ -387,4 +390,18 @@ classOrInterfaceModifier
     | PRIVATE
     | STATIC
     | ABSTRACT
+    ;
+
+lambda
+    : lambdaParameters ':' typeTypeOrVoid '->' lambdaBody
+    ;
+
+// Java8
+lambdaParameters
+    : '(' formalParameterList? ')'
+    ;
+
+// Java8
+lambdaBody
+    : block
     ;

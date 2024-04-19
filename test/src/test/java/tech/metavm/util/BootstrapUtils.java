@@ -19,7 +19,6 @@ import tech.metavm.system.persistence.MemRegionMapper;
 import tech.metavm.task.JobSchedulerStatus;
 import tech.metavm.task.TaskSignal;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -47,7 +46,7 @@ public class BootstrapUtils {
     }
 
     public static BootstrapResult bootstrap() {
-        if(state != null) {
+        if (state != null) {
             var defContext = state.defContext();
             ModelDefRegistry.setDefContext(defContext);
             StandardTypes.setBooleanType((PrimitiveType) defContext.getType(Boolean.class));
@@ -88,13 +87,15 @@ public class BootstrapUtils {
             StandardTypes.setIllegalStateExceptionType(defContext.getClassType(IllegalStateException.class));
             StandardTypes.setNullPointerExceptionType(defContext.getClassType(NullPointerException.class));
             StandardTypes.clearParameterizedTypes();
+            StandardTypes.clearNullableTypes();
             var collClasses = List.of(
                     MetaList.class, ReadWriteMetaList.class, ChildMetaList.class, MetaSet.class);
             var primitiveClasses = List.of(Long.class, Double.class, Boolean.class, String.class, Date.class);
-            for (Class<?> collClass : collClasses) {
-                var collType = defContext.getClassType(collClass);
-                for (var primitiveClass : primitiveClasses) {
-                    var primitiveType = defContext.getType(primitiveClass);
+            for (var primitiveClass : primitiveClasses) {
+                var primitiveType = defContext.getType(primitiveClass);
+                StandardTypes.addNullableType(defContext.getNullableType(primitiveType));
+                for (Class<?> collClass : collClasses) {
+                    var collType = defContext.getClassType(collClass);
                     StandardTypes.addParameterizedType(defContext.getParameterizedType(collType, List.of(primitiveType)));
                 }
             }
@@ -147,7 +148,7 @@ public class BootstrapUtils {
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             entityContextFactory.setDefContext(defContext);
             TestUtils.doInTransactionWithoutResult(() -> {
-                try(var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                try (var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                     context.bind(new JobSchedulerStatus());
                     context.bind(new TaskSignal(TestConstants.APP_ID));
                     context.finish();
@@ -162,8 +163,7 @@ public class BootstrapUtils {
                     instanceSearchService,
                     state.allocatorStore()
             );
-        }
-        else {
+        } else {
             NativeFunctions.setEmailSender(MockEmailSender.INSTANCE);
             var regionMapper = new MemRegionMapper();
             var regionManager = new RegionManager(regionMapper);
@@ -197,7 +197,7 @@ public class BootstrapUtils {
                     instanceSearchService.copy()
             );
             TestUtils.doInTransactionWithoutResult(() -> {
-                try(var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                try (var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                     context.bind(new JobSchedulerStatus());
                     context.bind(new TaskSignal(TestConstants.APP_ID));
                     context.finish();

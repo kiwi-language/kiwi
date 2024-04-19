@@ -153,4 +153,9 @@ public interface StandardTypesHolder {
 
     void clearParameterizedTypes();
 
+    void addNullableType(UnionType type);
+
+    UnionType getNullableType(Type type);
+
+    void clearNullableTypes();
 }

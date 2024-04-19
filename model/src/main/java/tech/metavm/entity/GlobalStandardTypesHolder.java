@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.type.*;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
@@ -45,7 +46,8 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private ClassType illegalArgumentExceptionType;
     private ClassType illegalStateExceptionType;
     private ClassType nullPointerExceptionType;
-    private Map<PTypeKey, ClassType> parameterizedTypes = new HashMap<>();
+    private final Map<PTypeKey, ClassType> parameterizedTypes = new HashMap<>();
+    private final Map<Type, UnionType> nullableTypes = new HashMap<>();
 
     @Override
     public PrimitiveType getLongType() {
@@ -400,7 +402,7 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public ClassType getParameterizedType(ClassType template, List<Type> typeArguments) {
         return Objects.requireNonNull(parameterizedTypes.get(new PTypeKey(template, typeArguments)),
-                () -> "Parameterized type not found: " + template.getName() + "<" + NncUtils.join(typeArguments, Type::getName) + ">");
+                () -> "Parameterized type not found: " + template.getName() + "<" + NncUtils.join(typeArguments, Type::getName) + "> in standard types");
 }
 
     @Override
@@ -412,4 +414,23 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     public void clearParameterizedTypes() {
         parameterizedTypes.clear();
     }
+
+    @Override
+    public void addNullableType(UnionType type) {
+        if(type.isBinaryNullable())
+            nullableTypes.put(type.getUnderlyingType(), type);
+        else
+            throw new InternalException(type.getTypeDesc() + " is not a nullable type");
+    }
+
+    @Override
+    public UnionType getNullableType(Type type) {
+        return Objects.requireNonNull(nullableTypes.get(type), () -> "Can not find nullable type for " + type.getTypeDesc() + " in standard types");
+    }
+
+    @Override
+    public void clearNullableTypes() {
+        this.nullableTypes.clear();
+    }
+
 }

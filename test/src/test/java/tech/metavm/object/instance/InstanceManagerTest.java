@@ -236,6 +236,31 @@ public class InstanceManagerTest extends TestCase {
         Assert.assertEquals("是", result.title());
     }
 
+    public void testLambda() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm", typeManager);
+        var utilsType = typeManager.getTypeByCode("Utils").type();
+        var findGtMethodId = TestUtils.getMethodByCode(utilsType, "findGt").id();
+        var result = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        findGtMethodId,
+                        null,
+                        List.of(
+                                new ListFieldValue(
+                                        null,
+                                        false,
+                                        List.of(
+                                                PrimitiveFieldValue.createLong(1),
+                                                PrimitiveFieldValue.createLong(2),
+                                                PrimitiveFieldValue.createLong(3)
+                                        )
+                                ),
+                                PrimitiveFieldValue.createLong(2)
+                        )
+                )
+        ));
+        Assert.assertEquals("3", result.title());
+    }
+
     public void testLivingBeing() {
         var typeIds = MockUtils.createLivingBeingTypes(typeManager);
         var human = TestUtils.doInTransaction(() -> flowExecutionService.execute(

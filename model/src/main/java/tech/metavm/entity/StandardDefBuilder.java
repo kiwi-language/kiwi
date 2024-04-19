@@ -118,9 +118,8 @@ public class StandardDefBuilder {
                 defContext.createCompositeTypes(primType);
                 collectionTypeMap.forEach((collClass, collType) -> {
                     if (collClass != MetaMap.class) {
-                        var pCollType = defContext.getGenericContext().getParameterizedType(collType, primType);
-                        StandardTypes.addParameterizedType(pCollType);
-//                        primTypeFactory.putType(ParameterizedTypeImpl.create(collClass, primClass), pType);
+                        StandardTypes.addParameterizedType(defContext.getGenericContext().getParameterizedType(collType, primType));
+                        StandardTypes.addNullableType(defContext.getNullableType(primType));
                     }
                 });
             }

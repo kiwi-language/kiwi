@@ -59,14 +59,14 @@ public class FunctionType extends CompositeType {
 
     @Override
     protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
-        if (that instanceof FunctionType functionType) {
-            if (parameterTypes.size() == functionType.parameterTypes.size()) {
+        if (that instanceof FunctionType thatFuncType) {
+            if (parameterTypes.size() == thatFuncType.parameterTypes.size()) {
                 for (int i = 0; i < parameterTypes.size(); i++) {
-                    if (!parameterTypes.get(i).isAssignableFrom(((FunctionType) that).parameterTypes.get(i), typeMapping)) {
+                    if (!thatFuncType.parameterTypes.get(i).isAssignableFrom(parameterTypes.get(i), typeMapping)) {
                         return false;
                     }
                 }
-                return functionType.returnType.isAssignableFrom(returnType, typeMapping);
+                return returnType.isAssignableFrom(thatFuncType.returnType, typeMapping);
             }
         }
         return false;

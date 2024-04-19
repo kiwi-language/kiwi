@@ -749,6 +749,18 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterFunctionCall(AssemblyParser.FunctionCallContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFunctionCall(AssemblyParser.FunctionCallContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterLiteral(AssemblyParser.LiteralContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -876,6 +888,42 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitClassOrInterfaceModifier(AssemblyParser.ClassOrInterfaceModifierContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLambda(AssemblyParser.LambdaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLambda(AssemblyParser.LambdaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLambdaParameters(AssemblyParser.LambdaParametersContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLambdaParameters(AssemblyParser.LambdaParametersContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLambdaBody(AssemblyParser.LambdaBodyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLambdaBody(AssemblyParser.LambdaBodyContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

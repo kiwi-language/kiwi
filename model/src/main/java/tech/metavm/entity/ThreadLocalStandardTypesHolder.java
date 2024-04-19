@@ -372,4 +372,19 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
     public void clearParameterizedTypes() {
         TL.get().clearParameterizedTypes();
     }
+
+    @Override
+    public void addNullableType(UnionType type) {
+        TL.get().addNullableType(type);
+    }
+
+    @Override
+    public UnionType getNullableType(Type type) {
+        return TL.get().getNullableType(type);
+    }
+
+    @Override
+    public void clearNullableTypes() {
+        TL.get().clearNullableTypes();
+    }
 }

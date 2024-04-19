@@ -31,7 +31,8 @@ public class AssemblerFactory {
         stdTypeIds.put(new PrimitiveAsmType(Assembler.AsmPrimitiveKind.DOUBLE), StandardTypes.getDoubleType().getStringId());
         stdTypeIds.put(new PrimitiveAsmType(Assembler.AsmPrimitiveKind.TIME), StandardTypes.getTimeType().getStringId());
         stdTypeIds.put(new PrimitiveAsmType(Assembler.AsmPrimitiveKind.PASSWORD), StandardTypes.getPasswordType().getStringId());
-        stdTypeIds.put(new PrimitiveAsmType(Assembler.AsmPrimitiveKind.NULL), StandardTypes.getNullType().getStringId());
+        PrimitiveAsmType nullTye;
+        stdTypeIds.put(nullTye = new PrimitiveAsmType(Assembler.AsmPrimitiveKind.NULL), StandardTypes.getNullType().getStringId());
         stdTypeIds.put(new PrimitiveAsmType(Assembler.AsmPrimitiveKind.VOID), StandardTypes.getVoidType().getStringId());
         stdTypeIds.put(AnyAsmType.INSTANCE, StandardTypes.getAnyType().getStringId());
         stdTypeIds.put(NeverAsmType.INSTANCE, StandardTypes.getNeverType().getStringId());
@@ -55,6 +56,7 @@ public class AssemblerFactory {
                 var pCollType = StandardTypes.getParameterizedType(collType, List.of(primType));
                 var asmPrimType = new PrimitiveAsmType(AsmPrimitiveKind.valueOf(primType.getKind().name()));
                 stdTypeIds.put(new ClassAsmType(collType.getCode(), List.of(asmPrimType)), pCollType.getStringId());
+                stdTypeIds.put(new UnionAsmType(Set.of(asmPrimType, nullTye)), StandardTypes.getNullableType(primType).getStringId());
             }
         }
         return stdTypeIds;

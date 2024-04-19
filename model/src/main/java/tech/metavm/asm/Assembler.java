@@ -10,10 +10,7 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.asm.antlr.AssemblyLexer;
 import tech.metavm.asm.antlr.AssemblyParser;
 import tech.metavm.asm.antlr.AssemblyParserBaseVisitor;
-import tech.metavm.flow.MethodDTOBuilder;
-import tech.metavm.flow.NodeDTOFactory;
-import tech.metavm.flow.UpdateOp;
-import tech.metavm.flow.ValueDTOFactory;
+import tech.metavm.flow.*;
 import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.type.Access;
@@ -91,6 +88,17 @@ public class Assembler {
 
     private static List<String> parseTypeParameters(@Nullable AssemblyParser.TypeParametersContext typeParameters) {
         return typeParameters != null ? NncUtils.map(typeParameters.typeParameter(), tv -> tv.IDENTIFIER().getText()) : List.of();
+    }
+
+    private List<ParameterDTO> parseParameterList(@Nullable AssemblyParser.FormalParameterListContext parameterList, AsmScope scope) {
+        if(parameterList == null)
+            return List.of();
+        return NncUtils.map(parameterList.formalParameter(), p -> parseParameter(p, scope));
+    }
+
+    private ParameterDTO parseParameter(AssemblyParser.FormalParameterContext parameter, AsmScope scope) {
+        var name = parameter.IDENTIFIER().getText();
+        return ParameterDTO.create(TmpId.randomString(), name, name, getTypeId(parseType(parameter.typeType(), scope)));
     }
 
     private String getGenericDeclarationId(AsmGenericDeclaration genericDeclaration) {
@@ -743,14 +751,11 @@ public class Assembler {
         }
 
         @Override
-        protected void visitFunction(String name, @Nullable AssemblyParser.TypeParametersContext typeParameters, @Nullable AssemblyParser.FormalParameterListContext formalParameterList, @Nullable AssemblyParser.TypeTypeOrVoidContext returnType, @Nullable AssemblyParser.BlockContext block, ParserRuleContext ctx, boolean isConstructor, Runnable processBody) {
+        protected void visitFunction(String name, @Nullable AssemblyParser.TypeParametersContext typeParameters, @Nullable AssemblyParser.FormalParameterListContext parameterList, @Nullable AssemblyParser.TypeTypeOrVoidContext returnType, @Nullable AssemblyParser.BlockContext block, ParserRuleContext ctx, boolean isConstructor, Runnable processBody) {
             var classBuilder = builder();
             var methodKey = getAttribute(ctx, AsmAttributeKey.methodInfo).method;
             scope = getAttribute(ctx, AsmAttributeKey.methodInfo);
             try {
-                List<AssemblyParser.FormalParameterContext> params = NncUtils.getOrElse(
-                        formalParameterList, AssemblyParser.FormalParameterListContext::formalParameter, List.of()
-                );
                 var mods = currentMods();
                 var methodBuilder = MethodDTOBuilder.newBuilder(classBuilder.getId(), name)
                         .code(name)
@@ -790,16 +795,7 @@ public class Assembler {
                             getTypeId(new PrimitiveAsmType(AsmPrimitiveKind.LONG))
                     ));
                 }
-                for (var param : params) {
-                    methodBuilder.addParameter(
-                            ParameterDTO.create(
-                                    TmpId.randomString(),
-                                    param.IDENTIFIER().getText(),
-                                    param.IDENTIFIER().getText(),
-                                    getTypeId(parseType(param.typeType(), scope))
-                            )
-                    );
-                }
+                parseParameterList(parameterList, scope).forEach(methodBuilder::addParameter);
                 if (isConstructor) {
                     methodBuilder.isConstructor(true);
                     methodBuilder.returnTypeId(classBuilder.getId());
@@ -864,7 +860,11 @@ public class Assembler {
         }
 
         private String nextNodeName() {
-            return "__node__" + nextNodeNum++;
+            return nextNodeName("__node__");
+        }
+
+        private String nextNodeName(String prefix) {
+            return prefix + nextNodeNum++;
         }
 
         private List<NodeDTO> parseBlockNodes(AssemblyParser.BlockContext block) {
@@ -880,13 +880,13 @@ public class Assembler {
         private NodeDTO processStatement(String name, AssemblyParser.StatementContext statement) {
             try {
                 var currentClass = currentClass();
-                if (statement.statementExpression != null) {
+                /*if (statement.statementExpression != null) {
                     return NodeDTOFactory.createValueNode(
                             NncUtils.randomNonNegative(),
                             name,
                             ValueDTOFactory.createExpression(parseExpression(statement.statementExpression))
                     );
-                }
+                }*/
                 if (statement.bop != null) {
                     var object = statement.THIS() != null ? ValueDTOFactory.createReference("this")
                             : ValueDTOFactory.createExpression(statement.IDENTIFIER(0).getText());
@@ -969,6 +969,15 @@ public class Assembler {
                             arguments
                     );
                 }
+                if(statement.functionCall() != null) {
+                    var funcCall = statement.functionCall();
+                    return NodeDTOFactory.createFunction(
+                            NncUtils.randomNonNegative(),
+                            name,
+                            parseValue(funcCall.expression()),
+                            parseValueList(funcCall.expressionList())
+                    );
+                }
                 if (statement.THROW() != null) {
                     return NodeDTOFactory.createRaiseNodeWithException(
                             NncUtils.randomNonNegative(),
@@ -1034,6 +1043,32 @@ public class Assembler {
                             fields
                     );
                 }
+                if (statement.lambda() != null) {
+                    var lambda = statement.lambda();
+                    var params = parseParameterList(lambda.lambdaParameters().formalParameterList(), scope);
+                    var nodes = new ArrayList<NodeDTO>();
+                    var inputName = nextNodeName("__input__");
+                    nodes.add(NodeDTOFactory.createInputNode(
+                            NncUtils.randomNonNegative(),
+                            inputName,
+                            NncUtils.map(params, p -> InputFieldDTO.create(p.name(), p.typeId()))
+                    ));
+                    params.forEach(p -> nodes.add(NodeDTOFactory.createValueNode(
+                            NncUtils.randomNonNegative(),
+                            p.name(),
+                            ValueDTOFactory.createReference(inputName + "." + p.name())
+                    )));
+                    nodes.addAll(parseBlockNodes(lambda.lambdaBody().block()));
+                    if(lambda.typeTypeOrVoid().VOID() != null)
+                        nodes.add(NodeDTOFactory.createReturnNode(NncUtils.randomNonNegative(), nextNodeName(), null));
+                    return NodeDTOFactory.createLambda(
+                            NncUtils.randomNonNegative(),
+                            name,
+                            params,
+                            getTypeId(parseType(lambda.typeTypeOrVoid(), scope)),
+                            nodes
+                    );
+                }
                 throw new InternalException("Unknown statement: " + statement.getText());
             } catch (Exception e) {
                 throw new InternalException("Fail to process statement: " + statement.getText(), e);
@@ -1052,6 +1087,12 @@ public class Assembler {
 
         private ValueDTO parseValue(AssemblyParser.ExpressionContext expression) {
             return ValueDTOFactory.createExpression(parseExpression(expression));
+        }
+
+        private List<ValueDTO> parseValueList(@Nullable AssemblyParser.ExpressionListContext expressionList) {
+            if(expressionList == null)
+                return List.of();
+            return NncUtils.map(expressionList.expression(), this::parseValue);
         }
 
         private String parseExpression(AssemblyParser.ExpressionContext expression) {
@@ -1149,6 +1190,18 @@ public class Assembler {
                                             case READ_WRITE -> ArrayKind.READ_WRITE.code();
                                             case READ_ONLY -> ArrayKind.READ_ONLY.code();
                                         }
+                                )
+                        );
+                        case FunctionAsmType functionAsmType -> new TypeDTO(
+                                id,
+                                type.name(),
+                                null,
+                                TypeCategoryCodes.FUNCTION,
+                                false,
+                                false,
+                                new FunctionTypeParam(
+                                        NncUtils.map(functionAsmType.parameterTypes, Assembler.this::getTypeId),
+                                        getTypeId(functionAsmType.returnType)
                                 )
                         );
                         default -> null;
@@ -1293,7 +1346,7 @@ public class Assembler {
             while (k != null) {
                 var found = k.findTypeParameter(name);
                 if (found != null) {
-                    if(forMethodSignature && k == scope)
+                    if (forMethodSignature && k == scope)
                         return new SelfTypeParameter(found.index());
                     else
                         return found;
@@ -1376,7 +1429,8 @@ public class Assembler {
         }
     }
 
-    public record AsmTypeVariable(@NotNull AsmGenericDeclaration owner, @NotNull String name, int index) implements AsmType {
+    public record AsmTypeVariable(@NotNull AsmGenericDeclaration owner, @NotNull String name,
+                                  int index) implements AsmType {
 
         @Override
         public String name() {

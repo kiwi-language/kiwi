@@ -95,6 +95,27 @@ public class NodeDTOFactory {
         );
     }
 
+    public static NodeDTO createLambda(Long tmpId, String name, List<ParameterDTO> parameters, String returnTypeId, List<NodeDTO> nodes) {
+        return new NodeDTO(
+                getStringTmpId(tmpId),
+                null,
+                name,
+                null,
+                NodeKind.LAMBDA.code(),
+                null,
+                null,
+                new LambdaNodeParam(
+                        new ScopeDTO(null, setPrevId(nodes)),
+                        parameters,
+                        returnTypeId,
+                        null
+                ),
+                null,
+                null,
+                null
+        );
+    }
+
     public static NodeDTO createInputNode(Long tmpId, String name, List<InputFieldDTO> fields) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
@@ -275,6 +296,22 @@ public class NodeDTOFactory {
                 null,
                 null,
                 new MethodCallNodeParam(self, null, methodName, typeArgumentIds, typeId, null, arguments, List.of(), List.of()),
+                null,
+                null,
+                null
+        );
+    }
+
+    public static NodeDTO createFunction(Long tmpId, String name, ValueDTO function, List<ValueDTO> arguments) {
+        return new NodeDTO(
+                getStringTmpId(tmpId),
+                null,
+                name,
+                null,
+                NodeKind.FUNC.code(),
+                null,
+                null,
+                new FunctionNodeParam(function, arguments),
                 null,
                 null,
                 null

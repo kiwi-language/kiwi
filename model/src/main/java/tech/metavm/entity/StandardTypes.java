@@ -383,4 +383,16 @@ public class StandardTypes {
         holder.clearParameterizedTypes();
     }
 
+    public static UnionType getNullableType(Type type) {
+        return holder.getNullableType(type);
+    }
+
+    public static void addNullableType(UnionType type) {
+        holder.addNullableType(type);
+    }
+
+    public static void clearNullableTypes() {
+        holder.clearNullableTypes();
+    }
+
 }

@@ -1,0 +1,25 @@
+class Utils {
+
+    public static int|null findGt(List<int> list, int value) {
+        lambda: (int v):boolean -> {
+            return v > value;
+        }
+        result: Utils.<int>find(list, lambda);
+        return result;
+    }
+
+    public static <T> T|null find(Iterable<[never, T]> iterable, (T) -> boolean test) {
+        it: iterable.iterator();
+        hasNext: it.hasNext();
+        loop: for(boolean hasNext = hasNext; loop.hasNext; hasNext = hasNext1) {
+            next: it.next();
+            found: test(next);
+            if (found) {
+                return next;
+            }
+            hasNext1: it.hasNext();
+        }
+        return null;
+    }
+
+}

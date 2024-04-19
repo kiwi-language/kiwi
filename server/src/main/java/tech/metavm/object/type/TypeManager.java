@@ -362,7 +362,8 @@ public class TypeManager extends EntityContextFactoryBean {
                 }
             }
             context.finish();
-            return NncUtils.map(typeDTOs, typeDTO -> context.getType(Id.parse(typeDTO.id())).getStringId());
+            return NncUtils.map(typeDTOs, typeDTO -> Objects.requireNonNull(context.getType(typeDTO.id()),
+                    "Type '" + typeDTO.id() + "' not saved").getStringId());
         }
     }
 

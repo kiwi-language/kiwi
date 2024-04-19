@@ -30,37 +30,35 @@ public class AssemblerTest extends TestCase {
     public static final Logger LOGGER = LoggerFactory.getLogger(AssemblerTest.class);
 
     public void testParentChild() {
-        final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
-        assemble(List.of(source));
+        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm");
     }
 
     public void testMyList() {
-        final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/List.masm";
 //        assemble(List.of(source));
-        deploy(List.of(source));
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/List.masm");
     }
 
     public void testShopping() {
-        final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm";
-        deploy(List.of(source));
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm");
     }
 
     public void testLivingBeing() {
-        final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm";
-        deploy(List.of(source));
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm");
     }
 
     public void testUtils() {
-        final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm";
-        deploy(List.of(source));
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm");
     }
 
     public void testGenericOverloading() {
-        final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/GenericOverloading.masm";
-        deploy(List.of(source));
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/GenericOverloading.masm");
     }
 
-    private void assemble(List<String> sources) {
+    public void testLambda() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm");
+    }
+
+    private void assemble(String source) {
         var stdTypeIds = new HashMap<AsmType, String>();
         for (AsmPrimitiveKind primitiveKind : AsmPrimitiveKind.values()) {
             stdTypeIds.put(new PrimitiveAsmType(primitiveKind), TmpId.randomString());
@@ -69,26 +67,30 @@ public class AssemblerTest extends TestCase {
         stdTypeIds.put(Assembler.NeverAsmType.INSTANCE, TmpId.randomString());
         stdTypeIds.put(new Assembler.UnionAsmType(Set.of(Assembler.AnyAsmType.INSTANCE, new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.NULL))),
                 TmpId.randomString());
-        stdTypeIds.put(ClassAsmType.create("ChildList"), TmpId.randomString());
-        stdTypeIds.put(ClassAsmType.create("List"), TmpId.randomString());
-        stdTypeIds.put(ClassAsmType.create("ReadWriteList"), TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("Enum"), TmpId.randomString());
         stdTypeIds.put(ClassAsmType.create("RuntimeException"), TmpId.randomString());
-        stdTypeIds.put(ClassAsmType.create("Iterable"), TmpId.randomString());
-        stdTypeIds.put(ClassAsmType.create("Iterator"), TmpId.randomString());
-        stdTypeIds.put(ClassAsmType.create("Predicate"), TmpId.randomString());
+        var collTypeNames = List.of("List", "ReadWriteList", "ChildList", "Iterable", "Iterator", "Predicate", "Consumer");
+        collTypeNames.forEach(name -> stdTypeIds.put(ClassAsmType.create(name), TmpId.randomString()));
+        var nullType = new PrimitiveAsmType(AsmPrimitiveKind.NULL);
+        for (AsmPrimitiveKind kind : AsmPrimitiveKind.values()) {
+            if(kind != AsmPrimitiveKind.VOID && kind != AsmPrimitiveKind.NULL) {
+                var primType = new PrimitiveAsmType(kind);
+                stdTypeIds.put(new Assembler.UnionAsmType(Set.of(primType, nullType)), TmpId.randomString());
+                collTypeNames.forEach(name -> stdTypeIds.put(new ClassAsmType(name, List.of(primType)), TmpId.randomString()));
+            }
+        }
         var assembler = new Assembler(stdTypeIds);
-        assemble(sources, assembler);
+        assemble(List.of(source), assembler);
     }
 
     private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {
         assembler.assemble(sources);
         var request = new BatchSaveRequest(assembler.getAllTypes(), List.of(), assembler.getParameterizedFlows(), false);
-                TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
+        TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
         return request;
     }
 
-    private void deploy(List<String> sources) {
+    private void deploy(String source) {
         var bootResult = BootstrapUtils.bootstrap();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         var typeManager = new TypeManager(
@@ -107,7 +109,7 @@ public class AssemblerTest extends TestCase {
         typeManager.setFlowExecutionService(flowExecutionService);
         FlowSavingContext.initConfig();
         var assembler = AssemblerFactory.createWithStandardTypes();
-        var request = assemble(sources, assembler);
+        var request = assemble(List.of(source), assembler);
 //        DebugEnv.DEBUG_ON = true;
         TestUtils.doInTransaction(() -> typeManager.batchSave(request));
     }
