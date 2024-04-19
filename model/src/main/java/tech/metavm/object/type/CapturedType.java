@@ -90,8 +90,13 @@ public class CapturedType extends Type implements ITypeVariable, PostRemovalAwar
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that) {
+    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
         return this == that;
+    }
+
+    @Override
+    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
+        return this.equals(that);
     }
 
     @Override

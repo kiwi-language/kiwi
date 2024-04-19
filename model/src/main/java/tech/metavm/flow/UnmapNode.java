@@ -52,7 +52,7 @@ public class UnmapNode extends NodeRT {
     }
 
     public void update(Value view, Mapping mapping) {
-        AssertUtils.assertTrue(mapping.getTargetType().isAssignableFrom(view.getType()),
+        AssertUtils.assertTrue(mapping.getTargetType().isAssignableFrom(view.getType(), null),
                 ErrorCode.INCORRECT_MAPPING);
         this.view = addChild(view, "view");
         this.mapping = mapping;

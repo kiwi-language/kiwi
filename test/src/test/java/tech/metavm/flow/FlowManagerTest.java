@@ -37,7 +37,7 @@ public class FlowManagerTest extends TestCase {
         var jobManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
         typeManager =
                 new TypeManager(entityContextFactory, entityQueryService, jobManager, null);
-        flowManager = new FlowManager(entityContextFactory);
+        flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         FlowSavingContext.initConfig();
     }

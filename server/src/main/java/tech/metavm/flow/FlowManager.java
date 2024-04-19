@@ -3,6 +3,7 @@ package tech.metavm.flow;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.common.Page;
 import tech.metavm.entity.*;
@@ -21,15 +22,21 @@ import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Component
 public class FlowManager extends EntityContextFactoryBean {
 
     private TypeManager typeManager;
 
-    public FlowManager(EntityContextFactory entityContextFactory) {
+    private final TransactionOperations transactionTemplate;
+
+    public FlowManager(EntityContextFactory entityContextFactory, TransactionOperations transactionTemplate) {
         super(entityContextFactory);
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Transactional(readOnly = true)
@@ -100,6 +107,33 @@ public class FlowManager extends EntityContextFactoryBean {
     public Flow save(FlowDTO flowDTO) {
         try (var context = newContext()) {
             var flow = save(flowDTO, context);
+            context.finish();
+            return flow;
+        }
+    }
+
+    public Flow getParameterizedFlow(GetParameterizedFlowRequest request) {
+        var templateId = Id.parse(request.templateId());
+        var typeArgumentIds = NncUtils.map(request.typeArgumentIds(), Id::parse);
+        try (var context = newContext()) {
+            var template = context.getFlow(templateId);
+            var typeArgs = NncUtils.map(typeArgumentIds, context::getType);
+            var existing = context.getGenericContext().getExistingFlow(template, typeArgs);
+            if (existing != null) {
+                return existing;
+            } else {
+                return transactionTemplate.execute(s -> createParameterizedFlow(request));
+            }
+        }
+    }
+
+    private Flow createParameterizedFlow(GetParameterizedFlowRequest request) {
+        try (var context = newContext()) {
+            var templateId = Id.parse(request.templateId());
+            var typeArgIds = NncUtils.map(request.typeArgumentIds(), Id::parse);
+            var template = context.getFlow(templateId);
+            var typeArgs = NncUtils.map(typeArgIds, context::getType);
+            var flow = context.getGenericContext().getParameterizedFlow(template, typeArgs);
             context.finish();
             return flow;
         }
@@ -213,7 +247,7 @@ public class FlowManager extends EntityContextFactoryBean {
                 var candidate = NncUtils.find(
                         type.getMethods(),
                         f -> f.getParameterTypes().equals(overridden.getParameterTypes())
-                                && overridden.getReturnType().isAssignableFrom(f.getReturnType())
+                                && overridden.getReturnType().isAssignableFrom(f.getReturnType(), null)
                 );
                 if (candidate != null) {
                     candidate.addOverridden(overridden);
@@ -272,8 +306,8 @@ public class FlowManager extends EntityContextFactoryBean {
     }
 
     public void saveContent(FlowDTO flowDTO, Flow flow, IEntityContext context) {
-        try(var ignored = context.getProfiler().enter("FlowManager.saveContent")) {
-            if(DebugEnv.debugging)
+        try (var ignored = context.getProfiler().enter("FlowManager.saveContent")) {
+            if (DebugEnv.debugging)
                 DebugEnv.logger.info("FlowManager.saveContent flow: {}", flow.getQualifiedName());
             if (flow.isNative() || (flow instanceof Method method && method.isAbstract()))
                 return;
@@ -361,7 +395,7 @@ public class FlowManager extends EntityContextFactoryBean {
 
     @Transactional
     public NodeDTO saveNode(NodeDTO nodeDTO) {
-        if(nodeDTO.id() == null || Id.parse(nodeDTO.id()) instanceof TmpId)
+        if (nodeDTO.id() == null || Id.parse(nodeDTO.id()) instanceof TmpId)
             return createNode(nodeDTO);
         else
             return updateNode(nodeDTO);
@@ -844,7 +878,7 @@ public class FlowManager extends EntityContextFactoryBean {
     @Transactional
     public BranchDTO updateBranch(BranchDTO branchDTO) {
         NncUtils.requireNonNull(branchDTO.index(), "分支序号必填");
-        try (var context = newContext(); var serContext= SerializeContext.enter()) {
+        try (var context = newContext(); var serContext = SerializeContext.enter()) {
             NodeRT owner = context.getEntity(NodeRT.class, branchDTO.ownerId());
             if (owner == null) {
                 throw BusinessException.nodeNotFound(branchDTO.ownerId());

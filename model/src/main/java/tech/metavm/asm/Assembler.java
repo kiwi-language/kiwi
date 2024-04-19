@@ -395,12 +395,12 @@ public class Assembler {
 
         @Override
         public Void visitClassDeclaration(AssemblyParser.ClassDeclarationContext ctx) {
-           var classInfo = ClassInfo.fromContext(ctx, scope);
-           setAttribute(ctx, AsmAttributeKey.classInfo, classInfo);
-           super.visitClassDeclaration(ctx);
-           if(ctx.typeType() != null)
-               classInfo.superType = (ClassAsmType) parseType(ctx.typeType(), classInfo);
-           return null;
+            var classInfo = ClassInfo.fromContext(ctx, scope);
+            setAttribute(ctx, AsmAttributeKey.classInfo, classInfo);
+            super.visitClassDeclaration(ctx);
+            if (ctx.typeType() != null)
+                classInfo.superType = (ClassAsmType) parseType(ctx.typeType(), classInfo);
+            return null;
         }
 
         @Override
@@ -433,14 +433,16 @@ public class Assembler {
             setAttribute(ctx, AsmAttributeKey.methodInfo, methodInfo);
             super.visitFunction(name, typeParameters, formalParameterList, returnType, block, ctx, isConstructor, processBody);
             List<AsmType> paramTypes = formalParameterList != null ?
-                    NncUtils.map(formalParameterList.formalParameter(), p -> parseType(p.typeType(), methodInfo)) : List.of();
-            var methodKey = new MethodKey(classInfo.rawName(), name, paramTypes);
+                    NncUtils.map(formalParameterList.formalParameter(), p -> parseType(p.typeType(), methodInfo, true)) : List.of();
+            var methodKey = new MethodKey(classInfo.rawName(), name, paramTypes, methodInfo.getTypeParameters().size());
+            logger.info("method key: {}", methodKey);
             methodInfo.setMethod(methodKey);
         }
 
         @Override
         public Void visitTypeParameter(AssemblyParser.TypeParameterContext ctx) {
-            var type = new AsmTypeVariable((AsmGenericDeclaration) scope, ctx.IDENTIFIER().getText());
+            var genericDecl = (AsmGenericDeclaration) scope;
+            var type = new AsmTypeVariable(genericDecl, ctx.IDENTIFIER().getText(), scope.getTypeParameters().size());
             setAttribute(ctx, AsmAttributeKey.typeVariable, type);
             scope.addTypeParameter(type);
             return super.visitTypeParameter(ctx);
@@ -451,7 +453,7 @@ public class Assembler {
 
         @Override
         public Void visitClassDeclaration(AssemblyParser.ClassDeclarationContext ctx) {
-            var classInfo = getAttribute(ctx,AsmAttributeKey.classInfo);
+            var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
             typeIds.put(classInfo.type, TmpId.randomString());
             var supers = new ArrayList<ClassAsmType>();
             superTypes.put(classInfo.rawName(), supers);
@@ -465,7 +467,7 @@ public class Assembler {
 
         @Override
         public Void visitEnumDeclaration(AssemblyParser.EnumDeclarationContext ctx) {
-            var classInfo = getAttribute(ctx,AsmAttributeKey.classInfo);
+            var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
             var supers = addSupers(classInfo.rawName());
             var pEnumType = new ClassAsmType("Enum", List.of(classInfo.type));
             supers.add(pEnumType);
@@ -479,7 +481,7 @@ public class Assembler {
 
         @Override
         public Void visitInterfaceDeclaration(AssemblyParser.InterfaceDeclarationContext ctx) {
-            var classInfo = getAttribute(ctx,AsmAttributeKey.classInfo);
+            var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
             var supers = addSupers(classInfo.rawName());
             if (ctx.EXTENDS() != null)
                 forEachClass(ctx.typeList(), supers::add);
@@ -765,7 +767,7 @@ public class Assembler {
                     var supers = new LinkedList<>(superTypes.get(currentClass().type.rawName));
                     while (!supers.isEmpty()) {
                         var s = supers.poll();
-                        var overriddenId = methodIds.get(new MethodKey(s.rawName, name, methodKey.parameterTypes));
+                        var overriddenId = methodIds.get(new MethodKey(s.rawName, name, methodKey.parameterTypes, methodKey.numTypeParameters));
                         if (overriddenId != null)
                             overriddenIds.add(overriddenId);
                         else
@@ -1202,6 +1204,10 @@ public class Assembler {
     }
 
     private static AsmType parseType(AssemblyParser.TypeTypeContext typeType, AsmScope scope) {
+        return parseType(typeType, scope, false);
+    }
+
+    private static AsmType parseType(AssemblyParser.TypeTypeContext typeType, AsmScope scope, boolean forMethodSignature) {
         if (typeType.ANY() != null)
             return AnyAsmType.INSTANCE;
         if (typeType.NEVER() != null)
@@ -1209,7 +1215,7 @@ public class Assembler {
         if (typeType.primitiveType() != null)
             return parsePrimitiveType(typeType.primitiveType());
         if (typeType.classOrInterfaceType() != null) {
-            return parseClassType(typeType.classOrInterfaceType(), scope);
+            return parseClassType(typeType.classOrInterfaceType(), scope, forMethodSignature);
         }
         if (typeType.arrayKind() != null) {
             var arrayKind = typeType.arrayKind();
@@ -1277,13 +1283,21 @@ public class Assembler {
     }
 
     private static AsmType parseClassType(AssemblyParser.ClassOrInterfaceTypeContext classOrInterfaceType, @Nullable AsmScope scope) {
+        return parseClassType(classOrInterfaceType, scope, false);
+    }
+
+    private static AsmType parseClassType(AssemblyParser.ClassOrInterfaceTypeContext classOrInterfaceType, @Nullable AsmScope scope, boolean forMethodSignature) {
         var name = classOrInterfaceType.qualifiedName().getText();
         if (!name.contains(".")) {
             var k = scope;
             while (k != null) {
                 var found = k.findTypeParameter(name);
-                if (found != null)
-                    return found;
+                if (found != null) {
+                    if(forMethodSignature && k == scope)
+                        return new SelfTypeParameter(found.index());
+                    else
+                        return found;
+                }
                 k = k.parent();
             }
         }
@@ -1362,7 +1376,7 @@ public class Assembler {
         }
     }
 
-    public record AsmTypeVariable(@NotNull AsmGenericDeclaration owner, @NotNull String name) implements AsmType {
+    public record AsmTypeVariable(@NotNull AsmGenericDeclaration owner, @NotNull String name, int index) implements AsmType {
 
         @Override
         public String name() {
@@ -1435,10 +1449,11 @@ public class Assembler {
     private record FieldKey(String typeName, String fieldName) {
     }
 
-    private record MethodKey(String typeName, String methodName, List<AsmType> parameterTypes) {
+    private record MethodKey(String typeName, String methodName, List<AsmType> parameterTypes, int numTypeParameters) {
 
         public String name() {
-            return typeName + "." + methodName + "(" + NncUtils.join(parameterTypes, AsmType::name) + ")";
+            return typeName + "." + (numTypeParameters > 0 ? "<" + numTypeParameters + ">" : "")
+                    + methodName + "(" + NncUtils.join(parameterTypes, AsmType::name) + ")";
         }
 
     }

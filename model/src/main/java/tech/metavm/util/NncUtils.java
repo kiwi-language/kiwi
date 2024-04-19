@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.checkerframework.checker.units.qual.K;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -1458,10 +1459,9 @@ public class NncUtils {
             throw new NullPointerException(message);
     }
 
-    public static <T> boolean equalsIgnoreOrder(Collection<T> coll1, Collection<T> coll2) {
-        if (coll1.size() != coll2.size()) {
+    public static <T> boolean equalsIgnoreOrder(Collection<? extends T> coll1, Collection<? extends T> coll2) {
+        if (coll1.size() != coll2.size())
             return false;
-        }
         return new HashSet<>(coll1).equals(new HashSet<>(coll2));
     }
 
@@ -1611,6 +1611,24 @@ public class NncUtils {
             return true;
         }
         return streamOf(iterable).allMatch(predicate);
+    }
+
+    public static <T> boolean equalsIgnoreOrder(Collection<? extends T> coll1, Collection<? extends T> coll2, BiPredicate<T,T> equals) {
+        if(coll1.size() != coll2.size())
+            return false;
+        var list = new LinkedList<>(coll2);
+        out:
+        for (T t : coll1) {
+            var it = list.iterator();
+            while(it.hasNext()) {
+                if(equals.test(t, it.next())) {
+                    it.remove();
+                    continue out;
+                }
+            }
+            return false;
+        }
+        return true;
     }
 
     public static <T> boolean noneMatch(Iterable<T> iterable, Predicate<T> predicate) {

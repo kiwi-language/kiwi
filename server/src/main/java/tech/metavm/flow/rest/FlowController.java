@@ -17,15 +17,23 @@ import java.util.List;
 @RequestMapping("/flow")
 public class FlowController {
 
-    @Autowired
-    private FlowManager flowManager;
+    private final FlowManager flowManager;
 
-    @Autowired
-    private FlowExecutionService flowExecutionService;
+    private final FlowExecutionService flowExecutionService;
+
+    public FlowController(FlowManager flowManager, FlowExecutionService flowExecutionService) {
+        this.flowManager = flowManager;
+        this.flowExecutionService = flowExecutionService;
+    }
 
     @PostMapping("/get")
     public Result<GetFlowResponse> get(@RequestBody GetFlowRequest request) {
         return Result.success(flowManager.get(request));
+    }
+
+    @PostMapping("/get-parameterized")
+    public Result<String> getParameterized(@RequestBody GetParameterizedFlowRequest request) {
+        return Result.success(flowManager.getParameterizedFlow(request).getStringId());
     }
 
     @GetMapping

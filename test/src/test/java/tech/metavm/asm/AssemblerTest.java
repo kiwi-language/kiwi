@@ -55,6 +55,11 @@ public class AssemblerTest extends TestCase {
         deploy(List.of(source));
     }
 
+    public void testGenericOverloading() {
+        final var source = "/Users/leen/workspace/object/test/src/test/resources/asm/GenericOverloading.masm";
+        deploy(List.of(source));
+    }
+
     private void assemble(List<String> sources) {
         var stdTypeIds = new HashMap<AsmType, String>();
         for (AsmPrimitiveKind primitiveKind : AsmPrimitiveKind.values()) {
@@ -95,7 +100,7 @@ public class AssemblerTest extends TestCase {
         var instanceManager = new InstanceManager(bootResult.entityContextFactory(),
                 bootResult.instanceStore(), instanceQueryService);
         typeManager.setInstanceManager(instanceManager);
-        var flowManager = new FlowManager(bootResult.entityContextFactory());
+        var flowManager = new FlowManager(bootResult.entityContextFactory(), new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         var flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());

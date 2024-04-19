@@ -49,7 +49,7 @@ public class MappingTest extends TestCase {
                 bootResult.entityContextFactory(), bootResult.instanceStore(), instanceQueryService
         );
         typeManager.setInstanceManager(instanceManager);
-        flowManager = new FlowManager(bootResult.entityContextFactory());
+        flowManager = new FlowManager(bootResult.entityContextFactory(), new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         var flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());

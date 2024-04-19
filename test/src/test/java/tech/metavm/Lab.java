@@ -1,25 +1,26 @@
 package tech.metavm;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tech.metavm.autograph.TranspileTestTools;
+import tech.metavm.autograph.mocks.GenericOverrideFoo;
 
 public class Lab {
 
-    public static <T> @Nullable T find(Iterable<? extends T> iterable, Predicate<? super T> predicate) {
-        for (T t : iterable) {
-            if(predicate.test(t)) {
-                return t;
-            }
-        }
-        return null;
-    }
+    public static final Logger logger = LoggerFactory.getLogger(Lab.class);
 
-    public static boolean contains(List<String> list, String str) {
-        return Lab.<String>find(list, s -> s.equals(str)) != null;
+
+    public static void main(String[] args) {
+        var file = TranspileTestTools.getPsiJavaFile(GenericOverrideFoo.class);
+        var baseClass = file.getClasses()[0];
+        var method0 = baseClass.getMethods()[0];
+        var typeParamList0 = method0.getTypeParameterList();
+        logger.info("type parameters: {}",  typeParamList0 != null ? typeParamList0.getText() : "null");
+
+        var subClass = file.getClasses()[1];
+        var method = subClass.getMethods()[0];
+        var typeParamList = method.getTypeParameterList();
+        logger.info("type parameters: {}",  typeParamList != null ? typeParamList.getText() : "null");
     }
 
 }

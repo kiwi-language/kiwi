@@ -621,11 +621,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         var mappingType = getType(Mapping.class);
         var functionType = getType(Function.class);
         type2Def.keySet().forEach(type -> {
-            if(typeType.isAssignableFrom(type))
+            if(typeType.isAssignableFrom(type, null))
                 typeTypes.add(type);
-            else if(mappingType.isAssignableFrom(type))
+            else if(mappingType.isAssignableFrom(type, null))
                 mappingTypes.add(type);
-            else if(functionType.isAssignableFrom(type))
+            else if(functionType.isAssignableFrom(type, null))
                 functionTypes.add(type);
         });
     }

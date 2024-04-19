@@ -52,7 +52,7 @@ public class MapNode extends NodeRT {
     }
 
     public void update(Value source, Mapping mapping) {
-        AssertUtils.assertTrue(mapping.getSourceType().isAssignableFrom(source.getType()),
+        AssertUtils.assertTrue(mapping.getSourceType().isAssignableFrom(source.getType(), null),
                 ErrorCode.INCORRECT_MAPPING);
         this.source = addChild(source, "source");
         this.mapping = mapping;

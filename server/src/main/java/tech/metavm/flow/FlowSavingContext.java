@@ -49,7 +49,7 @@ public class FlowSavingContext {
     private static Config getConfig() {
         var config = CONFIG_LOCAL.get();
         if(config == null) {
-            throw new InternalException("Config is not intialzied");
+            throw new InternalException("Config is not initialized");
         }
         return config;
     }

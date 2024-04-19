@@ -36,7 +36,7 @@ public class ShoppingTest extends TestCase {
                 new EntityQueryService(instanceQueryService),
                 new TaskManager(entityContextFactory, transactionOptions),
                 transactionOptions);
-        flowManager = new FlowManager(entityContextFactory);
+        flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         instanceManager = new InstanceManager(entityContextFactory, instanceStore, instanceQueryService);

@@ -266,6 +266,8 @@ public class SubstitutorV2 extends CopyVisitor {
             addCopy(method, copy);
             addCopy(method.getRootScope(), copy.getRootScope());
             enterElement(copy);
+            for (Method overridden : method.getOverridden())
+                NncUtils.biForEach(overridden.getTypeParameters(), copy.getTypeArguments(), typeSubstitutor::addMapping);
             copy.update(
                     NncUtils.map(method.getParameters(), p -> (Parameter) copy(p)),
                     substituteType(method.getReturnType()),

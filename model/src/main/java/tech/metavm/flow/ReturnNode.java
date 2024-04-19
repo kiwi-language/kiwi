@@ -74,7 +74,7 @@ public class ReturnNode extends NodeRT {
         if (!callable.getReturnType().isVoid()) {
             if (value == null)
                 return "未配置返回结果";
-            else if (!callable.getReturnType().isAssignableFrom(getExpressionTypes().getType(value.getExpression())))
+            else if (!callable.getReturnType().isAssignableFrom(getExpressionTypes().getType(value.getExpression()), null))
                 return "返回结果错误";
         }
         return null;

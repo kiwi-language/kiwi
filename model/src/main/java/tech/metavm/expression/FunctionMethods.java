@@ -189,7 +189,7 @@ public class FunctionMethods {
     }
 
     public static boolean isAssignable(Type from, Type to) {
-        return from.isAssignableFrom(to);
+        return from.isAssignableFrom(to, null);
     }
 
     public static LongInstance LEN(Instance instance) {

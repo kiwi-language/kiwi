@@ -9,15 +9,15 @@ public interface TypeRegistry {
     Type getType(Class<?> javaClass);
 
     default boolean isTypeType(Type type) {
-        return getType(Type.class).isAssignableFrom(type);
+        return getType(Type.class).isAssignableFrom(type, null);
     }
 
     default boolean isMappingType(Type type) {
-        return getType(Mapping.class).isAssignableFrom(type);
+        return getType(Mapping.class).isAssignableFrom(type, null);
     }
 
     default boolean isFunctionType(Type type) {
-        return getType(Function.class).isAssignableFrom(type);
+        return getType(Function.class).isAssignableFrom(type, null);
     }
 
 }

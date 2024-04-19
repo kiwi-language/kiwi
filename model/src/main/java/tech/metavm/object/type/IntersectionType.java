@@ -42,8 +42,8 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that) {
-        return NncUtils.allMatch(this.types, t -> t.isAssignableFrom(that));
+    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+        return NncUtils.allMatch(this.types, t -> t.isAssignableFrom(that, typeMapping));
     }
 
     @Override
@@ -59,6 +59,14 @@ public class IntersectionType extends CompositeType {
     @Override
     public List<? extends Type> getSuperTypes() {
         return Collections.unmodifiableList(types);
+    }
+
+    @Override
+    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
+        if (that instanceof IntersectionType thatIntersectionType)
+            return NncUtils.equalsIgnoreOrder(types, thatIntersectionType.types, (t1,t2) -> t1.equals(t2, mapping));
+        else
+            return false;
     }
 
     @Override

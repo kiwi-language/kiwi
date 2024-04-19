@@ -61,8 +61,8 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that) {
-        return NncUtils.anyMatch(members, m -> m.isAssignableFrom(that));
+    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+        return NncUtils.anyMatch(members, m -> m.isAssignableFrom(that, typeMapping));
     }
 
     @Override
@@ -138,6 +138,14 @@ public class UnionType extends CompositeType {
     @Override
     public List<? extends Type> getSuperTypes() {
         return List.of(Types.getLeastUpperBound(members));
+    }
+
+    @Override
+    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
+        if (that instanceof UnionType thatUnionType)
+            return NncUtils.equalsIgnoreOrder(members, thatUnionType.members, (t1, t2) -> t1.equals(t2, mapping));
+        else
+            return false;
     }
 
     @Override

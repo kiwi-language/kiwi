@@ -52,7 +52,7 @@ public class TypeManagerTest extends TestCase {
                 entityContextFactory, instanceStore, new InstanceQueryService(instanceSearchService)
         );
         typeManager.setInstanceManager(instanceManager);
-        flowManager = new FlowManager(entityContextFactory);
+        flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         var flowExecutionService = new FlowExecutionService(entityContextFactory);

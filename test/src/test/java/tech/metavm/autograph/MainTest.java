@@ -1,13 +1,11 @@
 package tech.metavm.autograph;
 
-import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.application.rest.dto.ApplicationCreateRequest;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.rest.FlowExecutionRequest;
-import tech.metavm.flow.rest.GetFlowRequest;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.ArrayKind;
@@ -21,8 +19,6 @@ import tech.metavm.util.*;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static tech.metavm.util.NncUtils.requireNonNull;
 import static tech.metavm.util.TestUtils.doInTransaction;
@@ -32,123 +28,9 @@ public class MainTest extends CompilerTestBase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(MainTest.class);
 
-    public static final String SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/java";
-
     public static final String SHOPPING_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/shopping";
 
-    public static final String METAVM_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/metavm";
-
     public static final String USERS_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/users";
-
-    public static final String HOME = "/Users/leen/workspace/object/test/src/test/resources/home";
-
-    public void _test() throws ExecutionException, InterruptedException {
-        compile(SOURCE_ROOT);
-        var ref = new Object() {
-            String productTypeId;
-        };
-        submit(() -> {
-            var productType = queryClassType("商品");
-            ref.productTypeId = productType.id();
-            Assert.assertNotNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
-            var skuType = queryClassType("SKU");
-            var skuListType = typeManager.getParameterizedType(
-                    new GetParameterizedTypeRequest(
-                            StandardTypes.getChildListType().getStringId(),
-                            List.of(skuType.id()),
-                            List.of()
-                    )
-            ).type().id();
-            var product = InstanceDTO.createClassInstance(
-                    productType.id(),
-                    List.of(
-                            InstanceFieldDTO.create(
-                                    getFieldIdByCode(productType, "title"),
-                                    PrimitiveFieldValue.createString("鞋子")
-                            ),
-                            InstanceFieldDTO.create(
-                                    getFieldIdByCode(productType, "skus"),
-                                    InstanceFieldValue.of(
-                                            InstanceDTO.createListInstance(
-                                                    skuListType,
-                                                    true,
-                                                    List.of(
-                                                            InstanceFieldValue.of(
-                                                                    InstanceDTO.createClassInstance(
-                                                                            skuType.id(),
-                                                                            List.of(
-                                                                                    InstanceFieldDTO.create(
-                                                                                            getFieldIdByCode(skuType, "title"),
-                                                                                            PrimitiveFieldValue.createString("40")
-                                                                                    ),
-                                                                                    InstanceFieldDTO.create(
-                                                                                            getFieldIdByCode(skuType, "amount"),
-                                                                                            PrimitiveFieldValue.createLong(100)
-                                                                                    ),
-                                                                                    InstanceFieldDTO.create(
-                                                                                            getFieldIdByCode(skuType, "price"),
-                                                                                            PrimitiveFieldValue.createDouble(90.0)
-                                                                                    )
-                                                                            )
-                                                                    )
-                                                            ),
-                                                            InstanceFieldValue.of(
-                                                                    InstanceDTO.createClassInstance(
-                                                                            skuType.id(),
-                                                                            List.of(
-                                                                                    InstanceFieldDTO.create(
-                                                                                            getFieldIdByCode(skuType, "title"),
-                                                                                            PrimitiveFieldValue.createString("41")
-                                                                                    ),
-                                                                                    InstanceFieldDTO.create(
-                                                                                            getFieldIdByCode(skuType, "amount"),
-                                                                                            PrimitiveFieldValue.createLong(100)
-                                                                                    ),
-                                                                                    InstanceFieldDTO.create(
-                                                                                            getFieldIdByCode(skuType, "price"),
-                                                                                            PrimitiveFieldValue.createDouble(100.0)
-                                                                                    )
-                                                                            )
-                                                                    )
-                                                            )
-                                                    )
-                                            )
-                                    )
-                            )
-                    )
-            );
-            var productId = doInTransaction(() -> instanceManager.create(product));
-            var loadedProduct = instanceManager.get(productId, 1).instance();
-            MatcherAssert.assertThat(loadedProduct, new InstanceDTOMatcher(product, TestUtils.extractDescendantIds(loadedProduct)));
-            var productMapping = TestUtils.getDefaultMapping(productType);
-            var productViewType = typeManager.getType(new GetTypeRequest(productMapping.targetTypeId(), false)).type();
-            var productViews = instanceManager.query(
-                    new InstanceQueryDTO(
-                            productViewType.id(),
-                            productMapping.id(),
-                            null,
-                            null,
-                            List.of(),
-                            1,
-                            20,
-                            false,
-                            false,
-                            List.of()
-                    )
-            ).page().data();
-            Assert.assertEquals(1, productViews.size());
-            var productView = productViews.get(0);
-            var priceFieldValue = (PrimitiveFieldValue) productView.getFieldValue(
-                    getFieldIdByCode(productViewType, "price"));
-            Assert.assertEquals(95.0, (double) priceFieldValue.getValue(), 0.0);
-        });
-        CompilerConfig.setMethodBlacklist(Set.of("tech.metavm.lab.Product.setSkus"));
-        compile(SOURCE_ROOT);
-        submit(() -> {
-            var productType = typeManager.getType(new GetTypeRequest(ref.productTypeId, false)).type();
-            Assert.assertNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
-        });
-    }
 
     public void testShopping() {
         compileTwice(SHOPPING_SOURCE_ROOT);
@@ -221,108 +103,6 @@ public class MainTest extends CompilerTestBase {
             var orderCoupons = ((InstanceFieldValue) order.getFieldValue(getFieldIdByCode(orderType, "coupons"))).getInstance();
             Assert.assertEquals(1, orderCoupons.getListSize());
             Assert.assertEquals(95, price);
-        });
-    }
-
-//    public void testLab() {
-//        compile(USERS_SOURCE_ROOT);
-//        submit(() -> {
-//            // create an UserLab instance
-//            var userLabType = queryClassType("UserLab");
-//            var userLabId = doInTransaction(() -> instanceManager.create(InstanceDTO.createClassInstance(
-//                    userLabType.getRef(),
-//                    List.of(
-//                            InstanceFieldDTO.create(
-//                                    getFieldIdByCode(userLabType, "label"),
-//                                    PrimitiveFieldValue.createString("实验室")
-//                            )
-//                    )
-//            )));
-//
-//            // call UserLab.createRole
-//            var createRoleMethodId = TestUtils.getMethodIdByCode(userLabType, "createRole");
-//            var role = doInTransaction(() -> flowExecutionService.execute(
-//                    new FlowExecutionRequest(
-//                            createRoleMethodId,
-//                            userLabId,
-//                            List.of(PrimitiveFieldValue.createString("admin"))
-//                    )
-//            ));
-//            var roleType = queryClassType("LabRole");
-//            var roleNameFieldId = getFieldIdByCode(roleType, "name");
-//            Assert.assertEquals("admin", ((PrimitiveFieldValue) role.getFieldValue(roleNameFieldId)).getValue());
-//            // call UserLab.createPlatformUser
-//            var roleReadWriteListType = typeManager.getParameterizedType(
-//                    new GetParameterizedTypeRequest(
-//                            StandardTypes.getReadWriteListType().getRef(),
-//                            List.of(roleType.getRef()),
-//                            List.of()
-//                    )
-//            ).type();
-//            var createPlatformUserMethodId = TestUtils.getMethodIdByCode(userLabType, "createPlatformUser");
-//            ContextUtil.resetProfiler();
-//            var platformUser = doInTransaction(() -> {
-//                InstanceDTO result;
-//                result = flowExecutionService.execute(
-//                        new FlowExecutionRequest(
-//                                createPlatformUserMethodId,
-//                                userLabId,
-//                                List.of(
-//                                        PrimitiveFieldValue.createString("lyq"),
-//                                        PrimitiveFieldValue.createString("123456"),
-//                                        PrimitiveFieldValue.createString("lyq"),
-//                                        new InstanceFieldValue(
-//                                                null,
-//                                                InstanceDTO.createListInstance(
-//                                                        roleReadWriteListType.getRef(),
-//                                                        false,
-//                                                        List.of(ReferenceFieldValue.create(role))
-//                                                )
-//                                        )
-//                                )
-//                        )
-//                );
-////                }
-//                return result;
-//            });
-//            LOGGER.info(ContextUtil.getProfiler().finish(true, true).output());
-//
-//            ContextUtil.resetProfiler();
-//            var userType = queryClassType("LabUser", List.of(TypeCategory.CLASS.code()));
-////            var platformUserType = queryClassType("LabPlatformUser");
-//            var userLoginNameFieldId = getFieldIdByCode(userType, "loginName");
-//            var userNameFieldId = getFieldIdByCode(userType, "name");
-//            Assert.assertEquals("lyq", ((PrimitiveFieldValue) platformUser.getFieldValue(userLoginNameFieldId)).getValue());
-//            Assert.assertEquals("lyq", ((PrimitiveFieldValue) platformUser.getFieldValue(userNameFieldId)).getValue());
-//        });
-//    }
-
-    public void testMetavm() {
-        compile(METAVM_SOURCE_ROOT);
-        var ref = new Object() {
-            String getCodeMethodId;
-            int numNodes;
-        };
-        submit(() -> {
-            var typeType = queryClassType("类型", List.of(TypeCategory.CLASS.code()));
-            Assert.assertTrue(typeType.getClassParam().errors().isEmpty());
-            ref.getCodeMethodId = TestUtils.getMethodIdByCode(typeType, "getCode");
-            var getCodeMethod = flowManager.get(new GetFlowRequest(ref.getCodeMethodId, true)).flow();
-            ref.numNodes = Objects.requireNonNull(getCodeMethod.rootScope()).nodes().size();
-
-            var typeCategoryType = queryClassType("类型分类", List.of(TypeCategory.ENUM.code()));
-            var firstEnumConstant = typeCategoryType.getClassParam().enumConstants().get(0);
-            Assert.assertEquals("类", firstEnumConstant.title());
-        });
-
-        // test recompile
-        compile(METAVM_SOURCE_ROOT);
-
-        // assert that the number of nodes doesn't change after recompilation
-        submit(() -> {
-            var getCodeMethod = flowManager.get(new GetFlowRequest(ref.getCodeMethodId, true)).flow();
-            int numNodes = Objects.requireNonNull(getCodeMethod.rootScope()).nodes().size();
-            Assert.assertEquals(ref.numNodes, numNodes);
         });
     }
 

@@ -8,6 +8,7 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.FlowExecutionRequest;
+import tech.metavm.flow.rest.GetParameterizedFlowRequest;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
@@ -50,7 +51,7 @@ public class InstanceManagerTest extends TestCase {
                 new TaskManager(entityContextFactory, transactionOperations),
                 transactionOperations
         );
-        flowManager = new FlowManager(entityContextFactory);
+        flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         flowExecutionService = new FlowExecutionService(entityContextFactory);
@@ -208,6 +209,31 @@ public class InstanceManagerTest extends TestCase {
                 )
         ));
         Assert.assertEquals("是", contains2.title());
+    }
+
+    public void testGenericOverloading() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/GenericOverloading.masm", typeManager);
+        var baseType = typeManager.getTypeByCode("Base").type();
+        var subType = typeManager.getTypeByCode("Sub").type();
+        var testMethodId = TestUtils.getMethodByCode(baseType, "test").id();
+        var pTestMethodId = flowManager.getParameterizedFlow(new GetParameterizedFlowRequest(
+                testMethodId,
+                List.of(StandardTypes.getStringType().getStringId())
+        )).getStringId();
+        var subId = TestUtils.doInTransaction(() -> instanceManager.create(
+                InstanceDTO.createClassInstance(
+                       subType.id(),
+                        List.of()
+                )
+        ));
+        var result = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        pTestMethodId,
+                        subId,
+                        List.of(PrimitiveFieldValue.createString("abc"))
+                )
+        ));
+        Assert.assertEquals("是", result.title());
     }
 
     public void testLivingBeing() {

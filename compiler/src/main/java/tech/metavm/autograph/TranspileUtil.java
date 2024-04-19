@@ -222,14 +222,14 @@ public class TranspileUtil {
         queue.offer(declaringClass);
         Set<String> visited = new HashSet<>();
         visited.add(declaringClass.getQualifiedName());
-        List<PsiMethod> overridenMethods = new ArrayList<>();
+        List<PsiMethod> overriddenMethods = new ArrayList<>();
         while (!queue.isEmpty()) {
             var klass = queue.poll();
             if (klass != declaringClass) {
                 var superMethods = klass.getMethods();
                 for (PsiMethod superMethod : superMethods) {
                     if (isOverrideOf(method, superMethod)) {
-                        overridenMethods.add(superMethod);
+                        overriddenMethods.add(superMethod);
                     }
                 }
             }
@@ -247,26 +247,26 @@ public class TranspileUtil {
                 }
             }
         }
-        return overridenMethods;
+        return overriddenMethods;
     }
 
-    public static boolean isOverrideOf(PsiMethod override, PsiMethod overriden) {
-        if (!override.getName().equals(overriden.getName())) {
+    public static boolean isOverrideOf(PsiMethod override, PsiMethod overridden) {
+        if (!override.getName().equals(overridden.getName())) {
             return false;
         }
         var overrideDeclClass = NncUtils.requireNonNull(override.getContainingClass());
-        var overridenDeclClass = NncUtils.requireNonNull(overriden.getContainingClass());
-        if (!overrideDeclClass.isInheritor(overridenDeclClass, true)) {
+        var overriddenDeclClass = NncUtils.requireNonNull(overridden.getContainingClass());
+        if (!overrideDeclClass.isInheritor(overriddenDeclClass, true)) {
             return false;
         }
         int paramCount = override.getParameterList().getParametersCount();
-        if (overriden.getParameterList().getParametersCount() != paramCount) {
+        if (overridden.getParameterList().getParametersCount() != paramCount) {
             return false;
         }
         for (int i = 0; i < paramCount; i++) {
             var overrideParamType = NncUtils.requireNonNull(override.getParameterList().getParameter(i)).getType();
-            var overridenParamType = NncUtils.requireNonNull(overriden.getParameterList().getParameter(i)).getType();
-            if (!overrideParamType.equals(overridenParamType)) {
+            var overriddenParamType = NncUtils.requireNonNull(overridden.getParameterList().getParameter(i)).getType();
+            if (!overrideParamType.equals(overriddenParamType)) {
                 return false;
             }
         }

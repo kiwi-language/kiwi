@@ -13,7 +13,6 @@ import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -118,7 +117,7 @@ public class Method extends Flow implements Property, GenericElement {
                     overridenFlow.getParameterTypes()
             );
             NncUtils.requireTrue(overridenFlow.getReturnType() == getReturnType() ||
-                    overridenFlow.getReturnType().isAssignableFrom(getReturnType()));
+                    overridenFlow.getReturnType().isAssignableFrom(getReturnType(), null));
         }
     }
 
@@ -294,11 +293,15 @@ public class Method extends Flow implements Property, GenericElement {
                             FunctionType type, @Nullable FunctionType staticType) {
         super.checkTypes(parameters, returnType, type);
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
-        for (Flow overriddenFlow : overridden) {
-            if (!paramTypes.equals(overriddenFlow.getParameterTypes())) {
-                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
+        for (Method overriddenFlow : overridden) {
+            if(getTypeParameters().size() != overriddenFlow.getTypeParameters().size()) {
+                logger.info("Method {} has an overridden {} with different number of type parameters. {} != {}",
+                        getQualifiedName(), overriddenFlow.getQualifiedName(), getTypeParameters().size(), overriddenFlow.getTypeParameters().size());
             }
-            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType)) {
+            var typeParamMapping = NncUtils.zip(getTypeParameters(), overriddenFlow.getTypeParameters());
+            if(!NncUtils.biAllMatch(paramTypes, overriddenFlow.getParameterTypes(), (t1,t2) -> t1.equals(t2, typeParamMapping)))
+                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
+            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType, typeParamMapping)) {
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT);
             }
         }
@@ -422,10 +425,10 @@ public class Method extends Flow implements Property, GenericElement {
                 throw new InternalException(
                         String.format("Methods with the same signature defined in the same type: %s(%s)",
                                 getName(), NncUtils.join(paramTypes, Type::getTypeDesc)));
-            return declaringType.isAssignableFrom(that.getDeclaringType());
+            return declaringType.isAssignableFrom(that.getDeclaringType(), null);
         }
         for (int i = 0; i < paramTypes.size(); i++) {
-            if(!paramTypes.get(i).isAssignableFrom(thatParamTypes.get(i)))
+            if(!paramTypes.get(i).isAssignableFrom(thatParamTypes.get(i), null))
                 return false;
         }
         return true;

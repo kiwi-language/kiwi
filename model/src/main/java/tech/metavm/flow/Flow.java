@@ -168,7 +168,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         if(this.code != null && this.code.equals(code)) {
             if(parameters.size() == argumentTypes.size()) {
                 for(int i = 0; i < parameters.size(); i++) {
-                    if(!parameters.get(i).getType().isAssignableFrom(argumentTypes.get(i)))
+                    if(!parameters.get(i).getType().isAssignableFrom(argumentTypes.get(i), null))
                         return false;
                 }
                 return true;

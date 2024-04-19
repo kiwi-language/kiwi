@@ -11,6 +11,8 @@ import tech.metavm.object.type.rest.dto.ObjectTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
 
+import java.util.Map;
+
 @EntityType("任意类型")
 public class AnyType extends Type {
 
@@ -29,8 +31,13 @@ public class AnyType extends Type {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that) {
+    protected boolean isAssignableFrom0(Type that, @javax.annotation.Nullable Map<TypeVariable, ? extends Type> typeMapping) {
         return true;
+    }
+
+    @Override
+    public boolean equals(Type that, @javax.annotation.Nullable Map<TypeVariable, ? extends Type> mapping) {
+        return equals(that);
     }
 
     @Override

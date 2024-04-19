@@ -76,7 +76,7 @@ public abstract class CompilerTestBase extends TestCase  {
         instanceManager = new InstanceManager(bootResult.entityContextFactory(),
                 bootResult.instanceStore(), instanceQueryService);
         typeManager.setInstanceManager(instanceManager);
-        flowManager = new FlowManager(bootResult.entityContextFactory());
+        flowManager = new FlowManager(bootResult.entityContextFactory(), new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());

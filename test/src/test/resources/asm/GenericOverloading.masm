@@ -1,0 +1,16 @@
+
+class Base {
+
+    <T> boolean test(T value) {
+        return false;
+    }
+
+}
+
+class Sub extends Base {
+
+    <T> boolean test(T value) {
+        return true;
+    }
+
+}

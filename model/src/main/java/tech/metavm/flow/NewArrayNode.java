@@ -72,7 +72,7 @@ public class NewArrayNode extends NodeRT implements NewNode {
         } else {
             NncUtils.requireTrue(value.getType() instanceof ArrayType);
             var valueType = (ArrayType) value.getType();
-            NncUtils.requireTrue(getType().getElementType().isAssignableFrom(valueType.getElementType()));
+            NncUtils.requireTrue(getType().getElementType().isAssignableFrom(valueType.getElementType(), null));
         }
         return value;
     }

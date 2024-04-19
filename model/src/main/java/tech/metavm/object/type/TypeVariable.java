@@ -65,14 +65,23 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
     @Override
     public void setCopySource(Object copySource) {
         NncUtils.requireNull(this.copySource);
+        //noinspection UnnecessaryLocalVariable
         var typeVarTemplate = (TypeVariable) copySource;
 //        NncUtils.requireTrue(typeVarTemplate.getGenericDeclaration() == genericDeclaration.getTemplate());
         this.copySource = typeVarTemplate;
     }
 
     @Override
-    public boolean isAssignableFrom(Type that) {
-        return that == this || super.isAssignableFrom(that);
+    public boolean isAssignableFrom(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+        return equals(that, typeMapping) || super.isAssignableFrom(that, typeMapping);
+    }
+
+    @Override
+    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
+        if(mapping != null)
+            return Objects.requireNonNullElse(mapping.get(this), this).equals(that);
+        else
+            return this.equals(that);
     }
 
     @Override
@@ -89,8 +98,8 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that) {
-        return this == that;
+    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+        return equals(that, typeMapping);
     }
 
     @Override

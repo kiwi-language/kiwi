@@ -471,13 +471,13 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             return method;
         if (superClass != null) {
             var m = superClass.findMethodByCodeAndParamTypes(code, parameterTypes);
-            if(m != null)
+            if (m != null)
                 return m;
         }
-        if(isEffectiveAbstract()) {
+        if (isEffectiveAbstract()) {
             for (ClassType it : interfaces) {
                 var m = it.findMethodByCodeAndParamTypes(code, parameterTypes);
-                if(m != null)
+                if (m != null)
                     return m;
             }
         }
@@ -522,13 +522,13 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             return method;
         if (superClass != null) {
             var m = superClass.getMethod(property, value);
-            if(m != null)
+            if (m != null)
                 return m;
         }
-        if(isEffectiveAbstract()) {
+        if (isEffectiveAbstract()) {
             for (ClassType it : interfaces) {
                 var m = it.getMethod(property, value);
-                if(m != null)
+                if (m != null)
                     return m;
             }
         }
@@ -745,24 +745,23 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
      * Find static field, instance method or static method by var.
      */
     public Property findStaticPropertyByVar(Var var) {
-        if(var.isId()) {
+        if (var.isId()) {
             var p = findSelfStaticProperty(m -> m.idEquals(var.getId()));
-            if(p != null)
+            if (p != null)
                 return p;
-        }
-        else {
+        } else {
             var p = findSelfStaticProperty(m -> m.getName().equals(var.getName()));
-            if(p != null)
+            if (p != null)
                 return p;
         }
-        if(superClass != null) {
+        if (superClass != null) {
             var p = superClass.findStaticPropertyByVar(var);
-            if(p != null)
+            if (p != null)
                 return p;
         }
         for (ClassType it : interfaces) {
             var p = it.findStaticPropertyByVar(var);
-            if(p != null)
+            if (p != null)
                 return p;
         }
         return null;
@@ -943,7 +942,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that) {
+    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
         if (equals(that)) {
             return true;
         }
@@ -951,15 +950,15 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             if (template != null) {
                 var s = thatClass.findAncestorType(template);
                 if (s != null)
-                    return NncUtils.biAllMatch(typeArguments, s.typeArguments, (type, that1) -> type.contains(that1));
+                    return NncUtils.biAllMatch(typeArguments, s.typeArguments, (type, that1) -> type.contains(that1, typeMapping));
                 else
                     return false;
             } else {
-                if (thatClass.getSuperClass() != null && isAssignableFrom(thatClass.getSuperClass()))
+                if (thatClass.getSuperClass() != null && isAssignableFrom(thatClass.getSuperClass(), typeMapping))
                     return true;
                 if (isInterface()) {
                     for (ClassType it : thatClass.interfaces) {
-                        if (isAssignableFrom(it)) {
+                        if (isAssignableFrom(it, typeMapping)) {
                             return true;
                         }
                     }
@@ -1207,9 +1206,10 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     public @Nullable Method tryResolveMethod(String code, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly, ParameterizedFlowProvider parameterizedFlowProvider) {
         var candidates = new ArrayList<Method>();
         getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates, parameterizedFlowProvider);
-        out: for (Method m1 : candidates) {
+        out:
+        for (Method m1 : candidates) {
             for (Method m2 : candidates) {
-                if(m1 != m2 && m1.isHiddenBy(m2))
+                if (m1 != m2 && m1.isHiddenBy(m2))
                     continue out;
             }
             return m1;
@@ -1224,23 +1224,22 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
                                    List<Method> candidates,
                                    ParameterizedFlowProvider parameterizedFlowProvider) {
         methods.forEach(m -> {
-            if((m.isStatic() || !staticOnly) && code.equals(m.getCode()) && m.getParameters().size() == argumentTypes.size()){
-                if(NncUtils.isNotEmpty(typeArguments)) {
-                    if(m.getTypeParameters().size() == typeArguments.size()) {
+            if ((m.isStatic() || !staticOnly) && code.equals(m.getCode()) && m.getParameters().size() == argumentTypes.size()) {
+                if (NncUtils.isNotEmpty(typeArguments)) {
+                    if (m.getTypeParameters().size() == typeArguments.size()) {
                         var pMethod = parameterizedFlowProvider.getParameterizedFlow(m, typeArguments);
                         if (pMethod.matches(code, argumentTypes))
                             candidates.add(pMethod);
                     }
-                }
-                else {
-                    if(m.matches(code, argumentTypes))
+                } else {
+                    if (m.matches(code, argumentTypes))
                         candidates.add(m);
                 }
             }
         });
-        if(superClass != null)
+        if (superClass != null)
             superClass.getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates, parameterizedFlowProvider);
-        if(isInterface() || isAbstract || staticOnly) {
+        if (isInterface() || isAbstract || staticOnly) {
             interfaces.forEach(it -> it.getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates, parameterizedFlowProvider));
         }
     }
@@ -1455,13 +1454,24 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return true;
     }
 
+    @Override
+    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
+        if (typeArguments.isEmpty())
+            return this == that;
+        else if (that instanceof ClassType thatClassType) {
+            return template == thatClassType.template
+                    && NncUtils.biAllMatch(typeArguments, thatClassType.typeArguments, (t1, t2) -> t1.equals(t2, mapping));
+        } else
+            return false;
+    }
+
     public boolean isParameterized() {
         return template != null && template != this;
     }
 
     @Override
     public String getTypeDesc() {
-        if(isParameterized())
+        if (isParameterized())
             return Objects.requireNonNull(template).getName() + "<" + NncUtils.join(typeArguments, Type::getTypeDesc, ",") + ">";
         else
             return getName();
@@ -1590,7 +1600,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
-        if(typeArguments.isEmpty())
+        if (typeArguments.isEmpty())
             return getCodeRequired();
         else
             return requireNonNull(template).getCodeRequired() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
