@@ -102,7 +102,7 @@ public record SourceEvaluationContext(Source source,
     }
 
     private Instance createPrimitiveInstance(PrimitiveFieldValue primitiveValue) {
-        var kind = PrimitiveKind.getByCode(primitiveValue.getPrimitiveKind());
+        var kind = PrimitiveKind.fromCode(primitiveValue.getPrimitiveKind());
         return switch (kind) {
             case PASSWORD -> Instances.passwordInstance((String) primitiveValue.getValue());
             case NULL -> Instances.nullInstance();

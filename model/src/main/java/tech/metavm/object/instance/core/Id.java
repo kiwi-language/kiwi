@@ -3,6 +3,7 @@ package tech.metavm.object.instance.core;
 import com.google.common.primitives.UnsignedBytes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.util.EncodingUtils;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
@@ -43,7 +44,7 @@ public abstract class Id implements Comparable<Id> {
         var isArray = (maskedTagCode & 0x80) != 0;
         return switch (tag) {
             case NULL -> new NullId();
-            case OBJECT_PHYSICAL -> new DefaultPhysicalId(isArray, input.readLong(), input.readLong(), readId(input));
+            case OBJECT_PHYSICAL -> new DefaultPhysicalId(isArray, input.readLong(), input.readLong(), TypeKey.read(input));
             case CLASS_TYPE_PHYSICAL, ARRAY_TYPE_PHYSICAL, FIELD_PHYSICAL ->
                     new TaggedPhysicalId(tag, input.readLong(), input.readLong());
             case TMP -> new TmpId(input.readLong());
@@ -51,10 +52,10 @@ public abstract class Id implements Comparable<Id> {
             case CHILD_VIEW -> new ChildViewId(isArray, readId(input), readId(input), (ViewId) readId(input));
             case FIELD_VIEW ->
                     new FieldViewId(isArray, (ViewId) readId(input), ViewId.readMappingId(input), readId(input),
-                            PathViewId.readSourceId(input), readId(input));
+                            PathViewId.readSourceId(input), TypeKey.read(input));
             case ELEMENT_VIEW ->
                     new ElementViewId(isArray, (ViewId) readId(input), ViewId.readMappingId(input), input.readInt(),
-                            PathViewId.readSourceId(input), readId(input));
+                            PathViewId.readSourceId(input), TypeKey.read(input));
             case MOCK -> new MockId(input.readLong());
         };
     }

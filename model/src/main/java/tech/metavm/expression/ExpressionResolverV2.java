@@ -45,7 +45,8 @@ public class ExpressionResolverV2 extends CopyVisitor {
             try {
                 var qualifier = context.getDefaultExpr();
                 var qualifierType = (ClassType) qualifier.getType();
-                var property = qualifierType.getPropertyByVar(Var.parse(expr.getVariable()));
+                var klass = qualifierType.resolve();
+                var property = klass.getPropertyByVar(Var.parse(expr.getVariable()));
                 return new PropertyExpression(qualifier, property);
             }
             catch (InternalException e) {
@@ -100,8 +101,8 @@ public class ExpressionResolverV2 extends CopyVisitor {
             assignedTypeStack.push(null);
             if (expression.getQualifier() instanceof VariableExpression qualifierVariableExpr) {
                 Var qualifierVar = Var.parse(qualifierVariableExpr.getVariable());
-                if (!context.isContextVar(qualifierVar) && context.getTypeProvider() != null) {
-                    ClassType type = getClassType(qualifierVar, context.getTypeProvider());
+                if (!context.isContextVar(qualifierVar) && context.getTypeDefProvider() != null) {
+                    Klass type = getClassType(qualifierVar, context.getTypeDefProvider());
                     if (type != null) {
 
                         return new StaticPropertyExpression(
@@ -112,7 +113,8 @@ public class ExpressionResolverV2 extends CopyVisitor {
             }
             var qualifier = (Expression) copy(expression.getQualifier());
             var qualifierType = (ClassType) context.getExpressionType(qualifier);
-            var property = qualifierType.getPropertyByVar(Var.parse(expression.getField().getVariable()));
+            var klass = qualifierType.resolve();
+            var property = klass.getPropertyByVar(Var.parse(expression.getField().getVariable()));
             if(property == null)
                 throw new InternalException("Property not found: " + expression.getField().getVariable() + " in type " + qualifierType);
             return new PropertyExpression(qualifier, property);
@@ -121,16 +123,10 @@ public class ExpressionResolverV2 extends CopyVisitor {
         }
     }
 
-    private ClassType getClassType(Var var, IndexedTypeProvider typeProvider) {
+    private Klass getClassType(Var var, IndexedTypeDefProvider klassProvider) {
         return switch (var.getType()) {
-            case ID -> {
-                var entity = typeProvider.getClassType(var.getId());
-                yield entity instanceof ClassType classType ? classType : null;
-            }
-            case NAME -> {
-                var type = typeProvider.findClassTypeByName(var.getName());
-                yield type instanceof ClassType classType ? classType : null;
-            }
+            case ID -> klassProvider.getTypeDef(var.getId()) instanceof Klass classType ? classType : null;
+            case NAME -> klassProvider.findKlassByName(var.getName());
         };
     }
 

@@ -8,7 +8,7 @@ public record ParameterDTO(
         String id,
         String name,
         String code,
-        String typeId,
+        String type,
         @Nullable ValueDTO condition,
         @Nullable String templateId,
         String callableId

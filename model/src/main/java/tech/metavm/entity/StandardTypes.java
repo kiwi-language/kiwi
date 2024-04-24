@@ -42,7 +42,7 @@ public class StandardTypes {
         return nullable ? getNullableAnyType() : getAnyType();
     }
 
-    public static ClassType getEnumType() {
+    public static Klass getEnumType() {
         return holder.getEnumType();
     }
 
@@ -53,11 +53,11 @@ public class StandardTypes {
         return (ClassType) getType(pType);
     }
 
-    public static ClassType getEntityType() {
+    public static Klass getEntityType() {
         return holder.getEntityType();
     }
 
-    public static ClassType getRecordType() {
+    public static Klass getRecordType() {
         return holder.getRecordType();
     }
 
@@ -113,59 +113,59 @@ public class StandardTypes {
         return ModelDefRegistry.getDefContext().getArrayType(getAnyType(), ArrayKind.CHILD);
     }
 
-    public static Field getEnumNameField(ClassType classType) {
+    public static Field getEnumNameField(Klass classType) {
         return classType.getFieldByCode("name");
     }
 
-    public static Field getEnumOrdinalField(ClassType classType) {
+    public static Field getEnumOrdinalField(Klass classType) {
         return classType.getFieldByCode("ordinal");
     }
 
-    public static ClassType getListType() {
+    public static Klass getListType() {
         return holder.getListType();
     }
 
-    public static ClassType getReadWriteListType() {
+    public static Klass getReadWriteListType() {
         return holder.getReadWriteListType();
     }
 
-    public static ClassType getChildListType() {
+    public static Klass getChildListType() {
         return holder.getChildListType();
     }
 
-    public static ClassType getSetType() {
+    public static Klass getSetType() {
         return holder.getSetType();
     }
 
-    public static ClassType getMapType() {
+    public static Klass getMapType() {
         return holder.getMapType();
     }
 
-    public static ClassType getCollectionType() {
+    public static Klass getCollectionType() {
         return holder.getCollectionType();
     }
 
-    public static ClassType getIterableType() {
+    public static Klass getIterableType() {
         return holder.getIterableType();
     }
 
-    public static ClassType getIteratorType() {
+    public static Klass getIteratorType() {
         return holder.getIteratorType();
     }
 
-    public static ClassType getIteratorImplType() {
+    public static Klass getIteratorImplType() {
         return holder.getIteratorImplType();
     }
 
-    public static ClassType getThrowableType() {
+    public static Klass getThrowableType() {
         return holder.getThrowableType();
     }
 
-    public static ClassType getExceptionType() {
+    public static Klass getExceptionType() {
         return holder.getExceptionType();
     }
 
-    public static ClassType getRuntimeExceptionType() {
+    public static Klass getRuntimeExceptionType() {
         return holder.getRuntimeExceptionType();
     }
 
@@ -231,20 +231,20 @@ public class StandardTypes {
         holder.setVoidType(voidType);
     }
 
-    public static ClassType getConsumerType() {
+    public static Klass getConsumerType() {
         return holder.getConsumerType();
     }
 
-    public static ClassType setConsumerType(ClassType type) {
+    public static Klass setConsumerType(Klass type) {
         holder.setConsumerType(type);
         return type;
     }
 
-    public static ClassType getPredicateType() {
+    public static Klass getPredicateType() {
         return holder.getPredicateType();
     }
 
-    public static ClassType setPredicateType(ClassType type) {
+    public static Klass setPredicateType(Klass type) {
         holder.setPredicateType(type);
         return type;
     }
@@ -277,105 +277,105 @@ public class StandardTypes {
         holder.setNullableStringType(nullableStringType);
     }
 
-    public static void setEnumType(ClassType enumType) {
+    public static void setEnumType(Klass enumType) {
         holder.setEnumType(enumType);
     }
 
-    public static void setThrowableType(ClassType throwableType) {
+    public static void setThrowableType(Klass throwableType) {
         holder.setThrowableType(throwableType);
     }
 
-    public static void setExceptionType(ClassType exceptionType) {
+    public static void setExceptionType(Klass exceptionType) {
         holder.setExceptionType(exceptionType);
     }
 
-    public static void setRuntimeExceptionType(ClassType runtimeExceptionType) {
+    public static void setRuntimeExceptionType(Klass runtimeExceptionType) {
         holder.setRuntimeExceptionType(runtimeExceptionType);
     }
 
-    public static void setIllegalArgumentExceptionType(ClassType illegalArgumentExceptionType) {
+    public static void setIllegalArgumentExceptionType(Klass illegalArgumentExceptionType) {
         holder.setIllegalArgumentExceptionType(illegalArgumentExceptionType);
     }
 
-    public static void setIllegalStateExceptionType(ClassType illegalStateExceptionType) {
+    public static void setIllegalStateExceptionType(Klass illegalStateExceptionType) {
         holder.setIllegalStateExceptionType(illegalStateExceptionType);
     }
 
-    public static ClassType getNullPointerExceptionType() {
+    public static Klass getNullPointerExceptionType() {
         return holder.getNullPointerExceptionType();
     }
 
-    public static void setNullPointerExceptionType(ClassType nullPointerExceptionType) {
+    public static void setNullPointerExceptionType(Klass nullPointerExceptionType) {
         holder.setNullPointerExceptionType(nullPointerExceptionType);
     }
 
-    public static ClassType getIllegalArgumentExceptionType() {
+    public static Klass getIllegalArgumentExceptionType() {
         return holder.getIllegalArgumentExceptionType();
     }
 
-    public static ClassType getIllegalStateExceptionType() {
+    public static Klass getIllegalStateExceptionType() {
         return holder.getIllegalStateExceptionType();
     }
 
-    public static void setEntityType(ClassType entityType) {
+    public static void setEntityType(Klass entityType) {
         holder.setEntityType(entityType);
     }
 
-    public static ClassType setRecordType(ClassType recordType) {
+    public static Klass setRecordType(Klass recordType) {
         holder.setRecordType(recordType);
         return recordType;
     }
 
-    public static ClassType setCollectionType(ClassType collectionType) {
+    public static Klass setCollectionType(Klass collectionType) {
         holder.setCollectionType(collectionType);
         return collectionType;
     }
 
-    public static ClassType setSetType(ClassType setType) {
+    public static Klass setSetType(Klass setType) {
         holder.setSetType(setType);
         return setType;
     }
 
-    public static ClassType setListType(ClassType listType) {
+    public static Klass setListType(Klass listType) {
         holder.setListType(listType);
         return listType;
     }
 
-    public static ClassType setReadWriteListType(ClassType readWriteListType) {
+    public static Klass setReadWriteListType(Klass readWriteListType) {
         holder.setReadWriteListType(readWriteListType);
         return readWriteListType;
     }
 
-    public static ClassType setChildListType(ClassType childListType) {
+    public static Klass setChildListType(Klass childListType) {
         holder.setChildListType(childListType);
         return childListType;
     }
 
-    public static ClassType setMapType(ClassType mapType) {
+    public static Klass setMapType(Klass mapType) {
         holder.setMapType(mapType);
         return mapType;
     }
 
-    public static ClassType setIteratorType(ClassType iteratorType) {
+    public static Klass setIteratorType(Klass iteratorType) {
         holder.setIteratorType(iteratorType);
         return iteratorType;
     }
 
-    public static ClassType setIterableType(ClassType iterableType) {
+    public static Klass setIterableType(Klass iterableType) {
         holder.setIterableType(iterableType);
         return iterableType;
     }
 
-    public static ClassType setIteratorImplType(ClassType iteratorImplType) {
+    public static Klass setIteratorImplType(Klass iteratorImplType) {
         holder.setIteratorImplType(iteratorImplType);
         return iteratorImplType;
     }
 
-    public static ClassType getParameterizedType(ClassType template, List<Type> typeArguments) {
+    public static Klass getParameterizedType(Klass template, List<Type> typeArguments) {
         return holder.getParameterizedType(template, typeArguments);
     }
 
-    public static void addParameterizedType(ClassType type) {
+    public static void addParameterizedType(Klass type) {
         holder.addParameterizedType(type);
     }
 

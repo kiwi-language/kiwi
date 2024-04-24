@@ -74,62 +74,62 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
-    public ClassType getEnumType() {
+    public Klass getEnumType() {
         return TL.get().getEnumType();
     }
 
     @Override
-    public ClassType getThrowableType() {
+    public Klass getThrowableType() {
         return TL.get().getThrowableType();
     }
 
     @Override
-    public ClassType getExceptionType() {
+    public Klass getExceptionType() {
         return TL.get().getExceptionType();
     }
 
     @Override
-    public ClassType getRuntimeExceptionType() {
+    public Klass getRuntimeExceptionType() {
         return TL.get().getRuntimeExceptionType();
     }
 
     @Override
-    public ClassType getEntityType() {
+    public Klass getEntityType() {
         return TL.get().getEntityType();
     }
 
     @Override
-    public ClassType getRecordType() {
+    public Klass getRecordType() {
         return TL.get().getRecordType();
     }
 
     @Override
-    public ClassType getCollectionType() {
+    public Klass getCollectionType() {
         return TL.get().getCollectionType();
     }
 
     @Override
-    public ClassType getSetType() {
+    public Klass getSetType() {
         return TL.get().getSetType();
     }
 
     @Override
-    public ClassType getListType() {
+    public Klass getListType() {
         return TL.get().getListType();
     }
 
     @Override
-    public ClassType getMapType() {
+    public Klass getMapType() {
         return TL.get().getMapType();
     }
 
     @Override
-    public ClassType getIteratorType() {
+    public Klass getIteratorType() {
         return TL.get().getIteratorType();
     }
 
     @Override
-    public ClassType getIteratorImplType() {
+    public Klass getIteratorImplType() {
         return TL.get().getIteratorImplType();
     }
 
@@ -214,62 +214,62 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
-    public void setEnumType(ClassType type) {
+    public void setEnumType(Klass type) {
         TL.get().setEnumType(type);
     }
 
     @Override
-    public void setThrowableType(ClassType type) {
+    public void setThrowableType(Klass type) {
         TL.get().setThrowableType(type);
     }
 
     @Override
-    public void setExceptionType(ClassType type) {
+    public void setExceptionType(Klass type) {
         TL.get().setExceptionType(type);
     }
 
     @Override
-    public void setRuntimeExceptionType(ClassType type) {
+    public void setRuntimeExceptionType(Klass type) {
         TL.get().setRuntimeExceptionType(type);
     }
 
     @Override
-    public void setEntityType(ClassType type) {
+    public void setEntityType(Klass type) {
         TL.get().setEntityType(type);
     }
 
     @Override
-    public void setRecordType(ClassType type) {
+    public void setRecordType(Klass type) {
         TL.get().setRecordType(type);
     }
 
     @Override
-    public void setCollectionType(ClassType type) {
+    public void setCollectionType(Klass type) {
         TL.get().setCollectionType(type);
     }
 
     @Override
-    public void setSetType(ClassType type) {
+    public void setSetType(Klass type) {
         TL.get().setSetType(type);
     }
 
     @Override
-    public void setListType(ClassType type) {
+    public void setListType(Klass type) {
         TL.get().setListType(type);
     }
 
     @Override
-    public void setMapType(ClassType type) {
+    public void setMapType(Klass type) {
         TL.get().setMapType(type);
     }
 
     @Override
-    public void setIteratorType(ClassType type) {
+    public void setIteratorType(Klass type) {
         TL.get().setIteratorType(type);
     }
 
     @Override
-    public void setIteratorImplType(ClassType type) {
+    public void setIteratorImplType(Klass type) {
         TL.get().setIteratorImplType(type);
     }
 
@@ -279,92 +279,92 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
-    public void setReadWriteListType(ClassType type) {
+    public void setReadWriteListType(Klass type) {
         TL.get().setReadWriteListType(type);
     }
 
     @Override
-    public void setChildListType(ClassType type) {
+    public void setChildListType(Klass type) {
         TL.get().setChildListType(type);
     }
 
     @Override
-    public ClassType getChildListType() {
+    public Klass getChildListType() {
         return TL.get().getChildListType();
     }
 
     @Override
-    public ClassType getReadWriteListType() {
+    public Klass getReadWriteListType() {
         return TL.get().getReadWriteListType();
     }
 
     @Override
-    public ClassType getIterableType() {
+    public Klass getIterableType() {
         return TL.get().getIterableType();
     }
 
     @Override
-    public void setIterableType(ClassType iterableType) {
+    public void setIterableType(Klass iterableType) {
         TL.get().setIterableType(iterableType);
     }
 
     @Override
-    public ClassType getConsumerType() {
+    public Klass getConsumerType() {
         return TL.get().getConsumerType();
     }
 
     @Override
-    public void setConsumerType(ClassType consumerType) {
+    public void setConsumerType(Klass consumerType) {
         TL.get().setConsumerType(consumerType);
     }
 
     @Override
-    public ClassType getPredicateType() {
+    public Klass getPredicateType() {
         return TL.get().getPredicateType();
     }
 
     @Override
-    public void setPredicateType(ClassType type) {
+    public void setPredicateType(Klass type) {
         TL.get().setPredicateType(type);
     }
 
     @Override
-    public void setIllegalArgumentExceptionType(ClassType illegalArgumentExceptionType) {
+    public void setIllegalArgumentExceptionType(Klass illegalArgumentExceptionType) {
         TL.get().setIllegalArgumentExceptionType(illegalArgumentExceptionType);
     }
 
     @Override
-    public void setIllegalStateExceptionType(ClassType illegalStateExceptionType) {
+    public void setIllegalStateExceptionType(Klass illegalStateExceptionType) {
         TL.get().setIllegalStateExceptionType(illegalStateExceptionType);
     }
 
     @Override
-    public ClassType getIllegalArgumentExceptionType() {
+    public Klass getIllegalArgumentExceptionType() {
         return TL.get().getIllegalArgumentExceptionType();
     }
 
     @Override
-    public ClassType getIllegalStateExceptionType() {
+    public Klass getIllegalStateExceptionType() {
         return TL.get().getIllegalStateExceptionType();
     }
 
     @Override
-    public ClassType getNullPointerExceptionType() {
+    public Klass getNullPointerExceptionType() {
         return TL.get().getNullPointerExceptionType();
     }
 
     @Override
-    public void setNullPointerExceptionType(ClassType nullPointerExceptionType) {
+    public void setNullPointerExceptionType(Klass nullPointerExceptionType) {
         TL.get().setNullPointerExceptionType(nullPointerExceptionType);
     }
 
     @Override
-    public void addParameterizedType(ClassType type) {
+    public void addParameterizedType(Klass type) {
         TL.get().addParameterizedType(type);
     }
 
     @Override
-    public ClassType getParameterizedType(ClassType template, List<Type> typeArguments) {
+    public Klass getParameterizedType(Klass template, List<Type> typeArguments) {
         return TL.get().getParameterizedType(template, typeArguments);
     }
 

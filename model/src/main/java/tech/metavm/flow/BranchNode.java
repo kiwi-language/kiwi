@@ -5,7 +5,6 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.type.ClassType;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -160,11 +159,6 @@ public class BranchNode extends NodeRT {
         if (!branches.remove(branch)) {
             throw new InternalException(branch + " does not exist in " + this);
         }
-    }
-
-    @Override
-    public ClassType getType() {
-        return (ClassType) super.getType();
     }
 
     @Override

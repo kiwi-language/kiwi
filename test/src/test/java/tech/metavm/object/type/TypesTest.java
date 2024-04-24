@@ -21,8 +21,8 @@ public class TypesTest extends TestCase {
                 .superClass(c1).build();
         var c3 = ClassTypeBuilder.newBuilder("c3", null)
                 .superClass(c1).build();
-        Assert.assertSame(c1, Types.getLeastUpperBound(List.of(c1, c2, c3)));
-        Assert.assertSame(c1, Types.getLeastUpperBound(List.of(c2, c3)));
+        Assert.assertSame(c1, Types.getLeastUpperBound(List.of(c1.getType(), c2.getType(), c3.getType())));
+        Assert.assertSame(c1, Types.getLeastUpperBound(List.of(c2.getType(), c3.getType())));
     }
 
     public void testGetCommonSuperTypes_union() {
@@ -32,8 +32,8 @@ public class TypesTest extends TestCase {
         var c3 = ClassTypeBuilder.newBuilder("c3", null)
                 .superClass(c1).build();
 
-        var u1 = new UnionType(null, Set.of(c2, c3));
-        var cst = Types.getLeastUpperBound(List.of(c1, u1));
+        var u1 = new UnionType(null, Set.of(c2.getType(), c3.getType()));
+        var cst = Types.getLeastUpperBound(List.of(c1.getType(), u1));
         Assert.assertSame(c1, cst);
     }
 
@@ -44,8 +44,8 @@ public class TypesTest extends TestCase {
                 .superClass(c0).build();
         var c3 = ClassTypeBuilder.newBuilder("c3", null)
                 .superClass(c1).build();
-        var intersect = new IntersectionType(null, Set.of(c2, c3));
-        var cst = Types.getLeastUpperBound(List.of(c1, intersect));
+        var intersect = new IntersectionType(null, Set.of(c2.getType(), c3.getType()));
+        var cst = Types.getLeastUpperBound(List.of(c1.getType(), intersect));
         Assert.assertSame(c1, cst);
     }
 
@@ -56,7 +56,7 @@ public class TypesTest extends TestCase {
                 .interfaces(c1).build();
         var c3 = ClassTypeBuilder.newBuilder("c3", null)
                 .interfaces(c1).build();
-        var cst = Types.getLeastUpperBound(List.of(c2, c3));
+        var cst = Types.getLeastUpperBound(List.of(c2.getType(), c3.getType()));
         Assert.assertSame(c1, cst);
     }
 
@@ -66,8 +66,8 @@ public class TypesTest extends TestCase {
                 .superClass(c1).build();
         var c3 = ClassTypeBuilder.newBuilder("c3", null)
                 .superClass(c1).build();
-        var nullable_c3 = new UnionType(null, Set.of(StandardTypes.getNullType(), c3));
-        var cst = Types.getLeastUpperBound(List.of(c2, nullable_c3));
+        var nullable_c3 = new UnionType(null, Set.of(StandardTypes.getNullType(), c3.getType()));
+        var cst = Types.getLeastUpperBound(List.of(c2.getType(), nullable_c3));
         Assert.assertEquals(StandardTypes.getNullableAnyType(), cst);
     }
 

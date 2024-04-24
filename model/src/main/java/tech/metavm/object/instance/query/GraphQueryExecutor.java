@@ -7,7 +7,7 @@ import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -16,7 +16,7 @@ import static tech.metavm.object.instance.query.PathResolver.resolvePath;
 
 public class GraphQueryExecutor {
 
-    public List<InstanceDTO[]> execute(ClassType type, List<DurableInstance> instances, List<Expression> expressions, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public List<InstanceDTO[]> execute(Klass type, List<DurableInstance> instances, List<Expression> expressions, ParameterizedFlowProvider parameterizedFlowProvider) {
         PathTree path = resolvePath(expressions);
         ObjectNode tree = new ObjectNode(path, type);
         loadTree(NncUtils.map(instances, i -> new NodeInstancePair(tree, i)));

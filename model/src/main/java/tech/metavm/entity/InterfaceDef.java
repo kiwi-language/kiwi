@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
@@ -15,15 +16,10 @@ public class InterfaceDef<T> extends PojoDef<T>  {
     public InterfaceDef(Class<T> javaClass,
                      Type javaType,
                      @Nullable PojoDef<? super T> superDef,
-                     ClassType type,
+                     Klass type,
                      DefContext defContext
     ) {
         super(javaClass, javaType, superDef, type, defContext);
-    }
-
-    @Override
-    public ClassType getType() {
-        return type;
     }
 
     @Override

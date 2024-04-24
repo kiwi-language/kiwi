@@ -2,15 +2,15 @@ package tech.metavm.util;
 
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 
 public record ShoppingTypes(
-        ClassType productType,
-        ClassType skuType,
-        ClassType couponType,
-        ClassType orderType,
-        ClassType couponStateType,
+        Klass productType,
+        Klass skuType,
+        Klass couponType,
+        Klass orderType,
+        Klass couponStateType,
         ArrayType skuChildArrayType,
         ArrayType couponArrayType,
         Field productTitleField,

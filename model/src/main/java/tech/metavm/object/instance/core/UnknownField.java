@@ -1,22 +1,22 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.entity.Entity;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.Column;
 
 public class UnknownField extends Entity {
 
-    private final ClassType declaringType;
+    private final Klass declaringType;
     private final Column column;
     private Instance value;
 
-    public UnknownField(ClassType declaringType, Column column, Instance value) {
+    public UnknownField(Klass declaringType, Column column, Instance value) {
         this.declaringType = declaringType;
         this.column = column;
         this.value = value;
     }
 
-    public ClassType getDeclaringType() {
+    public Klass getDeclaringType() {
         return declaringType;
     }
 

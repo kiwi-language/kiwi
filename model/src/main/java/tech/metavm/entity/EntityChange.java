@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.ChangeList;
 
@@ -67,7 +67,7 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
     }
 
     private static Integer getEntityPriority(Class<?> entityType) {
-        if(entityType.equals(ClassType.class)) {
+        if(entityType.equals(Klass.class)) {
             return 1;
         }
         if(entityType.equals(Field.class)) {

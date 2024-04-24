@@ -29,7 +29,7 @@ public class Declarator extends CodeGenVisitor {
 
     private final IEntityContext context;
 
-    private final LinkedList<ClassType> classStack = new LinkedList<>();
+    private final LinkedList<Klass> classStack = new LinkedList<>();
 
     private @Nullable Index currentIndex;
 
@@ -73,12 +73,12 @@ public class Declarator extends CodeGenVisitor {
         metaClass.setStage(ResolutionStage.DECLARATION);
         if (!metaClass.isInterface()) {
             if (metaClass.findSelfMethodByCode("<init>") == null) {
-                MethodBuilder.newBuilder(metaClass, "实例初始化", "<init>", context.getFunctionTypeContext())
+                MethodBuilder.newBuilder(metaClass, "实例初始化", "<init>")
                         .access(Access.PRIVATE)
                         .build();
             }
             if (metaClass.findSelfMethodByCode("<cinit>") == null) {
-                MethodBuilder.newBuilder(metaClass, "类型初始化", "<cinit>", context.getFunctionTypeContext())
+                MethodBuilder.newBuilder(metaClass, "类型初始化", "<cinit>")
                         .isStatic(true)
                         .access(Access.PRIVATE)
                         .build();
@@ -128,7 +128,7 @@ public class Declarator extends CodeGenVisitor {
                 continue;
             var overriddenMethodType = TranspileUtil.createTemplateType(overriddenMethodCls);
             overridden.add(TranspileUtil.getMethidByJavaMethod(
-                    (ClassType) typeResolver.resolveDeclaration(overriddenMethodType),
+                    Types.resolveKlass(typeResolver.resolveDeclaration(overriddenMethodType)),
                     overriddenMethod, typeResolver)
             );
         }
@@ -143,7 +143,7 @@ public class Declarator extends CodeGenVisitor {
             resolvedParams.addAll(getEnumConstructorParams());
         resolvedParams.addAll(processParameters(method.getParameterList()));
         if (flow == null) {
-            flow = MethodBuilder.newBuilder(currentClass(), getFlowName(method), getFlowCode(method), context.getFunctionTypeContext())
+            flow = MethodBuilder.newBuilder(currentClass(), getFlowName(method), getFlowCode(method))
                     .isConstructor(method.isConstructor())
                     .isStatic(method.getModifierList().hasModifierProperty(PsiModifier.STATIC))
                     .access(resolveAccess(method.getModifierList()))
@@ -158,16 +158,11 @@ public class Declarator extends CodeGenVisitor {
                     flow.getParameters(), resolvedParams,
                     (param, resolvedParam) -> param.setName(resolvedParam.getName())
             );
-            flow.update(
-                    flow.getParameters(),
-                    getReturnType(method),
-                    List.of(),
-                    context.getFunctionTypeContext()
-            );
+            flow.setReturnType(getReturnType(method));
         }
         visitedMethods.add(flow);
         for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
-            var typeVar = typeResolver.resolveTypeVariable(typeParameter);
+            var typeVar = typeResolver.resolveTypeVariable(typeParameter).getVariable();
             if (typeVar.getGenericDeclaration() != flow)
                 typeVar.setGenericDeclaration(flow);
         }
@@ -246,7 +241,7 @@ public class Declarator extends CodeGenVisitor {
         var field = currentClass().findSelfStaticFieldByCode(enumConstant.getName());
         if (field == null) {
             field = FieldBuilder
-                    .newBuilder(getEnumConstantName(enumConstant), enumConstant.getName(), currentClass(), currentClass())
+                    .newBuilder(getEnumConstantName(enumConstant), enumConstant.getName(), currentClass(), currentClass().getType())
                     .isChild(true)
                     .isStatic(true)
                     .build();
@@ -255,7 +250,7 @@ public class Declarator extends CodeGenVisitor {
         enumConstant.putUserData(Keys.FIELD, field);
     }
 
-    private ClassType currentClass() {
+    private Klass currentClass() {
         return NncUtils.requireNonNull(classStack.peek());
     }
 

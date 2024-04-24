@@ -4,7 +4,7 @@ import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
@@ -44,8 +44,8 @@ public class ReferenceTree {
     private boolean isRoot() {
         if (rootMode == 1) {
             if (instance instanceof ClassInstance classInstance) {
-                if (classInstance.getType() == ModelDefRegistry.getClassType(ClassType.class)) {
-                    var anonymousField = classInstance.getType().getFieldByJavaField(
+                if (classInstance.getType() == ModelDefRegistry.getClassType(Klass.class)) {
+                    var anonymousField = classInstance.getKlass().getFieldByJavaField(
                             ReflectionUtils.getField(Type.class, "anonymous")
                     );
                     return ((BooleanInstance) classInstance.getField(anonymousField)).isFalse();

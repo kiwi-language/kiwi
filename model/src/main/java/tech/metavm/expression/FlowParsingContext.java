@@ -20,7 +20,7 @@ public class FlowParsingContext extends BaseParsingContext {
     public static FlowParsingContext create(ScopeRT scope, NodeRT prev, IEntityContext entityContext) {
         return new FlowParsingContext(
                 entityContext.getInstanceContext(),
-                new ContextTypeRepository(entityContext),
+                new ContextTypeDefRepository(entityContext),
                 new ContextArrayTypeProvider(entityContext),
                 entityContext.getUnionTypeContext(),
                 scope, prev);
@@ -35,11 +35,11 @@ public class FlowParsingContext extends BaseParsingContext {
     private final Map<NodeRT, NodeExpression> node2expression = new HashMap<>();
 
     public FlowParsingContext(
-            InstanceProvider instanceProvider, IndexedTypeProvider typeProvider,
+            InstanceProvider instanceProvider, IndexedTypeDefProvider typeDefProvider,
             ArrayTypeProvider arrayTypeProvider,
             UnionTypeProvider unionTypeProvider,
             ScopeRT scope, NodeRT prev) {
-        super(instanceProvider, typeProvider, arrayTypeProvider, unionTypeProvider);
+        super(instanceProvider, typeDefProvider, arrayTypeProvider, unionTypeProvider);
         this.scope = scope;
         this.prev = prev;
         this.lastNode = prev != null ? prev : scope.getOwner();

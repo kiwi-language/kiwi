@@ -6,35 +6,33 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
-public class Closure<T extends Type> {
+public class Closure {
 
-    private final Class<T> elementJavaClass;
-    private final List<T> types;
-    private final Map<ClassType, T> template2instance = new HashMap<>();
-    private final Set<T> set;
+    private final List<Klass> classes;
+    private final Map<Klass, Klass> template2instance = new HashMap<>();
+    private final Set<Klass> set;
 
-    public Closure(T type, Class<T> elementJavaClass) {
-        this.types = new ArrayList<>();
-        this.elementJavaClass = elementJavaClass;
+    public Closure(Klass klass) {
+        this.classes = new ArrayList<>();
         set = new HashSet<>();
-        type.accept(new VoidSuperTypeVisitor() {
+        klass.accept(new VoidSuperKlassVisitor() {
 
             @Override
-            public Void visitType(Type type) {
-                if (set.add(elementJavaClass.cast(type)))
-                    types.add(elementJavaClass.cast(type));
-                return super.visitType(type);
+            public Void visitKlass(Klass klass) {
+                if(set.add(klass))
+                    classes.add(klass);
+                return super.visitKlass(klass);
             }
+
         });
-        types.sort(Closure::compareClosureElement);
+        classes.sort(Closure::compareClosureElement);
     }
 
-    private Closure(List<T> types, Set<T> set, Class<T> elementJavaClass) {
-        this.types = types;
+    private Closure(List<Klass> types, Set<Klass> set) {
+        this.classes = types;
         this.set = set;
-        this.elementJavaClass = elementJavaClass;
-        for (T type : types) {
-            if(type instanceof ClassType classType) {
+        for (var type : types) {
+            if(type instanceof Klass classType) {
                 var template = classType.getTemplate();
                 if(template != null)
                     template2instance.put(template, type);
@@ -42,65 +40,58 @@ public class Closure<T extends Type> {
         }
     }
 
-    public List<Type> getTypes() {
-        return Collections.unmodifiableList(types);
+    public List<Klass> getClasses() {
+        return Collections.unmodifiableList(classes);
     }
 
-    public boolean contains(Type type) {
+    public boolean contains(Klass type) {
         return set.contains(type);
     }
 
-    public Closure<T> merge(Closure<T> that) {
+    public Closure merge(Closure that) {
         return merge(List.of(this, that));
     }
 
-    public T get(Predicate<T> predicate) {
+    public Klass get(Predicate<Klass> predicate) {
         return NncUtils.requireNonNull(find(predicate));
     }
 
-    public @Nullable T find(Predicate<T> predicate) {
-        return NncUtils.find(types, predicate);
+    public @Nullable Klass find(Predicate<Klass> predicate) {
+        return NncUtils.find(classes, predicate);
     }
 
-    public T findByTemplate(ClassType template) {
+    public Klass findByTemplate(Klass template) {
         return template2instance.get(template);
     }
 
-    public Closure<T> getMin() {
-        Set<Type> skips = new HashSet<>();
-        for (Type type : types) {
-            for (Type type1 : types) {
-                if (type != type1 && type.isAssignableFrom(type1, null))
-                    skips.add(type);
+    public Closure getMin() {
+        Set<Klass> skips = new HashSet<>();
+        for (var klass : classes) {
+            for (var klass1 : classes) {
+                if (klass != klass1 && klass.isAssignableFrom(klass1, null))
+                    skips.add(klass);
             }
         }
-        var types = NncUtils.exclude(this.types, skips::contains);
-        return new Closure<>(types, new HashSet<>(types), elementJavaClass);
+        var types = NncUtils.exclude(this.classes, skips::contains);
+        return new Closure(types, new HashSet<>(types));
     }
 
-    public static <T extends Type> Closure<T> merge(List<Closure<T>> closures) {
+    public static Closure merge(List<Closure> closures) {
         NncUtils.requireNotEmpty(closures);
-        List<T> types = new ArrayList<>();
-        Set<T> set = new HashSet<>();
-        for (Closure<T> closure : closures) {
-            for (T type : closure.types) {
+        List<Klass> types = new ArrayList<>();
+        Set<Klass> set = new HashSet<>();
+        for (Closure closure : closures) {
+            for (var type : closure.classes) {
                 if (set.add(type))
                     types.add(type);
             }
         }
         types.sort(Closure::compareClosureElement);
-        return new Closure<>(types, set, closures.get(0).elementJavaClass);
+        return new Closure(types, set);
     }
 
-    public <T1 extends Type> Closure<T1> cast(Class<T1> typeClass) {
-        NncUtils.requireTrue(this.elementJavaClass.isAssignableFrom(typeClass));
-        //noinspection unchecked
-        return (Closure<T1>) this;
-    }
-
-    private static int compareClosureElement(Type type1, Type type2) {
-        int r = Integer.compare(type1.category.closurePrecedence(), type2.category.closurePrecedence());
-        return r != 0 ? r : Integer.compare(type2.getRank(), type1.getRank());
+    private static int compareClosureElement(Klass type1, Klass type2) {
+        return Integer.compare(type2.getRank(), type1.getRank());
     }
 
 }

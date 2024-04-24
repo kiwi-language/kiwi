@@ -54,7 +54,7 @@ public class StdAllocators {
     public Id getId(Object object) {
         return switch (object) {
             case java.lang.reflect.Field field -> getId0(Field.class, getFieldQualifiedName(field));
-            case Type type -> getId0(ClassType.class, getTypeCode(type));
+            case Type type -> getId0(Klass.class, getTypeCode(type));
             case Enum<?> enumConstant -> getId0(ReflectionUtils.getEnumClass(enumConstant), enumConstant.name());
             case ModelIdentity modelIdentity -> getId0(modelIdentity.type(), modelIdentity.name());
             case null, default ->
@@ -65,7 +65,7 @@ public class StdAllocators {
     public void putId(Object object, Id id) {
         switch (object) {
             case java.lang.reflect.Field field -> putId0(Field.class, getFieldQualifiedName(field), id);
-            case Type type -> putId0(ClassType.class, getTypeCode(type), id);
+            case Type type -> putId0(Klass.class, getTypeCode(type), id);
             case Enum<?> enumConstant -> putId0(ReflectionUtils.getEnumClass(enumConstant), enumConstant.name(), id);
             case ModelIdentity modelIdentity -> putId0(modelIdentity.type(), modelIdentity.name(), id);
             case null, default ->
@@ -87,7 +87,7 @@ public class StdAllocators {
     }
 
     public TypeId getTypeId(Id id) {
-        StdAllocator classTypeAllocator = allocatorMap.get(ClassType.class);
+        StdAllocator classTypeAllocator = allocatorMap.get(Klass.class);
         StdAllocator arrayTypeAllocator = allocatorMap.get(ArrayType.class);
         for (StdAllocator allocator : allocatorMap.values()) {
             if (allocator.contains(id)) {

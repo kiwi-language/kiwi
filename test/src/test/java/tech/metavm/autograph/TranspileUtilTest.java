@@ -71,16 +71,16 @@ public class TranspileUtilTest extends TestCase {
         var fooType = ClassTypeBuilder.newBuilder("SignatureFoo", SignatureFoo.class.getName()).build();
         var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
 
-        var addMethod = MethodBuilder.newBuilder(fooType, "add", "add", typeProviders.functionTypeProvider)
+        var addMethod = MethodBuilder.newBuilder(fooType, "add", "add")
                 .typeParameters(List.of(typeVar))
                 .parameters(
                         new Parameter(null, "list", "list",
                                 typeProviders.parameterizedTypeProvider.getParameterizedType(
                                         StandardTypes.getListType(),
-                                        List.of(new UncertainType(null, typeVar, StandardTypes.getNullableAnyType()))
-                                )
+                                        List.of(new UncertainType(null, typeVar.getType(), StandardTypes.getNullableAnyType()))
+                                ).getType()
                         ),
-                        new Parameter(null, "element", "element", typeVar)
+                        new Parameter(null, "element", "element", typeVar.getType())
                 )
                 .build();
         var sig2 = addMethod.getInternalName(null);

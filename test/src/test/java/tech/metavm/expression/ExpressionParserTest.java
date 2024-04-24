@@ -34,7 +34,7 @@ public class ExpressionParserTest extends TestCase {
 
                     @Override
                     public Expression resolveVar(Var var) {
-                        return new ThisExpression(StandardTypes.getEnumType());
+                        return new ThisExpression(StandardTypes.getEnumType().getType());
                     }
 
                     @Override
@@ -53,16 +53,16 @@ public class ExpressionParserTest extends TestCase {
                     }
 
                     @Override
-                    public IndexedTypeProvider getTypeProvider() {
-                        return new IndexedTypeProvider() {
+                    public IndexedTypeDefProvider getTypeDefProvider() {
+                        return new IndexedTypeDefProvider() {
                             @Nullable
                             @Override
-                            public ClassType findClassTypeByName(String name) {
+                            public Klass findKlassByName(String name) {
                                 return StandardTypes.getEnumType();
                             }
 
                             @Override
-                            public Type getType(Id id) {
+                            public TypeDef getTypeDef(Id id) {
                                 return StandardTypes.getEnumType();
                             }
                         };

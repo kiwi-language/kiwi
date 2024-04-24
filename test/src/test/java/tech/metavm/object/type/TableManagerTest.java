@@ -52,7 +52,7 @@ public class TableManagerTest extends TestCase {
     }
 
     public void testGet() {
-        ClassType type = ModelDefRegistry.getClassType(Type.class);
+        Klass type = ModelDefRegistry.getClassType(Type.class).resolve();
         TableDTO tableDTO = tableManager.get(type.getStringId());
         Assert.assertNotNull(tableDTO.id());
         Assert.assertEquals(type.getName(), tableDTO.name());

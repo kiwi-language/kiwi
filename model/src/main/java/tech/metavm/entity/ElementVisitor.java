@@ -14,8 +14,8 @@ public abstract class ElementVisitor<R> {
         return visitElement(type);
     }
 
-    public R visitClassType(ClassType type) {
-        return visitType(type);
+    public R visitKlass(Klass klass) {
+        return visitElement(klass);
     }
 
     public R visitConstraint(Constraint constraint) {
@@ -34,7 +34,19 @@ public abstract class ElementVisitor<R> {
         return visitConstraint(checkConstraint);
     }
 
-    public R visitTypeVariable(TypeVariable type) {
+    public R visitClassType(ClassType type) {
+        return visitType(type);
+    }
+
+    public R visitTypeVariable(TypeVariable typeVariable) {
+        return visitElement(typeVariable);
+    }
+
+    public R visitCapturedTypeVariable(CapturedTypeVariable capturedTypeVariable) {
+        return visitElement(capturedTypeVariable);
+    }
+
+    public R visitVariableType(VariableType type) {
         return visitType(type);
     }
 

@@ -4,9 +4,9 @@ import java.util.List;
 
 public interface ParameterizedTypeRepository extends ParameterizedTypeProvider {
 
-    List<ClassType> getTemplateInstances(ClassType template);
+    List<Klass> getTemplateInstances(Klass template);
 
-    ClassType getExisting(ClassType template, List<? extends Type> typeArguments);
+    Klass getExisting(Klass template, List<? extends Type> typeArguments);
 
-    void add(ClassType parameterizedType);
+    void add(Klass parameterizedType);
 }

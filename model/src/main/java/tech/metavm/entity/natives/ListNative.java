@@ -3,7 +3,7 @@ package tech.metavm.entity.natives;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
@@ -21,7 +21,7 @@ public class ListNative extends IterableNative {
 
     public ListNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getType().findFieldByCode("array"));
+        arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByCode("array"));
         if(instance.isFieldInitialized(arrayField)) {
             array = (ArrayInstance) instance.getField(arrayField);
         }
@@ -39,7 +39,7 @@ public class ListNative extends IterableNative {
 
     public Instance List(Instance c, CallContext callContext) {
         if(c instanceof ClassInstance collection) {
-            var thatArrayField = collection.getType().getFieldByCode("array");
+            var thatArrayField = collection.getKlass().getFieldByCode("array");
             var thatArray = (ArrayInstance) collection.getField(thatArrayField);
             array = new ArrayInstance((ArrayType) arrayField.getType(),
                     new InstanceParentRef(instance, arrayField));
@@ -68,7 +68,7 @@ public class ListNative extends IterableNative {
     }
 
     public ClassInstance iterator(CallContext callContext) {
-        var iteratorImplType = (ClassType) instance.getType().getDependency(StandardTypes.getIteratorImplType());
+        var iteratorImplType = (Klass) instance.getKlass().getDependency(StandardTypes.getIteratorImplType());
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
@@ -114,7 +114,7 @@ public class ListNative extends IterableNative {
 
     public BooleanInstance addAll(Instance c, CallContext callContext) {
         if(c instanceof ClassInstance collection && collection.isList()) {
-            var thatArrayField = collection.getType().getFieldByCode("array");
+            var thatArrayField = collection.getKlass().getFieldByCode("array");
             var thatArray = (ArrayInstance) collection.getField(thatArrayField);
             array.addAll(thatArray);
             return Instances.trueInstance();
@@ -123,7 +123,7 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public static ClassInstance of(ClassType type, Instance values, CallContext callContext) {
+    public static ClassInstance of(Klass type, Instance values, CallContext callContext) {
         if(values instanceof ArrayInstance array) {
             var list = ClassInstance.allocate(type);
             var listNative = (ListNative) NativeMethods.getNativeObject(list);
@@ -145,7 +145,7 @@ public class ListNative extends IterableNative {
 
     public BooleanInstance removeIf(Instance filter, CallContext callContext) {
         if(filter instanceof ClassInstance classInstance) {
-            var method = classInstance.getType().getMethods().get(0);
+            var method = classInstance.getKlass().getMethods().get(0);
             return Instances.booleanInstance(array.removeIf(e -> method.execute(
                     classInstance, List.of(e), callContext).booleanRet()));
         }
@@ -160,7 +160,7 @@ public class ListNative extends IterableNative {
     @Override
     public void forEach(Instance action, CallContext callContext) {
         if(action instanceof ClassInstance classInstance) {
-            var method = classInstance.getType().getMethods().get(0);
+            var method = classInstance.getKlass().getMethods().get(0);
             array.forEach(e -> method.execute(classInstance, List.of(e), callContext));
         }
         else

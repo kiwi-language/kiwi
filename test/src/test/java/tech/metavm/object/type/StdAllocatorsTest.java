@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.object.instance.core.DefaultPhysicalId;
-import tech.metavm.object.instance.core.TaggedPhysicalId;
+import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.util.ReflectionUtils;
 
@@ -31,13 +31,13 @@ public class StdAllocatorsTest extends TestCase {
         java.lang.reflect.Field typeNameField = ReflectionUtils.getField(Type.class, "name");
 
         var class2ids = allocators.allocate(
-                Map.of(ClassType.class, 1, Field.class, 1)
+                Map.of(Klass.class, 1, Field.class, 1)
         );
 
         
         
-        allocators.putId(Field.class, DefaultPhysicalId.ofObject(class2ids.get(ClassType.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        allocators.putId(typeNameField, DefaultPhysicalId.ofObject(class2ids.get(Field.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocators.putId(Field.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(0), 0L, new ClassTypeKey("1")));
+        allocators.putId(typeNameField, DefaultPhysicalId.ofObject(class2ids.get(Field.class).get(0), 0L, new ClassTypeKey("1")));
 
         var fieldClassId = allocators.getId(Field.class);
         LOGGER.info("Field id: " + fieldClassId);
@@ -50,15 +50,15 @@ public class StdAllocatorsTest extends TestCase {
         java.lang.reflect.Field typeNameReflectField = ReflectionUtils.getField(Type.class, "name");
 
         var class2ids = allocators.allocate(
-                Map.of(ClassType.class, 3, Field.class, 1, TypeCategory.class, 1)
+                Map.of(Klass.class, 3, Field.class, 1, TypeCategory.class, 1)
         );
-        allocators.putId(ClassType.class, DefaultPhysicalId.ofObject(class2ids.get(ClassType.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        allocators.putId(Field.class, DefaultPhysicalId.ofObject(class2ids.get(ClassType.class).get(1), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        allocators.putId(TypeCategory.class, DefaultPhysicalId.ofObject(class2ids.get(ClassType.class).get(2), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        allocators.putId(typeNameReflectField, DefaultPhysicalId.ofObject(class2ids.get(Field.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        allocators.putId(TypeCategory.CLASS, DefaultPhysicalId.ofObject(class2ids.get(TypeCategory.class).get(0), 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        allocators.putId(Klass.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(0), 0L, new ClassTypeKey("1")));
+        allocators.putId(Field.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(1), 0L, new ClassTypeKey("1")));
+        allocators.putId(TypeCategory.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(2), 0L, new ClassTypeKey("1")));
+        allocators.putId(typeNameReflectField, DefaultPhysicalId.ofObject(class2ids.get(Field.class).get(0), 0L, new ClassTypeKey("1")));
+        allocators.putId(TypeCategory.CLASS, DefaultPhysicalId.ofObject(class2ids.get(TypeCategory.class).get(0), 0L, new ClassTypeKey("1")));
 
-        var typeClassId = allocators.getId(ClassType.class);
+        var typeClassId = allocators.getId(Klass.class);
         var fieldClassId = allocators.getId(Field.class);
         Assert.assertEquals(typeClassId.getPhysicalId(), allocators.getTypeId(fieldClassId).id());
 

@@ -1,14 +1,14 @@
 package tech.metavm.expression.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.common.Result;
 import tech.metavm.expression.ExpressionService;
 import tech.metavm.expression.dto.BoolExprDTO;
 import tech.metavm.expression.dto.BoolExprParseRequest;
-import tech.metavm.expression.dto.InstanceSearchItemDTO;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/expression")
@@ -20,14 +20,6 @@ public class ExpressionController {
     @PostMapping("/parse-bool")
     public Result<BoolExprDTO> parseBoolExpr(@RequestBody BoolExprParseRequest request) {
         return Result.success(expressionService.parseBoolExpr(request));
-    }
-
-    @GetMapping("/parse-search-expression")
-    public Result<List<InstanceSearchItemDTO>> parseSearchText(
-            @RequestParam("typeId") String typeId,
-            @RequestParam("searchExpression") String searchText
-    ) {
-        return Result.success(expressionService.parseSearchText(typeId, searchText));
     }
 
 }

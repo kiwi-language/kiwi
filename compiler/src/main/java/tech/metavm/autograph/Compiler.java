@@ -12,10 +12,9 @@ import tech.metavm.autograph.env.LightVirtualFileBase;
 import tech.metavm.entity.ChildList;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
-import tech.metavm.flow.Flow;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
-import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.object.type.rest.dto.TypeDefDTO;
 import tech.metavm.system.RegionConstants;
 import tech.metavm.util.CompilerException;
 import tech.metavm.util.ContextUtil;
@@ -106,11 +105,12 @@ public class Compiler {
                     psiClassTypes.forEach(t -> typeResolver.resolve(t, stage));
                 }
             }
-            var generatedTypes = NncUtils.exclude(typeResolver.getGeneratedTypes(), this::isCapturedByParameterizedFlow);
-            var generatedPFlows = NncUtils.exclude(typeResolver.getGeneratedParameterizedFlows(), this::isCapturedByParameterizedFlow);
+            var generatedTypes = typeResolver.getGeneratedTypeDefs();
+                    //NncUtils.exclude(typeResolver.getGeneratedTypes(), this::isCapturedByParameterizedFlow);
+//            var generatedPFlows = NncUtils.exclude(typeResolver.getGeneratedParameterizedFlows(), this::isCapturedByParameterizedFlow);
             long elapsed = System.currentTimeMillis() - start;
             LOGGER.info("Compilation done in {} ms. {} types generated", elapsed, generatedTypes.size());
-            deploy(generatedTypes, generatedPFlows, typeResolver);
+            deploy(generatedTypes, typeResolver);
             LOGGER.info("Deploy done");
             return true;
         }
@@ -124,51 +124,48 @@ public class Compiler {
 
     }
 
-    private boolean isCapturedByParameterizedFlow(Type type) {
+    /*private boolean isCapturedByParameterizedFlow(Type type) {
         for (CapturedType capturedType : type.getCapturedTypes()) {
-            if(capturedType.getScope() instanceof Flow flow && flow.isParameterized())
+            if(capturedType.getScope() instanceof Flow flow && flow.getParameterizedFlows())
                 return true;
         }
         return false;
     }
 
     private boolean isCapturedByParameterizedFlow(Flow flow) {
-        return flow.isParameterized() && NncUtils.anyMatch(flow.getTypeArguments(), this::isCapturedByParameterizedFlow);
-    }
+        return flow.getParameterizedFlows() && NncUtils.anyMatch(flow.getTypeArguments(), this::isCapturedByParameterizedFlow);
+    }*/
 
-    private void deploy(Collection<Type> generatedTypes,
-                        Collection<Flow> generatedPFlows,
-                        TypeResolver typeResolver) {
+    private void deploy(Collection<TypeDef> generatedTypeDefs, TypeResolver typeResolver) {
         try (var serContext = SerializeContext.enter();
              var ignored = ContextUtil.getProfiler().enter("deploy")) {
             serContext.includingCode(true)
                     .includeNodeOutputType(false)
                     .includingValueType(false)
                     .writeParameterizedTypeAsPTypeDTO(true);
-            for (Type metaType : generatedTypes) {
-                if (metaType instanceof ClassType classType) {
-                    typeResolver.ensureCodeGenerated(classType);
-                    serContext.addWritingCodeType(classType);
+            for (var typeDef : generatedTypeDefs) {
+                if(typeDef instanceof Klass klass) {
+                    typeResolver.ensureCodeGenerated(klass);
+                    serContext.addWritingCodeType(klass);
                 }
             }
-            for (Type metaType : generatedTypes) {
-                if (metaType instanceof ClassType classType)
-                    typeResolver.ensureCodeGenerated(classType);
-                serContext.writeType(metaType);
+            for (var typeDef : generatedTypeDefs) {
+                if (typeDef instanceof Klass klass)
+                    typeResolver.ensureCodeGenerated(klass);
+                serContext.writeTypeDef(typeDef);
             }
-            var typeDTOs = new ArrayList<TypeDTO>();
+            var typeDefDTOs = new ArrayList<TypeDefDTO>();
             serContext.forEachType(
                     (t -> (t.isIdNull() || !RegionConstants.isSystemId(t.getId().getPhysicalId()))),
                     t -> {
-                        if (t instanceof ClassType classType && classType.isParameterized())
-                            typeDTOs.add(classType.toPTypeDTO(serContext));
-                        else
-                            typeDTOs.add(t.toDTO());
+                        if(t instanceof Klass k && k.isParameterized())
+                            return;
+                        typeDefDTOs.add(t.toDTO(serContext));
                     }
             );
-            var pFlowDTOs = NncUtils.map(generatedPFlows, f -> f.toPFlowDTO(serContext));
+//            var pFlowDTOs = NncUtils.map(generatedPFlows, f -> f.toPFlowDTO(serContext));
             LOGGER.info("Compile successful");
-            var request = new BatchSaveRequest(typeDTOs, List.of(), pFlowDTOs, true);
+            var request = new BatchSaveRequest(typeDefDTOs, List.of(), true);
             saveRequest(request);
             typeClient.batchSave(request);
         }

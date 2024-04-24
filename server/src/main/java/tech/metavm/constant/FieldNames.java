@@ -4,7 +4,7 @@ public class FieldNames {
 
     public static final String APPLICATION_ID = "appId";
 
-    public static final String TYPE_ID = "typeId";
+    public static final String TYPE = "typeId";
 
     public static final String ID = "id";
 

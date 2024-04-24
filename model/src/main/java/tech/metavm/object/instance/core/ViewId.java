@@ -1,7 +1,6 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeProvider;
+import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
@@ -26,8 +25,8 @@ public abstract class ViewId extends Id {
 
     public abstract @Nullable SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider);
 
-    public Type getViewType(MappingProvider mappingProvider, TypeProvider typeProvider) {
-        return mappingProvider.getMapping(mappingId).getTargetType();
+    public TypeKey getViewTypeKey(MappingProvider mappingProvider) {
+        return mappingProvider.getMapping(mappingId).getTargetType().getTypeKey();
     }
 
     public void writeMappingId(InstanceOutput output) {

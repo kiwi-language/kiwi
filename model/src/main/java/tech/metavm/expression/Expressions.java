@@ -4,7 +4,7 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.object.type.Property;
@@ -17,8 +17,8 @@ import java.util.Objects;
 
 public class Expressions {
 
-    public static Expression thisObject(ClassType type) {
-        return new ThisExpression(type);
+    public static Expression thisObject(Klass klass) {
+        return new ThisExpression(klass.getType());
     }
 
     public static Expression not(Expression expression) {

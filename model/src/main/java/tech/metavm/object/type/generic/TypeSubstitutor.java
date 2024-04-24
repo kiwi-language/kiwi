@@ -3,10 +3,8 @@ package tech.metavm.object.type.generic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityUtils;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.util.DebugEnv;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -20,25 +18,19 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private final Map<Type, Type> variableMap;
-    private final CompositeTypeFacade compositeTypeFacade;
-    private final DTOProvider dtoProvider;
 
     public TypeSubstitutor(List<? extends Type> typeVariables,
-                           List<? extends Type> typeArguments,
-                           CompositeTypeFacade compositeTypeFacade,
-                           DTOProvider dtoProvider) {
-        this.compositeTypeFacade = compositeTypeFacade;
-        if(typeVariables.size() != typeArguments.size())
+                           List<? extends Type> typeArguments) {
+        if (typeVariables.size() != typeArguments.size())
             throw new InternalException("Type variables and type arguments have different sizes. " +
                     "type variables: [" + NncUtils.join(typeVariables, Type::getTypeDesc) + "]"
                     + ", type arguments: [" + NncUtils.join(typeArguments, Type::getTypeDesc) + "]");
         this.variableMap = new HashMap<>(NncUtils.zip(typeVariables, typeArguments));
-        this.dtoProvider = dtoProvider;
     }
 
     public void addMapping(Type from, Type to) {
         variableMap.put(from, to);
-        if(DebugEnv.debugging)
+        if (DebugEnv.debugging)
             debugLogger.info("added mapping: {} -> {}", EntityUtils.getEntityDesc(from), EntityUtils.getEntityDesc(to));
     }
 
@@ -53,10 +45,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         if (subst != type)
             return subst;
         var elementType = type.getElementType().accept(this);
-        return compositeTypeFacade.getArrayType(
-                elementType, type.getKind(),
-                dtoProvider.getTmpId(new ArrayTypeKey(type.getKind().code(), elementType.getStringId()))
-        );
+        return new ArrayType(null, elementType, type.getKind());
     }
 
     @Override
@@ -64,11 +53,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var subst = super.visitUncertainType(uncertainType);
         if (subst != uncertainType)
             return subst;
-        var lb = uncertainType.getLowerBound().accept(this);
-        var ub = uncertainType.getUpperBound().accept(this);
-        return compositeTypeFacade.getUncertainType(
-                lb, ub, dtoProvider.getTmpId(new UncertainTypeKey(lb.getStringId(), ub.getStringId()))
-        );
+        return new UncertainType(null, uncertainType.getLowerBound().accept(this), uncertainType.getUpperBound().accept(this));
     }
 
     @Override
@@ -76,10 +61,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var subst = super.visitIntersectionType(type);
         if (subst != type)
             return subst;
-        var types = NncUtils.mapUnique(type.getTypes(), t -> t.accept(this));
-        return compositeTypeFacade.getIntersectionType(
-                types, dtoProvider.getTmpId(new IntersectionTypeKey(NncUtils.mapUnique(types, Type::getStringId)))
-        );
+        return new IntersectionType(null, NncUtils.mapUnique(type.getTypes(), t -> t.accept(this)));
     }
 
     @Override
@@ -87,21 +69,11 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var subst = super.visitFunctionType(functionType);
         if (subst != functionType)
             return subst;
-        var paramTypes = NncUtils.map(functionType.getParameterTypes(), t -> t.accept(this));
-        var returnType = functionType.getReturnType().accept(this);
-        return compositeTypeFacade.getFunctionType(
-                paramTypes, returnType,
-                dtoProvider.getTmpId(new FunctionTypeKey(NncUtils.map(paramTypes, Entity::getStringId), returnType.getStringId()))
+        return new FunctionType(
+                null,
+                NncUtils.map(functionType.getParameterTypes(), t -> t.accept(this)),
+                functionType.getReturnType().accept(this)
         );
-    }
-
-    private void logVariableMap() {
-        if(DebugEnv.debugging) {
-            debugLogger.info("variable map:");
-            for (var entry : variableMap.entrySet()) {
-                debugLogger.info("key: {}, value: {}", EntityUtils.getEntityDesc(entry.getKey()), EntityUtils.getEntityDesc(entry.getValue()));
-            }
-        }
     }
 
     @Override
@@ -109,11 +81,9 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var subst = super.visitUnionType(type);
         if (subst != type)
             return subst;
-        var members = NncUtils.mapUnique(type.getMembers(), t -> t.accept(this));
-        return compositeTypeFacade.getUnionType(
-                members, dtoProvider.getTmpId(new UnionTypeKey(NncUtils.mapUnique(members, Entity::getStringId)))
-        );
+        return new UnionType(null, NncUtils.mapUnique(type.getMembers(), t -> t.accept(this)));
     }
+
 
     @Override
     public Type visitClassType(ClassType type) {
@@ -124,12 +94,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
             return type;
         else {
             var substitutedTypeArgs = NncUtils.map(type.getTypeArguments(), t -> t.accept(this));
-            return compositeTypeFacade.getParameterizedType(
-                    type.getEffectiveTemplate(),
-                    substitutedTypeArgs,
-                    ResolutionStage.DECLARATION,
-                    dtoProvider
-            );
+            return new ClassType(type.getKlass(), substitutedTypeArgs);
         }
     }
 

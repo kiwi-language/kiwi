@@ -10,7 +10,10 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.asm.antlr.AssemblyLexer;
 import tech.metavm.asm.antlr.AssemblyParser;
 import tech.metavm.asm.antlr.AssemblyParserBaseVisitor;
-import tech.metavm.flow.*;
+import tech.metavm.flow.MethodDTOBuilder;
+import tech.metavm.flow.NodeDTOFactory;
+import tech.metavm.flow.UpdateOp;
+import tech.metavm.flow.ValueDTOFactory;
 import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.type.Access;
@@ -44,6 +47,7 @@ public class Assembler {
     private final Map<MethodKey, String> methodIds = new HashMap<>();
     private final Map<String, List<ClassAsmType>> superTypes = new HashMap<>();
     private final List<TypeDTO> types = new ArrayList<>();
+    private final List<TypeVariableDTO> typeVariables = new ArrayList<>();
     private final Map<AsmType, TypeDTO> compositeTypes = new HashMap<>();
     private final Map<ParserRuleContext, Map<AsmAttributeKey<?>, Object>> attributes = new HashMap<>();
 
@@ -58,8 +62,8 @@ public class Assembler {
         assignIds(units);
         logIds();
         emit(units);
-        emitCompositeTypes(units);
-        return getAllTypes();
+//        emitCompositeTypes(units);
+        return getAllTypeDefs();
     }
 
     private void buildAST(List<AssemblyParser.CompilationUnitContext> units) {
@@ -74,9 +78,9 @@ public class Assembler {
         units.forEach(unit -> unit.accept(new Emitter()));
     }
 
-    private void emitCompositeTypes(List<AssemblyParser.CompilationUnitContext> units) {
-        units.forEach(unit -> unit.accept(new CompositeTypeEmitter()));
-    }
+//    private void emitCompositeTypes(List<AssemblyParser.CompilationUnitContext> units) {
+//        units.forEach(unit -> unit.accept(new CompositeTypeEmitter()));
+//    }
 
     private String getTypeId(AsmType type) {
         return requireNonNull(typeIds.get(type), () -> "Can not find id for type: " + type.name());
@@ -695,19 +699,12 @@ public class Assembler {
         public Void visitTypeParameter(AssemblyParser.TypeParameterContext ctx) {
             var name = ctx.IDENTIFIER().getText();
             var typeVariable = scope.getTypeParameter(name);
-            var boundId = ctx.typeType() != null ? getTypeId(parseType(ctx.typeType(), scope)) : null;
-            types.add(new TypeDTO(
-                    getTypeId(typeVariable),
-                    name,
-                    name,
-                    TypeCategory.VARIABLE.code(),
-                    false,
-                    false,
-                    new TypeVariableParam(
-                            getGenericDeclarationId(typeVariable.owner),
-                            scope.getTypeParameterNames().indexOf(name),
-                            boundId != null ? List.of(boundId) : List.of()
-                    )
+            var bound = ctx.typeType() != null ? parseType(ctx.typeType(), scope).toString() : null;
+            typeVariables.add(new TypeVariableDTO(
+                    null, name, name,
+                    getGenericDeclarationId(typeVariable.owner),
+                    typeVariable.index,
+                    bound != null ? List.of(bound) : List.of()
             ));
             return null;
         }
@@ -1051,7 +1048,7 @@ public class Assembler {
                     nodes.add(NodeDTOFactory.createInputNode(
                             NncUtils.randomNonNegative(),
                             inputName,
-                            NncUtils.map(params, p -> InputFieldDTO.create(p.name(), p.typeId()))
+                            NncUtils.map(params, p -> InputFieldDTO.create(p.name(), p.type()))
                     ));
                     params.forEach(p -> nodes.add(NodeDTOFactory.createValueNode(
                             NncUtils.randomNonNegative(),
@@ -1117,132 +1114,132 @@ public class Assembler {
 
     }
 
-    private class CompositeTypeEmitter extends VisitorBase {
-
-        @Override
-        public Void visitEnumDeclaration(AssemblyParser.EnumDeclarationContext ctx) {
-            var type = ClassAsmType.create(ctx.IDENTIFIER().getText());
-            var pEnumType = new ClassAsmType("Enum", List.of(type));
-            var pEnumTypeId = getTypeId(pEnumType);
-            types.add(new TypeDTO(
-                    pEnumTypeId,
-                    pEnumType.name(),
-                    null,
-                    TypeCategory.CLASS.code(),
-                    false,
-                    false,
-                    new PTypeDTO(
-                            pEnumTypeId,
-                            getTypeId(ClassAsmType.create("Enum")),
-                            List.of(getTypeId(type)),
-                            List.of(),
-                            List.of(),
-                            List.of(),
-                            List.of()
-                    )
-            ));
-            return super.visitEnumDeclaration(ctx);
-        }
-
-        @Override
-        public Void visitTypeType(AssemblyParser.TypeTypeContext ctx) {
-            if (ctx.classOrInterfaceType() == null) {
-                var type = parseType(ctx, scope);
-                if (!compositeTypes.containsKey(type)) {
-                    var id = getTypeId(type);
-                    var typeDTO = switch (type) {
-                        case UnionAsmType unionAsmType -> new TypeDTO(
-                                id,
-                                type.name(),
-                                null,
-                                TypeCategory.UNION.code(),
-                                false,
-                                false,
-                                new UnionTypeParam(NncUtils.map(unionAsmType.members, Assembler.this::getTypeId))
-                        );
-                        case UncertainAsmType uncertainAsmType -> new TypeDTO(
-                                id,
-                                type.name(),
-                                null,
-                                TypeCategory.UNCERTAIN.code(),
-                                false,
-                                false,
-                                new UncertainTypeParam(
-                                        getTypeId(uncertainAsmType.lowerBound),
-                                        getTypeId(uncertainAsmType.upperBound)
-                                )
-                        );
-                        case ArrayAsmType arrayAsmType -> new TypeDTO(
-                                id,
-                                type.name(),
-                                null,
-                                switch (arrayAsmType.kind) {
-                                    case CHILD -> TypeCategory.CHILD_ARRAY.code();
-                                    case READ_WRITE -> TypeCategory.READ_WRITE_ARRAY.code();
-                                    case READ_ONLY -> TypeCategory.READ_ONLY_ARRAY.code();
-                                },
-                                false,
-                                false,
-                                new ArrayTypeParam(
-                                        getTypeId(arrayAsmType.elementType),
-                                        switch (arrayAsmType.kind) {
-                                            case CHILD -> ArrayKind.CHILD.code();
-                                            case READ_WRITE -> ArrayKind.READ_WRITE.code();
-                                            case READ_ONLY -> ArrayKind.READ_ONLY.code();
-                                        }
-                                )
-                        );
-                        case FunctionAsmType functionAsmType -> new TypeDTO(
-                                id,
-                                type.name(),
-                                null,
-                                TypeCategoryCodes.FUNCTION,
-                                false,
-                                false,
-                                new FunctionTypeParam(
-                                        NncUtils.map(functionAsmType.parameterTypes, Assembler.this::getTypeId),
-                                        getTypeId(functionAsmType.returnType)
-                                )
-                        );
-                        default -> null;
-                    };
-                    if (typeDTO != null)
-                        compositeTypes.put(type, typeDTO);
-                }
-            }
-            return super.visitTypeType(ctx);
-        }
-
-        @Override
-        public Void visitClassOrInterfaceType(AssemblyParser.ClassOrInterfaceTypeContext ctx) {
-            var type = parseClassType(ctx, scope);
-            if (type instanceof ClassAsmType classAsmType && classAsmType.isParameterized() && !compositeTypes.containsKey(type)) {
-                var id = getTypeId(classAsmType);
-                compositeTypes.put(type, new TypeDTO(
-                                id,
-                                type.name(),
-                                null,
-                                TypeCategory.CLASS.code(),
-                                false,
-                                false,
-                                new PTypeDTO(
-                                        id,
-                                        getTypeId(new ClassAsmType(classAsmType.rawName, List.of())),
-                                        NncUtils.map(
-                                                classAsmType.typeArguments, Assembler.this::getTypeId
-                                        ),
-                                        List.of(),
-                                        List.of(),
-                                        List.of(),
-                                        List.of()
-                                )
-                        )
-                );
-            }
-            return super.visitClassOrInterfaceType(ctx);
-        }
-
-    }
+//    private class CompositeTypeEmitter extends VisitorBase {
+//
+//        @Override
+//        public Void visitEnumDeclaration(AssemblyParser.EnumDeclarationContext ctx) {
+//            var type = ClassAsmType.create(ctx.IDENTIFIER().getText());
+//            var pEnumType = new ClassAsmType("Enum", List.of(type));
+//            var pEnumTypeId = getTypeId(pEnumType);
+//            types.add(new TypeDTO(
+//                    pEnumTypeId,
+//                    pEnumType.name(),
+//                    null,
+//                    TypeCategory.CLASS.code(),
+//                    false,
+//                    false,
+//                    new PTypeDTO(
+//                            pEnumTypeId,
+//                            getTypeId(ClassAsmType.create("Enum")),
+//                            List.of(getTypeId(type)),
+//                            List.of(),
+//                            List.of(),
+//                            List.of(),
+//                            List.of()
+//                    )
+//            ));
+//            return super.visitEnumDeclaration(ctx);
+//        }
+//
+//        @Override
+//        public Void visitTypeType(AssemblyParser.TypeTypeContext ctx) {
+//            if (ctx.classOrInterfaceType() == null) {
+//                var type = parseType(ctx, scope);
+//                if (!compositeTypes.containsKey(type)) {
+//                    var id = getTypeId(type);
+//                    var typeDTO = switch (type) {
+//                        case UnionAsmType unionAsmType -> new TypeDTO(
+//                                id,
+//                                type.name(),
+//                                null,
+//                                TypeCategory.UNION.code(),
+//                                false,
+//                                false,
+//                                new UnionTypeParam(NncUtils.map(unionAsmType.members, Assembler.this::getTypeId))
+//                        );
+//                        case UncertainAsmType uncertainAsmType -> new TypeDTO(
+//                                id,
+//                                type.name(),
+//                                null,
+//                                TypeCategory.UNCERTAIN.code(),
+//                                false,
+//                                false,
+//                                new UncertainTypeParam(
+//                                        getTypeId(uncertainAsmType.lowerBound),
+//                                        getTypeId(uncertainAsmType.upperBound)
+//                                )
+//                        );
+//                        case ArrayAsmType arrayAsmType -> new TypeDTO(
+//                                id,
+//                                type.name(),
+//                                null,
+//                                switch (arrayAsmType.kind) {
+//                                    case CHILD -> TypeCategory.CHILD_ARRAY.code();
+//                                    case READ_WRITE -> TypeCategory.READ_WRITE_ARRAY.code();
+//                                    case READ_ONLY -> TypeCategory.READ_ONLY_ARRAY.code();
+//                                },
+//                                false,
+//                                false,
+//                                new ArrayTypeParam(
+//                                        getTypeId(arrayAsmType.elementType),
+//                                        switch (arrayAsmType.kind) {
+//                                            case CHILD -> ArrayKind.CHILD.code();
+//                                            case READ_WRITE -> ArrayKind.READ_WRITE.code();
+//                                            case READ_ONLY -> ArrayKind.READ_ONLY.code();
+//                                        }
+//                                )
+//                        );
+//                        case FunctionAsmType functionAsmType -> new TypeDTO(
+//                                id,
+//                                type.name(),
+//                                null,
+//                                TypeCategoryCodes.FUNCTION,
+//                                false,
+//                                false,
+//                                new FunctionTypeParam(
+//                                        NncUtils.map(functionAsmType.parameterTypes, Assembler.this::getTypeId),
+//                                        getTypeId(functionAsmType.returnType)
+//                                )
+//                        );
+//                        default -> null;
+//                    };
+//                    if (typeDTO != null)
+//                        compositeTypes.put(type, typeDTO);
+//                }
+//            }
+//            return super.visitTypeType(ctx);
+//        }
+//
+//        @Override
+//        public Void visitClassOrInterfaceType(AssemblyParser.ClassOrInterfaceTypeContext ctx) {
+//            var type = parseClassType(ctx, scope);
+//            if (type instanceof ClassAsmType classAsmType && classAsmType.isParameterized() && !compositeTypes.containsKey(type)) {
+//                var id = getTypeId(classAsmType);
+//                compositeTypes.put(type, new TypeDTO(
+//                                id,
+//                                type.name(),
+//                                null,
+//                                TypeCategory.CLASS.code(),
+//                                false,
+//                                false,
+//                                new PTypeDTO(
+//                                        id,
+//                                        getTypeId(new ClassAsmType(classAsmType.rawName, List.of())),
+//                                        NncUtils.map(
+//                                                classAsmType.typeArguments, Assembler.this::getTypeId
+//                                        ),
+//                                        List.of(),
+//                                        List.of(),
+//                                        List.of(),
+//                                        List.of()
+//                                )
+//                        )
+//                );
+//            }
+//            return super.visitClassOrInterfaceType(ctx);
+//        }
+//
+//    }
 
     private AssemblyParser.CompilationUnitContext parse(String source) {
         var input = CharStreams.fromString(source);
@@ -1537,10 +1534,14 @@ public class Assembler {
 
     }
 
-    public List<TypeDTO> getAllTypes() {
+    public List<TypeDTO> getAllTypeDefs() {
         var allTypes = new ArrayList<>(types);
         allTypes.addAll(compositeTypes.values());
         return allTypes;
+    }
+
+    public List<TypeVariableDTO> getTypeVariables() {
+        return Collections.unmodifiableList(typeVariables);
     }
 
     public List<ParameterizedFlowDTO> getParameterizedFlows() {

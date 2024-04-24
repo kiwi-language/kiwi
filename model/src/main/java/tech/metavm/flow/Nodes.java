@@ -21,8 +21,8 @@ public class Nodes {
                 RaiseParameterKind.MESSAGE, null, message);
     }
 
-    public static SelfNode self(String name, @Nullable String code, ClassType type, ScopeRT scope) {
-        return new SelfNode(null, name, code, type, scope.getLastNode(), scope);
+    public static SelfNode self(String name, @Nullable String code, Klass type, ScopeRT scope) {
+        return new SelfNode(null, name, code, type.getType(), scope.getLastNode(), scope);
     }
 
     public static NewArrayNode newArray(String name, @Nullable String code, ArrayType type,
@@ -30,7 +30,7 @@ public class Nodes {
         return new NewArrayNode(null, name, code, type, value, parentRef, scope.getLastNode(), scope);
     }
 
-    public static NewObjectNode newObject(String name, ClassType type, ScopeRT scope, Method constructor,
+    public static NewObjectNode newObject(String name, Klass type, ScopeRT scope, Method constructor,
                                           List<Argument> arguments, boolean ephemeral, boolean unbound) {
         return new NewObjectNode(null, name, null,
                 constructor, arguments, scope.getLastNode(), scope, null, ephemeral, unbound);
@@ -90,7 +90,7 @@ public class Nodes {
         var indexField = FieldBuilder.newBuilder("索引", "index", whileOutputType, StandardTypes.getLongType())
                 .build();
         var list = getArray.get();
-        var listType = (ClassType) list.getType();
+        var listClass = ((ClassType) list.getType()).resolve();
         var size = new MethodCallNode(
                 null,
                 "列表大小_" + seq,
@@ -98,7 +98,7 @@ public class Nodes {
                 StandardTypes.getLongType(),
                 scope.getLastNode(),
                 scope, list,
-                listType.getMethodByCodeAndParamTypes("size", List.of()),
+                listClass.getMethodByCodeAndParamTypes("size", List.of()),
                 List.of()
         );
         var node = new WhileNode(
@@ -120,10 +120,10 @@ public class Nodes {
                 )
         ));
         var bodyScope = node.getBodyScope();
-        var getMethod = ((ClassType )list.getType()).getMethodByCodeAndParamTypes("get", List.of(StandardTypes.getLongType()));
+        var getMethod = listClass.getMethodByCodeAndParamTypes("get", List.of(StandardTypes.getLongType()));
         var element = new MethodCallNode(
                 null, "获取元素_" + seq, null,
-                ((ClassType) list.getType()).getListElementType(),
+                listClass.getListElementType(),
                 bodyScope.getLastNode(), bodyScope,
                 getArray.get(), getMethod,
                 List.of(Nodes.argument(getMethod, 0, Values.nodeProperty(node, indexField)))

@@ -59,7 +59,7 @@ public enum ArrayKind {
         this.suffix = suffix;
     }
 
-    public static ArrayKind getByCode(int code) {
+    public static ArrayKind fromCode(int code) {
         return NncUtils.findRequired(values(), v -> v.code == code);
     }
 

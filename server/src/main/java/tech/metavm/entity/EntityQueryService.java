@@ -25,7 +25,7 @@ public class EntityQueryService {
         var idPage = instanceQueryService.query(instanceQuery,
                 context.getInstanceContext(),
                 context.getGenericContext(),
-                new ContextTypeRepository(context),
+                new ContextTypeDefRepository(context),
                 CompositeTypeFacadeImpl.fromContext(context)
         );
         return new Page<>(
@@ -40,7 +40,7 @@ public class EntityQueryService {
     }
 
     private InstanceQuery convertToInstanceQuery(EntityQuery<?> entityQuery, IEntityContext context) {
-        ClassType type = ModelDefRegistry.getClassType(entityQuery.entityType());
+        var type = ModelDefRegistry.getClassType(entityQuery.entityType());
         EntityDef<?> entityDef = ModelDefRegistry.getEntityDef(type);
         return new InstanceQuery(
                 type,

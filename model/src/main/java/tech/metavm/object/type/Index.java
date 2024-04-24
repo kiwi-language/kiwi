@@ -26,7 +26,7 @@ public class Index extends Constraint implements LocalKey {
     private final boolean unique;
     private transient IndexDef<?> indexDef;
 
-    public Index(ClassType type, String name, @Nullable String code, String message, boolean unique, List<Field> fields) {
+    public Index(Klass type, String name, @Nullable String code, String message, boolean unique, List<Field> fields) {
         super(ConstraintKind.UNIQUE, type, name, code, message);
         this.unique = unique;
         for (Field field : fields) {
@@ -34,7 +34,7 @@ public class Index extends Constraint implements LocalKey {
         }
     }
 
-    public Index(ClassType type, String name, @Nullable String code, String message, boolean unique) {
+    public Index(Klass type, String name, @Nullable String code, String message, boolean unique) {
         super(ConstraintKind.UNIQUE, type, name, code, message);
         this.unique = unique;
     }

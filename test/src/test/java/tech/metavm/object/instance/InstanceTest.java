@@ -8,6 +8,7 @@ import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.persistence.PersistenceUtils;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.FooTypes;
 import tech.metavm.util.MockUtils;
@@ -43,7 +44,7 @@ public class InstanceTest extends TestCase {
         Map<Field, Instance> barData = new HashMap<>();
         barData.put(fooTypes.barCodeField(), stringInstance(CONST_BAR_CODE));
         ClassInstance bar = ClassInstance.create(barData, fooTypes.barType());
-        bar.initId(DefaultPhysicalId.ofObject(2L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        bar.initId(DefaultPhysicalId.ofObject(2L, 0L, new ClassTypeKey("1")));
         return bar;
     }
 
@@ -58,7 +59,7 @@ public class InstanceTest extends TestCase {
         );
         fooData.put(fooTypes.fooBazListField(), new ArrayInstance(fooTypes.bazArrayType()));
         ClassInstance foo = ClassInstance.create(fooData, fooTypes.fooType());
-        foo.initId(DefaultPhysicalId.ofObject(1L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        foo.initId(DefaultPhysicalId.ofObject(1L, 0L, new ClassTypeKey("1")));
         return foo;
     }
 

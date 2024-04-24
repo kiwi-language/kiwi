@@ -7,7 +7,7 @@ import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.CompositeTypeFacade;
-import tech.metavm.object.type.TypeProvider;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.view.MappingProvider;
 
 import javax.annotation.Nullable;
@@ -21,12 +21,12 @@ public class InstanceContextBuilder {
     public static InstanceContextBuilder newBuilder(long appId,
                                                     IInstanceStore instanceStore,
                                                     IdInitializer idProvider,
-                                                    TypeProvider typeProvider,
+                                                    TypeDefProvider typeDefProvider,
                                                     MappingProvider mappingProvider,
                                                     ParameterizedFlowProvider parameterizedFlowProvider,
                                                     CompositeTypeFacade compositeTypeFacade) {
         return new InstanceContextBuilder(appId, instanceStore, idProvider,
-                typeProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade);
+                typeDefProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade);
     }
 
     private final long appId;
@@ -36,7 +36,7 @@ public class InstanceContextBuilder {
     private @Nullable IInstanceContext parent;
     private boolean asyncPostProcess;
     private List<ContextPlugin> plugins = List.of();
-    private TypeProvider typeProvider;
+    private TypeDefProvider typeDefProvider;
     private MappingProvider mappingProvider;
     private ParameterizedFlowProvider parameterizedFlowProvider;
     private CompositeTypeFacade compositeTypeFacade;
@@ -49,21 +49,21 @@ public class InstanceContextBuilder {
     public InstanceContextBuilder(long appId,
                                   IInstanceStore instanceStore,
                                   IdInitializer idInitializer,
-                                  TypeProvider typeProvider,
+                                  TypeDefProvider typeDefProvider,
                                   MappingProvider mappingProvider,
                                   ParameterizedFlowProvider parameterizedFlowProvider,
                                   CompositeTypeFacade compositeTypeFacade) {
         this.appId = appId;
         this.instanceStore = instanceStore;
         this.idInitializer = idInitializer;
-        this.typeProvider = typeProvider;
+        this.typeDefProvider = typeDefProvider;
         this.mappingProvider = mappingProvider;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.compositeTypeFacade = compositeTypeFacade;
     }
 
     public InstanceContextBuilder dependency(EntityInstanceContextBridge dependency) {
-        this.typeProvider = dependency;
+        this.typeDefProvider = dependency;
         this.mappingProvider = dependency;
         this.parameterizedFlowProvider = dependency;
         this.compositeTypeFacade = dependency;
@@ -137,7 +137,7 @@ public class InstanceContextBuilder {
             idInitializer = new WrappedIdInitializer(getTypeIdInterceptor, idInitializer);
         return new InstanceContext(
                 appId, instanceStore, idInitializer, executor, asyncPostProcess,
-                plugins, parent, typeProvider, mappingProvider,
+                plugins, parent, typeDefProvider, mappingProvider,
                 parameterizedFlowProvider, compositeTypeFacade, childLazyLoading, cache,
                 eventQueue, readonly);
     }

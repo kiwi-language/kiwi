@@ -7,6 +7,8 @@ import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
 
 import java.util.Map;
 import java.util.Objects;
@@ -124,7 +126,27 @@ public class PrimitiveType extends Type {
     }
 
     @Override
+    public PrimitiveType copy() {
+        return new PrimitiveType(kind);
+    }
+
+    @Override
+    public String toTypeExpression(SerializeContext serializeContext) {
+        return kind.name().toLowerCase();
+    }
+
+    @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitPrimitiveType(this);
     }
+
+    @Override
+    public void write0(InstanceOutput output) {
+        output.write(kind.code());
+    }
+
+    public static PrimitiveType read(InstanceInput input) {
+        return new PrimitiveType(PrimitiveKind.fromCode(input.readInt()));
+    }
+
 }

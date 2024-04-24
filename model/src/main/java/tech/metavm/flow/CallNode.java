@@ -100,7 +100,7 @@ public abstract class CallNode extends NodeRT {
             capturedTypes.add(ct);
             actualCapturedTypes.add(t);
         });
-        var typeSubst = new TypeSubstitutor(capturedTypes, actualCapturedTypes, frame.compositeTypeFacade(), new MockDTOProvider());
+        var typeSubst = new TypeSubstitutor(capturedTypes, actualCapturedTypes);
         if(flow instanceof Method method && method.getDeclaringType().isParameterized()
                 && NncUtils.anyMatch(method.getDeclaringType().getTypeArguments(), Type::isCaptured)) {
             var declaringType = method.getDeclaringType();
@@ -151,7 +151,7 @@ public abstract class CallNode extends NodeRT {
         flow = tryUncaptureFlow(flow, frame);
         var self = getSelf(frame);
         if (flow instanceof Method method && method.isInstanceMethod())
-            flow = requireNonNull(self).getType().resolveMethod(method, frame.parameterizedFlowProvider());
+            flow = requireNonNull(self).getKlass().resolveMethod(method, frame.parameterizedFlowProvider());
         FlowExecResult result = flow.execute(self, argInstances, frame);
         if (result.exception() != null)
             return frame.catchException(this, result.exception());

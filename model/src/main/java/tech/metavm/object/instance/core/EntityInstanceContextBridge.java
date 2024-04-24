@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 public class EntityInstanceContextBridge implements MappingProvider, ParameterizedFlowProvider,
-        TypeProvider, IndexProvider, VersionRepository, TypeRegistry, CompositeTypeFacade {
+        TypeDefProvider, IndexProvider, VersionRepository, TypeRegistry, CompositeTypeFacade {
 
     private IEntityContext entityContext;
 
@@ -45,8 +45,8 @@ public class EntityInstanceContextBridge implements MappingProvider, Parameteriz
     }
 
     @Override
-    public Type getType(Id id) {
-        return entityContext.getType(id);
+    public TypeDef getTypeDef(Id id) {
+        return entityContext.getTypeDef(id);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class EntityInstanceContextBridge implements MappingProvider, Parameteriz
     }
 
     @Override
-    public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage resolutionStage, DTOProvider dtoProvider) {
+    public Klass getParameterizedType(Klass template, List<? extends Type> typeArguments, ResolutionStage resolutionStage, DTOProvider dtoProvider) {
         return entityContext.getGenericContext().getParameterizedType(template, typeArguments, resolutionStage, dtoProvider);
     }
 }

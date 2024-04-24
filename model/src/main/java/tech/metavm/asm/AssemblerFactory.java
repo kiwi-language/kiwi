@@ -53,7 +53,7 @@ public class AssemblerFactory {
             var collType = ModelDefRegistry.getDefContext().getClassType(collClass);
             for (Class<? extends Serializable> primitiveClass : primitiveClasses) {
                 var primType = (PrimitiveType) ModelDefRegistry.getDefContext().getType(primitiveClass);
-                var pCollType = StandardTypes.getParameterizedType(collType, List.of(primType));
+                var pCollType = StandardTypes.getParameterizedType(collType.resolve(), List.of(primType));
                 var asmPrimType = new PrimitiveAsmType(AsmPrimitiveKind.valueOf(primType.getKind().name()));
                 stdTypeIds.put(new ClassAsmType(collType.getCode(), List.of(asmPrimType)), pCollType.getStringId());
                 stdTypeIds.put(new UnionAsmType(Set.of(asmPrimType, nullTye)), StandardTypes.getNullableType(primType).getStringId());

@@ -3,7 +3,6 @@ package tech.metavm.object.instance;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
-import tech.metavm.asm.AssemblerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
@@ -18,8 +17,8 @@ import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.object.type.TypeManager;
-import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
 import tech.metavm.task.TaskManager;
@@ -304,7 +303,7 @@ public class InstanceManagerTest extends TestCase {
                 ClassTypeDTOBuilder.newBuilder("Child")
                         .build()
         ));
-        var nullableChildType = typeManager.getUnionType(List.of(childType.id(), StandardTypes.getNullType().getStringId())).type();
+        var nullableChildType = TypeExpressions.getNullableType(TypeExpressions.getClassType(childType.id()));
         var typeTmpId = TmpId.random().toString();
         var childFieldTmpId = TmpId.random().toString();
         var childRefFieldTmpId = TmpId.random().toString();
@@ -312,7 +311,7 @@ public class InstanceManagerTest extends TestCase {
                 ClassTypeDTOBuilder.newBuilder("Parent")
                         .id(typeTmpId)
                         .addField(
-                                FieldDTOBuilder.newBuilder("child", nullableChildType.id())
+                                FieldDTOBuilder.newBuilder("child", nullableChildType)
                                         .code("child")
                                         .id(childFieldTmpId)
                                         .isChild(true)
@@ -412,10 +411,7 @@ public class InstanceManagerTest extends TestCase {
 
     public void testRemoveNonPersistedChild() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
-        var assembler = AssemblerFactory.createWithStandardTypes();
-        var types = assembler.assemble(List.of(parentChildMasm));
-        FlowSavingContext.initConfig();
-        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(types, List.of(), List.of(), false)));
+        MockUtils.assemble(parentChildMasm, typeManager);
         var parentType = typeManager.getTypeByCode("Parent").type();
         var parentConstructorId = TestUtils.getMethodByCode(parentType, "Parent").id();
         var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
@@ -451,10 +447,7 @@ public class InstanceManagerTest extends TestCase {
 
     public void testRemoveRoot() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
-        var assembler = AssemblerFactory.createWithStandardTypes();
-        var types = assembler.assemble(List.of(parentChildMasm));
-        FlowSavingContext.initConfig();
-        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(types, List.of(), List.of(), false)));
+        MockUtils.assemble(parentChildMasm, typeManager);
         var parentType = typeManager.getTypeByCode("Parent").type();
         var parentConstructorId = TestUtils.getMethodByCode(parentType, "Parent").id();
         var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(

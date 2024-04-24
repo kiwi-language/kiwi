@@ -61,7 +61,7 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
                     self = ClassInstanceBuilder.newBuilder(((Method) flow).getDeclaringType()).build();
                     context.getInstanceContext().bind(self);
                 } else
-                    flow = Objects.requireNonNull(self).getType().resolveMethod(method, context.getGenericContext());
+                    flow = Objects.requireNonNull(self).getKlass().resolveMethod(method, context.getGenericContext());
             }
             var result = flow.execute(self, arguments, context.getInstanceContext());
             if (result.exception() == null)

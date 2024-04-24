@@ -9,21 +9,21 @@ import javax.annotation.Nullable;
 public record InputFieldDTO(
         String fieldId,
         String name,
-        String typeId,
+        String type,
         FieldValue defaultValue,
         @Nullable ValueDTO condition
 ) implements FieldReferringDTO<InputFieldDTO> {
 
-    public static InputFieldDTO create(String name, String typeId) {
-        return new InputFieldDTO(null, name, typeId, null, null);
+    public static InputFieldDTO create(String name, String type) {
+        return new InputFieldDTO(null, name, type, null, null);
     }
 
     public InputFieldDTO copyWithFieldId(String fieldId) {
-        return new InputFieldDTO(fieldId, name, typeId, defaultValue, condition);
+        return new InputFieldDTO(fieldId, name, type, defaultValue, condition);
     }
 
     public FieldDTO toFieldDTO(String declaringTypeId) {
-        return FieldDTOBuilder.newBuilder(name, typeId)
+        return FieldDTOBuilder.newBuilder(name, type)
                 .id(fieldId)
                 .readonly(true)
                 .defaultValue(defaultValue)

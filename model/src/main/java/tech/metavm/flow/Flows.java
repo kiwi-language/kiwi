@@ -26,7 +26,7 @@ public class Flows {
             if (method.getDeclaringType().isTemplate() && context.isPersisted(method.getDeclaringType())) {
                 flow.analyze();
                 var templateInstances = context.getTemplateInstances(method.getDeclaringType());
-                for (ClassType templateInstance : templateInstances) {
+                for (Klass templateInstance : templateInstances) {
                     context.getGenericContext().retransformMethod(method, templateInstance);
                 }
             }
@@ -48,7 +48,7 @@ public class Flows {
         return flow instanceof Method method && method.isConstructor();
     }
 
-    public static @Nullable ClassType getDeclaringType(Flow flow) {
+    public static @Nullable Klass getDeclaringType(Flow flow) {
         return flow instanceof Method method ? method.getDeclaringType() : null;
     }
 

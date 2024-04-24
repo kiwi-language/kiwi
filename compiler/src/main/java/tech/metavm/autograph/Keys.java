@@ -2,7 +2,7 @@ package tech.metavm.autograph;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.util.Key;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.TypeVariable;
@@ -53,7 +53,7 @@ public class Keys {
 
     public static final Key<Boolean> READ_ONLY_EXPR = createKey("ReadOnlyExpression");
 
-    public static final Key<ClassType> MV_CLASS = createKey("MetaClass");
+    public static final Key<Klass> MV_CLASS = createKey("MetaClass");
 
     public static final Key<TypeVariable> TYPE_VARIABLE = createKey("TypeVariable");
 

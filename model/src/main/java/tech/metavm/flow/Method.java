@@ -26,7 +26,7 @@ public class Method extends Flow implements Property, GenericElement {
     public static final Logger logger = LoggerFactory.getLogger(Method.class);
 
     @EntityField("所属类型")
-    private final @NotNull ClassType declaringType;
+    private final @NotNull Klass declaringType;
     @EntityField("是否静态")
     private boolean _static;
     @EntityField("可见范围")
@@ -51,7 +51,7 @@ public class Method extends Flow implements Property, GenericElement {
     @CopyIgnore
     @Nullable
     private Method verticalTemplate;
-    @EntityField("静态类型")
+    @ChildEntity("静态类型")
     @Nullable
     private FunctionType staticType;
 
@@ -60,7 +60,7 @@ public class Method extends Flow implements Property, GenericElement {
     private final boolean parameterized;
 
     public Method(Long tmpId,
-                  @NotNull ClassType declaringType,
+                  @NotNull Klass declaringType,
                   String name,
                   @Nullable String code,
                   boolean isConstructor,
@@ -72,22 +72,26 @@ public class Method extends Flow implements Property, GenericElement {
                   List<Method> overridden,
                   List<TypeVariable> typeParameters,
                   List<Type> typeArguments,
-                  FunctionType type,
-                  @Nullable FunctionType staticType,
                   boolean isStatic,
                   @Nullable Method horizontalTemplate,
                   Access access,
                   @Nullable CodeSource codeSource,
                   boolean hidden,
                   MetadataState state) {
-        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, codeSource, state, isAbstract);
+        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, horizontalTemplate, codeSource, state, isAbstract);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
         this._static = isStatic;
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
-        this.staticType = staticType;
+        if(!isStatic) {
+            this.staticType = new FunctionType(
+                    NncUtils.randomNonNegative(),
+                    NncUtils.prepend(declaringType.getType(), NncUtils.map(parameters, Parameter::getType)),
+                    returnType
+            );
+        }
         this.access = access;
         this.overridden.addAll(overridden);
         parameterized = horizontalTemplate != null;
@@ -96,7 +100,7 @@ public class Method extends Flow implements Property, GenericElement {
             declaringType.addMethod(this);
         else
             horizontalTemplate.addTemplateInstance(this);
-        checkTypes(overridden, parameters, returnType, type, staticType);
+        checkTypes(overridden, parameters, returnType);
     }
 
     @Nullable
@@ -162,9 +166,7 @@ public class Method extends Flow implements Property, GenericElement {
     @Override
     protected FlowParam getParam(boolean includeCode, SerializeContext serContext) {
         if (includeCode) {
-            serContext.writeType(declaringType);
-            if (staticType != null)
-                serContext.writeType(staticType);
+            serContext.writeTypeDef(declaringType);
         }
         return new MethodParam(
                 isConstructor, isAbstract, _static,
@@ -182,7 +184,7 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     @Override
-    public @NotNull ClassType getDeclaringType() {
+    public @NotNull Klass getDeclaringType() {
         return declaringType;
     }
 
@@ -243,7 +245,7 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     public void setOverridden(List<Method> overridden) {
-        checkTypes(overridden, getParameters(), getReturnType(), getType(), staticType);
+        checkTypes(overridden, getParameters(), getReturnType());
         this.overridden.reset(overridden);
         declaringType.rebuildMethodTable();
     }
@@ -254,13 +256,13 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     public void addOverridden(Method overridden) {
-        checkTypes(List.of(overridden), getParameters(), getReturnType(), getType(), staticType);
+        checkTypes(List.of(overridden), getParameters(), getReturnType());
         this.overridden.add(overridden);
         declaringType.rebuildMethodTable();
     }
 
     public void addOverridden(List<Method> overridden) {
-        checkTypes(overridden, getParameters(), getReturnType(), getType(), staticType);
+        checkTypes(overridden, getParameters(), getReturnType());
         this.overridden.addAll(overridden);
         declaringType.rebuildMethodTable();
     }
@@ -284,21 +286,14 @@ public class Method extends Flow implements Property, GenericElement {
         return declaringType.getName() + "." + getName();
     }
 
-    @Override
-    protected void checkTypes(List<Parameter> parameters, Type returnType, FunctionType type) {
-        checkTypes(overridden, parameters, returnType, type, staticType);
-    }
-
-    private void checkTypes(List<Method> overridden, List<Parameter> parameters, Type returnType,
-                            FunctionType type, @Nullable FunctionType staticType) {
-        super.checkTypes(parameters, returnType, type);
+    private void checkTypes(List<Method> overridden, List<Parameter> parameters, Type returnType) {
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
         for (Method overriddenFlow : overridden) {
             if(getTypeParameters().size() != overriddenFlow.getTypeParameters().size()) {
                 logger.error("Method {} has an overridden {} with different number of type parameters. {} != {}",
                         getQualifiedName(), overriddenFlow.getQualifiedName(), getTypeParameters().size(), overriddenFlow.getTypeParameters().size());
             }
-            var typeParamMapping = NncUtils.zip(getTypeParameters(), overriddenFlow.getTypeParameters());
+            var typeParamMapping = NncUtils.zip(getTypeParameters(), NncUtils.map(overriddenFlow.getTypeParameters(), TypeVariable::getType));
             if(!NncUtils.biAllMatch(paramTypes, overriddenFlow.getParameterTypes(), (t1,t2) -> t1.equals(t2, typeParamMapping)))
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
             if (!overriddenFlow.getReturnType().isAssignableFrom(returnType, typeParamMapping)) {
@@ -315,21 +310,15 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     @Override
-    public void update(List<Parameter> parameters, Type returnType, FunctionTypeProvider functionTypeProvider) {
-        update(parameters, returnType, overridden, functionTypeProvider);
-    }
-
-    public void update(List<Parameter> parameters, Type returnType,
-                       @Nullable List<Method> overridden, FunctionTypeProvider functionTypeProvider) {
-        var paramTypes = NncUtils.map(parameters, Parameter::getType);
-        var type = functionTypeProvider.getFunctionType(paramTypes, returnType);
-        var staticType =
-                isInstanceMethod() ? functionTypeProvider.getFunctionType(NncUtils.prepend(declaringType, paramTypes), returnType) : null;
-        checkTypes(NncUtils.orElse(overridden, this.overridden), parameters, returnType, type, staticType);
-        updateInternal(parameters, returnType, type);
-        this.staticType = staticType;
-        if (overridden != null && overridden != this.overridden)
-            this.overridden.reset(overridden);
+    protected void resetType() {
+        super.resetType();
+        if(!isStatic()) {
+            staticType = new FunctionType(
+                    NncUtils.randomNonNegative(),
+                    NncUtils.prepend(declaringType.getType(), getParameterTypes()),
+                    getReturnType()
+            );
+        }
     }
 
     public Method getEffectiveVerticalTemplate() {
@@ -434,4 +423,8 @@ public class Method extends Flow implements Property, GenericElement {
         return true;
     }
 
+    @Override
+    public Method getParameterized(List<Type> typeArguments) {
+        return (Method) super.getParameterized(typeArguments);
+    }
 }

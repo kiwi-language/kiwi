@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.Element;
 import tech.metavm.entity.StructuralVisitor;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.MetadataState;
 import tech.metavm.util.DebugEnv;
 
@@ -15,9 +15,9 @@ public class FlowChecker extends StructuralVisitor<Boolean> {
     private Flow flow;
 
     @Override
-    public Boolean visitClassType(ClassType type) {
-        super.visitClassType(type);
-        return type.isError();
+    public Boolean visitKlass(Klass klass) {
+        super.visitKlass(klass);
+        return klass.isError();
     }
 
     @Override

@@ -10,14 +10,14 @@ import javax.annotation.Nullable;
 
 public class FieldBuilder {
 
-    public static FieldBuilder newBuilder(String name, @Nullable String code, ClassType declaringType, Type type) {
+    public static FieldBuilder newBuilder(String name, @Nullable String code, Klass declaringType, Type type) {
         return new FieldBuilder(name, code, declaringType, type);
     }
 
     private final String name;
     @Nullable
     private final String code;
-    private final ClassType declaringType;
+    private final Klass declaringType;
     private final Type type;
     private Column column;
     private Long tmpId;
@@ -35,7 +35,7 @@ public class FieldBuilder {
     private boolean readonly;
     private boolean asTitle;
 
-    private FieldBuilder(String name, @Nullable String code, ClassType declaringType, Type type) {
+    private FieldBuilder(String name, @Nullable String code, Klass declaringType, Type type) {
         this.name = name;
         this.code = code;
         this.declaringType = declaringType;

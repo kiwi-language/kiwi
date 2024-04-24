@@ -10,6 +10,7 @@ import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.TreeNotFoundException;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.type.CompositeTypeFacade;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.BusinessException;
@@ -31,11 +32,11 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
                                     IndexSource indexSource,
                                     IdInitializer idInitializer,
                                     @Nullable IInstanceContext parent,
-                                    TypeProvider typeProvider,
+                                    TypeDefProvider typeDefProvider,
                                     MappingProvider mappingProvider,
                                     ParameterizedFlowProvider parameterizedFlowProvider,
                                     CompositeTypeFacade compositeTypeFacade, boolean readonly) {
-        super(appId, parent, readonly, indexSource, typeProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade);
+        super(appId, parent, readonly, indexSource, typeDefProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade);
         this.idInitializer = idInitializer;
         this.loadingBuffer = new LoadingBuffer(this, treeSources, versionSource);
     }

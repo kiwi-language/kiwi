@@ -8,6 +8,7 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.Expressions;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;

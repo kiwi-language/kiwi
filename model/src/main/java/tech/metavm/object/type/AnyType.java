@@ -7,9 +7,10 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.type.rest.dto.ObjectTypeKey;
+import tech.metavm.object.type.rest.dto.AnyTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
+import tech.metavm.util.InstanceOutput;
 
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public class AnyType extends Type {
 
     @Override
     public TypeKey getTypeKey() {
-        return new ObjectTypeKey();
+        return new AnyTypeKey();
     }
 
     @Override
@@ -53,6 +54,21 @@ public class AnyType extends Type {
     @Override
     public String getInternalName(@Nullable Flow current) {
         return "Any";
+    }
+
+    @Override
+    public AnyType copy() {
+        return new AnyType();
+    }
+
+    @Override
+    public String toTypeExpression(SerializeContext serializeContext) {
+        return "any";
+    }
+
+    @Override
+    public void write0(InstanceOutput output) {
+
     }
 
     @Override

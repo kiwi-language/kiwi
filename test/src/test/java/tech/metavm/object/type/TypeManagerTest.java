@@ -138,7 +138,6 @@ public class TypeManagerTest extends TestCase {
                 new BatchSaveRequest(
                         List.of(productTypeDTO),
                         List.of(),
-                        List.of(),
                         false
                 )
         ));
@@ -146,18 +145,14 @@ public class TypeManagerTest extends TestCase {
 
     public void testAddFieldWithDefaultValueToTemplate() {
         var nodeTypeIds = MockUtils.createNodeTypes(typeManager);
-        var nodeType = typeManager.getParameterizedType(
-                new GetParameterizedTypeRequest(
-                        nodeTypeIds.nodeTypeId(),
-                        List.of(StandardTypes.getStringType().getStringId()),
-                        List.of()
-                )
-        ).type();
+        var nodeType = typeManager.getType(new GetTypeRequest(nodeTypeIds.nodeTypeId(), false)).type();
+        var pNodeType = TypeExpressions.getParameterizedType(TypeExpressions.getClassType(nodeTypeIds.nodeTypeId()),
+                TypeExpressions.getClassType(StandardTypes.getStringType().getStringId()));
         var labelFieldId = TestUtils.getFieldIdByCode(nodeType, "label");
         var valueFieldId = TestUtils.getFieldIdByCode(nodeType, "value");
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.create(new InstanceDTO(
                 null,
-                nodeType.id(),
+                pNodeType,
                 null,
                 null,
                 null,
@@ -217,7 +212,7 @@ public class TypeManagerTest extends TestCase {
                         .build()
         ));
 
-        var skuChildArrayType = typeManager.getArrayType(skuType.id(), ArrayKind.CHILD.code()).type();
+        var skuChildArrayType = TypeExpressions.getChildArrayType(TypeExpressions.getClassType(skuType.id()));
 
         var productType = TestUtils.doInTransaction(() -> typeManager.saveType(ClassTypeDTOBuilder.newBuilder("Product")
                 .id(TmpId.random().toString())
@@ -228,7 +223,7 @@ public class TypeManagerTest extends TestCase {
                 .build()));
 
         TestUtils.doInTransaction(() -> typeManager.saveField(
-                FieldDTOBuilder.newBuilder("sku", skuChildArrayType.id())
+                FieldDTOBuilder.newBuilder("sku", skuChildArrayType)
                         .id(TmpId.random().toString())
                         .declaringTypeId(productType.id())
                         .isChild(true)
@@ -237,10 +232,10 @@ public class TypeManagerTest extends TestCase {
 
         var skuViewType = TestUtils.getViewType(skuType, typeManager);
         var productViewType = TestUtils.getViewType(productType, typeManager);
-        var skuViewChildArrayType = typeManager.getArrayType(skuViewType.id(), ArrayKind.CHILD.code()).type();
+        var skuViewChildArrayType = TypeExpressions.getChildArrayType(TypeExpressions.getClassType(skuViewType.id()));
 
         var productViewSkuField = TestUtils.getFieldByName(productViewType, "sku");
-        Assert.assertEquals(skuViewChildArrayType.id(), productViewSkuField.typeId());
+        Assert.assertEquals(skuViewChildArrayType, productViewSkuField.typeId());
 
         TestUtils.doInTransaction(() -> typeManager.saveField(
                 FieldDTOBuilder.newBuilder("desc", StandardTypes.getStringType().getStringId())
@@ -251,7 +246,7 @@ public class TypeManagerTest extends TestCase {
 
         var reloadedProductViewType = TestUtils.getViewType(productType, typeManager);
         var reloadedProductViewSkuField = TestUtils.getFieldByName(reloadedProductViewType, "sku");
-        Assert.assertEquals(skuViewChildArrayType.id(), reloadedProductViewSkuField.typeId());
+        Assert.assertEquals(skuViewChildArrayType, reloadedProductViewSkuField.typeId());
     }
 
 }

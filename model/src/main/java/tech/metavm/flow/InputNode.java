@@ -10,9 +10,8 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
-import tech.metavm.object.type.Types;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
@@ -27,18 +26,18 @@ public class InputNode extends ChildTypeNode {
         var node = (InputNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new InputNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
-                    context.getClassType(Id.parse(nodeDTO.outputTypeId())), prev, scope);
+                    context.getKlass(Id.parse(nodeDTO.outputTypeId())), prev, scope);
         }
         return node;
     }
 
-    public InputNode(Long tmpId, String name, @Nullable String code, ClassType type, NodeRT prev, ScopeRT scope) {
+    public InputNode(Long tmpId, String name, @Nullable String code, Klass type, NodeRT prev, ScopeRT scope) {
         super(tmpId, name, code, type, prev, scope);
     }
 
     @Override
     protected InputNodeParam getParam(SerializeContext serializeContext) {
-        return new InputNodeParam(NncUtils.map(getType().getReadyFields(), this::toInputFieldDTO));
+        return new InputNodeParam(NncUtils.map(getKlass().getReadyFields(), this::toInputFieldDTO));
     }
 
     private InputFieldDTO toInputFieldDTO(Field field) {
@@ -55,8 +54,8 @@ public class InputNode extends ChildTypeNode {
 
     @Nullable
     public Value getFieldCondition(Field field) {
-        var type = getType();
-        var constraints = type.getFieldCheckConstraints(field);
+        var klass = getKlass();
+        var constraints = klass.getFieldCheckConstraints(field);
         if (constraints.isEmpty()) {
             return null;
         } else {
@@ -68,8 +67,8 @@ public class InputNode extends ChildTypeNode {
     public NodeExecResult execute(MetaFrame frame) {
         try(var ignored = ContextUtil.getProfiler().enter("InputNode.execute")) {
             Map<Field, Instance> fieldValues = new HashMap<>();
-            NncUtils.biForEach(getType().getReadyFields(), frame.getArguments(), fieldValues::put);
-            return next(ClassInstance.create(fieldValues, getType()));
+            NncUtils.biForEach(getKlass().getReadyFields(), frame.getArguments(), fieldValues::put);
+            return next(ClassInstance.create(fieldValues, getKlass()));
         }
     }
 

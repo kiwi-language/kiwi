@@ -5,7 +5,7 @@ import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceRepository;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.CompositeTypeFacade;
 
 import java.util.List;
@@ -14,7 +14,7 @@ public class LambdaFrame extends MetaFrame {
 
     private final MetaFrame containingFrame;
 
-    public LambdaFrame(NodeRT entry, ClassType declaringType,
+    public LambdaFrame(NodeRT entry, Klass declaringType,
                        List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider,
                        CompositeTypeFacade compositeTypeFacade,
                        MetaFrame containingFrame) {

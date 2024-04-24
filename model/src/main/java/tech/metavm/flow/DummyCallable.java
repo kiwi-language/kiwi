@@ -37,8 +37,4 @@ public class DummyCallable implements Callable {
         return null;
     }
 
-    @Override
-    public void setFunctionType(FunctionType functionType) {
-
-    }
 }

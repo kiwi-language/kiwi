@@ -9,6 +9,7 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.util.*;
 
 import java.io.ByteArrayInputStream;
@@ -42,7 +43,7 @@ public class ClassInstanceTest extends TestCase {
                         new ArrayInstance(fooType.bazArrayType())
                 ))
                 .build();
-        foo.initId(DefaultPhysicalId.ofObject(100000L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        foo.initId(DefaultPhysicalId.ofObject(100000L, 0L, new ClassTypeKey("1")));
         FieldValue fieldValueDTO = foo.toFieldValueDTO();
         Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
         Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
@@ -56,7 +57,7 @@ public class ClassInstanceTest extends TestCase {
         InstanceDTO instanceDTO = foo.toDTO();
         Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
         ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
-        Assert.assertEquals(foo.getType().getReadyFields().size(), paramDTO.fields().size());
+        Assert.assertEquals(foo.getKlass().getReadyFields().size(), paramDTO.fields().size());
         TestUtils.logJSON(LOGGER, instanceDTO);
     }
 
@@ -77,7 +78,7 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void test_add_not_null_field() {
-        ClassType type = ClassTypeBuilder.newBuilder("Lab", null).build();
+        Klass type = ClassTypeBuilder.newBuilder("Lab", null).build();
         Field titleField = FieldBuilder
                 .newBuilder("title", null, type, StandardTypes.getStringType())
                 .build();
@@ -94,7 +95,7 @@ public class ClassInstanceTest extends TestCase {
                 ),
                 type
         );
-        instance.initId(DefaultPhysicalId.ofObject(10001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        instance.initId(DefaultPhysicalId.ofObject(10001L, 0L, new ClassTypeKey("1")));
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 
@@ -109,7 +110,7 @@ public class ClassInstanceTest extends TestCase {
     public void testEphemeral() {
         var flowType = ClassTypeBuilder.newBuilder("Flow", "Flow").build();
         var scopeType = ClassTypeBuilder.newBuilder("Scope", "Scope").build();
-        var nullableScopeType = new UnionType(null, Set.of(StandardTypes.getNullType(), scopeType));
+        var nullableScopeType = new UnionType(null, Set.of(StandardTypes.getNullType(), scopeType.getType()));
         var rootScopeField = FieldBuilder.newBuilder("rootScope", "rootScope", flowType, nullableScopeType)
                 .isChild(true)
                 .build();
@@ -143,7 +144,7 @@ public class ClassInstanceTest extends TestCase {
         var input = new InstanceInput(bin, id -> {
             var inst = id2instance.get(id);
             if(inst instanceof ClassInstance classInst)
-                return new ClassInstance(id, classInst.getType(), classInst.isEphemeral(), null);
+                return new ClassInstance(id, classInst.getKlass(), classInst.isEphemeral(), null);
             else
                 throw new RuntimeException("Unexpected instance: " + inst);
         });

@@ -22,7 +22,7 @@ import static tech.metavm.object.type.ResolutionStage.INIT;
 
 public class GenericContext implements ParameterizedFlowProvider, ParameterizedTypeRepository {
 
-    private final Map<ClassType, Map<List<? extends Type>, ClassType>> parameterizedTypes = new HashMap<>();
+    private final Map<Klass, Map<List<? extends Type>, Klass>> parameterizedTypes = new HashMap<>();
     private final Map<Flow, Map<List<? extends Type>, Flow>> parameterizedFlows = new HashMap<>();
     private final Set<Flow> newFlows = new HashSet<>();
     private final IEntityContext entityContext;
@@ -37,41 +37,39 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         emptyBatch = SaveTypeBatch.empty(entityContext);
     }
 
-    public ClassType getParameterizedType(ClassType template, Type... typeArguments) {
+    public Klass getParameterizedType(Klass template, Type... typeArguments) {
         return getParameterizedType(template, List.of(typeArguments));
     }
 
-    public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments) {
+    public Klass getParameterizedType(Klass template, List<? extends Type> typeArguments) {
         return getParameterizedType(template, typeArguments, DEFINITION, emptyBatch);
     }
 
-    public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage) {
+    public Klass getParameterizedType(Klass template, List<? extends Type> typeArguments, ResolutionStage stage) {
         return getParameterizedType(template, typeArguments, stage, emptyBatch);
     }
 
-    public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage, DTOProvider dtoProvider) {
+    public Klass getParameterizedType(Klass template, List<? extends Type> typeArguments, ResolutionStage stage, DTOProvider dtoProvider) {
         var existing = getExisting(template, typeArguments);
         if (existing == template)
             return template;
         if (existing != null && existing.getStage().isAfterOrAt(stage))
             return existing;
         var transformer = SubstitutorV2.create(
-                template, template.getTypeParameters(), typeArguments, stage, entityContext, dtoProvider
+                template, template.getTypeParameters(), typeArguments, stage
         );
-        return (ClassType) template.accept(transformer);
+        return (Klass) template.accept(transformer);
     }
 
     @Override
-    public List<ClassType> getTemplateInstances(ClassType template) {
+    public List<Klass> getTemplateInstances(Klass template) {
         return entityContext.getTemplateInstances(template);
     }
 
-    public Field retransformField(Field field, ClassType existing) {
+    public Field retransformField(Field field, Klass existing) {
         var transformer = SubstitutorV2.create(field.getDeclaringType(),
                 field.getDeclaringType().getTypeParameters(), existing.getTypeArguments(),
-                DEFINITION,
-                entityContext,
-                SaveTypeBatch.empty(entityContext));
+                DEFINITION);
         transformer.enterElement(existing);
         var transformedField = (Field) field.accept(transformer);
         transformer.exitElement();
@@ -82,24 +80,20 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         return entityContext;
     }
 
-    public ObjectMapping retransformObjectMapping(ObjectMapping objectMapping, ClassType parameterizedType) {
+    public ObjectMapping retransformObjectMapping(ObjectMapping objectMapping, Klass parameterizedType) {
         var transformer = SubstitutorV2.create(objectMapping,
-                objectMapping.getSourceType().getTypeParameters(), parameterizedType.getTypeArguments(),
-                DEFINITION,
-                entityContext,
-                SaveTypeBatch.empty(entityContext));
+                objectMapping.getSourceKlass().getTypeParameters(), parameterizedType.getTypeArguments(),
+                DEFINITION);
         transformer.enterElement(parameterizedType);
         var transformedMapping = (ObjectMapping) objectMapping.accept(transformer);
         transformer.exitElement();
         return transformedMapping;
     }
 
-    public Method retransformMethod(Method methodTemplate, ClassType parameterizedType) {
+    public Method retransformMethod(Method methodTemplate, Klass parameterizedType) {
         var transformer = SubstitutorV2.create(methodTemplate.getDeclaringType(),
                 methodTemplate.getDeclaringType().getTypeParameters(), parameterizedType.getTypeArguments(),
-                DEFINITION,
-                entityContext,
-                SaveTypeBatch.empty(entityContext));
+                DEFINITION);
         transformer.enterElement(parameterizedType);
         var transformedMethod = (Method) methodTemplate.accept(transformer);
         transformer.exitElement();
@@ -109,24 +103,22 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
     public Flow retransformHorizontalFlowInstances(Flow template, Flow templateInstance) {
         var transformer = SubstitutorV2.create(template,
                 template.getTypeParameters(), templateInstance.getTypeArguments(),
-                DEFINITION,
-                entityContext,
-                SaveTypeBatch.empty(entityContext));
+                DEFINITION);
         if (templateInstance instanceof Method method)
             transformer.enterElement(method.getDeclaringType());
         return (Flow) template.accept(transformer);
     }
 
-    public ClassType retransformClass(ClassType template, ClassType parameterized) {
+    public Klass retransformClass(Klass template, Klass parameterized) {
         parameterized.setStage(INIT);
         var transformer = SubstitutorV2.create(
                 template, template.getTypeParameters(), parameterized.getTypeArguments(),
-                DEFINITION, entityContext, emptyBatch
+                DEFINITION
         );
-        return (ClassType) template.accept(transformer);
+        return (Klass) template.accept(transformer);
     }
 
-    private ClassType getNew(ClassType template, List<? extends Type> typeArguments) {
+    private Klass getNew(Klass template, List<? extends Type> typeArguments) {
         return parameterizedTypes.computeIfAbsent(template, k -> new HashMap<>()).get(typeArguments);
     }
 
@@ -139,7 +131,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         return parameterizedFlows.computeIfAbsent(template, k -> new HashMap<>()).get(typeArguments);
     }
 
-    public ClassType getExisting(ClassType template, List<? extends Type> typeArguments) {
+    public Klass getExisting(Klass template, List<? extends Type> typeArguments) {
         if(parent != null && parent.getEntityContext().containsEntity(template)
                 && NncUtils.allMatch(typeArguments, typeArg -> parent.getEntityContext().containsEntity(typeArg))) {
             var found = parent.getExisting(template, typeArguments);
@@ -180,17 +172,17 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         parameterizedFlows.computeIfAbsent(flow.getEffectiveHorizontalTemplate(),
                 k -> new HashMap<>()).put(flow.getTypeArguments(), flow);
         CompositeTypeEventRegistry.notifyFlowCreated(flow);
-        for (Type typeArgument : flow.getTypeArguments()) {
-            typeArgument.getCapturedTypes().forEach(ct -> ct.addCapturedFlow(flow));
-        }
+//        for (Type typeArgument : flow.getTypeArguments()) {
+//            typeArgument.getCapturedTypes().forEach(ct -> ct.addCapturedFlow(flow));
+//        }
     }
 
-    public ClassType load(ClassType template, List<? extends Type> typeArguments) {
+    public Klass load(Klass template, List<? extends Type> typeArguments) {
         if (entityContext == null) {
             return null;
         }
         return entityContext.selectFirstByKey(
-                ClassType.IDX_PARAMETERIZED_TYPE_KEY,
+                Klass.IDX_PARAMETERIZED_TYPE_KEY,
                 Types.getParameterizedKey(template, typeArguments)
         );
     }
@@ -205,33 +197,33 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         );
     }
 
-    public void add(ClassType classType) {
-        var template = classType.getEffectiveTemplate();
+    public void add(Klass klass) {
+        var template = klass.getEffectiveTemplate();
         if (template == null)
             return;
-        CompositeTypeEventRegistry.notifyTypeCreated(classType);
-        classType.getCapturedTypes().forEach(ct -> ct.addCapturedCompositeType(classType));
-        parameterizedTypes.computeIfAbsent(template, k -> new HashMap<>()).put(classType.getTypeArguments(), classType);
-        entityContext.tryBind(classType);
+        CompositeTypeEventRegistry.notifyTypeCreated(klass.getType());
+//        classType.getCapturedTypes().forEach(ct -> ct.addCapturedCompositeType(classType));
+        parameterizedTypes.computeIfAbsent(template, k -> new HashMap<>()).put(klass.getTypeArguments(), klass);
+        entityContext.tryBind(klass);
         if (typeFactory.isPutTypeSupported()) {
-            var templateClass = (Class<?>) typeFactory.getJavaType(template);
+            var templateClass = (Class<?>) typeFactory.getJavaType(template.getType());
             if (templateClass != null) {
                 var javaType = ParameterizedTypeImpl.create(
                         templateClass,
-                        NncUtils.map(classType.getTypeArguments(), typeFactory::getJavaType)
+                        NncUtils.map(klass.getTypeArguments(), typeFactory::getJavaType)
                 );
-                typeFactory.putType(javaType, classType);
+                typeFactory.putType(javaType, klass.getType());
             }
         }
         if (typeFactory.isAddTypeSupported()) {
-            typeFactory.addType(classType);
+            typeFactory.addType(klass.getType());
         }
     }
 
-    public List<ClassType> getNewTypes() {
-        List<ClassType> newTypes = new ArrayList<>();
+    public List<Klass> getNewTypes() {
+        List<Klass> newTypes = new ArrayList<>();
         for (var value : parameterizedTypes.values()) {
-            for (ClassType classType : value.values()) {
+            for (Klass classType : value.values()) {
                 if (entityContext.isNewEntity(classType))
                     newTypes.add(classType);
             }
@@ -239,7 +231,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         return newTypes;
     }
 
-    public void generateDeclarations(ClassType declaringType, ClassType template) {
+    public void generateDeclarations(Klass declaringType, Klass template) {
         if (declaringType.getStage().isAfterOrAt(ResolutionStage.DECLARATION)) {
             return;
         }
@@ -248,29 +240,29 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         }
         var transformer = SubstitutorV2.create(
                 template, template.getTypeParameters(), declaringType.getTypeArguments(),
-                ResolutionStage.DECLARATION, entityContext, emptyBatch);
+                ResolutionStage.DECLARATION);
         template.accept(transformer);
     }
 
-    public void generateDeclarations(ClassType template) {
+    public void generateDeclarations(Klass template) {
         var templateInstances = parameterizedTypes.get(template);
         if (templateInstances != null) {
-            for (ClassType templateInst : templateInstances.values()) {
+            for (Klass templateInst : templateInstances.values()) {
                 generateDeclarations(templateInst, template);
             }
         }
     }
 
-    public void generateCode(ClassType template) {
+    public void generateCode(Klass template) {
         var templateInstances = parameterizedTypes.get(template);
         if (templateInstances != null) {
-            for (ClassType templateInst : templateInstances.values()) {
+            for (Klass templateInst : templateInstances.values()) {
                 generateCode(templateInst, template);
             }
         }
     }
 
-    public void generateCode(ClassType declaringType, ClassType template) {
+    public void generateCode(Klass declaringType, Klass template) {
         if (declaringType.getStage().isAfterOrAt(DEFINITION)) {
             return;
         }
@@ -278,7 +270,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
             throw new InternalException("Template code not generated yet");
         }
         var substitutor = SubstitutorV2.create(template, template.getTypeParameters(),
-                declaringType.getTypeArguments(), DEFINITION, entityContext, emptyBatch);
+                declaringType.getTypeArguments(), DEFINITION);
         template.accept(substitutor);
     }
 
@@ -298,8 +290,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         if (existing != null && existing.getStage().isAfterOrAt(stage))
             return existing;
         var substitutor = SubstitutorV2.create(
-                template, template.getTypeParameters(), typeArguments, stage,
-                entityContext, batch
+                template, template.getTypeParameters(), typeArguments, stage
         );
         if (template instanceof Method method)
             substitutor.enterElement(method.getDeclaringType());
@@ -325,7 +316,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         while (!allDefined) {
             allDefined = true;
             for (var values : new ArrayList<>(parameterizedTypes.values())) {
-                for (ClassType pType : new ArrayList<>(values.values())) {
+                for (Klass pType : new ArrayList<>(values.values())) {
                     if (pType.getTemplate() != null && pType.getStage() != ResolutionStage.DEFINITION) {
                         getParameterizedType(pType.getTemplate(), pType.getTypeArguments(), ResolutionStage.DEFINITION, emptyBatch);
                         allDefined = false;

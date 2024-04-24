@@ -8,8 +8,7 @@ import tech.metavm.flow.rest.MethodCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -44,13 +43,14 @@ public class MethodCallNode extends CallNode {
                 var exprTypes = prev != null ? prev.getExpressionTypes() : scope.getExpressionTypes();
                 declaringType = (ClassType) exprTypes.getType(self.getExpression());
             } else
-                declaringType = context.getClassType(Objects.requireNonNull(param.getTypeId()));
+                declaringType = (ClassType) TypeParser.parse(Objects.requireNonNull(param.getTypeId()), new ContextTypeDefRepository(context));
             var argumentValues = NncUtils.map(
                     param.getArgumentValues(),
                     arg -> ValueFactory.create(arg, parsingContext)
             );
             var argumentTypes = NncUtils.map(argumentValues, Value::getType);
-            var method = declaringType.resolveMethod(param.getFlowCode(),
+            var klass = declaringType.resolve();
+            var method = klass.resolveMethod(param.getFlowCode(),
                     argumentTypes,
                     NncUtils.map(param.getTypeArgumentIds(), context::getType),
                     isStatic,

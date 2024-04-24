@@ -8,7 +8,6 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.LambdaInstance;
 import tech.metavm.object.type.*;
-import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -23,67 +22,50 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
         var parameters = NncUtils.map(
                 param.getParameters(),
                 paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
-                        context.getType(Id.parse(paramDTO.typeId())))
+                        TypeParser.parse(paramDTO.type(), context))
         );
-        var parameterTypes = NncUtils.map(parameters, Parameter::getType);
         var returnType = context.getType(Id.parse(param.getReturnTypeId()));
-        var funcInterface = NncUtils.get(param.getFunctionalInterfaceId(), id -> context.getClassType(Id.parse(id)));
-        var funcType = context.getFunctionTypeContext().getFunctionType(parameterTypes, returnType);
+        var funcInterface = (ClassType) NncUtils.get(param.getFunctionalInterface(), t -> TypeParser.parse(t, new ContextTypeDefRepository(context)));
         var node = (LambdaNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new LambdaNode(
-                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, parameters, returnType,
-                    funcType, funcInterface
+                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, parameters, returnType, funcInterface
             );
             node.createSAMImpl(context.getFunctionTypeContext(), context.getGenericContext());
         }
         else
-            node.update(parameters, returnType, funcType, funcInterface);
+            node.update(parameters, returnType, funcInterface);
         return node;
     }
 
     @ChildEntity("参数列表")
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
 
-    @EntityField("返回类型")
+    @ChildEntity("返回类型")
     private Type returnType;
 
-    @EntityField("函数类型")
+    @ChildEntity("functionType")
     private FunctionType functionType;
 
     @Nullable
-    @EntityField("函数接口")
+    @ChildEntity("函数接口")
     private ClassType functionalInterface;
 
     private transient ClassType functionInterfaceImpl;
 
     public LambdaNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope,
                       List<Parameter> parameters,
-                      Type returnType,
-                      FunctionType functionType, @Nullable ClassType functionalInterface) {
-        super(tmpId, name, code, functionalInterface != null ? functionalInterface : functionType, previous, scope, false);
-        checkTypes(parameters, returnType, functionType);
+                      Type returnType, @Nullable ClassType functionalInterface) {
+        super(tmpId, name, code, functionalInterface != null ? functionalInterface : Types.getFunctionType(parameters, returnType), previous, scope, false);
         setParameters(parameters);
-        this.returnType = returnType;
-        this.functionType = functionType;
-        this.functionalInterface = functionalInterface;
-    }
-
-    private void checkTypes(List<Parameter> parameters, Type returnType, FunctionType functionType) {
-        if (parameters.size() != functionType.getParameterTypes().size())
-            throw new InternalException("Parameter size mismatch");
-        for (int i = 0; i < parameters.size(); i++) {
-            if (!parameters.get(i).getType().equals(functionType.getParameterTypes().get(i)))
-                throw new InternalException("Parameter type mismatch");
-        }
-        if (!returnType.equals(functionType.getReturnType()))
-            throw new InternalException("Return type mismatch");
+        this.returnType = returnType.copy();
+        this.functionalInterface = NncUtils.get(functionalInterface, ClassType::copy);
     }
 
     @Override
     @NotNull
-    public Type getType() {
-        return NncUtils.requireNonNull(super.getType());
+    public FunctionType getType() {
+        return (FunctionType) NncUtils.requireNonNull(super.getType());
     }
 
     @Nullable
@@ -119,20 +101,22 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
         return functionType;
     }
 
-    public void update(List<Parameter> parameters, Type returnType,
-                       FunctionType functionType,
-                       @Nullable ClassType functionalInterface) {
-        checkTypes(parameters, returnType, functionType);
-        setParameters(parameters);
-        this.returnType = returnType;
-        this.functionalInterface = functionalInterface;
-        this.functionType = functionType;
-        setOutputType(functionalInterface != null ? functionalInterface : functionType);
+    public void update(List<Parameter> parameters, Type returnType, @Nullable ClassType functionalInterface) {
+        setParameters(parameters, false);
+        this.returnType = returnType.copy();
+        this.functionalInterface = NncUtils.get(functionalInterface, ClassType::copy);
+        resetType();
     }
 
     public void setParameters(List<Parameter> parameters) {
+        setParameters(parameters, true);
+    }
+
+    private void setParameters(List<Parameter> parameters, boolean resetType) {
         NncUtils.forEach(parameters, p -> p.setCallable(this));
         this.parameters.resetChildren(parameters);
+        if(resetType)
+            resetType();
     }
 
     @Override
@@ -140,9 +124,9 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
         return parameters.get(Parameter::getName, name);
     }
 
-    @Override
-    public void setFunctionType(FunctionType functionType) {
-        this.functionType = functionType;
+    private void resetType() {
+        functionType = new FunctionType(NncUtils.randomNonNegative(), getParameterTypes(), returnType);
+        setOutputType(functionalInterface != null ? functionalInterface : functionType);
     }
 
     @Override
@@ -151,8 +135,9 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
         if (functionInterfaceImpl == null) {
             return next(func);
         } else {
-            var funcField = functionInterfaceImpl.getFieldByCode("func");
-            return next(ClassInstance.create(Map.of(funcField, func), functionInterfaceImpl));
+            var funcImplKlass = functionInterfaceImpl.resolve();
+            var funcField = funcImplKlass.getFieldByCode("func");
+            return next(ClassInstance.create(Map.of(funcField, func), funcImplKlass));
         }
     }
 

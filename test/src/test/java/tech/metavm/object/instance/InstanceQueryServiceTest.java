@@ -10,8 +10,8 @@ import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
 import tech.metavm.object.type.CompositeTypeFacade;
-import tech.metavm.object.type.TypeRepository;
-import tech.metavm.object.type.mocks.MockTypeRepository;
+import tech.metavm.object.type.TypeDefRepository;
+import tech.metavm.object.type.mocks.MockTypeDefRepository;
 import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.MockUtils;
@@ -27,13 +27,13 @@ public class InstanceQueryServiceTest extends TestCase {
     private InstanceQueryService instanceQueryService;
     private MockInstanceRepository instanceRepository;
     private ParameterizedFlowProvider parameterizedFlowProvider;
-    private TypeRepository typeRepository;
+    private TypeDefRepository typeRepository;
     private CompositeTypeFacade compositeTypeFacade;
 
     @Override
     protected void setUp() throws Exception {
         MockStandardTypesInitializer.init();
-        typeRepository = new MockTypeRepository();
+        typeRepository = new MockTypeDefRepository();
         instanceSearchService = new MemInstanceSearchServiceV2();
         instanceQueryService = new InstanceQueryService(instanceSearchService);
         instanceRepository = new MockInstanceRepository();
@@ -54,7 +54,7 @@ public class InstanceQueryServiceTest extends TestCase {
         var qux = foo.getInstanceField(fooQuxField);
         var baz = foo.getInstanceArray(fooBazListField).getInstance(0);
 
-        var query = InstanceQueryBuilder.newBuilder(fooType)
+        var query = InstanceQueryBuilder.newBuilder(fooType.getType())
                 .fields(
                         InstanceQueryField.create(
                                 fooNameField,
@@ -85,7 +85,7 @@ public class InstanceQueryServiceTest extends TestCase {
         var fooType = fooTypes.fooType();
         var fooNameField = fooTypes.fooNameField();
         var foo = addInstance(MockUtils.createFoo(fooTypes, true));
-        InstanceQuery query2 = InstanceQueryBuilder.newBuilder(fooType)
+        InstanceQuery query2 = InstanceQueryBuilder.newBuilder(fooType.getType())
                 .fields(InstanceQueryField.create(
                         fooNameField,
                         foo.getField(fooNameField)
@@ -107,7 +107,7 @@ public class InstanceQueryServiceTest extends TestCase {
         addInstance(qux);
 
         var page = instanceQueryService.query(
-                InstanceQueryBuilder.newBuilder(fooType)
+                InstanceQueryBuilder.newBuilder(fooType.getType())
                         .fields(
                                 InstanceQueryField.create(fooNameField, foo.getField(fooNameField)),
                                 InstanceQueryField.create(fooQuxField, qux)

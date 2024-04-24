@@ -8,10 +8,9 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.object.type.TypeCategory;
-import tech.metavm.object.type.rest.dto.GetParameterizedTypeRequest;
+import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.user.rest.dto.LoginRequest;
@@ -85,14 +84,13 @@ public class MainTest extends CompilerTestBase {
             ));
             var buyMethodId = TestUtils.getMethodIdByCode(productType, "buy");
             var couponType = queryClassType("AST优惠券");
-            var couponArrayType = typeManager.getArrayType(couponType.id(), ArrayKind.READ_WRITE.code()).type();
             var order = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                     buyMethodId,
                     product.id(),
                     List.of(
                             PrimitiveFieldValue.createLong(1L),
                             InstanceFieldValue.of(InstanceDTO.createArrayInstance(
-                                    couponArrayType.id(),
+                                    String.format("$$%s[rw]", couponType.id()),
                                     false,
                                     List.of(ReferenceFieldValue.create(coupon))
                             ))
@@ -126,13 +124,14 @@ public class MainTest extends CompilerTestBase {
 //        compile(USERS_SOURCE_ROOT);
         submit(() -> {
             var roleType = queryClassType("LabRole");
-            var roleReadWriteListType = typeManager.getParameterizedType(
+            var roleReadWriteListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(roleType.id()));
+            /* typeManager.getParameterizedType(
                     new GetParameterizedTypeRequest(
                             StandardTypes.getReadWriteListType().getStringId(),
                             List.of(roleType.id()),
                             List.of()
                     )
-            ).type();
+            ).type(); */
             var roleNameFieldId = getFieldIdByCode(roleType, "name");
             var roleConstructorId = TestUtils.getMethodId(roleType, "LabRole", StandardTypes.getStringType().getStringId());
             var role = doInTransaction(() -> flowExecutionService.execute(
@@ -212,7 +211,7 @@ public class MainTest extends CompilerTestBase {
 
             // test platform user view list
             var platformUserMapping = TestUtils.getDefaultMapping(platformUserType);
-            var platformUserViewType = typeManager.getType(new GetTypeRequest(platformUserMapping.targetTypeId(), false)).type();
+            var platformUserViewType = typeManager.getType(new GetTypeRequest(platformUserMapping.targetType(), false)).type();
             var platformUserViewList = instanceManager.query(
                     new InstanceQueryDTO(
                             platformUserViewType.id(),
@@ -288,22 +287,10 @@ public class MainTest extends CompilerTestBase {
             Assert.assertNotNull(token);
 
             // test leave application
-            var platformUserListType = typeManager.getParameterizedType(
-                    new GetParameterizedTypeRequest(
-                            StandardTypes.getListType().getStringId(),
-                            List.of(platformUserType.id()),
-                            List.of()
-                    )
-            ).type();
-            var platformUserReadWriteListType = typeManager.getParameterizedType(
-                    new GetParameterizedTypeRequest(
-                            StandardTypes.getReadWriteListType().getStringId(),
-                            List.of(platformUserType.id()),
-                            List.of()
-                    )
-            ).type();
+            var platformUserListType = TypeExpressions.getListType(TypeExpressions.getClassType(platformUserType.id()));
+            var platformUserReadWriteListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(platformUserType.id()));
             var leaveApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "leaveApp",
-                    platformUserListType.id(), userApplicationType.id());
+                    platformUserListType, TypeExpressions.getClassType(userApplicationType.id()));
             try {
                 doInTransaction(() -> flowExecutionService.execute(
                         new FlowExecutionRequest(
@@ -313,7 +300,7 @@ public class MainTest extends CompilerTestBase {
                                         new InstanceFieldValue(
                                                 null,
                                                 InstanceDTO.createListInstance(
-                                                        platformUserReadWriteListType.id(),
+                                                        platformUserReadWriteListType,
                                                         false,
                                                         List.of(ReferenceFieldValue.create(platformUser))
                                                 )
@@ -338,7 +325,7 @@ public class MainTest extends CompilerTestBase {
                                     new InstanceFieldValue(
                                             null,
                                             InstanceDTO.createListInstance(
-                                                    roleReadWriteListType.id(),
+                                                    roleReadWriteListType,
                                                     false,
                                                     List.of(ReferenceFieldValue.create(role))
                                             )
@@ -453,7 +440,7 @@ public class MainTest extends CompilerTestBase {
                             List.of(
                                     InstanceFieldValue.of(
                                             InstanceDTO.createListInstance(
-                                                    platformUserReadWriteListType.id(),
+                                                    platformUserReadWriteListType,
                                                     false,
                                                     List.of(ReferenceFieldValue.create(anotherPlatformUser))
                                             )
@@ -485,7 +472,7 @@ public class MainTest extends CompilerTestBase {
 
             // test application view list
             var applicationMapping = TestUtils.getDefaultMapping(userApplicationType);
-            var applicationViewType = typeManager.getType(new GetTypeRequest(applicationMapping.targetTypeId(), false)).type();
+            var applicationViewType = typeManager.getType(new GetTypeRequest(applicationMapping.targetType(), false)).type();
             var applicationViewList = instanceManager.query(
                     new InstanceQueryDTO(
                             applicationViewType.id(),
@@ -508,13 +495,7 @@ public class MainTest extends CompilerTestBase {
 
             // assert that fields of LabToken type has been generated correctly
             var tokenType = queryClassType("LabToken");
-            var tokenReadWriteListType = typeManager.getParameterizedType(
-                    new GetParameterizedTypeRequest(
-                            StandardTypes.getReadWriteListType().getStringId(),
-                            List.of(tokenType.id()),
-                            List.of()
-                    )
-            ).type();
+            var tokenReadWriteListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(tokenType.id()));
             Assert.assertTrue(tokenType.ephemeral());
             Assert.assertEquals(2, tokenType.getClassParam().fields().size());
 
@@ -529,7 +510,7 @@ public class MainTest extends CompilerTestBase {
                                     PrimitiveFieldValue.createString("leen"),
                                     InstanceFieldValue.of(
                                             InstanceDTO.createListInstance(
-                                                    roleReadWriteListType.id(),
+                                                    roleReadWriteListType,
                                                     false,
                                                     List.of(ReferenceFieldValue.create(role))
                                             )
@@ -587,7 +568,7 @@ public class MainTest extends CompilerTestBase {
                             List.of(
                                     InstanceFieldValue.of(
                                             InstanceDTO.createListInstance(
-                                                    tokenReadWriteListType.id(),
+                                                    tokenReadWriteListType,
                                                     false,
                                                     List.of(tokenValue)
                                             )

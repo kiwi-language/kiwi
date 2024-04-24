@@ -642,6 +642,15 @@ public class ReflectionUtils {
         throw new InternalException("Can not find static field '" + name + "' in class '" + klass.getName() + "'");
     }
 
+    public static int getIntField(Field field, @javax.annotation.Nullable Object object) {
+        try {
+            return field.getInt(object);
+        }
+        catch (IllegalAccessException e) {
+            throw new InternalException("Fail to invoke getInt on " + field + " with object: " + object);
+        }
+    }
+
     public static List<Field> getStaticFields(Class<?> klass) {
         return NncUtils.filter(
                 Arrays.asList(klass.getFields()),

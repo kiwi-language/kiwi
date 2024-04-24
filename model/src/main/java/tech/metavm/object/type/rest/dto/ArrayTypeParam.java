@@ -9,8 +9,4 @@ public record ArrayTypeParam(
         return 2;
     }
 
-    @Override
-    public TypeKey getTypeKey() {
-        return new ArrayTypeKey(kind, elementTypeId);
-    }
 }

@@ -3,7 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.ObjectInstanceMap;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.Instances;
 import tech.metavm.util.ReflectionUtils;
 
@@ -32,8 +32,8 @@ public class ClassFieldDef implements IFieldDef {
         Instance instanceFieldValue = instance.getField(field);
         if(instanceFieldValue.isNull())
             return null;
-        ClassType type = objectInstanceMap.getEntity(ClassType.class, instanceFieldValue);
-        return defMap.getDef(type).getJavaClass();
+        Klass type = objectInstanceMap.getEntity(Klass.class, instanceFieldValue);
+        return defMap.getDef(type.getType()).getJavaClass();
     }
 
     @Override

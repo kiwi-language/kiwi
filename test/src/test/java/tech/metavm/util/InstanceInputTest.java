@@ -6,6 +6,7 @@ import org.junit.Assert;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.ClassTypeKey;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -101,33 +102,33 @@ public class InstanceInputTest extends TestCase {
 
     public void test() {
         String fooName = "foo", barCode = "bar001";
-        ClassType fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        ClassType barType = ClassTypeBuilder.newBuilder("Bar", "Bar").build();
-        ClassType quxType = ClassTypeBuilder.newBuilder("Qux", "Qux").build();
+        Klass fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
+        Klass barType = ClassTypeBuilder.newBuilder("Bar", "Bar").build();
+        Klass quxType = ClassTypeBuilder.newBuilder("Qux", "Qux").build();
 
-        fooType.initId(DefaultPhysicalId.ofObject(10001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        barType.initId(DefaultPhysicalId.ofObject(10002L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        quxType.initId(DefaultPhysicalId.ofObject(10003L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        fooType.initId(DefaultPhysicalId.ofObject(10001L, 0L, new ClassTypeKey("1")));
+        barType.initId(DefaultPhysicalId.ofObject(10002L, 0L, new ClassTypeKey("1")));
+        quxType.initId(DefaultPhysicalId.ofObject(10003L, 0L, new ClassTypeKey("1")));
 
         Field nameField = FieldBuilder
                 .newBuilder("name", "name", fooType, StandardTypes.getStringType()).build();
-        nameField.initId(DefaultPhysicalId.ofObject(20001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        nameField.initId(DefaultPhysicalId.ofObject(20001L, 0L, new ClassTypeKey("1")));
         Field barField = FieldBuilder
-                .newBuilder("bar", "bar", fooType, barType).isChild(true).build();
-        barField.initId(DefaultPhysicalId.ofObject(20002L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        Field quxField = FieldBuilder.newBuilder("qux", "qux", fooType, quxType).build();
-        quxField.initId(DefaultPhysicalId.ofObject(20003L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+                .newBuilder("bar", "bar", fooType, barType.getType()).isChild(true).build();
+        barField.initId(DefaultPhysicalId.ofObject(20002L, 0L, new ClassTypeKey("1")));
+        Field quxField = FieldBuilder.newBuilder("qux", "qux", fooType, quxType.getType()).build();
+        quxField.initId(DefaultPhysicalId.ofObject(20003L, 0L, new ClassTypeKey("1")));
 
         Field barCodeField = FieldBuilder
                 .newBuilder("code", "code", barType, StandardTypes.getStringType()).build();
-        barCodeField.initId(DefaultPhysicalId.ofObject(20004L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        barCodeField.initId(DefaultPhysicalId.ofObject(20004L, 0L, new ClassTypeKey("1")));
 
         Field quxNameField = FieldBuilder
                 .newBuilder("name", "name", quxType, StandardTypes.getStringType()).build();
-        quxNameField.initId(DefaultPhysicalId.ofObject(20005L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        quxNameField.initId(DefaultPhysicalId.ofObject(20005L, 0L, new ClassTypeKey("1")));
 
         var barInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30002L, 0L, TaggedPhysicalId.ofClass(1L, 0L)),
+                DefaultPhysicalId.ofObject(30002L, 0L, new ClassTypeKey("1")),
                 Map.of(
                         barCodeField,
                         new StringInstance(barCode, StandardTypes.getStringType())
@@ -136,7 +137,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var quxInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30003L, 0L, TaggedPhysicalId.ofClass(1L, 0L)),
+                DefaultPhysicalId.ofObject(30003L, 0L, new ClassTypeKey("1")),
                 Map.of(
                         quxNameField,
                         new StringInstance("qux001", StandardTypes.getStringType())
@@ -145,7 +146,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var fooInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30001L, 0L, TaggedPhysicalId.ofClass(1L, 0L)),
+                DefaultPhysicalId.ofObject(30001L, 0L, new ClassTypeKey("1")),
                 Map.of(
                         nameField, new StringInstance(fooName, StandardTypes.getStringType()),
                         barField, barInst,

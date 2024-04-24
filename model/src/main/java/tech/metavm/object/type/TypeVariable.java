@@ -3,18 +3,22 @@ package tech.metavm.object.type;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.type.rest.dto.TypeKey;
-import tech.metavm.object.type.rest.dto.TypeVariableKey;
-import tech.metavm.object.type.rest.dto.TypeVariableParam;
+import tech.metavm.object.type.rest.dto.TypeVariableDTO;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 
 @EntityType("类型变量")
-public class TypeVariable extends Type implements LocalKey, GenericElement, ITypeVariable {
+public class TypeVariable extends TypeDef implements LocalKey, GenericElement, ITypeVariable, GlobalKey, LoadAware {
 
+    @EntityField(value = "name", asTitle = true)
+    private String name;
+    private @Nullable String code;
     @ChildEntity("类型上界")
     private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");
     @EntityField("范型声明")
@@ -23,26 +27,21 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
     @CopyIgnore
     @Nullable
     private TypeVariable copySource;
-
+    private transient VariableType type;
     private transient IntersectionType intersection;
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
     public TypeVariable(Long tmpId, @NotNull String name, @Nullable String code, @NotNull GenericDeclaration genericDeclaration) {
-        super(name, code, false, false, TypeCategory.VARIABLE);
         setTmpId(tmpId);
+        this.name = name;
+        this.code = code;
         this.genericDeclaration = genericDeclaration;
         genericDeclaration.addTypeParameter(this);
     }
 
     @Override
     public void onLoad(IEntityContext context) {
-        super.onLoad(context);
         stage = ResolutionStage.INIT;
-    }
-
-    @Override
-    public Set<TypeVariable> getVariables() {
-        return Set.of(this);
     }
 
     public void setGenericDeclaration(GenericDeclaration genericDeclaration) {
@@ -56,10 +55,31 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
         return genericDeclaration;
     }
 
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public @Nullable String getCode() {
+        return code;
+    }
+
+    public void setCode(@Nullable String code) {
+        this.code = code;
+    }
+
+    public String getCodeRequired() {
+        return Objects.requireNonNull(code);
+    }
+
     public void setBounds(List<Type> bounds) {
         this.bounds.clear();
         this.bounds.addAll(bounds);
-        onSuperTypesChanged();
+//        onSuperTypesChanged();
     }
 
     @Override
@@ -72,37 +92,10 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
     }
 
     @Override
-    public boolean isAssignableFrom(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
-        return equals(that, typeMapping) || super.isAssignableFrom(that, typeMapping);
-    }
-
-    @Override
-    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
-        if(mapping != null)
-            return Objects.requireNonNullElse(mapping.get(this), this).equals(that);
-        else
-            return this.equals(that);
-    }
-
-    @Override
-    public TypeKey getTypeKey() {
-        return new TypeVariableKey(
-                genericDeclaration.getStringId(),
-                genericDeclaration.getTypeParameters().indexOf(this)
-        );
-    }
-
-    @Override
     public boolean isValidGlobalKey() {
         return false;
     }
 
-    @Override
-    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
-        return equals(that, typeMapping);
-    }
-
-    @Override
     public Type getUpperBound() {
         if (bounds.size() == 1) {
             return bounds.get(0);
@@ -118,7 +111,6 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
         return copySource;
     }
 
-    @Override
     public List<? extends Type> getSuperTypes() {
         return Collections.unmodifiableList(bounds);
     }
@@ -127,27 +119,17 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
         return bounds.toList();
     }
 
-    @Override
-    protected TypeVariableParam getParam(SerializeContext serializeContext) {
-        try (var serContext = SerializeContext.enter()) {
-            getBounds().forEach(serContext::writeType);
-            return new TypeVariableParam(
-                    serContext.getId(genericDeclaration),
-                    genericDeclaration.getTypeParameters().indexOf(this),
-                    NncUtils.map(bounds, serContext::getId)
-            );
-        }
-    }
 
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
         throw new UnsupportedOperationException();
     }
 
-    @Override
     public String getInternalName(@Nullable Flow current) {
         return genericDeclaration.getInternalName(current) + "." + getCodeRequired();
     }
+
+
 
     public TypeVariable copy() {
         var copy = new TypeVariable(null, name, null, DummyGenericDeclaration.INSTANCE);
@@ -165,7 +147,17 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
         return origStage;
     }
 
-    @Override
+    public TypeVariableDTO toDTO(SerializeContext serializeContext) {
+        return new TypeVariableDTO(
+                serializeContext.getId(this),
+                name,
+                code,
+                serializeContext.getId(genericDeclaration),
+                genericDeclaration.getTypeParameterIndex(this),
+                NncUtils.map(bounds, type1 -> type1.toTypeExpression(serializeContext))
+        );
+    }
+
     public String getTypeDesc() {
         return genericDeclaration.getTypeDesc() + "_" + name;
     }
@@ -185,4 +177,9 @@ public class TypeVariable extends Type implements LocalKey, GenericElement, ITyp
         return getCodeRequired();
     }
 
+    public VariableType getType() {
+        if(type == null)
+            type = new VariableType(this);
+        return type;
+    }
 }

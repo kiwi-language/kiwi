@@ -3,7 +3,6 @@ package tech.metavm.entity;
 import tech.metavm.object.type.*;
 
 import java.util.List;
-import java.util.Map;
 
 public interface StandardTypesHolder {
     
@@ -33,29 +32,29 @@ public interface StandardTypesHolder {
 
     UnionType getNullableStringType();
     
-    ClassType getEnumType();
+    Klass getEnumType();
 
-    ClassType getThrowableType();
+    Klass getThrowableType();
 
-    ClassType getExceptionType();
+    Klass getExceptionType();
 
-    ClassType getRuntimeExceptionType();
+    Klass getRuntimeExceptionType();
 
-    ClassType getEntityType();
+    Klass getEntityType();
 
-    ClassType getRecordType();
+    Klass getRecordType();
 
-    ClassType getCollectionType();
+    Klass getCollectionType();
 
-    ClassType getSetType();
+    Klass getSetType();
 
-    ClassType getListType();
+    Klass getListType();
 
-    ClassType getMapType();
+    Klass getMapType();
 
-    ClassType getIteratorType();
+    Klass getIteratorType();
 
-    ClassType getIteratorImplType();
+    Klass getIteratorImplType();
 
     ArrayType getReadonlyAnyArrayType();
     
@@ -89,67 +88,67 @@ public interface StandardTypesHolder {
 
     void setNullableStringType(UnionType type);
 
-    void setEnumType(ClassType type);
+    void setEnumType(Klass type);
 
-    void setThrowableType(ClassType type);
+    void setThrowableType(Klass type);
 
-    void setExceptionType(ClassType type);
+    void setExceptionType(Klass type);
 
-    void setRuntimeExceptionType(ClassType type);
+    void setRuntimeExceptionType(Klass type);
 
-    void setEntityType(ClassType type);
+    void setEntityType(Klass type);
 
-    void setRecordType(ClassType type);
+    void setRecordType(Klass type);
 
-    void setCollectionType(ClassType type);
+    void setCollectionType(Klass type);
 
-    void setSetType(ClassType type);
+    void setSetType(Klass type);
 
-    void setListType(ClassType type);
+    void setListType(Klass type);
 
-    void setMapType(ClassType type);
+    void setMapType(Klass type);
 
-    void setIteratorType(ClassType type);
+    void setIteratorType(Klass type);
 
-    void setIteratorImplType(ClassType type);
+    void setIteratorImplType(Klass type);
 
     void setReadonlyAnyArrayType(ArrayType type);
 
-    void setReadWriteListType(ClassType type);
+    void setReadWriteListType(Klass type);
 
-    void setChildListType(ClassType type);
+    void setChildListType(Klass type);
 
-    ClassType getChildListType();
+    Klass getChildListType();
 
-    ClassType getReadWriteListType();
+    Klass getReadWriteListType();
 
-    ClassType getIterableType();
+    Klass getIterableType();
 
-    void setIterableType(ClassType iterableType);
+    void setIterableType(Klass iterableType);
 
-    ClassType getConsumerType();
+    Klass getConsumerType();
 
-    void setConsumerType(ClassType consumerType);
+    void setConsumerType(Klass consumerType);
 
-    ClassType getPredicateType();
+    Klass getPredicateType();
 
-    void setPredicateType(ClassType type);
+    void setPredicateType(Klass type);
 
-    void setIllegalArgumentExceptionType(ClassType illegalArgumentExceptionType);
+    void setIllegalArgumentExceptionType(Klass illegalArgumentExceptionType);
 
-    void setIllegalStateExceptionType(ClassType illegalStateExceptionType);
+    void setIllegalStateExceptionType(Klass illegalStateExceptionType);
 
-    ClassType getIllegalArgumentExceptionType();
+    Klass getIllegalArgumentExceptionType();
 
-    ClassType getIllegalStateExceptionType();
+    Klass getIllegalStateExceptionType();
 
-    ClassType getNullPointerExceptionType();
+    Klass getNullPointerExceptionType();
 
-    void setNullPointerExceptionType(ClassType nullPointerExceptionType);
+    void setNullPointerExceptionType(Klass nullPointerExceptionType);
 
-    ClassType getParameterizedType(ClassType template, List<Type> typeArguments);
+    Klass getParameterizedType(Klass template, List<Type> typeArguments);
 
-    void addParameterizedType(ClassType type);
+    void addParameterizedType(Klass type);
 
     void clearParameterizedTypes();
 

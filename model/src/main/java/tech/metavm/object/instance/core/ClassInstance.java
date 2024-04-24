@@ -12,10 +12,7 @@ import tech.metavm.flow.Method;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Field;
-import tech.metavm.object.type.Index;
-import tech.metavm.object.type.Property;
+import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
@@ -30,39 +27,43 @@ public class ClassInstance extends DurableInstance {
 
     private final ReadWriteArray<InstanceField> fields = new ReadWriteArray<>(InstanceField.class);
     private final ReadWriteArray<UnknownField> unknownFields = new ReadWriteArray<>(UnknownField.class);
+    private final Klass klass;
     private transient Map<Flow, FlowInstance> functions;
 
-    public static ClassInstance create(Map<Field, Instance> data, ClassType type) {
+    public static ClassInstance create(Map<Field, Instance> data, Klass type) {
         return ClassInstanceBuilder.newBuilder(type).data(data).build();
     }
 
-    public static ClassInstance allocate(ClassType type) {
+    public static ClassInstance allocate(Klass type) {
         return ClassInstanceBuilder.newBuilder(type).build();
     }
 
-    public static ClassInstance allocate(ClassType type, @Nullable InstanceParentRef parentRef) {
+    public static ClassInstance allocate(Klass type, @Nullable InstanceParentRef parentRef) {
         return ClassInstanceBuilder.newBuilder(type)
                 .parentRef(parentRef)
                 .build();
     }
 
-    public ClassInstance(Id id, ClassType type, long version, long syncVersion,
+    public ClassInstance(Id id, Klass klass, long version, long syncVersion,
                          @Nullable Consumer<DurableInstance> load, @Nullable InstanceParentRef parentRef,
                          @Nullable Map<Field, Instance> data, @Nullable SourceRef sourceRef, boolean ephemeral) {
-        super(id, type, version, syncVersion, ephemeral, load);
+        super(id, klass.getType(), version, syncVersion, ephemeral, load);
+        this.klass = klass;
         setParentRef(parentRef);
         setSourceRef(sourceRef);
         if (data != null)
             reset(data, 0L, 0L);
     }
 
-    public ClassInstance(Id id, ClassType type, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
-        super(id, type, 0, 0, ephemeral, load);
+    public ClassInstance(Id id, Klass klass, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
+        super(id, klass.getType(), 0, 0, ephemeral, load);
+        this.klass = klass;
     }
 
-    public ClassInstance(Id id, Map<Field, Instance> data, ClassType type) {
-        super(id, type, 0, 0, type.isEphemeral(), null);
+    public ClassInstance(Id id, Map<Field, Instance> data, Klass klass) {
+        super(id, klass.getType(), 0, 0, klass.isEphemeral(), null);
         reset(data, 0L, 0L);
+        this.klass = klass;
     }
 
     @NoProxy
@@ -72,7 +73,7 @@ public class ClassInstance extends DurableInstance {
         clear();
         setVersion(version);
         setSyncVersion(syncVersion);
-        getType().forEachField(field -> {
+        klass.forEachField(field -> {
 //                try( var ignored1 = ContextUtil.getProfiler().enter("ClassInstance.reset.forEachField")) {
             Instance fieldValue = data.get(field);
             if (fieldValue == null || fieldValue.isNull()) {
@@ -110,7 +111,7 @@ public class ClassInstance extends DurableInstance {
     public Set<IndexKeyRT> getIndexKeys(ParameterizedFlowProvider parameterizedFlowProvider) {
         ensureLoaded();
         return NncUtils.flatMapUnique(
-                getType().getConstraints(Index.class),
+                klass.getConstraints(Index.class),
                 c -> c.createIndexKey(this, parameterizedFlowProvider)
         );
     }
@@ -143,7 +144,7 @@ public class ClassInstance extends DurableInstance {
 
     public String getTitle() {
         ensureLoaded();
-        Field titleField = getType().getTitleField();
+        Field titleField = klass.getTitleField();
         return titleField != null ? field(titleField).getDisplayValue() : tryGetPhysicalId() + "";
     }
 
@@ -174,7 +175,7 @@ public class ClassInstance extends DurableInstance {
         return field(field).getValue();
     }
 
-    public void setUnknownField(ClassType declaringType, Column column, Instance value) {
+    public void setUnknownField(Klass declaringType, Column column, Instance value) {
         ensureLoaded();
         var field = NncUtils.find(unknownFields,
                 f -> f.getDeclaringType() == declaringType && f.getColumn() == column);
@@ -233,7 +234,7 @@ public class ClassInstance extends DurableInstance {
     public void readFrom(InstanceInput input) {
 //        try( var ignored = ContextUtil.getProfiler().enter("ClassInstance.readFrom")) {
         setLoaded(input.isLoadedFromCache());
-        List<Field> fields = getType().getSortedFields();
+        List<Field> fields = klass.getSortedFields();
         var instFields = this.fields;
         int numFields = input.readInt();
         int j = 0;
@@ -267,7 +268,7 @@ public class ClassInstance extends DurableInstance {
         ensureLoaded();
         int idx = fieldPath.indexOf('.');
         if (idx == -1) {
-            return getField(getType().getFieldNyNameRequired(fieldPath));
+            return getField(klass.getFieldNyNameRequired(fieldPath));
         } else {
             String fieldName = fieldPath.substring(0, idx);
             String subPath = fieldPath.substring(idx + 1);
@@ -278,11 +279,11 @@ public class ClassInstance extends DurableInstance {
 
     public Instance getInstanceField(String fieldName) {
         ensureLoaded();
-        return field(getType().tryGetFieldByName(fieldName)).getValue();
+        return field(klass.tryGetFieldByName(fieldName)).getValue();
     }
 
     public void setField(String fieldCode, Instance value) {
-        var field = getType().getFieldByCode(fieldCode);
+        var field = klass.getFieldByCode(fieldCode);
         setFieldInternal(field, value);
     }
 
@@ -306,7 +307,7 @@ public class ClassInstance extends DurableInstance {
 
     private void setFieldInternal(Field field, Instance value) {
         ensureLoaded();
-        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType(), null));
+        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass, null));
         if (field.isReadonly())
             throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD);
         if (field.isChild() && value.isNotNull())
@@ -317,18 +318,18 @@ public class ClassInstance extends DurableInstance {
 
     public boolean isFieldInitialized(Field field) {
         ensureLoaded();
-        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType(), null));
+        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass, null));
         return fields.get(InstanceField::getField, field) != null;
     }
 
     public boolean isAllFieldsInitialized() {
         ensureLoaded();
-        return getType().allFieldsMatch(this::isFieldInitialized);
+        return klass.allFieldsMatch(this::isFieldInitialized);
     }
 
-    public @Nullable Field findUninitializedField(ClassType type) {
+    public @Nullable Field findUninitializedField(Klass type) {
         ensureLoaded();
-        NncUtils.requireTrue(type.isAssignableFrom(getType(), null));
+        NncUtils.requireTrue(type.isAssignableFrom(klass, null));
         return type.findField(f -> !isFieldInitialized(f));
     }
 
@@ -339,7 +340,7 @@ public class ClassInstance extends DurableInstance {
 
     private void initFieldInternal(Field field, Instance value) {
 //        try (var ignored = ContextUtil.getProfiler().enter("ClassInstance.initFieldInternal")) {
-        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType(), null));
+        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass, null));
         NncUtils.requireFalse(isFieldInitialized(field));
         if (field.isChild() && value.isNotNull())
             ((DurableInstance) value).setParent(this, field);
@@ -369,9 +370,9 @@ public class ClassInstance extends DurableInstance {
         if (functions == null) {
             functions = new HashMap<>();
         }
-        var concreteFlow = getType().tryResolveMethod(method, parameterizedFlowProvider);
+        var concreteFlow = klass.tryResolveMethod(method, parameterizedFlowProvider);
         return functions.computeIfAbsent(concreteFlow,
-                k -> new FlowInstance(getType().tryResolveMethod(method, parameterizedFlowProvider), this));
+                k -> new FlowInstance(klass.tryResolveMethod(method, parameterizedFlowProvider), this));
     }
 
     public Instance getProperty(Property property, ParameterizedFlowProvider parameterizedFlowProvider) {
@@ -397,7 +398,7 @@ public class ClassInstance extends DurableInstance {
     }
 
     protected InstanceField field(Id fieldId) {
-        return field(getType().getField(fieldId));
+        return field(klass.getField(fieldId));
     }
 
     @Override
@@ -484,11 +485,11 @@ public class ClassInstance extends DurableInstance {
     }
 
     public boolean isList() {
-        return getType().isList();
+        return klass.isList();
     }
 
     public boolean isChildList() {
-        return getType().isChildList();
+        return klass.isChildList();
     }
 
     public List<InstanceField> fields() {
@@ -507,7 +508,7 @@ public class ClassInstance extends DurableInstance {
 
     public ArrayInstance getInstanceArray(String fieldName) {
         ensureLoaded();
-        return field(getType().tryGetFieldByName(fieldName)).getInstanceArray();
+        return field(klass.tryGetFieldByName(fieldName)).getInstanceArray();
     }
 
     private void ensureFieldInitialized(Field field) {
@@ -528,9 +529,13 @@ public class ClassInstance extends DurableInstance {
 
     public void ensureAllFieldsInitialized() {
         ensureLoaded();
-        for (Field field : getType().getAllFields()) {
+        for (Field field : klass.getAllFields()) {
             ensureFieldInitialized(field);
         }
     }
 
+    @NoProxy
+    public Klass getKlass() {
+        return klass;
+    }
 }

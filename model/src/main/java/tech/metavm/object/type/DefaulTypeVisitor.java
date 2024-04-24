@@ -22,7 +22,7 @@ public abstract class DefaulTypeVisitor<R, S> implements TypeVisitor<R, S> {
     }
 
     @Override
-    public R visitTypeVariable(TypeVariable type, S s) {
+    public R variableVariableType(VariableType type, S s) {
         return visitType(type, s);
     }
 

@@ -19,9 +19,9 @@ public class InstanceDTOBuilder {
     }
 
     private static FieldValue build(Instance instance, int depth, boolean isChild) {
-        try (var serContext = SerializeContext.enter()) {
-            serContext.writeType(instance.getType());
-        }
+//        try (var serContext = SerializeContext.enter()) {
+//            serContext.writeType(instance.getType());
+//        }
         return switch (instance) {
             case ClassInstance classInstance -> buildForClassInstance(classInstance, depth, isChild);
             case ArrayInstance arrayInstance -> buildForArray(arrayInstance, depth, isChild);
@@ -75,7 +75,7 @@ public class InstanceDTOBuilder {
                         Instances.getSourceMappingId(instance),
                         new ClassInstanceParam(
                                 NncUtils.map(
-                                        instance.getType().getAllFields(),
+                                        instance.getKlass().getAllFields(),
                                         f -> new InstanceFieldDTO(
                                                 f.getStringId(),
                                                 f.getName(),
@@ -96,7 +96,6 @@ public class InstanceDTOBuilder {
             return array.toFieldValueDTO();
         } else {
             try (var serContext = SerializeContext.enter()) {
-                serContext.forceWriteType(array.getType());
                 InstanceDTO instanceDTO = new InstanceDTO(
                         array.getInstanceIdString(),
                         serContext.getId(array.getType()),

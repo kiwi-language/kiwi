@@ -2,7 +2,7 @@ package tech.metavm.object.instance.search;
 
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
@@ -15,13 +15,13 @@ import static tech.metavm.constant.FieldNames.*;
 public class IndexSourceBuilder {
 
     public static Map<String, Object> buildSource(long appId, ClassInstance instance) {
-        ClassType type = instance.getType();
+        Klass type = instance.getKlass();
         Map<String, Object> source = new HashMap<>();
         source.put(APPLICATION_ID, appId);
-        source.put(TYPE_ID, type.getPhysicalId());
+        source.put(TYPE, type.getPhysicalId());
         source.put(ID, instance.getStringId());
 
-        List<ClassType> hierarchy = type.getAncestorClasses();
+        List<Klass> hierarchy = type.getAncestorClasses();
         for (int lev = 0; lev < hierarchy.size(); lev++) {
             Map<String, Object> subSource = new HashMap<>();
             source.put("l" + lev, subSource);

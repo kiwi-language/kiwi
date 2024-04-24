@@ -16,18 +16,18 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
     private final ValueDef<Enum<?>> parentDef;
     private final Class<T> enumType;
     private final List<EnumConstantDef<T>> enumConstantDefList = new ArrayList<>();
-    private final ClassType type;
+    private final Klass klass;
     private final PrimitiveType nullType;
     private final PrimitiveType stringType;
     private final DefContext defContext;
 
-    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, ClassType type, DefContext defContext) {
+    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, Klass type, DefContext defContext) {
         super(enumType, ClassInstance.class);
         this.enumType = enumType;
         this.parentDef = parentDef;
         EntityType annotation = enumType.getAnnotation(EntityType.class);
         name = annotation != null ? annotation.value() : enumType.getSimpleName();
-        this.type = type;
+        this.klass = type;
         this.defContext = defContext;
         this.nullType = (PrimitiveType) defContext.getType(Null.class);
         this.stringType = (PrimitiveType) defContext.getType(String.class);
@@ -98,20 +98,20 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
             instance = new ClassInstance(
                     getId.apply(value),
                     parentDef.getInstanceFields(value, defContext.getObjectInstanceMap()),
-                    type
+                    klass
             );
         }
         else
             instance = (ClassInstance) defContext.getInstanceContext().get(id);
         instance.setField(
-                type.getFieldByCode("name"),
+                klass.getFieldByCode("name"),
                 new StringInstance(
                         EntityUtils.getMetaEnumConstantName(value),
                         stringType
                 )
         );
         var enumConstant = new EnumConstantRT(instance);
-        FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), type, type)
+        FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), klass, klass.getType())
                 .defaultValue(new NullInstance(nullType))
                 .isChild(true)
                 .isStatic(true)
@@ -122,7 +122,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
 
     @Override
     public ClassType getType() {
-        return type;
+        return klass.getType();
     }
 
     @Override

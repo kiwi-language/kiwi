@@ -3,10 +3,8 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Field;
+import tech.metavm.object.type.*;
 import tech.metavm.object.type.Index;
-import tech.metavm.object.type.Type;
 import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.RuntimeGeneric;
 

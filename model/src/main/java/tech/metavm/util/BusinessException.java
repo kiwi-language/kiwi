@@ -35,7 +35,7 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.INVALID_TYPE, typeDTO.name(), reason);
     }
 
-    public static BusinessException deleteNClassError(ClassType nClass, String reason) {
+    public static BusinessException deleteNClassError(Klass nClass, String reason) {
         return new BusinessException(ErrorCode.DELETE_N_CLASS_ERROR, nClass.getName(), reason);
     }
 
@@ -120,7 +120,7 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.INVALID_TYPE_VALUE, type.getName(), value);
     }
 
-    public static BusinessException typeReferredByFields(ClassType type, List<String> fieldNames) {
+    public static BusinessException typeReferredByFields(Klass type, List<String> fieldNames) {
         List<String> quotedFieldNames = NncUtils.map(fieldNames, s -> "\"" + s + "\"");
         return new BusinessException(
                 ErrorCode.ERROR_DELETING_TYPE,
@@ -190,7 +190,7 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException duplicateKey(ClassInstance instance, Id constraintId) {
-        Index constraint = instance.getType().getUniqueConstraint(constraintId);
+        Index constraint = instance.getKlass().getUniqueConstraint(constraintId);
         return new BusinessException(
                 ErrorCode.DUPLICATE_KEY,
                 NncUtils.join(constraint.getTypeFields(), Field::getName)
@@ -227,7 +227,7 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.SCHEDULER_STATUS_ALREADY_EXISTS);
     }
 
-    public static BusinessException listViewNotFound(ClassType type) {
+    public static BusinessException listViewNotFound(Klass type) {
         throw new BusinessException(ErrorCode.LIST_VIEW_NOT_FOUND, type.getName());
     }
 

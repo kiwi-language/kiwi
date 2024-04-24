@@ -23,7 +23,7 @@ public class CheckConstraintPlugin implements ContextPlugin {
     }
 
     private void checkConstraints(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
-        List<CheckConstraint> constraints = instance.getType().getConstraints(CheckConstraint.class);
+        List<CheckConstraint> constraints = instance.getKlass().getConstraints(CheckConstraint.class);
         for (CheckConstraint constraint : constraints) {
             if(!constraint.check(instance, parameterizedFlowProvider)) {
                 throw BusinessException.constraintCheckFailed(instance, constraint);

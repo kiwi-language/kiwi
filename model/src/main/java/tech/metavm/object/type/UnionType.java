@@ -7,6 +7,8 @@ import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.UnionTypeKey;
 import tech.metavm.object.type.rest.dto.UnionTypeParam;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -25,7 +27,7 @@ public class UnionType extends CompositeType {
     public UnionType(Long tmpId, Set<Type> members) {
         super(getName(members), getCode(members), false, false, TypeCategory.UNION);
         setTmpId(tmpId);
-        this.members = addChild(new ReadWriteArray<>(Type.class, members), "members");
+        this.members = addChild(new ReadWriteArray<>(Type.class, NncUtils.map(members, Type::copy)), "members");
     }
 
     private static String getName(Set<Type> members) {
@@ -45,7 +47,7 @@ public class UnionType extends CompositeType {
 
     @Override
     public TypeKey getTypeKey() {
-        return new UnionTypeKey(NncUtils.mapUnique(members, Entity::getStringId));
+        return new UnionTypeKey(NncUtils.mapUnique(members, Type::getTypeKey));
     }
 
     @Override
@@ -190,4 +192,28 @@ public class UnionType extends CompositeType {
         }
         return true;
     }
+
+    @Override
+    public UnionType copy() {
+        return new UnionType(null, NncUtils.mapUnique(members, Type::copy));
+    }
+
+    @Override
+    public String toTypeExpression(SerializeContext serializeContext) {
+        return NncUtils.join(members, type -> type.toTypeExpression(serializeContext), "|");
+    }
+
+    @Override
+    public void write0(InstanceOutput output) {
+        output.writeInt(members.size());
+        members.forEach(t -> t.write(output));
+    }
+
+    public static UnionType read(InstanceInput input, TypeDefProvider typeDefProvider) {
+        var members = new HashSet<Type>();
+        for (int i = 0; i < input.readInt(); i++)
+            members.add(Type.readType(input, typeDefProvider));
+        return new UnionType(null, members);
+    }
+
 }

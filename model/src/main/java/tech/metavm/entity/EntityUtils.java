@@ -7,7 +7,7 @@ import tech.metavm.flow.Flow;
 import tech.metavm.flow.Function;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.EnumConstantRT;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.*;
@@ -34,7 +34,7 @@ public class EntityUtils {
     );
 
     public static final Set<Class<?>> ENTITY_CLASSES = Set.of(
-            ClassType.class, tech.metavm.object.type.Field.class, Instance.class,
+            Klass.class, tech.metavm.object.type.Field.class, Instance.class,
             EnumConstantRT.class
     );
 

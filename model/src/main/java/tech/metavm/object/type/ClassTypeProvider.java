@@ -4,6 +4,6 @@ import tech.metavm.common.RefDTO;
 
 public interface ClassTypeProvider {
 
-    ClassType getClassType(RefDTO ref);
+    Klass getClassType(RefDTO ref);
 
 }

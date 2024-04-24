@@ -7,9 +7,11 @@ import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.ParameterizedTypeProvider;
-import tech.metavm.object.type.ParameterizedTypeRepository;
+import tech.metavm.object.type.TypeVariable;
 import tech.metavm.util.ContextUtil;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -17,16 +19,12 @@ import java.util.Objects;
 @EntityType("自身节点")
 public class SelfNode extends NodeRT {
 
-    public static ClassType getSelfType(Method method, ParameterizedTypeProvider parameterizedTypeProvider) {
-        var declaringType = method.getDeclaringType();
-        return declaringType.isTemplate() ?
-                parameterizedTypeProvider.getParameterizedType(declaringType, declaringType.getTypeParameters()) : declaringType;
-    }
-
     public static SelfNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var node = (SelfNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null)
-            node = new SelfNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), getSelfType((Method) scope.getFlow(), context.getGenericContext()), prev, scope);
+        if (node == null) {
+            var method = (Method) scope.getFlow();
+            node = new SelfNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), method.getDeclaringType().getType(), prev, scope);
+        }
         return node;
     }
 

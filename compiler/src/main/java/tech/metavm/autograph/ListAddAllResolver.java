@@ -41,7 +41,7 @@ public class ListAddAllResolver implements MethodCallResolver {
         var self = expressionResolver.resolve(methodCallExpression.getMethodExpression().getQualifierExpression());
         var array = expressionResolver.resolve(methodCallExpression.getArgumentList().getExpressions()[0]);
         var loop = methodGenerator.createWhile();
-        var indexField = FieldBuilder.newBuilder("索引", null, loop.getType(), StandardTypes.getLongType())
+        var indexField = FieldBuilder.newBuilder("索引", null, loop.getKlass(), StandardTypes.getLongType())
                 .build();
         loop.setCondition(
                 Values.expression(

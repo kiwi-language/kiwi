@@ -1,6 +1,5 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.type.rest.dto.GenericElementDTO;
 import tech.metavm.util.NncUtils;
 
 public interface GenericElement {
@@ -12,12 +11,5 @@ public interface GenericElement {
     Object getCopySource();
 
     void setCopySource(Object copySource);
-
-    default GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
-        return new GenericElementDTO(
-                serializeContext.getId(getCopySource()),
-                serializeContext.getId(this)
-        );
-    }
 
 }

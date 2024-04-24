@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.common.Page;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expressions;
@@ -89,17 +88,17 @@ public class TypeManager extends EntityContextFactoryBean {
             } else {
                 var patch = versionManager.pullInternal(query.version(), context);
                 entities = NncUtils.merge(
-                        NncUtils.map(patch.changedTypeIds(), context::getType),
+                        NncUtils.map(patch.changedTypeDefIds(), context::getType),
                         NncUtils.map(patch.changedFunctionIds(), context::getFunction)
                 );
                 var removedInstanceIds = NncUtils.merge(
-                        patch.removedTypeIds(),
+                        patch.removedTypeDefIds(),
                         patch.removedFunctionIds()
                 );
                 removedIds = new ArrayList<>();
                 for (String removedInstanceId : removedInstanceIds) {
                     var id = Id.parse(removedInstanceId);
-                    if(id instanceof PhysicalId physicalId && physicalId.getNodeId() == 0L)
+                    if (id instanceof PhysicalId physicalId && physicalId.getNodeId() == 0L)
                         removedIds.add(id.getPhysicalId());
                 }
                 version = patch.version();
@@ -127,11 +126,13 @@ public class TypeManager extends EntityContextFactoryBean {
 
     public GetTypeResponse getTypeByCode(String code) {
         try (IEntityContext context = newContext()) {
-            var type = context.selectFirstByKey(ClassType.UNIQUE_CODE, code);
+            var type = context.selectFirstByKey(Klass.UNIQUE_CODE, code);
             if (type == null) {
                 throw BusinessException.typeNotFound(code);
             }
-            return new GetTypeResponse(type.toDTO(), List.of());
+            try(var serContext = SerializeContext.enter()) {
+                return new GetTypeResponse(type.toDTO(serContext), List.of());
+            }
         }
     }
 
@@ -149,13 +150,13 @@ public class TypeManager extends EntityContextFactoryBean {
             IntersectionType.class, ArrayType.class, UncertainType.class
     );
 
-    private List<Type> getAllTypes(IEntityContext context) {
+    private List<TypeDef> getAllTypes(IEntityContext context) {
         var defContext = context.getDefContext();
-        List<Type> types = new ArrayList<>(
-                NncUtils.exclude(defContext.getAllBufferedEntities(Type.class), Entity::isEphemeralEntity)
+        var typeDefs = new ArrayList<>(
+                NncUtils.exclude(defContext.getAllBufferedEntities(TypeDef.class), Entity::isEphemeralEntity)
         );
-        types.addAll(context.selectByKey(Type.IDX_ALL_FLAG, true));
-        return types;
+        typeDefs.addAll(context.selectByKey(TypeDef.IDX_ALL_FLAG, true));
+        return typeDefs;
 //        for (Class<? extends Type> customTypeClass : CUSTOM_TYPE_CLASSES) {
 //            context.getAllByType(customTypeClass, types);
 //        }
@@ -176,7 +177,7 @@ public class TypeManager extends EntityContextFactoryBean {
             var functions = getAllFunctions(context);
             return new LoadAllMetadataResponse(
                     Versions.getLatestVersion(context),
-                    SerializeContext.forceWriteTypes(types),
+                    SerializeContext.forceWriteTypeDefs(types),
                     List.of(),
                     NncUtils.map(functions, f -> f.toDTO(false, serContext))
             );
@@ -185,7 +186,7 @@ public class TypeManager extends EntityContextFactoryBean {
 
     private Page<? extends Type> query0(TypeQuery query, IEntityContext context) {
         List<TypeCategory> categories = query.categories() != null ?
-                NncUtils.map(query.categories(), TypeCategory::getByCode)
+                NncUtils.map(query.categories(), TypeCategory::fromCode)
                 : List.of(TypeCategory.CLASS, TypeCategory.VALUE);
         if (categories.isEmpty())
             return new Page<>(List.of(), 0);
@@ -208,17 +209,16 @@ public class TypeManager extends EntityContextFactoryBean {
 
     public List<CreatingFieldDTO> getCreatingFields(String typeId) {
         try (var context = newContext()) {
-            var creatingFields = context.selectByKey(FieldData.IDX_DECLARING_TYPE, context.getClassType(typeId));
+            var creatingFields = context.selectByKey(FieldData.IDX_DECLARING_TYPE, context.getKlass(typeId));
             return NncUtils.map(creatingFields, FieldData::toDTO);
         }
     }
 
     public GetTypeResponse getType(GetTypeRequest request) {
         try (var context = newContext()) {
-            Type type = context.getType(Id.parse(request.getId()));
-
+            var type = context.getKlass(Id.parse(request.getId()));
             try (var serContext = SerializeContext.enter()) {
-                serContext.forceWriteType(type);
+                serContext.forceWriteKlass(type);
                 serContext.writeDependencies(context);
                 return new GetTypeResponse(
                         NncUtils.findRequired(serContext.getTypes(), t -> Objects.equals(t.id(), request.getId())),
@@ -233,7 +233,7 @@ public class TypeManager extends EntityContextFactoryBean {
             var idSet = new HashSet<>(request.ids());
             try (var serContext = SerializeContext.enter()) {
                 for (var id : request.ids()) {
-                    serContext.forceWriteType(context.getType(id));
+                    serContext.forceWriteKlass(context.getKlass(id));
                 }
                 serContext.writeDependencies(context);
                 return new GetTypesResponse(
@@ -282,26 +282,28 @@ public class TypeManager extends EntityContextFactoryBean {
     @Transactional
     public TypeDTO saveType(TypeDTO typeDTO) {
         try (IEntityContext context = newContext()) {
-            ClassType type = saveTypeWithContent(typeDTO, context);
+            Klass type = saveTypeWithContent(typeDTO, context);
             context.finish();
-            return type.toDTO();
+            try(var serContext = SerializeContext.enter()) {
+                return type.toDTO(serContext);
+            }
         }
     }
 
-    public ClassType saveType(TypeDTO typeDTO, IEntityContext context) {
-        var type = context.getClassType(typeDTO.id());
+    public Klass saveType(TypeDTO typeDTO, IEntityContext context) {
+        var type = context.getKlass(typeDTO.id());
         if (type == null)
             return createType(typeDTO, context);
         else
             return updateType(typeDTO, type, context);
     }
 
-    public ClassType saveTypeWithContent(TypeDTO typeDTO, IEntityContext context) {
-        ClassType type = context.getEntity(ClassType.class, typeDTO.id());
+    public Klass saveTypeWithContent(TypeDTO typeDTO, IEntityContext context) {
+        Klass type = context.getEntity(Klass.class, typeDTO.id());
         return saveTypeWithContent(typeDTO, type, context);
     }
 
-    public ClassType saveTypeWithContent(TypeDTO typeDTO, ClassType type, IEntityContext context) {
+    public Klass saveTypeWithContent(TypeDTO typeDTO, Klass type, IEntityContext context) {
         boolean isCreate;
         if (type == null) {
             isCreate = true;
@@ -322,7 +324,7 @@ public class TypeManager extends EntityContextFactoryBean {
         return type;
     }
 
-    private void initClass(ClassType classType, IEntityContext context) {
+    private void initClass(Klass classType, IEntityContext context) {
         var classInit = classType.findMethodByCode("<cinit>");
         if (classInit != null) {
             flowExecutionService.executeInternal(
@@ -333,7 +335,7 @@ public class TypeManager extends EntityContextFactoryBean {
         }
     }
 
-    private void saveFlows(ClassType type, List<FlowDTO> flows, IEntityContext context) {
+    private void saveFlows(Klass type, List<FlowDTO> flows, IEntityContext context) {
         Set<String> flowIds = NncUtils.mapNonNullUnique(flows, FlowDTO::id);
         for (Flow flow : new ArrayList<>(type.getMethods())) {
             if (flow.getStringId() != null && !flowIds.contains(flow.getStringId())) {
@@ -347,32 +349,31 @@ public class TypeManager extends EntityContextFactoryBean {
 
     @Transactional
     public List<String> batchSave(BatchSaveRequest request) {
-        List<TypeDTO> typeDTOs = request.types();
+        var typeDefDTOs = request.typeDefs();
         FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
         try (var context = newContext()) {
-            batchSave(typeDTOs, request.functions(), request.parameterizedFlows(), context);
-            List<ClassType> newClasses = NncUtils.filterAndMap(
-                    typeDTOs, t -> TypeCategory.getByCode(t.category()).isPojo() && !Id.isPersistedId(t.id()),
-                    t -> context.getClassType(t.id())
+            batchSave(typeDefDTOs, request.functions(), context);
+            List<Klass> newClasses = NncUtils.filterAndMap(
+                    typeDefDTOs, t -> t instanceof TypeDTO && !Id.isPersistedId(t.id()),
+                    t -> context.getKlass(t.id())
             );
-            for (ClassType newClass : newClasses) {
+            for (Klass newClass : newClasses) {
                 if (!newClass.isInterface()) {
 //                    context.initIds();
                     initClass(newClass, context);
                 }
             }
             context.finish();
-            return NncUtils.map(typeDTOs, typeDTO -> Objects.requireNonNull(context.getType(typeDTO.id()),
+            return NncUtils.map(typeDefDTOs, typeDTO -> Objects.requireNonNull(context.getType(typeDTO.id()),
                     "Type '" + typeDTO.id() + "' not saved").getStringId());
         }
     }
 
-    public List<Type> batchSave(List<TypeDTO> typeDTOs,
+    public List<Type> batchSave(List<? extends TypeDefDTO> typeDefDTOs,
                                 List<FlowDTO> functions,
-                                List<ParameterizedFlowDTO> parameterizedFlowDTOs,
                                 IEntityContext context) {
-        var batch = SaveTypeBatch.create(context, typeDTOs, functions, parameterizedFlowDTOs);
-        for (TypeDTO typeDTO : batch.getClassTypeDTOs()) {
+        var batch = SaveTypeBatch.create(context, typeDefDTOs, functions);
+        for (TypeDTO typeDTO : batch.getTypeDTOs()) {
             ClassTypeParam param = typeDTO.getClassParam();
             if (param.flows() != null) {
                 for (FlowDTO flowDTO : param.flows()) {
@@ -385,30 +386,28 @@ public class TypeManager extends EntityContextFactoryBean {
         for (FlowDTO function : functions) {
             flowManager.saveContent(function, context.getFunction(Id.parse(function.id())), context);
         }
-        for (ParameterizedFlowDTO parameterizedFlowDTO : parameterizedFlowDTOs) {
-            var templateFlow = context.getFlow(Id.parse(parameterizedFlowDTO.getTemplateId()));
-            var typeArgs = NncUtils.map(parameterizedFlowDTO.getTypeArgumentIds(), id -> context.getType(Id.parse(id)));
-            context.getGenericContext().getParameterizedFlow(templateFlow, typeArgs, ResolutionStage.DEFINITION, batch);
+//        for (ParameterizedFlowDTO parameterizedFlowDTO : parameterizedFlowDTOs) {
+//            var templateFlow = context.getFlow(Id.parse(parameterizedFlowDTO.getTemplateId()));
+//            var typeArgs = NncUtils.map(parameterizedFlowDTO.getTypeArgumentIds(), id -> context.getType(Id.parse(id)));
+//            context.getGenericContext().getParameterizedFlow(templateFlow, typeArgs, ResolutionStage.DEFINITION, batch);
+//        }
+        List<Klass> templates = new ArrayList<>();
+        for (TypeDTO typeDTO : batch.getTypeDTOs()) {
+            var klass = context.getKlass(Id.parse(typeDTO.id()));
+            if (klass.isTemplate())
+                templates.add(klass);
+            createOverridingFlows(klass, context);
         }
-        List<ClassType> templates = new ArrayList<>();
-        for (TypeDTO typeDTO : typeDTOs) {
-            var type = context.getType(Id.parse(typeDTO.id()));
-            if (type instanceof ClassType classType) {
-                if (classType.isTemplate())
-                    templates.add(classType);
-                createOverridingFlows(classType, context);
-            }
-        }
-        for (ClassType updatedTemplate : templates) {
+        for (Klass updatedTemplate : templates) {
             retransformClassTypeIfRequired(updatedTemplate, context);
         }
         return batch.getTypes();
     }
 
-    private void createOverridingFlows(ClassType type, IEntityContext context) {
+    private void createOverridingFlows(Klass type, IEntityContext context) {
         if (type.isParameterized())
             return;
-        for (ClassType it : type.getInterfaces()) {
+        for (Klass it : type.getInterfaces()) {
             var methods = it.getAllMethods();
             for (var overridden : methods) {
                 if (overridden.isAbstract())
@@ -417,7 +416,7 @@ public class TypeManager extends EntityContextFactoryBean {
         }
     }
 
-    public GetTypeResponse getUnionType(List<String> memberIds) {
+    /*public GetTypeResponse getUnionType(List<String> memberIds) {
         try (var context = newContext()) {
             var members = NncUtils.mapUnique(memberIds, context::getType);
             var type = context.getUnionType(members);
@@ -450,7 +449,7 @@ public class TypeManager extends EntityContextFactoryBean {
         var typeArgumentIds = NncUtils.map(request.typeArgumentIds(), Id::parse);
         if (templateId instanceof PhysicalId && NncUtils.allMatch(typeArgumentIds, id -> id instanceof PhysicalId)) {
             try (var context = newContext()) {
-                var template = context.getClassType(templateId);
+                var template = context.getKlass(templateId);
                 var typeArgs = NncUtils.map(typeArgumentIds, context::getType);
                 var existing = context.getGenericContext().getExisting(template, typeArgs);
                 if (existing != null) {
@@ -471,7 +470,7 @@ public class TypeManager extends EntityContextFactoryBean {
             }
             var templateId = Id.parse(request.templateId());
             var typeArgIds = NncUtils.map(request.typeArgumentIds(), Id::parse);
-            var template = context.getClassType(templateId);
+            var template = context.getKlass(templateId);
             var typeArgs = NncUtils.map(typeArgIds, context::getType);
             var type = context.getParameterizedType(template, typeArgs);
             if (type.tryGetId() == null && templateId instanceof PhysicalId
@@ -480,17 +479,17 @@ public class TypeManager extends EntityContextFactoryBean {
             }
             return makeResponse(type, context);
         }
-    }
+    } */
 
-    private GetTypeResponse makeResponse(Type type, IEntityContext context) {
+    private GetTypeResponse makeResponse(Klass type, IEntityContext context) {
         try (var serContext = SerializeContext.enter()) {
-            var typeDTO = type.toDTO();
+            var typeDTO = type.toDTO(serContext);
             serContext.writeDependencies(context);
             return new GetTypeResponse(typeDTO, serContext.getTypesExclude(type));
         }
     }
 
-    public GetTypeResponse getFunctionType(List<String> parameterTypeIds, String returnTypeId) {
+    /*public GetTypeResponse getFunctionType(List<String> parameterTypeIds, String returnTypeId) {
         try (var context = newContext()) {
             var parameterTypes = NncUtils.map(parameterTypeIds, context::getType);
             var returnType = context.getType(returnTypeId);
@@ -521,7 +520,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 return new GetTypeResponse(typeDTO, serContext.getTypesExclude(type));
             }
         }
-    }
+    } */
 
     public GetTypesResponse getDescendants(String id) {
         return getByRange(new GetByRangeRequest(
@@ -538,49 +537,49 @@ public class TypeManager extends EntityContextFactoryBean {
             var lowerBound = context.getType(request.lowerBoundId());
             var upperBound = context.getType(request.upperBoundId());
 
-            List<ClassType> types;
+            List<Klass> types;
             if (lowerBound == StandardTypes.getNeverType() && upperBound == StandardTypes.getAnyType()) {
                 types = NncUtils.filterByType(query0(
                         new TypeQuery(null, request.categories(), request.isTemplate(),
                                 request.includeParameterized(), request.includeBuiltin(), null,
                                 List.of(), 1, 20),
                         context
-                ).data(), ClassType.class);
+                ).data(), Klass.class);
             } else {
                 Set<TypeCategory> categories = request.categories() != null ?
-                        NncUtils.mapUnique(request.categories(), TypeCategory::getByCode) : TypeCategory.pojoCategories();
+                        NncUtils.mapUnique(request.categories(), TypeCategory::fromCode) : TypeCategory.pojoCategories();
                 boolean downwards = upperBound != StandardTypes.getAnyType();
-                Queue<ClassType> queue = new LinkedList<>();
+                Queue<Klass> queue = new LinkedList<>();
                 if (downwards) {
                     if (upperBound instanceof ClassType classType) {
-                        queue.offer(classType);
+                        queue.offer(classType.resolve());
                     } else if (upperBound instanceof UnionType unionType) {
                         for (Type member : unionType.getMembers()) {
                             if (member instanceof ClassType classType) {
-                                queue.offer(classType);
+                                queue.offer(classType.resolve());
                             }
                         }
                     }
                 } else {
                     if (lowerBound instanceof ClassType classType) {
-                        queue.offer(classType);
+                        queue.offer(classType.resolve());
                     } else {
                         if (lowerBound instanceof IntersectionType intersection) {
                             for (Type type : intersection.getTypes()) {
                                 if (type instanceof ClassType classType) {
-                                    queue.offer(classType);
+                                    queue.offer(classType.resolve());
                                 }
                             }
                         }
                     }
                 }
-                LinkedList<ClassType> typeList = new LinkedList<>();
+                LinkedList<Klass> typeList = new LinkedList<>();
                 types = typeList;
                 while (!queue.isEmpty()) {
                     var t = queue.poll();
-                    if (t.isAssignableFrom(lowerBound, null)) {
+                    if (t.getType().isAssignableFrom(lowerBound, null)) {
                         if (t.isTemplate() == request.isTemplate()
-                                && categories.contains(t.category)
+                                && categories.contains(t.getType().getCategory())
                                 && t.isParameterized() == request.includeParameterized()) {
                             if (downwards) {
                                 typeList.add(t);
@@ -591,14 +590,14 @@ public class TypeManager extends EntityContextFactoryBean {
                         if (downwards) {
                             queue.addAll(t.getSubTypes());
                         } else {
-                            queue.addAll(t.getSuperTypes());
+                            queue.addAll(t.getSupers());
                         }
                     }
                 }
             }
             var typeIds = NncUtils.mapUnique(types, Entity::getId);
             try (var serContext = SerializeContext.enter()) {
-                types.forEach(serContext::forceWriteType);
+                types.forEach(serContext::forceWriteKlass);
                 return new GetTypesResponse(
                         NncUtils.map(types, t -> serContext.getType(t.getId())),
                         serContext.getTypes(t -> !typeIds.contains(t.getId()))
@@ -611,12 +610,12 @@ public class TypeManager extends EntityContextFactoryBean {
     public String saveEnumConstant(InstanceDTO instanceDTO) {
         try (var context = newContext()) {
             var instanceContext = Objects.requireNonNull(context.getInstanceContext());
-            var type = context.getClassType(Id.parse(instanceDTO.typeId()));
+            var type = context.getKlass(Id.parse(instanceDTO.type()));
             ClassInstance instance;
             if (instanceDTO.isNew()) {
                 instanceDTO = setOrdinal(instanceDTO, type.getEnumConstants().size(), type);
                 instance = (ClassInstance) instanceManager.create(instanceDTO, instanceContext, context.getGenericContext());
-                FieldBuilder.newBuilder(instance.getTitle(), null, type, type)
+                FieldBuilder.newBuilder(instance.getTitle(), null, type, type.getType())
                         .isStatic(true)
                         .staticValue(instance)
                         .build();
@@ -634,7 +633,7 @@ public class TypeManager extends EntityContextFactoryBean {
         }
     }
 
-    private InstanceDTO setOrdinal(InstanceDTO instanceDTO, int ordinal, ClassType type) {
+    private InstanceDTO setOrdinal(InstanceDTO instanceDTO, int ordinal, Klass type) {
         var ordinalField = type.getFieldByCode("ordinal");
         var param = (ClassInstanceParam) instanceDTO.param();
         return instanceDTO.copyWithParam(
@@ -659,7 +658,7 @@ public class TypeManager extends EntityContextFactoryBean {
         try (var context = newContext()) {
             var instanceContext = NncUtils.requireNonNull(context.getInstanceContext());
             var instance = instanceContext.get(Id.parse(id));
-            var type = (ClassType) instance.getType();
+            var type = ((ClassInstance) instance).getKlass();
             var field = type.getStaticFieldByName(instance.getTitle());
             context.remove(field);
             context.finish();
@@ -675,11 +674,11 @@ public class TypeManager extends EntityContextFactoryBean {
         }
     }
 
-    public ClassType createType(TypeDTO classDTO, IEntityContext context) {
+    public Klass createType(TypeDTO classDTO, IEntityContext context) {
         return createType(classDTO, true, context);
     }
 
-    public ClassType createType(TypeDTO classDTO, boolean withContent, IEntityContext context) {
+    public Klass createType(TypeDTO classDTO, boolean withContent, IEntityContext context) {
         NncUtils.requireNonNull(classDTO.name(), "类型名称不能为空");
         ensureClassNameAvailable(classDTO, context);
         var stage = withContent ? ResolutionStage.DECLARATION : ResolutionStage.INIT;
@@ -689,7 +688,7 @@ public class TypeManager extends EntityContextFactoryBean {
         return type;
     }
 
-    public ClassType updateType(TypeDTO typeDTO, ClassType type, IEntityContext context) {
+    public Klass updateType(TypeDTO typeDTO, Klass type, IEntityContext context) {
         NncUtils.requireNonNull(typeDTO.name(), "类型名称不能为空");
         var batch = SaveTypeBatch.create(context, List.of(typeDTO), List.of());
         Types.saveClasType(typeDTO, ResolutionStage.DECLARATION, batch);
@@ -699,8 +698,8 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     private void ensureClassNameAvailable(TypeDTO typeDTO, IEntityContext context) {
-        if(!typeDTO.anonymous()) {
-            var classWithSameName = context.selectFirstByKey(ClassType.IDX_NAME, typeDTO.name());
+        if (!typeDTO.anonymous()) {
+            var classWithSameName = context.selectFirstByKey(Klass.IDX_NAME, typeDTO.name());
             if (classWithSameName != null && !classWithSameName.isAnonymous()) {
                 throw BusinessException.invalidType(typeDTO, "类型名称已存在");
             }
@@ -710,7 +709,7 @@ public class TypeManager extends EntityContextFactoryBean {
     @Transactional
     public void remove(String id) {
         try (var context = newContext()) {
-            ClassType type = context.getClassType(Id.parse(id));
+            Klass type = context.getKlass(Id.parse(id));
             if (type == null)
                 return;
             context.remove(type);
@@ -726,7 +725,7 @@ public class TypeManager extends EntityContextFactoryBean {
         return NncUtils.getOrElse(field, Entity::getStringId, null);
     }
 
-    public void saveFields(List<FieldDTO> fieldDTOs, ClassType declaringClass, IEntityContext context) {
+    public void saveFields(List<FieldDTO> fieldDTOs, Klass declaringClass, IEntityContext context) {
         Set<Id> fieldIds = new HashSet<>();
         for (FieldDTO fieldDTO : fieldDTOs) {
             var fieldId = Id.parse(fieldDTO.id());
@@ -745,10 +744,10 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     public Field saveField(FieldDTO fieldDTO, IEntityContext context) {
-        return saveField(fieldDTO, context.getClassType(Id.parse(fieldDTO.declaringTypeId())), context);
+        return saveField(fieldDTO, context.getKlass(Id.parse(fieldDTO.declaringTypeId())), context);
     }
 
-    private Field saveField(FieldDTO fieldDTO, ClassType declaringType, IEntityContext context) {
+    private Field saveField(FieldDTO fieldDTO, Klass declaringType, IEntityContext context) {
         Field field = context.getField(fieldDTO.id());
         if (field == null) {
             return createField(fieldDTO, declaringType, context);
@@ -757,7 +756,7 @@ public class TypeManager extends EntityContextFactoryBean {
         }
     }
 
-    private Field createField(FieldDTO fieldDTO, ClassType declaringType, IEntityContext context) {
+    private Field createField(FieldDTO fieldDTO, Klass declaringType, IEntityContext context) {
         var type = context.getType(Id.parse(fieldDTO.typeId()));
         var field = Types.createFieldAndBind(
                 declaringType,
@@ -782,8 +781,8 @@ public class TypeManager extends EntityContextFactoryBean {
 
     private void removeTransformedFieldIfRequired(Field field, IEntityContext context) {
         if (field.getDeclaringType().isTemplate() && context.isPersisted(field.getDeclaringType())) {
-            var templateInstances = context.selectByKey(ClassType.TEMPLATE_IDX, field.getDeclaringType());
-            for (ClassType templateInstance : templateInstances) {
+            var templateInstances = context.selectByKey(Klass.TEMPLATE_IDX, field.getDeclaringType());
+            for (Klass templateInstance : templateInstances) {
                 templateInstance.removeField(
                         templateInstance.tryGetFieldByName(field.getName())
                 );
@@ -794,16 +793,16 @@ public class TypeManager extends EntityContextFactoryBean {
     private void retransformFieldIfRequired(Field field, IEntityContext context) {
         if (field.getDeclaringType().isTemplate() && context.isPersisted(field.getDeclaringType())) {
             var templateInstances = context.getTemplateInstances(field.getDeclaringType());
-            for (ClassType templateInstance : templateInstances) {
+            for (Klass templateInstance : templateInstances) {
                 context.getGenericContext().retransformField(field, templateInstance);
             }
         }
     }
 
-    private void retransformClassTypeIfRequired(ClassType classType, IEntityContext context) {
+    private void retransformClassTypeIfRequired(Klass classType, IEntityContext context) {
         if (classType.isTemplate()) {
             var templateInstances = context.getTemplateInstances(classType);
-            for (ClassType templateInstance : templateInstances) {
+            for (Klass templateInstance : templateInstances) {
                 context.getGenericContext().retransformClass(classType, templateInstance);
             }
         }
@@ -825,7 +824,6 @@ public class TypeManager extends EntityContextFactoryBean {
             Field field = context.getField(fieldId);
             try (var serContext = SerializeContext.enter()) {
                 var fieldDTO = NncUtils.get(field, Field::toDTO);
-                serContext.writeType(field.getType());
                 return new GetFieldResponse(fieldDTO, serContext.getTypes());
             }
         }
@@ -851,7 +849,7 @@ public class TypeManager extends EntityContextFactoryBean {
 
     public Page<ConstraintDTO> listConstraints(String typeId, int page, int pageSize) {
         IEntityContext context = newContext();
-        ClassType type = context.getClassType(typeId);
+        Klass type = context.getKlass(typeId);
         Page<Constraint> dataPage = entityQueryService.query(
                 EntityQueryBuilder.newBuilder(Constraint.class)
                         .addField("declaringType", type)
@@ -910,7 +908,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 if (firstItem.startsWith(Constants.CONSTANT_ID_PREFIX)) {
                     type = context.getType(Expressions.parseIdFromConstantVar(firstItem));
                 } else {
-                    type = context.selectFirstByKey(ClassType.IDX_NAME, firstItem);
+                    type = NncUtils.get(context.selectFirstByKey(Klass.IDX_NAME, firstItem), Klass::getType);
                 }
                 path2type.put(firstItem, type);
                 maxLevels = Math.max(maxLevels, path.length());
@@ -930,7 +928,7 @@ public class TypeManager extends EntityContextFactoryBean {
                     }
                     if (parent instanceof ClassType classType) {
                         Field field = NncUtils.requireNonNull(
-                                classType.getFieldByVar(var),
+                                classType.resolve().getFieldByVar(var),
                                 () -> BusinessException.invalidTypePath(path.toString())
                         );
                         path2type.put(subPath.toString(), field.getType());

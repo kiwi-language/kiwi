@@ -231,7 +231,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments) {
+    public Klass getParameterizedType(Klass template, List<? extends Type> typeArguments) {
         return genericContext.getParameterizedType(template, typeArguments);
     }
 
@@ -578,7 +578,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private InstanceIndexQueryItem createInstanceQueryItem(Index indexConstraint,
                                                            Class<?> javaClass,
                                                            EntityIndexQueryItem queryItem) {
-        ClassType type = indexConstraint.getDeclaringType();
+        Klass type = indexConstraint.getDeclaringType();
         Field field = type.getFieldByJavaField(ReflectionUtils.getField(javaClass, queryItem.fieldName()));
         return new InstanceIndexQueryItem(
                 indexConstraint.getFieldByTypeField(field),
@@ -704,7 +704,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             if (array instanceof ChildArray<?>)
                 children.addAll(NncUtils.filter(array, Objects::nonNull));
         } else if (type instanceof ClassType classType) {
-            for (Field field : classType.getAllFields()) {
+            var klass = classType.resolve();
+            for (Field field : klass.getAllFields()) {
                 if (field.isChild()) {
                     Object child = ReflectionUtils.get(object, getDefContext().getJavaField(field));
                     if (child != null && !EntityUtils.isEphemeral(child))

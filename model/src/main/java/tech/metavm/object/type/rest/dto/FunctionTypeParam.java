@@ -11,8 +11,4 @@ public record FunctionTypeParam(
         return 6;
     }
 
-    @Override
-    public TypeKey getTypeKey() {
-        return new FunctionTypeKey(parameterTypeIds, returnTypeId);
-    }
 }

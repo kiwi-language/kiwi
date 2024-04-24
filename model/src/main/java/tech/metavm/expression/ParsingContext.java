@@ -3,10 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceProvider;
-import tech.metavm.object.type.ArrayTypeProvider;
-import tech.metavm.object.type.IndexedTypeProvider;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.UnionTypeProvider;
+import tech.metavm.object.type.*;
 
 public interface ParsingContext {
 
@@ -22,7 +19,7 @@ public interface ParsingContext {
 
     InstanceProvider getInstanceProvider();
 
-    IndexedTypeProvider getTypeProvider();
+    IndexedTypeDefProvider getTypeDefProvider();
 
     ArrayTypeProvider getArrayTypeProvider();
 

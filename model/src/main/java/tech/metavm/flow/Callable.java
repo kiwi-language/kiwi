@@ -24,8 +24,6 @@ public interface Callable {
 
     FunctionType getFunctionType();
 
-    void setFunctionType(FunctionType functionType);
-
     default List<Type> getParameterTypes() {
         return NncUtils.map(getParameters(), Parameter::getType);
     }

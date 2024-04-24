@@ -3,10 +3,7 @@ package tech.metavm.object.type;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.Page;
-import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityContextFactoryBean;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.ArrayFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
@@ -36,8 +33,10 @@ public class TableManager extends EntityContextFactoryBean {
 
     public TableDTO get(String id) {
         try (IEntityContext context = newContext()) {
-            ClassType type = context.getClassType(id);
-            return NncUtils.get(type, Type::toDTO, t -> convertToTable(t, context));
+            Klass type = context.getKlass(id);
+            try(var serContext = SerializeContext.enter()) {
+                return NncUtils.get(type, t -> t.toDTO(serContext), t -> convertToTable(t, context));
+            }
         }
     }
 
@@ -50,15 +49,17 @@ public class TableManager extends EntityContextFactoryBean {
                 .ephemeral(table.ephemeral())
                 .anonymous(table.anonymous())
                 .build();
-        ClassType type = typeManager.saveType(typeDTO, context);
+        Klass type = typeManager.saveType(typeDTO, context);
         context.initIds();
-        NncUtils.map(table.fields(), column -> saveField(column, type, context));
+        NncUtils.map(table.fields(), column -> saveField(column, type.getType(), context));
         saveTitleField(table.titleField(), type, context);
         context.finish();
-        return convertToTable(type.toDTO(), context);
+        try(var serContext = SerializeContext.enter()) {
+            return convertToTable(type.toDTO(serContext), context);
+        }
     }
 
-    private void saveTitleField(TitleFieldDTO titleFieldDTO, ClassType type, IEntityContext context) {
+    private void saveTitleField(TitleFieldDTO titleFieldDTO, Klass type, IEntityContext context) {
         if (titleFieldDTO != null) {
             Field titleField = type.getTitleField();
             if (titleField == null) {
@@ -86,8 +87,8 @@ public class TableManager extends EntityContextFactoryBean {
     public String saveColumn(ColumnDTO column) {
         requireNonNull(column.ownerId(), () -> BusinessException.invalidParams("表格ID必填"));
         IEntityContext context = newContext();
-        ClassType declaringType = context.getClassType(Id.parse(column.ownerId()));
-        Field field = saveField(column, declaringType, context);
+        Klass declaringType = context.getKlass(Id.parse(column.ownerId()));
+        Field field = saveField(column, declaringType.getType(), context);
         context.finish();
         return field.getStringId();
     }
@@ -119,7 +120,7 @@ public class TableManager extends EntityContextFactoryBean {
         FieldValue defaultValue;
         if (column.type() == ColumnType.ENUM.code) {
             EnumEditContext enumEditContext = saveEnum(declaringType, column, context);
-            type = getType(column, enumEditContext.getType(), context);
+            type = getType(column, enumEditContext.getType().getType(), context);
             defaultValue = column.multiValued() ?
                     new ArrayFieldValue(
                             null,
@@ -176,8 +177,9 @@ public class TableManager extends EntityContextFactoryBean {
 
     private List<ChoiceOptionDTO> getChoiceOptions(Type type, FieldValue fieldDefaultValue) {
         if (type instanceof ClassType classType && type.isEnum()) {
+            var klass = classType.resolve();
             var enumConstants = NncUtils.map(
-                    classType.getEnumConstants(),
+                    klass.getEnumConstants(),
                     EnumConstantRT::new
             );
             return getChoiceOptions(
@@ -211,7 +213,7 @@ public class TableManager extends EntityContextFactoryBean {
         if (type instanceof ClassType) {
             return ColumnType.TABLE;
         }
-        if (type instanceof AnyType || type instanceof TypeVariable) {
+        if (type instanceof AnyType || type instanceof VariableType) {
             return ColumnType.ANY;
         }
         throw new InternalException("Can not get column type for type: " + type);

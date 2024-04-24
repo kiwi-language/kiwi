@@ -8,8 +8,4 @@ public record PrimitiveTypeParam(
         return 3;
     }
 
-    @Override
-    public TypeKey getTypeKey() {
-        return new PrimitiveTypeKey(kind);
-    }
 }

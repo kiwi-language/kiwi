@@ -21,9 +21,9 @@ public class StructuralTypeTransformer<S> extends TypeTransformer<S> {
         }
         else {
             return entityContext.getParameterizedType(
-                    NncUtils.requireNonNull(type.getTemplate()),
+                    NncUtils.requireNonNull(type.resolve().getTemplate()),
                     typeArgs
-            );
+            ).getType();
         }
     }
 

@@ -11,7 +11,7 @@ import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.FieldBuilder;
 import tech.metavm.util.Instances;
@@ -24,7 +24,7 @@ import java.util.Map;
 public class ForeachNode extends LoopNode {
 
     public static ForeachNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var outputType = context.getClassType(Id.parse(nodeDTO.outputTypeId()));
+        var outputType = context.getKlass(Id.parse(nodeDTO.outputTypeId()));
         ParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
         ForeachNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.getArray(), parsingContext);
@@ -49,7 +49,7 @@ public class ForeachNode extends LoopNode {
     @ChildEntity("数组")
     private Value array;
 
-    public ForeachNode(Long tmpId, String name, @javax.annotation.Nullable String code, @NotNull ClassType outputType, NodeRT previous, ScopeRT scope,
+    public ForeachNode(Long tmpId, String name, @javax.annotation.Nullable String code, @NotNull Klass outputType, NodeRT previous, ScopeRT scope,
                        Value array, Value condition) {
         super(tmpId, name, code, outputType, previous, scope, condition);
         setArray(array);
@@ -74,23 +74,23 @@ public class ForeachNode extends LoopNode {
         var arrayValue = array.evaluate(frame);
         var index = Instances.longInstance(0);
         return new HashMap<>(Map.of(
-                getType().getFieldByCode("array"), arrayValue,
-                getType().getFieldByCode("index"), index
+                getKlass().getFieldByCode("array"), arrayValue,
+                getKlass().getFieldByCode("index"), index
         ));
     }
 
     @Override
     protected void updateExtraFields(ClassInstance instance, MetaFrame frame) {
         instance.setField(
-                getType().getFieldByCode("index"),
-                instance.getLongField(getType().findFieldByCode("index")).inc(1)
+                getKlass().getFieldByCode("index"),
+                instance.getLongField(getKlass().findFieldByCode("index")).inc(1)
         );
     }
 
     @Override
     protected boolean checkExtraCondition(ClassInstance loopObject, MetaFrame frame) {
-        var arrayField = getType().findFieldByCode("array");
-        var indexField = getType().findFieldByCode("index");
+        var arrayField = getKlass().findFieldByCode("array");
+        var indexField = getKlass().findFieldByCode("index");
         var array = (ArrayInstance) loopObject.getField(arrayField);
         var index = loopObject.getLongField(indexField);
         return index.getValue() < array.length();

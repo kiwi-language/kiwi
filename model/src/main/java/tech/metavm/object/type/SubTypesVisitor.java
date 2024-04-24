@@ -12,11 +12,11 @@ public abstract class SubTypesVisitor<R> extends ElementVisitor<R> {
     public abstract R defaultValue();
 
     @Override
-    public R visitClassType(ClassType type) {
-        for (ClassType subType : type.getSubTypes()) {
+    public R visitKlass(Klass klass) {
+        for (Klass subType : klass.getSubTypes()) {
             subType.accept(this);
         }
-        return super.visitClassType(type);
+        return super.visitKlass(klass);
     }
 
 }

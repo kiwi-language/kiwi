@@ -10,20 +10,20 @@ public class MockNativeFunctionsInitializer {
 
     public static void init(FunctionTypeProvider functionTypeProvider) {
         NativeFunctions.setGetSourceFunc(
-                FunctionBuilder.newBuilder("获取来源", "getSource", functionTypeProvider)
+                FunctionBuilder.newBuilder("获取来源", "getSource")
                         .parameters(new Parameter(null, "视图", "view", StandardTypes.getAnyType()))
                         .returnType(StandardTypes.getAnyType())
                         .isNative()
                         .build()
         );
-        NativeFunctions.setIsSourcePresent(FunctionBuilder.newBuilder("来源是否存在", "isSourcePResent", functionTypeProvider)
+        NativeFunctions.setIsSourcePresent(FunctionBuilder.newBuilder("来源是否存在", "isSourcePResent")
                 .isNative()
                 .parameters(new Parameter(null, "视图", "view", StandardTypes.getAnyType()))
                 .returnType(StandardTypes.getBooleanType())
                 .build());
 
         NativeFunctions.setSetSourceFunc(
-                FunctionBuilder.newBuilder("设置来源", "setSource", functionTypeProvider)
+                FunctionBuilder.newBuilder("设置来源", "setSource")
                         .parameters(
                                 new Parameter(null, "视图", "view", StandardTypes.getAnyType()),
                                 new Parameter(null, "来源", "source", StandardTypes.getAnyType())

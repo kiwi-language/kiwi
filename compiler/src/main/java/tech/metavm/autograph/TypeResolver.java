@@ -9,21 +9,19 @@ public interface TypeResolver {
 
     Type resolveTypeOnly(PsiType psiType);
 
-    TypeVariable resolveTypeVariable(PsiTypeParameter typeParameter);
+    VariableType resolveTypeVariable(PsiTypeParameter typeParameter);
 
     Type resolveDeclaration(PsiType psiType);
 
-    void ensureDeclared(ClassType classType);
+    void ensureDeclared(Klass classType);
 
-    void ensureCodeGenerated(ClassType classType);
+    void ensureCodeGenerated(Klass classType);
 
     void mapCapturedType(PsiCapturedWildcardType psiCapturedWildcardType, CapturedType type);
 
     Type resolve(PsiType psiType);
 
     Field resolveField(PsiField field);
-
-    Set<Type> getGeneratedTypes();
 
     PsiCapturedWildcardType getPsiCapturedType(CapturedType capturedType);
 

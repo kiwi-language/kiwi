@@ -26,10 +26,10 @@ public class TypeReducerTest extends TestCase {
                 .build();
         assertTrue(nameField.getType().isNullable());
         var nameFieldExpr = new PropertyExpression(
-                new ThisExpression(fooType),
+                new ThisExpression(fooType.getType()),
                 nameField
         );
-        var amountFieldExpr = new PropertyExpression(new ThisExpression(fooType), amountField);
+        var amountFieldExpr = new PropertyExpression(new ThisExpression(fooType.getType()), amountField);
         Expression expression = new BinaryExpression(
                 BinaryOperator.OR,
                 new BinaryExpression(

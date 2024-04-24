@@ -3,10 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceProvider;
-import tech.metavm.object.type.ArrayTypeProvider;
-import tech.metavm.object.type.IndexedTypeProvider;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.UnionTypeProvider;
+import tech.metavm.object.type.*;
 import tech.metavm.util.InternalException;
 
 public class SubParsingContext implements ParsingContext {
@@ -60,8 +57,8 @@ public class SubParsingContext implements ParsingContext {
     }
 
     @Override
-    public IndexedTypeProvider getTypeProvider() {
-        return parent.getTypeProvider();
+    public IndexedTypeDefProvider getTypeDefProvider() {
+        return parent.getTypeDefProvider();
     }
 
     @Override

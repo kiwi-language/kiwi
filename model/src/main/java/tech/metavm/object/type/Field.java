@@ -23,7 +23,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     @Nullable
     private String code;
     @EntityField("所属类型")
-    private final ClassType declaringType;
+    private final Klass declaringType;
     @EntityField("可见范围")
     private Access access;
     @EntityField("是否静态")
@@ -55,7 +55,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             Long tmpId,
             String name,
             @Nullable String code,
-            ClassType declaringType,
+            Klass declaringType,
             Type type,
             Access access,
             boolean readonly,
@@ -396,7 +396,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     @Override
-    public ClassType getDeclaringType() {
+    public Klass getDeclaringType() {
         return declaringType;
     }
 
@@ -436,7 +436,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return type;
     }
 
-    @Override
     public void setType(Type type) {
         this.type = type;
     }

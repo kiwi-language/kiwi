@@ -17,12 +17,12 @@ public enum DummyCapturedTypeScope implements CapturedTypeScope {
     }
 
     @Override
-    public Collection<CapturedType> getCapturedTypes() {
+    public Collection<CapturedTypeVariable> getCapturedTypeVariables() {
         return List.of();
     }
 
     @Override
-    public int getCapturedTypeIndex(CapturedType capturedType) {
+    public int getCapturedTypeVariableIndex(CapturedTypeVariable capturedTypeVariable) {
         throw new UnsupportedOperationException();
     }
 
@@ -32,7 +32,7 @@ public enum DummyCapturedTypeScope implements CapturedTypeScope {
     }
 
     @Override
-    public void addCapturedType(CapturedType capturedType) {
+    public void addCapturedTypeVariable(CapturedTypeVariable capturedTypeVariable) {
     }
 
     @Override

@@ -625,7 +625,7 @@ public class TranspileUtil {
         return elementFactory.createType(klass);
     }
 
-    public static tech.metavm.flow.Method getMethidByJavaMethod(ClassType klass, PsiMethod psiMethod, TypeResolver typeResolver) {
+    public static tech.metavm.flow.Method getMethidByJavaMethod(Klass klass, PsiMethod psiMethod, TypeResolver typeResolver) {
         return klass.getMethodByCodeAndParamTypes(
                 psiMethod.getName(),
                 NncUtils.map(

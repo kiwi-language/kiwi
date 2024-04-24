@@ -4,7 +4,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public final class AddObjectNodeParam extends ScopeNodeParamDTO implements NewParam<AddObjectNodeParam> {
-    private final String typeId;
+    private final String type;
     private final Boolean initializeArrayChildren;
     private final List<FieldParamDTO> fieldParams;
     private final boolean ephemeral;
@@ -20,15 +20,15 @@ public final class AddObjectNodeParam extends ScopeNodeParamDTO implements NewPa
             ScopeDTO bodyScope
     ) {
         super(bodyScope);
-        this.typeId = typeId;
+        this.type = typeId;
         this.initializeArrayChildren = initializeArrayChildren;
         this.ephemeral = ephemeral;
         this.fieldParams = fieldParams;
         this.parentRef = parentRef;
     }
 
-    public String getTypeId() {
-        return typeId;
+    public String getType() {
+        return type;
     }
 
     public List<FieldParamDTO> getFieldParams() {
@@ -50,6 +50,6 @@ public final class AddObjectNodeParam extends ScopeNodeParamDTO implements NewPa
 
     @Override
     public AddObjectNodeParam copyWithParentRef(ParentRefDTO parentRef) {
-        return new AddObjectNodeParam(typeId, initializeArrayChildren, ephemeral, fieldParams, parentRef, getBodyScope());
+        return new AddObjectNodeParam(type, initializeArrayChildren, ephemeral, fieldParams, parentRef, getBodyScope());
     }
 }

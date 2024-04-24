@@ -16,10 +16,7 @@ import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.persistence.VersionRT;
-import tech.metavm.object.type.CompositeTypeFacade;
-import tech.metavm.object.type.Field;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeProvider;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.*;
@@ -52,7 +49,7 @@ public class InstanceContext extends BufferingInstanceContext {
                            boolean asyncPostProcessing,
                            List<ContextPlugin> plugins,
                            IInstanceContext parent,
-                           TypeProvider typeProvider,
+                           TypeDefProvider typeDefProvider,
                            MappingProvider mappingProvider,
                            ParameterizedFlowProvider parameterizedFlowProvider,
                            CompositeTypeFacade compositeTypeFacade, boolean childrenLazyLoading,
@@ -64,7 +61,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 List.of(/*new CacheTreeSource(cache),*/new StoreTreeSource(instanceStore)),
                 new StoreVersionSource(instanceStore),
                 new StoreIndexSource(instanceStore), idInitializer,
-                parent, typeProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade, readonly);
+                parent, typeDefProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade, readonly);
         headContext = new SubContext(appId);
         this.asyncPostProcessing = asyncPostProcessing;
         this.plugins = plugins;
@@ -520,7 +517,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 asyncPostProcessing,
                 plugins,
                 getParent(),
-                getTypeProvider(),
+                getTypeDefProvider(),
                 getMappingProvider(),
                 parameterizedFlowProvider(),
                 compositeTypeFacade(),

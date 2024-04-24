@@ -1,9 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeProvider;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.NncUtils;
@@ -11,14 +9,14 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public interface EntityProvider extends MappingProvider, TypeProvider {
+public interface EntityProvider extends MappingProvider, TypeDefProvider {
 
     <T> T getEntity(Class<T> entityType, Id id);
 
     TypeRegistry getTypeRegistry();
 
-    default ClassType getClassType(Id id) {
-        return getEntity(ClassType.class, id);
+    default Klass getKlass(Id id) {
+        return getEntity(Klass.class, id);
     }
 
     default Mapping getMapping(Id id) {
@@ -27,6 +25,10 @@ public interface EntityProvider extends MappingProvider, TypeProvider {
 
     default Type getType(Id id) {
         return getEntity(Type.class, id);
+    }
+
+    default TypeDef getTypeDef(Id id) {
+        return getEntity(TypeDef.class, id);
     }
 
     <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... values);

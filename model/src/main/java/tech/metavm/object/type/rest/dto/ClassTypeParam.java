@@ -27,7 +27,7 @@ public record ClassTypeParam(
         boolean isAbstract,
         boolean isTemplate,
         List<String> typeParameterIds,
-        @Nullable List<TypeDTO> typeParameters,
+        @Nullable List<TypeVariableDTO> typeParameters,
         String templateId,
         List<String> typeArgumentIds,
         List<String> dependencyIds,
@@ -39,12 +39,6 @@ public record ClassTypeParam(
     @Override
     public int getType() {
         return 1;
-    }
-
-    @org.jetbrains.annotations.Nullable
-    @Override
-    public TypeKey getTypeKey() {
-        return templateId != null ? new ParameterizedTypeKey(templateId, typeArgumentIds) : null;
     }
 
     public FieldDTO findFieldByName(String name) {

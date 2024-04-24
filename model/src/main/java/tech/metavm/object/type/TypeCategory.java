@@ -45,8 +45,6 @@ public enum TypeCategory {
     BOOLEAN(TypeCategoryCodes.BOOLEAN, ColumnKind.BOOL, PrimitiveTypeParam.class, 5),
     @EnumConstant("时间")
     TIME(TypeCategoryCodes.TIME, ColumnKind.INT, PrimitiveTypeParam.class, 5),
-    @EnumConstant("日期")
-    DATE(TypeCategoryCodes.DATE, ColumnKind.INT, PrimitiveTypeParam.class, 5),
     @EnumConstant("任意类型")
     OBJECT(TypeCategoryCodes.OBJECT, ColumnKind.UNSPECIFIED, 5),
     @EnumConstant("密码")
@@ -93,7 +91,7 @@ public enum TypeCategory {
         this.closurePrecedence = closurePrecedence;
     }
 
-    public static TypeCategory getByCode(int code) {
+    public static TypeCategory fromCode(int code) {
         return Arrays.stream(values()).filter(t -> t.code == code)
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("模型类型不存在： " + code));
@@ -136,7 +134,7 @@ public enum TypeCategory {
     }
 
     public boolean isPrimitive() {
-        return isString() || isDate() || isTime() || isDouble()
+        return isString() || isTime() || isDouble()
                 || isLong() || isBool() || isPassword() || isNull();
     }
 
@@ -150,10 +148,6 @@ public enum TypeCategory {
 
     public boolean isString() {
         return this == STRING;
-    }
-
-    public boolean isDate() {
-        return this == DATE;
     }
 
     public boolean isDouble() {

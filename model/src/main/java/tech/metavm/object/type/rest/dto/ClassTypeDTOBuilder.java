@@ -48,7 +48,7 @@ public class ClassTypeDTOBuilder {
     private boolean isTemplate;
     private String templateId;
     private List<String> typeArgumentIds = new ArrayList<>();
-    private List<TypeDTO> typeParameters = new ArrayList<>();
+    private List<TypeVariableDTO> typeParameters = new ArrayList<>();
     private List<String> typeParameterIds = new ArrayList<>();
     private List<String> dependencyIds = new ArrayList<>();
     private boolean hasSubTypes;
@@ -230,7 +230,7 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder typeParameters(List<TypeDTO> typeParameters) {
+    public ClassTypeDTOBuilder typeParameters(List<TypeVariableDTO> typeParameters) {
         this.typeParameters = new ArrayList<>(typeParameters);
         this.typeParameterIds = NncUtils.map(typeParameters, BaseDTO::id);
         return this;

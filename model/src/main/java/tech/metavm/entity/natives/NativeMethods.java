@@ -7,7 +7,7 @@ import tech.metavm.flow.FlowExecResult;
 import tech.metavm.flow.Method;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
@@ -25,7 +25,7 @@ public class NativeMethods {
             NncUtils.requireNonNull(nativeClass,
                     "Native class not available for type '" + method.getDeclaringType().getName() + "'");
             List<Class<?>> paramTypes = new ArrayList<>();
-            paramTypes.add(ClassType.class);
+            paramTypes.add(Klass.class);
             paramTypes.addAll(NncUtils.multipleOf(Instance.class, method.getParameters().size()));
             paramTypes.add(CallContext.class);
             Object[] args = new Object[2 + arguments.size()];
@@ -74,16 +74,16 @@ public class NativeMethods {
     }
 
     private static Object createNativeObject(ClassInstance instance) {
-        var nativeClass = tryGetNativeClass(instance.getType());
+        var nativeClass = tryGetNativeClass(instance.getKlass());
         NncUtils.requireNonNull(nativeClass,
                 "Native class not available for type '" + instance.getType().getName() + "'");
         Constructor<?> constructor = ReflectionUtils.getConstructor(nativeClass, ClassInstance.class);
         return ReflectionUtils.invokeConstructor(constructor, instance);
     }
 
-    private static Class<?> tryGetNativeClass(ClassType type) {
+    private static Class<?> tryGetNativeClass(Klass type) {
         while (type != null) {
-            var def = ModelDefRegistry.tryGetDef(type.getEffectiveTemplate());
+            var def = ModelDefRegistry.tryGetDef(type.getEffectiveTemplate().getType());
             if (def != null) {
                 if (def instanceof DirectDef<?> directDef && directDef.getNativeClass() != null)
                     return directDef.getNativeClass();

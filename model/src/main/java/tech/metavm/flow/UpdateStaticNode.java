@@ -5,7 +5,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateStaticNodeParam;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
@@ -18,7 +18,7 @@ public class UpdateStaticNode extends NodeRT {
     public static UpdateStaticNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         UpdateStaticNodeParam param = nodeDTO.getParam();
         var node = (UpdateStaticNode) context.getNode(Id.parse(nodeDTO.id()));
-        var type = context.getClassType(Id.parse(param.typeId()));
+        var type = context.getKlass(Id.parse(param.typeId()));
         if (node == null)
             node = new UpdateStaticNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, type);
         else
@@ -38,12 +38,12 @@ public class UpdateStaticNode extends NodeRT {
     }
 
     @EntityField("类型")
-    private ClassType type;
+    private Klass type;
 
     @ChildEntity("字段列表")
     private final ChildArray<UpdateField> fields = addChild(new ChildArray<>(UpdateField.class), "fields");
 
-    public UpdateStaticNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, ClassType type) {
+    public UpdateStaticNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Klass type) {
         super(tmpId, name, code, null, previous, scope);
         this.type = type;
     }
@@ -75,7 +75,7 @@ public class UpdateStaticNode extends NodeRT {
         return fields.toList();
     }
 
-    public void setType(ClassType type) {
+    public void setType(Klass type) {
         this.type = type;
         this.fields.clear();
     }

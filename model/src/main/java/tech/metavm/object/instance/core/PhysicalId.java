@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.object.type.rest.dto.TypeKey;
 
 import java.util.Objects;
 
@@ -46,6 +47,6 @@ public abstract class PhysicalId extends Id {
     }
 
     @JsonIgnore
-    public abstract Id getTypeId();
+    public abstract TypeKey getTypeKey();
 
 }

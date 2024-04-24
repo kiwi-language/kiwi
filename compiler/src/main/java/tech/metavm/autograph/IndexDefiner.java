@@ -45,15 +45,15 @@ public class IndexDefiner extends VisitorBase {
             var dummyType = ClassTypeBuilder.newBuilder("IndexDummy", "IndexDummy").build();
             var dummyMethod = MethodBuilder.newBuilder(
                             dummyType,
-                            "dummy", "dummy", context.getFunctionTypeContext()
+                            "dummy", "dummy"
                     )
-                    .staticType(new FunctionType(null, List.of(dummyType), StandardTypes.getVoidType()))
+                    .staticType(new FunctionType(null, List.of(dummyType.getType()), StandardTypes.getVoidType()))
                     .type(new FunctionType(null, List.of(), StandardTypes.getVoidType()))
                     .build();
             builder = new MethodGenerator(dummyMethod, typeResolver, context, this);
             currentIndex = requireNonNull(psiClass.getUserData(Keys.INDEX));
             var param = psiMethod.getParameterList().getParameters()[0];
-            builder.setVariable(param.getName(), new ThisExpression(currentIndex.getDeclaringType()));
+            builder.setVariable(param.getName(), new ThisExpression(currentIndex.getDeclaringType().getType()));
             super.visitMethod(psiMethod);
         }
     }

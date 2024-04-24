@@ -1,34 +1,35 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.util.InstanceOutput;
 
 import java.util.Objects;
 
 public class DefaultPhysicalId extends PhysicalId {
 
-    public static PhysicalId ofObject(long id, long nodeId, Id typeId) {
-        return new DefaultPhysicalId(false, id, nodeId, typeId);
+    public static PhysicalId ofObject(long id, long nodeId, TypeKey typeKey) {
+        return new DefaultPhysicalId(false, id, nodeId, typeKey);
     }
 
     public static PhysicalId ofObject(long id, long nodeId, Type type) {
-        return new DefaultPhysicalId(false, id, nodeId, type.getId());
+        return new DefaultPhysicalId(false, id, nodeId, type.getTypeKey());
     }
 
-    public static PhysicalId ofArray(long id, long nodeId, Id typeId) {
-        return new DefaultPhysicalId(true, id, nodeId, typeId);
+    public static PhysicalId ofArray(long id, long nodeId, Type type) {
+        return new DefaultPhysicalId(true, id, nodeId, type.getTypeKey());
     }
 
-    private final Id typeId;
+    private final TypeKey typeKey;
 
-    public DefaultPhysicalId(boolean isArray, long treeId, long nodeId, Id typeId) {
+    public DefaultPhysicalId(boolean isArray, long treeId, long nodeId, TypeKey typeKey) {
         super(isArray, treeId, nodeId);
-        this.typeId = typeId;
+        this.typeKey = typeKey;
     }
 
     @Override
-    public Id getTypeId() {
-        return typeId;
+    public TypeKey getTypeKey() {
+        return typeKey;
     }
 
     @Override
@@ -36,7 +37,7 @@ public class DefaultPhysicalId extends PhysicalId {
         output.writeIdTag(IdTag.OBJECT_PHYSICAL, isArray());
         output.writeLong(getTreeId());
         output.writeLong(getNodeId());
-        typeId.write(output);
+        typeKey.write(output);
     }
 
     @Override
@@ -44,11 +45,11 @@ public class DefaultPhysicalId extends PhysicalId {
         if (this == entity) return true;
         if (!(entity instanceof DefaultPhysicalId that)) return false;
         if (!super.equals(entity)) return false;
-        return Objects.equals(typeId, that.typeId);
+        return Objects.equals(typeKey, that.typeKey);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), typeId);
+        return Objects.hash(super.hashCode(), typeKey);
     }
 }

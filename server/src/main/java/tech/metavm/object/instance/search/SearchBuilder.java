@@ -7,7 +7,7 @@ import tech.metavm.constant.FieldNames;
 import tech.metavm.expression.*;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.StringInstance;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.Column;
 import tech.metavm.util.InternalException;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Set;
 
 import static tech.metavm.constant.FieldNames.APPLICATION_ID;
-import static tech.metavm.constant.FieldNames.TYPE_ID;
+import static tech.metavm.constant.FieldNames.TYPE;
 
 public class SearchBuilder {
 
@@ -36,9 +36,9 @@ public class SearchBuilder {
         String queryString = query.includeBuiltin() ?
                 "(" + APPLICATION_ID + ":" + appIdStr + " OR " + APPLICATION_ID + ":\\-1)" :
                 "(" + APPLICATION_ID + ":" + appIdStr + ")";
-        if (!query.typeIds().isEmpty()) {
+        if (!query.types().isEmpty()) {
             String typeIdCondition = "(" +
-                    NncUtils.join(query.typeIds(), id -> TYPE_ID + ":" + id, " OR ") + ")";
+                    NncUtils.join(query.types(), id -> TYPE + ":" + id, " OR ") + ")";
             queryString += " AND " + typeIdCondition;
         }
         if (query.condition() != null && !Expressions.isConstantTrue(query.condition())) {
@@ -215,7 +215,7 @@ public class SearchBuilder {
     }
 
     private record SearchField(
-            @Nullable ClassType type,
+            @Nullable Klass type,
             Column column
     ) {
 

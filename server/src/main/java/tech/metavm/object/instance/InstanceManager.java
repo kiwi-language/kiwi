@@ -18,10 +18,8 @@ import tech.metavm.object.instance.query.InstanceNode;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.ParameterizedTypeRepository;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.ValueFormatter;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.system.RegionConstants;
 import tech.metavm.util.*;
 
@@ -56,18 +54,18 @@ public class InstanceManager extends EntityContextFactoryBean {
     public Page<InstanceDTO[]> select(SelectRequest request) {
         try (var entityContext = newContext()) {
             var context = entityContext.getInstanceContext();
-            ClassType type = context.getClassType(Id.parse(request.typeId()));
-            var dataPage = instanceQueryService.query(InstanceQueryBuilder.newBuilder(type)
+            var klass = ((ClassType) TypeParser.parse(request.type(), context.getTypeDefProvider())).resolve();
+            var dataPage = instanceQueryService.query(InstanceQueryBuilder.newBuilder(klass.getType())
                     .expression(request.condition())
                     .page(request.page())
                     .pageSize(request.pageSize())
                     .build(), entityContext
             );
             var roots = dataPage.data();
-            List<Expression> selects = NncUtils.map(request.selects(), sel -> ExpressionParser.parse(type, sel, entityContext));
+            List<Expression> selects = NncUtils.map(request.selects(), sel -> ExpressionParser.parse(klass, sel, entityContext));
             GraphQueryExecutor graphQueryExecutor = new GraphQueryExecutor();
             return new Page<>(
-                    graphQueryExecutor.execute(type, roots, selects, context.parameterizedFlowProvider()),
+                    graphQueryExecutor.execute(klass, roots, selects, context.parameterizedFlowProvider()),
                     dataPage.total()
             );
         }
@@ -102,7 +100,7 @@ public class InstanceManager extends EntityContextFactoryBean {
             var instance = context.get(instanceId);
             if (instance instanceof ClassInstance classInstance) {
                 if (instanceId instanceof PhysicalId/* && !classInstance.getType().isStruct()*/) {
-                    var defaultMapping = classInstance.getType().getDefaultMapping();
+                    var defaultMapping = classInstance.getType().resolve().getDefaultMapping();
                     if (defaultMapping != null) {
                         var viewId = new DefaultViewId(false, defaultMapping.getId(), instanceId);
                         var view = context.get(viewId);
@@ -245,7 +243,7 @@ public class InstanceManager extends EntityContextFactoryBean {
         try (var entityContext = newContext()) {
             var context = entityContext.getInstanceContext();
             var mappingProvider = context.getMappingProvider();
-            Type type = context.getType(Id.parse(query.typeId()));
+            Type type = TypeParser.parse(query.type(), context.getTypeDefProvider());
             if (type instanceof ClassType) {
                 var internalQuery = InstanceQueryBuilder.newBuilder(type)
                         .searchText(query.searchText())

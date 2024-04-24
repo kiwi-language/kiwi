@@ -15,7 +15,7 @@ import java.util.Objects;
 public abstract class Constraint extends Element implements  ClassMember, LocalKey {
 
     @EntityField("所属类型")
-    private final ClassType declaringType;
+    private final Klass declaringType;
     @EntityField(value = "名称", asTitle = true)
     private String name;
     @EntityField(value = "编号")
@@ -27,7 +27,7 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
     @Nullable
     private String message;
 
-    public Constraint(ConstraintKind kind, @NotNull ClassType declaringType,
+    public Constraint(ConstraintKind kind, @NotNull Klass declaringType,
                       String name, @Nullable String code, @Nullable String message) {
         super(null);
         this.declaringType = declaringType;
@@ -88,7 +88,7 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
     }
 
     @Override
-    public ClassType getDeclaringType() {
+    public Klass getDeclaringType() {
         return declaringType;
     }
 

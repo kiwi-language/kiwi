@@ -11,7 +11,7 @@ import java.util.Set;
 
 public record SearchQuery(
         long appId,
-        Set<Long> typeIds,
+        Set<String> types,
         Expression condition,
         boolean includeBuiltin,
         int page,
@@ -32,7 +32,7 @@ public record SearchQuery(
     }
 
     public boolean match(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
-        return typeIds.contains(instance.getType().getPhysicalId()) &&
+        return types.contains(instance.getType().toTypeExpression()) &&
                 (condition == null || ((BooleanInstance) condition.evaluate(new InstanceEvaluationContext(instance, parameterizedFlowProvider))).isTrue());
     }
 

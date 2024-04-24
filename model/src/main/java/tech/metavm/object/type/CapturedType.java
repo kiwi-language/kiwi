@@ -3,45 +3,32 @@ package tech.metavm.object.type;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.*;
+import tech.metavm.entity.BuildKeyContext;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.CapturedTypeKey;
 import tech.metavm.object.type.rest.dto.CapturedTypeParam;
-import tech.metavm.util.DebugEnv;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 
+// TODO make CapturedType the sub type of or the same type as VariableType
 @EntityType("捕获类型")
-public class CapturedType extends Type implements ITypeVariable, PostRemovalAware, GenericElement {
+public class CapturedType extends Type {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    @EntityField("范围")
-    private CapturedTypeScope scope;
+    private final CapturedTypeVariable variable;
 
-    @EntityField("不确定类型")
-    private final UncertainType uncertainType;
-
-    @ChildEntity("捕获流程列表")
-    private final ReadWriteArray<Flow> capturedFlows = addChild(new ReadWriteArray<>(Flow.class), "capturedFlows");
-
-    @ChildEntity("捕获复合类型列表")
-    private final ReadWriteArray<Type> capturedCompositeTypes = addChild(new ReadWriteArray<>(Type.class), "capturedCompositeTypes");
-
-    @CopyIgnore
-    @EntityField("复制来源")
-    private @Nullable CapturedType copySource;
-
-    public CapturedType(@NotNull UncertainType uncertainType,
-                        @NotNull CapturedTypeScope scope) {
-        super("CaptureOf" + uncertainType.getName(), null,
+    public CapturedType(CapturedTypeVariable variable) {
+        super("CaptureOf" + variable.getUncertainType().getName(), null,
                 true, true, TypeCategory.CAPTURED);
-        this.scope = scope;
-        this.uncertainType = uncertainType;
-        scope.addCapturedType(this);
+        this.variable = variable;
     }
 
     @Override
@@ -51,37 +38,17 @@ public class CapturedType extends Type implements ITypeVariable, PostRemovalAwar
 
     @Override
     public CapturedTypeKey getTypeKey() {
-        return new CapturedTypeKey(
-                scope.getStringId(),
-                uncertainType.getStringId(),
-                scope.getCapturedTypeIndex(this)
-        );
+        return new CapturedTypeKey(variable.getStringId());
     }
 
     @Override
     public Type getUpperBound() {
-        return uncertainType.getUpperBound();
+        return variable.getUpperBound();
     }
 
     @Override
     public Type getLowerBound() {
-        return uncertainType.getLowerBound();
-    }
-
-    public void setCapturedFlows(List<Flow> capturedFlows) {
-        this.capturedFlows.reset(capturedFlows);
-    }
-
-    public void setCapturedCompositeTypes(List<Type> capturedCompositeTypes) {
-        this.capturedCompositeTypes.reset(capturedCompositeTypes);
-    }
-
-    public void addCapturedFlow(Flow flow) {
-        capturedFlows.add(flow);
-    }
-
-    public void addCapturedCompositeType(Type type) {
-        capturedCompositeTypes.add(type);
+        return variable.getLowerBound();
     }
 
     @Override
@@ -101,27 +68,12 @@ public class CapturedType extends Type implements ITypeVariable, PostRemovalAwar
 
     @Override
     protected CapturedTypeParam getParam(SerializeContext serializeContext) {
-        return new CapturedTypeParam(
-                serializeContext.getId(scope),
-                serializeContext.getId(uncertainType),
-                scope.getCapturedTypeIndex(this)
-        );
-    }
-
-    public void setScope(CapturedTypeScope scope) {
-        if (this.scope != DummyCapturedTypeScope.INSTANCE)
-            throw new IllegalStateException("Scope is already set");
-        this.scope = scope;
-        scope.addCapturedType(this);
-    }
-
-    public CapturedTypeScope getScope() {
-        return scope;
+        return new CapturedTypeParam(serializeContext.getId(variable));
     }
 
     @Override
     public String getTypeDesc() {
-        return scope.getScopeName() + "_" + name;
+        return variable.getScope().getScopeName() + "_" + name;
     }
 
     @Override
@@ -131,12 +83,32 @@ public class CapturedType extends Type implements ITypeVariable, PostRemovalAwar
 
     @Override
     public String getInternalName(@Nullable Flow current) {
-        return scope.getInternalName(current) + ".CaptureOf" + uncertainType.getInternalName(current) +
-                scope.getCapturedTypeIndex(this);
+        var scope = variable.getScope();
+        return scope.getInternalName(current) + ".CaptureOf" + variable.getUncertainType().getInternalName(current) +
+                scope.getCapturedTypeVariableIndex(variable);
+    }
+
+    @Override
+    public Type copy() {
+        return new CapturedType(variable);
+    }
+
+    @Override
+    public String toTypeExpression(SerializeContext serializeContext) {
+        return "#" + serializeContext.getId(variable);
+    }
+
+    @Override
+    public void write0(InstanceOutput output) {
+        output.writeId(variable.getId());
+    }
+
+    public static CapturedType read(InstanceInput input, TypeDefProvider typeDefProvider) {
+        return new CapturedType((CapturedTypeVariable) typeDefProvider.getTypeDef(input.readId()));
     }
 
     public UncertainType getUncertainType() {
-        return uncertainType;
+        return variable.getUncertainType();
     }
 
     @Override
@@ -144,44 +116,4 @@ public class CapturedType extends Type implements ITypeVariable, PostRemovalAwar
         capturedTypes.add(this);
     }
 
-    @Override
-    public void postRemove(IEntityContext context) {
-        List<Entity> removals = new ArrayList<>(capturedFlows);
-        removals.addAll(capturedCompositeTypes);
-        if (DebugEnv.debugging) {
-            debugLogger.info("{}.afterRemoval called", EntityUtils.getEntityPath(this));
-            for (Entity removal : removals) {
-                boolean alreadyRemoved = context.isRemoved(removal);
-                debugLogger.info("Removing entity {}, already removed: {}",
-                        EntityUtils.getEntityDesc(removal) + "/" + removal.getStringId(), alreadyRemoved);
-                if (alreadyRemoved && removal instanceof Type removedType) {
-                    var capturedTypes = new IdentitySet<CapturedType>();
-                    for (Type componentType : Types.getComponentTypes(removedType)) {
-                        capturedTypes.addAll(componentType.getCapturedTypes());
-                    }
-                    debugLogger.info("Component captured types: {}", NncUtils.join(capturedTypes, EntityUtils::getEntityPath));
-                }
-            }
-        }
-        context.batchRemove(removals);
-    }
-
-    @Nullable
-    @Override
-    public CapturedType getCopySource() {
-        return copySource;
-    }
-
-    @Override
-    public void setCopySource(Object copySource) {
-        this.copySource = (CapturedType) copySource;
-    }
-
-    public Collection<Type> getCapturedCompositeTypes() {
-        return capturedCompositeTypes.toList();
-    }
-
-    public Collection<Flow> getCapturedFlows() {
-        return capturedFlows.toList();
-    }
 }

@@ -7,7 +7,6 @@ import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.flow.rest.FunctionParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.FunctionType;
 import tech.metavm.object.type.MetadataState;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeVariable;
@@ -27,6 +26,7 @@ public class Function extends Flow implements GlobalKey {
     public static final IndexDef<Function> UNIQUE_IDX_CODE =
             IndexDef.createUnique(Function.class, "code");
 
+    @SuppressWarnings({"FieldMayBeFinal", "unused"})
     private boolean allFlag = true;
 
     public Function(Long tmpId,
@@ -38,12 +38,10 @@ public class Function extends Flow implements GlobalKey {
                     Type returnType,
                     List<TypeVariable> typeParameters,
                     List<Type> typeArguments,
-                    FunctionType type,
                     @Nullable Function horizontalTemplate,
                     @Nullable CodeSource codeSource,
                     MetadataState state) {
-        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, codeSource, state, false);
-        checkTypes(parameters, returnType, type);
+        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, horizontalTemplate, codeSource, state, false);
     }
 
     @Override
@@ -98,5 +96,10 @@ public class Function extends Flow implements GlobalKey {
             return "this";
         return getCodeRequired() + "(" +
                 NncUtils.join(getParameterTypes(), t -> t.getInternalName(this), ",") + ")";
+    }
+
+    @Override
+    public Function getParameterized(List<Type> typeArguments) {
+        return (Function) super.getParameterized(typeArguments);
     }
 }

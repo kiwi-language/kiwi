@@ -2,7 +2,7 @@ package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeProvider;
+import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
@@ -15,13 +15,13 @@ public abstract class PathViewId extends ViewId {
 
     private final @Nullable Id sourceId;
 
-    private final Id typeId;
+    private final TypeKey typeKey;
 
-    protected PathViewId(boolean isArray, ViewId parent, @Nullable Id mappingId, @Nullable Id sourceId, Id typeId) {
+    protected PathViewId(boolean isArray, ViewId parent, @Nullable Id mappingId, @Nullable Id sourceId, TypeKey typeKey) {
         super(isArray, mappingId);
         this.parent = parent;
         this.sourceId = sourceId;
-        this.typeId = typeId;
+        this.typeKey = typeKey;
     }
 
     public Id getParent() {
@@ -51,12 +51,12 @@ public abstract class PathViewId extends ViewId {
         if (this == object) return true;
         if (!(object instanceof PathViewId that)) return false;
         if (!super.equals(object)) return false;
-        return Objects.equals(typeId, that.typeId) && Objects.equals(parent, that.parent) && Objects.equals(sourceId, that.sourceId);
+        return Objects.equals(typeKey, that.typeKey) && Objects.equals(parent, that.parent) && Objects.equals(sourceId, that.sourceId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), parent, sourceId, typeId);
+        return Objects.hash(super.hashCode(), parent, sourceId, typeKey);
     }
 
     @Override
@@ -75,17 +75,18 @@ public abstract class PathViewId extends ViewId {
     }
 
     @Override
-    public Type getViewType(MappingProvider mappingProvider, TypeProvider typeProvider) {
+    public TypeKey getViewTypeKey(MappingProvider mappingProvider) {
         var mappingId = getMappingId();
         if(mappingId != null)
-            return super.getViewType(mappingProvider, typeProvider);
-        return typeProvider.getType(typeId);
+            return super.getViewTypeKey(mappingProvider);
+        return typeKey;
+//        return typeProvider.getType(typeId);
 //        return getViewTypeByPath(parent.getViewType(mappingProvider, typeProvider));
     }
 
     protected abstract Type getViewTypeByPath(Type parentType);
 
-    public Id getTypeId() {
-        return typeId;
+    public TypeKey getTypeKey() {
+        return typeKey;
     }
 }

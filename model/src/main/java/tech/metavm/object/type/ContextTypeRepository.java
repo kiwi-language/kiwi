@@ -12,8 +12,8 @@ public class ContextTypeRepository implements TypeRepository {
     }
 
     @Override
-    public ClassType findClassTypeByName(String name) {
-        return context.selectFirstByKey(ClassType.IDX_NAME, name);
+    public Klass findClassTypeByName(String name) {
+        return context.selectFirstByKey(Klass.IDX_NAME, name);
     }
 
     @Override

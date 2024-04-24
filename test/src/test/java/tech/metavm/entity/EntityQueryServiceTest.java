@@ -6,7 +6,7 @@ import tech.metavm.common.Page;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -86,11 +86,11 @@ public class EntityQueryServiceTest extends TestCase {
     }
 
     public void testSearchTypes() {
-        ClassType fooType = ModelDefRegistry.getClassType(Foo.class);
+        Klass fooType = ModelDefRegistry.getClassType(Foo.class).resolve();
         try (var context = entityContextFactory.newContext(Constants.ROOT_APP_ID)) {
-            Page<ClassType> page = entityQueryService.query(
-                    EntityQueryBuilder.newBuilder(ClassType.class)
-                            .addField("category", fooType.getCategory())
+            Page<Klass> page = entityQueryService.query(
+                    EntityQueryBuilder.newBuilder(Klass.class)
+                            .addField("kind", fooType.getKind())
                             .addField("name", fooType.getName())
                             .includeBuiltin(true)
                             .build(),

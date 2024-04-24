@@ -12,7 +12,7 @@ public class RegionRT {
 
     public RegionRT(RegionPO regionPO) {
         this(
-                TypeCategory.getByCode(regionPO.getTypeCategory()),
+                TypeCategory.fromCode(regionPO.getTypeCategory()),
                 regionPO.getStartId(),
                 regionPO.getEndId(),
                 regionPO.getNextId()

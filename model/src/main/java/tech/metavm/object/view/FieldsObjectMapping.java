@@ -5,10 +5,10 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.FunctionTypeProvider;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.view.rest.dto.FieldsObjectMappingParam;
 import tech.metavm.object.view.rest.dto.ObjectMappingParam;
 import tech.metavm.util.BusinessException;
@@ -28,7 +28,7 @@ public class FieldsObjectMapping extends ObjectMapping {
     @ChildEntity("内置目标类型")
     @Nullable
     @CopyIgnore
-    private ClassType builtinTargetType;
+    private Klass builtinTargetType;
     @EntityField("读取流程")
     @Nullable
     private Method readMethod;
@@ -36,8 +36,8 @@ public class FieldsObjectMapping extends ObjectMapping {
     @Nullable
     private Method writeMethod;
 
-    public FieldsObjectMapping(Long tmpId, String name, @Nullable String code, ClassType sourceType, boolean builtin,
-                               @NotNull ClassType targetType, List<ObjectMapping> overridden) {
+    public FieldsObjectMapping(Long tmpId, String name, @Nullable String code, Klass sourceType, boolean builtin,
+                               @NotNull Klass targetType, List<ObjectMapping> overridden) {
         super(tmpId, name, code, sourceType, targetType, builtin);
         overridden.forEach(this::checkOverridden);
         this.overridden.addAll(overridden);
@@ -52,13 +52,13 @@ public class FieldsObjectMapping extends ObjectMapping {
         }
     }
 
-    public static String getTargetTypeName(ClassType sourceType, String mappingName) {
+    public static String getTargetTypeName(Klass sourceType, String mappingName) {
         if (mappingName.endsWith("视图") && mappingName.length() > 2)
             mappingName = mappingName.substring(0, mappingName.length() - 2);
         return NamingUtils.escapeTypeName(sourceType.getName()) + mappingName + "视图";
     }
 
-    public static @Nullable String getTargetTypeCode(ClassType sourceType, @Nullable String mappingCode) {
+    public static @Nullable String getTargetTypeCode(Klass sourceType, @Nullable String mappingCode) {
         if (sourceType.getCode() == null || mappingCode == null)
             return null;
         if (mappingCode.endsWith("View") && mappingCode.length() > 4)
@@ -74,7 +74,7 @@ public class FieldsObjectMapping extends ObjectMapping {
     public void setCode(@Nullable String code) {
         super.setCode(code);
         if (builtinTargetType != null)
-            builtinTargetType.setCode(getTargetTypeCode(getSourceType(), code));
+            builtinTargetType.setCode(getTargetTypeCode(getSourceKlass(), code));
     }
 
     @Override
@@ -117,10 +117,10 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     private void generateReadMethodDeclaration(FunctionTypeProvider functionTypeProvider) {
-        readMethod = MethodBuilder.newBuilder(getSourceType(),
+        readMethod = MethodBuilder.newBuilder(getSourceKlass(),
                         "获取视图$" + getName(),
-                        NncUtils.get(getCode(), c -> "getView$" + c),
-                        functionTypeProvider)
+                        NncUtils.get(getCode(), c -> "getView$" + c)
+                )
                 .existing(readMethod)
                 .codeSource(this)
                 .returnType(getTargetType())
@@ -130,10 +130,10 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     private void generateWriteMethodDeclaration(FunctionTypeProvider functionTypeProvider) {
-        writeMethod = MethodBuilder.newBuilder(getSourceType(),
+        writeMethod = MethodBuilder.newBuilder(getSourceKlass(),
                         "保存视图$" + getName(),
-                        NncUtils.get(getCode(), c -> "saveView$" + c),
-                        functionTypeProvider)
+                        NncUtils.get(getCode(), c -> "saveView$" + c)
+                )
                 .existing(writeMethod)
                 .codeSource(this)
                 .returnType(StandardTypes.getVoidType())
@@ -151,7 +151,7 @@ public class FieldsObjectMapping extends ObjectMapping {
         for (FieldMapping fieldMapping : fieldMappings)
             fieldParams.add(fieldMapping.generateReadCode(selfNode, compositeTypeFacade));
         var view = new AddObjectNode(null, "视图", "View", false,
-                true, getTargetType(), scope.getLastNode(), scope);
+                true, getTargetKlass(), scope.getLastNode(), scope);
         fieldParams.forEach(view::addField);
         new ReturnNode(null, "返回", "Return", scope.getLastNode(), scope, Values.node(view));
     }
@@ -172,7 +172,7 @@ public class FieldsObjectMapping extends ObjectMapping {
     public void setName(String name) {
         super.setName(name);
         if (builtinTargetType != null)
-            builtinTargetType.setName(getTargetTypeName(getSourceType(), name));
+            builtinTargetType.setName(getTargetTypeName(getSourceKlass(), name));
     }
 
     public void setOverridden(List<ObjectMapping> overridden) {
@@ -215,11 +215,11 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     public void setFieldMappings(List<FieldMapping> fields) {
         this.fieldMappings.resetChildren(fields);
-        getTargetType().setFields(NncUtils.map(fields, FieldMapping::getTargetField));
+        getTargetKlass().setFields(NncUtils.map(fields, FieldMapping::getTargetField));
     }
 
     @Nullable
-    public ClassType getBuiltinTargetType() {
+    public Klass getBuiltinTargetType() {
         return builtinTargetType;
     }
 

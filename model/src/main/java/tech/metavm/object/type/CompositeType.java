@@ -56,10 +56,7 @@ public abstract class CompositeType extends Type {
 
     @Override
     protected final TypeParam getParam(SerializeContext serializeContext) {
-        try(var serContext = SerializeContext.enter()) {
-            getComponentTypes().forEach(serContext::writeType);
-            return getParamInternal();
-        }
+        return getParamInternal();
     }
 
     protected abstract TypeParam getParamInternal();

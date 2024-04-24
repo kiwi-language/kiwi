@@ -9,6 +9,7 @@ import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.type.CompositeTypeFacade;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.ContextUtil;
@@ -33,7 +34,7 @@ public class EntityContextBuilder {
     private boolean asyncLogProcessing;
     private DefContext defContext;
     private boolean childrenLazyLoading;
-    private TypeProvider typeProvider;
+    private TypeDefProvider typeDefProvider;
     private MappingProvider mappingProvider;
     private ParameterizedFlowProvider parameterizedFlowProvider;
     private CompositeTypeFacade compositeTypeFacade;
@@ -87,8 +88,8 @@ public class EntityContextBuilder {
         return this;
     }
 
-    public EntityContextBuilder typeProvider(TypeProvider typeProvider) {
-        this.typeProvider = typeProvider;
+    public EntityContextBuilder typeDefProvider(TypeDefProvider typeDefProvider) {
+        this.typeDefProvider = typeDefProvider;
         return this;
     }
 
@@ -113,8 +114,8 @@ public class EntityContextBuilder {
         if (defContext == null)
             defContext = ModelDefRegistry.getDefContext();
         var dep = new EntityInstanceContextBridge();
-        if(typeProvider == null)
-            typeProvider = dep;
+        if(typeDefProvider == null)
+            typeDefProvider = dep;
         if(mappingProvider == null)
             mappingProvider = dep;
         if(parameterizedFlowProvider == null)
@@ -124,7 +125,7 @@ public class EntityContextBuilder {
         var instanceContext = new InstanceContext(
                 appId, instanceStore, idInitializer, executor,
                 asyncLogProcessing, plugins, NncUtils.get(parent, IEntityContext::getInstanceContext),
-                typeProvider , mappingProvider,
+                typeDefProvider, mappingProvider,
                 parameterizedFlowProvider, compositeTypeFacade, childrenLazyLoading, cache,
                 eventQueue, readonly);
         return new EntityContext(instanceContext, parent, defContext);

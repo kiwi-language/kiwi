@@ -47,6 +47,6 @@ public class Values {
     }
 
     public static Value inputValue(InputNode node, int parameterIndex) {
-        return nodeProperty(node, node.getType().getFields().get(parameterIndex));
+        return nodeProperty(node, node.getType().resolve().getFields().get(parameterIndex));
     }
 }

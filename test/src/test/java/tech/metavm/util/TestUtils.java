@@ -23,9 +23,7 @@ import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.TypeManager;
-import tech.metavm.object.type.rest.dto.FieldDTO;
-import tech.metavm.object.type.rest.dto.GetTypeRequest;
-import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 
 import javax.sql.DataSource;
@@ -244,9 +242,9 @@ public class TestUtils {
 
         EntityUtils.visitGraph(List.of(root), o -> {
             if (o instanceof Entity entity && entity.isPhysicalIdNull()) {
-                var typeId =
-                        ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(entity).getId() : new MockId(1L);
-                entity.initId(DefaultPhysicalId.ofObject(ref.nextId++, 0L, typeId));
+                var typeKey =
+                        ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(entity).getTypeKey() : new AnyTypeKey();
+                entity.initId(DefaultPhysicalId.ofObject(ref.nextId++, 0L, typeKey));
             }
         });
     }
@@ -274,7 +272,7 @@ public class TestUtils {
             public Void visitDurableInstance(DurableInstance instance) {
                 if (!instance.isIdInitialized()) {
                     var id = idProvider.allocateOne(TestConstants.APP_ID, instance.getType());
-                    instance.initId(new DefaultPhysicalId(instance instanceof ArrayInstance, id, 0L, instance.getType().getId()));
+                    instance.initId(new DefaultPhysicalId(instance instanceof ArrayInstance, id, 0L, instance.getType().getTypeKey()));
                 }
                 return super.visitDurableInstance(instance);
             }
@@ -327,7 +325,7 @@ public class TestUtils {
 
     public static TypeDTO getViewType(TypeDTO type, TypeManager typeManager) {
         var defaultMapping = getDefaultMapping(type);
-        return typeManager.getType(new GetTypeRequest(defaultMapping.targetTypeId(), false)).type();
+        return typeManager.getType(new GetTypeRequest(defaultMapping.targetType(), false)).type();
     }
 
     public static ObjectMappingDTO getDefaultMapping(TypeDTO typeDTO) {
@@ -338,7 +336,7 @@ public class TestUtils {
     }
 
     public static String getDefaultViewTypeId(TypeDTO typeDTO) {
-        return getDefaultMapping(typeDTO).targetTypeId();
+        return getDefaultMapping(typeDTO).targetType();
     }
 
     public static String getMethodIdByCode(TypeDTO typeDTO, String methodCode) {
@@ -355,12 +353,12 @@ public class TestUtils {
         ).id();
     }
 
-    public static String getStaticMethod(TypeDTO typeDTO, String code, String...parameterTypeIds) {
-        var paramTypeRefList = List.of(parameterTypeIds);
+    public static String getStaticMethod(TypeDTO typeDTO, String code, String...parameterTypes) {
+        var paramTypeRefList = List.of(parameterTypes);
         return NncUtils.findRequired(typeDTO.getClassParam().flows(),
                 f -> code.equals(f.code()) &&
                         ((MethodParam) f.param()).isStatic() &&
-                        paramTypeRefList.equals(NncUtils.map(f.parameters(), ParameterDTO::typeId))
+                        paramTypeRefList.equals(NncUtils.map(f.parameters(), ParameterDTO::type))
         ).id();
     }
 
@@ -368,7 +366,7 @@ public class TestUtils {
         var paramTypeidList = List.of(parameterTypeIds);
         return NncUtils.findRequired(typeDTO.getClassParam().flows(),
                 f -> code.equals(f.code()) && paramTypeidList.equals(
-                        NncUtils.map(f.parameters(), ParameterDTO::typeId)
+                        NncUtils.map(f.parameters(), ParameterDTO::type)
                 )
         ).id();
     }

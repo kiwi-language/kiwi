@@ -16,7 +16,7 @@ import java.util.Set;
 
 public record InstanceDTO(
         @Nullable String id,
-        String typeId,
+        String type,
         String typeName,
         String title,
         @Nullable String sourceMappingId,
@@ -68,7 +68,7 @@ public record InstanceDTO(
 
 
     public InstanceDTO copyWithParam(InstanceParam param) {
-        return new InstanceDTO(id, typeId, typeName, title, sourceMappingId, param);
+        return new InstanceDTO(id, type, typeName, title, sourceMappingId, param);
     }
 
     @Override
@@ -76,12 +76,12 @@ public record InstanceDTO(
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         InstanceDTO that = (InstanceDTO) o;
-        return Objects.equals(id, that.id) && Objects.equals(typeId, that.typeId) && Objects.equals(typeName, that.typeName) && Objects.equals(title, that.title) && Objects.equals(param, that.param);
+        return Objects.equals(id, that.id) && Objects.equals(type, that.type) && Objects.equals(typeName, that.typeName) && Objects.equals(title, that.title) && Objects.equals(param, that.param);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, typeId, typeName, title, param);
+        return Objects.hash(id, type, typeName, title, param);
     }
 
 
@@ -135,7 +135,7 @@ public record InstanceDTO(
 
     public boolean valueEquals(InstanceDTO that, Set<String> newIds) {
         return (Objects.equals(id, that.id) || newIds.contains(id) && that.id == null || newIds.contains(that.id) && id == null)
-                && Objects.equals(typeId, that.typeId)
+                && Objects.equals(type, that.type)
                 && param.valueEquals(that.param, newIds);
     }
 

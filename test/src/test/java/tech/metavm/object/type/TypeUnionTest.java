@@ -16,12 +16,12 @@ public class TypeUnionTest extends TestCase {
 
     public void testIsAssignable() {
         var fooTypes = MockUtils.createFooTypes();
-        var fooType = fooTypes.fooType();
-        var barType = fooTypes.barType();
-        var bazType = fooTypes.bazType();
+        var fooType = fooTypes.fooType().getType();
+        var barType = fooTypes.barType().getType();
+        var bazType = fooTypes.bazType().getType();
         var livingBeingTypes = MockUtils.createLivingBeingTypes(false);
-        var livingBeingType = livingBeingTypes.livingBeingType();
-        var humanType = livingBeingTypes.humanType();
+        var livingBeingType = livingBeingTypes.livingBeingType().getType();
+        var humanType = livingBeingTypes.humanType().getType();
 
         UnionType unionType = new UnionType(null, Set.of(fooType, barType, livingBeingType));
         Assert.assertTrue(unionType.isAssignableFrom(fooType, null));

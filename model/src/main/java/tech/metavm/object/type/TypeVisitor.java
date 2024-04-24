@@ -10,7 +10,7 @@ public interface TypeVisitor<R,S> {
 
     R visitUnionType(UnionType type, S s);
 
-    R visitTypeVariable(TypeVariable type, S s);
+    R variableVariableType(VariableType type, S s);
 
     R visitIntersectionType(IntersectionType type, S s);
 

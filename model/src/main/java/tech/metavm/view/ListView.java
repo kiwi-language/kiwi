@@ -1,7 +1,7 @@
 package tech.metavm.view;
 
 import tech.metavm.entity.*;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 import tech.metavm.entity.ReadWriteArray;
@@ -26,7 +26,7 @@ public class ListView extends Entity {
     @EntityField(value = "编号",asTitle = true)
     private String code;
     @EntityField("类型")
-    private final ClassType type;
+    private final Klass type;
     @EntityField("优先级")
     private int priority;
     @ChildEntity("可见字段")
@@ -34,7 +34,7 @@ public class ListView extends Entity {
     @ChildEntity("搜索字段")
     private final ReadWriteArray<Field> searchableFields = addChild(new ReadWriteArray<>(Field.class), "searchableFields");
 
-    public ListView(String code, ClassType type) {
+    public ListView(String code, Klass type) {
         this.code = code;
         this.type = type;
     }
@@ -55,7 +55,7 @@ public class ListView extends Entity {
         this.priority = priority;
     }
 
-    public ClassType getType() {
+    public Klass getType() {
         return type;
     }
 

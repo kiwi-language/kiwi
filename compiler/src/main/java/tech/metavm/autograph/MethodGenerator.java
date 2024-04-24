@@ -5,7 +5,10 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.NativeFunctions;
-import tech.metavm.expression.*;
+import tech.metavm.expression.Expression;
+import tech.metavm.expression.ExpressionTypeMap;
+import tech.metavm.expression.Expressions;
+import tech.metavm.expression.TypeNarrower;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.*;
 import tech.metavm.util.InternalException;
@@ -62,7 +65,7 @@ public class MethodGenerator {
         @Override
         public ArrayType getArrayType(Type elementType, ArrayKind kind, @Nullable Long tmpId) {
             var type = delegate.getArrayType(elementType, kind, tmpId);
-            if(type.isCaptured() && capturedCompositeTypes.add(type))
+            if (type.isCaptured() && capturedCompositeTypes.add(type))
                 method.addCapturedCompositeType(type);
             return type;
         }
@@ -70,7 +73,7 @@ public class MethodGenerator {
         @Override
         public FunctionType getFunctionType(List<Type> parameterTypes, Type returnType, @Nullable Long tmpId) {
             var type = delegate.getFunctionType(parameterTypes, returnType, tmpId);
-            if(type.isCaptured() && capturedCompositeTypes.add(type))
+            if (type.isCaptured() && capturedCompositeTypes.add(type))
                 method.addCapturedCompositeType(type);
             return type;
         }
@@ -78,7 +81,7 @@ public class MethodGenerator {
         @Override
         public UnionType getUnionType(Set<Type> types, @Nullable Long tmpId) {
             var type = delegate.getUnionType(types, tmpId);
-            if(type.isCaptured() && capturedCompositeTypes.add(type))
+            if (type.isCaptured() && capturedCompositeTypes.add(type))
                 method.addCapturedCompositeType(type);
             return type;
         }
@@ -86,7 +89,7 @@ public class MethodGenerator {
         @Override
         public IntersectionType getIntersectionType(Set<Type> types, @Nullable Long tmpId) {
             var type = delegate.getIntersectionType(types, tmpId);
-            if(type.isCaptured() && capturedCompositeTypes.add(type))
+            if (type.isCaptured() && capturedCompositeTypes.add(type))
                 method.addCapturedCompositeType(type);
             return type;
         }
@@ -94,17 +97,18 @@ public class MethodGenerator {
         @Override
         public UncertainType getUncertainType(Type lowerBound, Type upperBound, @Nullable Long tmpId) {
             var type = delegate.getUncertainType(lowerBound, upperBound, tmpId);
-            if(type.isCaptured() && capturedCompositeTypes.add(type))
+            if (type.isCaptured() && capturedCompositeTypes.add(type))
                 method.addCapturedCompositeType(type);
             return type;
         }
 
         @Override
-        public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage, DTOProvider dtoProvider) {
-            var type = delegate.getParameterizedType(template, typeArguments, stage, dtoProvider);
-            if(type.isCaptured() && capturedCompositeTypes.add(type))
+        public Klass getParameterizedType(Klass template, List<? extends Type> typeArguments, ResolutionStage stage, DTOProvider dtoProvider) {
+            var klass = delegate.getParameterizedType(template, typeArguments, stage, dtoProvider);
+            var type = klass.getType();
+            if (type.isCaptured() && capturedCompositeTypes.add(type))
                 method.addCapturedCompositeType(type);
-            return type;
+            return klass;
         }
     }
 
@@ -152,7 +156,7 @@ public class MethodGenerator {
                 (TryNode) scope().getLastNode(),
                 scope()
         );
-        FieldBuilder.newBuilder("异常", "exception", node.getType(),
+        FieldBuilder.newBuilder("异常", "exception", node.getKlass(),
                         StandardTypes.getNullableThrowableType())
                 .build();
         return node;
@@ -232,8 +236,8 @@ public class MethodGenerator {
         if (exprTypes != null) {
             mergeNode.mergeExpressionTypes(exprTypes);
         }
-        var result =  variableTable.exitCondSection(branchNode, outputVars);
-        if(result.values().iterator().next().yield() != null) {
+        var result = variableTable.exitCondSection(branchNode, outputVars);
+        if (result.values().iterator().next().yield() != null) {
             var yields = result.values().stream().map(BranchInfo::yield)
                     .filter(Objects::nonNull)
                     .toList();
@@ -241,7 +245,7 @@ public class MethodGenerator {
                     yields.stream().map(Expression::getType).collect(Collectors.toSet()),
                     expressionResolver.getCompositeTypeFacade()
             );
-            var yieldField = FieldBuilder.newBuilder("yield", "yield", mergeNode.getType(), yieldType).build();
+            var yieldField = FieldBuilder.newBuilder("yield", "yield", mergeNode.getKlass(), yieldType).build();
             new MergeNodeField(
                     yieldField, mergeNode,
                     branchNode.getBranches()
@@ -255,7 +259,7 @@ public class MethodGenerator {
                                     )
                             ))
             );
-            if(isInsideBranch() && !isSwitchExpression) {
+            if (isInsideBranch() && !isSwitchExpression) {
                 setYield(Expressions.nodeProperty(mergeNode, yieldField));
             }
         }
@@ -337,7 +341,7 @@ public class MethodGenerator {
         return setNodeExprTypes(node);
     }
 
-    UpdateStaticNode createUpdateStatic(ClassType klass, Map<Field, Expression> fields) {
+    UpdateStaticNode createUpdateStatic(Klass klass, Map<Field, Expression> fields) {
         var node = new UpdateStaticNode(
                 null, nextName("UpdateStatic"), null,
                 scope().getLastNode(), scope(), klass
@@ -346,7 +350,7 @@ public class MethodGenerator {
         return setNodeExprTypes(node);
     }
 
-    AddObjectNode createAddObject(ClassType klass) {
+    AddObjectNode createAddObject(Klass klass) {
         return setNodeExprTypes(new AddObjectNode(null, nextName("Add"),
                 null, false, false, klass,
                 scope().getLastNode(), scope()));
@@ -429,7 +433,7 @@ public class MethodGenerator {
     }
 
     IndexScanNode createIndexScan(Index index, IndexQueryKey from, IndexQueryKey to) {
-        var arrayType = compositeTypeFacade.getArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
+        var arrayType = compositeTypeFacade.getArrayType(index.getDeclaringType().getType(), ArrayKind.READ_ONLY);
         return setNodeExprTypes(new IndexScanNode(
                 null, nextName("IndexScan"), null, arrayType, scope().getLastNode(),
                 scope(), index, from, to
@@ -438,9 +442,9 @@ public class MethodGenerator {
 
     public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
         var listType = compositeTypeFacade.getParameterizedType(
-                StandardTypes.getReadWriteListType(), List.of(index.getDeclaringType()));
+                StandardTypes.getReadWriteListType(), List.of(index.getDeclaringType().getType()));
         return setNodeExprTypes(new IndexSelectNode(
-                null, nextName("IndexSelect"), null, listType,
+                null, nextName("IndexSelect"), null, listType.getType(),
                 scope().getLastNode(), scope(), index, key
         ));
     }
@@ -452,17 +456,18 @@ public class MethodGenerator {
         ));
     }
 
-    public Field newTemproryField(ClassType klass, String name, Type type) {
+    public Field newTemproryField(Klass klass, String name, Type type) {
         return FieldBuilder.newBuilder(name, null, klass, type).build();
     }
 
-    public ClassType newTemporaryType(String namePrefix) {
+    public Klass newTemporaryType(String namePrefix) {
         String name = namePrefix + "_" + NncUtils.randomNonNegative();
         return ClassTypeBuilder.newBuilder(name, null)
                 .anonymous(true)
                 .ephemeral(true)
                 .build();
     }
+
     MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments, CompositeTypeFacade compositeTypeFacade) {
         return createMethodCall(self, method, arguments, compositeTypeFacade, List.of(), List.of());
     }
@@ -484,7 +489,7 @@ public class MethodGenerator {
     }
 
     NodeRT createTypeCast(Expression operand, Type targetType) {
-        if(operand.getType().isNullable() && !targetType.isNullable())
+        if (operand.getType().isNullable() && !targetType.isNullable())
             targetType = compositeTypeFacade.getUnionType(Set.of(targetType, StandardTypes.getNullType()));
         return createFunctionCall(
                 expressionResolver.getParameterizedFlowProvider().getParameterizedFlow(NativeFunctions.getTypeCast(), List.of(targetType)),
@@ -507,13 +512,13 @@ public class MethodGenerator {
                 function, args));
     }
 
-    LambdaNode createLambda(List<Parameter> parameters, Type returnType, ClassType functionalInterface) {
+    LambdaNode createLambda(List<Parameter> parameters, Type returnType, Klass functionalInterface) {
         var funcType = compositeTypeFacade.getFunctionType(
                 NncUtils.map(parameters, Parameter::getType), returnType
         );
         var node = new LambdaNode(
                 null, nextName("Lambda"), null, scope().getLastNode(), scope(),
-                parameters, returnType, funcType, functionalInterface
+                parameters, returnType, functionalInterface.getType()
         );
         node.createSAMImpl(compositeTypeFacade, compositeTypeFacade);
         return node;
@@ -543,11 +548,11 @@ public class MethodGenerator {
 
     public SelfNode createSelf() {
         return setNodeExprTypes(new SelfNode(null, nextName("Self"), null,
-                SelfNode.getSelfType((Method) scope().getFlow(), compositeTypeFacade),
+                ((Method) scope().getFlow()).getDeclaringType().getType(),
                 scope().getLastNode(), scope()));
     }
 
-    public  <T extends NodeRT> T setNodeExprTypes(T node) {
+    public <T extends NodeRT> T setNodeExprTypes(T node) {
         var scope = scope();
         var lastNode = scope.getLastNode();
         if (lastNode == null) {
@@ -561,9 +566,9 @@ public class MethodGenerator {
     private String nextName(String nameRoot) {
         var pieces = nameRoot.split("_");
         int n;
-        if(NncUtils.isDigits(pieces[pieces.length-1])) {
-            nameRoot = Arrays.stream(pieces).limit(pieces.length-1).collect(Collectors.joining("_"));
-            n = Integer.parseInt(pieces[pieces.length-1]);
+        if (NncUtils.isDigits(pieces[pieces.length - 1])) {
+            nameRoot = Arrays.stream(pieces).limit(pieces.length - 1).collect(Collectors.joining("_"));
+            n = Integer.parseInt(pieces[pieces.length - 1]);
         } else {
             n = 0;
         }

@@ -20,7 +20,7 @@ public class TypeProviders {
     public final MockParameterizedTypeRepository parameterizedTypeProvider = new MockParameterizedTypeRepository(this);
     public final MockParameterizedFlowProvider parameterizedFlowProvider = new MockParameterizedFlowProvider(this);
     public final EntityRepository entityRepository = new MockEntityRepository(typeRegistry);
-    public final MockTypeRepository typeRepository = new MockTypeRepository();
+    public final MockTypeDefRepository typeDefRepository = new MockTypeDefRepository();
 
     public CompositeTypeFacade createFacade() {
         return new CompositeTypeFacadeImpl(
@@ -38,28 +38,23 @@ public class TypeProviders {
                 template,
                 typeParameters,
                 typeArguments,
-                stage,
-                entityRepository,
-                createFacade(),
-                parameterizedTypeProvider,
-                parameterizedFlowProvider,
-                new MockDTOProvider()
+                stage
         );
     }
 
-    public void addType(Type type) {
-        entityRepository.bind(type);
-        typeRepository.save(type);
-        switch (type) {
+    public void addTypeDef(TypeDef typeDef) {
+        entityRepository.bind(typeDef);
+        typeDefRepository.save(typeDef);
+        /*switch (typeDef) {
             case ArrayType arrayType -> arrayTypeProvider.add(arrayType);
             case ClassType classType when !classType.getTypeArguments().isEmpty() ->
-                parameterizedTypeProvider.add(classType);
+                parameterizedTypeProvider.add(classType.resolve());
             case UnionType unionType -> unionTypeProvider.add(unionType);
             case IntersectionType intersectionType -> intersectionTypeProvider.add(intersectionType);
             case FunctionType functionType -> functionTypeProvider.add(functionType);
             case UncertainType uncertainType -> uncertainTypeProvider.add(uncertainType);
             default -> {}
-        }
+        }*/
     }
 
 }

@@ -14,6 +14,7 @@ import tech.metavm.expression.antlr.MetaVMParser;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.query.OperatorTypes;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Constants;
@@ -28,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 
 public class ExpressionParser {
 
-    public static Expression parse(@NotNull ClassType type, @NotNull String expression, @NotNull IEntityContext entityContext) {
+    public static Expression parse(@NotNull Klass type, @NotNull String expression, @NotNull IEntityContext entityContext) {
         return parse(expression, TypeParsingContext.create(type, entityContext));
     }
 
@@ -144,11 +145,11 @@ public class ExpressionParser {
     }
 
     private StaticPropertyExpression parseStaticField(MetaVMParser.ExpressionContext expression) {
-        var type = (ClassType) parseTypeType(expression.typeType(0));
+        var klass = ((ClassType) parseTypeType(expression.typeType(0))).resolve();
         String identifier = expression.identifier().IDENTIFIER().getText();
         Field field = identifier.startsWith(Constants.CONSTANT_ID_PREFIX) ?
-                type.getField(Id.parse(identifier.substring(Constants.CONSTANT_ID_PREFIX.length()))) :
-                type.getFieldByName(identifier);
+                klass.getField(Id.parse(identifier.substring(Constants.CONSTANT_ID_PREFIX.length()))) :
+                klass.getFieldByName(identifier);
         return new StaticPropertyExpression(field);
     }
 
@@ -211,13 +212,13 @@ public class ExpressionParser {
             if (identifier.IDENTIFIER() != null) {
                 String name = identifier.IDENTIFIER().getText();
                 if (name.startsWith(Constants.CONSTANT_ID_PREFIX)) {
-                    return context.getTypeProvider().getType(
+                    return context.getTypeDefProvider().getKlass(
                             Id.parse(name.substring(Constants.CONSTANT_ID_PREFIX.length()))
-                    );
+                    ).getType();
                 } else {
                     String className = classType.typeArguments().isEmpty() ? name :
                             name + classType.typeArguments(0).getText();
-                    return requireNonNull(context.getTypeProvider()).findClassTypeByName(className);
+                    return requireNonNull(context.getTypeDefProvider().findKlassByName(className)).getType();
                 }
             }
         }

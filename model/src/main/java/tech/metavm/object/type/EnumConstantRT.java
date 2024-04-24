@@ -21,11 +21,11 @@ public class EnumConstantRT {
         this.instance = instance;
     }
 
-    public EnumConstantRT(EnumConstantDTO enumConstantDTO, ClassType type) {
+    public EnumConstantRT(EnumConstantDTO enumConstantDTO, Klass type) {
         this(type, enumConstantDTO.name(), enumConstantDTO.ordinal());
     }
 
-    public EnumConstantRT(ClassType type, String name, int ordinal) {
+    public EnumConstantRT(Klass type, String name, int ordinal) {
         this(
                 ClassInstance.create(
                     Map.of(StandardTypes.getEnumNameField(type),
@@ -47,11 +47,11 @@ public class EnumConstantRT {
     }
 
     public String getName() {
-        return instance.getStringField(StandardTypes.getEnumNameField(instance.getType())).getValue();
+        return instance.getStringField(StandardTypes.getEnumNameField(instance.getKlass())).getValue();
     }
 
     public int getOrdinal() {
-        return instance.getLongField(StandardTypes.getEnumOrdinalField(instance.getType())).getValue().intValue();
+        return instance.getLongField(StandardTypes.getEnumOrdinalField(instance.getKlass())).getValue().intValue();
     }
 
     public void update(EnumConstantDTO update) {
@@ -60,11 +60,11 @@ public class EnumConstantRT {
     }
 
     public void setName(String name) {
-        instance.setField(StandardTypes.getEnumNameField(instance.getType()), Instances.stringInstance(name));
+        instance.setField(StandardTypes.getEnumNameField(instance.getKlass()), Instances.stringInstance(name));
     }
 
     public void setOrdinal(int ordinal) {
-        instance.setField(StandardTypes.getEnumOrdinalField(instance.getType()), Instances.longInstance(ordinal));
+        instance.setField(StandardTypes.getEnumOrdinalField(instance.getKlass()), Instances.longInstance(ordinal));
     }
 
     public EnumConstantDTO toDTO() {

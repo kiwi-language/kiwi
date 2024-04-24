@@ -61,7 +61,7 @@ public class CompositeTypeFacadeImpl implements CompositeTypeFacade {
     }
 
     @Override
-    public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage resolutionStage, DTOProvider dtoProvider) {
+    public Klass getParameterizedType(Klass template, List<? extends Type> typeArguments, ResolutionStage resolutionStage, DTOProvider dtoProvider) {
         return parameterizedTypeRepository.getParameterizedType(template, typeArguments, resolutionStage, dtoProvider);
     }
 

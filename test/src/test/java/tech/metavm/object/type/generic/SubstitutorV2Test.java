@@ -11,9 +11,9 @@ import tech.metavm.expression.NodeExpression;
 import tech.metavm.expression.PropertyExpression;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.DefaultPhysicalId;
-import tech.metavm.object.instance.core.TaggedPhysicalId;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.mocks.TypeProviders;
+import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.Null;
 import tech.metavm.util.TestUtils;
@@ -37,22 +37,22 @@ public class SubstitutorV2Test extends TestCase {
         var voidType = new PrimitiveType(PrimitiveKind.VOID);
 
         var typeVar = new TypeVariable(null, "E", "E", DummyGenericDeclaration.INSTANCE);
-        ClassType foo = ClassTypeBuilder.newBuilder("Foo", "Foo")
+        Klass foo = ClassTypeBuilder.newBuilder("Foo", "Foo")
                 .typeParameters(typeVar)
                 .build();
 
-        var valueField = FieldBuilder.newBuilder("value", "value", foo, typeVar)
+        var valueField = FieldBuilder.newBuilder("value", "value", foo, typeVar.getType())
                 .nullType(nullType)
                 .build();
         {
-            var getValueFlow = MethodBuilder.newBuilder(foo, "getValue", "getValue", null)
-                    .type(new FunctionType(null, List.of(), typeVar))
-                    .staticType(new FunctionType(null, List.of(foo), typeVar))
-                    .returnType(typeVar)
+            var getValueFlow = MethodBuilder.newBuilder(foo, "getValue", "getValue")
+                    .type(new FunctionType(null, List.of(), typeVar.getType()))
+                    .staticType(new FunctionType(null, List.of(foo.getType()), typeVar.getType()))
+                    .returnType(typeVar.getType())
                     .build();
-            var selfNode = new SelfNode(null, "self", null, foo, null, getValueFlow.getRootScope());
+            var selfNode = new SelfNode(null, "self", null, foo.getType(), null, getValueFlow.getRootScope());
             var valueNode = new ValueNode(
-                    null, "value", null, typeVar, selfNode, getValueFlow.getRootScope(),
+                    null, "value", null, typeVar.getType(), selfNode, getValueFlow.getRootScope(),
                     Values.expression(
                             new PropertyExpression(new NodeExpression(selfNode), valueField)
                     )
@@ -64,18 +64,18 @@ public class SubstitutorV2Test extends TestCase {
         }
 
         {
-            var flow = MethodBuilder.newBuilder(foo, "setValue", "setValue", null)
-                    .type(new FunctionType(null, List.of(typeVar), voidType))
-                    .staticType(new FunctionType(null, List.of(foo, typeVar), voidType))
+            var flow = MethodBuilder.newBuilder(foo, "setValue", "setValue")
+                    .type(new FunctionType(null, List.of(typeVar.getType()), voidType))
+                    .staticType(new FunctionType(null, List.of(foo.getType(), typeVar.getType()), voidType))
                     .returnType(voidType)
-                    .parameters(new Parameter(null, "value", "value", typeVar))
+                    .parameters(new Parameter(null, "value", "value", typeVar.getType()))
                     .build();
-            var selfNode = new SelfNode(null, "self", null, foo, null, flow.getRootScope());
+            var selfNode = new SelfNode(null, "self", null, foo.getType(), null, flow.getRootScope());
             var inputType = ClassTypeBuilder.newBuilder("setValueInput", "setValueInput")
                     .ephemeral(true)
                     .anonymous(true)
                     .build();
-            var inputValueField = FieldBuilder.newBuilder("value", "value", inputType, typeVar)
+            var inputValueField = FieldBuilder.newBuilder("value", "value", inputType, typeVar.getType())
                     .nullType(nullType)
                     .build();
             var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getRootScope());
@@ -98,7 +98,7 @@ public class SubstitutorV2Test extends TestCase {
             throw new InternalException("Type not found: " + t.getTypeName());
         });
 
-        stringType.initId(DefaultPhysicalId.ofObject(1L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        stringType.initId(DefaultPhysicalId.ofObject(1L, 0L, new ClassTypeKey("1")));
 
         var typeProviders = new TypeProviders();
 
@@ -108,25 +108,20 @@ public class SubstitutorV2Test extends TestCase {
 
         var subst = new SubstitutorV2(
                 foo, List.of(typeVar), List.of(stringType),
-                ResolutionStage.DECLARATION,
-                entityRepo,
-                compositeTypeFacade,
-                typeProviders.parameterizedTypeProvider,
-                typeProviders.parameterizedFlowProvider,
-                new MockDTOProvider()
+                ResolutionStage.DECLARATION
         );
 
-        var pType = (ClassType) foo.accept(subst);
+        var pType = (Klass) foo.accept(subst);
         try (var serContext = SerializeContext.enter()) {
             serContext.includingCode(true);
-            serContext.writeType(pType);
+            serContext.writeTypeDef(pType);
             TestUtils.writeJson(JSON_FILE_PATH, serContext.getTypes());
         }
     }
 
     public void testFlow() {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        var barMethod = MethodBuilder.newBuilder(fooType, "bar", "bar", typeProviders.functionTypeProvider)
+        var barMethod = MethodBuilder.newBuilder(fooType, "bar", "bar")
                 .typeParameters(List.of(
                         new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE)
                 ))

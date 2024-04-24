@@ -8,9 +8,7 @@ import tech.metavm.expression.Expressions;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.CompositeTypeFacade;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.object.view.rest.dto.ObjectMappingParam;
 import tech.metavm.util.InternalException;
@@ -27,10 +25,14 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
             addChild(new ReadWriteArray<>(ObjectMapping.class), "overridden");
     @EntityField("是否预置")
     private final boolean builtin;
+    private final Klass sourceKlass;
+    private final Klass targetKlass;
 
-    public ObjectMapping(Long tmpId, String name, @Nullable String code, ClassType sourceType, ClassType targetType, boolean builtin) {
-        super(tmpId, name, code, sourceType, targetType);
+    public ObjectMapping(Long tmpId, String name, @Nullable String code, Klass sourceKlass, Klass targetKlass, boolean builtin) {
+        super(tmpId, name, code, sourceKlass.getType(), targetKlass.getType());
         this.builtin = builtin;
+        this.sourceKlass = sourceKlass;
+        this.targetKlass = targetKlass;
     }
 
     @Override
@@ -38,7 +40,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var scope = Objects.requireNonNull(mapper).newEphemeralRootScope();
         var input = Nodes.input(mapper, compositeTypeFacade);
         var actualSourceType = (ClassType) mapper.getParameter(0).getType();
-        var readMethod = getSourceMethod(actualSourceType, getReadMethod());
+        var readMethod = getSourceMethod(actualSourceType.resolve(), getReadMethod());
         var view = new MethodCallNode(
                 null, "视图", "view",
                 targetType,
@@ -53,9 +55,9 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
 
     protected Flow generateUnmappingCode(CompositeTypeFacade compositeTypeFacade) {
         Objects.requireNonNull(unmapper);
-        var actualSourceType = (ClassType) unmapper.getReturnType();
-        var fromViewMethod = findSourceMethod(actualSourceType, findFromViewMethod());
-        var writeMethod = getSourceMethod(actualSourceType, getWriteMethod());
+        var actualSourceKlass = ((ClassType) unmapper.getReturnType()).resolve();
+        var fromViewMethod = findSourceMethod(actualSourceKlass, findFromViewMethod());
+        var writeMethod = getSourceMethod(actualSourceKlass, getWriteMethod());
         var scope = unmapper.newEphemeralRootScope();
         var input = Nodes.input(unmapper, compositeTypeFacade);
         var isSourcePresent = Nodes.functionCall(
@@ -104,24 +106,24 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         return unmapper;
     }
 
-    private Method getSourceMethod(ClassType actualSourceType, Method method) {
+    private Method getSourceMethod(Klass actualSourceType, Method method) {
         return Objects.requireNonNull(findSourceMethod(actualSourceType, method));
     }
 
     @Override
-    protected ClassType getClassTypeForDeclaration() {
-        return getSourceType();
+    protected Klass getClassTypeForDeclaration() {
+        return sourceKlass;
     }
 
-    private @Nullable Method findSourceMethod(ClassType actualSourceType, Method method) {
+    private @Nullable Method findSourceMethod(Klass actualSourceKlass, Method method) {
         if(method == null)
             return null;
         var sourceType = getSourceType();
-        if(sourceType == actualSourceType)
+        if(actualSourceKlass.isType(sourceType))
             return method;
         else {
-            assert actualSourceType.getEffectiveTemplate() == sourceType.getEffectiveTemplate();
-            return actualSourceType.findMethodByVerticalTemplate(method.getEffectiveVerticalTemplate());
+            assert actualSourceKlass.getEffectiveTemplate().isType(sourceType.getEffectiveTemplate());
+            return actualSourceKlass.findMethodByVerticalTemplate(method.getEffectiveVerticalTemplate());
         }
     }
 
@@ -131,7 +133,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     }
 
     private Method findFromViewMethod() {
-        return NncUtils.find(getSourceType().getAllMethods(), this::isFromViewMethod);
+        return NncUtils.find(sourceKlass.getAllMethods(), this::isFromViewMethod);
     }
 
     private boolean isFromViewMethod(Method method) {
@@ -154,6 +156,14 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         return (ClassType) super.getSourceType();
     }
 
+    public Klass getSourceKlass() {
+        return sourceKlass;
+    }
+
+    public Klass getTargetKlass() {
+        return targetKlass;
+    }
+
     public ClassType getTargetType() {
         return (ClassType) super.getTargetType();
     }
@@ -171,8 +181,8 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                 serializeContext.getId(this),
                 getName(),
                 getCode(),
-                serializeContext.getId(getSourceType()),
-                serializeContext.getId(getTargetType()),
+                getSourceType().toTypeExpression(serializeContext),
+                getTargetType().toTypeExpression(serializeContext),
                 isDefault(),
                 isBuiltin(),
                 NncUtils.map(overridden, Entity::getStringId),
@@ -183,11 +193,11 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     protected abstract ObjectMappingParam getParam(SerializeContext serializeContext);
 
     public boolean isDefault() {
-        return getSourceType().getDefaultMapping() == this;
+        return sourceKlass.getDefaultMapping() == this;
     }
 
     public void setDefault() {
-        getSourceType().setDefaultMapping(this);
+        sourceKlass.setDefaultMapping(this);
     }
 
     public String getLocalKey(@NotNull BuildKeyContext context) {

@@ -23,15 +23,15 @@ public class AddObjectNode extends ScopeNode implements NewNode {
 
     public static AddObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         AddObjectNodeParam param = nodeDTO.getParam();
-        ClassType type = context.getClassType(Id.parse(param.getTypeId()));
+        var klass = (Klass) context.getKlass(param.getType());
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         AddObjectNode node = (AddObjectNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new AddObjectNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
                     NncUtils.orElse(param.isInitializeArrayChildren(), false), param.isEphemeral(),
-                    type, prev, scope);
+                    klass, prev, scope);
         } else {
-            node.setOutputType(type);
+            node.setKlass(klass);
             node.setEphemeral(param.isEphemeral());
             node.setInitializeArrayChildren(param.isInitializeArrayChildren());
         }
@@ -40,7 +40,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
                 fp -> new FieldParam(context.getField(Id.parse(fp.fieldId())), fp.value(), parsingContext)
         ));
         var parentRef = param.getParentRef() != null ?
-                ParentRef.create(param.getParentRef(), parsingContext, context, type) : null;
+                ParentRef.create(param.getParentRef(), parsingContext, context, klass.getType()) : null;
         node.setParentRef(parentRef);
         return node;
     }
@@ -55,12 +55,15 @@ public class AddObjectNode extends ScopeNode implements NewNode {
     @EntityField("是否临时")
     private boolean ephemeral;
 
+    private Klass klass;
+
     @ChildEntity("字段列表")
     private final ChildArray<FieldParam> fields = addChild(new ChildArray<>(FieldParam.class), "fields");
 
-    public AddObjectNode(Long tmpId, String name, @Nullable String code, boolean initializeArrayChildren, boolean ephemeral, ClassType type, NodeRT prev,
+    public AddObjectNode(Long tmpId, String name, @Nullable String code, boolean initializeArrayChildren, boolean ephemeral, Klass klass, NodeRT prev,
                          ScopeRT scope) {
-        super(tmpId, name, code, type, prev, scope, false);
+        super(tmpId, name, code, klass.getType(), prev, scope, false);
+        this.klass = klass;
         this.initializeArrayChildren = initializeArrayChildren;
         this.ephemeral = ephemeral;
     }
@@ -90,9 +93,11 @@ public class AddObjectNode extends ScopeNode implements NewNode {
 
     @Override
     public String check0() {
-        var fieldParamMap = NncUtils.toMap(fields, FieldParam::getField, Function.identity());
+        var fieldParamMap = NncUtils.toMap(fields, f -> f.getField().getEffectiveTemplate(), Function.identity());
+        var klass = getType().getKlass();
+        var allFields = NncUtils.map(klass.getAllFields(), Field::getEffectiveTemplate);
         ErrorBuilder errorBuffer = new ErrorBuilder();
-        for (Field field : getType().getAllFields()) {
+        for (var field : allFields) {
             if (field.getType().isNotNull() && !fieldParamMap.containsKey(field)) {
                 errorBuffer.addError(String.format("必填字段'%s'未配置", field.getName()));
             }
@@ -105,7 +110,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
     }
 
     public void addField(FieldParam fieldParam) {
-        NncUtils.requireTrue(fieldParam.getField().getDeclaringType() == getType()
+        NncUtils.requireTrue(fieldParam.getField().getDeclaringType() == klass
                 && fields.get(FieldParam::getField, fieldParam.getField()) == null
         );
         fields.addChild(fieldParam);
@@ -117,27 +122,32 @@ public class AddObjectNode extends ScopeNode implements NewNode {
 
     @Override
     protected void setOutputType(@Nullable Type outputType) {
-        NncUtils.requireTrue(outputType instanceof ClassType);
-        if (outputType != this.getType())
+        throw new UnsupportedOperationException();
+    }
+
+    public void setKlass(Klass klass) {
+        if(klass != null) {
+            this.klass = klass;
             this.fields.clear();
-        super.setOutputType(outputType);
+            super.setOutputType(klass.getType());
+        }
     }
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var parentRef = NncUtils.get(this.parentRef, p -> p.evaluate(frame));
-        var instance = ClassInstanceBuilder.newBuilder(getType())
+        var instance = ClassInstanceBuilder.newBuilder(klass)
                 .parentRef(parentRef)
                 .ephemeral(ephemeral)
                 .build();
         var fieldParamMap = NncUtils.toMap(fields, FieldParam::getField, Function.identity());
-        for (Field field : getType().getAllFields()) {
+        for (Field field : klass.getAllFields()) {
             var fieldParam = fieldParamMap.get(field);
             instance.initField(field,
                     NncUtils.getOrElse(fieldParam, fp -> fp.evaluate(frame), Instances.nullInstance()));
         }
         if (initializeArrayChildren) {
-            for (Field field : getType().getAllFields()) {
+            for (Field field : klass.getAllFields()) {
                 if (field.isChild()
                         && field.getType() instanceof ArrayType arrayType
                         && arrayType.getKind() != ArrayKind.READ_ONLY) {
@@ -182,7 +192,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
     }
 
     public void setFields(List<FieldParam> fields) {
-        NncUtils.requireTrue(NncUtils.allMatch(fields, f -> f.getField().getDeclaringType() == getType()));
+        NncUtils.requireTrue(NncUtils.allMatch(fields, f -> f.getField().getDeclaringType() == klass));
         this.fields.resetChildren(fields);
     }
 

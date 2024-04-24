@@ -3,19 +3,20 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.type.TypeVariable;
+import tech.metavm.object.type.VariableType;
 
 public class TypeVariableDef extends ModelDef<Object, ClassInstance> {
 
-    private final TypeVariable type;
+    private final TypeVariable variable;
 
-    public TypeVariableDef(java.lang.reflect.TypeVariable<?> javaTypeVariable, TypeVariable type) {
+    public TypeVariableDef(java.lang.reflect.TypeVariable<?> javaTypeVariable, TypeVariable variable) {
         super(Object.class, javaTypeVariable, ClassInstance.class);
-        this.type = type;
+        this.variable = variable;
     }
 
     @Override
-    public TypeVariable getType() {
-        return type;
+    public VariableType getType() {
+        return variable.getType();
     }
 
     @Override

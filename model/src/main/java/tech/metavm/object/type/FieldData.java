@@ -16,7 +16,7 @@ public class FieldData extends Entity {
     public static final IndexDef<FieldData> IDX_DECLARING_TYPE = IndexDef.create(FieldData.class, "declaringType");
 
     public static FieldData fromFieldDTO(FieldDTO fieldDTO, IEntityContext context) {
-        var declaringType = context.getClassType(fieldDTO.declaringTypeId());
+        var declaringType = context.getKlass(fieldDTO.declaringTypeId());
         var fieldType = context.getType(fieldDTO.typeId());
         var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
         var column = declaringType.allocateColumn(fieldType, null);
@@ -32,7 +32,7 @@ public class FieldData extends Entity {
     private final String code;
     private final Column column;
     private final boolean unique;
-    private final ClassType declaringType;
+    private final Klass declaringType;
     private final Access access;
     private final Type type;
     private final boolean isChild;
@@ -41,7 +41,7 @@ public class FieldData extends Entity {
     @Nullable
     private final Instance defaultValue;
 
-    public FieldData(Long tmpId, String name, @Nullable String code, Column column, boolean unique, ClassType declaringType, Access access, Type type, boolean isChild, boolean isStatic, Instance staticValue, @Nullable Instance defaultValue) {
+    public FieldData(Long tmpId, String name, @Nullable String code, Column column, boolean unique, Klass declaringType, Access access, Type type, boolean isChild, boolean isStatic, Instance staticValue, @Nullable Instance defaultValue) {
         super(tmpId);
         this.name = name;
         this.code = code;
@@ -73,7 +73,7 @@ public class FieldData extends Entity {
         return unique;
     }
 
-    public ClassType getDeclaringType() {
+    public Klass getDeclaringType() {
         return declaringType;
     }
 

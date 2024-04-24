@@ -1,7 +1,6 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.natives.ListNative;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
@@ -21,11 +20,10 @@ public class ValueFormatter {
 
     public static Instance parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
         Type actualType;
-        if (!instanceDTO.isNew()) {
+        if (!instanceDTO.isNew())
             actualType = context.get(instanceDTO.parseId()).getType();
-        } else {
-            actualType = context.getTypeProvider().getType(instanceDTO.typeId());
-        }
+        else
+            actualType = TypeParser.parse(instanceDTO.type(), context.getTypeDefProvider());
         if (actualType instanceof ClassType classType) {
             if (classType.isList()) {
                 var param = (ListInstanceParam) instanceDTO.param();
@@ -36,7 +34,7 @@ public class ValueFormatter {
                     listNative = new ListNative(list);
                     listNative.clear();
                 } else {
-                    list = ClassInstance.allocate(classType);
+                    list = ClassInstance.allocate(classType.resolve());
                     listNative = new ListNative(list);
                     listNative.List();
                 }
@@ -54,12 +52,13 @@ public class ValueFormatter {
                         InstanceFieldDTO::fieldId
                 );
                 ClassInstance instance;
+                var klass = classType.resolve();
                 if (!instanceDTO.isNew()) {
                     instance = (ClassInstance) context.get(instanceDTO.parseId());
                 } else {
-                    instance = ClassInstance.allocate(classType);
+                    instance = ClassInstance.allocate(klass);
                 }
-                for (Field field : classType.getAllFields()) {
+                for (Field field : klass.getAllFields()) {
                     FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getStringId()), InstanceFieldDTO::value);
                     Instance fieldValue = rawValue != null ?
                             parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context)
@@ -104,7 +103,7 @@ public class ValueFormatter {
     private static Instance parseOne(FieldValue rawValue, Type type,
                                      @Nullable InstanceParentRef parentRef, IInstanceContext context) {
         Instance value = InstanceFactory.resolveValue(
-                rawValue, type, context::getType, parentRef, context
+                rawValue, type, parentRef, context
         );
         if (value instanceof DurableInstance d && d.tryGetPhysicalId() == null) {
             context.bind(d);

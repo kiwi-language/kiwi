@@ -47,57 +47,57 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testIsAssignable() {
-        ClassType type1 = ClassTypeBuilder.newBuilder("Foo", null).build();
-        ClassType type2 = ClassTypeBuilder.newBuilder("Foo", null).superClass(type1).build();
+        Klass type1 = ClassTypeBuilder.newBuilder("Foo", null).build();
+        Klass type2 = ClassTypeBuilder.newBuilder("Foo", null).superClass(type1).build();
         Assert.assertTrue(type1.isAssignableFrom(type2, null));
     }
 
     public void testIsInstance() {
         var fooTypes = MockUtils.createFooTypes(true);
         var fooInst = MockUtils.createFoo(fooTypes, true);
-        Assert.assertTrue(fooTypes.fooType().isInstance(fooInst));
+        Assert.assertTrue(fooTypes.fooType().getType().isInstance(fooInst));
     }
 
     public void testIsNullable() {
         var fooType = MockUtils.createFooTypes().fooType();
-        Assert.assertFalse(fooType.isNullable());
+        Assert.assertFalse(fooType.getType().isNullable());
     }
 
     public void testGetClosure() {
-        ClassType i1 = ClassTypeBuilder.newBuilder("i1", null).category(TypeCategory.INTERFACE).build();
-        ClassType i2 = ClassTypeBuilder.newBuilder("i2", null).category(TypeCategory.INTERFACE).build();
-        ClassType c1 = ClassTypeBuilder.newBuilder("c1", null)
+        Klass i1 = ClassTypeBuilder.newBuilder("i1", null).category(TypeCategory.INTERFACE).build();
+        Klass i2 = ClassTypeBuilder.newBuilder("i2", null).category(TypeCategory.INTERFACE).build();
+        Klass c1 = ClassTypeBuilder.newBuilder("c1", null)
                 .interfaces(i1, i2)
                 .build();
 
-        ClassType i3 = ClassTypeBuilder.newBuilder("i2", null).category(TypeCategory.INTERFACE).build();
-        ClassType c2 = ClassTypeBuilder.newBuilder("c2", null)
+        Klass i3 = ClassTypeBuilder.newBuilder("i2", null).category(TypeCategory.INTERFACE).build();
+        Klass c2 = ClassTypeBuilder.newBuilder("c2", null)
                 .superClass(c1).interfaces(i3).build();
 
-        ClassType i4 = ClassTypeBuilder.newBuilder("i4", null).category(TypeCategory.INTERFACE).build();
+        Klass i4 = ClassTypeBuilder.newBuilder("i4", null).category(TypeCategory.INTERFACE).build();
 
-        ClassType c3 = ClassTypeBuilder.newBuilder("c3", null).interfaces(i3)
+        Klass c3 = ClassTypeBuilder.newBuilder("c3", null).interfaces(i3)
                 .superClass(c2).interfaces(i4)
                 .build();
 
         Assert.assertEquals(4, c3.getRank());
 
-        Assert.assertEquals(List.of(c3, c2, c1, i1, i2, i3, i4), c3.getClosure().getTypes());
+        Assert.assertEquals(List.of(c3, c2, c1, i1, i2, i3, i4), c3.getClosure().getClasses());
 
-        ClassType i5 = ClassTypeBuilder.newBuilder("i5", null).category(TypeCategory.INTERFACE).build();
+        Klass i5 = ClassTypeBuilder.newBuilder("i5", null).category(TypeCategory.INTERFACE).build();
         i4.setInterfaces(List.of(i5));
 
-        Assert.assertEquals(List.of(c3, c2, c1, i4, i1, i2, i3, i5), c3.getClosure().getTypes());
+        Assert.assertEquals(List.of(c3, c2, c1, i4, i1, i2, i3, i5), c3.getClosure().getClasses());
     }
 
     public void testResolveMethod() {
         var baseType = ClassTypeBuilder.newBuilder("Base", "Base").build();
 
-        MethodBuilder.newBuilder(baseType, "test", "test", typeProviders.functionTypeProvider)
+        MethodBuilder.newBuilder(baseType, "test", "test")
                 .parameters(new Parameter(null, "p1", "p1", StandardTypes.getStringType()))
                 .build();
 
-        var m1 = MethodBuilder.newBuilder(baseType, "test", "test", typeProviders.functionTypeProvider)
+        var m1 = MethodBuilder.newBuilder(baseType, "test", "test")
                 .parameters(new Parameter(null, "p1", "p1", StandardTypes.getBooleanType()))
                 .build();
 
@@ -105,15 +105,15 @@ public class ClassTypeTest extends TestCase {
                 .superClass(baseType)
                 .build();
 
-        var m2 = MethodBuilder.newBuilder(fooType, "test", "test", typeProviders.functionTypeProvider)
+        var m2 = MethodBuilder.newBuilder(fooType, "test", "test")
                 .parameters(new Parameter(null, "p1", "p1", StandardTypes.getAnyType()))
                 .build();
 
-        var m3 = MethodBuilder.newBuilder(fooType, "test", "test", typeProviders.functionTypeProvider)
+        var m3 = MethodBuilder.newBuilder(fooType, "test", "test")
                 .parameters(new Parameter(null, "p1", "p1", StandardTypes.getStringType()))
                 .build();
 
-        MethodBuilder.newBuilder(fooType, "test", "test", typeProviders.functionTypeProvider)
+        MethodBuilder.newBuilder(fooType, "test", "test")
                 .parameters(new Parameter(null, "p1", "p1", StandardTypes.getDoubleType()))
                 .build();
 

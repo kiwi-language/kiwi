@@ -14,6 +14,7 @@ import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import tech.metavm.object.type.rest.dto.FieldDTO;
@@ -66,7 +67,7 @@ public class FlowManager extends EntityContextFactoryBean {
                     ClassTypeBuilder.newBuilder("守护结束节点输出", "TryEndNodeOutput").temporary().build(),
                     tryNode, scope);
             FieldBuilder.newBuilder("异常", "exception",
-                            tryEndNode.getType(), context.getNullableType(StandardTypes.getThrowableType()))
+                            tryEndNode.getType().resolve(), context.getNullableType(StandardTypes.getThrowableType().getType()))
                     .build();
             context.bind(tryEndNode);
             afterFlowChange(scope.getFlow(), context);
@@ -94,13 +95,11 @@ public class FlowManager extends EntityContextFactoryBean {
         }
     }
 
-    private Type getReturnType(FlowDTO flowDTO, ClassType declaringType, IEntityContext context) {
-        if (flowDTO.isConstructor()) {
-            return declaringType.isTemplate() ?
-                    context.getParameterizedType(declaringType, declaringType.getTypeParameters()) : declaringType;
-        } else {
-            return context.getType(NncUtils.requireNonNull(flowDTO.returnTypeId()));
-        }
+    private Type getReturnType(FlowDTO flowDTO, Klass declaringType, IEntityContext context) {
+        if (flowDTO.isConstructor())
+            return declaringType.getType();
+        else
+            return context.getType(NncUtils.requireNonNull(flowDTO.returnType()));
     }
 
     @Transactional
@@ -149,13 +148,12 @@ public class FlowManager extends EntityContextFactoryBean {
         if (flowDTO.param() instanceof MethodParam methodParam) {
             List<Method> overridden = NncUtils.map(methodParam.overriddenIds(), context::getMethod);
             Method method = context.getMethod(flowDTO.id());
-            ClassType declaringType = method != null ? method.getDeclaringType() :
-                    context.getClassType(methodParam.declaringTypeId());
+            Klass declaringType = method != null ? method.getDeclaringType() :
+                    context.getKlass(methodParam.declaringTypeId());
             boolean creating = method == null;
             if (method == null) {
                 method = MethodBuilder
-                        .newBuilder(context.getClassType(methodParam.declaringTypeId()), flowDTO.name(),
-                                flowDTO.code(), context.getFunctionTypeContext())
+                        .newBuilder(context.getKlass(methodParam.declaringTypeId()), flowDTO.name(), flowDTO.code())
                         .flowDTO(flowDTO)
                         .access(Access.getByCode(methodParam.access()))
                         .isStatic(methodParam.isStatic())
@@ -168,7 +166,8 @@ public class FlowManager extends EntityContextFactoryBean {
             method.setCode(flowDTO.code());
             method.setConstructor(flowDTO.isConstructor());
             method.setAbstract(declaringType.isInterface() || methodParam.isAbstract());
-            method.update(parameters, returnType, overridden, context.getFunctionTypeContext());
+            method.setParameters(parameters);
+            method.setReturnType(returnType);
             if (method.isAbstract()) {
                 if (creating) {
                     createOverridingFlows(method, context);
@@ -180,13 +179,14 @@ public class FlowManager extends EntityContextFactoryBean {
         } else if (flowDTO.param() instanceof FunctionParam) {
             var function = context.getFunction(flowDTO.id());
             if (function == null) {
-                function = FunctionBuilder.newBuilder(flowDTO.name(), flowDTO.code(), context.getFunctionTypeContext())
+                function = FunctionBuilder.newBuilder(flowDTO.name(), flowDTO.code())
                         .tmpId(flowDTO.tmpId())
                         .build();
                 context.bind(function);
             }
-            var returnType = context.getType(flowDTO.returnTypeId());
-            function.update(parameters, returnType, context.getFunctionTypeContext());
+            var returnType = context.getType(flowDTO.returnType());
+            function.setParameters(parameters);
+            function.setReturnType(returnType);
             function.setNative(flowDTO.isNative());
             flow = function;
         } else {
@@ -194,7 +194,7 @@ public class FlowManager extends EntityContextFactoryBean {
         }
         flow.setNative(flowDTO.isNative());
         flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), context::getTypeVariable));
-        flow.setCapturedTypes(NncUtils.map(flowDTO.capturedTypeIds(), context::getCapturedType));
+        flow.setCapturedTypeVariables(NncUtils.map(flowDTO.capturedTypeIds(), context::getCapturedTypeVariable));
 //        if (flowDTO.horizontalInstances() != null) {
 //            for (FlowDTO templateInstance : flowDTO.horizontalInstances()) {
 //                save(templateInstance, declarationOnly, context);
@@ -211,21 +211,21 @@ public class FlowManager extends EntityContextFactoryBean {
         if (parameter != null) {
             parameter.setName(parameterDTO.name());
             parameter.setCode(parameterDTO.code());
-            parameter.setType(context.getType(parameterDTO.typeId()));
+            parameter.setType(TypeParser.parse(parameterDTO.type(), new ContextTypeDefRepository(context)));
             return parameter;
         } else {
             return new Parameter(
                     parameterDTO.tmpId(),
                     parameterDTO.name(),
                     parameterDTO.code(),
-                    context.getType(parameterDTO.typeId())
+                    TypeParser.parse(parameterDTO.type(), new ContextTypeDefRepository(context))
             );
         }
     }
 
     public void createOverridingFlows(Method overridden, IEntityContext context) {
         NncUtils.requireTrue(overridden.isAbstract());
-        for (ClassType subType : overridden.getDeclaringType().getSubTypes()) {
+        for (Klass subType : overridden.getDeclaringType().getSubTypes()) {
             createOverridingFlows(overridden, subType, context);
         }
     }
@@ -235,10 +235,10 @@ public class FlowManager extends EntityContextFactoryBean {
         createOverridingFlows(method, context);
     }
 
-    public void createOverridingFlows(Method overridden, ClassType type, IEntityContext context) {
+    public void createOverridingFlows(Method overridden, Klass type, IEntityContext context) {
         NncUtils.requireTrue(overridden.isAbstract());
         if (type.isEffectiveAbstract()) {
-            for (ClassType subType : type.getSubTypes()) {
+            for (Klass subType : type.getSubTypes()) {
                 createOverridingFlows(overridden, subType, context);
             }
         } else {
@@ -252,7 +252,7 @@ public class FlowManager extends EntityContextFactoryBean {
                 if (candidate != null) {
                     candidate.addOverridden(overridden);
                 } else {
-                    flow = MethodBuilder.newBuilder(type, overridden.getName(), overridden.getCode(), context.getFunctionTypeContext())
+                    flow = MethodBuilder.newBuilder(type, overridden.getName(), overridden.getCode())
                             .returnType(overridden.getReturnType())
                             .type(overridden.getType())
                             .access(overridden.getAccess())
@@ -295,7 +295,7 @@ public class FlowManager extends EntityContextFactoryBean {
         if (flow instanceof Method method) {
             if (method.getDeclaringType().isTemplate() && context.isPersisted(method.getDeclaringType())) {
                 var templateInstances = context.getTemplateInstances(method.getDeclaringType());
-                for (ClassType templateInstance : templateInstances) {
+                for (Klass templateInstance : templateInstances) {
                     var flowTi = templateInstance.findMethodByVerticalTemplate(method);
                     templateInstance.removeMethod(flowTi);
                     context.remove(flowTi);
@@ -334,7 +334,7 @@ public class FlowManager extends EntityContextFactoryBean {
                 null
         );
         return new SelfNode(selfNodeDTO.tmpId(), selfNodeDTO.name(), null,
-                SelfNode.getSelfType(flow, context.getGenericContext()), null, flow.getRootScope());
+                flow.getDeclaringType().getType(), null, flow.getRootScope());
     }
 
     private NodeRT createInputNode(Flow flow, NodeRT prev) {
@@ -368,7 +368,7 @@ public class FlowManager extends EntityContextFactoryBean {
     public void remove(Flow flow, IEntityContext context) {
         removeTransformedFlowsIfRequired(flow, context);
         if (flow instanceof Method method) {
-            for (ClassType subType : method.getDeclaringType().getSubTypes())
+            for (Klass subType : method.getDeclaringType().getSubTypes())
                 detachOverrideMethods(method, subType);
             method.getDeclaringType().removeMethod(method);
         } else
@@ -376,18 +376,18 @@ public class FlowManager extends EntityContextFactoryBean {
     }
 
     private void detachOverrideMethods(Method method) {
-        for (ClassType subType : method.getDeclaringType().getSubTypes()) {
+        for (Klass subType : method.getDeclaringType().getSubTypes()) {
             detachOverrideMethods(method, subType);
         }
     }
 
-    private void detachOverrideMethods(Method method, ClassType type) {
+    private void detachOverrideMethods(Method method, Klass type) {
         var override = type.tryResolveNonParameterizedMethod(method);
         if (override != null) {
             override.removeOverridden(method);
             override.addOverridden(method.getOverridden());
         } else {
-            for (ClassType subType : type.getSubTypes()) {
+            for (Klass subType : type.getSubTypes()) {
                 detachOverrideMethods(method, subType);
             }
         }
@@ -611,7 +611,7 @@ public class FlowManager extends EntityContextFactoryBean {
         FieldDTO excetpionFieldDTO;
         if (node != null) {
             var outputType = node.getType();
-            excetpionFieldDTO = outputType.getFieldByCode("exception").toDTO();
+            excetpionFieldDTO = outputType.resolve().getFieldByCode("exception").toDTO();
         } else {
             excetpionFieldDTO = FieldDTOBuilder
                     .newBuilder("异常", StandardTypes.getNullableThrowableType().getStringId())
@@ -678,14 +678,15 @@ public class FlowManager extends EntityContextFactoryBean {
 
     private NodeDTO preprocessForeachNode(NodeDTO nodeDTO, @Nullable NodeRT node, ScopeRT scope, IEntityContext context) {
         ForeachNodeParam param = nodeDTO.getParam();
-        @Nullable ClassType currentType = (ClassType) NncUtils.get(node, NodeRT::getType);
+        @Nullable var currentType = (ClassType) NncUtils.get(node, NodeRT::getType);
+        var currentKlass = NncUtils.get(currentType, ClassType::resolve);
         var loopFields = initializeFieldRefs(param.getFields());
         List<FieldDTO> fields = new ArrayList<>(NncUtils.map(loopFields, LoopFieldDTO::toFieldDTO));
         NodeRT prev = NncUtils.get(nodeDTO.prevId(), id -> context.getNode(Id.parse(id)));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var arrayValue = ValueFactory.create(param.getArray(), parsingContext);
         Field arrayField, indexField;
-        if (currentType != null && (arrayField = currentType.findFieldByCode("array")) != null) {
+        if (currentKlass != null && (arrayField = currentKlass.findFieldByCode("array")) != null) {
             fields.add(arrayField.toDTO());
         } else {
             fields.add(
@@ -696,7 +697,7 @@ public class FlowManager extends EntityContextFactoryBean {
                             .build()
             );
         }
-        if (currentType != null && (indexField = currentType.findFieldByCode("index")) != null) {
+        if (currentKlass != null && (indexField = currentKlass.findFieldByCode("index")) != null) {
             fields.add(indexField.toDTO());
         } else {
             fields.add(
@@ -761,7 +762,7 @@ public class FlowManager extends EntityContextFactoryBean {
         var callable = inputNode.getScope().getOwner() == null ? inputNode.getFlow() :
                 (Callable) inputNode.getScope().getOwner();
         List<Parameter> parameters = new ArrayList<>();
-        for (var field : inputNode.getType().getReadyFields()) {
+        for (var field : inputNode.getType().resolve().getReadyFields()) {
             var cond = NncUtils.get(inputNode.getFieldCondition(field), Value::copy);
             var parameter = callable.getParameterByName(field.getName());
             if (parameter == null) {
@@ -783,19 +784,15 @@ public class FlowManager extends EntityContextFactoryBean {
                 parameter.setCondition(cond);
             }
         }
-        var funcTypeContext = context.getFunctionTypeContext();
         if (callable instanceof Flow flow) {
             var oldFuncType = flow.getFunctionType();
-            flow.update(parameters, flow.getReturnType(), funcTypeContext);
+            flow.setParameters(parameters);
             if (flow instanceof Method method) {
                 if (method.isAbstract() && !oldFuncType.equals(flow.getFunctionType()))
                     recreateOverridingFlows(method, context);
             }
         } else {
-            var funcType = funcTypeContext.getFunctionType(callable.getParameterTypes(), callable.getReturnType());
             callable.setParameters(parameters);
-            callable.setFunctionType(funcType);
-
         }
     }
 
@@ -843,7 +840,7 @@ public class FlowManager extends EntityContextFactoryBean {
 
     public Page<FlowSummaryDTO> list(String typeId, int page, int pageSize, String searchText) {
         try (var context = newContext()) {
-            ClassType type = context.getClassType(Id.parse(typeId));
+            Klass type = context.getKlass(Id.parse(typeId));
             var methods = type.getAllMethods();
             if (searchText != null) {
                 methods = NncUtils.filter(methods, flow -> flow.getName().contains(searchText)

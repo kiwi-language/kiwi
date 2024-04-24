@@ -49,4 +49,5 @@ public class TypeCategoryCodes {
     public static final int NOTHING = 29;
 
     public static final int CAPTURED = 30;
+
 }

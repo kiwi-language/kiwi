@@ -8,14 +8,14 @@ public class LambdaNodeParam extends ScopeNodeParamDTO {
     private final List<ParameterDTO> parameters;
     private final String returnTypeId;
     @Nullable
-    private final String functionalInterfaceId;
+    private final String functionalInterface;
 
     public LambdaNodeParam(ScopeDTO bodyScope, List<ParameterDTO> parameters, String returnTypeId,
-                           @Nullable String functionalInterfaceId) {
+                           @Nullable String functionalInterface) {
         super(bodyScope);
         this.parameters = parameters;
         this.returnTypeId = returnTypeId;
-        this.functionalInterfaceId = functionalInterfaceId;
+        this.functionalInterface = functionalInterface;
     }
 
     public List<ParameterDTO> getParameters() {
@@ -27,7 +27,7 @@ public class LambdaNodeParam extends ScopeNodeParamDTO {
     }
 
     @Nullable
-    public String getFunctionalInterfaceId() {
-        return functionalInterfaceId;
+    public String getFunctionalInterface() {
+        return functionalInterface;
     }
 }

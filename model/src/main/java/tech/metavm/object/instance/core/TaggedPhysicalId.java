@@ -2,8 +2,9 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
+import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.util.InstanceOutput;
 
 import java.util.Objects;
@@ -30,11 +31,11 @@ public class TaggedPhysicalId extends PhysicalId {
     }
 
     @Override
-    public Id getTypeId() {
+    public TypeKey getTypeKey() {
         return switch (tag) {
-            case CLASS_TYPE_PHYSICAL -> ModelDefRegistry.getType(ClassType.class).getId();
-            case ARRAY_TYPE_PHYSICAL -> ModelDefRegistry.getType(ArrayType.class).getId();
-            case FIELD_PHYSICAL -> ModelDefRegistry.getType(Field.class).getId();
+            case CLASS_TYPE_PHYSICAL -> ModelDefRegistry.getType(Klass.class).getTypeKey();
+            case ARRAY_TYPE_PHYSICAL -> ModelDefRegistry.getType(ArrayType.class).getTypeKey();
+            case FIELD_PHYSICAL -> ModelDefRegistry.getType(Field.class).getTypeKey();
             default -> throw new IllegalStateException("Unexpected value: " + tag);
         };
     }

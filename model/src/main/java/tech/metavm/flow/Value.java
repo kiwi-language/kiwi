@@ -34,8 +34,6 @@ public abstract class Value extends Element {
 
     public ValueDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
-            if(serContext.includeValueType())
-                serContext.writeType(getType());
             return new ValueDTO(kind.code(), toFieldValue());
         }
     }

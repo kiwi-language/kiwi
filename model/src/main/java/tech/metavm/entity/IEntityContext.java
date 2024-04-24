@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, MappingProvider {
+public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, MappingProvider, TypeDefProvider {
 
     boolean containsEntity(Object entity);
 
@@ -66,9 +66,9 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
 //    <T> List<T> getByType(Class<? extends T> type, @Nullable T startExclusive, long limit);
 
-    default List<ClassType> getTemplateInstances(ClassType template) {
+    default List<Klass> getTemplateInstances(Klass template) {
         NncUtils.requireTrue(template.isTemplate());
-        return selectByKey(ClassType.TEMPLATE_IDX, template);
+        return selectByKey(Klass.TEMPLATE_IDX, template);
     }
 
     <T> List<T> getAllBufferedEntities(Class<T> entityClass);
@@ -79,9 +79,9 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     boolean containsEntity(Class<?> entityType, long id);
 
-    ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments);
+    Klass getParameterizedType(Klass template, List<? extends Type> typeArguments);
 
-    default ClassType getParameterizedType(ClassType template, Type... typeArguments) {
+    default Klass getParameterizedType(Klass template, Type... typeArguments) {
         return getParameterizedType(template, List.of(typeArguments));
     }
 
@@ -146,12 +146,20 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 //        return getEntity(ClassType.class, id);
 //    }
 
-    default ClassType getClassType(Id id) {
-        return getEntity(ClassType.class, id);
+    default TypeDef getTypeDef(Id id) {
+        return getEntity(TypeDef.class, id);
     }
 
-    default ClassType getClassType(String id) {
-        return getEntity(ClassType.class, id);
+    default TypeDef getTypeDef(String id) {
+        return getEntity(TypeDef.class, id);
+    }
+
+    default Klass getKlass(Id id) {
+        return getEntity(Klass.class, id);
+    }
+
+    default Klass getKlass(String id) {
+        return getEntity(Klass.class, id);
     }
 
     UnionType getUnionType(Set<Type> members);
@@ -165,11 +173,11 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     ArrayType getArrayType(Type elementType, ArrayKind kind);
 
-    default ClassType getListType(Type elementType) {
+    default Klass getListType(Type elementType) {
         return getGenericContext().getParameterizedType(StandardTypes.getListType(), List.of(elementType));
     }
 
-    default ClassType getReadWriteListType(Type elementType) {
+    default Klass getReadWriteListType(Type elementType) {
         return getGenericContext().getParameterizedType(StandardTypes.getReadWriteListType(), List.of(elementType));
     }
 
@@ -203,6 +211,10 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     default TypeVariable getTypeVariable(String id) {
         return getEntity(TypeVariable.class, id);
+    }
+
+    default CapturedTypeVariable getCapturedTypeVariable(String id) {
+        return getEntity(CapturedTypeVariable.class, id);
     }
 
     default NodeRT getNode(Id id) {

@@ -8,6 +8,7 @@ import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.type.CompositeTypeFacade;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
@@ -44,13 +45,13 @@ public class InstanceContextFactory {
     }
 
     public InstanceContextBuilder newBuilder(long appId,
-                                             TypeProvider typeProvider,
+                                             TypeDefProvider typeDefProvider,
                                              MappingProvider mappingProvider,
                                              ParameterizedFlowProvider parameterizedFlowProvider,
                                              CompositeTypeFacade compositeTypeFacade) {
         return InstanceContextBuilder.newBuilder(appId, instanceStore,
                         new DefaultIdInitializer(idService),
-                        typeProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade)
+                        typeDefProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade)
                 .executor(executor)
                 .eventQueue(eventQueue)
                 .cache(cache)

@@ -26,22 +26,23 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
     public void test() {
         var fooTypes = MockUtils.createFooTypes(true);
         var foo = MockUtils.createFoo(fooTypes, true);
+        var fooType = fooTypes.fooType().getType();
         memInstanceSearchServiceV2.bulk(TestConstants.APP_ID, List.of(foo), List.of());
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
-                Set.of(fooTypes.fooType().getPhysicalId()),
+                Set.of(fooType.toTypeExpression()),
                 Expressions.and(
                         Expressions.and(
                                 Expressions.eq(
                                         Expressions.property(
-                                                new ThisExpression(fooTypes.fooType()),
+                                                new ThisExpression(fooType),
                                                 fooTypes.fooNameField()
                                         ),
                                         Expressions.constant(foo.getField(fooTypes.fooNameField()))
                                 ),
                                 Expressions.eq(
                                         Expressions.property(
-                                                new ThisExpression(fooTypes.fooType()),
+                                                new ThisExpression(fooType),
                                                 fooTypes.fooQuxField()
                                         ),
                                         Expressions.constant(foo.getField(fooTypes.fooQuxField()))
@@ -49,7 +50,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
                         ),
                         Expressions.eq(
                                 Expressions.property(
-                                        new ThisExpression(fooTypes.fooType()),
+                                        new ThisExpression(fooType),
                                         fooTypes.fooBazListField()
                                 ),
                                 Expressions.constant(((ArrayInstance) foo.getField(fooTypes.fooBazListField())).get(0))
@@ -66,14 +67,15 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
 
     public void testSearchingSuperClassField() {
         var livingBeingTypes = MockUtils.createLivingBeingTypes(true);
+        var humanType = livingBeingTypes.humanType().getType();
         var human = MockUtils.createHuman(livingBeingTypes, true);
         memInstanceSearchServiceV2.bulk(TestConstants.APP_ID, List.of(human), List.of());
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
-                Set.of(livingBeingTypes.humanType().getPhysicalId()),
+                Set.of(humanType.toTypeExpression()),
                 Expressions.eq(
                         Expressions.property(
-                                new ThisExpression(livingBeingTypes.humanType()),
+                                new ThisExpression(humanType),
                                 livingBeingTypes.livingBeingAgeField()
                         ),
                         Expressions.constant(human.getField(livingBeingTypes.livingBeingAgeField()))

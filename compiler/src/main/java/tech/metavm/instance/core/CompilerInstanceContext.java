@@ -11,6 +11,7 @@ import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.CompositeTypeFacade;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
@@ -25,7 +26,7 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
                                    IdInitializer idService,
                                    IndexSource indexSource,
                                    IInstanceContext parent,
-                                   TypeProvider typeProvider,
+                                   TypeDefProvider typeDefProvider,
                                    MappingProvider mappingProvider,
                                    ParameterizedFlowProvider parameterizedFlowProvider,
                                    CompositeTypeFacade compositeTypeFacade,
@@ -34,7 +35,7 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
                 treeSources, versionSource,
                 indexSource, idService,
                 parent,
-                typeProvider,
+                typeDefProvider,
                 mappingProvider, parameterizedFlowProvider, compositeTypeFacade, readonly);
     }
 

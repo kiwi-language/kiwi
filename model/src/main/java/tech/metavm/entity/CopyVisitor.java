@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.ReflectionUtils;
@@ -30,8 +30,8 @@ public class CopyVisitor extends ElementVisitor<Element> {
         elements.pop();
     }
 
-    protected ClassType currentClass() {
-        return currentElement(ClassType.class);
+    protected Klass currentClass() {
+        return currentElement(Klass.class);
     }
 
     protected <T> T currentElement(Class<T> klass) {

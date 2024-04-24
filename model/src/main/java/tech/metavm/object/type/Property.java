@@ -38,7 +38,7 @@ public interface Property extends ClassMember, LocalKey {
 
     Type getType();
 
-    void setType(Type type);
+//    void setType(Type type);
 
     boolean isStatic();
 

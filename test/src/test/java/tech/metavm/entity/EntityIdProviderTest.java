@@ -4,8 +4,8 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.DefaultPhysicalId;
-import tech.metavm.object.instance.core.TaggedPhysicalId;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.system.IdService;
 import tech.metavm.system.RegionManager;
 import tech.metavm.system.persistence.MemBlockMapper;
@@ -22,16 +22,16 @@ import java.util.Set;
 public class EntityIdProviderTest extends TestCase {
 
     private void testAllocate(EntityIdProvider entityIdProvider) {
-        ClassType typeType = ClassTypeBuilder.newBuilder("Type", null).build();
-        ClassType fooType = ClassTypeBuilder.newBuilder("Foo", null).build();
-        ArrayType fooArrayType = new ArrayType(null, fooType, ArrayKind.READ_WRITE);
-        typeType.initId(DefaultPhysicalId.ofObject(1L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
-        fooType.initId(DefaultPhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType), 0L, typeType));
-        fooArrayType.initId(DefaultPhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType), 0L, typeType));
+        Klass typeType = ClassTypeBuilder.newBuilder("Type", null).build();
+        Klass fooType = ClassTypeBuilder.newBuilder("Foo", null).build();
+        ArrayType fooArrayType = new ArrayType(null, fooType.getType(), ArrayKind.READ_WRITE);
+        typeType.initId(DefaultPhysicalId.ofObject(1L, 0L, new ClassTypeKey("1")));
+        fooType.initId(DefaultPhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
+        fooArrayType.initId(DefaultPhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
 
         int numIdsForClass = 10, numIdsForArray = 5;
         Map<Type, Integer> type2count = Map.of(
-                fooType, numIdsForClass,
+                fooType.getType(), numIdsForClass,
                 fooArrayType, numIdsForArray
         );
 
@@ -40,7 +40,7 @@ public class EntityIdProviderTest extends TestCase {
         );
 
         Set<Long> visitedIds = new HashSet<>();
-        for (Type type : List.of(fooType, fooArrayType)) {
+        for (var type : List.of(fooType.getType(), fooArrayType)) {
             var idsForType = idMap.get(type);
             Assert.assertNotNull(idsForType);
             Assert.assertEquals((int) type2count.get(type), idsForType.size());

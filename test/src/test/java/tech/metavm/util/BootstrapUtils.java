@@ -67,25 +67,25 @@ public class BootstrapUtils {
             );
             StandardTypes.setNeverArrayType(defContext.getArrayType(StandardTypes.getNeverType(), ArrayKind.READ_WRITE));
             StandardTypes.setNullableAnyType(defContext.getNullableType(StandardTypes.getAnyType()));
-            StandardTypes.setEntityType(defContext.getClassType(Entity.class));
-            StandardTypes.setEnumType(defContext.getClassType(Enum.class));
-            StandardTypes.setThrowableType(defContext.getClassType(Throwable.class));
-            StandardTypes.setRuntimeExceptionType(defContext.getClassType(RuntimeException.class));
+            StandardTypes.setEntityType(defContext.getClassType(Entity.class).resolve());
+            StandardTypes.setEnumType(defContext.getClassType(Enum.class).resolve());
+            StandardTypes.setThrowableType(defContext.getClassType(Throwable.class).resolve());
+            StandardTypes.setRuntimeExceptionType(defContext.getClassType(RuntimeException.class).resolve());
             StandardTypes.setNullableStringType(defContext.getNullableType(StandardTypes.getStringType()));
-            StandardTypes.setCollectionType(defContext.getClassType(Collection.class));
-            StandardTypes.setListType(defContext.getClassType(MetaList.class));
-            StandardTypes.setReadWriteListType(defContext.getClassType(ReadWriteMetaList.class));
-            StandardTypes.setChildListType(defContext.getClassType(ChildMetaList.class));
-            StandardTypes.setSetType(defContext.getClassType(MetaSet.class));
-            StandardTypes.setMapType(defContext.getClassType(MetaMap.class));
-            StandardTypes.setIteratorImplType(defContext.getClassType(IteratorImpl.class));
-            StandardTypes.setIteratorType(defContext.getClassType(MetaIterator.class));
-            StandardTypes.setIterableType(defContext.getClassType(MetaIterable.class));
-            StandardTypes.setRecordType(defContext.getClassType(Record.class));
-            StandardTypes.setExceptionType(defContext.getClassType(Exception.class));
-            StandardTypes.setIllegalArgumentExceptionType(defContext.getClassType(IllegalArgumentException.class));
-            StandardTypes.setIllegalStateExceptionType(defContext.getClassType(IllegalStateException.class));
-            StandardTypes.setNullPointerExceptionType(defContext.getClassType(NullPointerException.class));
+            StandardTypes.setCollectionType(defContext.getClassType(Collection.class).resolve());
+            StandardTypes.setListType(defContext.getClassType(MetaList.class).resolve());
+            StandardTypes.setReadWriteListType(defContext.getClassType(ReadWriteMetaList.class).resolve());
+            StandardTypes.setChildListType(defContext.getClassType(ChildMetaList.class).resolve());
+            StandardTypes.setSetType(defContext.getClassType(MetaSet.class).resolve());
+            StandardTypes.setMapType(defContext.getClassType(MetaMap.class).resolve());
+            StandardTypes.setIteratorImplType(defContext.getClassType(IteratorImpl.class).resolve());
+            StandardTypes.setIteratorType(defContext.getClassType(MetaIterator.class).resolve());
+            StandardTypes.setIterableType(defContext.getClassType(MetaIterable.class).resolve());
+            StandardTypes.setRecordType(defContext.getClassType(Record.class).resolve());
+            StandardTypes.setExceptionType(defContext.getClassType(Exception.class).resolve());
+            StandardTypes.setIllegalArgumentExceptionType(defContext.getClassType(IllegalArgumentException.class).resolve());
+            StandardTypes.setIllegalStateExceptionType(defContext.getClassType(IllegalStateException.class).resolve());
+            StandardTypes.setNullPointerExceptionType(defContext.getClassType(NullPointerException.class).resolve());
             StandardTypes.clearParameterizedTypes();
             StandardTypes.clearNullableTypes();
             var collClasses = List.of(
@@ -95,7 +95,7 @@ public class BootstrapUtils {
                 var primitiveType = defContext.getType(primitiveClass);
                 StandardTypes.addNullableType(defContext.getNullableType(primitiveType));
                 for (Class<?> collClass : collClasses) {
-                    var collType = defContext.getClassType(collClass);
+                    var collType = defContext.getClassType(collClass).resolve();
                     StandardTypes.addParameterizedType(defContext.getParameterizedType(collType, List.of(primitiveType)));
                 }
             }

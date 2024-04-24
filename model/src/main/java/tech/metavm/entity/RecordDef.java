@@ -2,7 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.ObjectInstanceMap;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 
@@ -16,7 +16,7 @@ public class RecordDef<T extends Record> extends PojoDef<T> {
 
     private final Constructor<T> constructor;
 
-    public RecordDef(Class<T> javaType, Type genericType, @Nullable PojoDef<? super T> parentDef, ClassType type, DefContext defContext) {
+    public RecordDef(Class<T> javaType, Type genericType, @Nullable PojoDef<? super T> parentDef, Klass type, DefContext defContext) {
         super(javaType, genericType, parentDef, type, defContext);
         Class<?>[] componentTypes =
                 Arrays.stream(javaType.getRecordComponents()).map(RecordComponent::getType).toArray(Class<?>[]::new);

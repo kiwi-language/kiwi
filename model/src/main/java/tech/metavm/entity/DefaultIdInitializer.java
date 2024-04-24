@@ -2,7 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.IdentitySet;
@@ -27,7 +27,7 @@ public class DefaultIdInitializer implements IdInitializer {
 
     @Override
     public void initializeIds(long appId, Collection<? extends DurableInstance> instancesToInitId) {
-        var classType = ModelDefRegistry.getType(ClassType.class);
+        var classType = ModelDefRegistry.getType(Klass.class);
         var arrayType = ModelDefRegistry.getType(ArrayType.class);
         var fieldType = ModelDefRegistry.getType(Field.class);
         var countMap = Map.of(classType, (int) NncUtils.count(instancesToInitId, DurableInstance::isRoot));
@@ -61,8 +61,8 @@ public class DefaultIdInitializer implements IdInitializer {
             if (tag != null)
                 inst.initId(new TaggedPhysicalId(tag, treeId, nodeId));
             else {
-                var typeId = typeInstance.containsKey(type) ? typeInstance.get(type).getId() : type.getId();
-                inst.initId(new DefaultPhysicalId(inst instanceof ArrayInstance, treeId, nodeId, typeId));
+                var typeKey = typeInstance.containsKey(type) ? typeInstance.get(type).getType().getTypeKey() : type.getTypeKey();
+                inst.initId(new DefaultPhysicalId(inst instanceof ArrayInstance, treeId, nodeId, typeKey));
             }
         }
     }

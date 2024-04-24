@@ -32,7 +32,7 @@ public class MappingSaver {
 
     public static MappingSaver create(IEntityContext context) {
         return new MappingSaver(context.getInstanceContext(),
-                new ContextTypeRepository(context),
+                new ContextTypeDefRepository(context),
                 new CompositeTypeFacadeImpl(
                         new ContextArrayTypeProvider(context),
                         context.getFunctionTypeContext(),
@@ -54,7 +54,7 @@ public class MappingSaver {
 
 
     private final InstanceProvider instanceProvider;
-    private final IndexedTypeProvider typeProvider;
+    private final IndexedTypeDefProvider klassProvider;
     private final ParameterizedTypeRepository parameterizedTypeRepository;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private final CompositeTypeFacade compositeTypeFacade;
@@ -62,14 +62,14 @@ public class MappingSaver {
     private final EntityRepository entityRepository;
 
     public MappingSaver(InstanceProvider instanceProvider,
-                        IndexedTypeProvider typeProvider,
+                        IndexedTypeDefProvider klassProvider,
                         CompositeTypeFacade compositeTypeFacade,
                         ParameterizedTypeRepository parameterizedTypeRepository,
                         ParameterizedFlowProvider parameterizedFlowProvider,
                         MappingProvider mappingProvider,
                         EntityRepository entityRepository) {
         this.instanceProvider = instanceProvider;
-        this.typeProvider = typeProvider;
+        this.klassProvider = klassProvider;
         this.parameterizedTypeRepository = parameterizedTypeRepository;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.compositeTypeFacade = compositeTypeFacade;
@@ -85,7 +85,7 @@ public class MappingSaver {
     }
 
     private FieldsObjectMapping saveFieldsObjectMapping(ObjectMappingDTO mappingDTO) {
-        var sourceType = typeProvider.getClassType(Id.parse(mappingDTO.sourceTypeId()));
+        var sourceType = klassProvider.getKlass(Id.parse(mappingDTO.sourceType()));
         FieldsObjectMapping mapping = (FieldsObjectMapping) sourceType.findMapping(Id.parse(mappingDTO.id()));
         if (mapping == null) {
             var targetType = createTargetType(sourceType, "预设视图", "builtin");
@@ -108,18 +108,17 @@ public class MappingSaver {
         return mapping;
     }
 
-    private void retransformClassType(ClassType sourceType) {
+    private void retransformClassType(Klass sourceType) {
         if(DebugEnv.debugging) {
             debugLogger.info("MappingSaver.retransformClassType sourceType: {}", sourceType.getTypeDesc());
         }
         if (sourceType.isTemplate()) {
             var templateInstances = parameterizedTypeRepository.getTemplateInstances(sourceType);
-            for (ClassType templateInstance : templateInstances) {
+            for (Klass templateInstance : templateInstances) {
                 templateInstance.setStage(ResolutionStage.INIT);
                 var subst = new SubstitutorV2(
                         sourceType, sourceType.getTypeParameters(), templateInstance.getTypeArguments(),
-                        ResolutionStage.DEFINITION, entityRepository, compositeTypeFacade, parameterizedTypeRepository,
-                        parameterizedFlowProvider, new MockDTOProvider()
+                        ResolutionStage.DEFINITION
                 );
                 sourceType.accept(subst);
             }
@@ -131,7 +130,7 @@ public class MappingSaver {
         var codeGenerator = nestedMapping != null ? new ObjectNestedMapping(nestedMapping) :
                 new IdentityNestedMapping(entityRepository.getEntity(Field.class, Id.parse(fieldMappingDTO.targetFieldId())).getType());
         var fieldMapping = containingMapping.findFieldMapping(Id.parse(fieldMappingDTO.id()));
-        var sourceType = containingMapping.getSourceType();
+        var sourceType = containingMapping.getSourceKlass();
         if (fieldMapping == null) {
             return switch (fieldMappingDTO.param()) {
                 case DirectFieldMappingParam directParam -> {
@@ -139,7 +138,7 @@ public class MappingSaver {
                     yield new DirectFieldMapping(
                             fieldMappingDTO.tmpId(),
                             createTargetField(
-                                    containingMapping.getTargetType(),
+                                    containingMapping.getTargetKlass(),
                                     fieldMappingDTO.name(),
                                     fieldMappingDTO.code(),
                                     getTargetFieldType(sourceField.getType(), codeGenerator),
@@ -160,7 +159,7 @@ public class MappingSaver {
                             containingMapping,
                             objectNestedMapping,
                             createTargetField(
-                                    containingMapping.getTargetType(),
+                                    containingMapping.getTargetKlass(),
                                     fieldMappingDTO.name(),
                                     fieldMappingDTO.code(),
                                     getTargetFieldType(getter.getReturnType(), objectNestedMapping),
@@ -174,11 +173,11 @@ public class MappingSaver {
                 }
                 case ComputedFieldMappingParam computedParam -> {
                     var value = ValueFactory.create(computedParam.value(),
-                            createTypeParsingContext(containingMapping.getSourceType()));
+                            createTypeParsingContext(containingMapping.getSourceKlass()));
                     yield new ComputedFieldMapping(
                             fieldMappingDTO.tmpId(),
                             createTargetField(
-                                    containingMapping.getTargetType(),
+                                    containingMapping.getTargetKlass(),
                                     fieldMappingDTO.name(),
                                     fieldMappingDTO.code(),
                                     getTargetFieldType(value.getType(), codeGenerator),
@@ -214,7 +213,7 @@ public class MappingSaver {
                     var computedParam = (ComputedFieldMappingParam) param;
                     computedFieldMapping.setValue(
                             ValueFactory.create(computedParam.value(),
-                                    createTypeParsingContext(containingMapping.getSourceType()))
+                                    createTypeParsingContext(containingMapping.getSourceKlass()))
                     );
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + fieldMapping);
@@ -223,10 +222,10 @@ public class MappingSaver {
         }
     }
 
-    private TypeParsingContext createTypeParsingContext(ClassType type) {
+    private TypeParsingContext createTypeParsingContext(Klass type) {
         return new TypeParsingContext(
                 instanceProvider,
-                typeProvider,
+                klassProvider,
                 compositeTypeFacade,
                 compositeTypeFacade,
                 type
@@ -235,7 +234,7 @@ public class MappingSaver {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    public FieldsObjectMapping saveBuiltinMapping(ClassType type, boolean generateCode) {
+    public FieldsObjectMapping saveBuiltinMapping(Klass type, boolean generateCode) {
         if(DebugEnv.debugging) {
             debugLogger.info("saveBuiltinMapping. type: {}, generateCode: {}", type.getTypeDesc(), generateCode);
         }
@@ -269,20 +268,20 @@ public class MappingSaver {
             mapping.generateCode(compositeTypeFacade);
             if (type.isStruct())
                 saveFromViewMethod(type, mapping, true);
-            retransformClassType(mapping.getTargetType().getEffectiveTemplate());
+            retransformClassType(mapping.getTargetKlass().getEffectiveTemplate());
             retransformClassType(type);
         }
         return mapping;
     }
 
-    private void saveFromViewMethod(ClassType type, FieldsObjectMapping mapping, boolean generateCode) {
+    private void saveFromViewMethod(Klass klass, FieldsObjectMapping mapping, boolean generateCode) {
         var viewType = mapping.getTargetType();
-        var canonicalConstructor = getFromViewConstructor(type);
-        var fromView = type.findMethodByCodeAndParamTypes("fromView", List.of(viewType));
+        var canonicalConstructor = getFromViewConstructor(klass);
+        var fromView = klass.findMethodByCodeAndParamTypes("fromView", List.of(viewType));
         if (fromView == null) {
-            fromView = MethodBuilder.newBuilder(type, "fromView", "fromView", compositeTypeFacade)
+            fromView = MethodBuilder.newBuilder(klass, "fromView", "fromView")
                     .parameters(new Parameter(null, "view", "view", viewType))
-                    .returnType(type)
+                    .returnType(klass.getType())
                     .isStatic(true)
                     .build();
         }
@@ -290,7 +289,7 @@ public class MappingSaver {
             fromView.clearContent();
             var scope = fromView.getRootScope();
             var inputNode = Nodes.input(fromView, compositeTypeFacade);
-            var view = Nodes.value("view", Values.nodeProperty(inputNode, inputNode.getType().getFieldByCode("view")), scope);
+            var view = Nodes.value("view", Values.nodeProperty(inputNode, inputNode.getType().resolve().getFieldByCode("view")), scope);
 
             var fieldValues = new HashMap<String, Supplier<Value>>();
             for (FieldMapping fieldMapping : mapping.getFieldMappings()) {
@@ -309,11 +308,11 @@ public class MappingSaver {
 
             var newNode = Nodes.newObject(
                     "newObject",
-                    type,
+                    klass,
                     fromView.getRootScope(),
                     canonicalConstructor,
                     NncUtils.biMap(
-                            viewType.getAllFields(),
+                            viewType.resolve().getAllFields(),
                             canonicalConstructor.getParameters(),
                             (f, p) -> new Argument(
                                     null,
@@ -329,7 +328,7 @@ public class MappingSaver {
         }
     }
 
-    private Method getFromViewConstructor(ClassType type) {
+    private Method getFromViewConstructor(Klass type) {
         var fields = NncUtils.merge(
                 NncUtils.map(getVisibleFields(type), f -> new NameAndType(f.getCodeRequired(), f.getType())),
                 NncUtils.map(getAccessors(type), a -> new NameAndType(requireNonNull(a.code), a.getter.getReturnType()))
@@ -368,7 +367,7 @@ public class MappingSaver {
         var fieldMapping = directFieldMappings.get(field);
         if (fieldMapping == null) {
             fieldMapping = new DirectFieldMapping(
-                    null, createTargetField(containingMapping.getTargetType(), field.getName(), field.getCode(),
+                    null, createTargetField(containingMapping.getTargetKlass(), field.getName(), field.getCode(),
                     codeGenerator.getTargetType(),
                     field.isChild(), field.isTitle(), field.isReadonly()),
                     containingMapping, codeGenerator, field
@@ -387,28 +386,25 @@ public class MappingSaver {
         return FieldMapping.getTargetFieldType(targetFieldType, nestedMapping, compositeTypeFacade);
     }
 
-    private ClassType createTargetType(ClassType sourceType, String name, @Nullable String code) {
-        var viewTypeName = getTargetTypeName(sourceType, name);
-        var viewTypeCode = getTargetTypeCode(sourceType, code);
-        if (sourceType.isTemplate()) {
+    private Klass createTargetType(Klass sourceKlass, String name, @Nullable String code) {
+        var viewTypeName = getTargetTypeName(sourceKlass, name);
+        var viewTypeCode = getTargetTypeCode(sourceKlass, code);
+        if (sourceKlass.isTemplate()) {
             var template = ClassTypeBuilder.newBuilder(viewTypeName, viewTypeCode)
                     .isTemplate(true)
                     .ephemeral(true)
                     .struct(true)
                     .anonymous(true)
                     .typeParameters(NncUtils.map(
-                            sourceType.getTypeParameters(),
+                            sourceKlass.getTypeParameters(),
                             p -> new TypeVariable(null, p.getName(), p.getCode(), DummyGenericDeclaration.INSTANCE)
                     ))
                     .build();
             var subst = new SubstitutorV2(
                     template, template.getTypeParameters(),
-                    sourceType.getTypeParameters(), ResolutionStage.INIT,
-                    entityRepository, compositeTypeFacade,
-                    parameterizedTypeRepository,
-                    null, new MockDTOProvider()
+                    NncUtils.map(sourceKlass.getTypeParameters(), TypeVariable::getType), ResolutionStage.INIT
             );
-            return (ClassType) template.accept(subst);
+            return (Klass) template.accept(subst);
         } else {
             return ClassTypeBuilder.newBuilder(viewTypeName, viewTypeCode)
                     .ephemeral(true)
@@ -418,13 +414,13 @@ public class MappingSaver {
         }
     }
 
-    public static String getTargetTypeName(ClassType sourceType, String mappingName) {
+    public static String getTargetTypeName(Klass sourceType, String mappingName) {
         if (mappingName.endsWith("视图") && mappingName.length() > 2)
             mappingName = mappingName.substring(0, mappingName.length() - 2);
         return NamingUtils.escapeTypeName(sourceType.getName()) + mappingName + "视图";
     }
 
-    public static @Nullable String getTargetTypeCode(ClassType sourceType, @Nullable String mappingCode) {
+    public static @Nullable String getTargetTypeCode(Klass sourceType, @Nullable String mappingCode) {
         if (sourceType.getCode() == null || mappingCode == null)
             return null;
         if (mappingCode.endsWith("View") && mappingCode.length() > 4)
@@ -432,15 +428,13 @@ public class MappingSaver {
         return NamingUtils.escapeTypeName(sourceType.getCode()) + mappingCode + "View";
     }
 
-    private Field createTargetField(ClassType targetType, String name, String code, Type type,
+    private Field createTargetField(Klass targetType, String name, String code, Type type,
                                     boolean isChild, boolean asTitle, boolean readonly) {
         if (targetType.getTemplate() != null) {
             var template = requireNonNull(targetType.getTemplate());
             var typeSubst = new TypeSubstitutor(
                     targetType.getTypeArguments(),
-                    template.getTypeParameters(),
-                    compositeTypeFacade,
-                    new MockDTOProvider()
+                    NncUtils.map(template.getTypeParameters(), TypeVariable::getType)
             );
             type = type.accept(typeSubst);
             var fieldTemplate = FieldBuilder
@@ -452,11 +446,7 @@ public class MappingSaver {
                     .build();
             var subst = new SubstitutorV2(
                     template, template.getTypeParameters(),
-                    targetType.getTypeArguments(), ResolutionStage.DECLARATION,
-                    entityRepository,
-                    compositeTypeFacade,
-                    parameterizedTypeRepository,
-                    null, new MockDTOProvider()
+                    targetType.getTypeArguments(), ResolutionStage.DECLARATION
             );
             targetType.setStage(ResolutionStage.INIT);
             template.accept(subst);
@@ -483,12 +473,10 @@ public class MappingSaver {
                                 new IdentityNestedMapping(classType.getListElementType());
                         var targetType = (ClassType) underlyingClassType.accept(new TypeSubstitutor(
                                 List.of(underlyingClassType.getListElementType()),
-                                List.of(elementNestedMapping.getTargetType()),
-                                compositeTypeFacade,
-                                new MockDTOProvider()
+                                List.of(elementNestedMapping.getTargetType())
                         ));
                         ;
-                        yield new ListNestedMapping(classType, targetType,
+                        yield new ListNestedMapping(classType.resolve(), targetType.resolve(),
                                 parameterizedTypeRepository.getParameterizedType(
                                         StandardTypes.getReadWriteListType(),
                                         List.of(classType.getListElementType())
@@ -501,7 +489,7 @@ public class MappingSaver {
                     }
                     yield new IdentityNestedMapping(type);
                 } else {
-                    var nestedMapping = classType.getBuiltinMapping();
+                    var nestedMapping = classType.resolve().getBuiltinMapping();
                     yield nestedMapping != null ? new ObjectNestedMapping(nestedMapping) : new IdentityNestedMapping(type);
                 }
             }
@@ -513,9 +501,7 @@ public class MappingSaver {
                             new IdentityNestedMapping(arrayType.getElementType());
                     var typeSubst = (ArrayType) underlyingArrayType.accept(new TypeSubstitutor(
                             List.of(underlyingArrayType.getElementType()),
-                            List.of(elementNestedMapping.getTargetType()),
-                            compositeTypeFacade,
-                            new MockDTOProvider()
+                            List.of(elementNestedMapping.getTargetType())
                     ));
                     yield new ArrayNestedMapping(arrayType, typeSubst, elementNestedMapping);
                 }
@@ -549,7 +535,7 @@ public class MappingSaver {
                     declaringMapping,
                     codeGenerator,
                     createTargetField(
-                            declaringMapping.getTargetType(),
+                            declaringMapping.getTargetKlass(),
                             property.name,
                             property.code,
                             codeGenerator.getTargetType(),
@@ -568,7 +554,7 @@ public class MappingSaver {
         return propertyMapping;
     }
 
-    private static @Nullable Method getSetter(ClassType type, String propertyCode, Type propertyType) {
+    private static @Nullable Method getSetter(Klass type, String propertyCode, Type propertyType) {
         var flowCode = NamingUtils.getSetterName(propertyCode);
         var setter = type.findMethodByCodeAndParamTypes(flowCode, List.of(propertyType));
         if (setter != null && setter.isPublic() && !setter.isSynthetic())
@@ -577,11 +563,11 @@ public class MappingSaver {
             return null;
     }
 
-    private static List<Field> getVisibleFields(ClassType type) {
+    private static List<Field> getVisibleFields(Klass type) {
         return NncUtils.filter(type.getAllFields(), f -> f.getAccess() == Access.PUBLIC);
     }
 
-    private static List<Accessor> getAccessors(ClassType type) {
+    private static List<Accessor> getAccessors(Klass type) {
         var accessors = new ArrayList<Accessor>();
         for (var method : type.getAllMethods()) {
             var p = getAccessor(method);
@@ -592,7 +578,7 @@ public class MappingSaver {
     }
 
     public static ClassInstance getSource(ClassInstance view) {
-        var sourceField = view.getType().getFieldByCode("source");
+        var sourceField = view.getKlass().getFieldByCode("source");
         return (ClassInstance) view.getField(sourceField);
     }
 

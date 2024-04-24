@@ -29,7 +29,7 @@ public class StaticPropertyExpression extends Expression {
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         try(var serContext = SerializeContext.enter()) {
             if(serContext.isIncludeExpressionType()) {
-                serContext.writeType(property.getDeclaringType());
+                serContext.writeTypeDef(property.getDeclaringType());
             }
             return switch (symbolType) {
                 case NAME -> property.getDeclaringType().getName() + "." + property.getName();

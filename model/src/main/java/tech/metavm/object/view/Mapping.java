@@ -4,11 +4,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
-import tech.metavm.entity.natives.ExceptionNative;
 import tech.metavm.entity.natives.CallContext;
+import tech.metavm.entity.natives.ExceptionNative;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.CompositeTypeFacade;
+import tech.metavm.object.type.Klass;
+import tech.metavm.object.type.ResolutionStage;
+import tech.metavm.object.type.Type;
 import tech.metavm.object.view.rest.dto.MappingDTO;
 import tech.metavm.util.*;
 
@@ -84,9 +87,9 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
 //                    if(mappingId == null)
 //                        mappingId = 0L;
                     if (getParentField() != null)
-                        instance.initId(new FieldViewId(isArray, (ViewId) getParent().tryGetId(), mappingId, getParentField().getId(), sourceId, instance.getType().getEntityId()));
+                        instance.initId(new FieldViewId(isArray, (ViewId) getParent().tryGetId(), mappingId, getParentField().getId(), sourceId, instance.getType().getTypeKey()));
                     else
-                        instance.initId(new ElementViewId(isArray, (ViewId) getParent().tryGetId(), mappingId, getIndex(), sourceId, instance.getType().getEntityId()));
+                        instance.initId(new ElementViewId(isArray, (ViewId) getParent().tryGetId(), mappingId, getIndex(), sourceId, instance.getType().getTypeKey()));
                 }
             }
         });
@@ -170,7 +173,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         var declaringType = getClassTypeForDeclaration();
         mapper = MethodBuilder
                 .newBuilder(declaringType, "映射$" + getQualifiedName(),
-                        "map$" + getQualifiedCode(), compositeTypeFacade)
+                        "map$" + getQualifiedCode())
                 .parameters(mapper != null ? mapper.getParameters().get(0) :
                         new Parameter(null, "来源", "source", sourceType))
                 .existing(mapper)
@@ -181,8 +184,8 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
                 .build();
         unmapper = MethodBuilder.newBuilder(
                         declaringType, "反映射$" + getQualifiedName(),
-                        "unmap$" + getQualifiedCode(),
-                        compositeTypeFacade)
+                        "unmap$" + getQualifiedCode()
+                )
                 .existing(unmapper)
                 .isSynthetic(true)
                 .codeSource(this)
@@ -206,7 +209,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         this.copySource = (Mapping) copySource;
     }
 
-    protected abstract ClassType getClassTypeForDeclaration();
+    protected abstract Klass getClassTypeForDeclaration();
 
     protected abstract Flow generateMappingCode(CompositeTypeFacade compositeTypeFacade);
 

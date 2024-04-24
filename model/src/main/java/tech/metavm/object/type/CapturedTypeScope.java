@@ -9,13 +9,13 @@ public interface CapturedTypeScope {
 
     String getStringId();
 
-    Collection<CapturedType> getCapturedTypes();
+    Collection<CapturedTypeVariable> getCapturedTypeVariables();
 
-    int getCapturedTypeIndex(CapturedType capturedType);
+    int getCapturedTypeVariableIndex(CapturedTypeVariable capturedTypeVariable);
 
     String getInternalName(@Nullable Flow current);
 
-    void addCapturedType(CapturedType capturedType);
+    void addCapturedTypeVariable(CapturedTypeVariable capturedTypeVariable);
 
     String getScopeName();
 

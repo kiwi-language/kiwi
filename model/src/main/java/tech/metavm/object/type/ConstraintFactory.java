@@ -28,7 +28,7 @@ public class ConstraintFactory {
     }
 
     public static Constraint createFromDTO(ConstraintDTO constraintDTO, IEntityContext entityContext) {
-        ClassType type = entityContext.getClassType(constraintDTO.typeId());
+        Klass type = entityContext.getKlass(constraintDTO.typeId());
         ParsingContext parsingContext = TypeParsingContext.create(type, entityContext);
         String message = constraintDTO.message();
         if (constraintDTO.param() instanceof IndexParam) {
@@ -53,7 +53,7 @@ public class ConstraintFactory {
     public static Index createIndexConstraint(
             @Nullable Long tmpId,
             IndexParam param,
-            ClassType type,
+            Klass type,
             String name,
             @Nullable String code,
             String message,
@@ -75,7 +75,7 @@ public class ConstraintFactory {
     public static CheckConstraint createCheckConstraint(
             @Nullable Long tmpId,
             CheckConstraintParam param,
-            ClassType type,
+            Klass type,
             String name,
             @Nullable String code,
             String message,
@@ -88,7 +88,7 @@ public class ConstraintFactory {
     public static void update(ConstraintDTO constraintDTO, IEntityContext entityContext) {
         Constraint constraint = entityContext.getEntity(new TypeReference<>() {
         }, constraintDTO.id());
-        ClassType type = entityContext.getClassType(constraintDTO.typeId());
+        Klass type = entityContext.getKlass(constraintDTO.typeId());
         ParsingContext parsingContext = TypeParsingContext.create(type, entityContext);
         constraint.update(constraintDTO, entityContext);
         if (constraint instanceof Index indexConstraint) {
@@ -122,7 +122,7 @@ public class ConstraintFactory {
 
     public static Index newUniqueConstraint(String name, @Nullable String code, List<Field> fields) {
         NncUtils.requireNotEmpty(fields, "字段列表不能未空");
-        ClassType type = fields.get(0).getDeclaringType();
+        Klass type = fields.get(0).getDeclaringType();
         String message = "属性值'" + NncUtils.join(fields, Field::getName) + "'重复";
         return new Index(type, name, code, message, true, fields);
     }

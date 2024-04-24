@@ -66,7 +66,7 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     }
 
     private static Instance functionToInstance(Function function, @NotNull FunctionInstance functionInstance, CallContext callContext) {
-        var samInterface = (ClassType) function.getTypeArguments().get(0);
+        var samInterface = ((ClassType) function.getTypeArguments().get(0)).resolve();
         var type = Types.createSAMInterfaceImpl(samInterface, functionInstance, callContext.compositeTypeFacade());
         return new ClassInstance(null, Map.of(), type);
     }

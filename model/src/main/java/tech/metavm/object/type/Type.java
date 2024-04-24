@@ -10,10 +10,7 @@ import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NamingUtils;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -53,8 +50,6 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     @SuppressWarnings("FieldMayBeFinal") // for unit test
     private boolean dummyFlag = false;
 
-    @Nullable
-    private transient Closure<? extends Type> closure;
     @Nullable
     private transient List<Type> superTypesCheckpoint;
 
@@ -211,73 +206,6 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
 
     public int getRank() {
         return 1;
-    }
-
-    //<editor-fold desc="closure related">
-
-    protected void onAncestorChanged0() {
-    }
-
-    private void addAncestorChangeListener(Runnable listener) {
-        ancestorChangeListeners().add(listener);
-    }
-
-    private void removeAncestorChangeListener(Runnable listener) {
-        ancestorChangeListeners().remove(listener);
-    }
-
-    protected final void onSuperTypesChanged() {
-        if (superTypesCheckpoint != null) {
-            for (Type oldSuperType : superTypesCheckpoint) {
-                oldSuperType.removeAncestorChangeListener(this::onAncestorChanged);
-            }
-        }
-        onAncestorChanged();
-        resetSuperTypeListeners();
-    }
-
-    private void resetSuperTypeListeners() {
-        var superTypes = getSuperTypes();
-        for (Type superType : superTypes) {
-            superType.addAncestorChangeListener(this::onAncestorChanged);
-        }
-        this.superTypesCheckpoint = new ArrayList<>(superTypes);
-    }
-
-    private void onAncestorChanged() {
-        closure = null;
-        onAncestorChanged0();
-        ancestorChangeListeners().forEach(Runnable::run);
-    }
-
-    protected List<Runnable> ancestorChangeListeners() {
-        if (ancestorChangeListeners == null)
-            ancestorChangeListeners = new ArrayList<>();
-        return ancestorChangeListeners;
-    }
-
-    private void ensureListenersInitialized() {
-        if (superTypesCheckpoint == null) {
-            for (Type superType : getSuperTypes())
-                superType.ensureListenersInitialized();
-            resetSuperTypeListeners();
-        }
-    }
-
-    public Closure<? extends Type> getClosure() {
-        ensureListenersInitialized();
-        if (closure == null)
-            closure = createClosure(getClosureElementJavaClass());
-        return closure;
-    }
-
-    private <T extends Type> Closure<T> createClosure(Class<T> closureElementClass) {
-        return new Closure<>(closureElementClass.cast(this), closureElementClass);
-    }
-    //</editor-fold>
-
-    protected Class<? extends Type> getClosureElementJavaClass() {
-        return Type.class;
     }
 
     @Override
@@ -455,7 +383,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         cascade.addAll(context.selectByKey(UncertainType.LOWER_BOUND_IDX, this));
         cascade.addAll(context.selectByKey(UncertainType.UPPER_BOUND_IDX, this));
         cascade.addAll(context.selectByKey(ArrayType.ELEMENT_TYPE_IDX, this));
-        cascade.addAll(context.selectByKey(ClassType.TYPE_ARGUMENTS_IDX, this));
+        cascade.addAll(context.selectByKey(Klass.TYPE_ARGUMENTS_IDX, this));
         return new ArrayList<>(cascade);
     }
 
@@ -483,6 +411,42 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
 
     public TypeId getTypeId() {
         return new TypeId(TypeTag.fromCategory(category), getId().getPhysicalId());
+    }
+
+    public abstract Type copy();
+
+    public String toTypeExpression() {
+        try(var serContext = SerializeContext.enter()) {
+            return toTypeExpression(serContext);
+        }
+    }
+
+    public abstract String toTypeExpression(SerializeContext serializeContext);
+
+    public  void write(InstanceOutput output) {
+        output.write(category.code());
+        write0(output);
+    }
+
+    public abstract void write0(InstanceOutput output);
+
+    public static Type readType(InstanceInput input, TypeDefProvider typeDefProvider) {
+        var category = TypeCategory.fromCode(input.read());
+        return switch (category) {
+            case CLASS, INTERFACE, ENUM, VALUE -> ClassType.read(input, typeDefProvider);
+            case VARIABLE -> VariableType.read(input, typeDefProvider);
+            case CAPTURED -> CapturedType.read(input, typeDefProvider);
+            case LONG, DOUBLE, NULL, VOID, TIME, PASSWORD, STRING, BOOLEAN -> PrimitiveType.read(input);
+            case FUNCTION -> FunctionType.read(input, typeDefProvider);
+            case UNCERTAIN -> UncertainType.read(input, typeDefProvider);
+            case UNION ->  UnionType.read(input, typeDefProvider);
+            case INTERSECTION -> IntersectionType.read(input, typeDefProvider);
+            case READ_ONLY_ARRAY -> ArrayType.read(input, ArrayKind.READ_ONLY, typeDefProvider);
+            case READ_WRITE_ARRAY -> ArrayType.read(input, ArrayKind.READ_WRITE, typeDefProvider);
+            case CHILD_ARRAY -> ArrayType.read(input, ArrayKind.CHILD, typeDefProvider);
+            case NOTHING -> new NeverType();
+            case OBJECT -> new AnyType();
+        };
     }
 
 }

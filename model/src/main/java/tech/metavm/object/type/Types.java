@@ -10,11 +10,7 @@ import tech.metavm.flow.*;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.instance.core.FunctionInstance;
 import tech.metavm.object.instance.core.TypeTag;
-import tech.metavm.object.type.generic.TypeArgumentMap;
-import tech.metavm.object.type.rest.dto.FieldDTO;
-import tech.metavm.object.type.rest.dto.PTypeDTO;
-import tech.metavm.object.type.rest.dto.TypeDTO;
-import tech.metavm.util.ContextUtil;
+import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
@@ -30,35 +26,42 @@ public class Types {
 
     private static final TypeFactory TYPE_FACTORY = new DefaultTypeFactory(ModelDefRegistry::getType);
 
-    public static String getTypeVariableCanonicalName(TypeVariable typeVariable, Function<Type, java.lang.reflect.Type> getJavaType) {
+    /*public static String getTypeVariableCanonicalName(TypeVariable typeVariable, Function<Type, java.lang.reflect.Type> getJavaType) {
         return getCanonicalName(typeVariable.getGenericDeclaration(), getJavaType) + "-"
                 + getJavaType.apply(typeVariable).getTypeName();
-    }
+    }*/
 
-    public static String getCanonicalName(tech.metavm.entity.GenericDeclaration genericDeclaration,
+    /*public static String getCanonicalName(tech.metavm.entity.GenericDeclaration genericDeclaration,
                                           Function<Type, java.lang.reflect.Type> getJavaType) {
         return switch (genericDeclaration) {
-            case ClassType classType -> getCanonicalName(classType, getJavaType);
+            case Klass classType -> getCanonicalName(classType, getJavaType);
             case Method method -> getCanonicalMethodName(method, getJavaType);
             default -> throw new IllegalStateException("Unexpected value: " + genericDeclaration);
         };
+    }*/
+
+    public static Klass resolveKlass(Type type) {
+        if(type instanceof ClassType classType)
+            return classType.resolve();
+        else
+            throw new InternalException("Can not resolve klass from type " + type.getTypeDesc() + " because it's not a class type");
     }
 
     public static Type getViewType(Type sourceType, UnionType viewUnionType) {
         return NncUtils.findRequired(viewUnionType.getMembers(), sourceType::isViewType);
     }
 
-    public static String getCanonicalMethodName(Method method, Function<Type, java.lang.reflect.Type> getJavaType) {
+    /*public static String getCanonicalMethodName(Method method, Function<Type, java.lang.reflect.Type> getJavaType) {
         return getCanonicalName(method.getDeclaringType(), getJavaType) + "-" + method.getName()
                 + "("
                 + NncUtils.map(method.getParameters(), param -> getCanonicalName(param.getType(), getJavaType))
                 + ")";
-    }
+    }*/
 
     public static String getCanonicalName(Type type, Function<Type, java.lang.reflect.Type> getJavType) {
         return switch (type) {
             case ClassType classType -> getCanonicalName(classType, getJavType);
-            case TypeVariable typeVariable -> getCanonicalName(typeVariable, getJavType);
+            case VariableType variableType -> getCanonicalName(variableType, getJavType);
             case ArrayType arrayType -> getCanonicalName(arrayType, getJavType);
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
@@ -68,12 +71,12 @@ public class Types {
         return getJavaType.apply(arrayType.getElementType()) + "[]";
     }
 
-    public static String getCanonicalName(TypeVariable typeVariable, Function<Type, java.lang.reflect.Type> getJavaType) {
+    /*public static String getCanonicalName(TypeVariable typeVariable, Function<Type, java.lang.reflect.Type> getJavaType) {
         var type = (java.lang.reflect.TypeVariable<?>) getJavaType.apply(typeVariable);
         return type.getBounds()[0].getTypeName();
-    }
+    }*/
 
-    public static String getCanonicalName(ClassType classType, Function<Type, java.lang.reflect.Type> getJavaType) {
+    /*public static String getCanonicalName(Klass classType, Function<Type, java.lang.reflect.Type> getJavaType) {
         if (classType.getTemplate() != null) {
             return parameterizedName(
                     getJavaType.apply(classType).getTypeName(),
@@ -82,7 +85,7 @@ public class Types {
         } else {
             return getJavaType.apply(classType).getTypeName();
         }
-    }
+    }*/
 
     public static Type substitute(Type type, IEntityContext entityContext, List<TypeVariable> typeParameters, List<Type> typeArguments) {
         return substitute(List.of(type), entityContext, typeParameters, typeArguments).get(0);
@@ -132,7 +135,7 @@ public class Types {
             case ClassType classType -> {
                 if (classType.isParameterized() && actualType instanceof ClassType actualClassType) {
                     var formalTypeArguments = classType.getTypeArguments();
-                    var alignedActualClassType = Objects.requireNonNull(actualClassType.findAncestorType(classType.getEffectiveTemplate()));
+                    var alignedActualClassType = Objects.requireNonNull(actualClassType.findAncestor(classType.getEffectiveTemplate().getKlass()));
                     var actualTypeArguments = alignedActualClassType.getTypeArguments();
                     for (int i = 0; i < formalTypeArguments.size(); i++) {
                         extractCapturedType(formalTypeArguments.get(i), actualTypeArguments.get(i), setCaptureType);
@@ -222,12 +225,9 @@ public class Types {
             case CapturedType capturedType -> capturedType.getUncertainType();
             case ClassType classType -> {
                 if (classType.isParameterized()) {
-                    yield compositeTypeFacade.getParameterizedType(
-                            classType.getTemplate(),
-                            NncUtils.map(classType.getTypeArguments(), arg -> tryUncapture(arg, compositeTypeFacade)),
-                            classType.getStage(),
-                            new MockDTOProvider()
-                    );
+                    yield classType.getKlass().getParameterized(
+                            NncUtils.map(classType.getTypeArguments(), arg -> tryUncapture(arg, compositeTypeFacade))
+                    ).getType();
                 } else
                     yield classType;
             }
@@ -249,21 +249,21 @@ public class Types {
                     tryUncapture(functionType.getReturnType(), compositeTypeFacade),
                     null
             );
-            case TypeVariable typeVariable -> typeVariable;
+            case VariableType variableType -> variableType;
             default -> type;
         };
     }
 
-    public static ClassType getTypeType(TypeTag tag) {
+    public static Type getTypeType(TypeTag tag) {
         return switch (tag) {
-            case CLASS -> StandardTypes.getClassType(ClassType.class);
+            case CLASS -> StandardTypes.getClassType(Klass.class);
             case ARRAY -> StandardTypes.getClassType(ArrayType.class);
         };
     }
 
-    public static ClassType getTypeType(TypeCategory typeCategory) {
+    public static Type getTypeType(TypeCategory typeCategory) {
         if (typeCategory.isPojo())
-            return StandardTypes.getClassType(ClassType.class);
+            return StandardTypes.getClassType(Klass.class);
         else if (typeCategory.isPrimitive())
             return StandardTypes.getClassType(PrimitiveType.class);
         else if (typeCategory.isArray())
@@ -294,8 +294,9 @@ public class Types {
         if (type2.isAssignableFrom(type1, null))
             return type2;
         return switch (type1) {
-            case ClassType classType -> NncUtils.orElse(
-                    classType.getClosure().find(anc -> anc.isAssignableFrom(type2, null)),
+            case ClassType classType -> NncUtils.getOrElse(
+                    classType.resolve().getClosure().find(anc -> anc.getType().isAssignableFrom(type2, null)),
+                    Klass::getType,
                     StandardTypes.getAnyType(type2.isNullable()));
             case UnionType unionType -> getLeastUpperBound(getLeastUpperBound(unionType.getMembers()), type2);
             case IntersectionType intersectionType ->
@@ -314,25 +315,29 @@ public class Types {
         return NncUtils.findRequired(types, t -> !hasDescendant.contains(t));
     }
 
+    public static FunctionType getFunctionType(List<Parameter> parameters, Type returnType) {
+        return new FunctionType(NncUtils.randomNonNegative(), NncUtils.map(parameters, Parameter::getType), returnType);
+    }
+
     public static ClassType createFunctionalClass(ClassType functionalInterface,
-                                                  FunctionTypeProvider functionTypeProvider,
-                                                  ParameterizedTypeProvider parameterizedTypeProvider) {
+                                              FunctionTypeProvider functionTypeProvider,
+                                              ParameterizedTypeProvider parameterizedTypeProvider) {
         var klass = ClassTypeBuilder.newBuilder(functionalInterface.getName() + "实现", null)
-                .interfaces(functionalInterface)
+                .interfaces(functionalInterface.resolve())
                 .ephemeral(true)
                 .build();
         klass.setEphemeralEntity(true);
-        var sam = getSAM(functionalInterface);
+        var sam = getSAM(functionalInterface.resolve());
         var funcType = functionTypeProvider.getFunctionType(sam.getParameterTypes(), sam.getReturnType());
         var funcField = FieldBuilder.newBuilder("函数", "func", klass, funcType).build();
 
-        var flow = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode(), functionTypeProvider)
+        var flow = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode())
                 .overridden(List.of(sam))
                 .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
                 .returnType(sam.getReturnType())
                 .build();
 
-        var selfNode = new SelfNode(null, "当前对象", null, SelfNode.getSelfType(flow, parameterizedTypeProvider), null, flow.getRootScope());
+        var selfNode = new SelfNode(null, "当前对象", null, flow.getDeclaringType().getType(), null, flow.getRootScope());
         var inputType = ClassTypeBuilder.newBuilder("流程输入", "InputType").temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
@@ -349,10 +354,10 @@ public class Types {
         );
         var returnValue = flow.getReturnType().isVoid() ? null : Values.expression(new NodeExpression(funcNode));
         new ReturnNode(null, "结束", null, funcNode, flow.getRootScope(), returnValue);
-        return klass;
+        return klass.getType();
     }
 
-    public static Method getSAM(ClassType functionalInterface) {
+    public static Method getSAM(Klass functionalInterface) {
         var abstractFlows = NncUtils.filter(
                 functionalInterface.getMethods(),
                 Method::isAbstract
@@ -363,7 +368,7 @@ public class Types {
         return abstractFlows.get(0);
     }
 
-    public static ClassType createSAMInterfaceImpl(ClassType samInterface, FunctionInstance function, CompositeTypeFacade compositeTypeFacade) {
+    public static Klass createSAMInterfaceImpl(Klass samInterface, FunctionInstance function, CompositeTypeFacade compositeTypeFacade) {
         var klass = ClassTypeBuilder.newBuilder(
                         samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
                 .interfaces(samInterface)
@@ -374,11 +379,11 @@ public class Types {
         var sam = samInterface.getSingleAbstractMethod();
         var methodStaticType = new FunctionType(
                 null,
-                NncUtils.prepend(klass, sam.getParameterTypes()),
+                NncUtils.prepend(klass.getType(), sam.getParameterTypes()),
                 sam.getReturnType()
         );
         methodStaticType.setEphemeralEntity(true);
-        var method = MethodBuilder.newBuilder(klass, sam.getName(), null, null)
+        var method = MethodBuilder.newBuilder(klass, sam.getName(), null)
                 .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
                 .returnType(sam.getReturnType())
                 .type(sam.getType())
@@ -392,7 +397,7 @@ public class Types {
                 Values.constant(Expressions.constant(function)),
                 function.getType().getParameterTypes().isEmpty() ?
                         List.of() :
-                        NncUtils.map(input.getType().getFields(), f -> Values.nodeProperty(input, f))
+                        NncUtils.map(input.getType().resolve().getFields(), f -> Values.nodeProperty(input, f))
         );
         if (sam.getReturnType().isVoid())
             Nodes.ret("ret", scope, null);
@@ -412,7 +417,28 @@ public class Types {
         throw new InternalException("type " + type + " is not an array type");
     }
 
-    public static Type saveType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
+    public static TypeDef saveTypeDef(TypeDefDTO typeDefDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        return switch(typeDefDTO) {
+            case TypeDTO typeDTO -> saveClass(typeDTO, stage, batch);
+            case TypeVariableDTO typeVariableDTO -> saveTypeVariable(typeVariableDTO, stage, batch);
+            case CapturedTypeVariableDTO capturedTypeVariableDTO -> saveCapturedTypeVariable(capturedTypeVariableDTO, stage, batch);
+            default -> throw new InternalException("Invalid TypeDefDTO: " + typeDefDTO);
+        };
+    }
+
+    public static Klass saveClass(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        return TYPE_FACTORY.saveKlass(typeDTO, stage, batch);
+    }
+
+    public static TypeVariable saveTypeVariable(TypeVariableDTO typeVariableDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        return TYPE_FACTORY.saveTypeVariable(typeVariableDTO, stage, batch);
+    }
+
+    public static CapturedTypeVariable saveCapturedTypeVariable(CapturedTypeVariableDTO capturedTypeVariableDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        return TYPE_FACTORY.saveCapturedTypeVariable(capturedTypeVariableDTO, stage, batch);
+    }
+
+    /*public static Type saveType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try (var ignored = ContextUtil.getProfiler().enter("Types.saveType")) {
             var category = TypeCategory.getByCode(typeDTO.category());
             if (typeDTO.param() instanceof PTypeDTO pTypeDTO) {
@@ -436,6 +462,7 @@ public class Types {
             }
         }
     }
+     */
 
     public static Type getUnionType(Collection<Type> types, UnionTypeProvider unionTypeProvider) {
         if (types.isEmpty())
@@ -460,8 +487,8 @@ public class Types {
         return members.size() == 1 ? members.iterator().next() : unionTypeProvider.getUnionType(members);
     }
 
-    public static ClassType saveClasType(TypeDTO classDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        return TYPE_FACTORY.saveClassType(classDTO, stage, batch);
+    public static Klass saveClasType(TypeDTO classDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        return TYPE_FACTORY.saveKlass(classDTO, stage, batch);
     }
 
     public static Flow saveFlow(FlowDTO flowDTO, SaveTypeBatch batch) {
@@ -472,7 +499,7 @@ public class Types {
         return TYPE_FACTORY.saveFunction(flowDTO, stage, batch);
     }
 
-    public static Field createFieldAndBind(ClassType type, FieldDTO fieldDTO, IEntityContext context) {
+    public static Field createFieldAndBind(Klass type, FieldDTO fieldDTO, IEntityContext context) {
         return TYPE_FACTORY.saveField(type, fieldDTO, context);
     }
 
@@ -522,7 +549,7 @@ public class Types {
         return type == StandardTypes.getNullType();
     }
 
-    public static ClassType ensureClassArray(Type type) {
+    /* public static Klass ensureClassArray(Type type) {
         if (type.isBinaryNullable()) {
             type = type.getUnderlyingType();
         }
@@ -533,34 +560,34 @@ public class Types {
         if (elementType.isBinaryNullable()) {
             elementType = elementType.getUnderlyingType();
         }
-        if (elementType instanceof ClassType classType) {
+        if (elementType instanceof Klass classType) {
             return classType;
         } else {
             throw new InternalException("Only reference array is supported for AllMatchExpression right now");
         }
-    }
+    } */
 
-    public static ClassType getSetType(Type type, IEntityContext context) {
+    public static Klass getSetType(Type type, IEntityContext context) {
         return context.getParameterizedType(StandardTypes.getSetType(), List.of(type));
     }
 
-    public static ClassType getListType(Type type, IEntityContext context) {
+    public static Klass getListType(Type type, IEntityContext context) {
         return context.getParameterizedType(StandardTypes.getListType(), List.of(type));
     }
 
-    public static ClassType getCollectionType(Type type, IEntityContext context) {
+    public static Klass getCollectionType(Type type, IEntityContext context) {
         return context.getParameterizedType(StandardTypes.getCollectionType(), List.of(type));
     }
 
-    public static ClassType getIteratorType(Type type, IEntityContext context) {
+    public static Klass getIteratorType(Type type, IEntityContext context) {
         return context.getParameterizedType(StandardTypes.getIteratorType(), List.of(type));
     }
 
-    public static ClassType getIteratorImplType(Type type, IEntityContext context) {
+    public static Klass getIteratorImplType(Type type, IEntityContext context) {
         return context.getParameterizedType(StandardTypes.getIteratorImplType(), List.of(type));
     }
 
-    public static ClassType getMapType(Type keyType, Type valueType, IEntityContext context) {
+    public static Klass getMapType(Type keyType, Type valueType, IEntityContext context) {
         return context.getParameterizedType(StandardTypes.getMapType(), List.of(keyType, valueType));
     }
 
@@ -623,18 +650,18 @@ public class Types {
     }
 
     private static String getTypeArgumentName(Type typeArgument) {
-        if (typeArgument instanceof TypeVariable typeVariable) {
-            return typeVariable.getGenericDeclaration().getName() + "_" + typeVariable.getName();
+        if (typeArgument instanceof VariableType vt) {
+            return vt.getVariable().getGenericDeclaration().getName() + "_" + vt.getName();
         } else {
             return typeArgument.getName();
         }
     }
 
     private static String getTypeArgumentCode(Type typeArgument) {
-        if (typeArgument instanceof TypeVariable typeVariable) {
-            var genericDeclCode = typeVariable.getGenericDeclaration().getCode();
+        if (typeArgument instanceof VariableType vt) {
+            var genericDeclCode = vt.getVariable().getGenericDeclaration().getCode();
             if (genericDeclCode != null) {
-                return genericDeclCode + "_" + typeVariable.getCode();
+                return genericDeclCode + "_" + vt.getCode();
             } else {
                 return null;
             }
@@ -707,27 +734,27 @@ public class Types {
         };
     }
 
-    public static ClassType getClassType(Type type) {
+    /*public static Klass getClassType(Type type) {
         return switch (type) {
-            case ClassType classType -> classType;
-            case TypeVariable typeVariable -> (ClassType) typeVariable.getUpperBound();
+            case Klass classType -> classType;
+            case TypeVariable typeVariable -> (Klass) typeVariable.getUpperBound();
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
-    }
+    }*/
 
-    public static TypeArgumentMap resolveGenerics(Type type) {
-        var visitor = new GenericResolutionVisitor();
-        visitor.visitType(type);
-        return visitor.getSubstitutor();
-    }
+//    public static TypeArgumentMap resolveGenerics(Type type) {
+//        var visitor = new GenericResolutionVisitor();
+//        visitor.visitType(type);
+//        return visitor.getSubstitutor();
+//    }
 
-    public static String getConstructorCode(ClassType classType) {
+    public static String getConstructorCode(Klass classType) {
         var typeCode = Objects.requireNonNull(classType.getEffectiveTemplate().getCode());
         var dotIdx = typeCode.lastIndexOf('.');
         return dotIdx >= 0 ? typeCode.substring(dotIdx + 1) : typeCode;
     }
 
-    private static class GenericResolutionVisitor extends MetaTypeVisitor {
+    /*private static class GenericResolutionVisitor extends MetaTypeVisitor {
 
         private TypeArgumentMap substitutor = TypeArgumentMap.EMPTY;
 
@@ -748,6 +775,6 @@ public class Types {
         public TypeArgumentMap getSubstitutor() {
             return substitutor;
         }
-    }
+    } */
 
 }

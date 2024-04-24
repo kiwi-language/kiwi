@@ -3,7 +3,7 @@ package tech.metavm.view;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.*;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.view.FieldsObjectMapping;
 import tech.metavm.object.view.MappingSaver;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
@@ -27,7 +27,7 @@ public class ViewManager extends EntityContextFactoryBean {
 
     public ListViewDTO getDefaultListView(String typeId) {
         try (IEntityContext context = newContext()) {
-            ClassType type = context.getClassType(typeId);
+            Klass type = context.getKlass(typeId);
             List<ListView> views = context.query(
                     IDX_TYPE_PRIORITY.newQueryBuilder()
                             .from(new EntityIndexKey(List.of(type, 0)))
@@ -55,7 +55,7 @@ public class ViewManager extends EntityContextFactoryBean {
     public void removeMapping(String id) {
         try (var context = newContext()) {
             var mapping = context.getEntity(FieldsObjectMapping.class, id);
-            mapping.getSourceType().removeMapping(mapping);
+            mapping.getSourceKlass().removeMapping(mapping);
         }
     }
 

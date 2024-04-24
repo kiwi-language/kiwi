@@ -5,6 +5,8 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.UncertainTypeKey;
 import tech.metavm.object.type.rest.dto.UncertainTypeParam;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -27,8 +29,8 @@ public class UncertainType extends CompositeType implements LoadAware  {
     public UncertainType(Long tmpId, Type lowerBound, Type upperBound) {
         super(getName(lowerBound, upperBound), getCode(lowerBound, upperBound), true, true, TypeCategory.UNCERTAIN);
         setTmpId(tmpId);
-        this.lowerBound = lowerBound;
-        this.upperBound = upperBound;
+        this.lowerBound = addChild(lowerBound.copy(), "lowerBound");
+        this.upperBound = addChild(upperBound.copy(), "upperBound");
     }
 
     private static String getName(Type lowerBound, Type upperBound) {
@@ -45,7 +47,7 @@ public class UncertainType extends CompositeType implements LoadAware  {
 
     @Override
     public UncertainTypeKey getTypeKey() {
-        return new UncertainTypeKey(lowerBound.getStringId(), upperBound.getStringId());
+        return new UncertainTypeKey(lowerBound.getTypeKey(), upperBound.getTypeKey());
     }
 
     @Override
@@ -80,7 +82,6 @@ public class UncertainType extends CompositeType implements LoadAware  {
 
     public void setUpperBound(Type upperBound) {
         this.upperBound = upperBound;
-        onSuperTypesChanged();
     }
 
     @Override
@@ -127,4 +128,24 @@ public class UncertainType extends CompositeType implements LoadAware  {
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitUncertainType(this);
     }
+
+    public UncertainType copy() {
+        return new UncertainType(null, lowerBound.copy(), upperBound.copy());
+    }
+
+    @Override
+    public String toTypeExpression(SerializeContext serializeContext) {
+        return "[" + lowerBound.toTypeExpression(serializeContext) + "," + upperBound.toTypeExpression(serializeContext) + "]";
+    }
+
+    @Override
+    public void write0(InstanceOutput output) {
+       lowerBound.write(output);
+       upperBound.write(output);
+    }
+
+    public static UncertainType read(InstanceInput input, TypeDefProvider typeDefProvider) {
+        return new UncertainType(null, Type.readType(input, typeDefProvider), Type.readType(input, typeDefProvider));
+    }
+
 }

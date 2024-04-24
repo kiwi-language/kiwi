@@ -2,7 +2,7 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -12,10 +12,10 @@ import java.util.Map;
 
 public class ObjectNode extends InstanceNode<ClassInstance> {
 
-    private final ClassType type;
+    private final Klass type;
     private final Map<String, InstanceNode<?>> children = new LinkedHashMap<>();
 
-    public ObjectNode(PathTree path, ClassType type) {
+    public ObjectNode(PathTree path, Klass type) {
         super(path);
         this.type = type;
         for (PathTree child : path.getChildren()) {

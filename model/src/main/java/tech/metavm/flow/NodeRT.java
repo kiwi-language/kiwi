@@ -28,7 +28,7 @@ public abstract class NodeRT extends Element implements LocalKey {
     private String code;
     @EntityField("类别")
     private final NodeKind kind;
-    @EntityField("输出类型")
+    @ChildEntity("输出类型")
     @Nullable
     private Type outputType;
     @EntityField("所属范围")
@@ -57,7 +57,7 @@ public abstract class NodeRT extends Element implements LocalKey {
         setName(name);
         this.code = NncUtils.get(code, NamingUtils::ensureValidCode);
         this.scope = scope;
-        this.outputType = outputType;
+        this.outputType = NncUtils.get(outputType, t -> addChild(t.copy(), "outputType"));
         this.kind = NodeKind.getByNodeClass(this.getClass());
         if (previous != null) {
             previous.insertAfter(this);
@@ -191,12 +191,10 @@ public abstract class NodeRT extends Element implements LocalKey {
     }
 
     protected void setOutputType(@Nullable Type outputType) {
-        this.outputType = outputType;
+        this.outputType = NncUtils.get(outputType, t -> addChild(t, "outputType"));
     }
 
     public NodeDTO toDTO(SerializeContext serContext) {
-        if (getType() != null && serContext.includeNodeOutputType())
-            serContext.writeType(getType());
         return new NodeDTO(
                 serContext.getId(this),
                 getFlow().getStringId(),

@@ -5,6 +5,6 @@ import tech.metavm.entity.EntityType;
 @EntityType("类成员")
 public interface ClassMember {
 
-    ClassType getDeclaringType();
+    Klass getDeclaringType();
 
 }

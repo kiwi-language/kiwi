@@ -6,6 +6,8 @@ import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.IntersectionTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -22,7 +24,7 @@ public class IntersectionType extends CompositeType {
     public IntersectionType(Long tmpId, Set<Type> types) {
         super(getName(types), getCode(types), false, false, TypeCategory.INTERSECTION);
         setTmpId(tmpId);
-        this.types.addAll(types);
+        this.types.addAll(NncUtils.map(types, Type::copy));
     }
 
     private static String getName(Iterable<Type> types) {
@@ -38,7 +40,7 @@ public class IntersectionType extends CompositeType {
 
     @Override
     public TypeKey getTypeKey() {
-        return new IntersectionTypeKey(new HashSet<>(NncUtils.map(types, Entity::getStringId)));
+        return new IntersectionTypeKey(new HashSet<>(NncUtils.map(types, Type::getTypeKey)));
     }
 
     @Override
@@ -107,4 +109,28 @@ public class IntersectionType extends CompositeType {
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitIntersectionType(this);
     }
+
+    @Override
+    public IntersectionType copy() {
+        return new IntersectionType(null, NncUtils.mapUnique(types, Type::copy));
+    }
+
+    @Override
+    public String toTypeExpression(SerializeContext serializeContext) {
+        return NncUtils.join(types, type -> type.toTypeExpression(serializeContext), "&");
+    }
+
+    @Override
+    public void write0(InstanceOutput output) {
+        output.writeInt(types.size());
+        types.forEach(t -> t.write(output));
+    }
+
+    public static IntersectionType read(InstanceInput input, TypeDefProvider typeDefProvider) {
+        var types = new HashSet<Type>();
+        for (int i = 0; i < input.readInt(); i++)
+            types.add(Type.readType(input, typeDefProvider));
+        return new IntersectionType(null, types);
+    }
+
 }

@@ -20,7 +20,7 @@ public class EnumEditContext {
     private final List<ChoiceOptionDTO> optionDTOs;
     private final List<EnumConstantRT> defaultOptions = new ArrayList<>();
     private final IEntityContext entityContext;
-    private ClassType type;
+    private Klass type;
 
     public EnumEditContext(String id,
                            String name,
@@ -46,7 +46,7 @@ public class EnumEditContext {
             type = createType();
         }
         else {
-            type = entityContext.getEntity(ClassType.class, Id.parse(id));
+            type = entityContext.getEntity(Klass.class, Id.parse(id));
         }
     }
 
@@ -80,7 +80,7 @@ public class EnumEditContext {
     }
 
     private void addEnumConstant(String name, ClassInstance instance) {
-        FieldBuilder.newBuilder(name, null, type, type)
+        FieldBuilder.newBuilder(name, null, type, type.getType())
                 .isChild(true)
                 .isStatic(true)
                 .staticValue(instance)
@@ -96,9 +96,9 @@ public class EnumEditContext {
         );
     }
 
-    private ClassType createType() {
+    private Klass createType() {
         type = ClassTypeBuilder.newBuilder(name, null)
-                .superClass(ModelDefRegistry.getClassType(Enum.class))
+                .superClass(ModelDefRegistry.getClassType(Enum.class).resolve())
                 .category(TypeCategory.ENUM)
                 .anonymous(anonymous)
                 .build();
@@ -135,7 +135,7 @@ public class EnumEditContext {
 //        );
 //    }
 
-    public ClassType getType() {
+    public Klass getType() {
         return type;
     }
 

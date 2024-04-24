@@ -13,6 +13,7 @@ import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.*;
 import tech.metavm.util.profile.Profiler;
@@ -46,7 +47,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private boolean closed;
     private final boolean readonly;
     private final String clientId = ContextUtil.getClientId();
-    private final TypeProvider typeProvider;
+    private final TypeDefProvider typeDefProvider;
     private final IndexSource indexSource;
     private final MappingProvider mappingProvider;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
@@ -57,7 +58,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                                IInstanceContext parent,
                                boolean readonly,
                                IndexSource indexSource,
-                               TypeProvider typeProvider,
+                               TypeDefProvider typeDefProvider,
                                MappingProvider mappingProvider,
                                ParameterizedFlowProvider parameterizedFlowProvider,
                                CompositeTypeFacade compositeTypeFacade) {
@@ -65,7 +66,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         this.readonly = readonly;
         this.parent = parent;
         this.indexSource = indexSource;
-        this.typeProvider = typeProvider;
+//        this.typeProvider = typeProvider;
+        this.typeDefProvider = typeDefProvider;
         this.mappingProvider = mappingProvider;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.compositeTypeFacade = compositeTypeFacade;
@@ -273,10 +275,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private DurableInstance allocateView(ViewId viewId) {
-        var viewType = viewId.getViewType(mappingProvider, typeProvider);
+        var viewType = viewId.getViewTypeKey(mappingProvider).toType(typeDefProvider);
         DurableInstance view;
         if(viewType instanceof ClassType classViewType) {
-            view = ClassInstanceBuilder.newBuilder(classViewType)
+            view = ClassInstanceBuilder.newBuilder(classViewType.resolve())
                     .sourceRef(viewId.getSourceRef(this, mappingProvider))
                     .load(this::initializeView)
                     .id(viewId)
@@ -312,12 +314,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         });
     }
 
-    private Id getTypeId(Id id) {
-        return switch (id) {
-            case PhysicalId physicalId -> physicalId.getTypeId();
-            case ViewId viewId -> viewId.getViewType(mappingProvider, typeProvider).getEntityId();
+    private Type getTypeByInstanceId(Id id) {
+        TypeKey typeKey = switch (id) {
+            case PhysicalId physicalId -> physicalId.getTypeKey();
+            case ViewId viewId -> viewId.getViewTypeKey(mappingProvider);
             default -> throw new IllegalStateException("Unexpected value: " + id);
         };
+        return typeKey.toType(typeDefProvider);
     }
 
 //    protected abstract long getTypeId(long id);
@@ -338,7 +341,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected DurableInstance allocateInstance(Id id) {
-        Type type = getType(getTypeId(id));
+        Type type = getTypeByInstanceId(id);
         if (type instanceof ArrayType arrayType) {
             return switch (id) {
                 case PhysicalId physicalId ->
@@ -349,7 +352,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         } else {
             return switch (id) {
                 case PhysicalId physicalId ->
-                        new ClassInstance(physicalId, (ClassType) type, false, this::initializeInstance);
+                        new ClassInstance(physicalId, ((ClassType) type).resolve(), false, this::initializeInstance);
                 case ViewId viewId -> allocateView(viewId);
                 default -> throw new IllegalStateException("Unexpected value: " + id);
             };
@@ -357,8 +360,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public TypeProvider getTypeProvider() {
-        return typeProvider;
+    public TypeDefProvider getTypeDefProvider() {
+        return typeDefProvider;
     }
 
     @Override
@@ -493,11 +496,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public long getAppId() {
         return appId;
-    }
-
-    @Override
-    public Type getType(Id id) {
-        return typeProvider.getType(id);
     }
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");

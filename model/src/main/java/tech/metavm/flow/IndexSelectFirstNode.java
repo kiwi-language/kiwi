@@ -7,6 +7,7 @@ import tech.metavm.flow.rest.IndexSelectFirstNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Index;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
@@ -39,7 +40,7 @@ public class IndexSelectFirstNode extends NodeRT {
 
     public IndexSelectFirstNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope,
                                 Index index, IndexQueryKey key) {
-        super(tmpId, name, code, index.getDeclaringType(), previous, scope);
+        super(tmpId, name, code, index.getDeclaringType().getType(), previous, scope);
         this.index = index;
         this.key = addChild(key, "key");
     }

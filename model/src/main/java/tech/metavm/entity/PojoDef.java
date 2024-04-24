@@ -6,7 +6,11 @@ import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.util.*;
+import tech.metavm.object.type.Klass;
+import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectionUtils;
+import tech.metavm.util.TypeReference;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -19,19 +23,19 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     private final List<IFieldDef> fieldDefList = new ArrayList<>();
     private final List<IndexConstraintDef> indexConstraintDefList = new ArrayList<>();
     private final List<CheckConstraintDef> checkConstraintDefList = new ArrayList<>();
-    private final Map<ClassType, PojoDef<? extends T>> subTypeDefList = new HashMap<>();
-    protected final ClassType type;
+    private final Map<Klass, PojoDef<? extends T>> subTypeDefList = new HashMap<>();
+    protected final Klass klass;
     private Long id;
     private final DefContext defContext;
 
     public PojoDef(Class<T> javaClass,
                    Type javaType,
                    PojoDef<? super T> superDef,
-                   ClassType type,
+                   Klass klass,
                    DefContext defContext
     ) {
         super(javaClass, javaType, ClassInstance.class);
-        this.type = type;
+        this.klass = klass;
         this.defContext = defContext;
         this.superDef = superDef;
         if (superDef != null) {
@@ -53,7 +57,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     @Override
     public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
-        if (type == instance.getType()) {
+        if (klass.isType(instance.getType())) {
             if (model instanceof Entity entity) {
                 entity.setParent(
                         NncUtils.get(instance.getParent(), p -> objectInstanceMap.getEntity(Entity.class, p)),
@@ -62,7 +66,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
             }
             setPojoFields(model, instance, objectInstanceMap);
         } else {
-            PojoDef<? extends T> subTypeDef = getSubTypeDef(instance.getType());
+            PojoDef<? extends T> subTypeDef = getSubTypeDef(instance.getType().resolve());
             subTypeDef.initModelHelper(model, instance, objectInstanceMap);
         }
     }
@@ -100,8 +104,8 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     private void resetInstance(ClassInstance instance, Object model, ObjectInstanceMap instanceMap) {
 //        try(var ignored = ContextUtil.getProfiler().enter("PojoDef.resetInstance")) {
-            ClassType instanceType = instance.getType();
-            if (type == instance.getType()) {
+            Klass instanceType = instance.getType().resolve();
+            if (klass.isType(instance.getType())) {
                 if (model instanceof Entity entity)
                     reloadParent(entity, instance, instanceMap, defContext);
                 instance.reset(getInstanceFields(model, instanceMap), instance.getVersion(), instance.getSyncVersion());
@@ -115,20 +119,20 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         return null;
     }
 
-    private PojoDef<? extends T> getSubTypeDef(ClassType subType) {
-        if (subType == type ||
-                !type.isAssignableFrom(subType, null)) {
+    private PojoDef<? extends T> getSubTypeDef(Klass subType) {
+        if (subType == klass ||
+                !klass.isAssignableFrom(subType, null)) {
             throw new InternalException("type: " + subType + " is not a sub type of current type: " + getJavaClass());
         }
-        ClassType t = subType;
-        while (t != null && t.getSuperClass() != type) {
+        Klass t = subType;
+        while (t != null && t.getSuperClass() != klass) {
             t = t.getSuperClass();
         }
-        ClassType directSubType = NncUtils.requireNonNull(t);
+        Klass directSubType = NncUtils.requireNonNull(t);
         PojoDef<? extends T> subDef = subTypeDefList.get(directSubType);
         if (subDef == null) {
             subDef = new TypeReference<PojoDef<? extends T>>() {
-            }.getType().cast(defContext.getDef(directSubType));
+            }.getType().cast(defContext.getDef(directSubType.getType()));
         }
         return subDef;
     }
@@ -146,7 +150,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     public <S extends T> void addSubTypeDef(PojoDef<S> def) {
-        subTypeDefList.put(def.getType(), def);
+        subTypeDefList.put(def.getType().resolve(), def);
     }
 
     public IFieldDef getFieldDef(java.lang.reflect.Field javaField) {
@@ -214,7 +218,10 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     public ClassType getType() {
-        return type;
+        return klass.getType();
     }
 
+    public Klass getKlass() {
+        return klass;
+    }
 }

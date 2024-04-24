@@ -12,7 +12,7 @@ import tech.metavm.flow.rest.TryEndValueDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.Instances;
@@ -31,11 +31,11 @@ public class TryEndNode extends ChildTypeNode {
         var node = (TryEndNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new TryEndNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
-                    context.getEntity(ClassType.class, Id.parse(nodeDTO.outputTypeId())),
+                    context.getEntity(Klass.class, Id.parse(nodeDTO.outputTypeId())),
                     (TryNode) prev, scope);
         }
         var param = (TryEndNodeParam) nodeDTO.getParam();
-        if (param.fields().size() != node.getType().getReadyFields().size() - 1)
+        if (param.fields().size() != node.getKlass().getReadyFields().size() - 1)
             throw new BusinessException(ErrorCode.NODE_FIELD_DEF_AND_FIELD_VALUE_MISMATCH, node.getName());
         var mergeFieldDTOs = param.fields();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
@@ -65,7 +65,7 @@ public class TryEndNode extends ChildTypeNode {
     @ChildEntity("字段列表")
     private final ChildArray<TryEndField> fields = addChild(new ChildArray<>(TryEndField.class), "fields");
 
-    public TryEndNode(Long tmpId, String name, @Nullable String code, ClassType outputType, TryNode previous, ScopeRT scope) {
+    public TryEndNode(Long tmpId, String name, @Nullable String code, Klass outputType, TryNode previous, ScopeRT scope) {
         super(tmpId, name, code, outputType, previous, scope);
     }
 
@@ -97,7 +97,7 @@ public class TryEndNode extends ChildTypeNode {
         var tryNode = frame.exitTrySection();
         assert tryNode == getPredecessor();
         var exceptionInfo = frame.getExceptionInfo(getPredecessor());
-        var exceptionField = getType().getFieldByCode("exception");
+        var exceptionField = getKlass().getFieldByCode("exception");
         Instance exception;
         NodeRT raiseNode;
         if (exceptionInfo != null) {
@@ -112,7 +112,7 @@ public class TryEndNode extends ChildTypeNode {
                 f -> f.getValue(raiseNode).evaluate(frame)
         ));
         fieldValues.put(exceptionField, exception);
-        return next(ClassInstance.create(fieldValues, getType()));
+        return next(ClassInstance.create(fieldValues, getKlass()));
     }
 
     @Override

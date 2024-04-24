@@ -5,7 +5,6 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.common.Page;
 import tech.metavm.common.Result;
 import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.*;
 
@@ -100,21 +99,6 @@ public class TypeController {
         return Result.voidSuccess();
     }
 
-    @GetMapping("/{id}/array")
-    public Result<TypeDTO> getArrayType(@PathVariable("id") String id) {
-        return Result.success(typeManager.getArrayType(id, ArrayKind.READ_WRITE.code()).type());
-    }
-
-    @GetMapping("/{id}/nullable")
-    public Result<TypeDTO> getNullableType(@PathVariable("id") String id) {
-        return Result.success(typeManager.getNullableType(id));
-    }
-
-    @GetMapping("/{id}/nullable-array")
-    public Result<TypeDTO> getNullableArrayType(@PathVariable("id") String id) {
-        return Result.success(typeManager.getNullableArrayType(id));
-    }
-
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable("id") String id) {
         typeManager.remove(id);
@@ -147,31 +131,6 @@ public class TypeController {
     public Result<Void> setAsTitle(@PathVariable("id") String id) {
         typeManager.setFieldAsTitle(id);
         return Result.success(null);
-    }
-
-    @PostMapping("/get-union-type")
-    public Result<GetTypeResponse> getUnionType(@RequestBody GetUnionTypeRequest request) {
-        return Result.success(typeManager.getUnionType(request.memberIds()));
-    }
-
-    @PostMapping("/get-array-type")
-    public Result<GetTypeResponse> getArrayType(@RequestBody GetArrayTypeRequest request) {
-        return Result.success(typeManager.getArrayType(request.elementTypeId(), request.kind()));
-    }
-
-    @PostMapping("/get-parameterized-type")
-    public Result<GetTypeResponse> getParameterizedType(@RequestBody GetParameterizedTypeRequest request) {
-        return Result.success(typeManager.getParameterizedType(request));
-    }
-
-    @PostMapping("/get-function-type")
-    public Result<GetTypeResponse> getFunctionType(@RequestBody GetFunctionTypeRequest request) {
-        return Result.success(typeManager.getFunctionType(request.parameterTypeIds(), request.returnTypeId()));
-    }
-
-    @PostMapping("/get-uncertain-type")
-    public Result<GetTypeResponse> getUncertainType(@RequestBody GetUncertainTypeRequest request) {
-        return Result.success(typeManager.getUncertainType(request.lowerBoundId(), request.upperBoundId()));
     }
 
     @GetMapping("/constraint")

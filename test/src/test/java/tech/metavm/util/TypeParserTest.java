@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Constraint;
 
 import java.lang.reflect.ParameterizedType;
@@ -72,7 +72,7 @@ public class TypeParserTest extends TestCase {
                 Table.class,
                 ParameterizedTypeImpl.create(
                         List.class,
-                        WildcardTypeImpl.createSuper(ClassType.class)
+                        WildcardTypeImpl.createSuper(Klass.class)
                 )
         );
         Type parsedType = TypeParser.parse(parameterizedType.getTypeName());

@@ -6,7 +6,6 @@ import tech.metavm.entity.ReadonlyList;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.type.*;
 
 import javax.annotation.Nullable;
@@ -125,7 +124,7 @@ public class Instances {
         return new ArrayInstance(type, elements);
     }
 
-    public static ClassInstance classInstance(ClassType type, Map<Field, Instance> fields) {
+    public static ClassInstance classInstance(Klass type, Map<Field, Instance> fields) {
         return new ClassInstance(null, fields, type);
     }
 

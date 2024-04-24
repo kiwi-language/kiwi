@@ -97,7 +97,7 @@ public class ArrayNestedMapping extends NestedMapping {
                     branch2sourceNode.put(falseBranch, Values.node(source));
                 },
                 mergeNode -> {
-                    sourceFieldRef.sourceField = FieldBuilder.newBuilder("来源", null, mergeNode.getType(), sourceType)
+                    sourceFieldRef.sourceField = FieldBuilder.newBuilder("来源", null, mergeNode.getType().resolve(), sourceType)
                             .build();
                     new MergeNodeField(sourceFieldRef.sourceField, mergeNode, branch2sourceNode);
                 }

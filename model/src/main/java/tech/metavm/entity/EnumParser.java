@@ -38,9 +38,9 @@ public class EnumParser<T extends Enum<?>> extends DefParser<T, ClassInstance, E
                 javaClass,
                 superDef,
                 ClassTypeBuilder.newBuilder(EntityUtils.getMetaTypeName(javaClass), javaClass.getName())
-                        .superClass(superDef.getType())
+                        .superClass(superDef.getKlass())
                         .category(TypeCategory.ENUM)
-                        .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getType))
+                        .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getKlass))
                         .source(ClassSource.BUILTIN)
                         .build(),
                 defContext

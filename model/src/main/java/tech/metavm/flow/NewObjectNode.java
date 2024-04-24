@@ -45,7 +45,7 @@ public class NewObjectNode extends CallNode implements NewNode {
             node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
             return node;
         } else {
-            var declaringType = context.getClassType(param.getTypeId());
+            var declaringType = context.getKlass(param.getTypeId());
             var parsingContext = FlowParsingContext.create(scope, prev, context);
             var argumentValues = NncUtils.map(param.getArgumentValues(), arg -> ValueFactory.create(arg, parsingContext));
             var constructor = declaringType.resolveMethod(param.getFlowCode(),

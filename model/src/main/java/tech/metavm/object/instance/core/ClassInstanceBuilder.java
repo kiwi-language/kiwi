@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 
@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 
 public class ClassInstanceBuilder {
 
-    public static ClassInstanceBuilder newBuilder(ClassType type) {
+    public static ClassInstanceBuilder newBuilder(Klass type) {
         return new ClassInstanceBuilder(type);
     }
 
@@ -17,14 +17,14 @@ public class ClassInstanceBuilder {
     private long version;
     private long syncVersion;
     private SourceRef sourceRef;
-    private final ClassType type;
+    private final Klass type;
     private Map<Field, Instance> data;
     private InstanceParentRef parentRef;
     private Consumer<DurableInstance> load;
     private boolean ephemeral;
 //    private Long tmpId;
 
-    private ClassInstanceBuilder(ClassType type) {
+    private ClassInstanceBuilder(Klass type) {
         this.type = type;
     }
 

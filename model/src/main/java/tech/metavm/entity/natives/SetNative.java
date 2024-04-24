@@ -6,7 +6,7 @@ import tech.metavm.object.instance.core.FunctionInstance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
@@ -27,7 +27,7 @@ public class SetNative extends IterableNative {
 
     public SetNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getType().findFieldByCode("array"));
+        arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByCode("array"));
         if (instance.isFieldInitialized(arrayField)) {
             array = (ArrayInstance) instance.getField(arrayField);
             for (int i = 0; i < array.getElements().size(); i++) {
@@ -43,7 +43,7 @@ public class SetNative extends IterableNative {
     }
 
     public ClassInstance iterator(CallContext callContext) {
-        var iteratorImplType = (ClassType) instance.getType().getDependency(StandardTypes.getIteratorImplType());
+        var iteratorImplType = (Klass) instance.getKlass().getDependency(StandardTypes.getIteratorImplType());
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);

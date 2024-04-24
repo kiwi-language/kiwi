@@ -6,9 +6,12 @@ import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.FunctionTypeKey;
 import tech.metavm.object.type.rest.dto.FunctionTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,13 +34,13 @@ public class FunctionType extends CompositeType {
     private Type returnType;
 
     @ChildEntity("参数类型列表")
-    private final ReadWriteArray<Type> parameterTypes = addChild(new ReadWriteArray<>(Type.class), "parameterTypes");
+    private final ChildArray<Type> parameterTypes = addChild(new ChildArray<>(Type.class), "parameterTypes");
 
     public FunctionType(Long tmpId, List<Type> parameterTypes, Type returnType) {
         super(getName(parameterTypes, returnType), getCode(parameterTypes, returnType), false, true, TypeCategory.FUNCTION);
         setTmpId(tmpId);
-        this.parameterTypes.addAll(parameterTypes);
-        this.returnType = returnType;
+        this.parameterTypes.addChildren(NncUtils.map(parameterTypes, Type::copy));
+        this.returnType = addChild(returnType.copy(), "returnType");
     }
 
     private static String getName(List<Type> parameterTypes, Type returnType) {
@@ -54,7 +57,7 @@ public class FunctionType extends CompositeType {
 
     @Override
     public TypeKey getTypeKey() {
-        return new FunctionTypeKey(NncUtils.map(parameterTypes, Type::getStringId), returnType.getStringId());
+        return new FunctionTypeKey(NncUtils.map(parameterTypes, Type::getTypeKey), returnType.getTypeKey());
     }
 
     @Override
@@ -84,12 +87,11 @@ public class FunctionType extends CompositeType {
     }
 
     public void setReturnType(Type returnType) {
-        this.returnType = returnType;
+        this.returnType = addChild(returnType, "returnType");
     }
 
     public void setParameterTypes(List<Type> parameterTypes) {
-        this.parameterTypes.clear();
-        this.parameterTypes.addAll(parameterTypes);
+        this.parameterTypes.resetChildren(NncUtils.map(parameterTypes, Type::copy));
     }
 
     public Type getReturnType() {
@@ -136,4 +138,29 @@ public class FunctionType extends CompositeType {
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitFunctionType(this);
     }
+
+    @Override
+    public FunctionType copy() {
+        return new FunctionType(null, NncUtils.map(parameterTypes, Type::copy), returnType.copy());
+    }
+
+    @Override
+    public String toTypeExpression(SerializeContext serializeContext) {
+        return "(" + NncUtils.join(parameterTypes, type -> type.toTypeExpression(serializeContext)) + ")" + "->" + returnType.toTypeExpression(serializeContext);
+    }
+
+    @Override
+    public void write0(InstanceOutput output) {
+        output.writeInt(parameterTypes.size());
+        parameterTypes.forEach(t -> t.write(output));
+        returnType.write(output);
+    }
+
+    public static FunctionType read(InstanceInput input, TypeDefProvider typeDefProvider) {
+        var paramTypes = new ArrayList<Type>();
+        for (int i = 0; i < input.readInt(); i++)
+            paramTypes.add(Type.readType(input, typeDefProvider));
+        return new FunctionType(null, paramTypes, Type.readType(input, typeDefProvider));
+    }
+
 }

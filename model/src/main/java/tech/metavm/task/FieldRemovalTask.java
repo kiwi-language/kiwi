@@ -25,7 +25,7 @@ public class FieldRemovalTask {
             doFinally(context);
             return true;
         }
-        instances.stream().filter(field.getDeclaringType()::isInstance)
+        instances.stream().filter(field.getDeclaringType().getType()::isInstance)
                 .forEach(this::processInstance);
         cursor = instances.get(instances.size() - 1).getPhysicalId();
         return false;

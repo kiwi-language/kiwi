@@ -1,10 +1,10 @@
 package tech.metavm.util;
 
 import tech.metavm.asm.AssemblerFactory;
-import tech.metavm.entity.MemTypeRegistry;
-import tech.metavm.entity.StandardTypes;
-import tech.metavm.entity.mocks.MockEntityRepository;
-import tech.metavm.flow.*;
+import tech.metavm.flow.FlowSavingContext;
+import tech.metavm.flow.MethodDTOBuilder;
+import tech.metavm.flow.NodeDTOFactory;
+import tech.metavm.flow.ValueDTOFactory;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
@@ -31,22 +31,17 @@ public class MockUtils {
         var productType = ClassTypeBuilder.newBuilder("商品", "Product").build();
         var skuType = ClassTypeBuilder.newBuilder("SKU", "SKU").build();
         var couponType = ClassTypeBuilder.newBuilder("优惠券", "Coupon").build();
-        var couponArrayType = new ArrayType(null, couponType, ArrayKind.READ_WRITE);
+        var couponArrayType = new ArrayType(null, couponType.getType(), ArrayKind.READ_WRITE);
         var orderType = ClassTypeBuilder.newBuilder("订单", "Order").build();
         var couponStateType = ClassTypeBuilder.newBuilder("优惠券状态", "CouponState")
                 .category(TypeCategory.ENUM)
                 .build();
         var enumType = getEnumType();
         var subst = new SubstitutorV2(
-                enumType, enumType.getTypeParameters(), List.of(couponStateType),
-                ResolutionStage.DEFINITION,
-                new MockEntityRepository(new MemTypeRegistry()),
-                new UnsupportedCompositeTypeFacade(),
-                new UnsupportedParameterizedTypeRepository(),
-                new UnsupportedParameterizedFlowProvider(),
-                new MockDTOProvider()
+                enumType, enumType.getTypeParameters(), List.of(couponStateType.getType()),
+                ResolutionStage.DEFINITION
         );
-        var couponStateEnumType = (ClassType) subst.visitClassType(enumType);
+        var couponStateEnumType = (Klass) subst.visitKlass(enumType);
         couponStateType.setSuperClass(couponStateEnumType);
         var enumNameField = couponStateEnumType.getFieldByCode("name");
         var enumOrdinalField = couponStateEnumType.getFieldByCode("ordinal");
@@ -73,7 +68,7 @@ public class MockUtils {
         var productTitleField = FieldBuilder.newBuilder("标题", "title", productType, getStringType())
                 .asTitle()
                 .build();
-        var skuChildArrayType = new ArrayType(null, skuType, ArrayKind.CHILD);
+        var skuChildArrayType = new ArrayType(null, skuType.getType(), ArrayKind.CHILD);
         var productSkuListField = FieldBuilder.newBuilder("sku列表", "skuList", productType, skuChildArrayType)
                 .isChild(true)
                 .build();
@@ -88,7 +83,7 @@ public class MockUtils {
         var orderCodeField = FieldBuilder.newBuilder("编号", "code", orderType, getStringType())
                 .asTitle()
                 .build();
-        var orderProductField = FieldBuilder.newBuilder("商品", "product", orderType, productType).build();
+        var orderProductField = FieldBuilder.newBuilder("商品", "product", orderType, productType.getType()).build();
         var orderCouponsField = FieldBuilder.newBuilder("优惠券列表", "coupons", orderType, couponArrayType)
                 .isChild(true).build();
         var orderAmountField = FieldBuilder.newBuilder("数量", "amount", orderType, getLongType()).build();
@@ -99,7 +94,7 @@ public class MockUtils {
                 .build();
         var couponDiscountField = FieldBuilder.newBuilder("折扣", "discount", couponType, getDoubleType())
                 .build();
-        var couponStateField = FieldBuilder.newBuilder("状态", "state", couponType, couponStateType)
+        var couponStateField = FieldBuilder.newBuilder("状态", "state", couponType, couponStateType.getType())
                 .defaultValue(couponNormalState)
                 .build();
 
@@ -407,10 +402,10 @@ public class MockUtils {
     }
 
     private static Field createEnumConstantField(ClassInstance enumConstant) {
-        var enumType = enumConstant.getType();
+        var enumType = enumConstant.getKlass();
         var nameField = enumType.getFieldByCode("name");
         var name = enumConstant.getStringField(nameField).getValue();
-        return FieldBuilder.newBuilder(name, null, enumType, enumType)
+        return FieldBuilder.newBuilder(name, null, enumType, enumType.getType())
                 .isStatic(true)
                 .staticValue(enumConstant)
                 .build();
@@ -424,7 +419,7 @@ public class MockUtils {
     private static List<String> batchSaveTypes(TypeManager typeManager, List<TypeDTO> typeDTOs) {
         FlowSavingContext.initConfig();
         return TestUtils.doInTransaction(() -> typeManager.batchSave(
-                new BatchSaveRequest(typeDTOs, List.of(), List.of(), false)
+                new BatchSaveRequest(typeDTOs, List.of(), false)
         ));
     }
 
@@ -435,21 +430,16 @@ public class MockUtils {
         var couponType = typeManager.getTypeByCode("Coupon").type();
         var couponStateType = typeManager.getTypeByCode("CouponState").type();
         var orderType = typeManager.getTypeByCode("Order").type();
-        var skuChildListType = typeManager.getParameterizedType(GetParameterizedTypeRequest.create(
-              StandardTypes.getChildListType().getStringId(), List.of(skuType.id())
-        )).type();
-        var couponListType = typeManager.getParameterizedType(GetParameterizedTypeRequest.create(
-                StandardTypes.getReadWriteListType().getStringId(),
-                List.of(couponType.id())
-        )).type();
+        var skuChildListType = TypeExpressions.getChildListType(TypeExpressions.getClassType(skuType.id()));
+        var couponListType =  TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(couponType.id()));
         return new ShoppingTypeIds(
                 productType.id(),
                 skuType.id(),
                 couponStateType.id(),
                 couponType.id(),
                 orderType.id(),
-                skuChildListType.id(),
-                couponListType.id(),
+                skuChildListType,
+                couponListType,
                 TestUtils.getFieldIdByCode(productType, "name"),
                 TestUtils.getFieldIdByCode(productType, "skuList"),
                 TestUtils.getFieldIdByCode(skuType, "name"),
@@ -510,7 +500,7 @@ public class MockUtils {
         var assembler = AssemblerFactory.createWithStandardTypes();
         assembler.assemble(List.of(source));
         FlowSavingContext.initConfig();
-        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypes(), List.of(), assembler.getParameterizedFlows(), false)));
+        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(),  false)));
     }
 
     public static FooTypes createFooTypes() {
@@ -526,18 +516,18 @@ public class MockUtils {
         var barType = ClassTypeBuilder.newBuilder("巴", "Bar").build();
         var barCodeField = FieldBuilder.newBuilder("编号", "code", barType, getStringType())
                 .asTitle().build();
-        var barChildArrayType = new ArrayType(null, barType, ArrayKind.CHILD);
-        var barArrayType = new ArrayType(null, barType, ArrayKind.READ_WRITE);
+        var barChildArrayType = new ArrayType(null, barType.getType(), ArrayKind.CHILD);
+        var barArrayType = new ArrayType(null, barType.getType(), ArrayKind.READ_WRITE);
 //        var nullableBarType = new UnionType(null, Set.of(barType, getNullType()));
         var fooBarsField = FieldBuilder.newBuilder("巴列表", "bars", fooType, barChildArrayType)
                 .isChild(true).build();
         var bazType = ClassTypeBuilder.newBuilder("巴子", "Baz").build();
-        var bazArrayType = new ArrayType(null, bazType, ArrayKind.READ_WRITE);
+        var bazArrayType = new ArrayType(null, bazType.getType(), ArrayKind.READ_WRITE);
         var bazBarsField = FieldBuilder.newBuilder("巴列表", "bars", bazType, barArrayType).build();
         var fooBazListField = FieldBuilder.newBuilder("巴子列表", "bazList", fooType, bazArrayType).build();
         var quxType = ClassTypeBuilder.newBuilder("量子", "Qux").build();
         var quxAmountField = FieldBuilder.newBuilder("数量", "amount", quxType, getLongType()).build();
-        var nullableQuxType = new UnionType(null, Set.of(quxType, getNullType()));
+        var nullableQuxType = new UnionType(null, Set.of(quxType.getType(), getNullType()));
         var fooQuxField = FieldBuilder.newBuilder("量子", "qux", fooType, nullableQuxType).build();
         if (initIds)
             TestUtils.initEntityIds(fooType);
@@ -551,7 +541,7 @@ public class MockUtils {
                 .build();
         var livingBeingExtraInfoField = FieldBuilder.newBuilder("额外信息", "extraInfo", livingBeingType, getAnyType())
                 .build();
-        var livingBeingArrayType = new ArrayType(null, livingBeingType, ArrayKind.READ_WRITE);
+        var livingBeingArrayType = new ArrayType(null, livingBeingType.getType(), ArrayKind.READ_WRITE);
         var livingBeingOffspringsField = FieldBuilder.newBuilder("后代", "offsprings", livingBeingType, livingBeingArrayType)
                 .isChild(true)
                 .build();
@@ -750,7 +740,7 @@ public class MockUtils {
                         .build())
                 .build();
         var typeIds = TestUtils.doInTransaction(() -> typeManager.batchSave(
-                new BatchSaveRequest(List.of(platformUserTypeDTO, applicationTypeDTO), List.of(), List.of(), false)
+                new BatchSaveRequest(List.of(platformUserTypeDTO, applicationTypeDTO), List.of(), false)
         ));
         var applicationType = typeManager.getType(new GetTypeRequest(typeIds.get(1), false)).type();
         var applicationNameFieldId = TestUtils.getFieldIdByCode(applicationType, "name");

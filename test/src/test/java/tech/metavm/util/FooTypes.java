@@ -1,14 +1,14 @@
 package tech.metavm.util;
 
 import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 
 public record FooTypes(
-        ClassType fooType,
-        ClassType barType,
-        ClassType quxType,
-        ClassType bazType,
+        Klass fooType,
+        Klass barType,
+        Klass quxType,
+        Klass bazType,
         ArrayType barArrayType,
         ArrayType barChildArrayType,
         ArrayType bazArrayType,

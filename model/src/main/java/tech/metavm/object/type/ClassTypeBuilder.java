@@ -9,6 +9,7 @@ import java.util.List;
 
 public class ClassTypeBuilder {
 
+
     public static ClassTypeBuilder newBuilder(String name, @Nullable String code) {
         return new ClassTypeBuilder(name, code);
     }
@@ -17,22 +18,23 @@ public class ClassTypeBuilder {
     private final String name;
     @Nullable
     private final String code;
-    private ClassType superType;
+    private Klass superType;
     private TypeCategory category = TypeCategory.CLASS;
     private ClassSource source = ClassSource.RUNTIME;
+    private ClassKind kind;
     private boolean anonymous;
     private boolean ephemeral;
     private boolean isAbstract;
     private boolean isTemplate;
     private boolean struct;
     private String desc;
-    private List<ClassType> interfaces = new ArrayList<>();
+    private List<Klass> interfaces = new ArrayList<>();
     private List<Type> typeArguments = new ArrayList<>();
-    private ClassType existing;
+    private Klass existing;
     private boolean done;
     private Long suffix;
-    private ClassType template;
-    private List<ClassType> dependencies;
+    private Klass template;
+    private List<Klass> dependencies;
     private List<TypeVariable> typeParameters = List.of();
 
     private ClassTypeBuilder(String name, @Nullable String code) {
@@ -40,7 +42,7 @@ public class ClassTypeBuilder {
         this.code = code;
     }
 
-    public ClassTypeBuilder superClass(ClassType superType) {
+    public ClassTypeBuilder superClass(Klass superType) {
         this.superType = superType;
         return this;
     }
@@ -80,12 +82,12 @@ public class ClassTypeBuilder {
         return randomSuffix();
     }
 
-    public ClassTypeBuilder template(ClassType template) {
+    public ClassTypeBuilder template(Klass template) {
         this.template = template;
         return this;
     }
 
-    public ClassTypeBuilder dependencies(List<ClassType> dependencies) {
+    public ClassTypeBuilder dependencies(List<Klass> dependencies) {
         this.dependencies = dependencies;
         return this;
     }
@@ -100,16 +102,21 @@ public class ClassTypeBuilder {
         return this;
     }
 
+    public ClassTypeBuilder kind(ClassKind kind) {
+        this.kind = kind;
+        return this;
+    }
+
     public ClassTypeBuilder desc(String desc) {
         this.desc = desc;
         return this;
     }
 
-    public ClassTypeBuilder interfaces(ClassType... interfaces) {
+    public ClassTypeBuilder interfaces(Klass... interfaces) {
         return interfaces(List.of(interfaces));
     }
 
-    public ClassTypeBuilder interfaces(List<ClassType> interfaces) {
+    public ClassTypeBuilder interfaces(List<Klass> interfaces) {
         this.interfaces = interfaces;
         return this;
     }
@@ -142,34 +149,34 @@ public class ClassTypeBuilder {
         return this;
     }
 
-    public ClassTypeBuilder existing(ClassType existing) {
+    public ClassTypeBuilder existing(Klass existing) {
         this.existing = existing;
         return this;
     }
 
-    public ClassType build() {
+    public Klass build() {
         NncUtils.requireFalse(done, "Build has already been invoked");
         done = true;
         return create();
     }
 
     @NotNull
-    private ClassType create() {
+    private Klass create() {
         if (NncUtils.isNotEmpty(typeParameters)) {
             isTemplate = true;
-            this.typeArguments = new ArrayList<>(typeParameters);
+            this.typeArguments = new ArrayList<>(NncUtils.map(typeParameters, TypeVariable::getType));
         }
-        ClassType classType;
+        Klass classType;
         String effectiveName = suffix != null ? name + "_" + suffix : name;
         String effectiveCode = code != null ? (suffix != null ? code + "_" + suffix : code) : null;
         if (existing == null) {
-            classType = new ClassType(
+            classType = new Klass(
                     tmpId,
                     effectiveName,
                     effectiveCode,
                     superType,
                     interfaces,
-                    category,
+                    kind,
                     source,
                     template,
                     anonymous,

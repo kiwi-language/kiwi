@@ -50,7 +50,7 @@ public class MockStandardTypesInitializer {
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
                 .build();
-        enumTypeParam.setBounds(List.of(enumType));
+        enumTypeParam.setBounds(List.of(enumType.getType()));
         FieldBuilder.newBuilder("名称", "name", enumType, StandardTypes.getStringType()).build();
         FieldBuilder.newBuilder("序号", "ordinal", enumType, StandardTypes.getLongType()).build();
         StandardTypes.setEnumType(enumType);

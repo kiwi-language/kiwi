@@ -8,7 +8,6 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.flow.rest.GetParameterizedFlowRequest;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.rest.dto.GetParameterizedTypeRequest;
 import tech.metavm.util.TestUtils;
 
 import java.util.List;
@@ -41,14 +40,6 @@ public class BasicCompileTest extends CompilerTestBase {
         var fooType = getClassTypeByCode("capturedtypes.CtFoo");
         var labFoosFieldId = TestUtils.getFieldIdByCode(labType, "foos");
         var fooNameFieldId = TestUtils.getFieldIdByCode(fooType, "name");
-
-        var fooChildListType = typeManager.getParameterizedType(
-                new GetParameterizedTypeRequest(
-                        StandardTypes.getChildListType().getStringId(),
-                        List.of(fooType.id()),
-                        List.of()
-                )
-        );
 
         var labId = TestUtils.doInTransaction(() ->
                 instanceManager.create(InstanceDTO.createClassInstance(

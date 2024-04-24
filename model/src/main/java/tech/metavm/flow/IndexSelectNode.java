@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.expression.FlowParsingContext;
@@ -21,7 +22,7 @@ public class IndexSelectNode extends NodeRT {
         var param = (IndexSelectNodeParam) nodeDTO.param();
         var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var type = context.getReadWriteListType(index.getDeclaringType());
+        var type = context.getReadWriteListType(index.getDeclaringType().getType()).getType();
         var key = IndexQueryKey.create(param.key(), context, parsingContext);
         var node = (IndexSelectNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null) {
@@ -65,6 +66,7 @@ public class IndexSelectNode extends NodeRT {
     }
 
     @Override
+    @NotNull
     public ClassType getType() {
         return requireNonNull((ClassType) super.getType());
     }
@@ -72,7 +74,8 @@ public class IndexSelectNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var result = frame.instanceRepository().indexSelect(key.buildIndexKey(frame));
-        var list = ClassInstance.allocate(getType());
+        var klass = getType().resolve();
+        var list = ClassInstance.allocate(klass);
         var listNative = new ListNative(list);
         listNative.List(frame);
         result.forEach(e -> listNative.add(e, frame));

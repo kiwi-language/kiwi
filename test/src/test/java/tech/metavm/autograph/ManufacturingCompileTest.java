@@ -94,7 +94,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 // get default mapping of material type
                 var materialDefaultMapping = TestUtils.getDefaultMapping(materialType);
                 // get material view
-                var materialViewType = typeManager.getType(new GetTypeRequest(materialDefaultMapping.targetTypeId(), false)).type();
+                var materialViewType = typeManager.getType(new GetTypeRequest(materialDefaultMapping.targetType(), false)).type();
                 // load material view object
                 var materialView = instanceManager.get(
                         new DefaultViewId(false, Id.parse(materialDefaultMapping.id()), Id.parse(materialId)).toString(),
@@ -118,7 +118,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 var defaultMapping = TestUtils.getDefaultMapping(inventoryAttributesType);
                 Assert.assertNotNull(defaultMapping);
                 // get target type of default mapping
-                var targetTypeId = defaultMapping.targetTypeId();
+                var targetTypeId = defaultMapping.targetType();
                 var inventoryAttrViewType = typeManager.getType(new GetTypeRequest(targetTypeId, false)).type();
                 // assert that the view type and the source type have the same number of fields
                 Assert.assertEquals(inventoryAttributesType.getClassParam().fields().size(),
@@ -700,10 +700,10 @@ public class ManufacturingCompileTest extends CompilerTestBase {
     private RoutingObjects processRouting(InstanceDTO material, InstanceDTO unit) {
         var routingType = getClassTypeByCode("tech.metavm.manufacturing.production.Routing");
         var defaultMapping = TestUtils.getDefaultMapping(routingType);
-        var routingViewType = typeManager.getType(new GetTypeRequest(defaultMapping.targetTypeId(), false)).type();
+        var routingViewType = typeManager.getType(new GetTypeRequest(defaultMapping.targetType(), false)).type();
         var fromViewMethodId = TestUtils.getStaticMethodIdByCode(routingType, "fromView");
         var routingProcessType = getClassTypeByCode("tech.metavm.manufacturing.production.RoutingProcess");
-        var routingProcessViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(routingProcessType).targetTypeId(), false)).type();
+        var routingProcessViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(routingProcessType).targetType(), false)).type();
 
         var workCenterType = getClassTypeByCode("tech.metavm.manufacturing.production.WorkCenter");
         var workCenterConstructorId = TestUtils.getMethodIdByCode(workCenterType, "WorkCenter");
@@ -910,13 +910,13 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                             TypeDTO feedTypeType, TypeDTO pickMethodType, TypeDTO generalStateType, TypeDTO qualityInspectionStateType) {
         var bomType = getClassTypeByCode("tech.metavm.manufacturing.production.BOM");
         var bomDefaultMapping = TestUtils.getDefaultMapping(bomType);
-        var bomViewType = typeManager.getType(new GetTypeRequest(bomDefaultMapping.targetTypeId(), false)).type();
+        var bomViewType = typeManager.getType(new GetTypeRequest(bomDefaultMapping.targetType(), false)).type();
 
         var componentMaterialType = getClassTypeByCode("tech.metavm.manufacturing.production.ComponentMaterial");
-        var componentMaterialViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(componentMaterialType).targetTypeId(), false)).type();
+        var componentMaterialViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(componentMaterialType).targetType(), false)).type();
 
         var componentMaterialItemType = getClassTypeByCode("tech.metavm.manufacturing.production.ComponentMaterialItem");
-        var componentMaterialItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(componentMaterialItemType).targetTypeId(), false)).type();
+        var componentMaterialItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(componentMaterialItemType).targetType(), false)).type();
 
         var directFeedType = TestUtils.getEnumConstantByName(feedTypeType, "直接投料");
         var onDemandPickMethod = TestUtils.getEnumConstantByName(pickMethodType, "按需领料");

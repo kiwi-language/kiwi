@@ -7,9 +7,10 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.type.rest.dto.NothingTypeKey;
+import tech.metavm.object.type.rest.dto.NeverTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
+import tech.metavm.util.InstanceOutput;
 
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public class NeverType extends Type {
 
     @Override
     public TypeKey getTypeKey() {
-        return new NothingTypeKey();
+        return new NeverTypeKey();
     }
 
     @Override
@@ -54,4 +55,19 @@ public class NeverType extends Type {
     public String getInternalName(@Nullable Flow current) {
         return "Never";
     }
+
+    @Override
+    public NeverType copy() {
+        return new NeverType();
+    }
+
+    @Override
+    public String toTypeExpression(SerializeContext serializeContext) {
+        return "never";
+    }
+
+    @Override
+    public void write0(InstanceOutput output) {
+    }
+
 }

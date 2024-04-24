@@ -26,21 +26,16 @@ public class FunctionTest extends TestCase {
 
     public void testGeneric() {
         var typeVar = new TypeVariable(null, "T", null, DummyGenericDeclaration.INSTANCE);
-        var function = FunctionBuilder.newBuilder("test", "test", typeProviders.functionTypeProvider)
+        var function = FunctionBuilder.newBuilder("test", "test")
                 .typeParameters(List.of(typeVar))
-                .parameters(new Parameter(null, "p1", "p1", typeVar))
+                .parameters(new Parameter(null, "p1", "p1", typeVar.getType()))
                 .build();
         Assert.assertFalse(function.getTypeParameters().isEmpty());
         var subst = new SubstitutorV2(
                 function,
                 function.getTypeParameters(),
                 List.of(StandardTypes.getStringType()),
-                ResolutionStage.INIT,
-                new MockEntityRepository(typeProviders.entityRepository.getTypeRegistry()),
-                typeProviders.createFacade(),
-                typeProviders.parameterizedTypeProvider,
-                typeProviders.parameterizedFlowProvider,
-                new MockDTOProvider()
+                ResolutionStage.INIT
         );
         var parameterizedFunc = (Function) function.accept(subst);
         Assert.assertSame(function, parameterizedFunc.getHorizontalTemplate());

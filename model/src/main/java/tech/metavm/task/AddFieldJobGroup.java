@@ -1,7 +1,7 @@
 package tech.metavm.task;
 
 import tech.metavm.entity.*;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.MetadataState;
 import tech.metavm.util.NncUtils;
@@ -26,8 +26,8 @@ public class AddFieldJobGroup extends TaskGroup {
         var type = field.getDeclaringType();
         List<Task> jobs = new ArrayList<>();
         if (type.isTemplate()) {
-            var templateInstances = context.selectByKey(ClassType.TEMPLATE_IDX, type);
-            for (ClassType templateInstance : templateInstances) {
+            var templateInstances = context.selectByKey(Klass.TEMPLATE_IDX, type);
+            for (Klass templateInstance : templateInstances) {
                 context.getGenericContext().retransformClass(type, templateInstance);
                 var tiField = NncUtils.findRequired(templateInstance.getFields(), f -> f.getCopySource() == field);
                 templateInstanceFields.add(tiField);
@@ -39,9 +39,9 @@ public class AddFieldJobGroup extends TaskGroup {
         return jobs;
     }
 
-    private void createJobsForType(ClassType type, Field field, List<Task> jobs) {
+    private void createJobsForType(Klass type, Field field, List<Task> jobs) {
         jobs.add(new AddFieldTask(type, field));
-        for (ClassType subType : type.getSubTypes()) {
+        for (Klass subType : type.getSubTypes()) {
             createJobsForType(subType, field, jobs);
         }
     }

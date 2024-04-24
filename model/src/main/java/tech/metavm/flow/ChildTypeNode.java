@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 
 import javax.annotation.Nullable;
 
@@ -11,16 +12,22 @@ import javax.annotation.Nullable;
 public abstract class ChildTypeNode extends NodeRT {
 
     @ChildEntity("节点类型")
-    private final ClassType nodeType;
+    private final Klass klass;
 
-    protected ChildTypeNode(Long tmpId, String name, @Nullable String code, ClassType outputType, NodeRT previous, ScopeRT scope) {
+    protected ChildTypeNode(Long tmpId, String name, @Nullable String code, Klass klass, NodeRT previous, ScopeRT scope) {
         super(tmpId, name, code, null, previous, scope);
-        this.nodeType = addChild(outputType, "nodeType");
+        this.klass = addChild(klass, "klass");
+    }
+
+    public Klass getKlass() {
+        return klass;
     }
 
     @NotNull
     @Override
     public final ClassType getType() {
-        return nodeType;
+        return klass.getType();
     }
+
+
 }

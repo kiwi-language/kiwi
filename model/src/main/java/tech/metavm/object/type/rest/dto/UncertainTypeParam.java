@@ -10,8 +10,4 @@ public record UncertainTypeParam(
         return 7;
     }
 
-    @Override
-    public TypeKey getTypeKey() {
-        return new UncertainTypeKey(lowerBoundId, upperBoundId);
-    }
 }

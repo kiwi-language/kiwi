@@ -8,10 +8,7 @@ import tech.metavm.entity.natives.CallContext;
 import tech.metavm.event.EventQueue;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.CompositeTypeFacade;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeProvider;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.profile.Profiler;
@@ -83,7 +80,9 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
         return this;
     }
 
-    TypeProvider getTypeProvider();
+//    TypeProvider getTypeProvider();
+
+    TypeDefProvider getTypeDefProvider();
 
     MappingProvider getMappingProvider();
 
@@ -108,12 +107,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     void initIds();
 
     long getAppId();
-
-    Type getType(Id id);
-
-    default ClassType getClassType(Id id) {
-        return (ClassType) getType(id);
-    }
 
     void batchRemove(Collection<DurableInstance> instances);
 

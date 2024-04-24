@@ -10,7 +10,6 @@ import tech.metavm.object.instance.IndexConstraintPlugin;
 import tech.metavm.object.instance.MetaVersionPlugin;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.type.IdConstants;

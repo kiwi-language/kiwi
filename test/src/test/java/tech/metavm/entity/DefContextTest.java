@@ -14,6 +14,7 @@ import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -47,13 +48,13 @@ public class DefContextTest extends TestCase {
 
     public void testGetDef() {
 //        ClassType fooType = defContext.getClassType(Foo.class);
-        Field field = defContext.getField(ClassType.class, "fields");
+        Field field = defContext.getField(Klass.class, "fields");
         Assert.assertFalse(field.isUnique());
     }
 
     public void testConvertToInstance() {
-        EntityDef<ClassType> typeDef = defContext.getEntityDef(ClassType.class);
-        ClassType type = typeDef.getType();
+        EntityDef<Klass> typeDef = defContext.getEntityDef(Klass.class);
+        Klass type = typeDef.getKlass();
         var instance = (DurableInstance) objectInstanceMap.getInstance(type);
 //                typeDef.createInstance(type, objectInstanceMap, null);
 //        InstanceDTO instanceDTO = instance.toDTO();
@@ -70,11 +71,11 @@ public class DefContextTest extends TestCase {
     }
 
     public void testConvertType() {
-        EntityDef<ClassType> typeDef = defContext.getEntityDef(ClassType.class);
-        ClassType type = typeDef.getType();
+        EntityDef<Klass> typeDef = defContext.getEntityDef(Klass.class);
+        Klass type = typeDef.getKlass();
         var instance = (ClassInstance) objectInstanceMap.getInstance(type);
         typeDef.initInstance(instance, type, objectInstanceMap);
-        ClassType recoveredType = typeDef.createModel(instance, objectInstanceMap);
+        Klass recoveredType = typeDef.createModel(instance, objectInstanceMap);
         MatcherAssert.assertThat(recoveredType, PojoMatcher.of(type));
     }
 
@@ -85,7 +86,7 @@ public class DefContextTest extends TestCase {
     public void testInheritance() {
         EntityDef<NodeRT> superDef = defContext.getEntityDef(new TypeReference<>() {
         });
-        Assert.assertSame(Objects.requireNonNull(superDef.getType().getSuperClass()).getSuperClass(), typeFactory.getEntityType());
+        Assert.assertSame(Objects.requireNonNull(superDef.getKlass().getSuperClass()).getSuperClass(), StandardTypes.getEntityType());
     }
 
     public void testArrayFieldType() {
@@ -99,14 +100,14 @@ public class DefContextTest extends TestCase {
 
     public void test_field_with_instance_type() {
         PojoDef<ConstantExpression> def = defContext.getPojoDef(ConstantExpression.class);
-        ClassType quxType = defContext.getClassType(Qux.class);
-        quxType.initId(DefaultPhysicalId.ofObject(1000000L, 0L, TaggedPhysicalId.ofClass(1L, 0L)));
+        var quxType = defContext.getClassType(Qux.class).resolve();
+        quxType.initId(DefaultPhysicalId.ofObject(1000000L, 0L, new ClassTypeKey("1")));
         Field quxAmountField = defContext.getField(Qux.class, "amount");
         var qux = ClassInstance.create(
                 Map.of(quxAmountField, Instances.longInstance(100L)),
                 quxType
         );
-        qux.initId(DefaultPhysicalId.ofObject(idProvider.allocateOne(TestConstants.APP_ID, quxType), 0L, quxType));
+        qux.initId(DefaultPhysicalId.ofObject(idProvider.allocateOne(TestConstants.APP_ID, quxType.getType()), 0L, quxType.getType()));
         ConstantExpression model = new ConstantExpression(qux);
         Instance instance = def.createInstance(model, objectInstanceMap, null);
         ConstantExpression recoveredModel = def.createModelHelper(instance, objectInstanceMap);
@@ -115,7 +116,7 @@ public class DefContextTest extends TestCase {
 
     public void testGetIdentityMap() {
         PojoDef<Type> def = defContext.getPojoDef(Type.class);
-        ClassType type = def.getType();
+        Klass type = def.getKlass();
         Map<Object, ModelIdentity> identityMap = defContext.getIdentityMap();
         Set<ModelAndPath> models = EntityUtils.getReachableObjects(
                 List.of(type), o -> o instanceof Entity || o instanceof Enum<?>, true

@@ -16,8 +16,8 @@ public class ThrowableNative extends NativeBase {
 
     public ThrowableNative(ClassInstance instance) {
         this.instance = instance;
-        messageField = instance.getType().getFieldByCode("detailMessage");
-        causeField = instance.getType().getFieldByCode("cause");
+        messageField = instance.getKlass().getFieldByCode("detailMessage");
+        causeField = instance.getKlass().getFieldByCode("cause");
     }
 
     public ClassInstance Throwable(CallContext callContext) {

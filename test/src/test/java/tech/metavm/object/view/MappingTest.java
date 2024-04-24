@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.EntityQueryService;
-import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
@@ -16,14 +15,15 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.object.type.TypeManager;
-import tech.metavm.object.type.rest.dto.GetParameterizedTypeRequest;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -70,37 +70,23 @@ public class MappingTest extends TestCase {
         return typeManager.getType(new GetTypeRequest(id, false)).type();
     }
 
-    private String getChildListTypeId(String id) {
-        return typeManager.getParameterizedType(GetParameterizedTypeRequest.create(
-                StandardTypes.getChildListType().getStringId(),
-                List.of(id)
-        )).type().id();
-    }
-
-    private String getReadWriteListTypeId(String id) {
-        return typeManager.getParameterizedType(GetParameterizedTypeRequest.create(
-                StandardTypes.getReadWriteListType().getStringId(),
-                List.of(id)
-        )).type().id();
-    }
-
     public void test() {
         var typeIds = MockUtils.createShoppingTypes(typeManager);
         var productTypeDTO = getType(typeIds.productTypeId());
         var skuTypeDTO = getType(typeIds.skuTypeId());
         var productDefaultMapping = NncUtils.findRequired(productTypeDTO.getClassParam().mappings(),
                 m -> Objects.equals(m.id(), productTypeDTO.getClassParam().defaultMappingId()));
-        var productViewTypeDTO = getType(productDefaultMapping.targetTypeId());
+        var productViewTypeDTO = getType(productDefaultMapping.targetType());
         var productViewTitleFieldId = TestUtils.getFieldIdByCode(productViewTypeDTO, "name");
         var productViewSkuListFieldId = TestUtils.getFieldIdByCode(productViewTypeDTO, "skuList");
         var skuDefaultMapping = NncUtils.findRequired(
                 skuTypeDTO.getClassParam().mappings(),
                 m -> Objects.equals(skuTypeDTO.getClassParam().defaultMappingId(), m.id()));
-        var skuViewTypeDTO = getType(skuDefaultMapping.targetTypeId());
+        var skuViewTypeDTO = getType(skuDefaultMapping.targetType());
         var skuViewTitleFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "name");
         var skuViewPriceFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "price");
         var skuViewAmountFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "quantity");
-        var skuViewChildListTypeId = getChildListTypeId(skuViewTypeDTO.id());
+        var skuViewChildListType = TypeExpressions.getChildListType(TypeExpressions.getClassType(skuViewTypeDTO));
 
         var productId = saveInstance(InstanceDTO.createClassInstance(
                 typeIds.productTypeId(),
@@ -212,7 +198,7 @@ public class MappingTest extends TestCase {
                                 InstanceFieldValue.of(
                                         InstanceDTO.createListInstance(
                                                 skuListView.id(),
-                                                skuViewChildListTypeId,
+                                                skuViewChildListType,
                                                 true,
                                                 List.of(
                                                         InstanceFieldValue.of(
@@ -331,9 +317,9 @@ public class MappingTest extends TestCase {
                                 InstanceFieldDTO.create(shoppingTypeIds.couponDiscountFieldId(), PrimitiveFieldValue.createDouble(10.0)),
                                 InstanceFieldDTO.create(shoppingTypeIds.couponStateFieldId(),
                                         ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId())
+                                )
                         )
-                )
-        ))));
+                ))));
         TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
                 null, shoppingTypeIds.orderTypeId(),
                 null,
@@ -372,7 +358,7 @@ public class MappingTest extends TestCase {
         var mapping = TestUtils.getDefaultMapping(productTypeDTO);
         var productViewTypeId = TestUtils.getDefaultViewTypeId(productTypeDTO);
         var total = instanceManager.query(new InstanceQueryDTO(
-                productViewTypeId,  mapping.id(), null, null, List.of(), 1, 20,
+                productViewTypeId, mapping.id(), null, null, List.of(), 1, 20,
                 true, false, List.of()
         )).page().total();
         Assert.assertEquals(1, total);
@@ -384,7 +370,7 @@ public class MappingTest extends TestCase {
         var skuDefaultMapping = NncUtils.findRequired(
                 skuTypeDTO.getClassParam().mappings(),
                 m -> Objects.equals(skuTypeDTO.getClassParam().defaultMappingId(), m.id()));
-        var skuViewTypeDTO = getType(skuDefaultMapping.targetTypeId());
+        var skuViewTypeDTO = getType(skuDefaultMapping.targetType());
         var skuViewId = saveInstance(
                 new InstanceDTO(
                         null,
@@ -416,53 +402,46 @@ public class MappingTest extends TestCase {
     public void testGeneric() {
         var listTypeIds = MockUtils.createListType(typeManager);
         var nodeTypeIds = listTypeIds.nodeTypeIds();
-        var listOfStringType = typeManager.getParameterizedType(new GetParameterizedTypeRequest(
-                listTypeIds.listTypeId(),
-                List.of(StandardTypes.getStringType().getStringId()),
-                List.of()
-        )).type();
-        var nodeOfStringType = typeManager.getParameterizedType(new GetParameterizedTypeRequest(
-                nodeTypeIds.nodeTypeId(),
-                List.of(StandardTypes.getStringType().getStringId()),
-                List.of()
-        )).type();
-        var listDefaultMapping = TestUtils.getDefaultMapping(listOfStringType);
-        var listViewTypeId = listDefaultMapping.targetTypeId();
-        var listViewType = typeManager.getType(new GetTypeRequest(listViewTypeId, false)).type();
-        var nodeDefaultMapping = TestUtils.getDefaultMapping(nodeOfStringType);
-        var nodeViewTypeId = nodeDefaultMapping.targetTypeId();
-        var nodeViewType = typeManager.getType(new GetTypeRequest(nodeViewTypeId, false)).type();
-        var nodeViewChildListType = typeManager.getParameterizedType(
-                GetParameterizedTypeRequest.create(StandardTypes.getChildListType().getStringId(), List.of(nodeViewTypeId))).type();
+        var listKlass = typeManager.getType(new GetTypeRequest(listTypeIds.listTypeId(), false)).type();
+        var nodeKlass = typeManager.getType(new GetTypeRequest(nodeTypeIds.nodeTypeId(), false)).type();
+        var listDefaultMapping = TestUtils.getDefaultMapping(listKlass);
+        var listViewType = listDefaultMapping.targetType();
+        var listViewOfStrType = TypeExpressions.substitute(listViewType, Map.of(listKlass.typeParameterIds().get(0), "string"));
+        var listViewKlass = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(listViewType), false)).type();
+        var nodeDefaultMapping = TestUtils.getDefaultMapping(nodeKlass);
+        var nodeViewType = nodeDefaultMapping.targetType();
+        var nodeViewKlass = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(nodeViewType), false)).type();
+        var nodeViewOfStrType = TypeExpressions.substitute(nodeViewType, Map.of(nodeKlass.typeParameterIds().get(0), "string"));
+        var nodeViewOfStrChildListType = TypeExpressions.getChildListType(nodeViewOfStrType);
         var listView = new InstanceDTO(
                 null,
-                listViewTypeId,
+                listViewOfStrType,
                 null,
                 null,
                 listDefaultMapping.id(),
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(listViewType, "label"),
+                                        TestUtils.getFieldIdByCode(listViewKlass, "label"),
                                         PrimitiveFieldValue.createString("list001")
                                 ),
                                 InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(listViewType, "nodes"),
+                                        TestUtils.getFieldIdByCode(listViewKlass, "nodes"),
                                         InstanceFieldValue.of(
                                                 InstanceDTO.createListInstance(
-                                                        nodeViewChildListType.id(),
+                                                        nodeViewOfStrChildListType,
                                                         true,
                                                         List.of(
                                                                 InstanceFieldValue.of(
                                                                         InstanceDTO.createClassInstance(
-                                                                                nodeViewTypeId,
+                                                                                nodeViewOfStrType,
                                                                                 List.of(
                                                                                         InstanceFieldDTO.create(
-                                                                                                TestUtils.getFieldIdByCode(nodeViewType, "label"),
+                                                                                                TestUtils.getFieldIdByCode(nodeViewKlass, "label"),
                                                                                                 PrimitiveFieldValue.createString("node001")
                                                                                         ),
                                                                                         InstanceFieldDTO.create(
-                                                                                                TestUtils.getFieldIdByCode(nodeViewType, "value"),
+                                                                                                TestUtils.getFieldIdByCode(nodeViewKlass, "value"),
                                                                                                 PrimitiveFieldValue.createString("hello")
                                                                                         )
                                                                                 )
@@ -470,14 +449,14 @@ public class MappingTest extends TestCase {
                                                                 ),
                                                                 InstanceFieldValue.of(
                                                                         InstanceDTO.createClassInstance(
-                                                                                nodeViewTypeId,
+                                                                                nodeViewOfStrType,
                                                                                 List.of(
                                                                                         InstanceFieldDTO.create(
-                                                                                                TestUtils.getFieldIdByCode(nodeViewType, "label"),
+                                                                                                TestUtils.getFieldIdByCode(nodeViewKlass, "label"),
                                                                                                 PrimitiveFieldValue.createString("node002")
                                                                                         ),
                                                                                         InstanceFieldDTO.create(
-                                                                                                TestUtils.getFieldIdByCode(nodeViewType, "value"),
+                                                                                                TestUtils.getFieldIdByCode(nodeViewKlass, "value"),
                                                                                                 PrimitiveFieldValue.createString("world")
                                                                                         )
                                                                                 )
@@ -514,13 +493,13 @@ public class MappingTest extends TestCase {
                         List.of(
                                 InstanceFieldDTO.create(userTypeIds.applicationNameFieldId(), PrimitiveFieldValue.createString("test")),
                                 InstanceFieldDTO.create(userTypeIds.applicationOwnerFieldId(), ReferenceFieldValue.create(userId)
+                                )
                         )
-                )
-        ))));
+                ))));
         // query application view list
         var applicationViewTypeDTO = typeManager.getType(new GetTypeRequest(userTypeIds.applicationTypeId(), true)).type();
         var applicationDefaultMapping = TestUtils.getDefaultMapping(applicationViewTypeDTO);
-        var applicationViewTypeId = applicationDefaultMapping.targetTypeId();
+        var applicationViewTypeId = applicationDefaultMapping.targetType();
         var applicationViews = instanceManager.query(new InstanceQueryDTO(
                 applicationViewTypeId, applicationDefaultMapping.id(), null, null, List.of(), 1, 20,
                 true, false, List.of()

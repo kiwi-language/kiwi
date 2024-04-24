@@ -72,7 +72,7 @@ public class UnionNestedMapping extends NestedMapping {
                 ),
                 branch -> Nodes.raise("未知类型", branch.getScope(), Values.constantString("类型错误")),
                 mergeNode -> {
-                    valueFieldRef.valueField = FieldBuilder.newBuilder("值", null, mergeNode.getType(), targetType).build();
+                    valueFieldRef.valueField = FieldBuilder.newBuilder("值", null, mergeNode.getType().resolve(), targetType).build();
                     new MergeNodeField(valueFieldRef.valueField, mergeNode, values);
                 }
         );
@@ -112,7 +112,7 @@ public class UnionNestedMapping extends NestedMapping {
                 ),
                 branch -> Nodes.raise("未知类型", branch.getScope(), Values.constantString("类型错误")),
                 mergeNode -> {
-                    valueFieldRef.valueField = FieldBuilder.newBuilder("值", null, mergeNode.getType(), sourceType).build();
+                    valueFieldRef.valueField = FieldBuilder.newBuilder("值", null, mergeNode.getType().resolve(), sourceType).build();
                     new MergeNodeField(valueFieldRef.valueField, mergeNode, values);
                 }
         );

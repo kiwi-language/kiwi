@@ -3,7 +3,6 @@ package tech.metavm.expression;
 import tech.metavm.entity.CopyVisitor;
 import tech.metavm.entity.Element;
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.SerializeContext;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
@@ -28,12 +27,8 @@ public abstract class Expression extends Element {
     }
 
     protected final String build(VarType symbolType, boolean withParenthesis, boolean relaxedCheck) {
-        try (var serContext = SerializeContext.enter()) {
-            if (serContext.isIncludeExpressionType())
-                serContext.writeType(getType());
-            String expr = buildSelf(symbolType, relaxedCheck);
-            return withParenthesis ? "(" + expr + ")" : expr;
-        }
+        String expr = buildSelf(symbolType, relaxedCheck);
+        return withParenthesis ? "(" + expr + ")" : expr;
     }
 
     public abstract Type getType();

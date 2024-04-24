@@ -3,7 +3,6 @@ package tech.metavm.object.version;
 import org.springframework.stereotype.Component;
 import tech.metavm.common.MetaPatch;
 import tech.metavm.entity.*;
-import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -50,10 +49,10 @@ public class VersionManager extends EntityContextFactoryBean {
     public MetaPatch pull(long baseVersion) {
         try (var context = newContext()) {
             var internalPatch = pullInternal(baseVersion, context);
-            var types = NncUtils.map(internalPatch.changedTypeIds(), context::getType);
+            var types = NncUtils.map(internalPatch.changedTypeDefIds(), context::getTypeDef);
             try (var serContext = SerializeContext.enter()) {
-                for (Type type : types) {
-                    serContext.writeType(type);
+                for (var type : types) {
+                    serContext.writeTypeDef(type);
                 }
                 var typeDTOs = serContext.getTypes();
                 var mappingDTOs = NncUtils.map(
@@ -68,7 +67,7 @@ public class VersionManager extends EntityContextFactoryBean {
                         baseVersion,
                         internalPatch.version(),
                         typeDTOs,
-                        internalPatch.removedTypeIds(),
+                        internalPatch.removedTypeDefIds(),
                         mappingDTOs,
                         internalPatch.removedMappingIds(),
                         functionDTOs,

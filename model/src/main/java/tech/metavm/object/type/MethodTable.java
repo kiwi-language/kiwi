@@ -9,11 +9,11 @@ import java.util.Map;
 
 public class MethodTable {
 
-    private final ClassType classType;
+    private final Klass classType;
     private final Map<Method, Method> overriddenIndex = new IdentityHashMap<>();
     private final Map<Method, Method> verticalTemplateIndex = new IdentityHashMap<>();
 
-    public MethodTable(ClassType classType) {
+    public MethodTable(Klass classType) {
         this.classType = classType;
         rebuild();
     }

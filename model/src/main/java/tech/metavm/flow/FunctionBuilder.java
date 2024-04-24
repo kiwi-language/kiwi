@@ -11,14 +11,8 @@ import java.util.List;
 
 public class FunctionBuilder {
 
-    public static FunctionBuilder newBuilder(String name, @Nullable String code, FunctionTypeProvider functionTypeProvider) {
-        return new FunctionBuilder(name, code, functionTypeProvider);
-    }
-
-    public FunctionBuilder(@NotNull String name, @Nullable String code, @NotNull FunctionTypeProvider functionTypeProvider) {
-        this.name = name;
-        this.code = code;
-        this.functionTypeProvider = functionTypeProvider;
+    public static FunctionBuilder newBuilder(String name, @Nullable String code) {
+        return new FunctionBuilder(name, code);
     }
 
     @Nullable
@@ -36,10 +30,14 @@ public class FunctionBuilder {
     private @NotNull Type returnType = StandardTypes.getVoidType();
     private List<TypeVariable> typeParameters = new ArrayList<>();
     private List<Type> typeArguments = new ArrayList<>();
-    private final @NotNull FunctionTypeProvider functionTypeProvider;
     private CodeSource codeSource;
-    private FunctionType type;
     private MetadataState state = MetadataState.READY;
+
+    public FunctionBuilder(@NotNull String name, @Nullable String code) {
+        this.name = name;
+        this.code = code;
+    }
+
 
     public FunctionBuilder tmpId(Long tmpId) {
         this.tmpId = tmpId;
@@ -73,11 +71,6 @@ public class FunctionBuilder {
 
     public FunctionBuilder codeSource(CodeSource codeSource) {
         this.codeSource = codeSource;
-        return this;
-    }
-
-    public FunctionBuilder type(FunctionType type) {
-        this.type = type;
         return this;
     }
 
@@ -116,10 +109,8 @@ public class FunctionBuilder {
     }
 
     public Function build() {
-        if (type == null)
-            type = functionTypeProvider.getFunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
         if (!typeParameters.isEmpty())
-            typeArguments = new ArrayList<>(typeParameters);
+            typeArguments = new ArrayList<>(NncUtils.map(typeParameters, TypeVariable::getType));
         if (existing == null) {
             return new Function(
                     tmpId,
@@ -131,7 +122,6 @@ public class FunctionBuilder {
                     returnType,
                     typeParameters,
                     typeArguments,
-                    type,
                     horizontalTemplate,
                     codeSource,
                     state
@@ -143,7 +133,8 @@ public class FunctionBuilder {
             if (typeParameters.isEmpty())
                 existing.setTypeArguments(typeArguments);
             existing.setNative(isNative);
-            existing.update(parameters, returnType, functionTypeProvider);
+            existing.setParameters(parameters);
+            existing.setReturnType(returnType);
             existing.setState(state);
             return existing;
         }

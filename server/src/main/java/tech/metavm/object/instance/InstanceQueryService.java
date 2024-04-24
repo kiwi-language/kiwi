@@ -17,7 +17,10 @@ import tech.metavm.util.ContextUtil;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
@@ -31,18 +34,18 @@ public class InstanceQueryService {
     }
 
     private SearchQuery buildSearchQuery(InstanceQuery query,
-                                         IndexedTypeProvider typeProvider,
+                                         IndexedTypeDefProvider typeDefProvider,
                                          InstanceProvider instanceProvider,
                                          ArrayTypeProvider arrayTypeProvider,
                                          UnionTypeProvider unionTypeProvider) {
-        var expression = buildCondition(query, typeProvider, instanceProvider, arrayTypeProvider, unionTypeProvider);
+        var expression = buildCondition(query, typeDefProvider, instanceProvider, arrayTypeProvider, unionTypeProvider);
         Type type = query.type();
-        Set<Long> typeIds = (type instanceof ClassType classType) ?
-                NncUtils.mapUnique(classType.getSubTypeIds(), Id::getPhysicalId) :
-                Set.of(query.type().getPhysicalId());
+        Set<String> typeExpressions = (type instanceof ClassType classType) ?
+                NncUtils.mapUnique(classType.resolve().getSubTypes(), k -> k.getType().toTypeExpression()) :
+                Set.of(query.type().toTypeExpression());
         return new SearchQuery(
                 ContextUtil.getAppId(),
-                typeIds,
+                typeExpressions,
                 expression,
                 query.includeBuiltin(),
                 query.page(),
@@ -53,36 +56,36 @@ public class InstanceQueryService {
 
     public Page<DurableInstance> query(InstanceQuery query, IEntityContext context) {
         return query(query, context.getInstanceContext(), context.getGenericContext(),
-                new ContextTypeRepository(context), CompositeTypeFacadeImpl.fromContext(context));
+                new ContextTypeDefRepository(context), CompositeTypeFacadeImpl.fromContext(context));
     }
 
     public Page<DurableInstance> query(InstanceQuery query,
                                        InstanceRepository instanceRepository,
                                        ParameterizedFlowProvider parameterizedFlowProvider,
-                                       IndexedTypeProvider typeProvider,
+                                       IndexedTypeDefProvider typeDefProvider,
                                        CompositeTypeFacade compositeTypeFacade) {
         var type = query.type();
         if (type instanceof ClassType classType && query.sourceMapping() != null) {
             var sourceMapping = query.sourceMapping();
             if (sourceMapping.getTargetType() != type || !(sourceMapping instanceof FieldsObjectMapping sourceObjectMapping))
                 throw new BusinessException(ErrorCode.INVALID_SOURCE_MAPPING);
-            var sourceQuery = convertToSourceQuery(query, classType, sourceObjectMapping,
-                    instanceRepository, typeProvider, compositeTypeFacade, compositeTypeFacade);
+            var sourceQuery = convertToSourceQuery(query, classType.resolve(), sourceObjectMapping,
+                    instanceRepository, typeDefProvider, compositeTypeFacade, compositeTypeFacade);
             var sourcePage = query(sourceQuery, instanceRepository, parameterizedFlowProvider,
-                    typeProvider, compositeTypeFacade);
+                    typeDefProvider, compositeTypeFacade);
             return new Page<>(
                     NncUtils.map(sourcePage.data(),
                             i -> sourceObjectMapping.mapRoot(i, new DefaultCallContext(instanceRepository, parameterizedFlowProvider, compositeTypeFacade))),
                     sourcePage.total()
             );
         } else
-            return queryPhysical(query, instanceRepository, typeProvider, instanceRepository, compositeTypeFacade, compositeTypeFacade, parameterizedFlowProvider);
+            return queryPhysical(query, instanceRepository, typeDefProvider, instanceRepository, compositeTypeFacade, compositeTypeFacade, parameterizedFlowProvider);
     }
 
-    private InstanceQuery convertToSourceQuery(InstanceQuery query, ClassType viewType,
+    private InstanceQuery convertToSourceQuery(InstanceQuery query, Klass viewType,
                                                FieldsObjectMapping mapping,
                                                InstanceProvider instanceProvider,
-                                               IndexedTypeProvider typeProvider,
+                                               IndexedTypeDefProvider typeDefProvider,
                                                ArrayTypeProvider arrayTypeProvider,
                                                UnionTypeProvider unionTypeProvider) {
         var sourceType = mapping.getSourceType();
@@ -93,7 +96,7 @@ public class InstanceQueryService {
         }
         String convertedExpr;
         if (query.expression() != null) {
-            var parsingContext = new TypeParsingContext(instanceProvider, typeProvider, arrayTypeProvider, unionTypeProvider, viewType);
+            var parsingContext = new TypeParsingContext(instanceProvider, typeDefProvider, arrayTypeProvider, unionTypeProvider, viewType);
             var cond = ExpressionParser.parse(query.expression(), parsingContext);
             var convertedCond = (Expression) cond.accept(new CopyVisitor(cond) {
                 @Override
@@ -138,12 +141,12 @@ public class InstanceQueryService {
 
     private Page<DurableInstance> queryPhysical(InstanceQuery query,
                                                 InstanceRepository instanceRepository,
-                                                IndexedTypeProvider typeProvider,
+                                                IndexedTypeDefProvider typeDefProvider,
                                                 InstanceProvider instanceProvider,
                                                 ArrayTypeProvider arrayTypeProvider,
                                                 UnionTypeProvider unionTypeProvider,
                                                 ParameterizedFlowProvider parameterizedFlowProvider) {
-        var searchQuery = buildSearchQuery(query, typeProvider, instanceProvider, arrayTypeProvider, unionTypeProvider);
+        var searchQuery = buildSearchQuery(query, typeDefProvider, instanceProvider, arrayTypeProvider, unionTypeProvider);
         var idPage = instanceSearchService.search(searchQuery);
 //        var newlyCreatedIds = NncUtils.map(query.createdIds(), id -> ((PhysicalId) id).getId());
 //        var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
@@ -161,7 +164,7 @@ public class InstanceQueryService {
 
     public long count(InstanceQuery query, IEntityContext context) {
         return instanceSearchService.count(buildSearchQuery(query,
-                new ContextTypeRepository(context),
+                new ContextTypeDefRepository(context),
                 context.getInstanceContext(),
                 new ContextArrayTypeProvider(context),
                 context.getUnionTypeContext()
@@ -170,12 +173,12 @@ public class InstanceQueryService {
     }
 
     private Expression buildCondition(InstanceQuery query,
-                                      IndexedTypeProvider typeProvider,
+                                      IndexedTypeDefProvider typeDefProvider,
                                       InstanceProvider instanceProvider,
                                       ArrayTypeProvider arrayTypeProvider,
                                       UnionTypeProvider unionTypeProvider) {
         Expression condition = buildConditionForSearchText(
-                query.type().getId(), query.searchText(), query.searchFields(), typeProvider
+                query.type().getId(), query.searchText(), query.searchFields(), typeDefProvider
         );
         for (InstanceQueryField queryField : query.fields()) {
             Expression fieldCondition = null;
@@ -206,7 +209,7 @@ public class InstanceQueryService {
                     Expressions.and(condition, fieldCondition) : fieldCondition;
         }
         if (query.expression() != null) {
-            var parsingContext = new TypeParsingContext(instanceProvider, typeProvider, arrayTypeProvider, unionTypeProvider, (ClassType) query.type());
+            var parsingContext = new TypeParsingContext(instanceProvider, typeDefProvider, arrayTypeProvider, unionTypeProvider, ((ClassType) query.type()).resolve());
             var exprCond = ExpressionParser.parse(query.expression(), parsingContext);
             condition = condition != null ? Expressions.and(condition, exprCond) : exprCond;
         }
@@ -215,11 +218,11 @@ public class InstanceQueryService {
 
     private Expression buildConditionForSearchText(Id typeId, String searchText,
                                                    List<Field> searchFields,
-                                                   TypeProvider typeProvider) {
+                                                   TypeDefProvider typeDefProvider) {
         if (NncUtils.isEmpty(searchText))
             return null;
         Set<Field> searchFieldSet = new HashSet<>(searchFields);
-        ClassType type = typeProvider.getClassType(typeId);
+        Klass type = typeDefProvider.getKlass(typeId);
         Field titleField = type.getTitleField();
         if (titleField != null && !searchFields.contains(titleField))
             searchFieldSet.add(titleField);

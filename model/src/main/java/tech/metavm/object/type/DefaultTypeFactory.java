@@ -10,9 +10,4 @@ public class DefaultTypeFactory extends TypeFactory {
         this.getTypeFunc = getTypeFunc;
     }
 
-    @Override
-    public Type getType(java.lang.reflect.Type javaType) {
-        return getTypeFunc.apply(javaType);
-    }
-
 }

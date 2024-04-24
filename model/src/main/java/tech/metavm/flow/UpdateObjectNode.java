@@ -9,6 +9,7 @@ import tech.metavm.flow.rest.UpdateObjectNodeParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
@@ -32,15 +33,16 @@ public class UpdateObjectNode extends NodeRT {
         } else
             node.setObject(objectId);
         var type = (ClassType) node.getExpressionTypes().getType(objectId.getExpression());
+        var klass = type.resolve();
         final var _node = node;
         node.setFields(NncUtils.map(
                 param.fields(),
-                updateFieldDTO -> saveField(_node, updateFieldDTO, parsingContext, type)
+                updateFieldDTO -> saveField(_node, updateFieldDTO, parsingContext, klass)
         ));
         return node;
     }
 
-    private static UpdateField saveField(UpdateObjectNode node, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext, ClassType type) {
+    private static UpdateField saveField(UpdateObjectNode node, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext, Klass type) {
         var field = updateFieldDTO.getField(type);
         var op = UpdateOp.getByCode(updateFieldDTO.opCode());
         var value = ValueFactory.create(updateFieldDTO.value(), parsingContext);

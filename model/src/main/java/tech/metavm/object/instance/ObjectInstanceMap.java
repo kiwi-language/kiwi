@@ -3,7 +3,7 @@ package tech.metavm.object.instance;
 import tech.metavm.entity.ModelDef;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 
@@ -15,8 +15,8 @@ public interface ObjectInstanceMap {
 
     <T> T getEntity(Class<T> klass, Instance instance, @Nullable ModelDef<T, ?> def);
 
-    default ClassType getClassType(DurableInstance instance) {
-        return getEntity(ClassType.class, instance);
+    default Klass getClassType(DurableInstance instance) {
+        return getEntity(Klass.class, instance);
     }
 
     default Type getType(DurableInstance instance) {

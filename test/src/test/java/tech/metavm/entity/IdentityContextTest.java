@@ -32,12 +32,12 @@ public class IdentityContextTest extends TestCase {
                 .build();
 
         var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
-        var method = MethodBuilder.newBuilder(fooType, "bar", "bar", null)
+        var method = MethodBuilder.newBuilder(fooType, "bar", "bar")
                 .returnType(StandardTypes.getVoidType())
                 .typeParameters(List.of(typeVar))
-                .parameters(new Parameter(null, "t", "t", typeVar))
-                .type(new FunctionType(null, List.of(typeVar), StandardTypes.getVoidType()))
-                .staticType(new FunctionType(null, List.of(fooType, typeVar), StandardTypes.getVoidType()))
+                .parameters(new Parameter(null, "t", "t", typeVar.getType()))
+                .type(new FunctionType(null, List.of(typeVar.getType()), StandardTypes.getVoidType()))
+                .staticType(new FunctionType(null, List.of(fooType.getType(), typeVar.getType()), StandardTypes.getVoidType()))
                 .build();
 
         var identities = new IdentityHashMap<Object, ModelIdentity>();

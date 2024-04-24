@@ -7,9 +7,12 @@ import tech.metavm.flow.Function;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.InstanceFactory;
-import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Index;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.util.*;
 
@@ -30,7 +33,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final Map<Type, ModelDef<?, ?>> javaType2Def = new HashMap<>();
     private final Map<tech.metavm.object.type.Type, ModelDef<?, ?>> type2Def = new IdentityHashMap<>();
     private final IdentitySet<ModelDef<?, ?>> processedDefSet = new IdentitySet<>();
-    private final IdentitySet<ClassType> initializedClassTypes = new IdentitySet<>();
+    private final IdentitySet<Klass> initializedClassTypes = new IdentitySet<>();
     private final DirectDef<Object> objectDef;
     private final ValueDef<Enum<?>> enumDef;
     private final StdIdProvider stdIdProvider;
@@ -182,7 +185,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @SuppressWarnings("unused")
     public java.lang.reflect.Field getJavaField(Field field) {
-        Class<?> javaClass = getJavaClass(field.getDeclaringType());
+        Class<?> javaClass = getJavaClass(field.getDeclaringType().getType());
         return ReflectionUtils.getDeclaredFieldByName(javaClass, field.getCode());
     }
 
@@ -191,7 +194,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     public Field getField(java.lang.reflect.Field javaField) {
-        return getClassType(javaField.getDeclaringClass()).getFieldByJavaField(javaField);
+        return getClassType(javaField.getDeclaringClass()).resolve().getFieldByJavaField(javaField);
     }
 
     @Override
@@ -436,7 +439,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return getDef(type).getJavaType();
     }
 
-    public boolean isClassTypeInitialized(ClassType classType) {
+    public boolean isClassTypeInitialized(Klass classType) {
         return initializedClassTypes.contains(classType);
     }
 
@@ -579,7 +582,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         try(var ignored = getProfiler().enter("flush")) {
             parsers.values().forEach(p -> ensureStage(p.get().getType(), DEFINITION));
             int numPending = pendingModels.size();
-            for (ClassType newType : getGenericContext().getNewTypes()) {
+            for (Klass newType : getGenericContext().getNewTypes()) {
                 writeEntityIfNotPresent(newType);
             }
             for (CompositeType newCompositeType : getNewCompositeTypes()) {
@@ -656,9 +659,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     public tech.metavm.object.type.Type getTypeByTable(ReadonlyArray<?> table) {
         for (Object model : models()) {
             if (model instanceof ClassType type) {
-                if (type.getDeclaredConstraints() == table
-                        || type.getDeclaredFields() == table
-                        || type.getDeclaredMethods() == table
+                var klass = type.resolve();
+                if (klass.getDeclaredConstraints() == table
+                        || klass.getDeclaredFields() == table
+                        || klass.getDeclaredMethods() == table
                 ) {
                     return type;
                 }

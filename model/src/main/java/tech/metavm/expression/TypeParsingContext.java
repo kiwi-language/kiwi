@@ -14,33 +14,33 @@ import java.util.List;
 
 public class TypeParsingContext extends BaseParsingContext {
 
-    public static TypeParsingContext create(ClassType type, IEntityContext context) {
+    public static TypeParsingContext create(Klass type, IEntityContext context) {
         return new TypeParsingContext(
                 context.getInstanceContext(),
-                new ContextTypeRepository(context),
+                new ContextTypeDefRepository(context),
                 new ContextArrayTypeProvider(context),
                 context.getUnionTypeContext(),
                 type
         );
     }
 
-    private final ClassType type;
+    private final Klass klass;
     private final ThisExpression thisExpression;
     private final java.util.function.Function<Id, Instance> getInstanceFunc;
 
     public TypeParsingContext(InstanceProvider instanceProvider,
-                              IndexedTypeProvider typeProvider,
+                              IndexedTypeDefProvider typeProvider,
                               ArrayTypeProvider arrayTypeProvider,
                               UnionTypeProvider unionTypeProvider,
-                              ClassType type) {
+                              Klass klass) {
         super(instanceProvider, typeProvider, arrayTypeProvider, unionTypeProvider);
-        this.type = type;
-        thisExpression = new ThisExpression(type);
+        this.klass = klass;
+        thisExpression = new ThisExpression(klass.getType());
         this.getInstanceFunc = instanceProvider::get;
     }
 
-    public ClassType getType() {
-        return type;
+    public Klass getKlass() {
+        return klass;
     }
 
     @Override
@@ -72,13 +72,13 @@ public class TypeParsingContext extends BaseParsingContext {
     }
 
 
-    public static List<Field> getFields(ClassType type, List<Var> varPath) {
+    public static List<Field> getFields(Klass type, List<Var> varPath) {
         return getFields(type, varPath, true);
     }
 
-    public static List<Field> getFields(ClassType type, List<Var> varPath, boolean errorWhenNotFound) {
+    public static List<Field> getFields(Klass type, List<Var> varPath, boolean errorWhenNotFound) {
         List<Field> fields = new ArrayList<>();
-        ClassType t = type;
+        Klass t = type;
         Field field;
         Iterator<Var> varIt = varPath.iterator();
         while (varIt.hasNext()) {
@@ -93,13 +93,13 @@ public class TypeParsingContext extends BaseParsingContext {
             }
             fields.add(field);
             if (varIt.hasNext()) {
-                t = (ClassType) field.getType().getConcreteType();
+                t = ((ClassType) field.getType().getConcreteType()).resolve();
             }
         }
         return fields;
     }
 
-    public static Field getField(ClassType type, Var var) {
+    public static Field getField(Klass type, Var var) {
         return switch (var.getType()) {
             case NAME -> type.tryGetFieldByName(var.getName());
             case ID -> type.getField(var.getId());

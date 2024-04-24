@@ -2,7 +2,7 @@ package tech.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 
 import javax.annotation.Nullable;
@@ -16,7 +16,7 @@ public record UpdateFieldDTO(
 ) {
 
     @JsonIgnore
-    public Field getField(ClassType type) {
+    public Field getField(Klass type) {
         if(fieldId != null)
             return type.getField(Id.parse(fieldId));
         else
@@ -24,7 +24,7 @@ public record UpdateFieldDTO(
     }
 
     @JsonIgnore
-    public Field getStaticField(ClassType type) {
+    public Field getStaticField(Klass type) {
         if(fieldId != null)
             return type.getStaticField(Id.parse(fieldId));
         else

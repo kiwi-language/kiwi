@@ -6,7 +6,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record InstanceQueryDTO(
-        String typeId,
+        String type,
         @Nullable String sourceMappingId,
         String searchText,
         @Nullable String expression,

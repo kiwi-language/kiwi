@@ -2,7 +2,6 @@ package tech.metavm.object.instance.persistence;
 
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.flow.ParameterizedFlowProvider;
-import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
@@ -20,7 +19,7 @@ public class PersistenceUtils {
     public static void forEachIndexEntries(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider, long appId, Consumer<IndexEntryPO> action,
                                            Consumer<IndexEntryPO> actionForUnique) {
         instance.ensureLoaded();
-        instance.getType().getConstraints(Index.class).forEach(index -> forEachIndexEntries(index, instance, parameterizedFlowProvider, appId, action, actionForUnique));
+        instance.getKlass().getConstraints(Index.class).forEach(index -> forEachIndexEntries(index, instance, parameterizedFlowProvider, appId, action, actionForUnique));
     }
 
     private static void forEachIndexEntries(Index index, ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider,
@@ -99,7 +98,7 @@ public class PersistenceUtils {
         };
     }
 
-    private static Set<ReferencePO> extractReferences(final ClassType classType, InstancePO instancePO) {
+    private static Set<ReferencePO> extractReferences(final Klass classType, InstancePO instancePO) {
         var appId = instancePO.getAppId();
         Set<ReferencePO> refs = new HashSet<>();
         new StreamVisitor(new ByteArrayInputStream(instancePO.getData())) {

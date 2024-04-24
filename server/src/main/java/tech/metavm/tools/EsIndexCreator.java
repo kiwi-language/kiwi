@@ -33,7 +33,7 @@ public class EsIndexCreator {
     public Map<String, Object> buildSource() {
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put(APPLICATION_ID, Map.of("type", "long"));
-        properties.put(TYPE_ID, Map.of("type", "long"));
+        properties.put(TYPE, Map.of("type", "keyword"));
         properties.put(ID, Map.of("type", "keyword"));
         for (int level = 0; level < Constants.MAX_INHERITANCE_DEPTH; level++) {
             for (ColumnKind columnType : ColumnKind.values()) {

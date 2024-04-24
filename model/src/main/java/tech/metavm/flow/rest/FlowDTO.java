@@ -14,12 +14,12 @@ public record FlowDTO(
         String code,
         boolean isNative,
         @Nullable ScopeDTO rootScope,
-        String returnTypeId,
+        String returnType,
         List<ParameterDTO> parameters,
         String typeId,
         List<String> typeParameterIds,
         @Nullable String horizontalTemplateId,
-        List<String> typeArgumentIds,
+        List<String> typeArguments,
         List<String> capturedTypeIds,
         List<String> capturedCompositeTypeIds,
         List<String> capturedFlowIds,
@@ -31,7 +31,7 @@ public record FlowDTO(
     @JsonIgnore
     public FlowSignatureDTO signature() {
         return new FlowSignatureDTO(
-                name, NncUtils.map(parameters, ParameterDTO::typeId)
+                name, NncUtils.map(parameters, ParameterDTO::type)
         );
     }
 

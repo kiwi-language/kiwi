@@ -18,7 +18,7 @@ public class ExpressionResolverTest extends TestCase {
 
     public void testNewArrayList() {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        var barMethod = MethodBuilder.newBuilder(fooType, "bar", "bar", typeProviders.functionTypeProvider)
+        var barMethod = MethodBuilder.newBuilder(fooType, "bar", "bar")
                 .build();
     }
 

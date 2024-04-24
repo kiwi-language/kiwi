@@ -10,8 +10,4 @@ public interface TypeProvider {
         return getType(Id.parse(id));
     }
 
-    default ClassType getClassType(Id id) {
-        return (ClassType) getType(id);
-    }
-
 }

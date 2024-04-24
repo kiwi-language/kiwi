@@ -25,28 +25,28 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private ArrayType anyArrayType;
     private ArrayType neverArrayType;
     private UnionType nullableStringType;
-    private ClassType enumType;
-    private ClassType throwableType;
-    private ClassType exceptionType;
-    private ClassType runtimeExceptionType;
-    private ClassType entityType;
-    private ClassType recordType;
-    private ClassType collectionType;
-    private ClassType setType;
-    private ClassType listType;
-    private ClassType mapType;
-    private ClassType iteratorType;
-    private ClassType iteratorImplType;
+    private Klass enumType;
+    private Klass throwableType;
+    private Klass exceptionType;
+    private Klass runtimeExceptionType;
+    private Klass entityType;
+    private Klass recordType;
+    private Klass collectionType;
+    private Klass setType;
+    private Klass listType;
+    private Klass mapType;
+    private Klass iteratorType;
+    private Klass iteratorImplType;
     private ArrayType readonlyAnyArrayType;
-    private ClassType childListType;
-    private ClassType readWriteListType;
-    private ClassType iterableType;
-    private ClassType consumerType;
-    private ClassType predicateType;
-    private ClassType illegalArgumentExceptionType;
-    private ClassType illegalStateExceptionType;
-    private ClassType nullPointerExceptionType;
-    private final Map<PTypeKey, ClassType> parameterizedTypes = new HashMap<>();
+    private Klass childListType;
+    private Klass readWriteListType;
+    private Klass iterableType;
+    private Klass consumerType;
+    private Klass predicateType;
+    private Klass illegalArgumentExceptionType;
+    private Klass illegalStateExceptionType;
+    private Klass nullPointerExceptionType;
+    private final Map<PTypeKey, Klass> parameterizedTypes = new HashMap<>();
     private final Map<Type, UnionType> nullableTypes = new HashMap<>();
 
     @Override
@@ -115,62 +115,62 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
-    public ClassType getEnumType() {
+    public Klass getEnumType() {
         return enumType;
     }
 
     @Override
-    public ClassType getThrowableType() {
+    public Klass getThrowableType() {
         return throwableType;
     }
 
     @Override
-    public ClassType getExceptionType() {
+    public Klass getExceptionType() {
         return exceptionType;
     }
 
     @Override
-    public ClassType getRuntimeExceptionType() {
+    public Klass getRuntimeExceptionType() {
         return runtimeExceptionType;
     }
 
     @Override
-    public ClassType getEntityType() {
+    public Klass getEntityType() {
         return entityType;
     }
 
     @Override
-    public ClassType getRecordType() {
+    public Klass getRecordType() {
         return recordType;
     }
 
     @Override
-    public ClassType getCollectionType() {
+    public Klass getCollectionType() {
         return collectionType;
     }
 
     @Override
-    public ClassType getSetType() {
+    public Klass getSetType() {
         return setType;
     }
 
     @Override
-    public ClassType getListType() {
+    public Klass getListType() {
         return listType;
     }
 
     @Override
-    public ClassType getMapType() {
+    public Klass getMapType() {
         return mapType;
     }
 
     @Override
-    public ClassType getIteratorType() {
+    public Klass getIteratorType() {
         return iteratorType;
     }
 
     @Override
-    public ClassType getIteratorImplType() {
+    public Klass getIteratorImplType() {
         return iteratorImplType;
     }
 
@@ -255,62 +255,62 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
-    public void setEnumType(ClassType type) {
+    public void setEnumType(Klass type) {
         enumType = type;
     }
 
     @Override
-    public void setThrowableType(ClassType type) {
+    public void setThrowableType(Klass type) {
         throwableType = type;
     }
 
     @Override
-    public void setExceptionType(ClassType type) {
+    public void setExceptionType(Klass type) {
         exceptionType = type;
     }
 
     @Override
-    public void setRuntimeExceptionType(ClassType type) {
+    public void setRuntimeExceptionType(Klass type) {
         runtimeExceptionType = type;
     }
 
     @Override
-    public void setEntityType(ClassType type) {
+    public void setEntityType(Klass type) {
         entityType = type;
     }
 
     @Override
-    public void setRecordType(ClassType type) {
+    public void setRecordType(Klass type) {
         recordType = type;
     }
 
     @Override
-    public void setCollectionType(ClassType type) {
+    public void setCollectionType(Klass type) {
         collectionType = type;
     }
 
     @Override
-    public void setSetType(ClassType type) {
+    public void setSetType(Klass type) {
         setType = type;
     }
 
     @Override
-    public void setListType(ClassType type) {
+    public void setListType(Klass type) {
         listType = type;
     }
 
     @Override
-    public void setMapType(ClassType type) {
+    public void setMapType(Klass type) {
         mapType = type;
     }
 
     @Override
-    public void setIteratorType(ClassType type) {
+    public void setIteratorType(Klass type) {
         iteratorType = type;
     }
 
     @Override
-    public void setIteratorImplType(ClassType type) {
+    public void setIteratorImplType(Klass type) {
         iteratorImplType = type;
     }
 
@@ -320,93 +320,93 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
-    public void setChildListType(ClassType type) {
+    public void setChildListType(Klass type) {
         childListType = type;
     }
 
     @Override
-    public void setReadWriteListType(ClassType type) {
+    public void setReadWriteListType(Klass type) {
         readWriteListType = type;
     }
 
     @Override
-    public ClassType getChildListType() {
+    public Klass getChildListType() {
         return childListType;
     }
 
     @Override
-    public ClassType getReadWriteListType() {
+    public Klass getReadWriteListType() {
         return readWriteListType;
     }
 
     @Override
-    public ClassType getIterableType() {
+    public Klass getIterableType() {
         return iterableType;
     }
 
     @Override
-    public void setIterableType(ClassType iterableType) {
+    public void setIterableType(Klass iterableType) {
         this.iterableType = iterableType;
     }
 
     @Override
-    public ClassType getConsumerType() {
+    public Klass getConsumerType() {
         return consumerType;
     }
 
     @Override
-    public void setConsumerType(ClassType consumerType) {
+    public void setConsumerType(Klass consumerType) {
         this.consumerType = consumerType;
     }
 
     @Override
-    public ClassType getPredicateType() {
+    public Klass getPredicateType() {
         return predicateType;
     }
 
     @Override
-    public void setPredicateType(ClassType type) {
+    public void setPredicateType(Klass type) {
         predicateType = type;
     }
 
     @Override
-    public void setIllegalArgumentExceptionType(ClassType illegalArgumentExceptionType) {
+    public void setIllegalArgumentExceptionType(Klass illegalArgumentExceptionType) {
         this.illegalArgumentExceptionType = illegalArgumentExceptionType;
     }
 
     @Override
-    public void setIllegalStateExceptionType(ClassType illegalStateExceptionType) {
+    public void setIllegalStateExceptionType(Klass illegalStateExceptionType) {
         this.illegalStateExceptionType = illegalStateExceptionType;
     }
 
     @Override
-    public ClassType getIllegalArgumentExceptionType() {
+    public Klass getIllegalArgumentExceptionType() {
         return illegalArgumentExceptionType;
     }
 
     @Override
-    public ClassType getIllegalStateExceptionType() {
+    public Klass getIllegalStateExceptionType() {
         return illegalStateExceptionType;
     }
 
     @Override
-    public ClassType getNullPointerExceptionType() {
+    public Klass getNullPointerExceptionType() {
         return nullPointerExceptionType;
     }
 
     @Override
-    public void setNullPointerExceptionType(ClassType nullPointerExceptionType) {
+    public void setNullPointerExceptionType(Klass nullPointerExceptionType) {
         this.nullPointerExceptionType = nullPointerExceptionType;
     }
 
     @Override
-    public ClassType getParameterizedType(ClassType template, List<Type> typeArguments) {
+    public Klass getParameterizedType(Klass template, List<Type> typeArguments) {
         return Objects.requireNonNull(parameterizedTypes.get(new PTypeKey(template, typeArguments)),
                 () -> "Parameterized type not found: " + template.getName() + "<" + NncUtils.join(typeArguments, Type::getName) + "> in standard types");
 }
 
     @Override
-    public void addParameterizedType(ClassType type) {
+    public void addParameterizedType(Klass type) {
         parameterizedTypes.put(new PTypeKey(Objects.requireNonNull(type.getTemplate()), type.getTypeArguments()), type);
     }
 

@@ -103,7 +103,7 @@ public class MethodDTOBuilder {
         return addNode(NodeDTOFactory.createInputNode(
                 tmpId,
                 name,
-                NncUtils.map(parameters, p -> InputFieldDTO.create(p.name(), p.typeId()))
+                NncUtils.map(parameters, p -> InputFieldDTO.create(p.name(), p.type()))
         ));
     }
 

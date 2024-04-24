@@ -29,7 +29,7 @@ public class MapNative extends NativeBase {
 
     public MapNative(ClassInstance instance) {
         this.instance = instance;
-        ClassType type = instance.getType();
+        Klass type = instance.getKlass();
         keyArrayField = Objects.requireNonNull(type.findFieldByCode("keyArray"));
         valueArrayField = Objects.requireNonNull(type.findFieldByCode("valueArray"));
         keyType = ((ArrayType) keyArrayField.getType()).getElementType();
@@ -57,7 +57,7 @@ public class MapNative extends NativeBase {
     }
 
     public ClassInstance keySet(CallContext callContext) {
-        var keySetType = (ClassType) instance.getType().getDependency(StandardTypes.getSetType());
+        var keySetType = (Klass) instance.getKlass().getDependency(StandardTypes.getSetType());
         ClassInstance keySet = ClassInstance.allocate(keySetType);
         var setNative = (SetNative) NativeMethods.getNativeObject(keySet);
         setNative.Set(callContext);

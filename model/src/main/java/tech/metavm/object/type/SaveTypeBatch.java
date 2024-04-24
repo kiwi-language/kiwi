@@ -2,7 +2,6 @@ package tech.metavm.object.type;
 
 import tech.metavm.common.BaseDTO;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.flow.Flows;
 import tech.metavm.flow.Method;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.MethodParam;
@@ -20,36 +19,26 @@ import java.util.function.Function;
 
 public class SaveTypeBatch implements DTOProvider {
 
-    public static SaveTypeBatch create(IEntityContext context, List<TypeDTO> types, List<FlowDTO> functions) {
-        return create(context, types, functions, List.of());
-    }
-
     public static SaveTypeBatch create(IEntityContext context,
-                                       List<TypeDTO> types,
-                                       List<FlowDTO> functions,
-                                       List<ParameterizedFlowDTO> pFlows) {
-        var batch = new SaveTypeBatch(context, types, functions, pFlows);
+                                       List<? extends TypeDefDTO> typeDefDTOs,
+                                       List<FlowDTO> functions) {
+        var batch = new SaveTypeBatch(context, typeDefDTOs, functions);
         batch.execute();
         return batch;
     }
 
     private final IEntityContext context;
     // Order matters! Don't use HashMap
-    private final LinkedHashMap<String, TypeDTO> typeMap = new LinkedHashMap<>();
+    private final LinkedHashMap<String, TypeDefDTO> typeDefMap = new LinkedHashMap<>();
     private final Map<String, FlowDTO> functionMap = new HashMap<>();
-    private final Map<TypeKey, TypeDTO> typeKey2TypeDTO = new HashMap<>();
     private final Map<String, FlowDTO> flowMap = new HashMap<>();
-    private final Map<String, List<ParameterizedFlowDTO>> parameterizedFlowMap = new HashMap<>();
 
-    private SaveTypeBatch(IEntityContext context, List<TypeDTO> types,
-                          List<FlowDTO> functions, List<ParameterizedFlowDTO> parameterizedFlows) {
+    private SaveTypeBatch(IEntityContext context, List<? extends TypeDefDTO> typeDefDTOs, List<FlowDTO> functions) {
         this.context = context;
-        for (TypeDTO typeDTO : types) {
-            typeMap.put(typeDTO.id(), typeDTO);
-            var typeKey = typeDTO.getTypeKey();
-            if (typeKey != null)
-                typeKey2TypeDTO.put(typeKey, typeDTO);
-            if (typeDTO.param() instanceof ClassTypeParam classParam) {
+        for (var typeDefDTO : typeDefDTOs) {
+            typeDefMap.put(typeDefDTO.id(), typeDefDTO);
+            if (typeDefDTO instanceof TypeDTO typeDTO) {
+                var classParam = typeDTO.getClassParam();
                 if (classParam.flows() != null) {
                     for (FlowDTO flowDTO : classParam.flows())
                         flowMap.put(flowDTO.id(), flowDTO);
@@ -58,14 +47,11 @@ public class SaveTypeBatch implements DTOProvider {
         }
         for (FlowDTO function : functions)
             functionMap.put(function.id(), function);
-        for (ParameterizedFlowDTO pFlowDTO : parameterizedFlows) {
-            parameterizedFlowMap.computeIfAbsent(pFlowDTO.getTemplateId(), k -> new ArrayList<>()).add(pFlowDTO);
-        }
     }
 
-    private record SaveStage(ResolutionStage stage, Function<TypeDTO, Set<String>> getDependencies) {
-        List<TypeDTO> sort(Collection<TypeDTO> typeDTOs) {
-            return Sorter.sort(typeDTOs, getDependencies);
+    private record SaveStage(ResolutionStage stage, Function<TypeDefDTO, Set<String>> getDependencies) {
+        List<TypeDefDTO> sort(Collection<TypeDefDTO> typeDefDTOs) {
+            return Sorter.sort(typeDefDTOs, getDependencies);
         }
     }
 
@@ -78,17 +64,15 @@ public class SaveTypeBatch implements DTOProvider {
                 new SaveStage(ResolutionStage.MAPPING_DEFINITION, this::noDependencies)
         );
         for (var stage : stages) {
-            for (var typeDTO : stage.sort(typeMap.values()))
-                stage.stage.saveType(typeDTO, this);
+            for (var typeDTO : stage.sort(typeDefMap.values()))
+                stage.stage.saveTypeDef(typeDTO, this);
             for (var function : functionMap.values())
                 stage.stage.saveFunction(function, this);
-            for (var flowDTOs : parameterizedFlowMap.values())
-                flowDTOs.forEach(flowDTO -> stage.stage.saveParameterizedFlow(flowDTO, this));
         }
     }
 
     public List<Type> getTypes() {
-        return NncUtils.map(typeMap.keySet(), id -> context.getType(Id.parse(id)));
+        return NncUtils.map(typeDefMap.keySet(), id -> context.getType(Id.parse(id)));
     }
 
     public IEntityContext getContext() {
@@ -102,67 +86,67 @@ public class SaveTypeBatch implements DTOProvider {
         } else {
             var flowDTO = NncUtils.requireNonNull(flowMap.get(id), "Flow '" + id + " not available");
             var param = (MethodParam) flowDTO.param();
-            var declaringType = getClassType(param.declaringTypeId());
+            var declaringType = getKlass(param.declaringTypeId());
             return NncUtils.requireNonNull(declaringType.findSelfMethod(f -> f.getStringId().equals(id)));
         }
     }
 
-    public Type get(String id) {
+    public TypeDef getTypeDef(String id) {
+        var existing = context.getTypeDef(id);
+        if(existing != null)
+            return existing;
+        var typeDefDTO = NncUtils.requireNonNull(typeDefMap.get(id),
+                "TypeDef '" + id + "' not available");
+        return Types.saveTypeDef(typeDefDTO, ResolutionStage.INIT, this);
+    }
+
+    public Klass getKlass(String id) {
+        return (Klass) getTypeDef(id);
+    }
+
+    public TypeVariable getTypeVariable(String id) {
+        return (TypeVariable) getTypeDef(id);
+    }
+
+    /*public Type get(String id) {
         var existing = context.getType(id);
         if (existing != null)
             return existing;
         var typeDTO = NncUtils.requireNonNull(typeMap.get(id),
                 "Type '" + id + "' not available");
         return Types.saveType(typeDTO, ResolutionStage.INIT, this);
+    }*/
+
+//    public ClassType getClassType(String id) {
+//        return (ClassType) get(id);
+//    }
+
+    public CapturedTypeVariable getCapturedTypeVariable(String id) {
+        return (CapturedTypeVariable) getTypeDef(id);
     }
 
-    public ClassType getClassType(String id) {
-        return (ClassType) get(id);
+    public List<TypeDTO> getTypeDTOs() {
+        return NncUtils.filterByType(typeDefMap.values(), TypeDTO.class);
     }
 
-    public TypeVariable getTypeVariable(String id) {
-        return (TypeVariable) get(id);
-    }
-
-    public CapturedType getCapturedType(String id) {
-        return (CapturedType) get(id);
-    }
-
-    public List<TypeDTO> getClassTypeDTOs() {
-        return NncUtils.filter(this.typeMap.values(), t -> t.param() instanceof ClassTypeParam);
-    }
-
-    public Set<String> noDependencies(TypeDTO typeDTO) {
+    public Set<String> noDependencies(TypeDefDTO typeDefDTO) {
         return Set.of();
     }
 
-    public Set<String> initDependencies(TypeDTO typeDTO) {
+    public Set<String> initDependencies(TypeDefDTO typeDefDTO) {
         var dependencies = new HashSet<String>();
-        switch (typeDTO.param()) {
-            case ClassTypeParam classTypeParam -> {
-                if(classTypeParam.typeParameterIds() != null)
-                    dependencies.addAll(classTypeParam.typeParameterIds());
-            }
-            case PTypeDTO pTypeDTO -> dependencies.add(pTypeDTO.getTemplateId());
-            case ArrayTypeParam arrayTypeParam -> dependencies.add(arrayTypeParam.elementTypeId());
-            case UncertainTypeParam uncertainTypeParam -> {
-                dependencies.add(uncertainTypeParam.lowerBoundId());
-                dependencies.add(uncertainTypeParam.upperBoundId());
-            }
-            case UnionTypeParam unionTypeParam -> dependencies.addAll(unionTypeParam.memberIds());
-            case FunctionTypeParam functionTypeParam -> {
-                dependencies.addAll(functionTypeParam.parameterTypeIds());
-                dependencies.add(functionTypeParam.returnTypeId());
-            }
-            default -> {
-            }
+        if (Objects.requireNonNull(typeDefDTO) instanceof TypeDTO typeDTO) {
+            var classTypeParam = typeDTO.getClassParam();
+            if (classTypeParam.typeParameterIds() != null)
+                dependencies.addAll(classTypeParam.typeParameterIds());
         }
         return dependencies;
     }
 
-    private Set<String> declarationDependencies(TypeDTO typeDTO) {
+    private Set<String> declarationDependencies(TypeDefDTO typeDefDTO) {
         var dependencies = new HashSet<String>();
-        if (typeDTO.param() instanceof ClassTypeParam classParam) {
+        if (typeDefDTO instanceof TypeDTO typeDTO) {
+            var classParam = typeDTO.getClassParam();
             if (classParam.superClassId() != null)
                 dependencies.add(classParam.superClassId());
             if (classParam.interfaceIds() != null)
@@ -173,25 +157,25 @@ public class SaveTypeBatch implements DTOProvider {
 
     private static class Sorter {
 
-        public static List<TypeDTO> sort(Collection<TypeDTO> typeDTOs,
-                                         Function<TypeDTO, Set<String>> getDependencies) {
-            var sorter = new Sorter(typeDTOs, getDependencies);
+        public static List<TypeDefDTO> sort(Collection<TypeDefDTO> typeDefDTOs,
+                                         Function<TypeDefDTO, Set<String>> getDependencies) {
+            var sorter = new Sorter(typeDefDTOs, getDependencies);
             return sorter.result;
         }
 
         private final IdentitySet<BaseDTO> visited = new IdentitySet<>();
         private final IdentitySet<BaseDTO> visiting = new IdentitySet<>();
-        private final List<TypeDTO> result = new ArrayList<>();
-        private final Map<String, TypeDTO> map = new HashMap<>();
-        private final Function<TypeDTO, Set<String>> getDependencies;
+        private final List<TypeDefDTO> result = new ArrayList<>();
+        private final Map<String, TypeDefDTO> map = new HashMap<>();
+        private final Function<TypeDefDTO, Set<String>> getDependencies;
 
-        public Sorter(Collection<TypeDTO> typeDTOs, Function<TypeDTO, Set<String>> getDependencies) {
+        public Sorter(Collection<TypeDefDTO> typeDefDTOs, Function<TypeDefDTO, Set<String>> getDependencies) {
             this.getDependencies = getDependencies;
-            for (TypeDTO typeDTO : typeDTOs) {
+            for (var typeDTO : typeDefDTOs) {
                 map.put(typeDTO.id(), typeDTO);
             }
-            for (TypeDTO typeDTO : map.values()) {
-                visit(typeDTO);
+            for (var typeDefDTO : map.values()) {
+                visit(typeDefDTO);
             }
         }
 
@@ -205,55 +189,27 @@ public class SaveTypeBatch implements DTOProvider {
             }
         }
 
-        private void visit(TypeDTO typeDTO) {
-            if (visiting.contains(typeDTO)) {
+        private void visit(TypeDefDTO typeDefDTO) {
+            if (visiting.contains(typeDefDTO)) {
                 throw new InternalException("Circular reference");
             }
-            if (visited.contains(typeDTO)) {
+            if (visited.contains(typeDefDTO)) {
                 return;
             }
-            visiting.add(typeDTO);
-            getDependencies(typeDTO).forEach(this::visitId);
-            result.add(typeDTO);
-            visiting.remove(typeDTO);
-            visited.add(typeDTO);
+            visiting.add(typeDefDTO);
+            getDependencies(typeDefDTO).forEach(this::visitId);
+            result.add(typeDefDTO);
+            visiting.remove(typeDefDTO);
+            visited.add(typeDefDTO);
         }
 
-        private Set<String> getDependencies(TypeDTO typeDTO) {
-            return getDependencies.apply(typeDTO);
+        private Set<String> getDependencies(TypeDefDTO typeDefDTO) {
+            return getDependencies.apply(typeDefDTO);
         }
 
     }
 
-    @Override
-    public @Nullable Long getTmpId(TypeKey typeKey) {
-        return NncUtils.get(getTypeDTO(typeKey), TypeDTO::tmpId);
-    }
-
-    public @Nullable TypeDTO getTypeDTO(TypeKey typeKey) {
-        return typeKey2TypeDTO.get(typeKey);
-    }
-
-    @Override
-    public @Nullable PTypeDTO getPTypeDTO(String templateId, List<String> typeArgumentIds) {
-        var typeDTO = typeKey2TypeDTO.get(new ParameterizedTypeKey(templateId, typeArgumentIds));
-        return NncUtils.get(typeDTO, TypeDTO::getPTypeDTO);
-    }
-
-    public @Nullable FlowDTO getFlowDTO(Method method) {
-        var typeDTO = getTypeDTO(method.getDeclaringType().getStringId());
-        return NncUtils.get(typeDTO, t -> t.getClassParam().findFlowBySignature(method.getSignature()));
-    }
-
-    @Override
-    public @Nullable ParameterizedFlowDTO getParameterizedFlowDTO(String templateId, List<String> typeArgumentIds) {
-        var pFlows = parameterizedFlowMap.get(templateId);
-        if(pFlows == null)
-            return null;
-        return NncUtils.find(pFlows, pFlow -> pFlow.getTypeArgumentIds().equals(typeArgumentIds));
-    }
-
-    public void saveParameterizedFlows(ClassType type, ResolutionStage stage) {
+    /*public void saveParameterizedFlows(Klass type, ResolutionStage stage) {
         var pFlowDTOs = getPFlowsByDeclaringType(type.getStringId());
         for (ParameterizedFlowDTO parameterizedFlowDTO : pFlowDTOs) {
             Flows.getParameterizedFlow(
@@ -275,7 +231,7 @@ public class SaveTypeBatch implements DTOProvider {
         }
         else
             return List.of();
-    }
+    }*/
 
     public @Nullable ObjectMappingDTO getMappingDTO(FieldsObjectMapping mapping) {
         var typeDTO = getTypeDTO(mapping.getSourceType().getStringId());
@@ -287,7 +243,11 @@ public class SaveTypeBatch implements DTOProvider {
 
     @Override
     public @Nullable TypeDTO getTypeDTO(String id) {
-        return typeMap.get(id);
+        return (TypeDTO) getTypeDefDTO(id);
+    }
+
+    public TypeDefDTO getTypeDefDTO(String id) {
+        return typeDefMap.get(id);
     }
 
     public TypeDTO getTypeDTONotNull(String id) {
@@ -295,7 +255,7 @@ public class SaveTypeBatch implements DTOProvider {
     }
 
     public static SaveTypeBatch empty(IEntityContext context) {
-        return new SaveTypeBatch(context, List.of(), List.of(), List.of());
+        return new SaveTypeBatch(context, List.of(), List.of());
     }
 
 }

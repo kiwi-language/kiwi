@@ -85,7 +85,7 @@ public class AssemblerTest extends TestCase {
 
     private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {
         assembler.assemble(sources);
-        var request = new BatchSaveRequest(assembler.getAllTypes(), List.of(), assembler.getParameterizedFlows(), false);
+        var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), false);
         TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
         return request;
     }

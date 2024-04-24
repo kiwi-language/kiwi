@@ -19,7 +19,7 @@ public class ValueFormatterTest extends TestCase {
     public void testFormat() {
         var fooTypes = MockUtils.createFooTypes(true);
         var instance = MockUtils.createFoo(fooTypes);
-        for (Field field : instance.getType().getAllFields()) {
+        for (Field field : instance.getKlass().getAllFields()) {
             Object fieldValue = ValueFormatter.format(instance.getField(field));
             TestUtils.logJSON(LOGGER, field.getName(), fieldValue);
         }

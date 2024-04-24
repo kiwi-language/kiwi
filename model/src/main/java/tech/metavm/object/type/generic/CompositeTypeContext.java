@@ -59,7 +59,7 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
             }
         }
         T type = create(componentTypes, tmpId);
-        type.getCapturedTypes().forEach(ct -> ct.addCapturedCompositeType(type));
+//        type.getCapturedTypes().forEach(ct -> ct.addCapturedCompositeType(type));
         CompositeTypeEventRegistry.notifyTypeCreated(type);
         if(NncUtils.anyMatch(componentTypes, Entity::isEphemeralEntity))
             type.setEphemeralEntity(true);

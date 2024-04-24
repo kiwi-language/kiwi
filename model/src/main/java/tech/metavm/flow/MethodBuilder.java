@@ -16,12 +16,11 @@ import java.util.Map;
 
 public class MethodBuilder {
 
-    public static MethodBuilder newBuilder(ClassType declaringType, String name, String code, FunctionTypeProvider functionTypeProvider) {
-        return new MethodBuilder(declaringType, name, code, functionTypeProvider);
+    public static MethodBuilder newBuilder(Klass declaringType, String name, String code) {
+        return new MethodBuilder(declaringType, name, code);
     }
 
-    private final FunctionTypeProvider functionTypeProvider;
-    private final ClassType declaringType;
+    private final Klass declaringType;
     private final String name;
     @Nullable
     private final String code;
@@ -47,11 +46,10 @@ public class MethodBuilder {
     private @Nullable CodeSource codeSource;
     private MetadataState state;
 
-    private MethodBuilder(ClassType declaringType, String name, @Nullable String code, FunctionTypeProvider functionTypeProvider) {
+    private MethodBuilder(Klass declaringType, String name, @Nullable String code) {
         this.declaringType = declaringType;
         this.name = name;
         this.code = code;
-        this.functionTypeProvider = functionTypeProvider;
     }
 
     public MethodBuilder isAbstract(boolean isAbstract) {
@@ -161,19 +159,14 @@ public class MethodBuilder {
     public Method build() {
         if (returnType == null) {
             if (isConstructor)
-                returnType = declaringType;
+                returnType = declaringType.getType();
             else
                 returnType = NncUtils.orElse(StandardTypes.getVoidType(), StandardTypes::getVoidType);
         }
         if (NncUtils.isNotEmpty(typeParameters))
-            typeArguments = new ArrayList<>(typeParameters);
+            typeArguments = new ArrayList<>(NncUtils.map(typeParameters, TypeVariable::getType));
         if(declaringType.isInterface() && !_static)
             isAbstract = true;
-        var paramTypes = NncUtils.map(parameters, Parameter::getType);
-        if (type == null)
-            type = functionTypeProvider.getFunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
-        if (!_static && staticType == null)
-            staticType = functionTypeProvider.getFunctionType(NncUtils.prepend(declaringType, paramTypes), returnType);
         var effectiveTmpId = tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId);
         if(!hidden && !typeArguments.isEmpty())
             hidden = NncUtils.anyMatch(typeArguments, Type::isCaptured);
@@ -194,8 +187,6 @@ public class MethodBuilder {
                     overridden,
                     typeParameters,
                     typeArguments,
-                    type,
-                    staticType,
                     _static,
                     horizontalTemplate,
                     access,
@@ -211,7 +202,6 @@ public class MethodBuilder {
             existing.setOverridden(overridden);
             existing.setTypeParameters(typeParameters);
             existing.setTypeArguments(typeArguments);
-            existing.setType(type);
             existing.setStaticType(staticType);
             if (state != null)
                 existing.setState(state);

@@ -208,7 +208,7 @@ public class ExpressionResolver {
         methodGenerator.exitCondSection(mergeNode, List.of());
 
         var valueField = FieldBuilder
-                .newBuilder("value", "value", mergeNode.getType(),
+                .newBuilder("value", "value", mergeNode.getKlass(),
                         Types.getUnionType(List.of(thenExpr.getType(), elseExpr.getType()), compositeTypeFacade))
                 .build();
         new MergeNodeField(valueField, mergeNode, Map.of(
@@ -259,12 +259,12 @@ public class ExpressionResolver {
                 PsiClass psiClass = requireNonNull(psiField.getContainingClass());
                 Field field;
                 if (psiField.hasModifierProperty(PsiModifier.STATIC)) {
-                    ClassType klass = (ClassType) typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass));
+                    var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass))).resolve();
                     field = Objects.requireNonNull(klass.findStaticFieldByCode(psiField.getName()));
                     return new StaticPropertyExpression(field);
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
-                    ClassType klass = (ClassType) methodGenerator.getExpressionType(qualifierExpr);
+                    Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr));
                     typeResolver.ensureDeclared(klass);
                     field = klass.getFieldByCode(psiField.getName());
                     return new PropertyExpression(qualifierExpr, field);
@@ -274,18 +274,18 @@ public class ExpressionResolver {
             PsiClass psiClass = requireNonNull(psiMethod.getContainingClass());
             Method method;
             if (psiMethod.hasModifierProperty(PsiModifier.STATIC)) {
-                ClassType klass = (ClassType) typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass));
+                Klass klass = Types.resolveKlass(typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass)));
                 method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
                 return new StaticPropertyExpression(method);
             } else {
                 if (psiReferenceExpression.getQualifierExpression() instanceof PsiReferenceExpression refExpr &&
                         refExpr.resolve() instanceof PsiClass) {
-                    var klass = (ClassType) typeResolver.resolve(TranspileUtil.createType(psiClass));
+                    var klass = Types.resolveKlass(typeResolver.resolve(TranspileUtil.createType(psiClass)));
                     method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
                     return new StaticPropertyExpression(method);
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
-                    ClassType klass = (ClassType) methodGenerator.getExpressionType(qualifierExpr);
+                    Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr));
                     typeResolver.ensureDeclared(klass);
                     method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
                     return new PropertyExpression(qualifierExpr, method);
@@ -472,7 +472,7 @@ public class ExpressionResolver {
 
     private MethodCallNode createInvokeFlowNode(Expression self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
         List<Expression> arguments = NncUtils.map(argumentList.getExpressions(), arg -> resolve(arg, context));
-        var exprType = (ClassType) methodGenerator.getExpressionType(self);
+        var exprType = Types.resolveKlass(methodGenerator.getExpressionType(self));
         typeResolver.ensureDeclared(exprType);
         return methodGenerator.createMethodCall(self, Objects.requireNonNull(exprType.findMethodByCode(flowCode)), arguments, compositeTypeFacade);
     }
@@ -523,9 +523,12 @@ public class ExpressionResolver {
         for (PsiExpression psiArg : psiArgs) {
             var arg = resolve(psiArg, context);
             var paramType = typeResolver.resolveDeclaration(substitutor.substitute(psiArg.getType()));
-            if (paramType instanceof ClassType classType && classType.isSAMInterface()
-                    && arg.getType() instanceof FunctionType) {
-                arg = new NodeExpression(createSAMConversion(classType, arg));
+            if(paramType instanceof ClassType classType) {
+                var klass = classType.resolve();
+                if (klass.isSAMInterface()
+                        && arg.getType() instanceof FunctionType) {
+                    arg = new NodeExpression(createSAMConversion(klass, arg));
+                }
             }
             args.add(arg);
         }
@@ -555,9 +558,9 @@ public class ExpressionResolver {
         node.setCapturedExpressionTypes(captureExpressionTypes);
     }
 
-    private NodeRT createSAMConversion(ClassType samInterface, Expression function) {
+    private NodeRT createSAMConversion(Klass samInterface, Expression function) {
         var func = parameterizedFlowProvider.getParameterizedFlow(
-                NativeFunctions.getFunctionToInstance(), List.of(samInterface)
+                NativeFunctions.getFunctionToInstance(), List.of(samInterface.getType())
         );
         return methodGenerator.createFunctionCall(func, List.of(function));
     }
@@ -571,9 +574,9 @@ public class ExpressionResolver {
         var methodGenerics = expression.resolveMethodGenerics();
         var substitutor = methodGenerics.getSubstitutor();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
-        var declaringType = (ClassType) typeResolver.resolveDeclaration(
+        var declaringType = Types.resolveKlass(typeResolver.resolveDeclaration(
                 substitutor.substitute(TranspileUtil.createTemplateType(requireNonNull(method.getContainingClass())))
-        );
+        ));
         var psiParameters = NncUtils.requireNonNull(method.getParameterList()).getParameters();
         var template = declaringType.getEffectiveTemplate();
         List<Type> rawParamTypes = NncUtils.map(
@@ -631,7 +634,7 @@ public class ExpressionResolver {
         var type = NncUtils.requireNonNull(expression.getType());
         var psiMapType = TranspileUtil.createClassType(Map.class);
         if (psiMapType.isAssignableFrom(type)) {
-            var mapType = (ClassType) typeResolver.resolve(type);
+            var mapType = Types.resolveKlass(typeResolver.resolve(type));
             var subFlow = Objects.requireNonNull(mapType.findMethodByCode("Map"));
             var newNode = methodGenerator.createNew(subFlow,
                     resolveExpressionList(requireNonNull(expression.getArgumentList()), context),
@@ -639,7 +642,7 @@ public class ExpressionResolver {
             return createNodeExpression(newNode);
         }
         if (expression.getType() instanceof PsiClassType psiClassType) {
-            var klass = (ClassType) typeResolver.resolve(psiClassType);
+            var klass = Types.resolveKlass(typeResolver.resolve(psiClassType));
             List<Expression> args = NncUtils.map(
                     requireNonNull(expression.getArgumentList()).getExpressions(),
                     expr -> resolve(expr, context)
@@ -674,7 +677,7 @@ public class ExpressionResolver {
         return NncUtils.map(expressionList.getExpressions(), expression -> resolve(expression, context));
     }
 
-    public Expression newInstance(ClassType declaringType, List<Expression> arguments,
+    public Expression newInstance(Klass declaringType, List<Expression> arguments,
                                   List<PsiType> prefixTypes, PsiConstructorCall constructorCall, ResolutionContext context) {
         var methodGenerics = constructorCall.resolveMethodGenerics();
         NewObjectNode node;
@@ -747,7 +750,7 @@ public class ExpressionResolver {
                 } else {
                     self = variableTable.get("this");
                 }
-                ClassType instanceType = (ClassType) methodGenerator.getExpressionType(self);
+                Klass instanceType = Types.resolveKlass(methodGenerator.getExpressionType(self));
                 typeResolver.ensureDeclared(instanceType);
                 Field field = instanceType.getFieldByCode(psiField.getName());
                 UpdateObjectNode node = methodGenerator.createUpdateObject(self);
@@ -807,7 +810,7 @@ public class ExpressionResolver {
         methodGenerator.exitCondSection(mergeNode, List.of());
 
         var valueField = FieldBuilder
-                .newBuilder("value", "value", mergeNode.getType(), StandardTypes.getBooleanType())
+                .newBuilder("value", "value", mergeNode.getKlass(), StandardTypes.getBooleanType())
                 .build();
         new MergeNodeField(valueField, mergeNode, Map.of(
                 thenBranch, Values.expression(Expressions.trueExpression()),
@@ -839,12 +842,12 @@ public class ExpressionResolver {
     public Expression resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
         var returnType = typeResolver.resolveDeclaration(TranspileUtil.getLambdaReturnType(expression));
         var parameters = resolveParameterList(expression.getParameterList());
-        var funcInterface = (ClassType) typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType());
+        var funcInterface = Types.resolveKlass(typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType()));
         var lambdaNode = methodGenerator.createLambda(parameters, returnType, funcInterface);
         methodGenerator.enterScope(lambdaNode.getBodyScope());
         var inputNode = methodGenerator.createInput();
         for (Parameter parameter : parameters) {
-            var field = FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getType(), parameter.getType())
+            var field = FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getKlass(), parameter.getType())
                     .build();
             methodGenerator.setVariable(parameter.getCode(),
                     new PropertyExpression(new NodeExpression(inputNode), field));
@@ -887,7 +890,7 @@ public class ExpressionResolver {
         }
         var mergeNode = methodGenerator.createMerge();
         methodGenerator.exitCondSection(mergeNode, List.of(), true);
-        return Expressions.nodeProperty(mergeNode, mergeNode.getType().getFieldByCode("yield"));
+        return Expressions.nodeProperty(mergeNode, mergeNode.getKlass().getFieldByCode("yield"));
     }
 
     private Expression resolveSwitchCaseCondition(Expression switchExpression, PsiSwitchLabeledRuleStatement switchLabeledRuleStatement, ResolutionContext context) {

@@ -1,4 +1,4 @@
-package tech.metavm.object.type;
+/*package tech.metavm.object.type;
 
 public class MetaTypeVisitor {
 
@@ -28,3 +28,4 @@ public class MetaTypeVisitor {
     }
 
 }
+*/

@@ -12,6 +12,7 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
@@ -28,13 +29,13 @@ public abstract class LoopNode extends ScopeNode {
     private final ChildArray<LoopField> fields = addChild(new ChildArray<>(LoopField.class), "fields");
     @ChildEntity("条件")
     private Value condition;
-    @ChildEntity("节点类型")
-    private final ClassType nodeType;
+    @ChildEntity("klass")
+    private final Klass klass;
 
-    protected LoopNode(Long tmpId, String name, @Nullable String code, @NotNull ClassType outputType, NodeRT previous,
+    protected LoopNode(Long tmpId, String name, @Nullable String code, @NotNull Klass klass, NodeRT previous,
                        @NotNull ScopeRT scope, @NotNull Value condition) {
         super(tmpId, name, code, null, previous, scope, true);
-        this.nodeType = addChild(outputType, "nodeType");
+        this.klass = addChild(klass, "klass");
         this.condition = addChild(condition, "condition");
     }
 
@@ -107,7 +108,7 @@ public abstract class LoopNode extends ScopeNode {
         for (LoopField field : fields) {
             fieldValues.put(field.getField(), field.getInitialValue().evaluate(frame));
         }
-        return ClassInstance.create(fieldValues, getType());
+        return ClassInstance.create(fieldValues, klass);
     }
 
     private void updateLoopObject(ClassInstance loopObject, MetaFrame frame) {
@@ -139,7 +140,11 @@ public abstract class LoopNode extends ScopeNode {
     @Override
     @NotNull
     public ClassType getType() {
-        return nodeType;
+        return klass.getType();
+    }
+
+    public Klass getKlass() {
+        return klass;
     }
 
     @Override

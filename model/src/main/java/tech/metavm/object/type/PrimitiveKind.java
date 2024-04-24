@@ -63,7 +63,7 @@ public enum PrimitiveKind {
         return code;
     }
 
-    public static PrimitiveKind getByCode(int code) {
+    public static PrimitiveKind fromCode(int code) {
         return NncUtils.findRequired(values(), v -> v.code == code);
     }
 

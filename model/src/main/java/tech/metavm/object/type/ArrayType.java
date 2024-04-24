@@ -7,6 +7,8 @@ import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.ArrayTypeKey;
 import tech.metavm.object.type.rest.dto.ArrayTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -30,7 +32,7 @@ public class ArrayType extends CompositeType {
                 false, false, kind.category());
         setTmpId(tmpId);
         this.kind = kind;
-        this.elementType = elementType;
+        this.elementType = elementType.copy();
     }
 
     private static String getArrayTypeName(Type elementType, ArrayKind kind) {
@@ -56,7 +58,7 @@ public class ArrayType extends CompositeType {
 
     @Override
     public TypeKey getTypeKey() {
-        return new ArrayTypeKey(kind.code(), elementType.getStringId());
+        return new ArrayTypeKey(kind.code(), elementType.getTypeKey());
     }
 
     @Override
@@ -114,6 +116,25 @@ public class ArrayType extends CompositeType {
     @Override
     public String getInternalName(@Nullable Flow current) {
         return kind.getInternalName(elementType, current);
+    }
+
+    @Override
+    public Type copy() {
+        return new ArrayType(null, elementType.copy(), kind);
+    }
+
+    @Override
+    public String toTypeExpression(SerializeContext serializeContext) {
+        return elementType.toTypeExpression(serializeContext) + kind.getSuffix().toLowerCase();
+    }
+
+    @Override
+    public void write0(InstanceOutput output) {
+        elementType.write(output);
+    }
+
+    public static ArrayType read(InstanceInput input,  ArrayKind kind, TypeDefProvider typeDefProvider) {
+        return new ArrayType(null, Type.readType(input, typeDefProvider), kind);
     }
 
     public ArrayKind getKind() {

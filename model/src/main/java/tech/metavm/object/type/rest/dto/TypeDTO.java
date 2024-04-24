@@ -16,7 +16,7 @@ public record TypeDTO(
         boolean ephemeral,
         boolean anonymous,
         TypeParam param
-) implements BaseDTO, GenericDeclarationDTO {
+) implements TypeDefDTO, GenericDeclarationDTO {
 
     @JsonIgnore
     public ClassTypeParam getClassParam() {
@@ -24,38 +24,8 @@ public record TypeDTO(
     }
 
     @JsonIgnore
-    public PTypeDTO getPTypeDTO() {
-        return (PTypeDTO) param;
-    }
-
-    @JsonIgnore
-    public TypeVariableParam getTypeVariableParam() {
-        return (TypeVariableParam) param;
-    }
-
-    @JsonIgnore
     public ArrayTypeParam getArrayTypeParam() {
         return (ArrayTypeParam) param;
-    }
-
-    @JsonIgnore
-    public UnionTypeParam getUnionParam() {
-        return (UnionTypeParam) param;
-    }
-
-    @JsonIgnore
-    public FunctionTypeParam getFunctionTypeParam() {
-        return (FunctionTypeParam) param;
-    }
-
-    @JsonIgnore
-    public UncertainTypeParam getUncertainTypeParam() {
-        return (UncertainTypeParam) param;
-    }
-
-    @JsonIgnore
-    public CapturedTypeParam getCapturedTypeParam() {
-        return (CapturedTypeParam) param;
     }
 
     @JsonIgnore
@@ -70,11 +40,6 @@ public record TypeDTO(
     @JsonIgnore
     public IntersectionTypeParam getIntersectionParam() {
         return (IntersectionTypeParam) param;
-    }
-
-    @JsonIgnore
-    public @Nullable TypeKey getTypeKey() {
-        return param.getTypeKey();
     }
 
 }

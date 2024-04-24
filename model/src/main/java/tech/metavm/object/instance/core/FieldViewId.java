@@ -2,6 +2,7 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
@@ -11,8 +12,8 @@ public class FieldViewId extends PathViewId {
 
     public final Id fieldId;
 
-    public FieldViewId(boolean isArray, ViewId parent, @Nullable Id mappingId, Id fieldId, @Nullable Id sourceId, Id typeId) {
-        super(isArray, parent, mappingId, sourceId, typeId);
+    public FieldViewId(boolean isArray, ViewId parent, @Nullable Id mappingId, Id fieldId, @Nullable Id sourceId, TypeKey typeKey) {
+        super(isArray, parent, mappingId, sourceId, typeKey);
         this.fieldId = fieldId;
     }
 
@@ -23,7 +24,7 @@ public class FieldViewId extends PathViewId {
         writeMappingId(output);
         fieldId.write(output);
         writeSourceId(output);
-        getTypeId().write(output);
+        getTypeKey().write(output);
     }
 
     @Override
@@ -38,7 +39,7 @@ public class FieldViewId extends PathViewId {
 
     @Override
     protected Type getViewTypeByPath(Type parentType) {
-        return ((ClassType) parentType).getField(fieldId).getType();
+        return ((ClassType) parentType).resolve().getField(fieldId).getType();
     }
 
     @Override

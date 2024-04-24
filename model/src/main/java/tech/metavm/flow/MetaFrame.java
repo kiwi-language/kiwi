@@ -3,7 +3,6 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.natives.CallContext;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.Expression;
@@ -24,7 +23,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     private final ClassInstance self;
     private final List<Instance> arguments;
     @Nullable
-    private final ClassType owner;
+    private final Klass owner;
     private final Map<NodeRT, Instance> outputs = new HashMap<>();
     private final Set<LoopNode> loopingNodes = new IdentitySet<>();
     private NodeRT entry;
@@ -40,7 +39,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
     private final Map<TryNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
 
-    public MetaFrame(NodeRT entry, @Nullable ClassType owner, @Nullable ClassInstance self, List<Instance> arguments,
+    public MetaFrame(NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<Instance> arguments,
                      InstanceRepository instanceRepository,
                      ParameterizedFlowProvider parameterizedFlowProvider,
                      CompositeTypeFacade compositeTypeFacade) {

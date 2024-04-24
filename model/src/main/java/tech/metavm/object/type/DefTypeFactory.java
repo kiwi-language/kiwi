@@ -33,17 +33,8 @@ public class DefTypeFactory extends TypeFactory {
     }
 
     @Override
-    public Type getType(java.lang.reflect.Type javaType) {
-        return defContext.getType(javaType);
-    }
-
-    @Override
     public java.lang.reflect.Type getJavaType(Type type) {
         return defContext.getDef(type).getJavaType();
     }
 
-    @Override
-    public boolean containsJavaType(java.lang.reflect.Type javaType) {
-        return defContext.containsDef(javaType);
-    }
 }
