@@ -14,6 +14,7 @@ import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.generic.TypeSubstitutor;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -121,7 +122,7 @@ public class Method extends Flow implements Property, GenericElement {
                     overridenFlow.getParameterTypes()
             );
             NncUtils.requireTrue(overridenFlow.getReturnType() == getReturnType() ||
-                    overridenFlow.getReturnType().isAssignableFrom(getReturnType(), null));
+                    overridenFlow.getReturnType().isAssignableFrom(getReturnType()));
         }
     }
 
@@ -293,16 +294,17 @@ public class Method extends Flow implements Property, GenericElement {
                 logger.error("Method {} has an overridden {} with different number of type parameters. {} != {}",
                         getQualifiedName(), overriddenFlow.getQualifiedName(), getTypeParameters().size(), overriddenFlow.getTypeParameters().size());
             }
-            var typeParamMapping = NncUtils.zip(getTypeParameters(), NncUtils.map(overriddenFlow.getTypeParameters(), TypeVariable::getType));
-            if(!NncUtils.biAllMatch(paramTypes, overriddenFlow.getParameterTypes(), (t1,t2) -> t1.equals(t2, typeParamMapping)))
+            var subst = new TypeSubstitutor(NncUtils.map(getTypeParameters(), TypeVariable::getType), NncUtils.map(overriddenFlow.getTypeParameters(), TypeVariable::getType));
+            if(!NncUtils.biAllMatch(paramTypes, overriddenFlow.getParameterTypes(), (t1,t2) -> t1.accept(subst).equals(t2)))
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
-            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType, typeParamMapping)) {
-                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT);
+            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType.accept(subst))) {
+                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT,
+                        returnType.accept(subst).getTypeDesc(), overriddenFlow.getReturnType().getTypeDesc());
             }
         }
         if (isInstanceMethod()) {
             AssertUtils.assertNonNull(staticType, ErrorCode.INSTANCE_METHOD_MISSING_STATIC_TYPE);
-            if (!staticType.getParameterTypes().equals(NncUtils.prepend(declaringType, paramTypes))
+            if (!staticType.getParameterTypes().equals(NncUtils.prepend(declaringType.getType(), paramTypes))
                     || !staticType.getReturnType().equals(returnType))
                 throw new InternalException("Incorrect static function type: " + staticType);
         } else
@@ -414,10 +416,10 @@ public class Method extends Flow implements Property, GenericElement {
                 throw new InternalException(
                         String.format("Methods with the same signature defined in the same type: %s(%s)",
                                 getName(), NncUtils.join(paramTypes, Type::getTypeDesc)));
-            return declaringType.isAssignableFrom(that.getDeclaringType(), null);
+            return declaringType.isAssignableFrom(that.getDeclaringType());
         }
         for (int i = 0; i < paramTypes.size(); i++) {
-            if(!paramTypes.get(i).isAssignableFrom(thatParamTypes.get(i), null))
+            if(!paramTypes.get(i).isAssignableFrom(thatParamTypes.get(i)))
                 return false;
         }
         return true;

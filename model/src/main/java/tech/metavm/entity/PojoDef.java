@@ -13,10 +13,7 @@ import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     private final PojoDef<? super T> superDef;
@@ -121,12 +118,12 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     private PojoDef<? extends T> getSubTypeDef(Klass subType) {
         if (subType == klass ||
-                !klass.isAssignableFrom(subType, null)) {
+                !klass.isAssignableFrom(subType)) {
             throw new InternalException("type: " + subType + " is not a sub type of current type: " + getJavaClass());
         }
         Klass t = subType;
-        while (t != null && t.getSuperClass() != klass) {
-            t = t.getSuperClass();
+        while (t != null && Objects.equals(t.getSuperType(), klass.getType())) {
+            t = NncUtils.get(t.getSuperType(), ClassType::resolve);
         }
         Klass directSubType = NncUtils.requireNonNull(t);
         PojoDef<? extends T> subDef = subTypeDefList.get(directSubType);

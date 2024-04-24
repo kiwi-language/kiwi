@@ -118,4 +118,11 @@ public class ChildArray<T extends Entity> extends ReadonlyArray<T> {
         table.sort(comparator);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof ChildArray<?> thatArray)
+            return table.equals(thatArray.table);
+        else
+            return false;
+    }
 }

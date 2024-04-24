@@ -14,8 +14,6 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.SubstitutorV2;
-import tech.metavm.object.type.rest.dto.FlowInfo;
-import tech.metavm.object.type.rest.dto.ParameterizedFlowDTO;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -75,7 +73,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @CopyIgnore
     private @Nullable ChildArray<Flow> templateInstances;
     @ChildEntity("捕获类型列表")
-    private final ChildArray<CapturedTypeVariable> capturedTypeVariables = addChild(new ChildArray<>(CapturedTypeVariable.class), "capturedTypes");
+    private final ChildArray<CapturedTypeVariable> capturedTypeVariables = addChild(new ChildArray<>(CapturedTypeVariable.class), "capturedTypeVariables");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);
@@ -170,7 +168,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         if(this.code != null && this.code.equals(code)) {
             if(parameters.size() == argumentTypes.size()) {
                 for(int i = 0; i < parameters.size(); i++) {
-                    if(!parameters.get(i).getType().isAssignableFrom(argumentTypes.get(i), null))
+                    if(!parameters.get(i).getType().isAssignableFrom(argumentTypes.get(i)))
                         return false;
                 }
                 return true;
@@ -439,8 +437,8 @@ List.of(),
     }
 
     public void setTypeArguments(List<? extends Type> typeArguments) {
-        if (isTemplate() && !NncUtils.iterableEquals(this.typeParameters, typeArguments))
-            throw new InternalException("Type arguments must equal to type parameters for a template flow");
+        if (isTemplate() && !NncUtils.iterableEquals(NncUtils.map(this.typeParameters, TypeVariable::getType), typeArguments))
+            throw new InternalException("Type arguments must equal to type parameters for a template flow. Actual type arguments: " + typeArguments);
         this.typeArguments.reset(typeArguments);
         this.parameterizedKey = null;
     }

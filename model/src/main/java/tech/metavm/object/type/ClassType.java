@@ -1,6 +1,8 @@
 package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.generic.TypeSubstitutor;
@@ -8,18 +10,18 @@ import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.object.type.rest.dto.ParameterizedTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
-import tech.metavm.util.Constants;
-import tech.metavm.util.InstanceInput;
-import tech.metavm.util.InstanceOutput;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 @EntityType("ClassType")
 public class ClassType extends Type implements ISubstitutor {
+
+    public static final Logger logger = LoggerFactory.getLogger(ClassType.class);
+
     private final Klass klass;
     private final ChildArray<Type> typeArguments = addChild(new ChildArray<>(Type.class), "typeArguments");
     private transient TypeSubstitutor substitutor;
@@ -28,6 +30,10 @@ public class ClassType extends Type implements ISubstitutor {
     public ClassType(Klass klass, List<Type> typeArguments) {
         super(Types.getParameterizedName(klass.getName(), typeArguments),
                 Types.getParameterizedCode(klass.getCode(), typeArguments), false, false, klass.getKind().typeCategory());
+        if (klass.isParameterized())
+            throw new InternalException("Can not use a parameterized klass for a ClassType. klass: " + klass.getTypeDesc());
+//        if(typeArguments.equals(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType)))
+//            throw new InternalException("Trying to create an raw class type using type arguments for klass: " + klass.getTypeDesc());
         this.klass = klass;
         this.typeArguments.addChildren(NncUtils.map(typeArguments, Type::copy));
     }
@@ -38,10 +44,10 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     @Override
-    public TypeKey getTypeKey() {
-        return typeArguments.isEmpty() ?
+    public TypeKey toTypeKey() {
+        return typeArguments.toList().equals(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType)) ?
                 new ClassTypeKey(klass.getStringId()) :
-                new ParameterizedTypeKey(klass.getStringId(), NncUtils.map(typeArguments, Type::getTypeKey));
+                new ParameterizedTypeKey(klass.getStringId(), NncUtils.map(typeArguments, Type::toTypeKey));
     }
 
     public Klass getKlass() {
@@ -49,7 +55,7 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public ClassType getEffectiveTemplate() {
-        return klass.getEffectiveTemplate().getType();
+        return klass.getType();
     }
 
     public Type getListElementType() {
@@ -61,24 +67,23 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+    protected boolean isAssignableFrom0(Type that) {
         if (that instanceof ClassType thatClassType) {
             if (typeArguments.isEmpty() && thatClassType.typeArguments.isEmpty() && klass == thatClassType.klass)
                 return true;
-            if(!typeArguments.isEmpty()) {
+            if (!typeArguments.isEmpty()) {
                 var thatAncestor = thatClassType.findAncestor(klass);
-                if(thatAncestor != null)
-                    return isAssignableFrom(thatAncestor, typeMapping);
+                if (thatAncestor != null)
+                    return NncUtils.biAllMatch(typeArguments, thatAncestor.typeArguments, Type::contains);
                 else
                     return false;
-            }
-            else {
+            } else {
                 var thatSuper = thatClassType.getSuperType();
-                if(thatSuper != null && isAssignableFrom(thatSuper, typeMapping))
+                if (thatSuper != null && isAssignableFrom(thatSuper))
                     return true;
-                if(isInterface()) {
+                if (isInterface()) {
                     for (ClassType thatInterface : thatClassType.getInterfaces()) {
-                        if (isAssignableFrom(thatInterface, typeMapping))
+                        if (isAssignableFrom(thatInterface))
                             return true;
                     }
                     return false;
@@ -93,15 +98,12 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public @Nullable ClassType getSuperType() {
-        var superClass = klass.getSuperClass();
-        if(superClass != null)
-            return (ClassType) substitute(superClass.getType());
-        else
-            return null;
+        var rawSuperType = klass.getSuperType();
+        return rawSuperType != null ? (ClassType) substitute(rawSuperType) : null;
     }
 
     public List<ClassType> getInterfaces() {
-        return NncUtils.map(klass.getInterfaces(), it -> (ClassType) substitute(it.getType()));
+        return NncUtils.map(klass.getInterfaces(), it -> (ClassType) substitute(it));
     }
 
     public @Nullable ClassType findAncestor(Klass template) {
@@ -110,26 +112,31 @@ public class ClassType extends Type implements ISubstitutor {
 
     @Override
     public Type substitute(Type type) {
-        if(substitutor == null)
-            substitutor = new TypeSubstitutor(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType), typeArguments.toList());
-        return type.accept(substitutor);
+        if (!typeArguments.isEmpty()) {
+            if (substitutor == null)
+                substitutor = new TypeSubstitutor(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType), typeArguments.toList());
+            return type.accept(substitutor);
+        } else
+            return type;
     }
 
     public Klass resolve() {
-        if(resolved != null)
+        if (resolved != null)
             return resolved;
-        if(typeArguments.isEmpty())
+        if (typeArguments.isEmpty())
             return resolved = klass;
         else
             return resolved = klass.getParameterized(typeArguments.toList());
     }
 
     @Override
-    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
-        if(that instanceof ClassType thatClassType)
-            return klass == thatClassType.klass && typeArguments.equals(thatClassType.typeArguments);
-        else
-            return false;
+    public boolean equals(Object obj) {
+        return obj instanceof ClassType that && klass == that.klass && typeArguments.equals(that.typeArguments);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(klass, typeArguments);
     }
 
     @Override
@@ -165,7 +172,7 @@ public class ClassType extends Type implements ISubstitutor {
     @Override
     public void write0(InstanceOutput output) {
         output.writeId(klass.getId());
-        if(!typeArguments.isEmpty()) {
+        if (!typeArguments.isEmpty()) {
             output.writeInt(typeArguments.size());
             typeArguments.forEach(t -> t.write(output));
         }

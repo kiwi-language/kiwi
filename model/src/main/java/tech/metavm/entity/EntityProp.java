@@ -122,6 +122,6 @@ public class EntityProp {
 
     @Override
     public String toString() {
-        return getName();
+        return field.getDeclaringClass().getSimpleName() + "." + field.getName();
     }
 }

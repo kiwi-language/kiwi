@@ -53,8 +53,8 @@ public class Generator extends CodeGenVisitor {
         initFlowBuilder.enterScope(initFlowBuilder.getMethod().getRootScope());
         initFlowBuilder.setVariable("this", new NodeExpression(initFlowBuilder.createSelf()));
         initFlowBuilder.createInput();
-        if (klass.getSuperClass() != null) {
-            var superInit = klass.getSuperClass().findSelfMethodByCode("<init>");
+        if (klass.getSuperType() != null) {
+            var superInit = klass.getSuperType().resolve().findSelfMethodByCode("<init>");
             if (superInit != null) {
                 initFlowBuilder.createMethodCall(
                         initFlowBuilder.getVariable("this"),
@@ -68,8 +68,8 @@ public class Generator extends CodeGenVisitor {
         var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, entityContext, this);
         classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getRootScope());
         classInitFlowBuilder.createInput();
-        if (klass.getSuperClass() != null) {
-            var superCInit = klass.getSuperClass().findSelfMethodByCode("<cinit>");
+        if (klass.getSuperType() != null) {
+            var superCInit = klass.getSuperType().resolve().findSelfMethodByCode("<cinit>");
             if (superCInit != null) {
                 classInitFlowBuilder.createMethodCall(
                         null,
@@ -340,7 +340,7 @@ public class Generator extends CodeGenVisitor {
             builder.setVariable("this", new NodeExpression(selfNode));
             processParameters(psiMethod.getParameterList(), method);
             if (psiMethod.isConstructor()) {
-                var superClass = currentClass().getSuperClass();
+                var superClass = NncUtils.get(currentClass().getSuperType(), ClassType::resolve);
                 if (superClass != null && !isEnumType(superClass) && !isEntityType(superClass)
                         && !isRecordType(superClass) && !isSuperCallPresent(psiMethod)) {
                     builder().createMethodCall(
@@ -358,7 +358,7 @@ public class Generator extends CodeGenVisitor {
                 );
                 if (currentClass().isEnum()) {
                     var klass = currentClass();
-                    var enumClass = requireNonNull(klass.getSuperClass());
+                    var enumClass = requireNonNull(klass.getSuperType()).resolve();
                     var inputNode = method.getInputNode();
                     builder.createUpdate(
                             new NodeExpression(selfNode),
@@ -596,7 +596,7 @@ public class Generator extends CodeGenVisitor {
             }
             var memberTypes = new HashSet<Type>();
             for (var value : branch2value.values()) {
-                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType(), null)))
+                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
                     memberTypes.add(value.getType());
             }
             var fieldType =

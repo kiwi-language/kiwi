@@ -157,7 +157,7 @@ public class Types {
                         actualUt.getMembers() : Set.of(actualType);
                 actualMembers = new HashSet<>(actualMembers);
                 for (Type member : unionType.getMembers()) {
-                    var actualMember = NncUtils.find(actualMembers, that -> member.isAssignableFrom(that, null));
+                    var actualMember = NncUtils.find(actualMembers, that -> member.isAssignableFrom(that));
                     if(actualMember == null)
                         actualMember = StandardTypes.getNeverType();
                     extractCapturedType(member, actualMember, setCaptureType);
@@ -289,13 +289,13 @@ public class Types {
     }
 
     private static @NotNull Type getLeastUpperBound(Type type1, Type type2) {
-        if (type1.isAssignableFrom(type2, null))
+        if (type1.isAssignableFrom(type2))
             return type1;
-        if (type2.isAssignableFrom(type1, null))
+        if (type2.isAssignableFrom(type1))
             return type2;
         return switch (type1) {
             case ClassType classType -> NncUtils.getOrElse(
-                    classType.resolve().getClosure().find(anc -> anc.getType().isAssignableFrom(type2, null)),
+                    classType.resolve().getClosure().find(anc -> anc.getType().isAssignableFrom(type2)),
                     Klass::getType,
                     StandardTypes.getAnyType(type2.isNullable()));
             case UnionType unionType -> getLeastUpperBound(getLeastUpperBound(unionType.getMembers()), type2);
@@ -310,7 +310,7 @@ public class Types {
         Set<Type> hasDescendant = new HashSet<>();
         for (Type type : types)
             for (Type type1 : types)
-                if (!type1.equals(type) && type1.isAssignableFrom(type, null))
+                if (!type1.equals(type) && type1.isAssignableFrom(type))
                     hasDescendant.add(type1);
         return NncUtils.findRequired(types, t -> !hasDescendant.contains(t));
     }
@@ -323,7 +323,7 @@ public class Types {
                                               FunctionTypeProvider functionTypeProvider,
                                               ParameterizedTypeProvider parameterizedTypeProvider) {
         var klass = ClassTypeBuilder.newBuilder(functionalInterface.getName() + "实现", null)
-                .interfaces(functionalInterface.resolve())
+                .interfaces(functionalInterface)
                 .ephemeral(true)
                 .build();
         klass.setEphemeralEntity(true);
@@ -371,7 +371,7 @@ public class Types {
     public static Klass createSAMInterfaceImpl(Klass samInterface, FunctionInstance function, CompositeTypeFacade compositeTypeFacade) {
         var klass = ClassTypeBuilder.newBuilder(
                         samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
-                .interfaces(samInterface)
+                .interfaces(samInterface.getType())
                 .ephemeral(true)
                 .anonymous(true)
                 .build();
@@ -479,7 +479,7 @@ public class Types {
         out:
         for (Type effectiveType : effectiveTypes) {
             for (Type type : effectiveTypes) {
-                if (type != effectiveType && type.isAssignableFrom(effectiveType, null))
+                if (type != effectiveType && type.isAssignableFrom(effectiveType))
                     continue out;
             }
             members.add(effectiveType);

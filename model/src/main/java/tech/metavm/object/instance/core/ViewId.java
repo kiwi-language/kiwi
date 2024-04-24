@@ -26,7 +26,7 @@ public abstract class ViewId extends Id {
     public abstract @Nullable SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider);
 
     public TypeKey getViewTypeKey(MappingProvider mappingProvider) {
-        return mappingProvider.getMapping(mappingId).getTargetType().getTypeKey();
+        return mappingProvider.getMapping(mappingId).getTargetType().toTypeKey();
     }
 
     public void writeMappingId(InstanceOutput output) {

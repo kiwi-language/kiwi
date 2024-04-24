@@ -112,7 +112,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return ephemeral;
     }
 
-    public abstract TypeKey getTypeKey();
+    public abstract TypeKey toTypeKey();
 
     @SuppressWarnings("unused")
     public boolean isDurable() {
@@ -167,7 +167,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public boolean isNullable() {
-        return isAssignableFrom(NULL_TYPE, null);
+        return isAssignableFrom(NULL_TYPE);
     }
 
     public boolean isBinaryNullable() {
@@ -182,7 +182,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return this;
     }
 
-    protected abstract boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping);
+    protected abstract boolean isAssignableFrom0(Type that);
 
     public boolean isError() {
         return error;
@@ -217,29 +217,27 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return false;
     }
 
-    public boolean isAssignableFrom(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+    public boolean isAssignableFrom(Type that) {
         if (that instanceof NeverType)
             return true;
-        return that instanceof ITypeVariable && isAssignableFrom1(that, typeMapping) || isAssignableFrom1(that.getUpperBound(), typeMapping);
+        return that instanceof IVariableType && isAssignableFrom1(that) || isAssignableFrom1(that.getUpperBound());
     }
 
-    private boolean isAssignableFrom1(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+    private boolean isAssignableFrom1(Type that) {
         return switch (that) {
-            case UnionType unionType -> NncUtils.allMatch(unionType.getMembers(), that1 -> isAssignableFrom(that1, typeMapping));
+            case UnionType unionType -> NncUtils.allMatch(unionType.getMembers(), this::isAssignableFrom);
             case IntersectionType intersectionType ->
-                    NncUtils.anyMatch(intersectionType.getTypes(), that1 -> isAssignableFrom(that1, typeMapping));
-            default -> isAssignableFrom0(that, typeMapping);
+                    NncUtils.anyMatch(intersectionType.getTypes(), this::isAssignableFrom);
+            default -> isAssignableFrom0(that);
         };
     }
-
-    public abstract boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping);
 
     public boolean isUncertain() {
         return false;
     }
 
-    public final boolean contains(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
-        return getUpperBound().isAssignableFrom(that, typeMapping) && that.isAssignableFrom(getLowerBound(), typeMapping);
+    public boolean contains(Type that) {
+        return equals(that);
     }
 
     public boolean isVariable() {
@@ -259,7 +257,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public boolean isInstance(Instance value) {
-        return isAssignableFrom(value.getType(), null);
+        return isAssignableFrom(value.getType());
     }
 
     @NoProxy
@@ -393,7 +391,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
 
     @Override
     protected String toString0() {
-        return "Type " + name + " (id: " + tryGetId() + ")";
+        return "Type " + getTypeDesc();
     }
 
     @Override

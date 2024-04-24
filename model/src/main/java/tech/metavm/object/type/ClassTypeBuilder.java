@@ -18,17 +18,16 @@ public class ClassTypeBuilder {
     private final String name;
     @Nullable
     private final String code;
-    private Klass superType;
-    private TypeCategory category = TypeCategory.CLASS;
+    private ClassType superType;
     private ClassSource source = ClassSource.RUNTIME;
-    private ClassKind kind;
+    private ClassKind kind = ClassKind.CLASS;
     private boolean anonymous;
     private boolean ephemeral;
     private boolean isAbstract;
     private boolean isTemplate;
     private boolean struct;
     private String desc;
-    private List<Klass> interfaces = new ArrayList<>();
+    private List<ClassType> interfaces = new ArrayList<>();
     private List<Type> typeArguments = new ArrayList<>();
     private Klass existing;
     private boolean done;
@@ -42,7 +41,7 @@ public class ClassTypeBuilder {
         this.code = code;
     }
 
-    public ClassTypeBuilder superClass(Klass superType) {
+    public ClassTypeBuilder superClass(ClassType superType) {
         this.superType = superType;
         return this;
     }
@@ -59,10 +58,6 @@ public class ClassTypeBuilder {
 
     public ClassTypeBuilder isTemplate(boolean isTemplate) {
         this.isTemplate = isTemplate;
-        return this;
-    }
-
-    public ClassTypeBuilder sourceClassName(String sourceClassName) {
         return this;
     }
 
@@ -97,11 +92,6 @@ public class ClassTypeBuilder {
         return this;
     }
 
-    public ClassTypeBuilder category(TypeCategory category) {
-        this.category = category;
-        return this;
-    }
-
     public ClassTypeBuilder kind(ClassKind kind) {
         this.kind = kind;
         return this;
@@ -112,11 +102,11 @@ public class ClassTypeBuilder {
         return this;
     }
 
-    public ClassTypeBuilder interfaces(Klass... interfaces) {
+    public ClassTypeBuilder interfaces(ClassType... interfaces) {
         return interfaces(List.of(interfaces));
     }
 
-    public ClassTypeBuilder interfaces(List<Klass> interfaces) {
+    public ClassTypeBuilder interfaces(List<ClassType> interfaces) {
         this.interfaces = interfaces;
         return this;
     }
@@ -191,7 +181,7 @@ public class ClassTypeBuilder {
             classType = existing;
             existing.setName(effectiveName);
             existing.setCode(effectiveCode);
-            existing.setSuperClass(superType);
+            existing.setSuperType(superType);
             existing.setInterfaces(interfaces);
             existing.setSource(source);
             existing.setAbstract(isAbstract);

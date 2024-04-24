@@ -12,7 +12,7 @@ import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 @EntityType("数组类型")
 public class ArrayType extends CompositeType {
@@ -57,8 +57,8 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public TypeKey getTypeKey() {
-        return new ArrayTypeKey(kind.code(), elementType.getTypeKey());
+    public TypeKey toTypeKey() {
+        return new ArrayTypeKey(kind.code(), elementType.toTypeKey());
     }
 
     @Override
@@ -67,20 +67,12 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+    protected boolean isAssignableFrom0(Type that) {
         if (that instanceof ArrayType arrayType) {
-            return kind.isAssignableFrom(arrayType.kind, elementType, arrayType.elementType, typeMapping);
+            return kind.isAssignableFrom(arrayType.kind, elementType, arrayType.elementType);
         } else {
             return false;
         }
-    }
-
-    @Override
-    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
-        if(that instanceof ArrayType thatArrayType)
-            return kind == thatArrayType.kind && elementType.equals(thatArrayType.elementType, mapping);
-        else
-            return false;
     }
 
     @Override
@@ -185,4 +177,15 @@ public class ArrayType extends CompositeType {
             return elementType.isViewType(arrayType.getElementType());
         return false;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ArrayType that && kind == that.kind && elementType.equals(that.elementType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(kind, elementType);
+    }
+
 }

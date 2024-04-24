@@ -1,5 +1,7 @@
 package tech.metavm.entity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.object.type.Klass;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
@@ -10,6 +12,8 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class CopyVisitor extends ElementVisitor<Element> {
+
+    public static final Logger logger = LoggerFactory.getLogger(CopyVisitor.class);
 
     public final Object root;
     private final IdentityHashMap<Object, Object> map = new IdentityHashMap<>();
@@ -173,7 +177,14 @@ public class CopyVisitor extends ElementVisitor<Element> {
                             fieldValueCopy = ((Entity) copy).addChild((Entity) copy(fieldValue), prop.getName());
                         } else
                             fieldValueCopy = getValue(fieldValue, v -> prop.set(copy, v));
-                        prop.set(copy, fieldValueCopy);
+                        try {
+                            prop.set(copy, fieldValueCopy);
+                        }
+                        catch (RuntimeException e) {
+                            logger.info("Fail to set field {}. entity: {}, fieldValue: {}, fieldValueCopy: {}", prop, EntityUtils.getEntityPath(entity),
+                                    EntityUtils.getEntityDesc(fieldValue), EntityUtils.getEntityDesc(fieldValueCopy));
+                            throw e;
+                        }
                     }
                     yield copy;
                 }

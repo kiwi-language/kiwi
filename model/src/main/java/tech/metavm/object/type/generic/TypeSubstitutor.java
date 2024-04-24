@@ -9,6 +9,7 @@ import tech.metavm.util.DebugEnv;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,66 +37,65 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
 
     @Override
     public Type visitType(Type type) {
-        return variableMap.getOrDefault(type, type);
+        var subst = substitute(type);
+        return subst != null ? subst : type.copy();
     }
 
     @Override
     public Type visitArrayType(ArrayType type) {
-        var subst = super.visitArrayType(type);
-        if (subst != type)
+        var subst = substitute(type);
+        if (subst != null)
             return subst;
         var elementType = type.getElementType().accept(this);
         return new ArrayType(null, elementType, type.getKind());
     }
 
     @Override
-    public Type visitUncertainType(UncertainType uncertainType) {
-        var subst = super.visitUncertainType(uncertainType);
-        if (subst != uncertainType)
+    public Type visitUncertainType(UncertainType type) {
+        var subst = substitute(type);
+        if (subst != null)
             return subst;
-        return new UncertainType(null, uncertainType.getLowerBound().accept(this), uncertainType.getUpperBound().accept(this));
+        return new UncertainType(null, type.getLowerBound().accept(this), type.getUpperBound().accept(this));
     }
 
     @Override
     public Type visitIntersectionType(IntersectionType type) {
-        var subst = super.visitIntersectionType(type);
-        if (subst != type)
+        var subst = substitute(type);
+        if (subst != null)
             return subst;
         return new IntersectionType(null, NncUtils.mapUnique(type.getTypes(), t -> t.accept(this)));
     }
 
     @Override
-    public Type visitFunctionType(FunctionType functionType) {
-        var subst = super.visitFunctionType(functionType);
-        if (subst != functionType)
+    public Type visitFunctionType(FunctionType type) {
+        var subst = substitute(type);
+        if (subst != null)
             return subst;
         return new FunctionType(
                 null,
-                NncUtils.map(functionType.getParameterTypes(), t -> t.accept(this)),
-                functionType.getReturnType().accept(this)
+                NncUtils.map(type.getParameterTypes(), t -> t.accept(this)),
+                type.getReturnType().accept(this)
         );
     }
 
     @Override
     public Type visitUnionType(UnionType type) {
-        var subst = super.visitUnionType(type);
-        if (subst != type)
+        var subst = substitute(type);
+        if (subst != null)
             return subst;
         return new UnionType(null, NncUtils.mapUnique(type.getMembers(), t -> t.accept(this)));
     }
 
-
     @Override
     public Type visitClassType(ClassType type) {
-        var subst = super.visitClassType(type);
-        if (subst != type)
+        var subst = substitute(type);
+        if (subst != null)
             return subst;
-        if (type.getTypeArguments().isEmpty())
-            return type;
-        else {
-            var substitutedTypeArgs = NncUtils.map(type.getTypeArguments(), t -> t.accept(this));
-            return new ClassType(type.getKlass(), substitutedTypeArgs);
-        }
+        return new ClassType(type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> t.accept(this)));
+    }
+
+    private @Nullable Type substitute(Type type) {
+        return variableMap.get(type);
     }
 
 }

@@ -407,8 +407,8 @@ public class TypeManager extends EntityContextFactoryBean {
     private void createOverridingFlows(Klass type, IEntityContext context) {
         if (type.isParameterized())
             return;
-        for (Klass it : type.getInterfaces()) {
-            var methods = it.getAllMethods();
+        for (var it : type.getInterfaces()) {
+            var methods = it.resolve().getAllMethods();
             for (var overridden : methods) {
                 if (overridden.isAbstract())
                     flowManager.createOverridingFlows(overridden, type, context);
@@ -577,7 +577,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 types = typeList;
                 while (!queue.isEmpty()) {
                     var t = queue.poll();
-                    if (t.getType().isAssignableFrom(lowerBound, null)) {
+                    if (t.getType().isAssignableFrom(lowerBound)) {
                         if (t.isTemplate() == request.isTemplate()
                                 && categories.contains(t.getType().getCategory())
                                 && t.isParameterized() == request.includeParameterized()) {
@@ -589,9 +589,8 @@ public class TypeManager extends EntityContextFactoryBean {
                         }
                         if (downwards) {
                             queue.addAll(t.getSubTypes());
-                        } else {
-                            queue.addAll(t.getSupers());
-                        }
+                        } else
+                            t.forEachSuper(queue::add);
                     }
                 }
             }

@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 @EntityType("变量类型")
-public class VariableType extends Type {
+public class VariableType extends Type implements IVariableType {
 
     private final TypeVariable variable;
 
@@ -29,20 +29,12 @@ public class VariableType extends Type {
     }
 
     @Override
-    public boolean isAssignableFrom(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
-        return equals(that, typeMapping) || super.isAssignableFrom(that, typeMapping);
+    public boolean isAssignableFrom(Type that) {
+        return equals(that) || super.isAssignableFrom(that);
     }
 
     @Override
-    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
-        if(mapping != null)
-            return Objects.requireNonNullElse(mapping.get(variable), this).equals(that);
-        else
-            return this.equals(that);
-    }
-
-    @Override
-    public TypeKey getTypeKey() {
+    public TypeKey toTypeKey() {
         return new VariableTypeKey(variable.getStringId());
     }
 
@@ -52,8 +44,8 @@ public class VariableType extends Type {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
-        return equals(that, typeMapping);
+    protected boolean isAssignableFrom0(Type that) {
+        return equals(that);
     }
 
     @Override
@@ -120,4 +112,13 @@ public class VariableType extends Type {
         return visitor.visitVariableType(this);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof VariableType that && variable == that.variable;
+    }
+
+    @Override
+    public int hashCode() {
+        return variable.hashCode();
+    }
 }

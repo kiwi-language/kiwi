@@ -6,7 +6,6 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.FunctionNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.FunctionInstance;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.FunctionType;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
@@ -64,7 +63,7 @@ public class FunctionNode extends NodeRT {
                 throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
             }
             for (int i = 0; i < arguments.size(); i++) {
-                if (!functionType.getParameterTypes().get(i).isAssignableFrom(arguments.get(i).getType(), null)) {
+                if (!functionType.getParameterTypes().get(i).isAssignableFrom(arguments.get(i).getType())) {
                     throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
                 }
             }

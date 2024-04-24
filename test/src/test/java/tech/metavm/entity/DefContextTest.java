@@ -86,7 +86,7 @@ public class DefContextTest extends TestCase {
     public void testInheritance() {
         EntityDef<NodeRT> superDef = defContext.getEntityDef(new TypeReference<>() {
         });
-        Assert.assertSame(Objects.requireNonNull(superDef.getKlass().getSuperClass()).getSuperClass(), StandardTypes.getEntityType());
+        Assert.assertSame(Objects.requireNonNull(superDef.getKlass().getSuperType()).getSuperType(), StandardTypes.getEntityType());
     }
 
     public void testArrayFieldType() {

@@ -13,7 +13,7 @@ import java.util.List;
 public record ParameterizedTypeKey(String templateId, List<TypeKey> typeArgumentKeys) implements TypeKey{
 
     public static ParameterizedTypeKey create(Klass template, List<Type> typeArguments) {
-        return new ParameterizedTypeKey(template.getStringId(), NncUtils.map(typeArguments, Type::getTypeKey));
+        return new ParameterizedTypeKey(template.getStringId(), NncUtils.map(typeArguments, Type::toTypeKey));
     }
 
     @Override

@@ -98,8 +98,8 @@ public class EnumEditContext {
 
     private Klass createType() {
         type = ClassTypeBuilder.newBuilder(name, null)
-                .superClass(ModelDefRegistry.getClassType(Enum.class).resolve())
-                .category(TypeCategory.ENUM)
+                .superClass(ModelDefRegistry.getClassType(Enum.class))
+                .kind(ClassKind.ENUM)
                 .anonymous(anonymous)
                 .build();
         entityContext.bind(type);

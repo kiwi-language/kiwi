@@ -130,5 +130,11 @@ public class ReadWriteArray<T> extends ReadonlyArray<T> implements List<T> {
         table.sort(comparator);
     }
 
-
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof ReadWriteArray<?> thatArray)
+            return table.equals(thatArray.table);
+        else
+            return false;
+    }
 }

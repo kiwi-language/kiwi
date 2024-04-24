@@ -7,6 +7,7 @@ import tech.metavm.flow.FlowExecResult;
 import tech.metavm.flow.Method;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Klass;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -90,7 +91,7 @@ public class NativeMethods {
                 else
                     return null;
             } else
-                type = type.getSuperClass();
+                type = NncUtils.get(type.getSuperType(), ClassType::resolve);
         }
         return null;
     }

@@ -121,7 +121,7 @@ public abstract class TypeFactory {
             if (type == null) {
                 type = ClassTypeBuilder.newBuilder(typeDTO.name(), typeDTO.code())
                         .tmpId(typeDTO.tmpId())
-                        .category(TypeCategory.fromCode(typeDTO.category()))
+                        .kind(ClassKind.fromCode(typeDTO.kind()))
                         .ephemeral(typeDTO.ephemeral())
                         .anonymous(typeDTO.anonymous())
                         .typeParameters(NncUtils.map(param.typeParameterIds(), batch::getTypeVariable))
@@ -145,10 +145,10 @@ public abstract class TypeFactory {
                 if (type.isEnum()) {
                     // TODO handle memory leak
                     var enumSuperClass = StandardTypes.getEnumType().getParameterized(List.of(type.getType()));
-                    type.setSuperClass(enumSuperClass);
+                    type.setSuperType(enumSuperClass.getType());
                 } else
-                    type.setSuperClass(NncUtils.get(param.superClassId(), batch::getKlass));
-                type.setInterfaces(NncUtils.map(param.interfaceIds(), batch::getKlass));
+                    type.setSuperType(NncUtils.get(param.superClassId(), id -> batch.getKlass(id).getType()));
+                type.setInterfaces(NncUtils.map(param.interfaceIds(), id -> batch.getKlass(id).getType()));
                 if (!type.isTemplate())
                     type.setTypeArguments(NncUtils.map(param.typeArgumentIds(), id -> context.getType(Id.parse(id))));
                 if (param.dependencyIds() != null)

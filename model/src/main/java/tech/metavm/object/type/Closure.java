@@ -68,7 +68,7 @@ public class Closure {
         Set<Klass> skips = new HashSet<>();
         for (var klass : classes) {
             for (var klass1 : classes) {
-                if (klass != klass1 && klass.isAssignableFrom(klass1, null))
+                if (klass != klass1 && klass.isAssignableFrom(klass1))
                     skips.add(klass);
             }
         }

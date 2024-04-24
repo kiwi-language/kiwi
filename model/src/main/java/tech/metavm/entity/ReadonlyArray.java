@@ -215,4 +215,16 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         return table.stream();
     }
 
+    @Override
+    public int hashCode() {
+        return table.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof ReadonlyArray<?> thatArray)
+            return table.equals(thatArray.table);
+        else
+            return false;
+    }
 }

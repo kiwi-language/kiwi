@@ -61,7 +61,7 @@ public class DefaultIdInitializer implements IdInitializer {
             if (tag != null)
                 inst.initId(new TaggedPhysicalId(tag, treeId, nodeId));
             else {
-                var typeKey = typeInstance.containsKey(type) ? typeInstance.get(type).getType().getTypeKey() : type.getTypeKey();
+                var typeKey = typeInstance.containsKey(type) ? typeInstance.get(type).getType().toTypeKey() : type.toTypeKey();
                 inst.initId(new DefaultPhysicalId(inst instanceof ArrayInstance, treeId, nodeId, typeKey));
             }
         }

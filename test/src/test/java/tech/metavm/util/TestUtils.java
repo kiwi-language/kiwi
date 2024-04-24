@@ -243,7 +243,7 @@ public class TestUtils {
         EntityUtils.visitGraph(List.of(root), o -> {
             if (o instanceof Entity entity && entity.isPhysicalIdNull()) {
                 var typeKey =
-                        ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(entity).getTypeKey() : new AnyTypeKey();
+                        ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(entity).toTypeKey() : new AnyTypeKey();
                 entity.initId(DefaultPhysicalId.ofObject(ref.nextId++, 0L, typeKey));
             }
         });
@@ -272,7 +272,7 @@ public class TestUtils {
             public Void visitDurableInstance(DurableInstance instance) {
                 if (!instance.isIdInitialized()) {
                     var id = idProvider.allocateOne(TestConstants.APP_ID, instance.getType());
-                    instance.initId(new DefaultPhysicalId(instance instanceof ArrayInstance, id, 0L, instance.getType().getTypeKey()));
+                    instance.initId(new DefaultPhysicalId(instance instanceof ArrayInstance, id, 0L, instance.getType().toTypeKey()));
                 }
                 return super.visitDurableInstance(instance);
             }

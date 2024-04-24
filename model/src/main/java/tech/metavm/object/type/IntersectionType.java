@@ -21,6 +21,8 @@ public class IntersectionType extends CompositeType {
     @ChildEntity("类型列表")
     private final ReadWriteArray<Type> types = addChild(new ReadWriteArray<>(Type.class), "types");
 
+    private transient Set<Type> typeSet;
+
     public IntersectionType(Long tmpId, Set<Type> types) {
         super(getName(types), getCode(types), false, false, TypeCategory.INTERSECTION);
         setTmpId(tmpId);
@@ -39,13 +41,13 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
-    public TypeKey getTypeKey() {
-        return new IntersectionTypeKey(new HashSet<>(NncUtils.map(types, Type::getTypeKey)));
+    public TypeKey toTypeKey() {
+        return new IntersectionTypeKey(new HashSet<>(NncUtils.map(types, Type::toTypeKey)));
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
-        return NncUtils.allMatch(this.types, t -> t.isAssignableFrom(that, typeMapping));
+    protected boolean isAssignableFrom0(Type that) {
+        return NncUtils.allMatch(this.types, t -> t.isAssignableFrom(that));
     }
 
     @Override
@@ -61,14 +63,6 @@ public class IntersectionType extends CompositeType {
     @Override
     public List<? extends Type> getSuperTypes() {
         return Collections.unmodifiableList(types);
-    }
-
-    @Override
-    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
-        if (that instanceof IntersectionType thatIntersectionType)
-            return NncUtils.equalsIgnoreOrder(types, thatIntersectionType.types, (t1,t2) -> t1.equals(t2, mapping));
-        else
-            return false;
     }
 
     @Override
@@ -131,6 +125,22 @@ public class IntersectionType extends CompositeType {
         for (int i = 0; i < input.readInt(); i++)
             types.add(Type.readType(input, typeDefProvider));
         return new IntersectionType(null, types);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof IntersectionType that && typeSet().equals(that.typeSet());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), typeSet());
+    }
+
+    private Set<Type> typeSet() {
+        if(typeSet == null)
+            typeSet = new HashSet<>();
+        return typeSet;
     }
 
 }

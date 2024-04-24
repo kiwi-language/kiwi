@@ -150,9 +150,9 @@ public class TypeNarrower {
         Set<Type> intersection = new HashSet<>();
         for (Type t1 : set1) {
             for (Type t2 : set2) {
-                if (t1.isAssignableFrom(t2, null)) {
+                if (t1.isAssignableFrom(t2)) {
                     intersection.add(t2);
-                } else if (t2.isAssignableFrom(t1, null)) {
+                } else if (t2.isAssignableFrom(t1)) {
                     intersection.add(t1);
                 }
             }
@@ -173,7 +173,7 @@ public class TypeNarrower {
         var toRemove = new HashSet<Type>();
         for (Type t1 : set) {
             for (Type t2 : set) {
-                if (t1 != t2 && t2.isAssignableFrom(t1, null)) {
+                if (t1 != t2 && t2.isAssignableFrom(t1)) {
                     toRemove.add(t1);
                 }
             }

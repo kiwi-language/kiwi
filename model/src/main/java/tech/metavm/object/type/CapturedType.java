@@ -14,7 +14,7 @@ import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 // TODO make CapturedType the sub type of or the same type as VariableType
@@ -37,7 +37,7 @@ public class CapturedType extends Type {
     }
 
     @Override
-    public CapturedTypeKey getTypeKey() {
+    public CapturedTypeKey toTypeKey() {
         return new CapturedTypeKey(variable.getStringId());
     }
 
@@ -57,13 +57,8 @@ public class CapturedType extends Type {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+    protected boolean isAssignableFrom0(Type that) {
         return this == that;
-    }
-
-    @Override
-    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
-        return this.equals(that);
     }
 
     @Override
@@ -116,4 +111,13 @@ public class CapturedType extends Type {
         capturedTypes.add(this);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof CapturedType that && variable == that.variable;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), variable);
+    }
 }

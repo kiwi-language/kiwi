@@ -10,7 +10,7 @@ import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 @EntityType("不确定类型")
 public class UncertainType extends CompositeType implements LoadAware  {
@@ -46,23 +46,18 @@ public class UncertainType extends CompositeType implements LoadAware  {
     }
 
     @Override
-    public UncertainTypeKey getTypeKey() {
-        return new UncertainTypeKey(lowerBound.getTypeKey(), upperBound.getTypeKey());
+    public UncertainTypeKey toTypeKey() {
+        return new UncertainTypeKey(lowerBound.toTypeKey(), upperBound.toTypeKey());
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
-        return getLowerBound().isAssignableFrom0(that, typeMapping);
+    protected boolean isAssignableFrom0(Type that) {
+        return getLowerBound().isAssignableFrom0(that);
     }
 
     @Override
-    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
-        if(that instanceof UncertainType thatUncertainType) {
-           return lowerBound.equals(thatUncertainType.lowerBound, mapping)
-                   && upperBound.equals(thatUncertainType.upperBound, mapping);
-        }
-        else
-            return false;
+    public boolean contains(Type that) {
+        return upperBound.isAssignableFrom(that) && that.isAssignableFrom(lowerBound);
     }
 
     @Override
@@ -148,4 +143,13 @@ public class UncertainType extends CompositeType implements LoadAware  {
         return new UncertainType(null, Type.readType(input, typeDefProvider), Type.readType(input, typeDefProvider));
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof UncertainType that && lowerBound.equals(that.lowerBound) && upperBound.equals(that.upperBound);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lowerBound, upperBound);
+    }
 }

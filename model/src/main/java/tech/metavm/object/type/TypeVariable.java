@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType("类型变量")
-public class TypeVariable extends TypeDef implements LocalKey, GenericElement, ITypeVariable, GlobalKey, LoadAware {
+public class TypeVariable extends TypeDef implements LocalKey, GenericElement, GlobalKey, LoadAware {
 
     @EntityField(value = "name", asTitle = true)
     private String name;

@@ -43,6 +43,9 @@ public class SubstitutorV2 extends CopyVisitor {
                          List<? extends Type> typeArguments,
                          ResolutionStage stage) {
         super(root);
+        if(typeParameters.size() != typeArguments.size()) {
+            logger.info("#type parameters != #type arguments. root: {}", EntityUtils.getEntityDesc(root));
+        }
         if (DebugEnv.debugging) {
             if (root instanceof Klass ct && ct.getTypeDesc().equals("Node") && typeArguments.get(0).getTypeDesc().equals("MyList_T") && stage == DEFINITION)
                 System.out.println("Caught");
@@ -52,7 +55,7 @@ public class SubstitutorV2 extends CopyVisitor {
         }
         this.typeSubstitutor = new TypeSubstitutor(NncUtils.map(typeParameters, TypeVariable::getType), typeArguments);
         this.stage = stage;
-        NncUtils.biForEach(typeParameters, typeArguments, this::addCopy);
+//        NncUtils.biForEach(typeParameters, typeArguments, this::addCopy);
         /*var rootDTO = switch (root) {
             case Klass classType ->
                     dtoProvider.getPTypeDTO(classType.getStringId(), NncUtils.map(typeArguments, Entity::getStringId));
@@ -111,7 +114,7 @@ public class SubstitutorV2 extends CopyVisitor {
     }
 
     public Klass substituteClass(Klass klass) {
-        return klass.getParameterized(NncUtils.map(klass.getEffectiveTypeArguments(), this::substituteType));
+        return klass.getEffectiveTemplate().getParameterized(NncUtils.map(klass.getEffectiveTypeArguments(), this::substituteType));
     }
 
     private Field substituteField(Field field) {
@@ -312,6 +315,11 @@ public class SubstitutorV2 extends CopyVisitor {
     }
 
     @Override
+    public Type visitType(Type type) {
+        return type.accept(typeSubstitutor);
+    }
+
+    @Override
     public Element visitCapturedTypeVariable(CapturedTypeVariable type) {
         var copy = (CapturedTypeVariable) getExistingCopy(type);
         if (copy == null) {
@@ -351,9 +359,9 @@ public class SubstitutorV2 extends CopyVisitor {
             addCopy(klass, copy);
             var curStage = copy.setStage(stage);
             if (stage.isAfterOrAt(SIGNATURE) && curStage.isBefore(SIGNATURE)) {
-                if (klass.getSuperClass() != null)
-                    copy.setSuperClass(substituteClass(klass.getSuperClass()));
-                copy.setInterfaces(NncUtils.map(klass.getInterfaces(), this::substituteClass));
+                if (klass.getSuperType() != null)
+                    copy.setSuperType((ClassType) substituteType(klass.getSuperType()));
+                copy.setInterfaces(NncUtils.map(klass.getInterfaces(), t -> (ClassType) substituteType(t)));
                 copy.setDependencies(NncUtils.map(klass.getDependencies(), this::substituteClass));
             }
             enterElement(copy);

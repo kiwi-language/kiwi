@@ -87,9 +87,9 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
 //                    if(mappingId == null)
 //                        mappingId = 0L;
                     if (getParentField() != null)
-                        instance.initId(new FieldViewId(isArray, (ViewId) getParent().tryGetId(), mappingId, getParentField().getId(), sourceId, instance.getType().getTypeKey()));
+                        instance.initId(new FieldViewId(isArray, (ViewId) getParent().tryGetId(), mappingId, getParentField().getId(), sourceId, instance.getType().toTypeKey()));
                     else
-                        instance.initId(new ElementViewId(isArray, (ViewId) getParent().tryGetId(), mappingId, getIndex(), sourceId, instance.getType().getTypeKey()));
+                        instance.initId(new ElementViewId(isArray, (ViewId) getParent().tryGetId(), mappingId, getIndex(), sourceId, instance.getType().toTypeKey()));
                 }
             }
         });

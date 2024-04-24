@@ -34,17 +34,17 @@ public class MockUtils {
         var couponArrayType = new ArrayType(null, couponType.getType(), ArrayKind.READ_WRITE);
         var orderType = ClassTypeBuilder.newBuilder("订单", "Order").build();
         var couponStateType = ClassTypeBuilder.newBuilder("优惠券状态", "CouponState")
-                .category(TypeCategory.ENUM)
+                .kind(ClassKind.ENUM)
                 .build();
-        var enumType = getEnumType();
+        var enumKlass = getEnumType();
         var subst = new SubstitutorV2(
-                enumType, enumType.getTypeParameters(), List.of(couponStateType.getType()),
+                enumKlass, enumKlass.getTypeParameters(), List.of(couponStateType.getType()),
                 ResolutionStage.DEFINITION
         );
-        var couponStateEnumType = (Klass) subst.visitKlass(enumType);
-        couponStateType.setSuperClass(couponStateEnumType);
-        var enumNameField = couponStateEnumType.getFieldByCode("name");
-        var enumOrdinalField = couponStateEnumType.getFieldByCode("ordinal");
+        var couponStateEnumKlas = (Klass) subst.visitKlass(enumKlass);
+        couponStateType.setSuperType(couponStateEnumKlas.getType());
+        var enumNameField = couponStateEnumKlas.getFieldByCode("name");
+        var enumOrdinalField = couponStateEnumKlas.getFieldByCode("ordinal");
         var couponNormalState = ClassInstanceBuilder.newBuilder(couponStateType)
                 .data(Map.of(
                         enumNameField,
@@ -549,12 +549,12 @@ public class MockUtils {
                 .isChild(true)
                 .build();
         var animalType = ClassTypeBuilder.newBuilder("动物", "Animal")
-                .superClass(livingBeingType)
+                .superClass(livingBeingType.getType())
                 .build();
         var animalIntelligenceField = FieldBuilder.newBuilder("智力", "intelligence", animalType, getLongType())
                 .build();
         var humanType = ClassTypeBuilder.newBuilder("人类", "Human")
-                .superClass(animalType)
+                .superClass(animalType.getType())
                 .build();
         var humanOccupationField = FieldBuilder.newBuilder("职业", "occupation", humanType, getStringType())
                 .build();

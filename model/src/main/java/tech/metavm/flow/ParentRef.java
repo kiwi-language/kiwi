@@ -54,13 +54,13 @@ public class ParentRef extends Element {
 
     public void ensureChildAssignable(Type childType) {
         if (field != null) {
-            if (!field.getType().isAssignableFrom(childType, null)) {
+            if (!field.getType().isAssignableFrom(childType)) {
                 throw new BusinessException(ErrorCode.INVALID_MASTER,
                         parent.getType().getName() + "." + field.getName());
             }
         } else {
             var arrayType = (ArrayType) parent.getType();
-            if (!arrayType.getElementType().isAssignableFrom(childType, null)) {
+            if (!arrayType.getElementType().isAssignableFrom(childType)) {
                 throw new BusinessException(ErrorCode.INVALID_MASTER, parent.getType().getName());
             }
         }

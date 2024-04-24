@@ -47,7 +47,7 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     private void checkOverridden(ObjectMapping overridden) {
         if (!overridden.getTargetType().equals(getTargetType())
-                || !overridden.getSourceType().isAssignableFrom(getSourceType(), null)) {
+                || !overridden.getSourceType().isAssignableFrom(getSourceType())) {
             throw new BusinessException(ErrorCode.INVALID_OVERRIDDEN_MAPPING);
         }
     }

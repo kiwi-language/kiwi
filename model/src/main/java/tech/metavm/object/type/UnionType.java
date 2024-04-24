@@ -24,6 +24,8 @@ public class UnionType extends CompositeType {
     @ChildEntity("成员集合")
     private final ReadWriteArray<Type> members;
 
+    private transient Set<Type> memberSet;
+
     public UnionType(Long tmpId, Set<Type> members) {
         super(getName(members), getCode(members), false, false, TypeCategory.UNION);
         setTmpId(tmpId);
@@ -46,8 +48,8 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public TypeKey getTypeKey() {
-        return new UnionTypeKey(NncUtils.mapUnique(members, Type::getTypeKey));
+    public TypeKey toTypeKey() {
+        return new UnionTypeKey(NncUtils.mapUnique(members, Type::toTypeKey));
     }
 
     @Override
@@ -63,8 +65,8 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
-        return NncUtils.anyMatch(members, m -> m.isAssignableFrom(that, typeMapping));
+    protected boolean isAssignableFrom0(Type that) {
+        return NncUtils.anyMatch(members, m -> m.isAssignableFrom(that));
     }
 
     @Override
@@ -77,16 +79,13 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        UnionType unionType = (UnionType) o;
-        return Objects.equals(members, unionType.members);
+    public boolean equals(Object obj) {
+        return obj instanceof UnionType that && memberSet().equals(that.memberSet());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(members);
+        return Objects.hash(memberSet());
     }
 
     @Override
@@ -140,14 +139,6 @@ public class UnionType extends CompositeType {
     @Override
     public List<? extends Type> getSuperTypes() {
         return List.of(Types.getLeastUpperBound(members));
-    }
-
-    @Override
-    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
-        if (that instanceof UnionType thatUnionType)
-            return NncUtils.equalsIgnoreOrder(members, thatUnionType.members, (t1, t2) -> t1.equals(t2, mapping));
-        else
-            return false;
     }
 
     @Override
@@ -214,6 +205,12 @@ public class UnionType extends CompositeType {
         for (int i = 0; i < input.readInt(); i++)
             members.add(Type.readType(input, typeDefProvider));
         return new UnionType(null, members);
+    }
+
+    private Set<Type> memberSet() {
+        if(memberSet == null)
+            memberSet = new HashSet<>(members);
+        return memberSet;
     }
 
 }

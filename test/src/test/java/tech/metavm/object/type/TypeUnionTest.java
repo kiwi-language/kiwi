@@ -24,12 +24,12 @@ public class TypeUnionTest extends TestCase {
         var humanType = livingBeingTypes.humanType().getType();
 
         UnionType unionType = new UnionType(null, Set.of(fooType, barType, livingBeingType));
-        Assert.assertTrue(unionType.isAssignableFrom(fooType, null));
-        Assert.assertTrue(unionType.isAssignableFrom(barType, null));
-        Assert.assertFalse(unionType.isAssignableFrom(bazType, null));
-        Assert.assertTrue(unionType.isAssignableFrom(new UnionType(null, Set.of(fooType, barType)), null));
-        Assert.assertFalse(unionType.isAssignableFrom(new UnionType(null, Set.of(fooType, bazType)), null));
-        Assert.assertTrue(unionType.isAssignableFrom(humanType, null));
+        Assert.assertTrue(unionType.isAssignableFrom(fooType));
+        Assert.assertTrue(unionType.isAssignableFrom(barType));
+        Assert.assertFalse(unionType.isAssignableFrom(bazType));
+        Assert.assertTrue(unionType.isAssignableFrom(new UnionType(null, Set.of(fooType, barType))));
+        Assert.assertFalse(unionType.isAssignableFrom(new UnionType(null, Set.of(fooType, bazType))));
+        Assert.assertTrue(unionType.isAssignableFrom(humanType));
     }
 
 }

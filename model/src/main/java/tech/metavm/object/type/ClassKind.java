@@ -26,8 +26,12 @@ public enum ClassKind {
         return typeCategory;
     }
 
-    public ClassKind fromCode(int code) {
+    public static ClassKind fromCode(int code) {
         return NncUtils.findRequired(values(), v -> v.code == code);
+    }
+
+    public static ClassKind fromTypeCategory(TypeCategory typeCategory) {
+        return NncUtils.findRequired(values(), v -> v.typeCategory == typeCategory);
     }
 
 }

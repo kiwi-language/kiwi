@@ -33,9 +33,9 @@ public class TaggedPhysicalId extends PhysicalId {
     @Override
     public TypeKey getTypeKey() {
         return switch (tag) {
-            case CLASS_TYPE_PHYSICAL -> ModelDefRegistry.getType(Klass.class).getTypeKey();
-            case ARRAY_TYPE_PHYSICAL -> ModelDefRegistry.getType(ArrayType.class).getTypeKey();
-            case FIELD_PHYSICAL -> ModelDefRegistry.getType(Field.class).getTypeKey();
+            case CLASS_TYPE_PHYSICAL -> ModelDefRegistry.getType(Klass.class).toTypeKey();
+            case ARRAY_TYPE_PHYSICAL -> ModelDefRegistry.getType(ArrayType.class).toTypeKey();
+            case FIELD_PHYSICAL -> ModelDefRegistry.getType(Field.class).toTypeKey();
             default -> throw new IllegalStateException("Unexpected value: " + tag);
         };
     }

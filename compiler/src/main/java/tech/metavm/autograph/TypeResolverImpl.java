@@ -116,7 +116,7 @@ public class TypeResolverImpl implements TypeResolver {
     public Type resolve(PsiType psiType, ResolutionStage stage) {
         return switch (psiType) {
             case PsiPrimitiveType primitiveType -> {
-                if(primitiveType.getName().equals("null"))
+                if (primitiveType.getName().equals("null"))
                     yield StandardTypes.getNullType();
                 var klass = ReflectionUtils.getBoxedClass(KIND_2_PRIM_CLASS.get(primitiveType.getKind()));
                 yield context.getType(klass);
@@ -159,7 +159,7 @@ public class TypeResolverImpl implements TypeResolver {
 
     private Type resolveCapturedType(PsiCapturedWildcardType psiCapturedType, ResolutionStage stage) {
         var resolved = capturedTypeMap.get(psiCapturedType);
-        if(resolved != null)
+        if (resolved != null)
             return resolved;
         var psiMethod = Objects.requireNonNull(TranspileUtil.getParent(psiCapturedType.getContext(), PsiMethod.class));
         var method = Objects.requireNonNull(psiMethod.getUserData(Keys.Method));
@@ -181,7 +181,7 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private Type resolveClassType(PsiClassType classType, ResolutionStage stage) {
-        try(var entry = ContextUtil.getProfiler().enter("resolveClassType: " + stage)) {
+        try (var entry = ContextUtil.getProfiler().enter("resolveClassType: " + stage)) {
             for (var collClass : COLLECTION_CLASSES) {
                 if (TranspileUtil.createClassType(collClass).isAssignableFrom(classType)) {
                     classType = TranspileUtil.getSuperType(classType, collClass);
@@ -327,7 +327,7 @@ public class TypeResolverImpl implements TypeResolver {
                 return StandardTypes.getChildListType().getTypeParameters().get(0);
             var arrayListType = TranspileUtil.createClassType(ArrayList.class);
             var linkedListType = TranspileUtil.createClassType(LinkedList.class);
-            if(arrayListType.isAssignableFrom(ownerType) || linkedListType.isAssignableFrom(ownerType))
+            if (arrayListType.isAssignableFrom(ownerType) || linkedListType.isAssignableFrom(ownerType))
                 return StandardTypes.getReadWriteListType().getTypeParameters().get(0);
             var listType = TranspileUtil.createClassType(List.class);
             if (listType.isAssignableFrom(ownerType))
@@ -349,7 +349,7 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private Klass createMetaClass(PsiClass psiClass) {
-        try(var entry = ContextUtil.getProfiler().enter("createMetaClass")) {
+        try (var entry = ContextUtil.getProfiler().enter("createMetaClass")) {
             var name = TranspileUtil.getBizClassName(psiClass);
             var kind = getClassKind(psiClass);
             boolean isTemplate = psiClass.getTypeParameterList() != null
@@ -382,12 +382,12 @@ public class TypeResolverImpl implements TypeResolver {
             }
             if (psiClass.getSuperClass() != null &&
                     !Objects.equals(psiClass.getSuperClass().getQualifiedName(), Object.class.getName())) {
-                klass.setSuperClass(((ClassType) resolveTypeOnly(TranspileUtil.getSuperClassType(psiClass))).resolve());
+                klass.setSuperType(((ClassType) resolveTypeOnly(TranspileUtil.getSuperClassType(psiClass))));
             }
             klass.setInterfaces(
                     NncUtils.map(
                             TranspileUtil.getInterfaceTypes(psiClass),
-                            it -> ((ClassType) resolveTypeOnly(it)).resolve()
+                            it -> ((ClassType) resolveTypeOnly(it))
                     )
             );
             codeGenerator.transform(psiClass);
@@ -407,7 +407,7 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private Klass resolvePojoClass(PsiClass psiClass, final ResolutionStage stage) {
-        try(var entry = ContextUtil.getProfiler().enter("resolvePojoClass: " + stage)) {
+        try (var entry = ContextUtil.getProfiler().enter("resolvePojoClass: " + stage)) {
             var metaClass = psiClass.getUserData(Keys.MV_CLASS);
             if (metaClass == null)
                 metaClass = createMetaClass(psiClass);
@@ -444,14 +444,13 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private void processClassType(Klass metaClass, PsiClass psiClass, final ResolutionStage stage) {
-        try(var ignored = ContextUtil.getProfiler().enter("processClassType: " + stage)) {
+        try (var ignored = ContextUtil.getProfiler().enter("processClassType: " + stage)) {
             if (stage == INIT) {
                 return;
             }
             for (PsiClassType superType : psiClass.getSuperTypes())
                 resolve(superType, stage);
-            for (Klass superType : metaClass.getSupers())
-                processClassType(superType, stage);
+            metaClass.forEachSuper(superType -> processClassType(superType, stage));
             if (stage.isAfterOrAt(DECLARATION) && metaClass.getStage().isBefore(DECLARATION)) {
                 codeGenerator.generateDecl(psiClass, this);
                 context.getGenericContext().generateDeclarations(metaClass);

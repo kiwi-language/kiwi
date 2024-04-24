@@ -113,9 +113,9 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
     @Override
     public void generateDeclaration() {
         var klass = def.getKlass();
-        if (klass.getSuperClass() != null)
-            defContext.ensureStage(klass.getSuperClass().getType(), DECLARATION);
-        klass.getInterfaces().forEach(it -> defContext.ensureStage(it.getType(), DECLARATION));
+        if (klass.getSuperType() != null)
+            defContext.ensureStage(klass.getSuperType(), DECLARATION);
+        klass.getInterfaces().forEach(it -> defContext.ensureStage(it, DECLARATION));
         defContext.createCompositeTypes(def.getType());
         getPropertyFields().forEach(f -> {
             if(!defContext.isFieldBlacklisted(f))
@@ -258,11 +258,11 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         PojoDef<? super T> superDef = getSuperDef();
         List<InterfaceDef<? super T>> interfaceDefs = getInterfaceDefs();
         return ClassTypeBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))
-                .category(getTypeCategory())
+                .kind(ClassKind.fromTypeCategory(getTypeCategory()))
                 .source(ClassSource.BUILTIN)
                 .template(NncUtils.get(templateDef, PojoDef::getKlass))
-                .superClass(NncUtils.get(superDef, PojoDef::getKlass))
-                .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getKlass))
+                .superClass(NncUtils.get(superDef, PojoDef::getType))
+                .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getType))
                 .build();
     }
 

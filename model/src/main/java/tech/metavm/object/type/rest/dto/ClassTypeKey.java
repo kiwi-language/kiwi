@@ -21,7 +21,7 @@ public record ClassTypeKey(String id) implements TypeKey {
 
     @Override
     public ClassType toType(TypeDefProvider typeDefProvider) {
-        return new ClassType(typeDefProvider.getKlass(id), List.of());
+        return typeDefProvider.getKlass(id).getType();
     }
 
     @Override

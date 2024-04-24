@@ -13,7 +13,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 @EntityType("函数类型")
 public class FunctionType extends CompositeType {
@@ -56,32 +56,21 @@ public class FunctionType extends CompositeType {
 
 
     @Override
-    public TypeKey getTypeKey() {
-        return new FunctionTypeKey(NncUtils.map(parameterTypes, Type::getTypeKey), returnType.getTypeKey());
+    public TypeKey toTypeKey() {
+        return new FunctionTypeKey(NncUtils.map(parameterTypes, Type::toTypeKey), returnType.toTypeKey());
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, @Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+    protected boolean isAssignableFrom0(Type that) {
         if (that instanceof FunctionType thatFuncType) {
             if (parameterTypes.size() == thatFuncType.parameterTypes.size()) {
                 for (int i = 0; i < parameterTypes.size(); i++) {
-                    if (!thatFuncType.parameterTypes.get(i).isAssignableFrom(parameterTypes.get(i), typeMapping)) {
+                    if (!thatFuncType.parameterTypes.get(i).isAssignableFrom(parameterTypes.get(i))) {
                         return false;
                     }
                 }
-                return returnType.isAssignableFrom(thatFuncType.returnType, typeMapping);
+                return returnType.isAssignableFrom(thatFuncType.returnType);
             }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean equals(Type that, @Nullable Map<TypeVariable, ? extends Type> mapping) {
-        if(that instanceof FunctionType thatFuncType) {
-            if(thatFuncType.parameterTypes.size() != parameterTypes.size())
-                return false;
-            return returnType.equals(thatFuncType.returnType, mapping)
-                    && NncUtils.biAllMatch(parameterTypes, thatFuncType.parameterTypes, (t1, t2) -> t1.equals(t2, mapping));
         }
         return false;
     }
@@ -163,4 +152,13 @@ public class FunctionType extends CompositeType {
         return new FunctionType(null, paramTypes, Type.readType(input, typeDefProvider));
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof FunctionType that && parameterTypes.equals(that.parameterTypes) && returnType.equals(that.returnType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(parameterTypes, returnType);
+    }
 }

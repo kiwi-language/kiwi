@@ -13,11 +13,11 @@ public class DefaultPhysicalId extends PhysicalId {
     }
 
     public static PhysicalId ofObject(long id, long nodeId, Type type) {
-        return new DefaultPhysicalId(false, id, nodeId, type.getTypeKey());
+        return new DefaultPhysicalId(false, id, nodeId, type.toTypeKey());
     }
 
     public static PhysicalId ofArray(long id, long nodeId, Type type) {
-        return new DefaultPhysicalId(true, id, nodeId, type.getTypeKey());
+        return new DefaultPhysicalId(true, id, nodeId, type.toTypeKey());
     }
 
     private final TypeKey typeKey;

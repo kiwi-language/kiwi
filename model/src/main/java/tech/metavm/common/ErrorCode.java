@@ -82,7 +82,7 @@ public enum ErrorCode {
     ILLEGAL_FUNCTION_ARGUMENT(425, "函数'{}'调用参数错误, 形参类型: {}, 实参类型: {}"),
     INCORRECT_FUNCTION_ARGUMENT(426, "函数'{}'调用参数错误"),
     CONFLICTING_FLOW(427, "流程签名冲突：流程名称和参数类型相同，但编号不同"),
-    OVERRIDE_FLOW_RETURN_TYPE_INCORRECT(428, "复写流程返回类型不正确"),
+    OVERRIDE_FLOW_RETURN_TYPE_INCORRECT(428, "复写流程返回类型不正确, 当前流程返回类型: {}, 被复写流程返回类型: {}"),
     NOT_A_CHILD_FIELD(429, "字段'{}'不是子对象字段"),
     MASTER_FIELD_REQUIRED(430, "父对象字段必填"),
     MASTER_FIELD_SHOULD_BE_NULL(430, "父对象为数组时，不能设置父对象字段"),

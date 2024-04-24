@@ -10,7 +10,6 @@ import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 
-import java.util.Map;
 import java.util.Objects;
 
 @EntityType("基础类型")
@@ -25,26 +24,23 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public TypeKey getTypeKey() {
+    public TypeKey toTypeKey() {
         return new PrimitiveTypeKey(kind.code());
     }
 
     @Override
-    protected boolean isAssignableFrom0(Type that, @javax.annotation.Nullable Map<TypeVariable, ? extends Type> typeMapping) {
+    protected boolean isAssignableFrom0(Type that) {
         return equals(that);
     }
 
     @Override
-    public boolean equals(Type that, @javax.annotation.Nullable Map<TypeVariable, ? extends Type> mapping) {
-        return equals(that);
+    public boolean equals(Object obj) {
+        return obj instanceof PrimitiveType that && kind == that.kind;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PrimitiveType that = (PrimitiveType) o;
-        return kind == that.kind;
+    public int hashCode() {
+        return Objects.hash(kind);
     }
 
     public boolean isPrimitive() {
@@ -94,11 +90,6 @@ public class PrimitiveType extends Type {
     @Override
     public boolean isPassword() {
         return kind == PrimitiveKind.PASSWORD;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(kind);
     }
 
     @Override

@@ -12,7 +12,7 @@ public record TypeDTO(
         String id,
         String name,
         @Nullable String code,
-        int category,
+        int kind,
         boolean ephemeral,
         boolean anonymous,
         TypeParam param
