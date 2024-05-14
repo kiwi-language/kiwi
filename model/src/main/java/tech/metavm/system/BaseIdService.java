@@ -2,7 +2,6 @@ package tech.metavm.system;
 
 import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -31,11 +30,6 @@ public abstract class BaseIdService implements EntityIdProvider {
 
     public BlockRT getBydId(Id id) {
         return cache.getById(id.getPhysicalId());
-    }
-
-    @Override
-    public TypeId getTypeId(Id id) {
-        return getBydId(id).getTypeId();
     }
 
 

@@ -22,7 +22,7 @@ public record IntersectionTypeKey(Set<TypeKey> typeKeys) implements TypeKey {
 
     @Override
     public IntersectionType toType(TypeDefProvider typeDefProvider) {
-        return new IntersectionType(null, NncUtils.mapUnique(typeKeys, k -> k.toType(typeDefProvider)));
+        return new IntersectionType(NncUtils.mapUnique(typeKeys, k -> k.toType(typeDefProvider)));
     }
 
     @Override
@@ -33,5 +33,10 @@ public record IntersectionTypeKey(Set<TypeKey> typeKeys) implements TypeKey {
     @Override
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
         typeKeys.forEach(k -> k.accept(visitor));
+    }
+
+    @Override
+    public int getCode() {
+        return TypeKeyCodes.INTERSECTION;
     }
 }

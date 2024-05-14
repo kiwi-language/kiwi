@@ -57,8 +57,8 @@ public class MapNative extends NativeBase {
     }
 
     public ClassInstance keySet(CallContext callContext) {
-        var keySetType = (Klass) instance.getKlass().getDependency(StandardTypes.getSetType());
-        ClassInstance keySet = ClassInstance.allocate(keySetType);
+        var keySetType = (Klass) instance.getKlass().getDependency(StandardTypes.getSetKlass());
+        ClassInstance keySet = ClassInstance.allocate(keySetType.getType());
         var setNative = (SetNative) NativeMethods.getNativeObject(keySet);
         setNative.Set(callContext);
         for (Instance key : keyArray) {

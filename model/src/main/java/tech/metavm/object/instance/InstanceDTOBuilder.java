@@ -45,10 +45,10 @@ public class InstanceDTOBuilder {
                 var array = new ListNative(instance).toArray();
                 InstanceDTO instanceDTO = new InstanceDTO(
                         instance.getInstanceIdString(),
-                        serContext.getId(instance.getType()),
+                        instance.getType().toExpression(serContext),
                         instance.getType().getName(),
                         instance.getTitle(),
-                        Instances.getSourceMappingId(instance),
+                        Instances.getSourceMappingRefDTO(instance),
                         new ListInstanceParam(
                                 array.isChildArray(),
                                 NncUtils.map(
@@ -69,15 +69,15 @@ public class InstanceDTOBuilder {
             } else {
                 InstanceDTO instanceDTO = new InstanceDTO(
                         instance.getInstanceIdString(),
-                        serContext.getId(instance.getType()),
+                        instance.getType().toExpression(serContext),
                         instance.getType().getName(),
                         instance.getTitle(),
-                        Instances.getSourceMappingId(instance),
+                        Instances.getSourceMappingRefDTO(instance),
                         new ClassInstanceParam(
                                 NncUtils.map(
                                         instance.getKlass().getAllFields(),
                                         f -> new InstanceFieldDTO(
-                                                f.getStringId(),
+                                                f.getTag().toString(),
                                                 f.getName(),
                                                 f.getType().getConcreteType().getCategory().code(),
                                                 f.getType().isArray(),
@@ -98,10 +98,10 @@ public class InstanceDTOBuilder {
             try (var serContext = SerializeContext.enter()) {
                 InstanceDTO instanceDTO = new InstanceDTO(
                         array.getInstanceIdString(),
-                        serContext.getId(array.getType()),
+                        array.getType().toExpression(serContext),
                         array.getType().getName(),
                         array.getTitle(),
-                        Instances.getSourceMappingId(array),
+                        Instances.getSourceMappingRefDTO(array),
                         new ArrayInstanceParam(
                                 array.isChildArray(),
                                 NncUtils.map(

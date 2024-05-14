@@ -23,7 +23,7 @@ public record FunctionTypeKey(List<TypeKey> parameterTypeKeys, TypeKey returnTyp
 
     @Override
     public FunctionType toType(TypeDefProvider typeDefProvider) {
-        return new FunctionType(null, NncUtils.map(parameterTypeKeys, k -> k.toType(typeDefProvider)), returnTypeKey.toType(typeDefProvider));
+        return new FunctionType(NncUtils.map(parameterTypeKeys, k -> k.toType(typeDefProvider)), returnTypeKey.toType(typeDefProvider));
     }
 
     @Override
@@ -35,5 +35,10 @@ public record FunctionTypeKey(List<TypeKey> parameterTypeKeys, TypeKey returnTyp
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
         parameterTypeKeys.forEach(k -> k.accept(visitor));
         returnTypeKey.accept(visitor);
+    }
+
+    @Override
+    public int getCode() {
+        return TypeKeyCodes.FUNCTION;
     }
 }

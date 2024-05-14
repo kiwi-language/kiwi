@@ -1,390 +1,209 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.type.*;
-
-import java.util.List;
+import tech.metavm.object.type.Klass;
 
 public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
 
     private final ThreadLocal<GlobalStandardTypesHolder> TL = ThreadLocal.withInitial(GlobalStandardTypesHolder::new);
 
     @Override
-    public PrimitiveType getLongType() {
-        return TL.get().getLongType();
+    public Klass getEnumKlass() {
+        return TL.get().getEnumKlass();
     }
 
     @Override
-    public PrimitiveType getDoubleType() {
-        return TL.get().getDoubleType();
+    public Klass getThrowableKlass() {
+        return TL.get().getThrowableKlass();
     }
 
     @Override
-    public PrimitiveType getBooleanType() {
-        return TL.get().getBooleanType();
+    public Klass getExceptionKlass() {
+        return TL.get().getExceptionKlass();
     }
 
     @Override
-    public PrimitiveType getStringType() {
-        return TL.get().getStringType();
+    public Klass getRuntimeExceptionKlass() {
+        return TL.get().getRuntimeExceptionKlass();
     }
 
     @Override
-    public PrimitiveType getTimeType() {
-        return TL.get().getTimeType();
+    public Klass getEntityKlass() {
+        return TL.get().getEntityKlass();
     }
 
     @Override
-    public PrimitiveType getVoidType() {
-        return TL.get().getVoidType();
+    public Klass getRecordKlass() {
+        return TL.get().getRecordKlass();
     }
 
     @Override
-    public PrimitiveType getNullType() {
-        return TL.get().getNullType();
+    public Klass getCollectionKlass() {
+        return TL.get().getCollectionKlass();
     }
 
     @Override
-    public NeverType getNeverType() {
-        return TL.get().getNeverType();
+    public Klass getSetKlass() {
+        return TL.get().getSetKlass();
     }
 
     @Override
-    public AnyType getAnyType() {
-        return TL.get().getAnyType();
+    public Klass getListKlass() {
+        return TL.get().getListKlass();
     }
 
     @Override
-    public ArrayType getAnyArrayType() {
-        return TL.get().getAnyArrayType();
+    public Klass getMapKlass() {
+        return TL.get().getMapKlass();
     }
 
     @Override
-    public ArrayType getNeverArrayType() {
-        return TL.get().getNeverArrayType();
+    public Klass getIteratorKlass() {
+        return TL.get().getIteratorKlass();
     }
 
     @Override
-    public UnionType getNullableAnyType() {
-        return TL.get().getNullableAnyType();
+    public Klass getIteratorImplKlass() {
+        return TL.get().getIteratorImplKlass();
     }
 
     @Override
-    public UnionType getNullableStringType() {
-        return TL.get().getNullableStringType();
+    public void setEnumKlass(Klass type) {
+        TL.get().setEnumKlass(type);
     }
 
     @Override
-    public Klass getEnumType() {
-        return TL.get().getEnumType();
+    public void setThrowableKlass(Klass type) {
+        TL.get().setThrowableKlass(type);
     }
 
     @Override
-    public Klass getThrowableType() {
-        return TL.get().getThrowableType();
+    public void setExceptionKlass(Klass type) {
+        TL.get().setExceptionKlass(type);
     }
 
     @Override
-    public Klass getExceptionType() {
-        return TL.get().getExceptionType();
+    public void setRuntimeExceptionKlass(Klass type) {
+        TL.get().setRuntimeExceptionKlass(type);
     }
 
     @Override
-    public Klass getRuntimeExceptionType() {
-        return TL.get().getRuntimeExceptionType();
+    public void setEntityKlass(Klass type) {
+        TL.get().setEntityKlass(type);
     }
 
     @Override
-    public Klass getEntityType() {
-        return TL.get().getEntityType();
+    public void setRecordKlass(Klass type) {
+        TL.get().setRecordKlass(type);
     }
 
     @Override
-    public Klass getRecordType() {
-        return TL.get().getRecordType();
+    public void setCollectionKlass(Klass type) {
+        TL.get().setCollectionKlass(type);
     }
 
     @Override
-    public Klass getCollectionType() {
-        return TL.get().getCollectionType();
+    public void setSetKlass(Klass type) {
+        TL.get().setSetKlass(type);
     }
 
     @Override
-    public Klass getSetType() {
-        return TL.get().getSetType();
+    public void setListKlass(Klass type) {
+        TL.get().setListKlass(type);
     }
 
     @Override
-    public Klass getListType() {
-        return TL.get().getListType();
+    public void setMapKlass(Klass type) {
+        TL.get().setMapKlass(type);
     }
 
     @Override
-    public Klass getMapType() {
-        return TL.get().getMapType();
+    public void setIteratorKlass(Klass type) {
+        TL.get().setIteratorKlass(type);
     }
 
     @Override
-    public Klass getIteratorType() {
-        return TL.get().getIteratorType();
+    public void setIteratorImplKlass(Klass type) {
+        TL.get().setIteratorImplKlass(type);
     }
 
     @Override
-    public Klass getIteratorImplType() {
-        return TL.get().getIteratorImplType();
+    public void setReadWriteListKlass(Klass type) {
+        TL.get().setReadWriteListKlass(type);
     }
 
     @Override
-    public ArrayType getReadonlyAnyArrayType() {
-        return TL.get().getReadonlyAnyArrayType();
+    public void setChildListKlass(Klass type) {
+        TL.get().setChildListKlass(type);
     }
 
     @Override
-    public PrimitiveType getPasswordType() {
-        return TL.get().getPasswordType();
+    public Klass getChildListKlass() {
+        return TL.get().getChildListKlass();
     }
 
     @Override
-    public void setLongType(PrimitiveType type) {
-        TL.get().setLongType(type);
+    public Klass getReadWriteListKlass() {
+        return TL.get().getReadWriteListKlass();
     }
 
     @Override
-    public void setDoubleType(PrimitiveType type) {
-        TL.get().setDoubleType(type);
+    public Klass getIterableKlass() {
+        return TL.get().getIterableKlass();
     }
 
     @Override
-    public void setBooleanType(PrimitiveType type) {
-        TL.get().setBooleanType(type);
+    public void setIterableKlass(Klass iterableType) {
+        TL.get().setIterableKlass(iterableType);
     }
 
     @Override
-    public void setStringType(PrimitiveType type) {
-        TL.get().setStringType(type);
+    public Klass getConsumerKlass() {
+        return TL.get().getConsumerKlass();
     }
 
     @Override
-    public void setTimeType(PrimitiveType type) {
-        TL.get().setTimeType(type);
+    public void setConsumerKlass(Klass consumerType) {
+        TL.get().setConsumerKlass(consumerType);
     }
 
     @Override
-    public void setVoidType(PrimitiveType type) {
-        TL.get().setVoidType(type);
+    public Klass getPredicateKlass() {
+        return TL.get().getPredicateKlass();
     }
 
     @Override
-    public void setNullType(PrimitiveType type) {
-        TL.get().setNullType(type);
+    public void setPredicateKlass(Klass type) {
+        TL.get().setPredicateKlass(type);
     }
 
     @Override
-    public void setPasswordType(PrimitiveType type) {
-        TL.get().setPasswordType(type);
+    public void setIllegalArgumentExceptionKlass(Klass illegalArgumentExceptionType) {
+        TL.get().setIllegalArgumentExceptionKlass(illegalArgumentExceptionType);
     }
 
     @Override
-    public void setNeverType(NeverType type) {
-        TL.get().setNeverType(type);
+    public void setIllegalStateExceptionKlass(Klass illegalStateExceptionType) {
+        TL.get().setIllegalStateExceptionKlass(illegalStateExceptionType);
     }
 
     @Override
-    public void setAnyType(AnyType type) {
-        TL.get().setAnyType(type);
+    public Klass getIllegalArgumentExceptionKlass() {
+        return TL.get().getIllegalArgumentExceptionKlass();
     }
 
     @Override
-    public void setAnyArrayType(ArrayType type) {
-        TL.get().setAnyArrayType(type);
+    public Klass getIllegalStateExceptionKlass() {
+        return TL.get().getIllegalStateExceptionKlass();
     }
 
     @Override
-    public void setNeverArrayType(ArrayType type) {
-        TL.get().setNeverArrayType(type);
+    public Klass getNullPointerExceptionKlass() {
+        return TL.get().getNullPointerExceptionKlass();
     }
 
     @Override
-    public void setNullableAnyType(UnionType type) {
-        TL.get().setNullableAnyType(type);
+    public void setNullPointerExceptionKlass(Klass nullPointerExceptionType) {
+        TL.get().setNullPointerExceptionKlass(nullPointerExceptionType);
     }
 
-    @Override
-    public void setNullableStringType(UnionType type) {
-        TL.get().setNullableStringType(type);
-    }
-
-    @Override
-    public void setEnumType(Klass type) {
-        TL.get().setEnumType(type);
-    }
-
-    @Override
-    public void setThrowableType(Klass type) {
-        TL.get().setThrowableType(type);
-    }
-
-    @Override
-    public void setExceptionType(Klass type) {
-        TL.get().setExceptionType(type);
-    }
-
-    @Override
-    public void setRuntimeExceptionType(Klass type) {
-        TL.get().setRuntimeExceptionType(type);
-    }
-
-    @Override
-    public void setEntityType(Klass type) {
-        TL.get().setEntityType(type);
-    }
-
-    @Override
-    public void setRecordType(Klass type) {
-        TL.get().setRecordType(type);
-    }
-
-    @Override
-    public void setCollectionType(Klass type) {
-        TL.get().setCollectionType(type);
-    }
-
-    @Override
-    public void setSetType(Klass type) {
-        TL.get().setSetType(type);
-    }
-
-    @Override
-    public void setListType(Klass type) {
-        TL.get().setListType(type);
-    }
-
-    @Override
-    public void setMapType(Klass type) {
-        TL.get().setMapType(type);
-    }
-
-    @Override
-    public void setIteratorType(Klass type) {
-        TL.get().setIteratorType(type);
-    }
-
-    @Override
-    public void setIteratorImplType(Klass type) {
-        TL.get().setIteratorImplType(type);
-    }
-
-    @Override
-    public void setReadonlyAnyArrayType(ArrayType type) {
-        TL.get().setReadonlyAnyArrayType(type);
-    }
-
-    @Override
-    public void setReadWriteListType(Klass type) {
-        TL.get().setReadWriteListType(type);
-    }
-
-    @Override
-    public void setChildListType(Klass type) {
-        TL.get().setChildListType(type);
-    }
-
-    @Override
-    public Klass getChildListType() {
-        return TL.get().getChildListType();
-    }
-
-    @Override
-    public Klass getReadWriteListType() {
-        return TL.get().getReadWriteListType();
-    }
-
-    @Override
-    public Klass getIterableType() {
-        return TL.get().getIterableType();
-    }
-
-    @Override
-    public void setIterableType(Klass iterableType) {
-        TL.get().setIterableType(iterableType);
-    }
-
-    @Override
-    public Klass getConsumerType() {
-        return TL.get().getConsumerType();
-    }
-
-    @Override
-    public void setConsumerType(Klass consumerType) {
-        TL.get().setConsumerType(consumerType);
-    }
-
-    @Override
-    public Klass getPredicateType() {
-        return TL.get().getPredicateType();
-    }
-
-    @Override
-    public void setPredicateType(Klass type) {
-        TL.get().setPredicateType(type);
-    }
-
-    @Override
-    public void setIllegalArgumentExceptionType(Klass illegalArgumentExceptionType) {
-        TL.get().setIllegalArgumentExceptionType(illegalArgumentExceptionType);
-    }
-
-    @Override
-    public void setIllegalStateExceptionType(Klass illegalStateExceptionType) {
-        TL.get().setIllegalStateExceptionType(illegalStateExceptionType);
-    }
-
-    @Override
-    public Klass getIllegalArgumentExceptionType() {
-        return TL.get().getIllegalArgumentExceptionType();
-    }
-
-    @Override
-    public Klass getIllegalStateExceptionType() {
-        return TL.get().getIllegalStateExceptionType();
-    }
-
-    @Override
-    public Klass getNullPointerExceptionType() {
-        return TL.get().getNullPointerExceptionType();
-    }
-
-    @Override
-    public void setNullPointerExceptionType(Klass nullPointerExceptionType) {
-        TL.get().setNullPointerExceptionType(nullPointerExceptionType);
-    }
-
-    @Override
-    public void addParameterizedType(Klass type) {
-        TL.get().addParameterizedType(type);
-    }
-
-    @Override
-    public Klass getParameterizedType(Klass template, List<Type> typeArguments) {
-        return TL.get().getParameterizedType(template, typeArguments);
-    }
-
-    @Override
-    public void clearParameterizedTypes() {
-        TL.get().clearParameterizedTypes();
-    }
-
-    @Override
-    public void addNullableType(UnionType type) {
-        TL.get().addNullableType(type);
-    }
-
-    @Override
-    public UnionType getNullableType(Type type) {
-        return TL.get().getNullableType(type);
-    }
-
-    @Override
-    public void clearNullableTypes() {
-        TL.get().clearNullableTypes();
-    }
 }

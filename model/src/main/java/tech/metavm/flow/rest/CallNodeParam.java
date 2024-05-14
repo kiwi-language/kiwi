@@ -15,39 +15,39 @@ import java.util.List;
 )
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "callKind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class CallNodeParam {
-    private final String flowId;
+    private final FlowRefDTO flowRef;
     private final @Nullable String flowCode;
-    private final @Nullable List<String> typeArgumentIds;
-    private final @Nullable String typeId;
+    private final @Nullable List<String> typeArguments;
+    private final @Nullable String type;
     private final List<ArgumentDTO> arguments;
     private final List<ValueDTO> argumentValues;
-    private final List<String> capturedExpressionTypeIds;
+    private final List<String> capturedExpressionTypes;
     private final List<String> capturedExpressions;
 
-    public CallNodeParam(@Nullable String flowId,
+    public CallNodeParam(@Nullable FlowRefDTO flowRef,
                          @Nullable String flowCode,
-                         @Nullable List<String> typeArgumentIds,
-                         @Nullable String typeId,
+                         @Nullable List<String> typeArguments,
+                         @Nullable String type,
                          List<ArgumentDTO> arguments,
                          List<ValueDTO> argumentValues,
-                         List<String> capturedExpressionTypeIds,
+                         List<String> capturedExpressionTypes,
                          List<String> capturedExpressions) {
-        this.flowId = flowId;
+        this.flowRef = flowRef;
         this.flowCode = flowCode;
-        this.typeArgumentIds = typeArgumentIds;
-        this.typeId = typeId;
+        this.typeArguments = typeArguments;
+        this.type = type;
         this.arguments = arguments;
         this.argumentValues = argumentValues;
-        this.capturedExpressionTypeIds = capturedExpressionTypeIds;
+        this.capturedExpressionTypes = capturedExpressionTypes;
         this.capturedExpressions = capturedExpressions;
     }
 
     public boolean isResolved() {
-        return flowId != null;
+        return flowRef != null;
     }
 
-    public @Nullable String getFlowId() {
-        return flowId;
+    public @Nullable FlowRefDTO getFlowRef() {
+        return flowRef;
     }
 
     @Nullable
@@ -56,13 +56,13 @@ public abstract class CallNodeParam {
     }
 
     @Nullable
-    public List<String> getTypeArgumentIds() {
-        return typeArgumentIds;
+    public List<String> getTypeArguments() {
+        return typeArguments;
     }
 
     @Nullable
-    public String getTypeId() {
-        return typeId;
+    public String getType() {
+        return type;
     }
 
     public List<ArgumentDTO> getArguments() {
@@ -75,8 +75,8 @@ public abstract class CallNodeParam {
 
     public abstract int getCallKind();
 
-    public List<String> getCapturedExpressionTypeIds() {
-        return capturedExpressionTypeIds;
+    public List<String> getCapturedExpressionTypes() {
+        return capturedExpressionTypes;
     }
 
     public List<String> getCapturedExpressions() {

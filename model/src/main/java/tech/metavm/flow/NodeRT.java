@@ -191,7 +191,7 @@ public abstract class NodeRT extends Element implements LocalKey {
     }
 
     protected void setOutputType(@Nullable Type outputType) {
-        this.outputType = NncUtils.get(outputType, t -> addChild(t, "outputType"));
+        this.outputType = NncUtils.get(outputType, t -> addChild(t.copy(), "outputType"));
     }
 
     public NodeDTO toDTO(SerializeContext serContext) {
@@ -202,20 +202,16 @@ public abstract class NodeRT extends Element implements LocalKey {
                 code,
                 kind.code(),
                 NncUtils.get(predecessor, serContext::getId),
-                NncUtils.get(getType(), serContext::getId),
+                NncUtils.get(getType(), t -> t.toExpression(serContext)),
                 getParam(serContext),
-                kind.isOutputTypeAsChild() ? getTypeDTO() : null,
+                getOutputKlassDTO(serContext),
                 scope.getStringId(),
                 error
         );
     }
 
-    private TypeDTO getTypeDTO() {
-        Type type = getType();
-        if (type == null) {
-            return null;
-        }
-        return type.toDTO();
+    protected TypeDTO getOutputKlassDTO(SerializeContext serializeContext) {
+        return null;
     }
 
     public @NotNull ScopeRT getScope() {

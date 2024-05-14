@@ -3,8 +3,8 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.*;
 import tech.metavm.object.type.Index;
+import tech.metavm.object.type.*;
 import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.RuntimeGeneric;
 
@@ -31,18 +31,8 @@ public class ModelDefRegistry {
         return holder.isPresent();
     }
 
-    public static boolean containsDef(Type type) {
-        return getDefContext().containsDef(type);
-    }
-
-    public static void setModelFields(Object model, Instance instance, ObjectInstanceMap objectInstanceMap) {
-        EntityDef<?> entityDef = (EntityDef<?>) getDefContext().getDef(instance.getType());
-        entityDef.initModelHelper(model, instance, objectInstanceMap);
-    }
-
-    public static void updateInstance(Object model, Instance instance, ObjectInstanceMap instanceMap) {
-        ModelDef<?, ?> entityDef = getDefContext().getDef(instance.getType());
-        updateInstanceHelper(entityDef, model, instance, instanceMap);
+    public static boolean containsDef(TypeDef typeDef) {
+        return getDefContext().containsDef(typeDef);
     }
 
     private static <T, I extends DurableInstance> void updateInstanceHelper(
@@ -51,24 +41,24 @@ public class ModelDefRegistry {
             Instance instance,
             ObjectInstanceMap instanceMap) {
         modelDef.updateInstance(
-                modelDef.getInstanceType().cast(instance), modelDef.getJavaClass().cast(entity),
+                modelDef.getInstanceClass().cast(instance), modelDef.getEntityClass().cast(entity),
                 instanceMap
         );
     }
 
     public static Type getType(Entity entity) {
-        if(entity instanceof RuntimeGeneric runtimeGeneric)
+        if (entity instanceof RuntimeGeneric runtimeGeneric)
             return getType(runtimeGeneric.getGenericType());
         else
             return getType(EntityUtils.getRealType(entity.getClass()));
     }
 
     public static Type getType(Class<?> entityClass) {
-        return holder.get().getDef(entityClass).getType();
+        return holder.get().getType(entityClass);
     }
 
     public static Type getType(java.lang.reflect.Type javaType) {
-        return holder.get().getDef(javaType).getType();
+        return holder.get().getType(javaType);
     }
 
     public static ClassType getClassType(Class<?> javaType) {
@@ -92,7 +82,7 @@ public class ModelDefRegistry {
     }
 
     public static Class<? extends Entity> getEntityType(ClassType type) {
-        return holder.get().getEntityDef(type).getJavaClass();
+        return ((EntityDef<?>) holder.get().getDef(type.resolve())).getEntityClass();
     }
 
     public static java.lang.reflect.Type getJavaType(Type type) {
@@ -107,20 +97,12 @@ public class ModelDefRegistry {
         return enumType.cast(holder.get().getEnumDef(enumType).getEnumConstantDef(id).getValue());
     }
 
-    public static EntityDef<?> getEntityDef(Type type) {
-        return holder.get().getEntityDef(type);
-    }
-
-    public static <T> ModelDef<T,?> getDef(Class<T> aClass) {
+    public static <T> ModelDef<T, ?> getDef(Class<T> aClass) {
         return holder.get().getDef(aClass);
     }
 
-    public static ModelDef<?,?> getDef(ClassType type) {
-        return holder.get().getDef(type);
-    }
-
-    public static @Nullable  ModelDef<?,?> tryGetDef(ClassType type) {
-        return holder.get().tryGetDef(type);
+    public static @Nullable ModelDef<?, ?> tryGetDef(TypeDef typeDef) {
+        return holder.get().tryGetDef(typeDef);
     }
 
     public static boolean isInitialized() {

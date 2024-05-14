@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
@@ -19,7 +20,7 @@ public class ConstantExpression extends Expression {
     @EntityField("常量值")
     private final Instance value;
 
-    public ConstantExpression(Instance value) {
+    public ConstantExpression(@NotNull Instance value) {
         this.value = value;
     }
 

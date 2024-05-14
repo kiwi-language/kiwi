@@ -394,4 +394,32 @@ public abstract class ElementVisitor<R> {
         return visitNode(unmapNode);
     }
 
+    public R visitFieldRef(FieldRef fieldRef) {
+        return visitElement(fieldRef);
+    }
+
+    public R visitFlowRef(FlowRef flowRef) {
+        return visitElement(flowRef);
+    }
+
+    public R visitMethodRef(MethodRef methodRef) {
+        return visitFlowRef(methodRef);
+    }
+
+    public R visitFunctionRef(FunctionRef functionRef) {
+        return visitFlowRef(functionRef);
+    }
+
+    public R visitParameterRef(ParameterRef parameterRef) {
+        return visitElement(parameterRef);
+    }
+
+    public R visitLambdaNodeRef(LambdaNodeRef lambdaNodeRef) {
+        return visitElement(lambdaNodeRef);
+    }
+
+    public R visitObjectMappingRef(ObjectMappingRef objectMappingRef) {
+        return visitElement(objectMappingRef);
+    }
+
 }

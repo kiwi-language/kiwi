@@ -1,6 +1,5 @@
 package tech.metavm.object.type;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
@@ -13,106 +12,39 @@ import tech.metavm.object.type.rest.dto.TypeParam;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 @EntityType("类型")
-public abstract class Type extends Element implements LoadAware, GlobalKey {
-
-    public static final IndexDef<Type> IDX_ALL_FLAG = IndexDef.create(Type.class, "allFlag");
-
-    public static final IndexDef<Type> IDX_CATEGORY = IndexDef.create(Type.class, "category");
-
-    @SuppressWarnings("StaticInitializerReferencesSubClass")
-    public static PrimitiveType NULL_TYPE = new PrimitiveType(PrimitiveKind.NULL);
-
-    @EntityField(value = "名称", asTitle = true)
-    protected String name;
-    @EntityField(value = "编号")
-    @Nullable
-    private String code;
-    @EntityField("是否匿名")
-    protected boolean anonymous;
-    @EntityField("是否临时")
-    protected final boolean ephemeral;
-    @EntityField("类别")
-    protected TypeCategory category;
-    @EntityField("错误")
-    private boolean error = false;
-
-    //<editor-fold desc="search flags">
-
-    private boolean allFlag = true;
-
-    @SuppressWarnings("unused")
-    private boolean templateFlag = false;
-    //</editor-fold>
-
-    @SuppressWarnings("FieldMayBeFinal") // for unit test
-    private boolean dummyFlag = false;
-
-    @Nullable
-    private transient List<Type> superTypesCheckpoint;
-
-    private transient List<Runnable> ancestorChangeListeners = new ArrayList<>();
-
-    public Type(String name, @Nullable String code, boolean anonymous, boolean ephemeral, TypeCategory category) {
-        this.name = name;
-        this.code = NamingUtils.ensureValidTypeCode(code);
-        this.anonymous = anonymous;
-        this.ephemeral = ephemeral;
-        this.category = category;
-    }
-
-    @Override
-    public void onLoad(IEntityContext context) {
-    }
+public abstract class Type extends ValueElement {
 
     public boolean isViewType(Type type) {
-        return this == type;
+        return this.equals(type);
     }
 
-    protected void setTemplateFlag(boolean templateFlag) {
-        this.templateFlag = templateFlag;
-    }
-
-    public String getName() {
-        return name;
-    }
+    public abstract String getName();
 
     public String getTypeDesc() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+        return getName();
     }
 
     @Nullable
-    public String getCode() {
-        return code;
+    public abstract String getCode();
+
+    public abstract TypeCategory getCategory();
+
+    public abstract boolean isEphemeral();
+
+    public TypeKey toTypeKey() {
+       return toTypeKey(TypeDef::getStringId);
     }
 
-    public String getCodeRequired() {
-        return NncUtils.requireNonNull(code, "Code is not set for type '" + name + "'");
-    }
+    public abstract TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId);
 
-    public void setCode(@Nullable String code) {
-        this.code = NamingUtils.ensureValidTypeCode(code);
-    }
-
-    public TypeCategory getCategory() {
-        return category;
-    }
-
-    public boolean isAnonymous() {
-        return anonymous;
-    }
-
-    public boolean isEphemeral() {
-        return ephemeral;
-    }
-
-    public abstract TypeKey toTypeKey();
+    public void forEachTypeDef(Consumer<TypeDef> action) {}
 
     @SuppressWarnings("unused")
     public boolean isDurable() {
@@ -147,27 +79,8 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return current;
     }
 
-    public Type getUltimateUpperBound() {
-        var upperBound = getUpperBound();
-        if (upperBound == this) {
-            return this;
-        }
-        Set<Type> visited = new IdentitySet<>(List.of(this, upperBound));
-        var last = upperBound;
-        var current = upperBound.getUpperBound();
-        while (last != current) {
-            if (visited.contains(current)) {
-                throw new InternalException("Circular reference detected in the upper bound chain of type " + this);
-            }
-            last = current;
-            current = current.getUpperBound();
-            visited.add(current);
-        }
-        return current;
-    }
-
     public boolean isNullable() {
-        return isAssignableFrom(NULL_TYPE);
+        return isAssignableFrom(StandardTypes.getNullType());
     }
 
     public boolean isBinaryNullable() {
@@ -184,16 +97,9 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
 
     protected abstract boolean isAssignableFrom0(Type that);
 
-    public boolean isError() {
-        return error;
-    }
+    public abstract  <R, S> R accept(TypeVisitor<R, S> visitor, S s);
 
-    public void setError(boolean error) {
-        this.error = error;
-    }
-
-    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
-        return visitor.visitType(this, s);
+    public <S> void acceptComponents(TypeVisitor<?, S> visitor, S s) {
     }
 
     public Type transform(TypeTransformer<?> transformer) {
@@ -202,10 +108,6 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
 
     public List<? extends Type> getSuperTypes() {
         return List.of();
-    }
-
-    public int getRank() {
-        return 1;
     }
 
     @Override
@@ -343,88 +245,64 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public ColumnKind getSQLType() {
-        return category.getSQLType();
+        return getCategory().getSQLType();
     }
 
     protected TypeDTO toDTO(TypeParam param) {
         try (var ser = SerializeContext.enter()) {
             return new TypeDTO(
                     ser.getId(this),
-                    name,
-                    code,
-                    category.code(),
-                    ephemeral,
-                    anonymous,
+                    getName(),
+                    getCode(),
+                    getCategory().code(),
+                    isEphemeral(),
+                    false,
                     param
             );
         }
     }
 
-    public TypeDTO toDTO() {
-        try (var serContext = SerializeContext.enter()) {
-            return toDTO(getParam(serContext));
-        }
-    }
-
-    protected abstract TypeParam getParam(SerializeContext serializeContext);
-
-    @Override
-    public final List<Object> beforeRemove(IEntityContext context) {
-        Set<Object> cascade = new IdentitySet<>(beforeRemoveInternal(context));
-        cascade.addAll(
-                NncUtils.union(
-                        context.selectByKey(FunctionType.PARAMETER_TYPE_KEY, this),
-                        context.selectByKey(FunctionType.RETURN_TYPE_KEY, this)
-                )
-        );
-        cascade.addAll(context.selectByKey(UnionType.MEMBER_IDX, this));
-        cascade.addAll(context.selectByKey(UncertainType.LOWER_BOUND_IDX, this));
-        cascade.addAll(context.selectByKey(UncertainType.UPPER_BOUND_IDX, this));
-        cascade.addAll(context.selectByKey(ArrayType.ELEMENT_TYPE_IDX, this));
-        cascade.addAll(context.selectByKey(Klass.TYPE_ARGUMENTS_IDX, this));
-        return new ArrayList<>(cascade);
-    }
-
-    protected List<?> beforeRemoveInternal(IEntityContext context) {
-        return List.of();
-    }
-
     @Override
     protected String toString0() {
-        return "Type " + getTypeDesc();
-    }
-
-    @Override
-    public abstract String getGlobalKey(@NotNull BuildKeyContext context);
-
-    public void setAnonymous(boolean anonymous) {
-        this.anonymous = anonymous;
+        return getTypeDesc();
     }
 
     public abstract String getInternalName(@org.jetbrains.annotations.Nullable Flow current);
 
     public TypeTag getTag() {
-        return TypeTag.fromCategory(category);
+        return TypeTag.fromCategory(getCategory());
     }
 
     public TypeId getTypeId() {
-        return new TypeId(TypeTag.fromCategory(category), getId().getPhysicalId());
+        throw new UnsupportedOperationException();
     }
 
     public abstract Type copy();
 
-    public String toTypeExpression() {
+    public String toExpression () {
         try(var serContext = SerializeContext.enter()) {
-            return toTypeExpression(serContext);
+            return toExpression(serContext, null);
         }
     }
 
-    public abstract String toTypeExpression(SerializeContext serializeContext);
+    public String toExpression(SerializeContext serializeContext) {
+        return toExpression(serializeContext, null);
+    }
+
+    public String toExpression(@Nullable Function<TypeDef, String> getTypeDefExpr) {
+        try(var serCtx = SerializeContext.enter()) {
+            return toExpression(serCtx, getTypeDefExpr);
+        }
+    }
+
+    public abstract String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr);
 
     public  void write(InstanceOutput output) {
-        output.write(category.code());
+        output.write(getCategory().code());
         write0(output);
     }
+
+    public abstract int getTypeKeyCode();
 
     public abstract void write0(InstanceOutput output);
 
@@ -442,8 +320,8 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
             case READ_ONLY_ARRAY -> ArrayType.read(input, ArrayKind.READ_ONLY, typeDefProvider);
             case READ_WRITE_ARRAY -> ArrayType.read(input, ArrayKind.READ_WRITE, typeDefProvider);
             case CHILD_ARRAY -> ArrayType.read(input, ArrayKind.CHILD, typeDefProvider);
-            case NOTHING -> new NeverType();
-            case OBJECT -> new AnyType();
+            case NEVER -> new NeverType();
+            case ANY -> new AnyType();
         };
     }
 

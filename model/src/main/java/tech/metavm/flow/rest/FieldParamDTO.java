@@ -1,17 +1,16 @@
 package tech.metavm.flow.rest;
 
 import tech.metavm.common.BaseDTO;
-import tech.metavm.common.RefDTO;
-import tech.metavm.util.NncUtils;
+import tech.metavm.object.type.rest.dto.FieldRefDTO;
 
 public record FieldParamDTO (
         String id,
-        String fieldId,
+        FieldRefDTO fieldRef,
         ValueDTO value
 ) implements BaseDTO {
 
-    public static FieldParamDTO create(String fieldId, ValueDTO value) {
-        return new FieldParamDTO(null, fieldId, value);
+    public static FieldParamDTO create(FieldRefDTO fieldRef, ValueDTO value) {
+        return new FieldParamDTO(null, fieldRef, value);
     }
 
 }

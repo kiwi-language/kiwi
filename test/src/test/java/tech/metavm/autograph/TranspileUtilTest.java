@@ -29,13 +29,10 @@ import static java.util.Objects.requireNonNull;
 
 public class TranspileUtilTest extends TestCase {
 
-    private TypeProviders typeProviders;
-
     @Override
     protected void setUp() throws Exception {
         TranspileTestTools.touch();
         MockStandardTypesInitializer.init();
-        typeProviders = new TypeProviders();
     }
 
     public void testGetTemplateType() {
@@ -75,10 +72,7 @@ public class TranspileUtilTest extends TestCase {
                 .typeParameters(List.of(typeVar))
                 .parameters(
                         new Parameter(null, "list", "list",
-                                typeProviders.parameterizedTypeProvider.getParameterizedType(
-                                        StandardTypes.getListType(),
-                                        List.of(new UncertainType(null, typeVar.getType(), StandardTypes.getNullableAnyType()))
-                                ).getType()
+                                StandardTypes.getListKlass().getParameterized(List.of(new UncertainType(typeVar.getType(), StandardTypes.getNullableAnyType()))).getType()
                         ),
                         new Parameter(null, "element", "element", typeVar.getType())
                 )

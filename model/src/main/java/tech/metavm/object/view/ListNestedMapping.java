@@ -1,12 +1,15 @@
 package tech.metavm.object.view;
 
 import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.Expressions;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.FieldBuilder;
+import tech.metavm.object.type.Type;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,34 +19,28 @@ import java.util.function.Supplier;
 @EntityType("数组嵌套映射")
 public class ListNestedMapping extends NestedMapping {
 
-    @EntityField("来源类型")
-    private final Klass sourceKlass;
-    @EntityField("目标类型")
-    private final Klass targetKlass;
-    @EntityField("来源读写列表类型")
-    private final Klass sourceReadWriteListType;
-    @EntityField("目标读写列表类型")
-    private final Klass targetReadWriteListType;
+    @ChildEntity("来源类型")
+    private final ClassType sourceType;
+    @ChildEntity("目标类型")
+    private final ClassType targetType;
     @ChildEntity("元素嵌套映射")
     private final NestedMapping elementNestedMapping;
 
-    public ListNestedMapping(Klass sourceKlass, Klass targetKlass, Klass sourceReadWriteListType,
-                             Klass targetReadWriteListType, NestedMapping elementNestedMapping) {
-        this.sourceKlass = sourceKlass;
-        this.targetKlass = targetKlass;
-        this.sourceReadWriteListType = sourceReadWriteListType;
-        this.targetReadWriteListType = targetReadWriteListType;
+    public ListNestedMapping(ClassType sourceType, ClassType targetType, NestedMapping elementNestedMapping) {
+        this.sourceType = addChild(sourceType.copy(), "sourceType");
+        this.targetType = addChild(targetType.copy(), "targetType");
         this.elementNestedMapping = addChild(elementNestedMapping, "elementNestedMapping");
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
-        var sourceElementType = sourceKlass.getListElementType();
-        var constructor = targetKlass.isEffectiveAbstract() ? targetReadWriteListType.getDefaultConstructor() :
+    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
+        var sourceElementType = sourceType.getListElementType();
+        var targetKlass = targetType.resolve();
+        var constructor = targetKlass.isEffectiveAbstract() ?
+                StandardTypes.getReadWriteListKlass(targetKlass.getListElementType()).getDefaultConstructor() :
                 targetKlass.getDefaultConstructor();
         var targetList = Nodes.newObject(
-                targetKlass.getName() + "列表",
-                null,
+                targetType.getName() + "列表",
                 scope,
                 constructor,
                 List.of(),
@@ -52,23 +49,22 @@ public class ListNestedMapping extends NestedMapping {
         );
         var setSourceFunc = NativeFunctions.setSource();
         Nodes.functionCall(
-                "设置来源" + targetKlass.getName(),
+                "设置来源" + targetType.getName(),
                 scope,
                 setSourceFunc,
                 List.of(
                         Nodes.argument(setSourceFunc, 0, Values.node(targetList)),
                         Nodes.argument(setSourceFunc, 1, getSource.get())
-                ),
-                compositeTypeFacade
+                )
         );
         Nodes.listForEach(
-                "遍历" + sourceKlass.getName(),
+                "遍历" + sourceType.getName(),
                 getSource,
                 (bodyScope, getElement, getIndex) -> {
                     var getTargetElement = elementNestedMapping.generateMappingCode(getElement,
-                            bodyScope, compositeTypeFacade);
+                            bodyScope);
                     var addMethod = targetKlass.getMethodByCodeAndParamTypes("add", List.of(
-                            targetKlass.getListElementType()
+                            targetType.getListElementType()
                     ));
                     Nodes.methodCall(
                             "添加" + sourceElementType.getName(),
@@ -81,8 +77,7 @@ public class ListNestedMapping extends NestedMapping {
                                             0,
                                             getTargetElement.get()
                                     )
-                            ),
-                            compositeTypeFacade
+                            )
                     );
                 },
                 scope
@@ -91,10 +86,11 @@ public class ListNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
+    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
         var isSourcePresent = Nodes.functionCall("来源是否存在", scope, NativeFunctions.isSourcePresent(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())), compositeTypeFacade);
+                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())));
         var branch2sourceNode = new HashMap<Branch, Value>();
+        var sourceKlass = sourceType.resolve();
         var sourceFieldRef = new Object() {
             Field sourceField;
         };
@@ -104,19 +100,18 @@ public class ListNestedMapping extends NestedMapping {
                 scope,
                 Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.trueExpression())),
                 trueBranch -> {
-                    var source = Nodes.functionCall(sourceKlass.getName() + "来源", trueBranch.getScope(),
+                    var source = Nodes.functionCall(sourceType.getName() + "来源", trueBranch.getScope(),
                             NativeFunctions.getSource(),
-                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())), compositeTypeFacade);
+                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())));
                     branch2sourceNode.put(trueBranch, Values.node(source));
                 },
                 falseBranch -> {
                     var source = Nodes.newObject(
-                            sourceKlass.getName() + "新建来源",
-                            null,
+                            sourceType.getName() + "新建来源",
                             falseBranch.getScope(),
-                            sourceKlass.isChildList() ?
+                            sourceType.isChildList() ?
                                     sourceKlass.getDefaultConstructor() :
-                                    sourceReadWriteListType.getDefaultConstructor(),
+                                    StandardTypes.getReadWriteListKlass(sourceKlass.getListElementType()).getDefaultConstructor(),
                             List.of(),
                             false,
                             true
@@ -124,7 +119,7 @@ public class ListNestedMapping extends NestedMapping {
                     branch2sourceNode.put(falseBranch, Values.node(source));
                 },
                 mergeNode -> {
-                    sourceFieldRef.sourceField = FieldBuilder.newBuilder("来源", null, mergeNode.getType().resolve(), sourceKlass.getType())
+                    sourceFieldRef.sourceField = FieldBuilder.newBuilder("来源", null, mergeNode.getType().resolve(), sourceType)
                             .build();
                     new MergeNodeField(sourceFieldRef.sourceField, mergeNode, branch2sourceNode);
                 }
@@ -133,20 +128,19 @@ public class ListNestedMapping extends NestedMapping {
         var sourceField = sourceFieldRef.sourceField;
         var clearMethod = sourceKlass.getMethodByCodeAndParamTypes("clear", List.of());
         Nodes.methodCall(
-                "清空" + sourceKlass.getName(),
+                "清空" + sourceType.getName(),
                 scope,
                 Values.nodeProperty(mergeNode, sourceField),
                 clearMethod,
-                List.of(),
-                compositeTypeFacade
+                List.of()
         );
         Nodes.listForEach(
-                "遍历" + targetKlass.getName(), getView,
+                "遍历" + targetType.getName(), getView,
                 (bodyScope, getElement, getIndex) -> {
-                    var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope, compositeTypeFacade);
-                    var addMethod = sourceKlass.getMethodByCodeAndParamTypes("add", List.of(sourceKlass.getListElementType()));
+                    var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
+                    var addMethod = sourceKlass.getMethodByCodeAndParamTypes("add", List.of(sourceType.getListElementType()));
                     Nodes.methodCall(
-                            "添加元素" + sourceKlass.getName(),
+                            "添加元素" + sourceType.getName(),
                             bodyScope,
                             Values.nodeProperty(mergeNode, sourceField),
                             addMethod,
@@ -156,8 +150,7 @@ public class ListNestedMapping extends NestedMapping {
                                             0,
                                             getSourceElement.get()
                                     )
-                            ),
-                            compositeTypeFacade
+                            )
                     );
                 },
                 scope
@@ -167,19 +160,24 @@ public class ListNestedMapping extends NestedMapping {
 
     @Override
     public Type getTargetType() {
-        return targetKlass.getType();
+        return targetType;
+    }
+
+    @Override
+    public String getText() {
+        return "{\"kind\": \"List\", \"sourceType\": \"" + sourceType.getTypeDesc() + "\", \"targetType\": \"" + targetType.getTypeDesc() + "\", \"elementMapping\": "
+                + elementNestedMapping.getText() + "}";
     }
 
     @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof ListNestedMapping that)) return false;
-        if (!super.equals(object)) return false;
-        return Objects.equals(sourceKlass, that.sourceKlass) && Objects.equals(targetKlass, that.targetKlass) && Objects.equals(elementNestedMapping, that.elementNestedMapping);
+        return Objects.equals(sourceType, that.sourceType) && Objects.equals(targetType, that.targetType) && Objects.equals(elementNestedMapping, that.elementNestedMapping);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), sourceKlass, targetKlass, elementNestedMapping);
+        return Objects.hash(sourceType, targetType, elementNestedMapping);
     }
 }

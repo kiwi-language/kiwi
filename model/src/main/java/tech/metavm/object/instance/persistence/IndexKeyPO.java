@@ -3,8 +3,11 @@ package tech.metavm.object.instance.persistence;
 import com.google.common.primitives.UnsignedBytes;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.util.BytesUtils;
+import tech.metavm.util.NncUtils;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class IndexKeyPO implements Comparable<IndexKeyPO> {
 
@@ -172,25 +175,24 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IndexKeyPO that = (IndexKeyPO) o;
-        if(Arrays.equals(indexId, that.indexId)) {
+        if (Arrays.equals(indexId, that.indexId)) {
             for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
-                if(!Arrays.equals(columns[i], that.columns[i]))
+                if (!Arrays.equals(columns[i], that.columns[i]))
                     return false;
             }
             return true;
-        }
-        else
+        } else
             return false;
     }
 
     @Override
     public int hashCode() {
         int h = hash;
-        if(h == 0 && !hashIsZero) {
+        if (h == 0 && !hashIsZero) {
             h = Arrays.hashCode(indexId);
             for (int i = 0; i < MAX_KEY_COLUMNS; i++)
                 h = 31 * h + Arrays.hashCode(columns[i]);
-            if(h == 0)
+            if (h == 0)
                 hashIsZero = true;
             else
                 hash = h;
@@ -200,10 +202,9 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
 
     @Override
     public String toString() {
-        return "IndexKeyPO{" +
-                "indexId=" + Id.fromBytes(indexId) +
-                ", columns=" + Arrays.toString(columns) +
-                '}';
+        var indexIdStr = Id.fromBytes(indexId);
+        var fields = NncUtils.map(columns, BytesUtils::readIndexBytes);
+        return "{\"indexId: \"" + indexIdStr + "\", \"fields\": [" + NncUtils.join(fields, Objects::toString) + "]}";
     }
 
     public IndexKeyPO copy() {
@@ -216,13 +217,13 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
     @Override
     public int compareTo(@NotNull IndexKeyPO o) {
         var indexCmpResult = UnsignedBytes.lexicographicalComparator().compare(indexId, o.indexId);
-        if(indexCmpResult != 0)
+        if (indexCmpResult != 0)
             return indexCmpResult;
 //        if(!Arrays.equals(indexId, o.indexId))
 //            throw new RuntimeException("Can not compare keys from different indexes");
         for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
             var cmp = UnsignedBytes.lexicographicalComparator().compare(columns[i], o.columns[i]);
-            if(cmp != 0)
+            if (cmp != 0)
                 return cmp;
         }
         return 0;

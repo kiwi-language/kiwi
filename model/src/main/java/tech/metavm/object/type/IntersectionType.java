@@ -1,10 +1,10 @@
 package tech.metavm.object.type;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.IntersectionTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.object.type.rest.dto.TypeKeyCodes;
 import tech.metavm.object.type.rest.dto.TypeParam;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
@@ -12,21 +12,21 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Function;
 
 @EntityType("类型交集")
 public class IntersectionType extends CompositeType {
 
-    public static final IndexDef<IntersectionType> KEY_IDX = new IndexDef<>(IntersectionType.class, "key");
-
     @ChildEntity("类型列表")
-    private final ReadWriteArray<Type> types = addChild(new ReadWriteArray<>(Type.class), "types");
+    private final ChildArray<Type> types = addChild(new ChildArray<>(Type.class), "types");
 
     private transient Set<Type> typeSet;
 
-    public IntersectionType(Long tmpId, Set<Type> types) {
+    public IntersectionType(Set<Type> types) {
         super(getName(types), getCode(types), false, false, TypeCategory.INTERSECTION);
-        setTmpId(tmpId);
-        this.types.addAll(NncUtils.map(types, Type::copy));
+        if(types.isEmpty())
+            throw new IllegalArgumentException("types can not be empty");
+        this.types.addChildren(NncUtils.map(types, Type::copy));
     }
 
     private static String getName(Iterable<Type> types) {
@@ -41,8 +41,8 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
-    public TypeKey toTypeKey() {
-        return new IntersectionTypeKey(new HashSet<>(NncUtils.map(types, Type::toTypeKey)));
+    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+        return new IntersectionTypeKey(new HashSet<>(NncUtils.map(types, type -> type.toTypeKey(getTypeDefId))));
     }
 
     @Override
@@ -51,8 +51,13 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitIntersectionType(this, s);
+    }
+
+    @Override
     public List<Type> getComponentTypes() {
-        return Collections.unmodifiableList(types);
+        return Collections.unmodifiableList(types.toList());
     }
 
     @Override
@@ -62,22 +67,35 @@ public class IntersectionType extends CompositeType {
 
     @Override
     public List<? extends Type> getSuperTypes() {
-        return Collections.unmodifiableList(types);
+        return Collections.unmodifiableList(types.toList());
     }
 
     @Override
-    public String getGlobalKey(@NotNull BuildKeyContext context) {
-        List<String> memberCanonicalNames = NncUtils.mapAndSort(
-                types,
-                object -> context.getModelName(object,this),
-                String::compareTo
-        );
-        return String.join("&", memberCanonicalNames);
+    public String getName() {
+        return NncUtils.join(types, Type::getName, "&");
     }
 
     @Override
     public String getTypeDesc() {
         return NncUtils.join(types, Type::getTypeDesc, "&");
+    }
+
+    @Nullable
+    @Override
+    public String getCode() {
+        if(NncUtils.anyMatch(types, t -> t.getCode() == null))
+            return null;
+        return NncUtils.join(types, Type::getCode, "&");
+    }
+
+    @Override
+    public TypeCategory getCategory() {
+        return TypeCategory.INTERSECTION;
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return false;
     }
 
     @Override
@@ -87,16 +105,7 @@ public class IntersectionType extends CompositeType {
     }
 
     public Set<Type> getTypes() {
-        return new HashSet<>(types);
-    }
-
-    @Override
-    protected String getKey() {
-        return getKey(types);
-    }
-
-    public static String getKey(List<Type> componentTypes) {
-        return CompositeType.getKey(NncUtils.sort(componentTypes, Comparator.comparing(Entity::getId)));
+        return new HashSet<>(types.toList());
     }
 
     @Override
@@ -106,12 +115,17 @@ public class IntersectionType extends CompositeType {
 
     @Override
     public IntersectionType copy() {
-        return new IntersectionType(null, NncUtils.mapUnique(types, Type::copy));
+        return new IntersectionType(NncUtils.mapUnique(types, Type::copy));
     }
 
     @Override
-    public String toTypeExpression(SerializeContext serializeContext) {
-        return NncUtils.join(types, type -> type.toTypeExpression(serializeContext), "&");
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+        return NncUtils.join(types, type -> type.toExpression(serializeContext, getTypeDefExpr), "&");
+    }
+
+    @Override
+    public int getTypeKeyCode() {
+        return TypeKeyCodes.INTERSECTION;
     }
 
     @Override
@@ -124,17 +138,17 @@ public class IntersectionType extends CompositeType {
         var types = new HashSet<Type>();
         for (int i = 0; i < input.readInt(); i++)
             types.add(Type.readType(input, typeDefProvider));
-        return new IntersectionType(null, types);
+        return new IntersectionType(types);
     }
 
     @Override
-    public boolean equals(Object obj) {
+    protected boolean equals0(Object obj) {
         return obj instanceof IntersectionType that && typeSet().equals(that.typeSet());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), typeSet());
+        return Objects.hash(typeSet());
     }
 
     private Set<Type> typeSet() {

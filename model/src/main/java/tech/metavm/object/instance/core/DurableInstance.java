@@ -8,6 +8,7 @@ import tech.metavm.entity.Tree;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
+import tech.metavm.object.view.rest.dto.MappingKey;
 import tech.metavm.system.RegionConstants;
 import tech.metavm.util.*;
 
@@ -119,9 +120,9 @@ public abstract class DurableInstance extends Instance {
         return sourceRef != null;
     }
 
-    public Id getMappingId() {
+    public MappingKey getMappingKey() {
         if (tryGetId() instanceof ViewId viewId) {
-            return viewId.getMappingId();
+            return viewId.getMappingKey();
         } else
             throw new InternalException("Not a view instance");
     }
@@ -137,7 +138,7 @@ public abstract class DurableInstance extends Instance {
     }
 
     public Id getId() {
-        return requireNonNull(id);
+        return requireNonNull(id, () -> Instances.getInstancePath(this) + " id not initialized yet");
     }
 
     public String getStringId() {
@@ -194,7 +195,12 @@ public abstract class DurableInstance extends Instance {
         if (this.parent != null) {
             if (this.parent == parent && Objects.equals(this.parentField, parentField))
                 return;
-            throw new InternalException("Can not change parent");
+            throw new InternalException("Can not change parent of " + Instances.getInstanceDesc(this)
+                    + ", current parent: " + Instances.getInstancePath(this.parent)
+                    + ", current parentField: " + this.parentField
+                    + ", new parent: " + Instances.getInstancePath(parent)
+                    + ", new parentField: " + parentField
+            );
         }
         setParentInternal(parent, parentField);
     }
@@ -215,7 +221,7 @@ public abstract class DurableInstance extends Instance {
             this.parent = parent;
             if (parent instanceof ClassInstance parentClassInst) {
                 this.parentField = requireNonNull(parentField);
-                assert parentField.isChild();
+                assert parentField.isChild() : "Invalid parent field: " + parentField;
 //                parentClassInst.setOrInitField(parentField, this);
             } else if (parent instanceof ArrayInstance parentArray) {
                 NncUtils.requireNull(parentField);

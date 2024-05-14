@@ -6,6 +6,7 @@ import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.FunctionTypeKey;
 import tech.metavm.object.type.rest.dto.FunctionTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.object.type.rest.dto.TypeKeyCodes;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.NncUtils;
@@ -14,31 +15,23 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 @EntityType("函数类型")
 public class FunctionType extends CompositeType {
 
-    public static final IndexDef<FunctionType> KEY_IDX = IndexDef.createUnique(
-            FunctionType.class, "key");
+    public static final IndexDef<FunctionType> PARAMETER_TYPE_KEY = IndexDef.create(FunctionType.class, "parameterTypes");
 
-    public static final IndexDef<FunctionType> PARAMETER_TYPE_KEY = IndexDef.create(
-            FunctionType.class, "parameterTypes"
-    );
+    public static final IndexDef<FunctionType> RETURN_TYPE_KEY = IndexDef.create(FunctionType.class, "returnType");
 
-    public static final IndexDef<FunctionType> RETURN_TYPE_KEY = IndexDef.create(
-            FunctionType.class, "returnType"
-    );
-
-
-    @EntityField("返回类型")
+    @ChildEntity("返回类型")
     private Type returnType;
 
     @ChildEntity("参数类型列表")
     private final ChildArray<Type> parameterTypes = addChild(new ChildArray<>(Type.class), "parameterTypes");
 
-    public FunctionType(Long tmpId, List<Type> parameterTypes, Type returnType) {
+    public FunctionType(List<Type> parameterTypes, @NotNull Type returnType) {
         super(getName(parameterTypes, returnType), getCode(parameterTypes, returnType), false, true, TypeCategory.FUNCTION);
-        setTmpId(tmpId);
         this.parameterTypes.addChildren(NncUtils.map(parameterTypes, Type::copy));
         this.returnType = addChild(returnType.copy(), "returnType");
     }
@@ -56,8 +49,8 @@ public class FunctionType extends CompositeType {
 
 
     @Override
-    public TypeKey toTypeKey() {
-        return new FunctionTypeKey(NncUtils.map(parameterTypes, Type::toTypeKey), returnType.toTypeKey());
+    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+        return new FunctionTypeKey(NncUtils.map(parameterTypes, type -> type.toTypeKey(getTypeDefId)), returnType.toTypeKey(getTypeDefId));
     }
 
     @Override
@@ -73,6 +66,11 @@ public class FunctionType extends CompositeType {
             }
         }
         return false;
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitFunctionType(this, s);
     }
 
     public void setReturnType(Type returnType) {
@@ -102,19 +100,36 @@ public class FunctionType extends CompositeType {
     }
 
     @Override
+    public String getName() {
+        return "(" + NncUtils.join(parameterTypes, Type::getName) + ")->" + returnType.getName();
+    }
+
+    @Override
     public String getTypeDesc() {
         return "(" + NncUtils.join(parameterTypes, Type::getTypeDesc) + ")" + "->" + returnType.getTypeDesc();
+    }
+
+    @Nullable
+    @Override
+    public String getCode() {
+        if(returnType.getCode() == null || NncUtils.anyMatch(parameterTypes, t -> t.getCode() == null))
+            return null;
+        return "(" + NncUtils.join(parameterTypes, Type::getCode) + ")->" + returnType.getCode();
+    }
+
+    @Override
+    public TypeCategory getCategory() {
+        return TypeCategory.FUNCTION;
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return false;
     }
 
     @Override
     public List<Type> getComponentTypes() {
         return NncUtils.append(getParameterTypes(), returnType);
-    }
-
-    @Override
-    public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return "(" + NncUtils.join(parameterTypes, object -> context.getModelName(object, this)) + ")"
-                + "->" + context.getModelName(returnType, this);
     }
 
     @Override
@@ -130,12 +145,17 @@ public class FunctionType extends CompositeType {
 
     @Override
     public FunctionType copy() {
-        return new FunctionType(null, NncUtils.map(parameterTypes, Type::copy), returnType.copy());
+        return new FunctionType(NncUtils.map(parameterTypes, Type::copy), returnType.copy());
     }
 
     @Override
-    public String toTypeExpression(SerializeContext serializeContext) {
-        return "(" + NncUtils.join(parameterTypes, type -> type.toTypeExpression(serializeContext)) + ")" + "->" + returnType.toTypeExpression(serializeContext);
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+        return "(" + NncUtils.join(parameterTypes, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ")" + "->" + returnType.toExpression(serializeContext, getTypeDefExpr);
+    }
+
+    @Override
+    public int getTypeKeyCode() {
+        return TypeKeyCodes.FUNCTION;
     }
 
     @Override
@@ -149,11 +169,11 @@ public class FunctionType extends CompositeType {
         var paramTypes = new ArrayList<Type>();
         for (int i = 0; i < input.readInt(); i++)
             paramTypes.add(Type.readType(input, typeDefProvider));
-        return new FunctionType(null, paramTypes, Type.readType(input, typeDefProvider));
+        return new FunctionType(paramTypes, Type.readType(input, typeDefProvider));
     }
 
     @Override
-    public boolean equals(Object obj) {
+    protected boolean equals0(Object obj) {
         return obj instanceof FunctionType that && parameterTypes.equals(that.parameterTypes) && returnType.equals(that.returnType);
     }
 

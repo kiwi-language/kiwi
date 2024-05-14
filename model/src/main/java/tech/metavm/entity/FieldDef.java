@@ -6,24 +6,23 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.ReflectionUtils;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 
 public class FieldDef implements IFieldDef {
 
     private final Field javaField;
-    private final boolean nullable;
     private final PojoDef<?> declaringTypeDef;
     private final tech.metavm.object.type.Field field;
-    private final ModelDef<?, ?> targetDef;
+    private final @Nullable Mapper<?, ?> targetMapper;
 
     public FieldDef(tech.metavm.object.type.Field field,
                     boolean nullable,
                     Field javaField,
                     PojoDef<?> declaringTypeDef,
-                    ModelDef<?, ?> targetDef) {
+                    @Nullable Mapper<?, ?> targetMapper) {
         this.javaField = javaField;
-        this.nullable = nullable;
-        this.targetDef = targetDef;
+        this.targetMapper = targetMapper;
         this.declaringTypeDef = declaringTypeDef;
         this.field = field;
         declaringTypeDef.addFieldDef(this);
@@ -38,9 +37,9 @@ public class FieldDef implements IFieldDef {
     @Override
     public Object getModelFieldValue(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         Instance fieldValue = instance.getField(field);
-        if (targetDef instanceof InstanceDef<?> || targetDef instanceof InstanceCollectionDef<?, ?>) {
+        if (targetMapper instanceof InstanceArrayMapper<?, ?>) {
 //            noinspection rawtypes,unchecked
-            return objectInstanceMap.getEntity(javaField.getType(), fieldValue, (ModelDef) targetDef);
+            return objectInstanceMap.getEntity(javaField.getType(), fieldValue, (Mapper) targetMapper);
         }
         return objectInstanceMap.getEntity(javaField.getType(), fieldValue);
     }
@@ -77,9 +76,4 @@ public class FieldDef implements IFieldDef {
         return field.getName();
     }
 
-    @JsonIgnore
-    @SuppressWarnings("unused")
-    public ModelDef<?, ?> getTargetDef() {
-        return targetDef;
-    }
 }

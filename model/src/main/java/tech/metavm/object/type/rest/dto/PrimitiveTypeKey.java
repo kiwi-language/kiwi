@@ -46,4 +46,14 @@ public record PrimitiveTypeKey(int kind) implements TypeKey {
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
 
     }
+
+    @Override
+    public int getCode() {
+        return getTypeKeyCode(kind);
+    }
+
+    public static int getTypeKeyCode(int kind) {
+        return typeKeyCodesMap[kind];
+    }
+
 }

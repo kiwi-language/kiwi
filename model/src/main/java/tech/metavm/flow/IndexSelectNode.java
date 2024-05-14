@@ -13,6 +13,8 @@ import tech.metavm.object.type.Index;
 
 import javax.annotation.Nullable;
 
+import java.util.List;
+
 import static java.util.Objects.requireNonNull;
 
 @EntityType("索引查询节点")
@@ -22,7 +24,7 @@ public class IndexSelectNode extends NodeRT {
         var param = (IndexSelectNodeParam) nodeDTO.param();
         var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var type = context.getReadWriteListType(index.getDeclaringType().getType()).getType();
+        var type = new ClassType(StandardTypes.getReadWriteListKlass(), List.of(index.getDeclaringType().getType()));
         var key = IndexQueryKey.create(param.key(), context, parsingContext);
         var node = (IndexSelectNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null) {
@@ -74,8 +76,7 @@ public class IndexSelectNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var result = frame.instanceRepository().indexSelect(key.buildIndexKey(frame));
-        var klass = getType().resolve();
-        var list = ClassInstance.allocate(klass);
+        var list = ClassInstance.allocate(getType());
         var listNative = new ListNative(list);
         listNative.List(frame);
         result.forEach(e -> listNative.add(e, frame));

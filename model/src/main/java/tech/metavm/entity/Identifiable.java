@@ -4,6 +4,7 @@ import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public interface Identifiable {
 
@@ -13,7 +14,7 @@ public interface Identifiable {
 
     @NoProxy
     default Id getId() {
-        return NncUtils.requireNonNull(tryGetId());
+        return Objects.requireNonNull(tryGetId(), () -> EntityUtils.getEntityDesc(this) + " id not initialized");
     }
 
     @NoProxy

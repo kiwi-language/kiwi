@@ -8,12 +8,9 @@ import tech.metavm.object.type.mocks.TypeProviders;
 
 public class ExpressionResolverTest extends TestCase {
 
-    private TypeProviders typeProviders;
-
     @Override
     protected void setUp() throws Exception {
         MockStandardTypesInitializer.init();
-        typeProviders = new TypeProviders();
     }
 
     public void testNewArrayList() {

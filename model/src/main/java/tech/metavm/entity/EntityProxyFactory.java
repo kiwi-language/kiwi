@@ -110,7 +110,7 @@ public class EntityProxyFactory {
         } catch (ClassCastException e) {
             if (EntityProxyFactory.isDummy(object)) {
                 throw new InternalException("Trying to get handler from a dummy object, " +
-                        "dummy source: " + EntityUtils.getEntityDesc(EntityProxyFactory.getDummyExtra(object))
+                        "dummy source: " + EntityUtils.getEntityPath(EntityProxyFactory.getDummyExtra(object))
                 );
             } else
                 throw e;

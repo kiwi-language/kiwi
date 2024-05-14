@@ -42,7 +42,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
             var instance = context.get(ver.id());
             if (instance instanceof ClassInstance classInstance) {
                 instanceMap.put(classInstance.getId(), classInstance);
-                PersistenceUtils.forEachIndexEntries(classInstance, context.parameterizedFlowProvider(), context.getAppId(),
+                PersistenceUtils.forEachIndexEntries(classInstance, context.getAppId(),
                         currentEntries::add,
                         entry -> {
                             if (!currentUniqueKeys.add(entry.getKey()))

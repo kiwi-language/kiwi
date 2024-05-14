@@ -38,7 +38,12 @@ public class ExpressionParser {
     }
 
     public static Expression parse(@NotNull String expression, @Nullable Type assignedType, @NotNull ParsingContext context) {
-        return new ExpressionParser(expression, context).parse(assignedType);
+        try {
+            return new ExpressionParser(expression, context).parse(assignedType);
+        }
+        catch (Exception e) {
+            throw new InternalException("fail to parse expression " + expression, e);
+        }
     }
 
     private final String expression;
@@ -150,7 +155,7 @@ public class ExpressionParser {
         Field field = identifier.startsWith(Constants.CONSTANT_ID_PREFIX) ?
                 klass.getField(Id.parse(identifier.substring(Constants.CONSTANT_ID_PREFIX.length()))) :
                 klass.getFieldByName(identifier);
-        return new StaticPropertyExpression(field);
+        return new StaticPropertyExpression(field.getRef());
     }
 
     private Expression parseArrayAccess(MetaVMParser.ExpressionContext expression) {
@@ -194,8 +199,7 @@ public class ExpressionParser {
             case MetaVMParser.QUESTION -> ConditionalExpression.create(
                     parse(expression.expression(0)),
                     parse(expression.expression(1)),
-                    parse(expression.expression(2)),
-                    context.getUnionTypeProvider()
+                    parse(expression.expression(2))
             );
             default -> new BinaryExpression(
                     BinaryOperator.getByOp(bop.getText(), OperatorTypes.BINARY),

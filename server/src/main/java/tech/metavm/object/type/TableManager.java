@@ -49,13 +49,13 @@ public class TableManager extends EntityContextFactoryBean {
                 .ephemeral(table.ephemeral())
                 .anonymous(table.anonymous())
                 .build();
-        Klass type = typeManager.saveType(typeDTO, context);
+        var klass = typeManager.saveType(typeDTO, context);
         context.initIds();
-        NncUtils.map(table.fields(), column -> saveField(column, type.getType(), context));
-        saveTitleField(table.titleField(), type, context);
+        NncUtils.map(table.fields(), column -> saveField(column, klass, context));
+        saveTitleField(table.titleField(), klass, context);
         context.finish();
         try(var serContext = SerializeContext.enter()) {
-            return convertToTable(type.toDTO(serContext), context);
+            return convertToTable(klass.toDTO(serContext), context);
         }
     }
 
@@ -87,8 +87,8 @@ public class TableManager extends EntityContextFactoryBean {
     public String saveColumn(ColumnDTO column) {
         requireNonNull(column.ownerId(), () -> BusinessException.invalidParams("表格ID必填"));
         IEntityContext context = newContext();
-        Klass declaringType = context.getKlass(Id.parse(column.ownerId()));
-        Field field = saveField(column, declaringType.getType(), context);
+        var declaringType = context.getKlass(Id.parse(column.ownerId()));
+        Field field = saveField(column, declaringType, context);
         context.finish();
         return field.getStringId();
     }
@@ -99,14 +99,14 @@ public class TableManager extends EntityContextFactoryBean {
             if (fieldDTO == null || !isVisible(fieldDTO, context)) {
                 return null;
             }
-            return convertToColumnDTO(fieldDTO, context.getType(Id.parse(fieldDTO.typeId())));
+            return convertToColumnDTO(fieldDTO, TypeParser.parse(fieldDTO.type(), context));
         }
     }
 
-    private EnumEditContext saveEnum(Type declaringType, ColumnDTO fieldEdit, IEntityContext context) {
+    private EnumEditContext saveEnum(Klass declaringKlass, ColumnDTO fieldEdit, IEntityContext context) {
         EnumEditContext enumEditContext = new EnumEditContext(
                 fieldEdit.targetId(),
-                declaringType.getName() + "_" + fieldEdit.name(),
+                declaringKlass.getName() + "_" + fieldEdit.name(),
                 true,
                 fieldEdit.choiceOptions(),
                 context
@@ -115,11 +115,11 @@ public class TableManager extends EntityContextFactoryBean {
         return enumEditContext;
     }
 
-    private Field saveField(ColumnDTO column, Type declaringType, IEntityContext context) {
+    private Field saveField(ColumnDTO column, Klass declaringKlass, IEntityContext context) {
         Type type;
         FieldValue defaultValue;
         if (column.type() == ColumnType.ENUM.code) {
-            EnumEditContext enumEditContext = saveEnum(declaringType, column, context);
+            EnumEditContext enumEditContext = saveEnum(declaringKlass, column, context);
             type = getType(column, enumEditContext.getType().getType(), context);
             defaultValue = column.multiValued() ?
                     new ArrayFieldValue(
@@ -129,16 +129,16 @@ public class TableManager extends EntityContextFactoryBean {
                     )
                     : NncUtils.first(enumEditContext.getDefaultOptions(), enumConstantRT1 -> enumConstantRT1.toFieldValue(context.getInstanceContext()));
         } else {
-            type = getType(column, NncUtils.get(column.targetId(), id -> context.getType(Id.parse(id))), context);
+            type = getType(column, NncUtils.get(column.targetId(), id -> TypeParser.parse(id, context)), context);
             defaultValue = column.defaultValue();
         }
         return typeManager.saveField(
-                FieldDTOBuilder.newBuilder(column.name(), type.getStringId())
+                FieldDTOBuilder.newBuilder(column.name(), type.toExpression())
                         .id(column.id())
                         .access(column.access())
                         .defaultValue(defaultValue)
                         .unique(column.unique())
-                        .declaringTypeId(declaringType.getStringId())
+                        .declaringTypeId(declaringKlass.getStringId())
                         .build(),
                 context
         );
@@ -198,7 +198,7 @@ public class TableManager extends EntityContextFactoryBean {
         if (isDouble(type)) {
             return ColumnType.DOUBLE;
         }
-        if (isBool(type)) {
+        if (isBoolean(type)) {
             return ColumnType.BOOL;
         }
         if (isString(type)) {
@@ -262,10 +262,10 @@ public class TableManager extends EntityContextFactoryBean {
         if (concreteType != null) {
             type = concreteType;
             if (multiValued) {
-                type = context.getArrayType(type, ArrayKind.READ_WRITE);
+                type = new ArrayType(type, ArrayKind.READ_WRITE);
             }
             if (!required) {
-                type = context.getNullableType(type);
+                type = StandardTypes.getNullableType(type);
             }
         } else {
             throw BusinessException.invalidColumn(name, "未选择列类型或未选择关联表格");
@@ -310,8 +310,7 @@ public class TableManager extends EntityContextFactoryBean {
                 NncUtils.filterAndMap(
                         param.fields(),
                         f -> isVisible(f, context),
-                        f -> convertToColumnDTO(f, context.getType(Id.parse(f.typeId()))
-                        )
+                        f -> convertToColumnDTO(f, TypeParser.parse(f.type(), context))
                 )
         );
     }
@@ -319,18 +318,20 @@ public class TableManager extends EntityContextFactoryBean {
     private static final Set<Class<?>> CONFIDENTIAL_JAVA_CLASSES = Set.of(Password.class);
 
     private boolean isVisible(FieldDTO fieldDTO, IEntityContext context) {
-        NncUtils.requireNonNull(fieldDTO.typeId(), "字段'" + fieldDTO.name() + "'的typeId为空");
-        Type fieldType = context.getType(Id.parse(fieldDTO.typeId()));
-        if (ModelDefRegistry.containsDef(fieldType)) {
-            Class<?> javaClass = ModelDefRegistry.getJavaClass(fieldType);
-            return !CONFIDENTIAL_JAVA_CLASSES.contains(javaClass);
-        } else {
-            return true;
+        NncUtils.requireNonNull(fieldDTO.type(), "字段'" + fieldDTO.name() + "'的typeId为空");
+        Type fieldType = TypeParser.parse(fieldDTO.type(), context);
+        if (fieldType instanceof ClassType classType) {
+            var klass = classType.resolve();
+            if(ModelDefRegistry.containsDef(klass)) {
+                Class<?> javaClass = ModelDefRegistry.getJavaClass(fieldType);
+                return !CONFIDENTIAL_JAVA_CLASSES.contains(javaClass);
+            }
         }
+        return true;
     }
 
     private TitleFieldDTO convertToTitleField(FieldDTO fieldDTO, IEntityContext context) {
-        Type fieldType = context.getType(Id.parse(fieldDTO.typeId()));
+        Type fieldType = TypeParser.parse(fieldDTO.type(), context);
         return new TitleFieldDTO(
                 null,
                 fieldDTO.name(),

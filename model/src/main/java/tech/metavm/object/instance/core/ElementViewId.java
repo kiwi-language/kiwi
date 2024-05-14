@@ -3,6 +3,7 @@ package tech.metavm.object.instance.core;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.object.view.rest.dto.MappingKey;
 import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
@@ -12,8 +13,8 @@ public class ElementViewId extends PathViewId {
 
     private final int index;
 
-    public ElementViewId(boolean isArray, ViewId parent, @Nullable Id mappingId, int index, @Nullable Id sourceId, TypeKey type) {
-        super(isArray, parent, mappingId, sourceId, type);
+    public ElementViewId(boolean isArray, ViewId parent, @Nullable MappingKey mappingKey, int index, @Nullable Id sourceId, TypeKey type) {
+        super(isArray, parent, mappingKey, sourceId, type);
         this.index = index;
     }
 
@@ -21,7 +22,7 @@ public class ElementViewId extends PathViewId {
     public void write(InstanceOutput output) {
         output.writeIdTag(IdTag.ELEMENT_VIEW, isArray());
         getParent().write(output);
-        writeMappingId(output);
+        writeMappingKey(output);
         output.writeInt(index);
         writeSourceId(output);
         getTypeKey().write(output);

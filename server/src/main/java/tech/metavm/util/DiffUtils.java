@@ -260,10 +260,6 @@ public class DiffUtils {
         return (T) copyPojo(pojo, new IdentityHashMap<>(), true);
     }
 
-    public static Value copyValue(Value value) {
-        return (Value) copyPojo(value, new IdentityHashMap<>(), true);
-    }
-
     private enum DiffState {
         DOING,
         DONE

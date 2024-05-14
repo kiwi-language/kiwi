@@ -1,7 +1,9 @@
 package tech.metavm.object.type;
 
+import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.antlr.TypeLexer;
 import tech.metavm.util.Constants;
@@ -20,10 +22,16 @@ public class TypeParserImpl implements TypeParser {
     }
 
     @Override
-    public Type parse(String expression) {
+    public Type parse(@NotNull String expression) {
         var input = CharStreams.fromString(expression);
         var parser = new tech.metavm.object.type.antlr.TypeParser(new CommonTokenStream(new TypeLexer(input)));
-        return parseType(parser.type());
+        parser.setErrorHandler(new BailErrorStrategy());
+        try {
+            return parseType(parser.type());
+        }
+        catch (Exception e) {
+            throw new InternalException("Fail to parse expression: " + expression, e);
+        }
     }
 
     private Type parseType(tech.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
@@ -43,12 +51,12 @@ public class TypeParserImpl implements TypeParser {
             return parseVariableType(ctx.variableType());
         if(ctx.LBRACK() != null)
             return parseUncertainType(ctx);
-        if(ctx.BITOR() != null)
-            return parseUnionType(ctx);
-        if(ctx.BITAND() != null)
-            return parseIntersectionType(ctx);
         if(ctx.NUM() != null)
             return parseCapturedType(ctx);
+        if(!ctx.BITOR().isEmpty())
+            return parseUnionType(ctx);
+        if(!ctx.BITAND().isEmpty())
+            return parseIntersectionType(ctx);
         throw new IllegalArgumentException("Unknown type: " + ctx.getText());
     }
 
@@ -71,27 +79,29 @@ public class TypeParserImpl implements TypeParser {
             return new PrimitiveType(PrimitiveKind.TIME);
         if(ctx.PASSWORD() != null)
             return new PrimitiveType(PrimitiveKind.PASSWORD);
+        if(ctx.NULL() != null)
+            return new PrimitiveType(PrimitiveKind.NULL);
         throw new IllegalArgumentException("Unknown primitive type: " + ctx.getText());
     }
 
     private FunctionType parseFunctionType(tech.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new FunctionType(null, parseTypeList(ctx.typeList()), parseType(ctx.type(0)));
+        return new FunctionType(parseTypeList(ctx.typeList()), parseType(ctx.type(0)));
     }
 
     private ArrayType parseArrayType(tech.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new ArrayType(null, parseType(ctx.elementType), parseArrayKind(ctx.arrayKind()));
+        return new ArrayType(parseType(ctx.elementType), parseArrayKind(ctx.arrayKind()));
     }
 
     private UncertainType parseUncertainType(tech.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new UncertainType(null, parseType(ctx.type(0)), parseType(ctx.type(1)));
+        return new UncertainType(parseType(ctx.type(0)), parseType(ctx.type(1)));
     }
 
     private UnionType parseUnionType(tech.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new UnionType(null, NncUtils.mapUnique(ctx.type(), this::parseType));
+        return new UnionType(NncUtils.mapUnique(ctx.type(), this::parseType));
     }
 
     private IntersectionType parseIntersectionType(tech.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new IntersectionType(null, NncUtils.mapUnique(ctx.type(), this::parseType));
+        return new IntersectionType(NncUtils.mapUnique(ctx.type(), this::parseType));
     }
 
     private ClassType parseClassType(tech.metavm.object.type.antlr.TypeParser.ClassTypeContext ctx) {

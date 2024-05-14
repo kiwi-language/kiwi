@@ -17,13 +17,13 @@ public class ArrayTypeTest extends TestCase {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build().getType();
         Assert.assertTrue(anyType.isAssignableFrom(fooType));
 
-        var objectArrayType = new ArrayType(null, anyType, ArrayKind.READ_WRITE);
-        var fooArrayType = new ArrayType(null, fooType, ArrayKind.READ_WRITE);
+        var objectArrayType = new ArrayType(anyType, ArrayKind.READ_WRITE);
+        var fooArrayType = new ArrayType(fooType, ArrayKind.READ_WRITE);
 
         Assert.assertFalse(objectArrayType.isAssignableFrom(fooArrayType));
         Assert.assertTrue(anyType.isAssignableFrom(objectArrayType));
 
-        var fooChildArrayType = new ArrayType(null, fooType, ArrayKind.CHILD);
+        var fooChildArrayType = new ArrayType(fooType, ArrayKind.CHILD);
         Assert.assertTrue(fooArrayType.isAssignableFrom(fooChildArrayType));
         Assert.assertFalse(fooChildArrayType.isAssignableFrom(fooArrayType));
     }

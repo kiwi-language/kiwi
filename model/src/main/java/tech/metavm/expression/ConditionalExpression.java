@@ -3,13 +3,11 @@ package tech.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.Types;
-import tech.metavm.object.type.UnionTypeProvider;
 
 import java.util.List;
 import java.util.Objects;
@@ -20,10 +18,9 @@ public class ConditionalExpression extends Expression {
 
     public static ConditionalExpression create(@NotNull Expression condition,
                                                @NotNull Expression trueValue,
-                                               @NotNull Expression falseValue,
-                                               UnionTypeProvider unionTypeProvider) {
+                                               @NotNull Expression falseValue) {
         return new ConditionalExpression(condition, trueValue, falseValue, Types.getUnionType(
-                Set.of(trueValue.getType(), falseValue.getType()), unionTypeProvider));
+                Set.of(trueValue.getType(), falseValue.getType())));
     }
 
     @ChildEntity("条件")
@@ -32,7 +29,7 @@ public class ConditionalExpression extends Expression {
     private final Expression trueValue;
     @ChildEntity("false表达式")
     private final Expression falseValue;
-    @EntityField("类型")
+    @ChildEntity("类型")
     private final Type type;
 
     public ConditionalExpression(@NotNull Expression condition,
@@ -42,7 +39,7 @@ public class ConditionalExpression extends Expression {
         this.condition = addChild(condition.copy(), "condition");
         this.trueValue = addChild(trueValue.copy(), "trueValue");
         this.falseValue = addChild(falseValue.copy(), "falseValue");
-        this.type = type;
+        this.type = addChild(type.copy(), "type");
     }
 
     @Override

@@ -4,14 +4,16 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.*;
-import tech.metavm.expression.*;
+import tech.metavm.entity.MockStandardTypesInitializer;
+import tech.metavm.entity.StandardTypes;
+import tech.metavm.expression.AllMatchExpression;
+import tech.metavm.expression.ExpressionParser;
+import tech.metavm.expression.TypeParsingContext;
+import tech.metavm.expression.VarType;
 import tech.metavm.object.instance.core.InstanceProvider;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.mocks.MockArrayTypeProvider;
 import tech.metavm.object.type.mocks.MockTypeDefRepository;
-import tech.metavm.object.type.mocks.MockUnionTypeProvider;
 import tech.metavm.util.TestUtils;
 
 import java.util.List;
@@ -22,15 +24,11 @@ public class ExpressionTypeResolverTest extends TestCase {
 
     private TypeDefRepository typeDefRepository;
     private InstanceProvider instanceProvider;
-    private ArrayTypeProvider arrayTypeProvider;
-    private UnionTypeProvider unionTypeProvider;
 
     @Override
     protected void setUp() throws Exception {
         typeDefRepository = new MockTypeDefRepository();
         instanceProvider = new MockInstanceRepository();
-        arrayTypeProvider = new MockArrayTypeProvider();
-        unionTypeProvider = new MockUnionTypeProvider();
         MockStandardTypesInitializer.init();
     }
 
@@ -49,7 +47,7 @@ public class ExpressionTypeResolverTest extends TestCase {
         var listViewType = ClassTypeBuilder.newBuilder("列表视图", "ListView").build();
         var classTypeType = ClassTypeBuilder.newBuilder("Class类型", "ClassType").build();
         var fieldType = ClassTypeBuilder.newBuilder("字段", "Field").build();
-        var fieldChildArrayType = new ArrayType(null, fieldType.getType(), ArrayKind.CHILD);
+        var fieldChildArrayType = new ArrayType(fieldType.getType(), ArrayKind.CHILD);
         FieldBuilder.newBuilder("可见字段", "visibleFields", listViewType, fieldChildArrayType).build();
         FieldBuilder.newBuilder("类型", "type", listViewType, classTypeType.getType()).build();
         FieldBuilder.newBuilder("所属类型", "declaringType", fieldType, classTypeType.getType()).build();
@@ -63,7 +61,7 @@ public class ExpressionTypeResolverTest extends TestCase {
     }
 
     private TypeParsingContext createTypeParsingContext(Klass type) {
-        return new TypeParsingContext(instanceProvider, typeDefRepository, arrayTypeProvider, unionTypeProvider, type);
+        return new TypeParsingContext(instanceProvider, typeDefRepository, type);
     }
 
 }

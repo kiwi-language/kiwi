@@ -24,19 +24,19 @@ public class RecordDef<T extends Record> extends PojoDef<T> {
     }
 
     @Override
-    public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public void initEntity(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public T createModel(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public T createEntity(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         Object[] fieldValues = NncUtils.map(getFieldDefList(), fieldDef -> fieldDef.getModelFieldValue(instance, objectInstanceMap))
                 .toArray(Object[]::new);
         return ReflectionUtils.invokeConstructor(constructor, fieldValues);
     }
 
     @Override
-    public void updateModel(T pojo, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public void updateEntity(T pojo, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
 
     }
 

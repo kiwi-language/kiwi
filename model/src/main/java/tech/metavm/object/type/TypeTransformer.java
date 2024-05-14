@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-public class TypeTransformer<S> extends DefaulTypeVisitor<Type, S> implements Function<Type, Type> {
+public class TypeTransformer<S> extends DefaultTypeVisitor<Type, S> implements Function<Type, Type> {
 
     public List<Type> visit(List<Type> types, S s) {
         return NncUtils.map(types, t -> visitType(t, s));

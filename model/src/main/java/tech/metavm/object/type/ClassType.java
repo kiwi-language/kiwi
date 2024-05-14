@@ -1,21 +1,27 @@
 package tech.metavm.object.type;
 
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.TypeId;
+import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.type.generic.TypeSubstitutor;
 import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.object.type.rest.dto.ParameterizedTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
-import tech.metavm.object.type.rest.dto.TypeParam;
-import tech.metavm.util.*;
+import tech.metavm.object.type.rest.dto.TypeKeyCodes;
+import tech.metavm.util.Constants;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 @EntityType("ClassType")
 public class ClassType extends Type implements ISubstitutor {
@@ -23,15 +29,14 @@ public class ClassType extends Type implements ISubstitutor {
     public static final Logger logger = LoggerFactory.getLogger(ClassType.class);
 
     private final Klass klass;
+    @ChildEntity("typeArguments")
     private final ChildArray<Type> typeArguments = addChild(new ChildArray<>(Type.class), "typeArguments");
     private transient TypeSubstitutor substitutor;
     private transient Klass resolved;
 
     public ClassType(Klass klass, List<Type> typeArguments) {
-        super(Types.getParameterizedName(klass.getName(), typeArguments),
-                Types.getParameterizedCode(klass.getCode(), typeArguments), false, false, klass.getKind().typeCategory());
-        if (klass.isParameterized())
-            throw new InternalException("Can not use a parameterized klass for a ClassType. klass: " + klass.getTypeDesc());
+//        if (klass.isParameterized())
+//            throw new InternalException("Can not use a parameterized klass for a ClassType. klass: " + klass.getTypeDesc());
 //        if(typeArguments.equals(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType)))
 //            throw new InternalException("Trying to create an raw class type using type arguments for klass: " + klass.getTypeDesc());
         this.klass = klass;
@@ -44,10 +49,10 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     @Override
-    public TypeKey toTypeKey() {
-        return typeArguments.toList().equals(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType)) ?
-                new ClassTypeKey(klass.getStringId()) :
-                new ParameterizedTypeKey(klass.getStringId(), NncUtils.map(typeArguments, Type::toTypeKey));
+    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+        return typeArguments.isEmpty() ?
+                new ClassTypeKey(getTypeDefId.apply(klass)) :
+                new ParameterizedTypeKey(klass.getStringId(), NncUtils.map(typeArguments, type -> type.toTypeKey(getTypeDefId)));
     }
 
     public Klass getKlass() {
@@ -59,11 +64,12 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public Type getListElementType() {
-        return klass.getListElementType();
+        return resolve().getListElementType();
     }
 
     public List<Type> getTypeArguments() {
-        return typeArguments.toList();
+        // the type arguments should be the list of type parameters for a raw ClassType
+        return isParameterized() ? typeArguments.toList() : klass.getTypeArguments();
     }
 
     @Override
@@ -93,21 +99,25 @@ public class ClassType extends Type implements ISubstitutor {
         return false;
     }
 
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitClassType(this, s);
+    }
+
     public boolean isInterface() {
         return klass.isInterface();
     }
 
     public @Nullable ClassType getSuperType() {
-        var rawSuperType = klass.getSuperType();
-        return rawSuperType != null ? (ClassType) substitute(rawSuperType) : null;
+        return resolve().getSuperType();
     }
 
     public List<ClassType> getInterfaces() {
-        return NncUtils.map(klass.getInterfaces(), it -> (ClassType) substitute(it));
+        return resolve().getInterfaces();
     }
 
     public @Nullable ClassType findAncestor(Klass template) {
-        return NncUtils.get(klass.findAncestor(template), a -> (ClassType) substitute(a.getType()));
+        return resolve().findAncestor(template).getType();
     }
 
     @Override
@@ -121,16 +131,20 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public Klass resolve() {
-        if (resolved != null)
+        if (resolved != null) {
             return resolved;
-        if (typeArguments.isEmpty())
-            return resolved = klass;
-        else
+        }
+        if (typeArguments.isEmpty()) {
+            resolved = klass;
+            return klass;
+        }
+        else {
             return resolved = klass.getParameterized(typeArguments.toList());
+        }
     }
 
     @Override
-    public boolean equals(Object obj) {
+    protected boolean equals0(Object obj) {
         return obj instanceof ClassType that && klass == that.klass && typeArguments.equals(that.typeArguments);
     }
 
@@ -140,18 +154,39 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     @Override
-    protected TypeParam getParam(SerializeContext serializeContext) {
-        return null;
+    public boolean isEnum() {
+        return klass.isEnum();
     }
 
     @Override
-    public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return null;
+    public boolean isViewType(Type type) {
+        return resolve().isViewType(type);
+    }
+
+    @Override
+    public String getName() {
+        return Types.getParameterizedName(klass.getName(), typeArguments.toList());
+    }
+
+    @Nullable
+    @Override
+    public String getCode() {
+        return Types.getParameterizedCode(klass.getCode(), typeArguments.toList());
+    }
+
+    @Override
+    public TypeCategory getCategory() {
+        return klass.getKind().typeCategory();
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return klass.isEphemeral();
     }
 
     @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
-        return klass.getInternalName(current);
+        return resolve().getInternalName(current);
     }
 
     @Override
@@ -160,13 +195,20 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public ClassType copy() {
-        return new ClassType(klass, NncUtils.map(typeArguments, Type::copy));
+        var copy = new ClassType(klass, NncUtils.map(typeArguments, Type::copy));
+        copy.resolved = resolved;
+        return copy;
     }
 
     @Override
-    public String toTypeExpression(SerializeContext serializeContext) {
-        var id = Constants.CONSTANT_ID_PREFIX + serializeContext.getId(klass);
-        return typeArguments.isEmpty() ? id : id + "<" + NncUtils.map(typeArguments, type -> type.toTypeExpression(serializeContext)) + ">";
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+        var id = getTypeDefExpr == null ? Constants.CONSTANT_ID_PREFIX + serializeContext.getId(klass) : getTypeDefExpr.apply(klass);
+        return typeArguments.isEmpty() ? id : id + "<" + NncUtils.join(typeArguments, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ">";
+    }
+
+    @Override
+    public int getTypeKeyCode() {
+        return typeArguments.isEmpty() ? TypeKeyCodes.CLASS : TypeKeyCodes.PARAMETERIZED;
     }
 
     @Override
@@ -198,4 +240,24 @@ public class ClassType extends Type implements ISubstitutor {
         return klass.isChildList();
     }
 
+    @Override
+    public <S> void acceptComponents(TypeVisitor<?, S> visitor, S s) {
+        typeArguments.forEach(t -> t.accept(visitor, s));
+    }
+
+    @Override
+    public void forEachTypeDef(Consumer<TypeDef> action) {
+        action.accept(klass);
+        typeArguments.forEach(t -> t.forEachTypeDef(action));
+    }
+
+    @Override
+    public String getTypeDesc() {
+        return resolve().getTypeDesc();
+    }
+
+    @Override
+    public TypeId getTypeId() {
+        return new TypeId(TypeTag.fromCategory(getCategory()), resolve().getId().getPhysicalId());
+    }
 }

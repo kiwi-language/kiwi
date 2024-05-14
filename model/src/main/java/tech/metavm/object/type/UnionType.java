@@ -1,10 +1,10 @@
 package tech.metavm.object.type;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.object.type.rest.dto.TypeKeyCodes;
 import tech.metavm.object.type.rest.dto.UnionTypeKey;
 import tech.metavm.object.type.rest.dto.UnionTypeParam;
 import tech.metavm.util.InstanceInput;
@@ -13,23 +13,32 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Function;
 
 @EntityType("联合类型")
 public class UnionType extends CompositeType {
 
-    public static final IndexDef<UnionType> KEY_IDX = IndexDef.createUnique(UnionType.class, "key");
+    public static UnionType create(Type...types) {
+        return new UnionType(Set.of(types));
+    }
 
     public static final IndexDef<UnionType> MEMBER_IDX = IndexDef.create(UnionType.class, "members");
 
     @ChildEntity("成员集合")
-    private final ReadWriteArray<Type> members;
+    private final ChildArray<Type> members = addChild(new ChildArray<>(Type.class), "members");
 
     private transient Set<Type> memberSet;
 
-    public UnionType(Long tmpId, Set<Type> members) {
+    public UnionType(Set<Type> members) {
         super(getName(members), getCode(members), false, false, TypeCategory.UNION);
-        setTmpId(tmpId);
-        this.members = addChild(new ReadWriteArray<>(Type.class, NncUtils.map(members, Type::copy)), "members");
+        if(members.isEmpty())
+            throw new IllegalArgumentException("members can not be empty");
+        // maintain a relatively deterministic order so that the ModelIdentities of the members are not changed between reboots
+        // the order is not fully deterministic but it's sufficient for bootstrap because only binary-nullable union types are involved.
+        var sortedMembers = members.stream().map(Type::copy)
+                .sorted(Comparator.comparingInt(Type::getTypeKeyCode))
+                .toList();
+        this.members.addChildren(sortedMembers);
     }
 
     private static String getName(Set<Type> members) {
@@ -44,12 +53,12 @@ public class UnionType extends CompositeType {
     }
 
     public Set<Type> getMembers() {
-        return new HashSet<>(members);
+        return new HashSet<>(members.toList());
     }
 
     @Override
-    public TypeKey toTypeKey() {
-        return new UnionTypeKey(NncUtils.mapUnique(members, Type::toTypeKey));
+    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+        return new UnionTypeKey(NncUtils.mapUnique(members, type -> type.toTypeKey(getTypeDefId)));
     }
 
     @Override
@@ -60,13 +69,18 @@ public class UnionType extends CompositeType {
         return this;
     }
 
-    public ReadonlyArray<Type> getDeclaredMembers() {
+    public ChildArray<Type> getDeclaredMembers() {
         return members;
     }
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
         return NncUtils.anyMatch(members, m -> m.isAssignableFrom(that));
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitUnionType(this, s);
     }
 
     @Override
@@ -79,7 +93,7 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    protected boolean equals0(Object obj) {
         return obj instanceof UnionType that && memberSet().equals(that.memberSet());
     }
 
@@ -92,16 +106,6 @@ public class UnionType extends CompositeType {
     protected String toString0() {
         List<String> memberNames = NncUtils.mapAndSort(members, Type::getName, String::compareTo);
         return "UnionType " + String.join("|", memberNames);
-    }
-
-    @Override
-    public String getGlobalKey(@NotNull BuildKeyContext context) {
-        List<String> memberCanonicalNames = NncUtils.mapAndSort(
-                members,
-                object -> context.getModelName(object, this),
-                String::compareTo
-        );
-        return String.join("|", memberCanonicalNames);
     }
 
     @Override
@@ -138,21 +142,30 @@ public class UnionType extends CompositeType {
 
     @Override
     public List<? extends Type> getSuperTypes() {
-        return List.of(Types.getLeastUpperBound(members));
-    }
-
-    @Override
-    protected String getKey() {
-        return getKey(members);
-    }
-
-    public static String getKey(List<Type> componentTypes) {
-        return CompositeType.getKey(NncUtils.sort(componentTypes, Comparator.comparing(Entity::getId)));
+        return List.of(Types.getLeastUpperBound(memberSet()));
     }
 
     @Override
     public String getTypeDesc() {
         return NncUtils.join(members, Type::getTypeDesc, "|");
+    }
+
+    @Nullable
+    @Override
+    public String getCode() {
+        if(NncUtils.anyMatch(members, t -> t.getCode() == null))
+            return null;
+        return NncUtils.join(members, Type::getCode, "|");
+    }
+
+    @Override
+    public TypeCategory getCategory() {
+        return TypeCategory.UNION;
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return false;
     }
 
     @Override
@@ -185,13 +198,23 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public UnionType copy() {
-        return new UnionType(null, NncUtils.mapUnique(members, Type::copy));
+    public String getName() {
+        return NncUtils.join(members, Type::getName, "|");
     }
 
     @Override
-    public String toTypeExpression(SerializeContext serializeContext) {
-        return NncUtils.join(members, type -> type.toTypeExpression(serializeContext), "|");
+    public UnionType copy() {
+        return new UnionType(NncUtils.mapUnique(members, Type::copy));
+    }
+
+    @Override
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+        return NncUtils.join(members, type -> type.toExpression(serializeContext, getTypeDefExpr), "|");
+    }
+
+    @Override
+    public int getTypeKeyCode() {
+        return TypeKeyCodes.UNION;
     }
 
     @Override
@@ -204,12 +227,12 @@ public class UnionType extends CompositeType {
         var members = new HashSet<Type>();
         for (int i = 0; i < input.readInt(); i++)
             members.add(Type.readType(input, typeDefProvider));
-        return new UnionType(null, members);
+        return new UnionType(members);
     }
 
     private Set<Type> memberSet() {
         if(memberSet == null)
-            memberSet = new HashSet<>(members);
+            memberSet = new HashSet<>(members.toList());
         return memberSet;
     }
 

@@ -22,7 +22,7 @@ public class SerializeContext implements Closeable {
     public static List<TypeDTO> forceWriteTypeDefs(List<TypeDef> typeDefs) {
         try (var serContext = SerializeContext.enter()) {
             for (var typeDef : typeDefs) {
-                serContext.writeTypeDef(typeDef, true);
+                serContext.writeTypeDef(typeDef);
             }
             return serContext.getTypes();
         }
@@ -35,7 +35,6 @@ public class SerializeContext implements Closeable {
     private boolean includeNodeOutputType;
     private boolean includeExpressionType;
     private boolean includeCode;
-    private boolean includeBuiltin;
     private boolean writeParameterizedTypeAsPTypeDTO;
     private final Set<TypeDef> writtenTypes = new IdentitySet<>();
     private final Map<TypeDef, TypeDefDTO> types = new HashMap<>();
@@ -87,40 +86,15 @@ public class SerializeContext implements Closeable {
         }
     }
 
-    private boolean isBuiltinType(Type type) {
-        return type instanceof PrimitiveType || type instanceof AnyType || type instanceof NeverType;
-    }
-
     public boolean isIncludeExpressionType() {
         return includeExpressionType;
     }
 
-    public void writeTypeDef(TypeDef typeDef) {
-        writeTypeDef(typeDef, false);
-    }
-
-    public void writeClass(Klass klass) {
-
-    }
-
-    public void writeTypeVariable(TypeVariable typeVariable) {
-
-    }
-
-    public void writeCapturedTypeVariable(CapturedTypeVariable capturedTypeVariable) {
-    }
-
     public void forceWriteKlass(Klass klass) {
-        writeTypeDef(klass, true);
+        writeTypeDef(klass);
     }
 
-    public void forWriteTypeDef(TypeDef typeDef) {
-        writeTypeDef(typeDef, true);
-    }
-
-    private void writeTypeDef(TypeDef typeDef, boolean forceWrite) {
-        if (!forceWrite && !includeBuiltin)
-            return;
+    public void writeTypeDef(TypeDef typeDef) {
         if (writtenTypes.contains(typeDef))
             return;
         if (typeDef instanceof Klass klass && klass.isParameterized())
@@ -233,7 +207,6 @@ public class SerializeContext implements Closeable {
     }
 
     public SerializeContext includeBuiltin(boolean includeBuiltin) {
-        this.includeBuiltin = includeBuiltin;
         return this;
     }
 

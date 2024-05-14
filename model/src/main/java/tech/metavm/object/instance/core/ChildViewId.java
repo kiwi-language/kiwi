@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.object.view.rest.dto.MappingKey;
 import tech.metavm.util.InstanceOutput;
 
 import java.util.Objects;
@@ -8,15 +9,15 @@ public class ChildViewId extends DefaultViewId {
 
     private final ViewId rootId;
 
-    public ChildViewId(boolean isArray, Id mappingId, Id sourceId, ViewId rootId) {
-        super(isArray, mappingId, sourceId);
+    public ChildViewId(boolean isArray, MappingKey mappingKey, Id sourceId, ViewId rootId) {
+        super(isArray, mappingKey, sourceId);
         this.rootId = rootId;
     }
 
     @Override
     public void write(InstanceOutput output) {
         output.writeIdTag(IdTag.CHILD_VIEW, isArray());
-        getMappingId().write(output);
+        getMappingKey().write(output);
         getSourceId().write(output);
         rootId.write(output);
     }

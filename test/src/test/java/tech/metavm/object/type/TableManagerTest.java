@@ -2,7 +2,8 @@ package tech.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityQueryService;
+import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceQueryService;
@@ -38,10 +39,9 @@ public class TableManagerTest extends TestCase {
     }
 
     public void testSmoking() {
-        Type fooType = ModelDefRegistry.getType(Foo.class);
-
-        TableDTO tableDTO = tableManager.get(fooType.getStringId());
-        Assert.assertEquals(fooType.getStringId(), tableDTO.id());
+        var fooKlass = ((ClassType) ModelDefRegistry.getType(Foo.class)).resolve();
+        TableDTO tableDTO = tableManager.get(fooKlass.getStringId());
+        Assert.assertEquals(fooKlass.getStringId(), tableDTO.id());
 
         Field bazListField = ModelDefRegistry.getField(Foo.class, "bazList");
         Assert.assertTrue(bazListField.getType().isNullable());
@@ -92,7 +92,7 @@ public class TableManagerTest extends TestCase {
 
     public void testMultiValuedField() {
         TableDTO bar = save(new TableDTO(
-                TmpId.random().toString(),  "Bar", "Bar", null,
+                TmpId.random().toString(), "Bar", "Bar", null,
                 false, false,
                 new TitleFieldDTO(
                         NncUtils.randomNonNegative(),
@@ -116,8 +116,9 @@ public class TableManagerTest extends TestCase {
                                 TmpId.random().toString(),
                                 "bars", TableManager.ColumnType.TABLE.code(),
                                 Access.PUBLIC.code(), null,
-                                bar.id(), null, true, true, false,
-                                  null, null
+                                TypeExpressions.getClassType(bar.id())
+                                , null, true, true, false,
+                                null, null
                         )
                 )
         ));

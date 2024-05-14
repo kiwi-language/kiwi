@@ -32,7 +32,8 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
     public InstanceDTO execute(FlowExecutionRequest request) {
         try (var context = newContext(); var ignored =ContextUtil.getProfiler().enter("FlowExecutionService.execute")) {
             ContextUtil.setEntityContext(context);
-            var flow = context.getEntity(Flow.class, request.flowId());
+            var flowRef = FlowRef.create(request.flowRef(), context);
+            var flow = flowRef.resolve();
             var self = NncUtils.get(request.instanceId(),
                     id -> (ClassInstance) context.getInstanceContext().get(Id.parse(id)));
             var arguments = new ArrayList<Instance>();
@@ -58,10 +59,10 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
         try(var ignored = ContextUtil.getProfiler().enter("FlowExecutionService.executeInternal")) {
             if (flow instanceof Method method && method.isInstanceMethod()) {
                 if (method.isConstructor()) {
-                    self = ClassInstanceBuilder.newBuilder(((Method) flow).getDeclaringType()).build();
+                    self = ClassInstanceBuilder.newBuilder(((Method) flow).getDeclaringType().getType()).build();
                     context.getInstanceContext().bind(self);
                 } else
-                    flow = Objects.requireNonNull(self).getKlass().resolveMethod(method, context.getGenericContext());
+                    flow = Objects.requireNonNull(self).getKlass().resolveMethod(method);
             }
             var result = flow.execute(self, arguments, context.getInstanceContext());
             if (result.exception() == null)

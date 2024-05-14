@@ -1,12 +1,13 @@
 package tech.metavm.object.type.rest.dto;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.CapturedType;
 import tech.metavm.object.type.CapturedTypeVariable;
 import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.util.InstanceOutput;
 
-public record CapturedTypeKey(String variableId) implements TypeKey {
+public record CapturedTypeKey(@NotNull String variableId) implements TypeKey {
     @Override
     public void write(InstanceOutput output) {
         output.writeId(Id.parse(variableId));
@@ -30,5 +31,10 @@ public record CapturedTypeKey(String variableId) implements TypeKey {
     @Override
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
 
+    }
+
+    @Override
+    public int getCode() {
+        return TypeKeyCodes.CAPTURED;
     }
 }

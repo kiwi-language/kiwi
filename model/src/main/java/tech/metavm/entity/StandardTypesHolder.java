@@ -2,159 +2,86 @@ package tech.metavm.entity;
 
 import tech.metavm.object.type.*;
 
-import java.util.List;
-
 public interface StandardTypesHolder {
     
-    PrimitiveType getLongType();
+    Klass getEnumKlass();
 
-    PrimitiveType getDoubleType();
+    Klass getThrowableKlass();
 
-    PrimitiveType getBooleanType();
+    Klass getExceptionKlass();
 
-    PrimitiveType getStringType();
+    Klass getRuntimeExceptionKlass();
 
-    PrimitiveType getTimeType();
+    Klass getEntityKlass();
 
-    PrimitiveType getVoidType();
+    Klass getRecordKlass();
 
-    PrimitiveType getNullType();
+    Klass getCollectionKlass();
 
-    NeverType getNeverType();
-    
-    AnyType getAnyType();
+    Klass getSetKlass();
 
-    ArrayType getAnyArrayType();
+    Klass getListKlass();
 
-    ArrayType getNeverArrayType();
+    Klass getMapKlass();
 
-    UnionType getNullableAnyType();
+    Klass getIteratorKlass();
 
-    UnionType getNullableStringType();
-    
-    Klass getEnumType();
+    Klass getIteratorImplKlass();
 
-    Klass getThrowableType();
+    void setEnumKlass(Klass type);
 
-    Klass getExceptionType();
+    void setThrowableKlass(Klass type);
 
-    Klass getRuntimeExceptionType();
+    void setExceptionKlass(Klass type);
 
-    Klass getEntityType();
+    void setRuntimeExceptionKlass(Klass type);
 
-    Klass getRecordType();
+    void setEntityKlass(Klass type);
 
-    Klass getCollectionType();
+    void setRecordKlass(Klass type);
 
-    Klass getSetType();
+    void setCollectionKlass(Klass type);
 
-    Klass getListType();
+    void setSetKlass(Klass type);
 
-    Klass getMapType();
+    void setListKlass(Klass type);
 
-    Klass getIteratorType();
+    void setMapKlass(Klass type);
 
-    Klass getIteratorImplType();
+    void setIteratorKlass(Klass type);
 
-    ArrayType getReadonlyAnyArrayType();
-    
-    PrimitiveType getPasswordType();
+    void setIteratorImplKlass(Klass type);
 
-    void setLongType(PrimitiveType type);
+    void setReadWriteListKlass(Klass type);
 
-    void setDoubleType(PrimitiveType type);
+    void setChildListKlass(Klass type);
 
-    void setBooleanType(PrimitiveType type);
+    Klass getChildListKlass();
 
-    void setStringType(PrimitiveType type);
+    Klass getReadWriteListKlass();
 
-    void setTimeType(PrimitiveType type);
+    Klass getIterableKlass();
 
-    void setVoidType(PrimitiveType type);
+    void setIterableKlass(Klass iterableType);
 
-    void setNullType(PrimitiveType type);
+    Klass getConsumerKlass();
 
-    void setPasswordType(PrimitiveType type);
+    void setConsumerKlass(Klass consumerType);
 
-    void setNeverType(NeverType type);
+    Klass getPredicateKlass();
 
-    void setAnyType(AnyType type);
+    void setPredicateKlass(Klass type);
 
-    void setAnyArrayType(ArrayType type);
+    void setIllegalArgumentExceptionKlass(Klass illegalArgumentExceptionType);
 
-    void setNeverArrayType(ArrayType type);
+    void setIllegalStateExceptionKlass(Klass illegalStateExceptionType);
 
-    void setNullableAnyType(UnionType type);
+    Klass getIllegalArgumentExceptionKlass();
 
-    void setNullableStringType(UnionType type);
+    Klass getIllegalStateExceptionKlass();
 
-    void setEnumType(Klass type);
+    Klass getNullPointerExceptionKlass();
 
-    void setThrowableType(Klass type);
+    void setNullPointerExceptionKlass(Klass nullPointerExceptionType);
 
-    void setExceptionType(Klass type);
-
-    void setRuntimeExceptionType(Klass type);
-
-    void setEntityType(Klass type);
-
-    void setRecordType(Klass type);
-
-    void setCollectionType(Klass type);
-
-    void setSetType(Klass type);
-
-    void setListType(Klass type);
-
-    void setMapType(Klass type);
-
-    void setIteratorType(Klass type);
-
-    void setIteratorImplType(Klass type);
-
-    void setReadonlyAnyArrayType(ArrayType type);
-
-    void setReadWriteListType(Klass type);
-
-    void setChildListType(Klass type);
-
-    Klass getChildListType();
-
-    Klass getReadWriteListType();
-
-    Klass getIterableType();
-
-    void setIterableType(Klass iterableType);
-
-    Klass getConsumerType();
-
-    void setConsumerType(Klass consumerType);
-
-    Klass getPredicateType();
-
-    void setPredicateType(Klass type);
-
-    void setIllegalArgumentExceptionType(Klass illegalArgumentExceptionType);
-
-    void setIllegalStateExceptionType(Klass illegalStateExceptionType);
-
-    Klass getIllegalArgumentExceptionType();
-
-    Klass getIllegalStateExceptionType();
-
-    Klass getNullPointerExceptionType();
-
-    void setNullPointerExceptionType(Klass nullPointerExceptionType);
-
-    Klass getParameterizedType(Klass template, List<Type> typeArguments);
-
-    void addParameterizedType(Klass type);
-
-    void clearParameterizedTypes();
-
-    void addNullableType(UnionType type);
-
-    UnionType getNullableType(Type type);
-
-    void clearNullableTypes();
 }

@@ -16,7 +16,7 @@ public record FlowDTO(
         @Nullable ScopeDTO rootScope,
         String returnType,
         List<ParameterDTO> parameters,
-        String typeId,
+        String type,
         List<String> typeParameterIds,
         @Nullable String horizontalTemplateId,
         List<String> typeArguments,

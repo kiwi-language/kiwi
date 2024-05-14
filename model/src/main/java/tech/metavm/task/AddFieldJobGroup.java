@@ -28,7 +28,6 @@ public class AddFieldJobGroup extends TaskGroup {
         if (type.isTemplate()) {
             var templateInstances = context.selectByKey(Klass.TEMPLATE_IDX, type);
             for (Klass templateInstance : templateInstances) {
-                context.getGenericContext().retransformClass(type, templateInstance);
                 var tiField = NncUtils.findRequired(templateInstance.getFields(), f -> f.getCopySource() == field);
                 templateInstanceFields.add(tiField);
                 createJobsForType(templateInstance, tiField, jobs);

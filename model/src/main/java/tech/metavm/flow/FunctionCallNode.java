@@ -1,6 +1,5 @@
 package tech.metavm.flow;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
@@ -12,14 +11,13 @@ import tech.metavm.flow.rest.FunctionCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.CompositeTypeFacadeImpl;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.Types;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("函数调用节点")
 public class FunctionCallNode extends CallNode {
@@ -28,32 +26,31 @@ public class FunctionCallNode extends CallNode {
         var param = (FunctionCallNodeParam) nodeDTO.param();
         var node = (FunctionCallNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var function = context.getFunction(Id.parse(param.getFlowId()));
+        var functionRef = FunctionRef.create(Objects.requireNonNull(param.getFlowRef()), context);
+        var function = functionRef.resolve();
         List<Argument> arguments = NncUtils.biMap(
                 function.getParameters(),
                 param.getArguments(),
-                (parameter, argDTO) -> new Argument(argDTO.tmpId(), parameter,
+                (parameter, argDTO) -> new Argument(argDTO.tmpId(), parameter.getRef(),
                         ValueFactory.create(argDTO.value(), parsingContext))
         );
         if(node == null) {
-            var outputType = function.getReturnType().isVoid() ? null
-                    : Types.tryCapture(function.getReturnType(), scope.getFlow(), CompositeTypeFacadeImpl.fromContext(context), null);
             return new FunctionCallNode(
-                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType,
-                    prev, scope, function, arguments
+                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
+                    prev, scope, functionRef, arguments
             );
         }
         else {
-            node.setSubFlow(function);
+            node.setFlowRef(functionRef);
             node.setArguments(arguments);
         }
-        node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypeIds(), context::getType));
+        node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypes(), t -> TypeParser.parse(t, context)));
         node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
         return node;
     }
 
-    public FunctionCallNode(Long tmpId, String name, @Nullable String code, @Nullable Type outputType, NodeRT prev, ScopeRT scope, Function subFlow, List<Argument> arguments) {
-        super(tmpId, name, code, outputType, prev, scope, subFlow, arguments);
+    public FunctionCallNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, FunctionRef functionRef, List<Argument> arguments) {
+        super(tmpId, name, code, prev, scope, functionRef, arguments);
     }
 
     @Override
@@ -69,30 +66,23 @@ public class FunctionCallNode extends CallNode {
     @Override
     protected FunctionCallNodeParam getParam(SerializeContext serializeContext) {
         return new FunctionCallNodeParam(
-                serializeContext.getId(getSubFlow()),
+                getFlowRef().toDTO(serializeContext),
                 null,
                 NncUtils.map(arguments, Argument::toDTO),
-                NncUtils.map(capturedExpressionTypes, serializeContext::getId),
+                NncUtils.map(capturedExpressionTypes, t -> t.toExpression(serializeContext)),
                 NncUtils.map(capturedExpressions, e -> e.build(VarType.NAME))
         );
     }
 
-    @NotNull
     @Override
-    public Type getType() {
-        return getSubFlow().getReturnType();
+    public FunctionRef getFlowRef() {
+        return (FunctionRef) super.getFlowRef();
     }
 
     @Override
-    public Function getSubFlow() {
-        return (Function) super.getSubFlow();
-    }
-
-    @Override
-    public void setSubFlow(Flow subFlow) {
-        if(subFlow instanceof Function)
-            super.setSubFlow(subFlow);
-        else
-            throw new InternalException("Invalid sub flow for function call node: " + subFlow);
+    public void setFlowRef(FlowRef flowRef) {
+        if(flowRef instanceof FunctionRef)
+            super.setFlowRef(flowRef);
+        throw new InternalException("Invalid sub flow for function call node: " + flowRef);
     }
 }

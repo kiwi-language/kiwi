@@ -17,8 +17,8 @@ import java.util.function.Supplier;
 @EntityType("字段映射")
 public abstract class FieldMapping extends Element {
 
-    @EntityField("目标字段")
-    private final Field targetField;
+    @ChildEntity("目标字段引用")
+    private final FieldRef targetFieldRef;
 
     @EntityField("所属映射")
     protected final FieldsObjectMapping containingMapping;
@@ -27,46 +27,46 @@ public abstract class FieldMapping extends Element {
     @Nullable
     protected NestedMapping nestedMapping;
 
-    public FieldMapping(Long tmpId, Field targetField, FieldsObjectMapping containingMapping, @Nullable NestedMapping nestedMapping) {
+    public FieldMapping(Long tmpId, FieldRef targetFieldRef, FieldsObjectMapping containingMapping, @Nullable NestedMapping nestedMapping) {
         super(tmpId);
         this.containingMapping = containingMapping;
-        this.targetField = targetField;
+        this.targetFieldRef = addChild(targetFieldRef.copy(), "targetFieldRef");
         this.nestedMapping = NncUtils.get(nestedMapping, c -> addChild(c, "nestedMapping"));
         containingMapping.addField(this);
     }
 
     public Field getTargetField() {
-        return targetField;
+        return targetFieldRef.resolve();
     }
 
     public void setTargetFieldType(Type type) {
-        targetField.setType(type);
+        targetFieldRef.resolve().setType(type);
     }
 
     public boolean isReadonly() {
-        return targetField.isReadonly();
+        return getTargetField().isReadonly();
     }
 
     public String getName() {
-        return targetField.getName();
+        return getTargetField().getName();
     }
 
     public @Nullable String getCode() {
-        return targetField.getCode();
+        return getTargetField().getCode();
     }
 
     public void setName(String name) {
-        targetField.setName(name);
+        getTargetField().setName(name);
     }
 
     public void setCode(String code) {
-        targetField.setCode(code);
+        getTargetField().setCode(code);
     }
 
     public abstract FieldMapping getCopySource();
 
     public boolean isChild() {
-        return targetField.isChild();
+        return getTargetField().isChild();
     }
 
     public FieldMappingDTO toDTO(SerializeContext serializeContext) {
@@ -78,7 +78,7 @@ public abstract class FieldMapping extends Element {
                 isChild(),
                 isReadonly(),
                 NncUtils.get(getSourceField(), serializeContext::getId),
-                serializeContext.getId(targetField),
+                serializeContext.getId(targetFieldRef),
                 nestedMapping instanceof ObjectNestedMapping classCodeGenerator ? classCodeGenerator.getMapping().getStringId() : null,
                 getParam(serializeContext)
         );
@@ -93,33 +93,33 @@ public abstract class FieldMapping extends Element {
     }
 
     public Type getType() {
-        return targetField.getType();
+        return getTargetField().getType();
     }
 
     public void setReadonly(boolean readonly) {
-        targetField.setReadonly(readonly);
+        getTargetField().setReadonly(readonly);
     }
 
-    public FieldParam generateReadCode(SelfNode selfNode, CompositeTypeFacade compositeTypeFacade) {
-        var valueSupplier = generateReadCode0(selfNode, compositeTypeFacade);
+    public FieldParam generateReadCode(SelfNode selfNode) {
+        var valueSupplier = generateReadCode0(selfNode);
         var value = valueSupplier.get();
         if (nestedMapping != null) {
-            var getNestedValue = nestedMapping.generateMappingCode(valueSupplier, selfNode.getScope(), compositeTypeFacade);
-            return new FieldParam(targetField, getNestedValue.get());
+            var getNestedValue = nestedMapping.generateMappingCode(valueSupplier, selfNode.getScope());
+            return new FieldParam(targetFieldRef, getNestedValue.get());
         } else
-            return new FieldParam(targetField, value);
+            return new FieldParam(targetFieldRef, value);
     }
 
-    protected abstract Supplier<Value> generateReadCode0(SelfNode selfNode, CompositeTypeFacade compositeTypeFacade);
+    protected abstract Supplier<Value> generateReadCode0(SelfNode selfNode);
 
-    public void generateWriteCode(SelfNode selfNode, ValueNode viewNode, CompositeTypeFacade compositeTypeFacade) {
+    public void generateWriteCode(SelfNode selfNode, ValueNode viewNode) {
         if (nestedMapping != null) {
             var scope = selfNode.getScope();
             var nestedFieldSource = nestedMapping.generateUnmappingCode(
-                    () -> Values.nodeProperty(viewNode, targetField), scope, compositeTypeFacade);
+                    () -> Values.nodeProperty(viewNode, getTargetField()), scope);
             generateWriteCode0(selfNode, nestedFieldSource);
         } else
-            generateWriteCode0(selfNode, () -> Values.nodeProperty(viewNode, targetField));
+            generateWriteCode0(selfNode, () -> Values.nodeProperty(viewNode, targetFieldRef.resolve()));
     }
 
     protected abstract void generateWriteCode0(SelfNode selfNode, Supplier<Value> fieldValueSupplier);
@@ -128,21 +128,21 @@ public abstract class FieldMapping extends Element {
 
     @Override
     public List<Object> beforeRemove(IEntityContext context) {
-        return List.of(targetField);
+        return List.of(targetFieldRef);
     }
 
-    public void setNestedMapping(@Nullable NestedMapping nestedMapping, CompositeTypeFacade compositeTypeFacade) {
+    public void setNestedMapping(@Nullable NestedMapping nestedMapping) {
         if(Objects.equals(nestedMapping, this.nestedMapping))
             return;
         this.nestedMapping = NncUtils.get(nestedMapping, c -> addChild(c, "nestedMapping"));
-        resetTargetFieldType(compositeTypeFacade);
+        resetTargetFieldType();
     }
 
-    protected void resetTargetFieldType(CompositeTypeFacade compositeTypeFacade) {
-        targetField.setType(getTargetFieldType(getTargetFieldType(), this.nestedMapping, compositeTypeFacade));
+    protected void resetTargetFieldType() {
+        getTargetField().setType(getTargetFieldType(getTargetFieldType(), this.nestedMapping));
     }
 
-    public static Type getTargetFieldType(Type targetFieldType, @Nullable NestedMapping nestedMapping, CompositeTypeFacade compositeTypeFacade) {
+    public static Type getTargetFieldType(Type targetFieldType, @Nullable NestedMapping nestedMapping) {
         if (nestedMapping == null)
             return targetFieldType;
         else
@@ -165,4 +165,11 @@ public abstract class FieldMapping extends Element {
     public String getLocalKey(@NotNull BuildKeyContext context) {
         return Objects.requireNonNull(getCode());
     }
+
+    public String getText() {
+        return "{\"sourceField\": " + NncUtils.get(getSourceField(), f -> "\"" + f.getName() + "\"")
+                + ", \"targetField\": \"" + getTargetField().getName()
+                + "\", \"nestedMapping\": " + NncUtils.get(nestedMapping, NestedMapping::getText) + "}";
+    }
+
 }

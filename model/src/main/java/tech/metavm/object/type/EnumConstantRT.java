@@ -33,7 +33,7 @@ public class EnumConstantRT {
                             StandardTypes.getEnumOrdinalField(type),
                             Instances.longInstance(ordinal)
                     ),
-                    type
+                    type.getType()
                 )
         );
     }

@@ -7,16 +7,10 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.CapturedTypeVariableDTO;
 import tech.metavm.object.type.rest.dto.TypeDefDTO;
-import tech.metavm.util.DebugEnv;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
-public class CapturedTypeVariable extends TypeDef implements GenericElement, PostRemovalAware {
+public class CapturedTypeVariable extends TypeDef implements GenericElement, LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
@@ -24,17 +18,13 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Pos
     private CapturedTypeScope scope;
 
     @ChildEntity("不确定类型")
-    private final UncertainType uncertainType;
-
-    @ChildEntity("捕获流程列表")
-    private final ReadWriteArray<Flow> capturedFlows = addChild(new ReadWriteArray<>(Flow.class), "capturedFlows");
-
-    @ChildEntity("捕获复合类型列表")
-    private final ReadWriteArray<Type> capturedCompositeTypes = addChild(new ReadWriteArray<>(Type.class), "capturedCompositeTypes");
+    private UncertainType uncertainType;
 
     @CopyIgnore
     @EntityField("复制来源")
-    private @Nullable CapturedType copySource;
+    private @Nullable CapturedTypeVariable copySource;
+
+    private transient ResolutionStage stage = ResolutionStage.INIT;
 
     public CapturedTypeVariable(@NotNull UncertainType uncertainType,
                         @NotNull CapturedTypeScope scope) {
@@ -56,20 +46,8 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Pos
         return uncertainType.getLowerBound();
     }
 
-    public void setCapturedFlows(List<Flow> capturedFlows) {
-        this.capturedFlows.reset(capturedFlows);
-    }
-
-    public void setCapturedCompositeTypes(List<Type> capturedCompositeTypes) {
-        this.capturedCompositeTypes.reset(capturedCompositeTypes);
-    }
-
-    public void addCapturedFlow(Flow flow) {
-        capturedFlows.add(flow);
-    }
-
-    public void addCapturedCompositeType(Type type) {
-        capturedCompositeTypes.add(type);
+    public void setUncertainType(UncertainType uncertainType) {
+        this.uncertainType = addChild(uncertainType.copy(), "uncertainType");
     }
 
     public void setScope(CapturedTypeScope scope) {
@@ -92,59 +70,44 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Pos
         return uncertainType;
     }
 
-    @Override
-    public void postRemove(IEntityContext context) {
-        List<Entity> removals = new ArrayList<>(capturedFlows);
-        removals.addAll(capturedCompositeTypes);
-        if (DebugEnv.debugging) {
-            debugLogger.info("{}.afterRemoval called", EntityUtils.getEntityPath(this));
-            for (Entity removal : removals) {
-                boolean alreadyRemoved = context.isRemoved(removal);
-                debugLogger.info("Removing entity {}, already removed: {}",
-                        EntityUtils.getEntityDesc(removal) + "/" + removal.getStringId(), alreadyRemoved);
-                if (alreadyRemoved && removal instanceof Type removedType) {
-                    var capturedTypes = new IdentitySet<CapturedType>();
-                    for (Type componentType : Types.getComponentTypes(removedType)) {
-                        capturedTypes.addAll(componentType.getCapturedTypes());
-                    }
-                    debugLogger.info("Component captured types: {}", NncUtils.join(capturedTypes, EntityUtils::getEntityPath));
-                }
-            }
-        }
-        context.batchRemove(removals);
-    }
-
     @Nullable
     @Override
-    public CapturedType getCopySource() {
+    public CapturedTypeVariable getCopySource() {
         return copySource;
     }
 
     @Override
     public void setCopySource(Object copySource) {
-        this.copySource = (CapturedType) copySource;
-    }
-
-    public Collection<Type> getCapturedCompositeTypes() {
-        return capturedCompositeTypes.toList();
-    }
-
-    public Collection<Flow> getCapturedFlows() {
-        return capturedFlows.toList();
+        this.copySource = (CapturedTypeVariable) copySource;
     }
 
     @Override
-    public CapturedType getType() {
-        return null;
+    public @NotNull CapturedType getType() {
+        return new CapturedType(this);
     }
 
     @Override
     public TypeDefDTO toDTO(SerializeContext serContext) {
         return new CapturedTypeVariableDTO(
                 serContext.getId(this),
-                uncertainType.toTypeExpression(serContext),
+                uncertainType.toExpression(serContext, null),
                 serContext.getId(scope),
                 scope.getCapturedTypeVariableIndex(this)
         );
+    }
+
+    public ResolutionStage setStage(ResolutionStage stage) {
+        var curStage = this.stage;
+        this.stage = stage;
+        return curStage;
+    }
+
+    public ResolutionStage getStage() {
+        return stage;
+    }
+
+    @Override
+    public void onLoad(IEntityContext context) {
+        stage = ResolutionStage.INIT;
     }
 }

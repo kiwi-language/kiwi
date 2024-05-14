@@ -10,17 +10,24 @@ public class MethodCallNodeParam extends CallNodeParam {
     private final ValueDTO self;
 
     public MethodCallNodeParam(@JsonProperty("self") ValueDTO self,
-                               @JsonProperty("flowId") String flowId,
+                               @JsonProperty("flowRef") MethodRefDTO flowRef,
                                @JsonProperty("flowCode") String flowCode,
                                @JsonProperty("typeArgumentIds") List<String> typeArgumentIds,
-                               @JsonProperty("typeId") @Nullable String typeId,
+                               @JsonProperty("type") @Nullable String type,
                                @JsonProperty("arguments") List<ArgumentDTO> arguments,
                                @JsonProperty("argumentValues") List<ValueDTO> argumentValues,
-                               @JsonProperty("capturedExpressionTypeIds") List<String> capturedExpressionTypeIds,
+                               @JsonProperty("capturedExpressionTypes") List<String> capturedExpressionTypes,
                                @JsonProperty("capturedExpressions") List<String> capturedExpressions
     ) {
-        super(flowId, flowCode, typeArgumentIds, typeId, arguments, argumentValues, capturedExpressionTypeIds, capturedExpressions);
+        super(flowRef, flowCode, typeArgumentIds, type, arguments, argumentValues, capturedExpressionTypes, capturedExpressions);
         this.self = self;
+    }
+
+
+    @Nullable
+    @Override
+    public MethodRefDTO getFlowRef() {
+        return (MethodRefDTO) super.getFlowRef();
     }
 
     public ValueDTO getSelf() {

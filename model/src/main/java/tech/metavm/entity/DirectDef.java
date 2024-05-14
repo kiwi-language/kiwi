@@ -1,38 +1,38 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.ObjectInstanceMap;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.type.TypeDef;
 import tech.metavm.util.ReflectionUtils;
 
 public class DirectDef<T> extends ModelDef<T, ClassInstance> {
 
-    private final Type type;
+    private final TypeDef typeDef;
     private final Class<?> nativeClass;
 
-    public DirectDef(java.lang.reflect.Type javaType, Type type) {
-        this(javaType, type, null);
+    public DirectDef(java.lang.reflect.Type javaType, TypeDef typeDef) {
+        this(javaType, typeDef, null);
     }
 
-    public DirectDef(java.lang.reflect.Type javaType, Type type, Class<?> nativeClass) {
+    public DirectDef(java.lang.reflect.Type javaType, TypeDef typeDef, Class<?> nativeClass) {
         //noinspection rawtypes,unchecked
         super((Class) ReflectionUtils.getRawClass(javaType), javaType, ClassInstance.class);
-        this.type = type;
+        this.typeDef = typeDef;
         this.nativeClass = nativeClass;
     }
 
     @Override
-    public Type getType() {
-        return type;
+    public TypeDef getTypeDef() {
+        return typeDef;
     }
 
     @Override
-    public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public void initEntity(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public void updateEntity(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 

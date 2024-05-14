@@ -19,7 +19,7 @@ import java.util.List;
 @Component
 public class InstanceLogServiceImpl extends EntityContextFactoryBean implements InstanceLogService {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(InstanceLogServiceImpl.class);
+    public static final Logger logger = LoggerFactory.getLogger(InstanceLogServiceImpl.class);
 
     private final InstanceSearchService instanceSearchService;
 

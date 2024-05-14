@@ -49,7 +49,7 @@ public class Generator extends CodeGenVisitor {
         klass.setCode(psiClass.getQualifiedName());
 
         var initFlow = klass.getMethodByCodeAndParamTypes("<init>", List.of());
-        var initFlowBuilder = new MethodGenerator(initFlow, typeResolver, entityContext, this);
+        var initFlowBuilder = new MethodGenerator(initFlow, typeResolver, this);
         initFlowBuilder.enterScope(initFlowBuilder.getMethod().getRootScope());
         initFlowBuilder.setVariable("this", new NodeExpression(initFlowBuilder.createSelf()));
         initFlowBuilder.createInput();
@@ -59,13 +59,12 @@ public class Generator extends CodeGenVisitor {
                 initFlowBuilder.createMethodCall(
                         initFlowBuilder.getVariable("this"),
                         superInit,
-                        List.of(),
-                        initFlowBuilder.getCompositeTypeFacade()
+                        List.of()
                 );
             }
         }
         var classInit = klass.getMethodByCodeAndParamTypes("<cinit>", List.of());
-        var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, entityContext, this);
+        var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, this);
         classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getRootScope());
         classInitFlowBuilder.createInput();
         if (klass.getSuperType() != null) {
@@ -74,8 +73,7 @@ public class Generator extends CodeGenVisitor {
                 classInitFlowBuilder.createMethodCall(
                         null,
                         superCInit,
-                        List.of(),
-                        classInitFlowBuilder.getCompositeTypeFacade()
+                        List.of()
                 );
             }
         }
@@ -92,9 +90,9 @@ public class Generator extends CodeGenVisitor {
         boolean hasConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
         if (!hasConstructor) {
             var constructor = klass.getDefaultConstructor();
-            var constructorGen = new MethodGenerator(constructor, typeResolver, entityContext, this);
+            var constructorGen = new MethodGenerator(constructor, typeResolver, this);
             constructorGen.enterScope(constructor.getRootScope());
-            constructorGen.createMethodCall(new NodeExpression(constructorGen.createSelf()), initFlow, List.of(), constructorGen.getCompositeTypeFacade());
+            constructorGen.createMethodCall(new NodeExpression(constructorGen.createSelf()), initFlow, List.of());
             constructorGen.createReturn(new NodeExpression(constructorGen.createSelf()));
             constructorGen.exitScope();
         }
@@ -222,7 +220,7 @@ public class Generator extends CodeGenVisitor {
 
         var exceptionExpr = new PropertyExpression(
                 new NodeExpression(tryEndNode),
-                tryEndNode.getKlass().getFieldByCode("exception")
+                tryEndNode.getKlass().getFieldByCode("exception").getRef()
         );
 
         if (statement.getCatchSections().length > 0) {
@@ -255,7 +253,7 @@ public class Generator extends CodeGenVisitor {
             exitCondSection(mergeNode, catchOutputVars);
 
             var exceptionField = FieldBuilder.newBuilder("异常", "exception",
-                    mergeNode.getKlass(), StandardTypes.getNullableThrowableType()).build();
+                    mergeNode.getKlass(), StandardTypes.getNullableThrowableKlass()).build();
 
             final var exceptionExprFinal = exceptionExpr;
             new MergeNodeField(
@@ -270,7 +268,7 @@ public class Generator extends CodeGenVisitor {
                                     )
                     )
             );
-            exceptionExpr = new PropertyExpression(new NodeExpression(mergeNode), exceptionField);
+            exceptionExpr = new PropertyExpression(new NodeExpression(mergeNode), exceptionField.getRef());
         }
         if (statement.getFinallyBlock() != null) {
             statement.getFinallyBlock().accept(this);
@@ -330,7 +328,7 @@ public class Generator extends CodeGenVisitor {
         };
         CompositeTypeEventRegistry.addListener(capturedTypeListener);
         method.clearContent();
-        MethodGenerator builder = new MethodGenerator(method, typeResolver, entityContext, this);
+        MethodGenerator builder = new MethodGenerator(method, typeResolver, this);
         builders.push(builder);
         builder.enterScope(method.getRootScope());
         if (TranspileUtil.isStatic(psiMethod)) {
@@ -346,15 +344,13 @@ public class Generator extends CodeGenVisitor {
                     builder().createMethodCall(
                             builder().getVariable("this"),
                             superClass.getDefaultConstructor(),
-                            List.of(),
-                            builder().getCompositeTypeFacade()
+                            List.of()
                     );
                 }
                 builder.createMethodCall(
                         new NodeExpression(selfNode),
                         currentClassInfo().fieldBuilder.getMethod(),
-                        List.of(),
-                        builder().getCompositeTypeFacade()
+                        List.of()
                 );
                 if (currentClass().isEnum()) {
                     var klass = currentClass();
@@ -366,12 +362,12 @@ public class Generator extends CodeGenVisitor {
                                     enumClass.getFieldByCode("name"),
                                     new PropertyExpression(
                                             new NodeExpression(inputNode),
-                                            inputNode.getKlass().getFieldByCode("__name__")
+                                            inputNode.getKlass().getFieldByCode("__name__").getRef()
                                     ),
                                     enumClass.getFieldByCode("ordinal"),
                                     new PropertyExpression(
                                             new NodeExpression(inputNode),
-                                            inputNode.getKlass().getFieldByCode("__ordinal__")
+                                            inputNode.getKlass().getFieldByCode("__ordinal__").getRef()
                                     )
                             )
                     );
@@ -390,15 +386,15 @@ public class Generator extends CodeGenVisitor {
     }
 
     private boolean isEnumType(Klass classType) {
-        return classType.getTemplate() != null && classType.getTemplate() == StandardTypes.getEnumType();
+        return classType.getTemplate() != null && classType.getTemplate() == StandardTypes.getEnumKlass();
     }
 
     private boolean isEntityType(Klass classType) {
-        return classType == StandardTypes.getEntityType();
+        return classType == StandardTypes.getEntityKlass();
     }
 
     private boolean isRecordType(Klass classType) {
-        return classType == StandardTypes.getRecordType();
+        return classType == StandardTypes.getRecordKlass();
     }
 
     private static boolean isSuperCallPresent(PsiMethod method) {
@@ -515,7 +511,7 @@ public class Generator extends CodeGenVisitor {
         var inputNode = builder().createInput();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getKlass(),
-                            Types.tryCapture(parameter.getType(), flow, builder().getCompositeTypeFacade(), parameter))
+                            Types.tryCapture(parameter.getType(), flow, parameter))
                     .build();
         }
         for (PsiParameter parameter : parameterList.getParameters()) {
@@ -535,7 +531,7 @@ public class Generator extends CodeGenVisitor {
         var field = Objects.requireNonNull(inputNode.getKlass().findFieldByCode(parameter.getName()));
         builder().setVariable(
                 parameter.getName(),
-                new PropertyExpression(new NodeExpression(inputNode), field)
+                new PropertyExpression(new NodeExpression(inputNode), field.getRef())
         );
     }
 
@@ -600,10 +596,10 @@ public class Generator extends CodeGenVisitor {
                     memberTypes.add(value.getType());
             }
             var fieldType =
-                    memberTypes.size() == 1 ? memberTypes.iterator().next() : entityContext.getUnionType(memberTypes);
+                    memberTypes.size() == 1 ? memberTypes.iterator().next() : new UnionType(memberTypes);
             var field = FieldBuilder.newBuilder(qn.toString(), qn.toString(), mergeNode.getKlass(), fieldType).build();
             var mergeField = new MergeNodeField(field, mergeNode, branch2value);
-            builder().setVariable(qn.toString(), new PropertyExpression(new NodeExpression(mergeNode), mergeField.getField()));
+            builder().setVariable(qn.toString(), new PropertyExpression(new NodeExpression(mergeNode), mergeField.getField().getRef()));
         }
     }
 
@@ -646,7 +642,7 @@ public class Generator extends CodeGenVisitor {
         }
         for (QualifiedName loopVar : loopVar2Field.keySet()) {
             var field = loopVar2Field.get(loopVar);
-            builder().setVariable(loopVar.toString(), new PropertyExpression(new NodeExpression(node), field));
+            builder().setVariable(loopVar.toString(), new PropertyExpression(new NodeExpression(node), field.getRef()));
         }
         var narrower = new TypeNarrower(node.getExpressionTypes()::getType);
         node.getBodyScope().setExpressionTypes(narrower.narrowType(node.getCondition().getExpression()));
@@ -667,14 +663,14 @@ public class Generator extends CodeGenVisitor {
             var initialValue = initialValues.get(field);
             var updatedValue = builder().getVariable(loopVar.toString());
             node.setField(field, Values.expression(initialValue), Values.expression(updatedValue));
-            builder().setVariable(loopVar.toString(), new PropertyExpression(new NodeExpression(node), field));
+            builder().setVariable(loopVar.toString(), new PropertyExpression(new NodeExpression(node), field.getRef()));
         }
         if (condition != null) {
             node.setField(requireNonNull(condField),
                     Values.expression(requireNonNull(condInitialValue)),
                     Values.expression(requireNonNull(condUpdatedValue))
             );
-            var extraCond = new PropertyExpression(new NodeExpression(node), condField);
+            var extraCond = new PropertyExpression(new NodeExpression(node), condField.getRef());
             var finalCond = node.getCondition() == null ? extraCond :
                     Expressions.and(node.getCondition().getExpression(), extraCond);
             node.setCondition(Values.expression(finalCond));
@@ -730,8 +726,7 @@ public class Generator extends CodeGenVisitor {
             typeResolver.ensureDeclared(collType);
             var itNode = builder().createMethodCall(
                     iteratedExpr, Objects.requireNonNull(collType.findMethodByCode("iterator")),
-                    List.of(),
-                    builder().getCompositeTypeFacade()
+                    List.of()
             );
             var itType = Types.resolveKlass(NncUtils.requireNonNull(itNode.getType()));
             processLoop(statement, getExtraLoopTest(statement), (node, loopVar2Field) -> {
@@ -741,8 +736,7 @@ public class Generator extends CodeGenVisitor {
                 var elementNode = builder().createMethodCall(
                         new NodeExpression(itNode),
                         Objects.requireNonNull(itType.findMethodByCode("next")),
-                        List.of(),
-                        builder().getCompositeTypeFacade()
+                        List.of()
                 );
                 builder().setVariable(statement.getIterationParameter().getName(), new NodeExpression(elementNode));
             });

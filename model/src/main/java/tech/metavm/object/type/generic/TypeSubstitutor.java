@@ -10,6 +10,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         if (subst != null)
             return subst;
         var elementType = type.getElementType().accept(this);
-        return new ArrayType(null, elementType, type.getKind());
+        return new ArrayType(elementType, type.getKind());
     }
 
     @Override
@@ -55,7 +56,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var subst = substitute(type);
         if (subst != null)
             return subst;
-        return new UncertainType(null, type.getLowerBound().accept(this), type.getUpperBound().accept(this));
+        return new UncertainType(type.getLowerBound().accept(this), type.getUpperBound().accept(this));
     }
 
     @Override
@@ -63,7 +64,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var subst = substitute(type);
         if (subst != null)
             return subst;
-        return new IntersectionType(null, NncUtils.mapUnique(type.getTypes(), t -> t.accept(this)));
+        return new IntersectionType(NncUtils.mapUnique(type.getTypes(), t -> t.accept(this)));
     }
 
     @Override
@@ -72,7 +73,6 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         if (subst != null)
             return subst;
         return new FunctionType(
-                null,
                 NncUtils.map(type.getParameterTypes(), t -> t.accept(this)),
                 type.getReturnType().accept(this)
         );
@@ -83,7 +83,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var subst = substitute(type);
         if (subst != null)
             return subst;
-        return new UnionType(null, NncUtils.mapUnique(type.getMembers(), t -> t.accept(this)));
+        return new UnionType(NncUtils.mapUnique(type.getMembers(), t -> t.accept(this)));
     }
 
     @Override
@@ -95,7 +95,11 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
     }
 
     private @Nullable Type substitute(Type type) {
-        return variableMap.get(type);
+        return NncUtils.get(variableMap.get(type), Type::copy);
+    }
+
+    Map<Type, Type> getVariableMap() {
+        return Collections.unmodifiableMap(variableMap);
     }
 
 }

@@ -3,7 +3,6 @@ package tech.metavm.object.instance.search;
 
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.InstanceEvaluationContext;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 
@@ -19,6 +18,11 @@ public record SearchQuery(
         int extra
 ) {
 
+    public SearchQuery {
+        if(types.isEmpty())
+            throw new IllegalArgumentException("types is empty");
+    }
+
     public int from() {
         return (page - 1) * pageSize;
     }
@@ -31,9 +35,9 @@ public record SearchQuery(
         return from() + size();
     }
 
-    public boolean match(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
-        return types.contains(instance.getType().toTypeExpression()) &&
-                (condition == null || ((BooleanInstance) condition.evaluate(new InstanceEvaluationContext(instance, parameterizedFlowProvider))).isTrue());
+    public boolean match(ClassInstance instance) {
+        return types.contains(instance.getType().toExpression()) &&
+                (condition == null || ((BooleanInstance) condition.evaluate(new InstanceEvaluationContext(instance))).isTrue());
     }
 
 }

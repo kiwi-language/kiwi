@@ -1,8 +1,12 @@
 package tech.metavm.object.instance;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.Page;
-import tech.metavm.object.instance.core.*;
-import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
 import tech.metavm.util.Instances;
@@ -15,6 +19,8 @@ import static tech.metavm.util.Constants.ROOT_APP_ID;
 import static tech.metavm.util.ContextUtil.getAppId;
 
 public class MemInstanceSearchServiceV2 implements InstanceSearchService {
+
+    public static final Logger logger = LoggerFactory.getLogger(MemInstanceSearchServiceV2.class);
 
     private final MultiApplicationMap<Id, Source> sourceMap = new MultiApplicationMap<>();
 
@@ -55,10 +61,10 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
     private boolean match(Source source, SearchQuery query) {
-        if (!query.types().contains(((PhysicalId)source.id()).getTypeKey().toTypeExpression()))
+        if (!query.types().contains(((PhysicalId) source.id()).getTypeKey().toTypeExpression()))
             return false;
         return query.condition() == null || Instances.isTrue(
-                query.condition().evaluate(new SourceEvaluationContext(source, null))
+                query.condition().evaluate(new SourceEvaluationContext(source))
         );
     }
 
@@ -96,7 +102,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
         var fields = new HashMap<Id, FieldValue>();
         instance.forEachField((field, value) -> {
             if (!field.isChild())
-                fields.put(field.getId(), value.toFieldValueDTO());
+                fields.put(field.getTag(), value.toFieldValueDTO());
         });
         return new Source(
                 instance.getId(),

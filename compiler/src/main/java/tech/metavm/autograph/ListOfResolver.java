@@ -8,7 +8,6 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.Expressions;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Klass;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -16,7 +15,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
-import static tech.metavm.autograph.TranspileUtil.createType;
 
 public class ListOfResolver implements MethodCallResolver {
 
@@ -47,9 +45,7 @@ public class ListOfResolver implements MethodCallResolver {
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var listType = (ClassType) expressionResolver.getTypeResolver().resolve(
                 methodGenerics.getSubstitutor().substitute(method.getReturnType()));
-        var readWriteListType = expressionResolver.getCompositeTypeFacade().getParameterizedType(
-                StandardTypes.getReadWriteListType(), List.of(listType.getListElementType())
-        );
+        var readWriteListType = StandardTypes.getReadWriteListKlass().getParameterized(List.of(listType.getListElementType()));
         var list = methodGenerator.createNew(
                 readWriteListType.getDefaultConstructor(),
                 List.of(),
@@ -61,8 +57,7 @@ public class ListOfResolver implements MethodCallResolver {
             methodGenerator.createMethodCall(
                     Expressions.node(list),
                     addMethod,
-                    List.of(value),
-                    expressionResolver.getCompositeTypeFacade()
+                    List.of(value)
             );
         }
         return Expressions.node(list);

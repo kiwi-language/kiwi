@@ -31,7 +31,7 @@ public class TypesTest extends TestCase {
                 .superClass(c1.getType()).build();
         var c3 = ClassTypeBuilder.newBuilder("c3", null)
                 .superClass(c1.getType()).build();
-        var u1 = new UnionType(null, Set.of(c2.getType(), c3.getType()));
+        var u1 = new UnionType(Set.of(c2.getType(), c3.getType()));
         var cst = Types.getLeastUpperBound(List.of(c1.getType(), u1));
         Assert.assertEquals(c1.getType(), cst);
     }
@@ -43,7 +43,7 @@ public class TypesTest extends TestCase {
                 .superClass(c0.getType()).build();
         var c3 = ClassTypeBuilder.newBuilder("c3", null)
                 .superClass(c1.getType()).build();
-        var intersect = new IntersectionType(null, Set.of(c2.getType(), c3.getType()));
+        var intersect = new IntersectionType(Set.of(c2.getType(), c3.getType()));
         var cst = Types.getLeastUpperBound(List.of(c1.getType(), intersect));
         Assert.assertEquals(c1.getType(), cst);
     }
@@ -65,7 +65,7 @@ public class TypesTest extends TestCase {
                 .superClass(c1.getType()).build();
         var c3 = ClassTypeBuilder.newBuilder("c3", null)
                 .superClass(c1.getType()).build();
-        var nullable_c3 = new UnionType(null, Set.of(StandardTypes.getNullType(), c3.getType()));
+        var nullable_c3 = new UnionType(Set.of(StandardTypes.getNullType(), c3.getType()));
         var cst = Types.getLeastUpperBound(List.of(c2.getType(), nullable_c3));
         Assert.assertEquals(StandardTypes.getNullableAnyType(), cst);
     }

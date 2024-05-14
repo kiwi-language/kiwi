@@ -3,13 +3,11 @@ package tech.metavm.object.instance.core;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ReferenceExtractor;
 import tech.metavm.entity.Tree;
-import tech.metavm.entity.Value;
 import tech.metavm.object.instance.persistence.ReferencePO;
 
 import java.util.*;
 
 public final class SubContext {
-    private final Set<Value> values = new LinkedHashSet<>();
     private final Map<Long, Tree> trees = new HashMap<>();
     private final Set<ReferencePO> references = new HashSet<>();
     private final long appId;
@@ -33,22 +31,9 @@ public final class SubContext {
         return references;
     }
 
-    public void addValue(Value value) {
-        values.add(value);
-    }
-
-    public Collection<Value> values() {
-        return values;
-    }
-
     public void clear() {
         trees.clear();
-        values.clear();
         references.clear();
-    }
-
-    public boolean remove(Value value) {
-        return values.remove(value);
     }
 
     Collection<Tree> trees() {

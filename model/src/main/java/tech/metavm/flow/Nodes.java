@@ -30,10 +30,10 @@ public class Nodes {
         return new NewArrayNode(null, name, code, type, value, parentRef, scope.getLastNode(), scope);
     }
 
-    public static NewObjectNode newObject(String name, Klass type, ScopeRT scope, Method constructor,
+    public static NewObjectNode newObject(String name, ScopeRT scope, Method constructor,
                                           List<Argument> arguments, boolean ephemeral, boolean unbound) {
         return new NewObjectNode(null, name, null,
-                constructor, arguments, scope.getLastNode(), scope, null, ephemeral, unbound);
+                constructor.getRef(), arguments, scope.getLastNode(), scope, null, ephemeral, unbound);
     }
 
     public static ReturnNode ret(String name, ScopeRT scope, @Nullable Value value) {
@@ -95,10 +95,9 @@ public class Nodes {
                 null,
                 "列表大小_" + seq,
                 null,
-                StandardTypes.getLongType(),
                 scope.getLastNode(),
                 scope, list,
-                listClass.getMethodByCodeAndParamTypes("size", List.of()),
+                listClass.getMethodByCodeAndParamTypes("size", List.of()).getRef(),
                 List.of()
         );
         var node = new WhileNode(
@@ -123,9 +122,8 @@ public class Nodes {
         var getMethod = listClass.getMethodByCodeAndParamTypes("get", List.of(StandardTypes.getLongType()));
         var element = new MethodCallNode(
                 null, "获取元素_" + seq, null,
-                listClass.getListElementType(),
                 bodyScope.getLastNode(), bodyScope,
-                getArray.get(), getMethod,
+                getArray.get(), getMethod.getRef(),
                 List.of(Nodes.argument(getMethod, 0, Values.nodeProperty(node, indexField)))
         );
         action.accept(bodyScope, () -> Values.node(element), () -> Values.nodeProperty(node, indexField));
@@ -133,11 +131,11 @@ public class Nodes {
     }
 
     public static MapNode map(String name, ScopeRT scope, Value source, ObjectMapping mapping) {
-        return new MapNode(null, name, null, scope.getLastNode(), scope, source, mapping);
+        return new MapNode(null, name, null, scope.getLastNode(), scope, source, mapping.getRef());
     }
 
     public static UnmapNode unmap(String name, ScopeRT scope, Value view, ObjectMapping mapping) {
-        return new UnmapNode(null, name, null, scope.getLastNode(), scope, view, mapping);
+        return new UnmapNode(null, name, null, scope.getLastNode(), scope, view, mapping.getRef());
     }
 
     public static BranchNode branch(String name, @Nullable String code, ScopeRT scope,
@@ -175,15 +173,13 @@ public class Nodes {
     }
 
     public static FunctionCallNode functionCall(String name, ScopeRT scope,
-                                                Function function, List<Argument> arguments, CompositeTypeFacade compositeTypeFacade) {
-        var outputType = function.getReturnType().isVoid() ? null : Types.tryCapture(function.getReturnType(), function, compositeTypeFacade, null);
-        return new FunctionCallNode(null, name, null, outputType, scope.getLastNode(), scope, function, arguments);
+                                                Function function, List<Argument> arguments) {
+        return new FunctionCallNode(null, name, null, scope.getLastNode(), scope, function.getRef(), arguments);
     }
 
     public static MethodCallNode methodCall(String name, ScopeRT scope,
-                                            Value self, Method method, List<Argument> arguments, CompositeTypeFacade compositeTypeFacade) {
-        var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), method, compositeTypeFacade, null);
-        return new MethodCallNode(null, name, null, outputType, scope.getLastNode(), scope, self, method, arguments);
+                                            Value self, Method method, List<Argument> arguments) {
+        return new MethodCallNode(null, name, null, scope.getLastNode(), scope, self, method.getRef(), arguments);
     }
 
     public static FunctionNode function(String name, ScopeRT scope, Value function, List<Value> arguments) {
@@ -194,17 +190,22 @@ public class Nodes {
         return new CastNode(null, name, null, outputType, scope.getLastNode(), scope, object);
     }
 
-    public static InputNode input(Flow flow, CompositeTypeFacade compositeTypeFacade) {
-        var inputType = ClassTypeBuilder.newBuilder("输入", null)
+    public static InputNode input(Flow flow) {
+       return input(flow, "Input", "Input");
+    }
+
+    public static InputNode input(Flow flow, String name, String code) {
+        var inputType = ClassTypeBuilder.newBuilder("Input", null)
                 .temporary()
+                .tmpId(NncUtils.randomNonNegative())
                 .build();
         for (var parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType,
-                            Types.tryCapture(parameter.getType(), flow, compositeTypeFacade, null))
+                            Types.tryCapture(parameter.getType(), flow, null))
                     .build();
         }
         return new InputNode(
-                null, "输入", "Input", inputType,
+                null, name, code, inputType,
                 flow.getRootScope().getLastNode(), flow.getRootScope()
         );
     }
@@ -218,14 +219,14 @@ public class Nodes {
     }
 
     public static Argument argument(Flow flow, int index, Value value) {
-        return new Argument(null, flow.getParameters().get(index), value);
+        return new Argument(null, flow.getParameters().get(index).getRef(), value);
     }
 
     public static void setSource(Value view, Value source, ScopeRT scope) {
         var seq = NncUtils.randomNonNegative();
         var setSourceFunc = NativeFunctions.setSource();
-        new FunctionCallNode(null, "设置来源_" + seq, "setSource_" + seq, null, scope.getLastNode(), scope,
-                setSourceFunc, List.of(
+        new FunctionCallNode(null, "设置来源_" + seq, "setSource_" + seq, scope.getLastNode(), scope,
+                setSourceFunc.getRef(), List.of(
                 Nodes.argument(setSourceFunc, 0, view),
                 Nodes.argument(setSourceFunc, 1, source)
         ));

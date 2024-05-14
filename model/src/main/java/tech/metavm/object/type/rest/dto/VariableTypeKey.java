@@ -1,12 +1,13 @@
 package tech.metavm.object.type.rest.dto;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.TypeVariable;
 import tech.metavm.object.type.VariableType;
 import tech.metavm.util.InstanceOutput;
 
-public record VariableTypeKey(String variableId) implements TypeKey {
+public record VariableTypeKey(@NotNull String variableId) implements TypeKey {
     @Override
     public void write(InstanceOutput output) {
         output.write(TypeKeyCodes.VARIABLE);
@@ -31,5 +32,10 @@ public record VariableTypeKey(String variableId) implements TypeKey {
     @Override
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
 
+    }
+
+    @Override
+    public int getCode() {
+        return TypeKeyCodes.VARIABLE;
     }
 }

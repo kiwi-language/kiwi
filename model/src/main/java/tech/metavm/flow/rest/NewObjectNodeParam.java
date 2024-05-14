@@ -13,19 +13,19 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
 
     private final boolean unbound;
 
-    public NewObjectNodeParam(@Nullable String flowId,
+    public NewObjectNodeParam(@Nullable MethodRefDTO flowRef,
                               @Nullable String flowCode,
                               @Nullable List<String> typeArgumentIds,
-                              @Nullable String typeId,
+                              @Nullable String type,
                               List<ArgumentDTO> arguments,
                               List<ValueDTO> argumentValues,
                               @Nullable ParentRefDTO parent,
                               boolean ephemeral,
                               boolean unbound,
-                              List<String> capturedExpressionTypeIds,
+                              List<String> capturedExpressionTypes,
                               List<String> capturedExpressions
     ) {
-        super(flowId, flowCode, typeArgumentIds, typeId, arguments, argumentValues, capturedExpressionTypeIds, capturedExpressions);
+        super(flowRef, flowCode, typeArgumentIds, type, arguments, argumentValues, capturedExpressionTypes, capturedExpressions);
         this.parent = parent;
         this.ephemeral = ephemeral;
         this.unbound = unbound;
@@ -44,11 +44,17 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
         return parent;
     }
 
+    @Nullable
+    @Override
+    public MethodRefDTO getFlowRef() {
+        return (MethodRefDTO) super.getFlowRef();
+    }
+
     @Override
     public NewObjectNodeParam copyWithParentRef(ParentRefDTO parentRef) {
         return new NewObjectNodeParam(
-                getFlowId(), getFlowCode(), getTypeArgumentIds(), getTypeId(), getArguments(), getArgumentValues(), parentRef, ephemeral, unbound,
-                new ArrayList<>(getCapturedExpressionTypeIds()), new ArrayList<>(getCapturedExpressions())
+                getFlowRef(), getFlowCode(), getTypeArguments(), getType(), getArguments(), getArgumentValues(), parentRef, ephemeral, unbound,
+                new ArrayList<>(getCapturedExpressionTypes()), new ArrayList<>(getCapturedExpressions())
         );
     }
 

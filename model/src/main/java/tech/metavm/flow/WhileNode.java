@@ -1,14 +1,15 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.expression.Expressions;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.WhileNodeParam;
-import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Klass;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -17,7 +18,7 @@ import javax.annotation.Nullable;
 public class WhileNode extends LoopNode {
 
     public static WhileNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var outputType = context.getKlass(Id.parse(nodeDTO.outputTypeId()));
+        var outputType = ((ClassType) TypeParser.parse(nodeDTO.outputType(), context)).resolve();
         var condition = Values.expression(Expressions.trueExpression());
         // IMPORTANT COMMENT DON"T REMOVE:
         // DO NOT call setLoopParam here. setLoopParam should be called after the loop body has been constructed.

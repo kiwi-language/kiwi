@@ -34,7 +34,7 @@ public class ExpressionParserTest extends TestCase {
 
                     @Override
                     public Expression resolveVar(Var var) {
-                        return new ThisExpression(StandardTypes.getEnumType().getType());
+                        return new ThisExpression(StandardTypes.getEnumKlass().getType());
                     }
 
                     @Override
@@ -58,25 +58,16 @@ public class ExpressionParserTest extends TestCase {
                             @Nullable
                             @Override
                             public Klass findKlassByName(String name) {
-                                return StandardTypes.getEnumType();
+                                return StandardTypes.getEnumKlass();
                             }
 
                             @Override
                             public TypeDef getTypeDef(Id id) {
-                                return StandardTypes.getEnumType();
+                                return StandardTypes.getEnumKlass();
                             }
                         };
                     }
 
-                    @Override
-                    public ArrayTypeProvider getArrayTypeProvider() {
-                        return null;
-                    }
-
-                    @Override
-                    public UnionTypeProvider getUnionTypeProvider() {
-                        return null;
-                    }
                 }
         );
 

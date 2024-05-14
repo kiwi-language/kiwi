@@ -57,12 +57,12 @@ public class IdentityContext {
                     else if (entity instanceof LocalKey localKey && localKey.isValidLocalKey()) {
                         fieldName = localKey.getLocalKey(buildKeyContext);
                     } else {
-                        LOGGER.warn("Entity " + entity + " is in a list but does not have a key");
-                        fieldName = Integer.toString(((ChildArray<?>) parent).indexOf(entity));
+//                        LOGGER.warn("Entity " + entity + " is in a list but does not have a key");
+                        fieldName = Integer.toString(((ChildArray<?>) parent).identityIndexOf(entity));
                     }
                     identity = new ModelIdentity(type, parentId.name() + "." + fieldName, parentId.relative());
                 } else
-                    throw new InternalException("Fail to create model identity for: " + model);
+                    throw new InternalException("Fail to create model identity for: " + EntityUtils.getEntityPath(model));
             }
             default -> throw new InternalException("Fail to create model identity for: " + model);
         }

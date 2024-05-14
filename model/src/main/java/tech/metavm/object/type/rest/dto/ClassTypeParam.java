@@ -11,8 +11,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record ClassTypeParam(
-        String superClassId,
-        List<String> interfaceIds,
+        String superType,
+        List<String> interfaces,
         int source,
         List<FieldDTO> fields,
         List<FieldDTO> staticFields,

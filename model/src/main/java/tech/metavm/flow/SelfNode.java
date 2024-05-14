@@ -7,11 +7,7 @@ import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Klass;
-import tech.metavm.object.type.ParameterizedTypeProvider;
-import tech.metavm.object.type.TypeVariable;
 import tech.metavm.util.ContextUtil;
-import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Objects;

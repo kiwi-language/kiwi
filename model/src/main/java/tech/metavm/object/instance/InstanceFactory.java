@@ -7,6 +7,7 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
+import tech.metavm.object.view.ObjectMappingRef;
 import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -33,8 +34,7 @@ public class InstanceFactory {
         if (type instanceof ArrayType arrayType)
             instance = instanceType.cast(new ArrayInstance(id, arrayType, ephemeral, null));
         else {
-            var klass = ((ClassType) type).resolve();
-            instance = instanceType.cast(new ClassInstance(id, klass, ephemeral, null));
+            instance = instanceType.cast(new ClassInstance(id, (ClassType) type, ephemeral, null));
         }
 //        Method allocateMethod = getAllocateMethod(instanceType, type.getClass());
 //        T instance = instanceType.cast(ReflectUtils.invoke(null, allocateMethod, type));
@@ -80,14 +80,14 @@ public class InstanceFactory {
         var param = instanceDTO.param();
         if (param instanceof ClassInstanceParam classInstanceParam) {
             var classType = (ClassType) type;
-            var klass = classType.resolve();
             Map<String, InstanceFieldDTO> fieldMap = NncUtils.toMap(classInstanceParam.fields(), InstanceFieldDTO::fieldId);
-            ClassInstance object = ClassInstance.allocate(klass, parentRef);
+            ClassInstance object = ClassInstance.allocate(classType, parentRef);
             instance = object;
-            for (Field field : klass.getAllFields()) {
-                if (fieldMap.containsKey(field.getStringId())) {
+            for (Field field : classType.resolve().getAllFields()) {
+                var tag = field.getTag().toString();
+                if (fieldMap.containsKey(tag)) {
                     var fieldValue = resolveValue(
-                            fieldMap.get(field.getStringId()).value(),
+                            fieldMap.get(tag).value(),
                             field.getType(),
                             InstanceParentRef.ofObject(object, field),
                             context
@@ -110,8 +110,7 @@ public class InstanceFactory {
             array.addAll(elements);
         } else if (param instanceof ListInstanceParam listInstanceParam) {
             var listType = (ClassType) type;
-            var listKlass = listType.resolve();
-            var list = ClassInstance.allocate(listKlass);
+            var list = ClassInstance.allocate(listType);
             var listNative = new ListNative(list);
             listNative.List();
             NncUtils.forEach(
@@ -123,8 +122,12 @@ public class InstanceFactory {
         } else {
             throw new InternalException("Can not create instance for type '" + type + "'");
         }
-        if (instanceDTO.sourceMappingId() != null) {
-            var sourceMapping = context.getMappingProvider().getMapping(Id.parse(instanceDTO.sourceMappingId()));
+        if (instanceDTO.sourceMappingRef() != null) {
+            var mappingRefDTO = instanceDTO.sourceMappingRef();
+            var sourceMapping = new ObjectMappingRef(
+                    (ClassType) TypeParser.parse(mappingRefDTO.declaringType(), context.getTypeDefProvider()),
+                    context.getMappingProvider().getObjectMapping(Id.parse(mappingRefDTO.rawMappingId()))
+            ).resolve();
             var source = sourceMapping.unmap(instance, context);
             instance.setSourceRef(new SourceRef(source, sourceMapping));
             context.bind(instance);
@@ -199,15 +202,15 @@ public class InstanceFactory {
                 if(!classType.isList())
                     throw new InternalException(classType.getTypeDesc() + " is not a list type");
                 Klass klass;
-                if(StandardTypes.getListType().isType(classType.getEffectiveTemplate())) {
+                if(StandardTypes.getListKlass().isType(classType.getEffectiveTemplate())) {
                     if(listFieldValue.isElementAsChild())
-                        klass = context.compositeTypeFacade().getParameterizedType(StandardTypes.getChildListType(), List.of(classType.getListElementType()));
+                        klass = StandardTypes.getChildListKlass().getParameterized(List.of(classType.getListElementType()));
                     else
-                        klass = context.compositeTypeFacade().getParameterizedType(StandardTypes.getReadWriteListType(), List.of(classType.getListElementType()));
+                        klass = StandardTypes.getReadWriteListKlass().getParameterized(List.of(classType.getListElementType()));
                 }
                 else
                     klass = classType.resolve();
-                var list = ClassInstance.allocate(klass);
+                var list = ClassInstance.allocate(klass.getType());
                 var listNative = new ListNative(list);
                 listNative.List();
                 NncUtils.forEach(

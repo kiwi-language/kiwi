@@ -2,7 +2,6 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.*;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.PrimitiveKind;
@@ -14,8 +13,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public record SourceEvaluationContext(Source source,
-                                      ParameterizedFlowProvider parameterizedFlowProvider) implements EvaluationContext {
+public record SourceEvaluationContext(Source source) implements EvaluationContext {
 
     @Override
     public Instance evaluate(Expression expression) {
@@ -120,7 +118,7 @@ public record SourceEvaluationContext(Source source,
         if (RegionConstants.isArrayId(id)) {
             return new ArrayInstance(id, StandardTypes.getAnyArrayType(), false, null);
         } else {
-            return new ClassInstance(id, StandardTypes.getEntityType(), false, null);
+            return new ClassInstance(id, StandardTypes.getEntityKlass().getType(), false, null);
         }
     }
 

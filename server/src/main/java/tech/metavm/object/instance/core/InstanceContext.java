@@ -7,7 +7,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.event.EventQueue;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.StoreTreeSource;
@@ -16,7 +15,9 @@ import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.persistence.VersionRT;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.*;
@@ -51,8 +52,7 @@ public class InstanceContext extends BufferingInstanceContext {
                            IInstanceContext parent,
                            TypeDefProvider typeDefProvider,
                            MappingProvider mappingProvider,
-                           ParameterizedFlowProvider parameterizedFlowProvider,
-                           CompositeTypeFacade compositeTypeFacade, boolean childrenLazyLoading,
+                           boolean childrenLazyLoading,
                            Cache cache,
                            @Nullable EventQueue eventQueue,
                            boolean readonly
@@ -61,7 +61,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 List.of(/*new CacheTreeSource(cache),*/new StoreTreeSource(instanceStore)),
                 new StoreVersionSource(instanceStore),
                 new StoreIndexSource(instanceStore), idInitializer,
-                parent, typeDefProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade, readonly);
+                parent, typeDefProvider, mappingProvider, readonly);
         headContext = new SubContext(appId);
         this.asyncPostProcessing = asyncPostProcessing;
         this.plugins = plugins;
@@ -143,7 +143,7 @@ public class InstanceContext extends BufferingInstanceContext {
             var treeChanges = difference.getTreeChanges();
             onContextInitializeId();
             if (prevPatch != null) {
-                try(var ignored2 = getProfiler().enter("InstanceContext.buildPatch.setAttributes")) {
+                try (var ignored2 = getProfiler().enter("InstanceContext.buildPatch.setAttributes")) {
                     prevPatch.entityChange.getAttributes().forEach((key, value) -> {
                         //noinspection rawtypes,unchecked
                         entityChange.setAttribute((DifferenceAttributeKey) key, value);
@@ -155,14 +155,14 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void removeOrphans(Patch patch, List<DurableInstance> nonPersistedOrphans) {
-        try(var ignored = getProfiler().enter("InstanceContext.removeOrphans")) {
+        try (var ignored = getProfiler().enter("InstanceContext.removeOrphans")) {
             var orphans = new ArrayList<>(nonPersistedOrphans);
             for (var version : patch.entityChange.deletes()) {
                 var instance = Objects.requireNonNull(getSelfBuffered(version.id()));
                 if (!instance.isRemoved())
                     orphans.add(instance);
             }
-            if(DebugEnv.buildPatchLog)
+            if (DebugEnv.buildPatchLog)
                 debugLogger.info("removeOrphans, numOrphans: {}, numNonPersistedOrphans: {}", orphans.size(), nonPersistedOrphans.size());
             if (!orphans.isEmpty()) {
                 batchRemove(orphans);
@@ -331,14 +331,14 @@ public class InstanceContext extends BufferingInstanceContext {
 
             @Override
             public Void visitDurableInstance(DurableInstance instance) {
-                if (DebugEnv.debugging)
+                if (DebugEnv.removeCheckVerbose)
                     path.addLast(getInstancePath(instance));
                 if (instance.isRemoved()) {
-                    if (DebugEnv.debugging)
-                        debugLogger.info(String.join("->", path));
+                    if (DebugEnv.removeCheckVerbose)
+                        logger.info("reference path: {}", String.join("->", path));
                     throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(instance));
                 }
-                if (DebugEnv.debugging) {
+                if (DebugEnv.removeCheckVerbose) {
                     try {
                         numCalls++;
                         if (!visited.add(instance))
@@ -519,8 +519,6 @@ public class InstanceContext extends BufferingInstanceContext {
                 getParent(),
                 getTypeDefProvider(),
                 getMappingProvider(),
-                parameterizedFlowProvider(),
-                compositeTypeFacade(),
                 childrenLazyLoading,
                 cache,
                 eventQueue, isReadonly());

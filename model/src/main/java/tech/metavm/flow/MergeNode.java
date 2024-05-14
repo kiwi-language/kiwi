@@ -10,8 +10,10 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -23,11 +25,11 @@ import java.util.*;
 public class MergeNode extends ChildTypeNode {
 
     public static MergeNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var outputType = context.getKlass(Id.parse(nodeDTO.outputTypeId()));
+        var outputKlass = ((ClassType) TypeParser.parse(nodeDTO.outputType(), context)).resolve();
         var branchNode = (BranchNode) Objects.requireNonNull(prev);
         var node = (MergeNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new MergeNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), branchNode, outputType, scope);
+            node = new MergeNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), branchNode, outputKlass, scope);
         var param = (MergeNodeParam) nodeDTO.param();
         if (param.fields().size() != node.getKlass().getReadyFields().size())
             throw new BusinessException(ErrorCode.MISSING_MERGE_NODE_FIELD_VALUE);
@@ -120,7 +122,7 @@ public class MergeNode extends ChildTypeNode {
                     field.getValue(branch).evaluate(frame)
             );
         }
-        return next(ClassInstance.create(fieldValues, getKlass()));
+        return next(ClassInstance.create(fieldValues, getType()));
     }
 
     @Override

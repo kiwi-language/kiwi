@@ -34,7 +34,7 @@ public class ValueFormatter {
                     listNative = new ListNative(list);
                     listNative.clear();
                 } else {
-                    list = ClassInstance.allocate(classType.resolve());
+                    list = ClassInstance.allocate(classType);
                     listNative = new ListNative(list);
                     listNative.List();
                 }
@@ -56,7 +56,7 @@ public class ValueFormatter {
                 if (!instanceDTO.isNew()) {
                     instance = (ClassInstance) context.get(instanceDTO.parseId());
                 } else {
-                    instance = ClassInstance.allocate(klass);
+                    instance = ClassInstance.allocate(classType);
                 }
                 for (Field field : klass.getAllFields()) {
                     FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getStringId()), InstanceFieldDTO::value);

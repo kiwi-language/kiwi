@@ -10,7 +10,9 @@ public interface TypeVisitor<R,S> {
 
     R visitUnionType(UnionType type, S s);
 
-    R variableVariableType(VariableType type, S s);
+    R visitVariableType(VariableType type, S s);
+
+    R visitCapturedType(CapturedType type, S s);
 
     R visitIntersectionType(IntersectionType type, S s);
 
@@ -20,8 +22,8 @@ public interface TypeVisitor<R,S> {
 
     R visitPrimitiveType(PrimitiveType type, S s);
 
-    R visitNothingType(NeverType type, S s);
+    R visitNeverType(NeverType type, S s);
 
-    R visitObjectType(AnyType type, S s);
+    R visitAnyType(AnyType type, S s);
 
 }

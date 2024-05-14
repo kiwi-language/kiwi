@@ -5,12 +5,18 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class FunctionCallNodeParam extends CallNodeParam {
-    public FunctionCallNodeParam(@Nullable String flowId,
-                                 @Nullable String typeId,
+    public FunctionCallNodeParam(@Nullable FunctionRefDTO flowRef,
+                                 @Nullable String type,
                                  List<ArgumentDTO> arguments,
-                                 List<String> capturedExpressionTypeIds,
+                                 List<String> capturedExpressionTypes,
                                  List<String> capturedExpressions) {
-        super(flowId, null, null, typeId, arguments, null, capturedExpressionTypeIds, capturedExpressions);
+        super(flowRef, null, null, type, arguments, null, capturedExpressionTypes, capturedExpressions);
+    }
+
+    @javax.annotation.Nullable
+    @Override
+    public FunctionRefDTO getFlowRef() {
+        return (FunctionRefDTO) super.getFlowRef();
     }
 
     @Override

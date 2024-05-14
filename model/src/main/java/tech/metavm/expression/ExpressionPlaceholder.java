@@ -4,6 +4,7 @@ import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.type.NeverType;
 import tech.metavm.object.type.Type;
 
 import java.util.List;
@@ -27,7 +28,7 @@ public class ExpressionPlaceholder extends Expression {
 
     @Override
     public Type getType() {
-        return StandardTypes.getNeverType();
+        return new NeverType();
     }
 
     @Override

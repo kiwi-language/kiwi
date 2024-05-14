@@ -1,21 +1,22 @@
 package tech.metavm.object.type;
 
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.BuildKeyContext;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.CapturedTypeKey;
-import tech.metavm.object.type.rest.dto.CapturedTypeParam;
+import tech.metavm.object.type.rest.dto.TypeKeyCodes;
+import tech.metavm.util.Constants;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 // TODO make CapturedType the sub type of or the same type as VariableType
 @EntityType("捕获类型")
@@ -26,8 +27,8 @@ public class CapturedType extends Type {
     private final CapturedTypeVariable variable;
 
     public CapturedType(CapturedTypeVariable variable) {
-        super("CaptureOf" + variable.getUncertainType().getName(), null,
-                true, true, TypeCategory.CAPTURED);
+        super(
+        );
         this.variable = variable;
     }
 
@@ -37,8 +38,8 @@ public class CapturedType extends Type {
     }
 
     @Override
-    public CapturedTypeKey toTypeKey() {
-        return new CapturedTypeKey(variable.getStringId());
+    public CapturedTypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+        return new CapturedTypeKey(getTypeDefId.apply(variable));
     }
 
     @Override
@@ -62,18 +63,34 @@ public class CapturedType extends Type {
     }
 
     @Override
-    protected CapturedTypeParam getParam(SerializeContext serializeContext) {
-        return new CapturedTypeParam(serializeContext.getId(variable));
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitCapturedType(this, s);
+    }
+
+    @Override
+    public String getName() {
+        return "CaptureOf" + variable.getUncertainType().getName();
     }
 
     @Override
     public String getTypeDesc() {
-        return variable.getScope().getScopeName() + "_" + name;
+        return variable.getScope().getScopeName() + "_" + getName();
+    }
+
+    @Nullable
+    @Override
+    public String getCode() {
+        return null;
     }
 
     @Override
-    public String getGlobalKey(@NotNull BuildKeyContext context) {
-        throw new UnsupportedOperationException();
+    public TypeCategory getCategory() {
+        return TypeCategory.CAPTURED;
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return false;
     }
 
     @Override
@@ -89,8 +106,14 @@ public class CapturedType extends Type {
     }
 
     @Override
-    public String toTypeExpression(SerializeContext serializeContext) {
-        return "#" + serializeContext.getId(variable);
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+        return getTypeDefExpr == null ? "#" + Constants.CONSTANT_ID_PREFIX + serializeContext.getId(variable)
+                : getTypeDefExpr.apply(variable);
+    }
+
+    @Override
+    public int getTypeKeyCode() {
+        return TypeKeyCodes.CAPTURED;
     }
 
     @Override
@@ -112,12 +135,17 @@ public class CapturedType extends Type {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    protected boolean equals0(Object obj) {
         return obj instanceof CapturedType that && variable == that.variable;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), variable);
+        return Objects.hash(variable);
+    }
+
+    @Override
+    public void forEachTypeDef(Consumer<TypeDef> action) {
+        action.accept(variable);
     }
 }

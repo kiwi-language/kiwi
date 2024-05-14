@@ -52,15 +52,15 @@ public class FlowManagerTest extends TestCase {
     public void testDecreaseQuantity() {
         var type = TestUtils.doInTransaction(() -> typeManager.saveType(ClassTypeDTOBuilder.newBuilder("Product")
                 .tmpId(NncUtils.randomNonNegative())
-                .addField(FieldDTOBuilder.newBuilder("title", StandardTypes.getStringType().getStringId()).build())
-                .addField(FieldDTOBuilder.newBuilder("price", StandardTypes.getDoubleType().getStringId()).build())
-                .addField(FieldDTOBuilder.newBuilder("quantity", StandardTypes.getLongType().getStringId()).build())
+                .addField(FieldDTOBuilder.newBuilder("title", "string").build())
+                .addField(FieldDTOBuilder.newBuilder("price", "double").build())
+                .addField(FieldDTOBuilder.newBuilder("quantity", "long").build())
                 .build()));
 
         var flow = TestUtils.doInTransaction(() -> flowManager.save(MethodDTOBuilder.newBuilder(type.id(), "decreaseQuantity")
                 .tmpId(NncUtils.randomNonNegative())
-                .parameters(List.of(ParameterDTO.create(null, "quantity", StandardTypes.getLongType().getStringId())))
-                .returnTypeId(StandardTypes.getVoidType().getStringId())
+                .parameters(List.of(ParameterDTO.create(null, "quantity", "long")))
+                .returnType("void")
                 .skipRootScope(true)
                 .build()));
 

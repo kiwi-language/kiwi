@@ -19,7 +19,7 @@ public class TypeTest extends TestCase {
         var typeDTO = fooType.toDTO();
         var param = (ClassTypeParam) typeDTO.param();
         for (FieldDTO field : param.fields()) {
-            Assert.assertNotNull("字段" + field.name() + "的typeId为空", field.typeId());
+            Assert.assertNotNull("字段" + field.name() + "的typeId为空", field.type());
         }
     }
 

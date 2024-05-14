@@ -15,7 +15,7 @@ import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.type.AllocatorStore;
-import tech.metavm.object.type.TypeCategory;
+import tech.metavm.object.type.ClassKind;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeQuery;
@@ -58,7 +58,6 @@ public abstract class CompilerTestBase extends TestCase  {
         StandardTypes.setHolder(new ThreadLocalStandardTypesHolder());
         NativeFunctions.setHolder(new ThreadLocalNativeFunctionsHolder());
         ModelDefRegistry.setHolder(new ThreadLocalDefContextHolder());
-        Instances.setHolder(new ThreadLocalBuiltinInstanceHolder());
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
         var bootResult = submit(() -> {
@@ -113,7 +112,6 @@ public abstract class CompilerTestBase extends TestCase  {
         StandardTypes.setHolder(new GlobalStandardTypesHolder());
         NativeFunctions.setHolder(new GlobalNativeFunctionsHolder());
         ModelDefRegistry.setHolder(new GlobalDefContextHolder());
-        Instances.setHolder(new GlobalBuiltinInstanceHolder());
     }
 
 
@@ -141,7 +139,7 @@ public abstract class CompilerTestBase extends TestCase  {
 
 
     protected TypeDTO queryClassType(String name) {
-        return queryClassType(name, List.of(TypeCategory.CLASS.code(), TypeCategory.ENUM.code(), TypeCategory.INTERFACE.code()));
+        return queryClassType(name, List.of(ClassKind.CLASS.code(), ClassKind.ENUM.code(), ClassKind.INTERFACE.code()));
     }
 
     protected void assertNoError(TypeDTO typeDTO) {
@@ -171,6 +169,7 @@ public abstract class CompilerTestBase extends TestCase  {
     protected void compileTwice(String sourceRoot) {
         compile(sourceRoot);
 //        DebugEnv.buildPatchLog = true;
+//        DebugEnv.flag = true;
         compile(sourceRoot);
 //        DebugEnv.buildPatchLog = false;
     }

@@ -1,6 +1,5 @@
 package tech.metavm.object.type;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
@@ -13,26 +12,24 @@ import tech.metavm.util.InstanceOutput;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 @EntityType("数组类型")
 public class ArrayType extends CompositeType {
 
-    public static final IndexDef<ArrayType> KEY_IDX = IndexDef.createUnique(ArrayType.class, "key");
-
     public static final IndexDef<ArrayType> ELEMENT_TYPE_IDX = IndexDef.create(ArrayType.class, "elementType");
 
-    @EntityField("元素类型")
+    @ChildEntity("元素类型")
     private final Type elementType;
 
     @EntityField("数组类别")
     private final ArrayKind kind;
 
-    public ArrayType(Long tmpId, Type elementType, ArrayKind kind) {
+    public ArrayType(Type elementType, ArrayKind kind) {
         super(getArrayTypeName(elementType, kind), getArrayTypeCode(elementType, kind),
                 false, false, kind.category());
-        setTmpId(tmpId);
         this.kind = kind;
-        this.elementType = elementType.copy();
+        this.elementType = addChild(elementType.copy(), "elementType");
     }
 
     private static String getArrayTypeName(Type elementType, ArrayKind kind) {
@@ -52,13 +49,8 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    protected String getKey() {
-        return getKey(elementType, kind);
-    }
-
-    @Override
-    public TypeKey toTypeKey() {
-        return new ArrayTypeKey(kind.code(), elementType.toTypeKey());
+    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+        return new ArrayTypeKey(kind.code(), elementType.toTypeKey(getTypeDefId));
     }
 
     @Override
@@ -73,6 +65,11 @@ public class ArrayType extends CompositeType {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitArrayType(this, s);
     }
 
     @Override
@@ -101,23 +98,23 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return kind.getEntityClass().getName() + "<" + context.getModelName(elementType, this) + ">";
-    }
-
-    @Override
     public String getInternalName(@Nullable Flow current) {
         return kind.getInternalName(elementType, current);
     }
 
     @Override
-    public Type copy() {
-        return new ArrayType(null, elementType.copy(), kind);
+    public ArrayType copy() {
+        return new ArrayType(elementType.copy(), kind);
     }
 
     @Override
-    public String toTypeExpression(SerializeContext serializeContext) {
-        return elementType.toTypeExpression(serializeContext) + kind.getSuffix().toLowerCase();
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+        return elementType.toExpression(serializeContext, getTypeDefExpr) + kind.getSuffix().toLowerCase();
+    }
+
+    @Override
+    public int getTypeKeyCode() {
+        return ArrayTypeKey.getTypeKeyCode(kind.code());
     }
 
     @Override
@@ -126,7 +123,7 @@ public class ArrayType extends CompositeType {
     }
 
     public static ArrayType read(InstanceInput input,  ArrayKind kind, TypeDefProvider typeDefProvider) {
-        return new ArrayType(null, Type.readType(input, typeDefProvider), kind);
+        return new ArrayType(Type.readType(input, typeDefProvider), kind);
     }
 
     public ArrayKind getKind() {
@@ -142,26 +139,25 @@ public class ArrayType extends CompositeType {
         return elementType.getTypeDesc() + kind.getSuffix();
     }
 
-    public Type getInnermostElementType() {
-        Type type = elementType;
-        while (type instanceof ArrayType arrayType) {
-            type = arrayType.elementType;
-        }
-        return type;
+    @Nullable
+    @Override
+    public String getCode() {
+        return getArrayTypeCode(elementType, kind);
+    }
+
+    @Override
+    public TypeCategory getCategory() {
+        return kind.category();
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return elementType.isEphemeral();
     }
 
     @Override
     public List<Type> getComponentTypes() {
         return List.of(elementType);
-    }
-
-    public static String getKey(Type elementType, ArrayKind kind) {
-        String key = CompositeType.getKey(List.of(elementType));
-        return switch (kind) {
-            case READ_WRITE -> key;
-            case READ_ONLY -> "r-" + key;
-            case CHILD -> "c-" + key;
-        };
     }
 
     @Override
@@ -179,7 +175,12 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public String getName() {
+        return getArrayTypeName(elementType, kind);
+    }
+
+    @Override
+    protected boolean equals0(Object obj) {
         return obj instanceof ArrayType that && kind == that.kind && elementType.equals(that.elementType);
     }
 

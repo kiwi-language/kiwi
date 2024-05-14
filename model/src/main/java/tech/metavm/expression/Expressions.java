@@ -163,7 +163,7 @@ public class Expressions {
     }
 
     public static Expression property(Expression self, Property property) {
-        return new PropertyExpression(self, property);
+        return new PropertyExpression(self, property.getRef());
     }
 
     public static Expression fieldEq(Field field, Instance value) {
@@ -175,7 +175,7 @@ public class Expressions {
     }
 
     public static PropertyExpression propertyExpr(Property property) {
-        return new PropertyExpression(thisObject(property.getDeclaringType()), property);
+        return new PropertyExpression(thisObject(property.getDeclaringType()), property.getRef());
     }
 
     public static Expression fieldIn(Field field, Collection<? extends Instance> values) {

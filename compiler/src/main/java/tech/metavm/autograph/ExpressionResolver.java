@@ -53,8 +53,6 @@ public class ExpressionResolver {
     private final MethodGenerator methodGenerator;
     private final TypeResolver typeResolver;
     private final VariableTable variableTable;
-    private final ParameterizedFlowProvider parameterizedFlowProvider;
-    private final CompositeTypeFacade compositeTypeFacade;
     private final VisitorBase visitor;
     private final Map<PsiExpression, Expression> expressionMap = new IdentityHashMap<>();
 
@@ -75,15 +73,10 @@ public class ExpressionResolver {
             new NewPasswordResolver(), new NewDateResolver()
     );
 
-    public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver,
-                              CompositeTypeFacade compositeTypeFacade,
-                              ParameterizedFlowProvider parameterizedFlowProvider,
-                              VisitorBase visitor) {
+    public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver, VisitorBase visitor) {
         this.methodGenerator = methodGenerator;
         this.typeResolver = typeResolver;
         this.variableTable = variableTable;
-        this.compositeTypeFacade = compositeTypeFacade;
-        this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.visitor = visitor;
     }
 
@@ -106,14 +99,6 @@ public class ExpressionResolver {
 
     private CapturedType resolveCapturedType(PsiCapturedWildcardType psiCapturedWildcardType) {
         return (CapturedType) expressionMap.get((PsiExpression) psiCapturedWildcardType.getContext()).getType();
-    }
-
-    public CompositeTypeFacade getCompositeTypeFacade() {
-        return compositeTypeFacade;
-    }
-
-    public ParameterizedFlowProvider getParameterizedFlowProvider() {
-        return parameterizedFlowProvider;
     }
 
     private Expression resolveNormal(PsiExpression psiExpression, ResolutionContext context) {
@@ -209,13 +194,13 @@ public class ExpressionResolver {
 
         var valueField = FieldBuilder
                 .newBuilder("value", "value", mergeNode.getKlass(),
-                        Types.getUnionType(List.of(thenExpr.getType(), elseExpr.getType()), compositeTypeFacade))
+                        Types.getUnionType(List.of(thenExpr.getType(), elseExpr.getType())))
                 .build();
         new MergeNodeField(valueField, mergeNode, Map.of(
                 thenBranch, Values.expression(thenExpr),
                 elseBranch, Values.expression(elseExpr))
         );
-        return new PropertyExpression(new NodeExpression(mergeNode), valueField);
+        return new PropertyExpression(new NodeExpression(mergeNode), valueField.getRef());
     }
 
     private Expression resolveParenthesized(PsiParenthesizedExpression psiExpression, ResolutionContext context) {
@@ -261,13 +246,13 @@ public class ExpressionResolver {
                 if (psiField.hasModifierProperty(PsiModifier.STATIC)) {
                     var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass))).resolve();
                     field = Objects.requireNonNull(klass.findStaticFieldByCode(psiField.getName()));
-                    return new StaticPropertyExpression(field);
+                    return new StaticPropertyExpression(field.getRef());
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
                     Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr));
                     typeResolver.ensureDeclared(klass);
                     field = klass.getFieldByCode(psiField.getName());
-                    return new PropertyExpression(qualifierExpr, field);
+                    return new PropertyExpression(qualifierExpr, field.getRef());
                 }
             }
         } else if (target instanceof PsiMethod psiMethod) {
@@ -276,19 +261,19 @@ public class ExpressionResolver {
             if (psiMethod.hasModifierProperty(PsiModifier.STATIC)) {
                 Klass klass = Types.resolveKlass(typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass)));
                 method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
-                return new StaticPropertyExpression(method);
+                return new StaticPropertyExpression(method.getRef());
             } else {
                 if (psiReferenceExpression.getQualifierExpression() instanceof PsiReferenceExpression refExpr &&
                         refExpr.resolve() instanceof PsiClass) {
                     var klass = Types.resolveKlass(typeResolver.resolve(TranspileUtil.createType(psiClass)));
                     method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
-                    return new StaticPropertyExpression(method);
+                    return new StaticPropertyExpression(method.getRef());
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
                     Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr));
                     typeResolver.ensureDeclared(klass);
                     method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
-                    return new PropertyExpression(qualifierExpr, method);
+                    return new PropertyExpression(qualifierExpr, method.getRef());
                 }
             }
         } else if (target instanceof PsiVariable variable) {
@@ -474,7 +459,7 @@ public class ExpressionResolver {
         List<Expression> arguments = NncUtils.map(argumentList.getExpressions(), arg -> resolve(arg, context));
         var exprType = Types.resolveKlass(methodGenerator.getExpressionType(self));
         typeResolver.ensureDeclared(exprType);
-        return methodGenerator.createMethodCall(self, Objects.requireNonNull(exprType.findMethodByCode(flowCode)), arguments, compositeTypeFacade);
+        return methodGenerator.createMethodCall(self, Objects.requireNonNull(exprType.findMethodByCode(flowCode)), arguments);
     }
 
     private Expression invokeFlow(Expression self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
@@ -533,7 +518,7 @@ public class ExpressionResolver {
             args.add(arg);
         }
         var method = resolveMethod(expression);
-        var node = methodGenerator.createMethodCall(qualifier, method, args, compositeTypeFacade);
+        var node = methodGenerator.createMethodCall(qualifier, method, args);
         setCapturedExpressions(node, context);
         if (method.getReturnType().isVoid()) {
             return null;
@@ -543,10 +528,10 @@ public class ExpressionResolver {
     }
 
     private void setCapturedExpressions(CallNode node, ResolutionContext context) {
-        var flow = node.getSubFlow();
+        var flow = node.getFlowRef();
         var capturedTypeSet = new HashSet<CapturedType>();
-        if(flow instanceof Method method)
-            method.getDeclaringType().getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
+        if(flow instanceof MethodRef methodRef)
+            methodRef.getDeclaringType().getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
         flow.getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
         var capturedTypes = new ArrayList<>(capturedTypeSet);
         var psiCapturedTypes = NncUtils.map(capturedTypes, typeResolver::getPsiCapturedType);
@@ -559,9 +544,7 @@ public class ExpressionResolver {
     }
 
     private NodeRT createSAMConversion(Klass samInterface, Expression function) {
-        var func = parameterizedFlowProvider.getParameterizedFlow(
-                NativeFunctions.getFunctionToInstance(), List.of(samInterface.getType())
-        );
+        var func = NativeFunctions.getFunctionToInstance().getParameterized(List.of(samInterface.getType()));
         return methodGenerator.createFunctionCall(func, List.of(function));
     }
 
@@ -584,7 +567,7 @@ public class ExpressionResolver {
                 param -> {
                     var t = typeResolver.resolveDeclaration(param.getType());
                     if (TranspileUtil.getAnnotation(param, Nullable.class) != null)
-                        t = compositeTypeFacade.getUnionType(Set.of(t, StandardTypes.getNullType()));
+                        t = new UnionType(Set.of(t, StandardTypes.getNullType()));
                     return t;
                 }
         );
@@ -596,7 +579,7 @@ public class ExpressionResolver {
         } else {
             var flowTypeArgs = NncUtils.map(method.getTypeParameters(),
                     typeParam -> typeResolver.resolveDeclaration(substitutor.substitute(typeParam)));
-            flow = parameterizedFlowProvider.getParameterizedFlow(piFlow, flowTypeArgs);
+            flow = piFlow.getParameterized(flowTypeArgs);
         }
         return flow;
     }
@@ -707,7 +690,7 @@ public class ExpressionResolver {
     private Type resolveParameterType(PsiParameter param, PsiSubstitutor substitutor) {
         var t = typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()));
         if (TranspileUtil.getAnnotation(param, Nullable.class) != null)
-            t = compositeTypeFacade.getUnionType(Set.of(t, StandardTypes.getNullType()));
+            t = new UnionType(Set.of(t, StandardTypes.getNullType()));
         return t;
     }
 
@@ -816,7 +799,7 @@ public class ExpressionResolver {
                 thenBranch, Values.expression(Expressions.trueExpression()),
                 elseBranch, Values.expression(Expressions.falseExpression())
         ));
-        return new PropertyExpression(new NodeExpression(mergeNode), valueField);
+        return new PropertyExpression(new NodeExpression(mergeNode), valueField.getRef());
     }
 
     public void constructBool(PsiExpression expression, boolean negated, BranchNode parent, ResolutionContext context) {
@@ -850,7 +833,7 @@ public class ExpressionResolver {
             var field = FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getKlass(), parameter.getType())
                     .build();
             methodGenerator.setVariable(parameter.getCode(),
-                    new PropertyExpression(new NodeExpression(inputNode), field));
+                    new PropertyExpression(new NodeExpression(inputNode), field.getRef()));
         }
         if (expression.getBody() instanceof PsiExpression bodyExpr) {
             methodGenerator.createReturn(resolve(bodyExpr, context));

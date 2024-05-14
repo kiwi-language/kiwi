@@ -1,24 +1,28 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Null;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
+
+    public static final Logger logger = LoggerFactory.getLogger(EnumDef.class);
 
     private final String name;
     private final ValueDef<Enum<?>> parentDef;
     private final Class<T> enumType;
     private final List<EnumConstantDef<T>> enumConstantDefList = new ArrayList<>();
     private final Klass klass;
-    private final PrimitiveType nullType;
-    private final PrimitiveType stringType;
     private final DefContext defContext;
 
     public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, Klass type, DefContext defContext) {
@@ -29,8 +33,6 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
         name = annotation != null ? annotation.value() : enumType.getSimpleName();
         this.klass = type;
         this.defContext = defContext;
-        this.nullType = (PrimitiveType) defContext.getType(Null.class);
-        this.stringType = (PrimitiveType) defContext.getType(String.class);
     }
 
     void addEnumConstantDef(EnumConstantDef<T> enumConstantDef) {
@@ -42,7 +44,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
     }
 
     @Override
-    public T createModel(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public T createEntity(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         return NncUtils.findRequired(
                 enumConstantDefList,
                 def -> def.getInstance() == instance
@@ -50,21 +52,23 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
     }
 
     @Override
-    public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public void initEntity(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public void updateEntity(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
 
     }
 
     @Override
     public ClassInstance createInstance(T model, ObjectInstanceMap instanceMap, Id id) {
-        return NncUtils.findRequired(
-                enumConstantDefList,
-                def -> def.getValue() == model
-        ).getInstance();
+        var ecDef = NncUtils.find(enumConstantDefList, def -> def.getValue() == model);
+        if(ecDef == null) {
+            logger.info("type: {}, state: {}", enumType.getSimpleName(), Objects.requireNonNull(getParser()).getState().name());
+            throw new NullPointerException("Can not find definition for enum constant: " + model.getDeclaringClass().getSimpleName() + "." + model.name());
+        }
+        return ecDef.getInstance();
     }
 
     @Override
@@ -107,12 +111,12 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
                 klass.getFieldByCode("name"),
                 new StringInstance(
                         EntityUtils.getMetaEnumConstantName(value),
-                        stringType
+                        new PrimitiveType(PrimitiveKind.STRING)
                 )
         );
         var enumConstant = new EnumConstantRT(instance);
         FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), klass, klass.getType())
-                .defaultValue(new NullInstance(nullType))
+                .defaultValue(new NullInstance(new PrimitiveType(PrimitiveKind.NULL)))
                 .isChild(true)
                 .isStatic(true)
                 .staticValue(instance)
@@ -121,8 +125,8 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
     }
 
     @Override
-    public ClassType getType() {
-        return klass.getType();
+    public Klass getTypeDef() {
+        return klass;
     }
 
     @Override

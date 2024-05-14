@@ -37,4 +37,9 @@ public class DummyCallable implements Callable {
         return null;
     }
 
+    @Override
+    public CallableRef getRef() {
+        throw new UnsupportedOperationException();
+    }
+
 }

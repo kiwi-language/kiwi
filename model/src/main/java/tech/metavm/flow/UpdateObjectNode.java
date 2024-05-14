@@ -12,6 +12,7 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.ContextUtil;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -28,8 +29,8 @@ public class UpdateObjectNode extends NodeRT {
         var objectId = ValueFactory.create(param.objectId(), parsingContext);
         if (node == null) {
             node = new UpdateObjectNode(
-                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, objectId
-            );
+                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, objectId,
+                    List.of());
         } else
             node.setObject(objectId);
         var type = (ClassType) node.getExpressionTypes().getType(objectId.getExpression());
@@ -52,7 +53,7 @@ public class UpdateObjectNode extends NodeRT {
             existing.setValue(value);
             return existing;
         } else {
-            return new UpdateField(field, op, value);
+            return new UpdateField(field.getRef(), op, value);
         }
     }
 
@@ -62,9 +63,10 @@ public class UpdateObjectNode extends NodeRT {
     @ChildEntity("字段列表")
     private final ChildArray<UpdateField> fields = addChild(new ChildArray<>(UpdateField.class), "fields");
 
-    public UpdateObjectNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, Value object) {
+    public UpdateObjectNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, Value object, List<UpdateField> fields) {
         super(tmpId, name, code, null, prev, scope);
         this.object = addChild(object, "object");
+        setFields(fields);
     }
 
     public Value getObject() {
@@ -80,9 +82,9 @@ public class UpdateObjectNode extends NodeRT {
     }
 
     public void setUpdateField(Field field, UpdateOp op, Value value) {
-        var updateField = fields.get(UpdateField::getField, field);
+        var updateField = fields.get(f -> f.getFieldRef().resolve(), field);
         if (updateField == null) {
-            updateField = new UpdateField(field, op, value);
+            updateField = new UpdateField(field.getRef(), op, value);
             fields.addChild(updateField);
         } else {
             updateField.setOp(op);
@@ -99,11 +101,16 @@ public class UpdateObjectNode extends NodeRT {
     }
 
     private void setFields(List<UpdateField> fields) {
+        var selfType = object.getType();
+        for (UpdateField field : fields) {
+            if(!field.getFieldRef().getDeclaringType().isAssignableFrom(selfType))
+                throw new InternalException("Field " + field.getFieldRef().resolve() + " is not defined in klass " + selfType);
+        }
         this.fields.resetChildren(fields);
     }
 
     public UpdateField getField(Field field) {
-        return fields.get(UpdateField::getField, field);
+        return fields.get(UpdateField::getFieldRef, field);
     }
 
     @Override

@@ -63,7 +63,7 @@ public class ShoppingTest extends TestCase {
         long originalAmount = (long) ((PrimitiveFieldValue) firstSkuDTO.getFieldValue(shoppingTypeIds.skuAmountFieldId())).getValue();
         TestUtils.doInTransactionWithoutResult(
                 () -> flowExecutionService.execute(new FlowExecutionRequest(
-                        shoppingTypeIds.skuDecAmountMethodId(),
+                        TestUtils.createMethodRef(shoppingTypeIds.skuTypeId(), shoppingTypeIds.skuDecAmountMethodId()),
                         firstSkuDTO.id(),
                         List.of(PrimitiveFieldValue.createLong(1L)))
                 )
@@ -74,7 +74,7 @@ public class ShoppingTest extends TestCase {
         try {
             TestUtils.doInTransaction(
                     () -> flowExecutionService.execute(new FlowExecutionRequest(
-                            shoppingTypeIds.skuDecAmountMethodId(),
+                            TestUtils.createMethodRef(shoppingTypeIds.skuTypeId(), shoppingTypeIds.skuDecAmountMethodId()),
                             firstSkuDTO.id(),
                             List.of(PrimitiveFieldValue.createLong(originalAmount)))
                     )
@@ -94,14 +94,16 @@ public class ShoppingTest extends TestCase {
         var arguments = List.of(PrimitiveFieldValue.createLong(1L),
                 InstanceFieldValue.of(
                         InstanceDTO.createListInstance(
-                                shoppingTypeIds.couponListTypeId(),
+                                shoppingTypeIds.couponListType(),
                                 false,
                                 NncUtils.map(couponsDTOs, ReferenceFieldValue::create)
                         ))
         );
-        var orderDTO = TestUtils.doInTransaction(
+            var orderDTO = TestUtils.doInTransaction(
                 () -> flowExecutionService.execute(
-                        new FlowExecutionRequest(shoppingTypeIds.skuBuyMethodId(), firstSkuDTO.id(), arguments)
+                        new FlowExecutionRequest(
+                                TestUtils.createMethodRef(shoppingTypeIds.skuTypeId(), shoppingTypeIds.skuBuyMethodId())
+                                , firstSkuDTO.id(), arguments)
                 )
         );
         Assert.assertNotNull(orderDTO);

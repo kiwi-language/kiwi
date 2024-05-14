@@ -3,6 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.entity.CopyVisitor;
 import tech.metavm.entity.Element;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.Value;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @EntityType("表达式")
-public abstract class Expression extends Element {
+public abstract class Expression extends Element implements Value {
 
     protected abstract String buildSelf(VarType symbolType, boolean relaxedCheck);
 
@@ -101,7 +102,7 @@ public abstract class Expression extends Element {
     }
 
     public Expression copy() {
-        return (Expression) accept(new CopyVisitor(this));
+        return (Expression) accept(new CopyVisitor(this, isStrictEphemeral()));
     }
 
 }

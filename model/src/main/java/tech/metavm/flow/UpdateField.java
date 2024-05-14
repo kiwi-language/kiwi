@@ -4,8 +4,11 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.flow.rest.UpdateFieldDTO;
-import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.Field;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.DoubleInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.LongInstance;
+import tech.metavm.object.type.FieldRef;
 import tech.metavm.object.type.Types;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -15,15 +18,15 @@ import java.util.Objects;
 
 @EntityType("更新字段")
 public class UpdateField extends Entity implements LocalKey {
-    @EntityField("字段")
-    private final Field field;
+    @ChildEntity("字段引用")
+    private final FieldRef fieldRef;
     @EntityField("操作")
     private UpdateOp op;
     @ChildEntity("值")
     private Value value;
 
-    public UpdateField(Field field, UpdateOp op, Value value) {
-        this.field = field;
+    public UpdateField(FieldRef fieldRef, UpdateOp op, Value value) {
+        this.fieldRef = addChild(fieldRef.copy(), "fieldRef");
         this.op = op;
         this.value = addChild(value, "value");
     }
@@ -31,9 +34,9 @@ public class UpdateField extends Entity implements LocalKey {
     public void execute(@Nullable ClassInstance instance, EvaluationContext context, boolean inConstructor) {
         Instance evaluatedValue = value.evaluate(context);
         Instance updateValue;
-        if(op == UpdateOp.SET) {
+        var field = fieldRef.resolve();
+        if(op == UpdateOp.SET)
             updateValue = evaluatedValue;
-        }
         else if(op == UpdateOp.INC) {
             if(Types.isDouble(field.getType())) {
                 updateValue = field.getDouble(instance).add((DoubleInstance) evaluatedValue);
@@ -53,7 +56,7 @@ public class UpdateField extends Entity implements LocalKey {
                 updateValue = field.getLong(instance).minus((LongInstance) evaluatedValue);
             }
             else {
-                throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
+                throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType().toExpression());
             }
         }
         else {
@@ -72,8 +75,8 @@ public class UpdateField extends Entity implements LocalKey {
         }
     }
 
-    public Field getField() {
-        return field;
+    public FieldRef getFieldRef() {
+        return fieldRef;
     }
 
     public void setValue(Value value) {
@@ -87,8 +90,8 @@ public class UpdateField extends Entity implements LocalKey {
     public UpdateFieldDTO toDTO() {
         try(var serContext = SerializeContext.enter()) {
             return new UpdateFieldDTO(
-                    serContext.getId(field),
-                    field.getName(),
+                    fieldRef.toDTO(serContext),
+                    fieldRef.getRawField().getName(),
                     op.code(),
                     value.toDTO()
             );
@@ -104,17 +107,17 @@ public class UpdateField extends Entity implements LocalKey {
     }
 
     public String getText() {
-        return field.getName() + " " + op.op() + " " + value.getText();
+        return fieldRef.getRawField().getName() + " " + op.op() + " " + value.getText();
     }
 
     @Override
     public boolean isValidLocalKey() {
-        return field.getCode() != null;
+        return fieldRef.getRawField().getCode() != null;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return Objects.requireNonNull(field.getCode());
+        return Objects.requireNonNull(fieldRef.getRawField().getCode());
     }
 
 }

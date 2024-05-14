@@ -70,9 +70,9 @@ public class EntityProp {
     }
 
     public boolean isChildEntity() {
-        if(!isEntity() && !isEntityList()) {
-            return false;
-        }
+//        if(!isEntity() && !isEntityList()) {
+//            return false;
+//        }
         return field.isAnnotationPresent(ChildEntity.class);
     }
 

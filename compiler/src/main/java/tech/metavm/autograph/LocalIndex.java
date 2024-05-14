@@ -1,5 +1,7 @@
 package tech.metavm.autograph;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.IndexOperator;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 
 public class LocalIndex {
 
+    public static final Logger logger = LoggerFactory.getLogger(LocalIndex.class);
     private static final byte[] MIN_ID = new byte[0];
     private static final byte[] MAX_ID = new byte[]{
             -1, -1, -1, -1, -1, -1, -1, -1,

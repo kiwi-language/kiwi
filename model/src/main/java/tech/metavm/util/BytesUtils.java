@@ -1,7 +1,9 @@
 package tech.metavm.util;
 
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.rest.FieldValue;
+import tech.metavm.object.instance.rest.InstanceParam;
+import tech.metavm.object.type.AnyType;
 import tech.metavm.system.RegionConstants;
 
 import java.io.ByteArrayInputStream;
@@ -10,6 +12,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class BytesUtils {
 
@@ -34,10 +37,89 @@ public class BytesUtils {
         return bout.toByteArray();
     }
 
-    public static Instance readIndexBytes(byte[] bytes) {
+    public static Object readIndexBytes(byte[] bytes) {
         var bin = new ByteArrayInputStream(bytes);
-        var input = new IndexKeyReader(bin, id -> null);
-        return input.readInstance();
+        var input = new IndexKeyReader(bin, MockDurableInstance::new);
+        return convertInstanceToValue(input.readInstance());
+    }
+
+    private static Object convertInstanceToValue(Instance instance) {
+        if(instance instanceof PrimitiveInstance primitiveInstance)
+            return primitiveInstance.getValue();
+        else if(instance instanceof DurableInstance durableInstance)
+            return durableInstance.getId();
+        else
+            throw new InternalException("Can not convert instance: " + instance);
+    }
+
+    private static class MockDurableInstance extends DurableInstance {
+
+        private final Id id;
+
+        public MockDurableInstance(Id id) {
+            super(new AnyType());
+            this.id = id;
+        }
+
+        @Override
+        public Id getId() {
+            return id;
+        }
+
+        @Override
+        public void readFrom(InstanceInput input) {
+
+        }
+
+        @Override
+        public Set<DurableInstance> getRefInstances() {
+            return null;
+        }
+
+        @Override
+        public boolean isReference() {
+            return false;
+        }
+
+        @Override
+        public FieldValue toFieldValueDTO() {
+            return null;
+        }
+
+        @Override
+        public String getTitle() {
+            return null;
+        }
+
+        @Override
+        public void writeTo(InstanceOutput output, boolean includeChildren) {
+
+        }
+
+        @Override
+        protected InstanceParam getParam() {
+            return null;
+        }
+
+        @Override
+        public <R> R accept(InstanceVisitor<R> visitor) {
+            return null;
+        }
+
+        @Override
+        public <R> void acceptReferences(InstanceVisitor<R> visitor) {
+
+        }
+
+        @Override
+        public <R> void acceptChildren(InstanceVisitor<R> visitor) {
+
+        }
+
+        @Override
+        protected void writeTree(TreeWriter treeWriter) {
+
+        }
     }
 
     public static byte[] hexToBytes(String hexString) {

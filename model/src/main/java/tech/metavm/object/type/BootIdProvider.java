@@ -3,8 +3,6 @@ package tech.metavm.object.type;
 import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
-import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
@@ -25,11 +23,6 @@ public class BootIdProvider implements EntityIdProvider {
                           Function<Type, java.lang.reflect.Type> getJavaType) {
         this.allocators = allocators;
         this.getJavaType = getJavaType;
-    }
-
-    @Override
-    public TypeId getTypeId(Id id) {
-        return allocators.getTypeId(id);
     }
 
     @Override

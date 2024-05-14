@@ -22,10 +22,10 @@ public class MethodDTOBuilder {
     private boolean isAbstract;
     private boolean isNative;
     private boolean isStatic;
-    private List<String> overriddenIds = new ArrayList<>();
+    private List<MethodRefDTO> overriddenRefs = new ArrayList<>();
     private List<NodeDTO> nodes = new ArrayList<>();
     private int access = Access.PUBLIC.code();
-    private String returnTypeId;
+    private String returnType;
     private List<ParameterDTO> parameters = new ArrayList<>();
     private List<String> capturedTypeIds = new ArrayList<>();
     private List<String> capturedCompositeTypeIds = new ArrayList<>();
@@ -62,8 +62,8 @@ public class MethodDTOBuilder {
         return this;
     }
 
-    public MethodDTOBuilder overriddenIds(List<String> overriddenIds) {
-        this.overriddenIds = overriddenIds;
+    public MethodDTOBuilder overriddenRefs(List<MethodRefDTO> overriddenRefs) {
+        this.overriddenRefs = overriddenRefs;
         return this;
     }
 
@@ -112,8 +112,8 @@ public class MethodDTOBuilder {
         return this;
     }
 
-    public MethodDTOBuilder returnTypeId(String returnTypeId) {
-        this.returnTypeId = returnTypeId;
+    public MethodDTOBuilder returnType(String returnType) {
+        this.returnType = returnType;
         return this;
     }
 
@@ -174,7 +174,7 @@ public class MethodDTOBuilder {
                         rootScopeId,
                         nodes
                 ),
-                returnTypeId,
+                returnType,
                 parameters,
                 null,
                 typeParameterIds,
@@ -192,7 +192,7 @@ public class MethodDTOBuilder {
                         null,
                         declaringTypeId,
                         null,
-                        overriddenIds,
+                        overriddenRefs,
                         access
                 )
         );

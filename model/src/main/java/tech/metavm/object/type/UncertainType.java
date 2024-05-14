@@ -1,8 +1,8 @@
 package tech.metavm.object.type;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.type.rest.dto.TypeKeyCodes;
 import tech.metavm.object.type.rest.dto.UncertainTypeKey;
 import tech.metavm.object.type.rest.dto.UncertainTypeParam;
 import tech.metavm.util.InstanceInput;
@@ -11,24 +11,22 @@ import tech.metavm.util.InstanceOutput;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 @EntityType("不确定类型")
-public class UncertainType extends CompositeType implements LoadAware  {
-
-    public static final IndexDef<UncertainType> KEY_IDX = IndexDef.createUnique(UncertainType.class, "key");
+public class UncertainType extends CompositeType {
 
     public static final IndexDef<UncertainType> LOWER_BOUND_IDX = IndexDef.create(UncertainType.class, "lowerBound");
 
     public static final IndexDef<UncertainType> UPPER_BOUND_IDX = IndexDef.create(UncertainType.class, "upperBound");
 
-    @EntityField("上限")
+    @ChildEntity("上限")
     private Type upperBound;
-    @EntityField("下限")
+    @ChildEntity("下限")
     private Type lowerBound;
 
-    public UncertainType(Long tmpId, Type lowerBound, Type upperBound) {
+    public UncertainType(Type lowerBound, Type upperBound) {
         super(getName(lowerBound, upperBound), getCode(lowerBound, upperBound), true, true, TypeCategory.UNCERTAIN);
-        setTmpId(tmpId);
         this.lowerBound = addChild(lowerBound.copy(), "lowerBound");
         this.upperBound = addChild(upperBound.copy(), "upperBound");
     }
@@ -46,13 +44,18 @@ public class UncertainType extends CompositeType implements LoadAware  {
     }
 
     @Override
-    public UncertainTypeKey toTypeKey() {
-        return new UncertainTypeKey(lowerBound.toTypeKey(), upperBound.toTypeKey());
+    public UncertainTypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+        return new UncertainTypeKey(lowerBound.toTypeKey(getTypeDefId), upperBound.toTypeKey(getTypeDefId));
     }
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
         return getLowerBound().isAssignableFrom0(that);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitUncertainType(this, s);
     }
 
     @Override
@@ -99,19 +102,36 @@ public class UncertainType extends CompositeType implements LoadAware  {
     }
 
     @Override
-    public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return "[" + context.getModelName(lowerBound, this) +
-                "," + context.getModelName(upperBound, this) + "]";
-    }
-
-    @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
         return "[" + lowerBound.getInternalName(current) + "," + upperBound.getInternalName(current) + "]";
     }
 
     @Override
+    public String getName() {
+        return "[" + lowerBound.getName() + "," + upperBound.getName() + "]";
+    }
+
+    @Override
     public String getTypeDesc() {
         return "[" + lowerBound.getTypeDesc() + "," + upperBound.getTypeDesc() + "]";
+    }
+
+    @Nullable
+    @Override
+    public String getCode() {
+        if(lowerBound.getCode() == null || upperBound.getCode() == null)
+            return null;
+        return "[" + lowerBound.getCode() + "," + upperBound.getCode() + "]";
+    }
+
+    @Override
+    public TypeCategory getCategory() {
+        return TypeCategory.UNCERTAIN;
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return false;
     }
 
     @Override
@@ -125,12 +145,17 @@ public class UncertainType extends CompositeType implements LoadAware  {
     }
 
     public UncertainType copy() {
-        return new UncertainType(null, lowerBound.copy(), upperBound.copy());
+        return new UncertainType(lowerBound.copy(), upperBound.copy());
     }
 
     @Override
-    public String toTypeExpression(SerializeContext serializeContext) {
-        return "[" + lowerBound.toTypeExpression(serializeContext) + "," + upperBound.toTypeExpression(serializeContext) + "]";
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+        return "[" + lowerBound.toExpression(serializeContext, getTypeDefExpr) + "," + upperBound.toExpression(serializeContext, getTypeDefExpr) + "]";
+    }
+
+    @Override
+    public int getTypeKeyCode() {
+        return TypeKeyCodes.UNCERTAIN;
     }
 
     @Override
@@ -140,11 +165,11 @@ public class UncertainType extends CompositeType implements LoadAware  {
     }
 
     public static UncertainType read(InstanceInput input, TypeDefProvider typeDefProvider) {
-        return new UncertainType(null, Type.readType(input, typeDefProvider), Type.readType(input, typeDefProvider));
+        return new UncertainType(Type.readType(input, typeDefProvider), Type.readType(input, typeDefProvider));
     }
 
     @Override
-    public boolean equals(Object obj) {
+    protected boolean equals0(Object obj) {
         return obj instanceof UncertainType that && lowerBound.equals(that.lowerBound) && upperBound.equals(that.upperBound);
     }
 

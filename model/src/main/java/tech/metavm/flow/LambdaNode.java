@@ -24,16 +24,15 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
                 paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
                         TypeParser.parse(paramDTO.type(), context))
         );
-        var returnType = context.getType(Id.parse(param.getReturnTypeId()));
+        var returnType = TypeParser.parse(param.getReturnType(), context);
         var funcInterface = (ClassType) NncUtils.get(param.getFunctionalInterface(), t -> TypeParser.parse(t, new ContextTypeDefRepository(context)));
         var node = (LambdaNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new LambdaNode(
                     nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, parameters, returnType, funcInterface
             );
-            node.createSAMImpl(context.getFunctionTypeContext(), context.getGenericContext());
-        }
-        else
+            node.createSAMImpl();
+        } else
             node.update(parameters, returnType, funcInterface);
         return node;
     }
@@ -55,17 +54,18 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
     public LambdaNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope,
                       List<Parameter> parameters,
-                      Type returnType, @Nullable ClassType functionalInterface) {
+                      @NotNull Type returnType, @Nullable ClassType functionalInterface) {
         super(tmpId, name, code, functionalInterface != null ? functionalInterface : Types.getFunctionType(parameters, returnType), previous, scope, false);
-        setParameters(parameters);
-        this.returnType = returnType.copy();
-        this.functionalInterface = NncUtils.get(functionalInterface, ClassType::copy);
+        this.returnType = addChild(returnType.copy(), "returnType");
+        setParameters(parameters, false);
+        this.functionalInterface = NncUtils.get(functionalInterface, t -> addChild(t.copy(), "functionalInterface"));
+        this.functionType = addChild(Types.getFunctionType(parameters, returnType), "functionType");
     }
 
     @Override
     @NotNull
-    public FunctionType getType() {
-        return (FunctionType) NncUtils.requireNonNull(super.getType());
+    public Type getType() {
+        return NncUtils.requireNonNull(super.getType());
     }
 
     @Nullable
@@ -83,18 +83,21 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
     @Override
     protected LambdaNodeParam getParam(SerializeContext serializeContext) {
-        try (var serContext = SerializeContext.enter()) {
-            return new LambdaNodeParam(
-                    bodyScope.toDTO(true, serializeContext),
-                    NncUtils.map(parameters, Parameter::toDTO),
-                    serContext.getId(returnType),
-                    NncUtils.get(functionalInterface, serContext::getId)
-            );
-        }
+        return new LambdaNodeParam(
+                bodyScope.toDTO(true, serializeContext),
+                NncUtils.map(parameters, Parameter::toDTO),
+                returnType.toExpression(serializeContext),
+                NncUtils.get(functionalInterface, t -> t.toExpression(serializeContext))
+        );
     }
 
     public List<Type> getParameterTypes() {
         return NncUtils.map(parameters, Parameter::getType);
+    }
+
+    @Override
+    public CallableRef getRef() {
+        return null;
     }
 
     public FunctionType getFunctionType() {
@@ -103,8 +106,8 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
     public void update(List<Parameter> parameters, Type returnType, @Nullable ClassType functionalInterface) {
         setParameters(parameters, false);
-        this.returnType = returnType.copy();
-        this.functionalInterface = NncUtils.get(functionalInterface, ClassType::copy);
+        this.returnType = addChild(returnType.copy(), "returnType");
+        this.functionalInterface = NncUtils.get(functionalInterface, t -> addChild(t.copy(), "functionalInterface"));
         resetType();
     }
 
@@ -115,7 +118,7 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
     private void setParameters(List<Parameter> parameters, boolean resetType) {
         NncUtils.forEach(parameters, p -> p.setCallable(this));
         this.parameters.resetChildren(parameters);
-        if(resetType)
+        if (resetType)
             resetType();
     }
 
@@ -125,7 +128,7 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
     }
 
     private void resetType() {
-        functionType = new FunctionType(NncUtils.randomNonNegative(), getParameterTypes(), returnType);
+        functionType = addChild(new FunctionType(getParameterTypes(), returnType), "functionType");
         setOutputType(functionalInterface != null ? functionalInterface : functionType);
     }
 
@@ -137,7 +140,7 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
         } else {
             var funcImplKlass = functionInterfaceImpl.resolve();
             var funcField = funcImplKlass.getFieldByCode("func");
-            return next(ClassInstance.create(Map.of(funcField, func), funcImplKlass));
+            return next(ClassInstance.create(Map.of(funcField, func), functionInterfaceImpl));
         }
     }
 
@@ -155,12 +158,12 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
     @Override
     public void onLoad(IEntityContext context) {
-        createSAMImpl(context.getFunctionTypeContext(), context.getGenericContext());
+        createSAMImpl();
     }
 
-    public void createSAMImpl(FunctionTypeProvider functionTypeProvider, ParameterizedTypeProvider parameterizedTypeProvider) {
+    public void createSAMImpl() {
         functionInterfaceImpl = functionalInterface != null ?
-                Types.createFunctionalClass(functionalInterface, functionTypeProvider, parameterizedTypeProvider) : null;
+                Types.createFunctionalClass(functionalInterface) : null;
     }
 
 }

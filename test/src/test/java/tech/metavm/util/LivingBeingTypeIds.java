@@ -4,6 +4,7 @@ public record LivingBeingTypeIds(
         String livingBeingTypeId,
         String animalTypeId,
         String humanTypeId,
+        String sentientTypeId,
         String livingBeingAgeFieldId,
         String livingBeingExtraFieldId,
         String livingBeingOffspringsFieldId,

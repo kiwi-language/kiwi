@@ -16,7 +16,7 @@ public class ExpressionSimplifier extends CopyVisitor {
     }
 
     public ExpressionSimplifier(Expression root) {
-        super(root);
+        super(root, false);
     }
 
     @Override

@@ -27,6 +27,8 @@ public interface TypeKey {
 
     void acceptChildren(TypeKeyVisitor<?> visitor);
 
+    int getCode();
+
     static TypeKey fromExpression(String expression) {
         var parser = new TypeParser(new CommonTokenStream(new TypeLexer(CharStreams.fromString(expression))));
         return fromTypeContext(parser.type());
@@ -90,8 +92,6 @@ public interface TypeKey {
         throw new InternalException("Invalid type: " + ctx.getText());
     }
 
-
-
     static TypeKey read(InstanceInput input) {
         int code = input.read();
         return switch (code) {
@@ -116,6 +116,7 @@ public interface TypeKey {
             case TypeKeyCodes.FUNCTION -> new FunctionTypeKey(readTypeKeyList(input), read(input));
             case TypeKeyCodes.UNCERTAIN -> new UncertainTypeKey(read(input), read(input));
             case TypeKeyCodes.VARIABLE -> new VariableTypeKey(input.readId().toString());
+            case TypeKeyCodes.CAPTURED -> new CapturedTypeKey(input.readId().toString());
             default -> throw new InternalException("Invalid type key code: " + code);
         };
     }

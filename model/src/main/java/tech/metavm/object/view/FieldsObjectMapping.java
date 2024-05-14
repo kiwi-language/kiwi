@@ -5,9 +5,8 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.CompositeTypeFacade;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.object.type.FunctionTypeProvider;
 import tech.metavm.object.type.Klass;
 import tech.metavm.object.view.rest.dto.FieldsObjectMappingParam;
 import tech.metavm.object.view.rest.dto.ObjectMappingParam;
@@ -37,12 +36,12 @@ public class FieldsObjectMapping extends ObjectMapping {
     private Method writeMethod;
 
     public FieldsObjectMapping(Long tmpId, String name, @Nullable String code, Klass sourceType, boolean builtin,
-                               @NotNull Klass targetType, List<ObjectMapping> overridden) {
+                               @NotNull ClassType targetType, List<ObjectMapping> overridden) {
         super(tmpId, name, code, sourceType, targetType, builtin);
         overridden.forEach(this::checkOverridden);
         this.overridden.addAll(overridden);
         sourceType.addMapping(this);
-        this.builtinTargetType = addChild(targetType.getEffectiveTemplate(), "builtinTargetType");
+        this.builtinTargetType = addChild(targetType.resolve().getEffectiveTemplate(), "builtinTargetType");
     }
 
     private void checkOverridden(ObjectMapping overridden) {
@@ -88,35 +87,37 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     @Override
-    protected Flow generateMappingCode(CompositeTypeFacade compositeTypeFacade) {
-        generateReadMethodCode(compositeTypeFacade);
-        return super.generateMappingCode(compositeTypeFacade);
+    protected Flow generateMappingCode(boolean generateReadMethod) {
+        if(generateReadMethod)
+            generateReadMethodCode();
+        return super.generateMappingCode(generateReadMethod);
     }
 
     @Override
-    protected Flow generateUnmappingCode(CompositeTypeFacade compositeTypeFacade) {
-        generateWriteMethodCode(compositeTypeFacade);
-        return super.generateUnmappingCode(compositeTypeFacade);
+    protected Flow generateUnmappingCode(boolean generateWriteMethod) {
+        if(generateWriteMethod)
+            generateWriteMethodCode();
+        return super.generateUnmappingCode(generateWriteMethod);
     }
 
     @Override
-    public void generateDeclarations(CompositeTypeFacade compositeTypeFacade) {
-        generateReadMethodDeclaration(compositeTypeFacade);
-        generateWriteMethodDeclaration(compositeTypeFacade);
-        super.generateDeclarations(compositeTypeFacade);
+    public void generateDeclarations() {
+        generateReadMethodDeclaration();
+        generateWriteMethodDeclaration();
+        super.generateDeclarations();
     }
 
     @Override
-    public void generateCode(Flow flow, CompositeTypeFacade compositeTypeFacade) {
+    public void generateCode(Flow flow) {
         if (flow == readMethod)
-            generateReadMethodCode(compositeTypeFacade);
+            generateReadMethodCode();
         else if (flow == writeMethod)
-            generateWriteMethodCode(compositeTypeFacade);
+            generateWriteMethodCode();
         else
-            super.generateCode(flow, compositeTypeFacade);
+            super.generateCode(flow);
     }
 
-    private void generateReadMethodDeclaration(FunctionTypeProvider functionTypeProvider) {
+    private void generateReadMethodDeclaration() {
         readMethod = MethodBuilder.newBuilder(getSourceKlass(),
                         "获取视图$" + getName(),
                         NncUtils.get(getCode(), c -> "getView$" + c)
@@ -129,7 +130,7 @@ public class FieldsObjectMapping extends ObjectMapping {
                 .build();
     }
 
-    private void generateWriteMethodDeclaration(FunctionTypeProvider functionTypeProvider) {
+    private void generateWriteMethodDeclaration() {
         writeMethod = MethodBuilder.newBuilder(getSourceKlass(),
                         "保存视图$" + getName(),
                         NncUtils.get(getCode(), c -> "saveView$" + c)
@@ -144,27 +145,27 @@ public class FieldsObjectMapping extends ObjectMapping {
                 .build();
     }
 
-    public void generateReadMethodCode(CompositeTypeFacade compositeTypeFacade) {
+    public void generateReadMethodCode() {
         var scope = Objects.requireNonNull(readMethod).newEphemeralRootScope();
         var selfNode = new SelfNode(null, "当前对象", "Self", getTargetType(), null, scope);
         List<FieldParam> fieldParams = new ArrayList<>();
         for (FieldMapping fieldMapping : fieldMappings)
-            fieldParams.add(fieldMapping.generateReadCode(selfNode, compositeTypeFacade));
+            fieldParams.add(fieldMapping.generateReadCode(selfNode));
         var view = new AddObjectNode(null, "视图", "View", false,
-                true, getTargetKlass(), scope.getLastNode(), scope);
+                true, getTargetType(), scope.getLastNode(), scope);
         fieldParams.forEach(view::addField);
         new ReturnNode(null, "返回", "Return", scope.getLastNode(), scope, Values.node(view));
     }
 
-    public void generateWriteMethodCode(CompositeTypeFacade compositeTypeFacade) {
+    public void generateWriteMethodCode() {
         var scope = Objects.requireNonNull(writeMethod).newEphemeralRootScope();
         var selfNode = new SelfNode(null, "当前对象", "Self", getSourceType(), null, scope);
-        var inputNode = Nodes.input(writeMethod, compositeTypeFacade);
+        var inputNode = Nodes.input(writeMethod);
         var viewNode = new ValueNode(null, "视图", "View", getTargetType(), scope.getLastNode(), scope,
                 Values.inputValue(inputNode, 0));
         for (FieldMapping fieldMapping : fieldMappings) {
             if (!fieldMapping.isReadonly())
-                fieldMapping.generateWriteCode(selfNode, viewNode, compositeTypeFacade);
+                fieldMapping.generateWriteCode(selfNode, viewNode);
         }
         new ReturnNode(null, "返回", "Return", scope.getLastNode(), scope, null);
     }
@@ -221,6 +222,23 @@ public class FieldsObjectMapping extends ObjectMapping {
     @Nullable
     public Klass getBuiltinTargetType() {
         return builtinTargetType;
+    }
+
+    public String getText() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{\"sourceType\": \"").append(sourceType.getTypeDesc())
+                .append("\", \"targetType\": \"").append(targetType.getTypeDesc()).append('\"')
+                .append(", \"fieldMappings\": [");
+        boolean first = true;
+        for (FieldMapping fieldMapping : fieldMappings) {
+            if(first)
+                first = false;
+            else
+                builder.append(", ");
+            builder.append(fieldMapping.getText());
+        }
+        builder.append("]}");
+        return builder.toString();
     }
 
 }

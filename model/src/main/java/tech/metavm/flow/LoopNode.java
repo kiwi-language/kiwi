@@ -14,6 +14,7 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -108,7 +109,7 @@ public abstract class LoopNode extends ScopeNode {
         for (LoopField field : fields) {
             fieldValues.put(field.getField(), field.getInitialValue().evaluate(frame));
         }
-        return ClassInstance.create(fieldValues, klass);
+        return ClassInstance.create(fieldValues, getType());
     }
 
     private void updateLoopObject(ClassInstance loopObject, MetaFrame frame) {
@@ -145,6 +146,11 @@ public abstract class LoopNode extends ScopeNode {
 
     public Klass getKlass() {
         return klass;
+    }
+
+    @Override
+    protected TypeDTO getOutputKlassDTO(SerializeContext serializeContext) {
+        return klass.toDTO(serializeContext);
     }
 
     @Override

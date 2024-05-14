@@ -3,7 +3,7 @@ package tech.metavm.entity;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Field;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.util.NncUtils;
 
@@ -12,11 +12,11 @@ import java.util.List;
 
 public class InstanceQueryBuilder {
 
-    public static InstanceQueryBuilder newBuilder(Type type) {
-        return new InstanceQueryBuilder(type);
+    public static InstanceQueryBuilder newBuilder(Klass klass) {
+        return new InstanceQueryBuilder(klass);
     }
 
-    private final Type type;
+    private final Klass klass;
     @Nullable
     private String searchText;
     @Nullable
@@ -32,8 +32,8 @@ public class InstanceQueryBuilder {
     private List<Id> excludedIds = List.of();
     private Mapping sourceMapping;
 
-    private InstanceQueryBuilder(Type type) {
-        this.type = type;
+    private InstanceQueryBuilder(Klass klass) {
+        this.klass = klass;
     }
 
     public InstanceQueryBuilder page(int page) {
@@ -97,7 +97,7 @@ public class InstanceQueryBuilder {
 
     public InstanceQuery build() {
         return new InstanceQuery(
-                type,
+                klass,
                 searchText,
                 expression,
                 searchFields,

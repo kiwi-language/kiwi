@@ -1,5 +1,6 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.entity.ReadonlyArray;
@@ -90,7 +91,7 @@ public class StdAllocator {
         return fileName;
     }
 
-    public void putId(String code, Id id) {
+    public void putId(@NotNull String code, @NotNull Id id) {
         code2id.put(code, id);
         id2code.put(id, code);
     }

@@ -61,13 +61,4 @@ public class SubParsingContext implements ParsingContext {
         return parent.getTypeDefProvider();
     }
 
-    @Override
-    public ArrayTypeProvider getArrayTypeProvider() {
-        return parent.getArrayTypeProvider();
-    }
-
-    @Override
-    public UnionTypeProvider getUnionTypeProvider() {
-        return parent.getUnionTypeProvider();
-    }
 }

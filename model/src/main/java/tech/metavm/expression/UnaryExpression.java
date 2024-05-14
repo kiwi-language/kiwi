@@ -63,12 +63,10 @@ public class UnaryExpression extends Expression {
 
     @Override
     public Type getType() {
-        if(operator.resultType() != null) {
+        if(operator.resultType() != null)
             return operator.resultType();
-        }
-        else {
+        else
             return operand.getType();
-        }
     }
 
     @Override

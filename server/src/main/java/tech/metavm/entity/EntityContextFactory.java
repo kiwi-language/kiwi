@@ -75,11 +75,10 @@ public class EntityContextFactory {
                                                       @Nullable IInstanceContext parent,
                                                       @Nullable IdInitializer idProvider,
                                                       EntityInstanceContextBridge bridge) {
-        var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge, bridge)
+        var builder = instanceContextFactory.newBuilder(appId, bridge, bridge)
                 .readonly(readonly)
                 .asyncPostProcess(NncUtils.orElse(asyncLogProcessing, defaultAsyncLogProcess))
                 .parent(parent)
-                .getTypeIdInterceptor(id -> IdConstants.isBuiltinAppId(id.getPhysicalId()) ? bridge.getType(Application.class).getTypeId() : null)
                 .plugins(
                         new MetaVersionPlugin(bridge, bridge),
                         new CheckConstraintPlugin(),

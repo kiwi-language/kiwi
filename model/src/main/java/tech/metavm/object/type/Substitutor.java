@@ -12,13 +12,13 @@ public class Substitutor extends StructuralTypeTransformer<Void> {
     private final Map<TypeVariable, Type> map = new HashMap<>();
 
     public Substitutor(IEntityContext entityContext, List<TypeVariable> typeVariables, List<Type> typeArguments) {
-        super(entityContext);
+        super();
         NncUtils.requireTrue(typeVariables.size() == typeArguments.size());
         NncUtils.biForEach(typeVariables, typeVariables, (tv1, tv2) -> map.put(tv1, tv2.getType()));
     }
 
     @Override
-    public Type variableVariableType(VariableType type, Void unused) {
+    public Type visitVariableType(VariableType type, Void unused) {
         return NncUtils.requireNonNull(map.get(type), "Can not resolve type variable: " + type);
     }
 }

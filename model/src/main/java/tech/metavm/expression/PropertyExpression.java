@@ -5,6 +5,7 @@ import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Property;
+import tech.metavm.object.type.PropertyRef;
 import tech.metavm.object.type.Type;
 
 import java.util.List;
@@ -18,21 +19,21 @@ public class PropertyExpression extends Expression {
     @ChildEntity("对象")
     private final Expression instance;
 
-    @EntityField("属性")
-    private final Property property;
+    @ChildEntity("属性")
+    private final PropertyRef propertyRef;
 
-    public PropertyExpression(@NotNull Expression instance, @NotNull Property property) {
+    public PropertyExpression(@NotNull Expression instance, @NotNull PropertyRef propertyRef) {
         this.instance = addChild(instance.copy(), "instance");
-        this.property = requireNonNull(property);
+        this.propertyRef = addChild((Entity & PropertyRef) propertyRef.copy(), "propertyRef");
     }
 
     public Property getProperty() {
-        return property;
+        return propertyRef.resolve();
     }
 
     @Override
     public Type getType() {
-        return property.getType();
+        return getProperty().getType();
     }
 
     @Override
@@ -42,14 +43,14 @@ public class PropertyExpression extends Expression {
 
     @Override
     protected Instance evaluateSelf(EvaluationContext context) {
-        return ((ClassInstance) instance.evaluate(context)).getProperty(property, context.parameterizedFlowProvider());
+        return ((ClassInstance) instance.evaluate(context)).getProperty(getProperty());
     }
 
     @Override
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         String fieldsExpr = switch (symbolType) {
-            case ID -> idVarName(requireNonNull(property.tryGetId()));
-            case NAME -> property.getName();
+            case ID -> idVarName(requireNonNull(getProperty().tryGetId()));
+            case NAME -> getProperty().getName();
         };
         if((instance instanceof CursorExpression cursorExpression) && cursorExpression.getAlias() == null) {
             return fieldsExpr;
@@ -78,12 +79,12 @@ public class PropertyExpression extends Expression {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof PropertyExpression that)) return false;
-        return Objects.equals(instance, that.instance) && Objects.equals(property, that.property);
+        return Objects.equals(instance, that.instance) && Objects.equals(propertyRef, that.propertyRef);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(instance, property);
+        return Objects.hash(instance, propertyRef);
     }
 
     @Override

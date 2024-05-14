@@ -67,14 +67,23 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
 
     @Override
     public void forEachReference(Consumer<Object> action) {
+        int i = 0;
         for (T t : this) {
-            if (t != null && !ValueUtil.isPrimitive(t))
-                action.accept(t);
+            if (t != null && !ValueUtil.isPrimitive(t)) {
+                if(DebugEnv.recordPath) {
+                    EntityUtils.enterPathItem(i + "");
+                    action.accept(t);
+                    EntityUtils.exitPathItem();
+                }
+                else
+                    action.accept(t);
+            }
+            i++;
         }
     }
 
     @Override
-    public void forEachDescendant(Consumer<Entity> action) {
+    public void forEachDescendant(Consumer<Entity> action, boolean skipCopyIgnore) {
         action.accept(this);
     }
 
@@ -198,6 +207,16 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         return table.indexOf(value);
     }
 
+    public int identityIndexOf(Object value) {
+        int i = 0;
+        for (T t : this) {
+            if (t == value)
+                return i;
+            i++;
+        }
+        return -1;
+    }
+
     public int lastIndexOf(Object o) {
         return table.lastIndexOf(o);
     }
@@ -209,6 +228,11 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
 
     public List<T> toList() {
         return Collections.unmodifiableList(table);
+    }
+
+    // Should only be used as WeakHashMap keys
+    public List<T> getTable() {
+        return table;
     }
 
     public Stream<T> stream() {

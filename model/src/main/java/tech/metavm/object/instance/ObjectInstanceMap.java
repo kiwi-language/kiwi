@@ -1,6 +1,6 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.entity.ModelDef;
+import tech.metavm.entity.Mapper;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Klass;
@@ -13,7 +13,7 @@ public interface ObjectInstanceMap {
 
     Instance getInstance(Object object);
 
-    <T> T getEntity(Class<T> klass, Instance instance, @Nullable ModelDef<T, ?> def);
+    <T> T getEntity(Class<T> klass, Instance instance, @Nullable Mapper<T, ?> mapper);
 
     default Klass getClassType(DurableInstance instance) {
         return getEntity(Klass.class, instance);

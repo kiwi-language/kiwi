@@ -1,6 +1,5 @@
 package tech.metavm.expression;
 
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.InternalException;
@@ -8,11 +7,9 @@ import tech.metavm.util.InternalException;
 public class InstanceEvaluationContext implements EvaluationContext {
 
     private final ClassInstance instance;
-    private final ParameterizedFlowProvider parameterizedFlowProvider;
 
-    public InstanceEvaluationContext(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public InstanceEvaluationContext(ClassInstance instance) {
         this.instance = instance;
-        this.parameterizedFlowProvider = parameterizedFlowProvider;
     }
 
     @Override
@@ -26,11 +23,6 @@ public class InstanceEvaluationContext implements EvaluationContext {
     @Override
     public boolean isContextExpression(Expression expression) {
         return expression instanceof ThisExpression;
-    }
-
-    @Override
-    public ParameterizedFlowProvider parameterizedFlowProvider() {
-        return parameterizedFlowProvider;
     }
 
 

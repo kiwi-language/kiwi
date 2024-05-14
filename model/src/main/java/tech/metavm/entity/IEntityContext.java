@@ -43,7 +43,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     ObjectInstanceMap getObjectInstanceMap();
 
-    <T> T getEntity(Class<T> klass, DurableInstance instance, @Nullable ModelDef<T, ?> def);
+    <T> T getEntity(Class<T> klass, DurableInstance instance, @Nullable Mapper<T, ?> mapper);
 
     DurableInstance getInstance(Object object);
 
@@ -79,31 +79,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     boolean containsEntity(Class<?> entityType, long id);
 
-    Klass getParameterizedType(Klass template, List<? extends Type> typeArguments);
-
-    default Klass getParameterizedType(Klass template, Type... typeArguments) {
-        return getParameterizedType(template, List.of(typeArguments));
-    }
-
-    FunctionType getFunctionType(List<Type> parameterTypes, Type returnType);
-
-    GenericContext getGenericContext();
-
-    FunctionTypeContext getFunctionTypeContext();
-
-    UncertainType getUncertainType(Type lowerBound, Type upperBound);
-
-    UncertainTypeContext getUncertainTypeContext();
-
-    UnionTypeContext getUnionTypeContext();
-
-    ArrayTypeContext getArrayTypeContext(ArrayKind kind);
-
-    UnionType getNullableType(Type type);
-
-    Set<CompositeType> getNewCompositeTypes();
-
-//    <T> T getEntity(Class<T> entityType, long id);
+    //    <T> T getEntity(Class<T> entityType, long id);
 
     <T> T getBufferedEntity(Class<T> entityType, long id);
 
@@ -122,11 +98,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     @Nullable
     IEntityContext getParent();
 
-    <T> T createEntity(DurableInstance instance, ModelDef<T, ?> def);
-
-    default FunctionType getFunctionType(Id id) {
-        return getEntity(FunctionType.class, id);
-    }
+    <T> T createEntity(DurableInstance instance, Mapper<T, ?> mapper);
 
     boolean isNewEntity(Object entity);
 
@@ -162,24 +134,8 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return getEntity(Klass.class, id);
     }
 
-    UnionType getUnionType(Set<Type> members);
-
     @Nullable
     EventQueue getEventQueue();
-
-    IntersectionType getIntersectionType(Set<Type> types);
-
-    IntersectionTypeContext getIntersectionTypeContext();
-
-    ArrayType getArrayType(Type elementType, ArrayKind kind);
-
-    default Klass getListType(Type elementType) {
-        return getGenericContext().getParameterizedType(StandardTypes.getListType(), List.of(elementType));
-    }
-
-    default Klass getReadWriteListType(Type elementType) {
-        return getGenericContext().getParameterizedType(StandardTypes.getReadWriteListType(), List.of(elementType));
-    }
 
     long getAppId(Object model);
 
@@ -199,14 +155,6 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     default TypeVariable getTypeVariable(Id id) {
         return getEntity(TypeVariable.class, id);
-    }
-
-    default CapturedType getCapturedType(Id id) {
-        return getEntity(CapturedType.class, id);
-    }
-
-    default CapturedType getCapturedType(String id) {
-        return getEntity(CapturedType.class, id);
     }
 
     default TypeVariable getTypeVariable(String id) {
@@ -250,6 +198,10 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     }
 
     default ObjectMapping getObjectMapping(Id id) {
+        return getEntity(ObjectMapping.class, id);
+    }
+
+    default ObjectMapping getObjectMapping(String id) {
         return getEntity(ObjectMapping.class, id);
     }
 
@@ -311,10 +263,6 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     }
 
     void initIdManually(Object model, Id id);
-
-    CompositeTypeContext<?> getCompositeTypeContext(TypeCategory category);
-
-    Collection<CompositeTypeContext<?>> getCompositeTypeContexts();
 
     boolean isRemoved(Object entity);
 

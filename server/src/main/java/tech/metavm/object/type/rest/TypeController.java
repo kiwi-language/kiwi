@@ -147,20 +147,9 @@ public class TypeController {
         return Result.success(typeManager.getConstraint(id));
     }
 
-    @PostMapping("/load-by-paths")
-    public Result<LoadByPathsResponse> loadByPaths(@RequestBody LoadByPathsRequest request) {
-        return Result.success(typeManager.loadByPaths(request.paths()));
-    }
-
     @PostMapping("/constraint")
     public Result<String> saveConstraint(@RequestBody ConstraintDTO constraint) {
         return Result.success(typeManager.saveConstraint(constraint));
-    }
-
-    @PostMapping("/init-composite-types/{id}")
-    public Result<Void> initCompositeTypes(@PathVariable String id) {
-        typeManager.initCompositeTypes(id);
-        return Result.voidSuccess();
     }
 
     @DeleteMapping("/constraint/{id}")

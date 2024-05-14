@@ -157,7 +157,7 @@ public class Types {
                         actualUt.getMembers() : Set.of(actualType);
                 actualMembers = new HashSet<>(actualMembers);
                 for (Type member : unionType.getMembers()) {
-                    var actualMember = NncUtils.find(actualMembers, that -> member.isAssignableFrom(that));
+                    var actualMember = NncUtils.find(actualMembers, member::isAssignableFrom);
                     if(actualMember == null)
                         actualMember = StandardTypes.getNeverType();
                     extractCapturedType(member, actualMember, setCaptureType);
@@ -173,7 +173,7 @@ public class Types {
         }
     }
 
-    public static Type tryCapture(Type type, CapturedTypeScope scope, CompositeTypeFacade compositeTypeFacade, @Nullable Parameter parameter) {
+    public static Type tryCapture(Type type, CapturedTypeScope scope, @Nullable Parameter parameter) {
         return type;
 //        return switch (type) {
 //            case UncertainType uncertainType -> new CapturedType(uncertainType, scope, NncUtils.randomNonNegative(), parameter);
@@ -220,35 +220,22 @@ public class Types {
         return List.of();
     }
 
-    public static Type tryUncapture(Type type, CompositeTypeFacade compositeTypeFacade) {
+    public static Type tryUncapture(Type type) {
         return switch (type) {
             case CapturedType capturedType -> capturedType.getUncertainType();
             case ClassType classType -> {
                 if (classType.isParameterized()) {
                     yield classType.getKlass().getParameterized(
-                            NncUtils.map(classType.getTypeArguments(), arg -> tryUncapture(arg, compositeTypeFacade))
+                            NncUtils.map(classType.getTypeArguments(), Types::tryUncapture)
                     ).getType();
                 } else
                     yield classType;
             }
-            case ArrayType arrayType -> compositeTypeFacade.getArrayType(
-                    tryUncapture(arrayType.getElementType(), compositeTypeFacade),
-                    arrayType.getKind(),
-                    null
-            );
-            case UnionType unionType -> compositeTypeFacade.getUnionType(
-                    NncUtils.mapUnique(unionType.getMembers(), t -> tryUncapture(t, compositeTypeFacade)),
-                    null
-            );
-            case IntersectionType intersectionType -> compositeTypeFacade.getIntersectionType(
-                    NncUtils.mapUnique(intersectionType.getTypes(), t -> tryUncapture(t, compositeTypeFacade)),
-                    null
-            );
-            case FunctionType functionType -> compositeTypeFacade.getFunctionType(
-                    NncUtils.map(functionType.getParameterTypes(), t -> tryUncapture(t, compositeTypeFacade)),
-                    tryUncapture(functionType.getReturnType(), compositeTypeFacade),
-                    null
-            );
+            case ArrayType arrayType -> new ArrayType(tryUncapture(arrayType.getElementType()), arrayType.getKind());
+            case UnionType unionType -> new UnionType(NncUtils.mapUnique(unionType.getMembers(), Types::tryUncapture));
+            case IntersectionType intersectionType -> new IntersectionType(NncUtils.mapUnique(intersectionType.getTypes(), Types::tryUncapture));
+            case FunctionType functionType -> new FunctionType(NncUtils.map(functionType.getParameterTypes(), Types::tryUncapture),
+                    tryUncapture(functionType.getReturnType()));
             case VariableType variableType -> variableType;
             default -> type;
         };
@@ -316,19 +303,17 @@ public class Types {
     }
 
     public static FunctionType getFunctionType(List<Parameter> parameters, Type returnType) {
-        return new FunctionType(NncUtils.randomNonNegative(), NncUtils.map(parameters, Parameter::getType), returnType);
+        return new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
     }
 
-    public static ClassType createFunctionalClass(ClassType functionalInterface,
-                                              FunctionTypeProvider functionTypeProvider,
-                                              ParameterizedTypeProvider parameterizedTypeProvider) {
+    public static ClassType createFunctionalClass(ClassType functionalInterface) {
         var klass = ClassTypeBuilder.newBuilder(functionalInterface.getName() + "实现", null)
                 .interfaces(functionalInterface)
                 .ephemeral(true)
                 .build();
         klass.setEphemeralEntity(true);
         var sam = getSAM(functionalInterface.resolve());
-        var funcType = functionTypeProvider.getFunctionType(sam.getParameterTypes(), sam.getReturnType());
+        var funcType = new FunctionType(sam.getParameterTypes(), sam.getReturnType());
         var funcField = FieldBuilder.newBuilder("函数", "func", klass, funcType).build();
 
         var flow = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode())
@@ -346,10 +331,10 @@ public class Types {
 
         var inputNode = new InputNode(null, "输入", null, inputType, selfNode, flow.getRootScope());
         var funcNode = new FunctionNode(null, "函数", null, inputNode, flow.getRootScope(),
-                Values.expression(new PropertyExpression(new NodeExpression(selfNode), funcField)),
+                Values.expression(new PropertyExpression(new NodeExpression(selfNode), funcField.getRef())),
                 NncUtils.map(inputType.getReadyFields(),
                         inputField ->
-                                Values.expression(new PropertyExpression(new NodeExpression(inputNode), inputField))
+                                Values.expression(new PropertyExpression(new NodeExpression(inputNode), inputField.getRef()))
                 )
         );
         var returnValue = flow.getReturnType().isVoid() ? null : Values.expression(new NodeExpression(funcNode));
@@ -368,7 +353,7 @@ public class Types {
         return abstractFlows.get(0);
     }
 
-    public static Klass createSAMInterfaceImpl(Klass samInterface, FunctionInstance function, CompositeTypeFacade compositeTypeFacade) {
+    public static Klass createSAMInterfaceImpl(Klass samInterface, FunctionInstance function) {
         var klass = ClassTypeBuilder.newBuilder(
                         samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
                 .interfaces(samInterface.getType())
@@ -378,7 +363,6 @@ public class Types {
         klass.setEphemeralEntity(true);
         var sam = samInterface.getSingleAbstractMethod();
         var methodStaticType = new FunctionType(
-                null,
                 NncUtils.prepend(klass.getType(), sam.getParameterTypes()),
                 sam.getReturnType()
         );
@@ -390,7 +374,7 @@ public class Types {
                 .staticType(methodStaticType)
                 .build();
         var scope = method.getRootScope();
-        var input = Nodes.input(method, compositeTypeFacade);
+        var input = Nodes.input(method);
         var func = Nodes.function(
                 "function",
                 scope,
@@ -464,7 +448,7 @@ public class Types {
     }
      */
 
-    public static Type getUnionType(Collection<Type> types, UnionTypeProvider unionTypeProvider) {
+    public static Type getUnionType(Collection<Type> types) {
         if (types.isEmpty())
             return StandardTypes.getNeverType();
         Set<Type> effectiveTypes = new HashSet<>();
@@ -484,7 +468,7 @@ public class Types {
             }
             members.add(effectiveType);
         }
-        return members.size() == 1 ? members.iterator().next() : unionTypeProvider.getUnionType(members);
+        return members.size() == 1 ? members.iterator().next() : new UnionType(members);
     }
 
     public static Klass saveClasType(TypeDTO classDTO, ResolutionStage stage, SaveTypeBatch batch) {
@@ -517,36 +501,36 @@ public class Types {
         return TYPE_FACTORY.isNullable(type);
     }
 
-    public static boolean isObject(Type type) {
-        return type == StandardTypes.getAnyType();
+    public static boolean isAny(Type type) {
+        return type instanceof AnyType;
     }
 
-    public static boolean isBool(Type type) {
-        return type == StandardTypes.getBooleanType();
+    public static boolean isBoolean(Type type) {
+        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.BOOLEAN;
     }
 
     public static boolean isDouble(Type type) {
-        return type == StandardTypes.getDoubleType();
+        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.DOUBLE;
     }
 
     public static boolean isString(Type type) {
-        return type == StandardTypes.getStringType();
+        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.STRING;
     }
 
     public static boolean isPassword(Type type) {
-        return type == StandardTypes.getPasswordType();
+        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.PASSWORD;
     }
 
     public static boolean isLong(Type type) {
-        return type == StandardTypes.getLongType();
+        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.LONG;
     }
 
     public static boolean isTime(Type type) {
-        return type == StandardTypes.getTimeType();
+        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.TIME;
     }
 
     public static boolean isNull(Type type) {
-        return type == StandardTypes.getNullType();
+        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.NULL;
     }
 
     /* public static Klass ensureClassArray(Type type) {
@@ -566,30 +550,6 @@ public class Types {
             throw new InternalException("Only reference array is supported for AllMatchExpression right now");
         }
     } */
-
-    public static Klass getSetType(Type type, IEntityContext context) {
-        return context.getParameterizedType(StandardTypes.getSetType(), List.of(type));
-    }
-
-    public static Klass getListType(Type type, IEntityContext context) {
-        return context.getParameterizedType(StandardTypes.getListType(), List.of(type));
-    }
-
-    public static Klass getCollectionType(Type type, IEntityContext context) {
-        return context.getParameterizedType(StandardTypes.getCollectionType(), List.of(type));
-    }
-
-    public static Klass getIteratorType(Type type, IEntityContext context) {
-        return context.getParameterizedType(StandardTypes.getIteratorType(), List.of(type));
-    }
-
-    public static Klass getIteratorImplType(Type type, IEntityContext context) {
-        return context.getParameterizedType(StandardTypes.getIteratorImplType(), List.of(type));
-    }
-
-    public static Klass getMapType(Type keyType, Type valueType, IEntityContext context) {
-        return context.getParameterizedType(StandardTypes.getMapType(), List.of(keyType, valueType));
-    }
 
     public static String getMapTypeName(Type keyType, Type valueType) {
         return getParameterizedName("词典", keyType, valueType);

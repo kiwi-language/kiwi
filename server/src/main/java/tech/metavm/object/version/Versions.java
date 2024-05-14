@@ -1,11 +1,15 @@
 package tech.metavm.object.version;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.util.NncUtils;
 
 import java.util.Set;
 
 public class Versions {
+
+    public static final Logger logger = LoggerFactory.getLogger(Versions.class);
 
     public static Version create(Set<String> changedTypeIds,
                                  Set<String> removedTypeIds,
@@ -18,6 +22,7 @@ public class Versions {
                 "Change set is empty");
         Version lastVersion = versionRepository.getLastVersion();
         long nextVersion = lastVersion != null ? lastVersion.getVersion() + 1 : 1;
+        logger.info("version: {}", nextVersion);
         var version = new Version(nextVersion,
                 changedTypeIds,
                 removedTypeIds,

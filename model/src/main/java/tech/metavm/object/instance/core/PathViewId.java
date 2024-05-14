@@ -2,8 +2,10 @@ package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.view.MappingProvider;
+import tech.metavm.object.view.rest.dto.MappingKey;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 
@@ -17,8 +19,8 @@ public abstract class PathViewId extends ViewId {
 
     private final TypeKey typeKey;
 
-    protected PathViewId(boolean isArray, ViewId parent, @Nullable Id mappingId, @Nullable Id sourceId, TypeKey typeKey) {
-        super(isArray, mappingId);
+    protected PathViewId(boolean isArray, ViewId parent, @Nullable MappingKey mappingKey, @Nullable Id sourceId, TypeKey typeKey) {
+        super(isArray, mappingKey);
         this.parent = parent;
         this.sourceId = sourceId;
         this.typeKey = typeKey;
@@ -66,22 +68,20 @@ public abstract class PathViewId extends ViewId {
 
     @Nullable
     @Override
-    public SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider) {
-        var mappingId = getMappingId();
+    public SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
+        var mappingKey = getMappingKey();
         if(sourceId != null)
-            return new SourceRef(instanceProvider.get(sourceId), mappingId != null ? mappingProvider.getMapping(mappingId) : null);
+            return new SourceRef(instanceProvider.get(sourceId), mappingKey != null ? mappingKey.toMapping(mappingProvider, typeDefProvider) : null);
         else
             return null;
     }
 
     @Override
-    public TypeKey getViewTypeKey(MappingProvider mappingProvider) {
-        var mappingId = getMappingId();
+    public TypeKey getViewTypeKey(MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
+        var mappingId = getMappingKey();
         if(mappingId != null)
-            return super.getViewTypeKey(mappingProvider);
+            return super.getViewTypeKey(mappingProvider, typeDefProvider);
         return typeKey;
-//        return typeProvider.getType(typeId);
-//        return getViewTypeByPath(parent.getViewType(mappingProvider, typeProvider));
     }
 
     protected abstract Type getViewTypeByPath(Type parentType);

@@ -20,7 +20,6 @@ import tech.metavm.task.JobSchedulerStatus;
 import tech.metavm.task.TaskSignal;
 
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -49,56 +48,24 @@ public class BootstrapUtils {
         if (state != null) {
             var defContext = state.defContext();
             ModelDefRegistry.setDefContext(defContext);
-            StandardTypes.setBooleanType((PrimitiveType) defContext.getType(Boolean.class));
-            StandardTypes.setDoubleType((PrimitiveType) defContext.getType(Double.class));
-            StandardTypes.setLongType((PrimitiveType) defContext.getType(Long.class));
-            StandardTypes.setTimeType((PrimitiveType) defContext.getType(Date.class));
-            StandardTypes.setPasswordType((PrimitiveType) defContext.getType(Password.class));
-            StandardTypes.setStringType((PrimitiveType) defContext.getType(String.class));
-            StandardTypes.setVoidType((PrimitiveType) defContext.getType(Void.class));
-            StandardTypes.setNullType((PrimitiveType) defContext.getType(Null.class));
-            StandardTypes.setAnyType((AnyType) defContext.getType(Object.class));
-            StandardTypes.setNeverType((NeverType) defContext.getType(Never.class));
-            StandardTypes.setAnyArrayType(
-                    defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_WRITE)
-            );
-            StandardTypes.setReadonlyAnyArrayType(
-                    defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_ONLY)
-            );
-            StandardTypes.setNeverArrayType(defContext.getArrayType(StandardTypes.getNeverType(), ArrayKind.READ_WRITE));
-            StandardTypes.setNullableAnyType(defContext.getNullableType(StandardTypes.getAnyType()));
-            StandardTypes.setEntityType(defContext.getClassType(Entity.class).resolve());
-            StandardTypes.setEnumType(defContext.getClassType(Enum.class).resolve());
-            StandardTypes.setThrowableType(defContext.getClassType(Throwable.class).resolve());
-            StandardTypes.setRuntimeExceptionType(defContext.getClassType(RuntimeException.class).resolve());
-            StandardTypes.setNullableStringType(defContext.getNullableType(StandardTypes.getStringType()));
-            StandardTypes.setCollectionType(defContext.getClassType(Collection.class).resolve());
-            StandardTypes.setListType(defContext.getClassType(MetaList.class).resolve());
-            StandardTypes.setReadWriteListType(defContext.getClassType(ReadWriteMetaList.class).resolve());
-            StandardTypes.setChildListType(defContext.getClassType(ChildMetaList.class).resolve());
-            StandardTypes.setSetType(defContext.getClassType(MetaSet.class).resolve());
-            StandardTypes.setMapType(defContext.getClassType(MetaMap.class).resolve());
-            StandardTypes.setIteratorImplType(defContext.getClassType(IteratorImpl.class).resolve());
-            StandardTypes.setIteratorType(defContext.getClassType(MetaIterator.class).resolve());
-            StandardTypes.setIterableType(defContext.getClassType(MetaIterable.class).resolve());
-            StandardTypes.setRecordType(defContext.getClassType(Record.class).resolve());
-            StandardTypes.setExceptionType(defContext.getClassType(Exception.class).resolve());
-            StandardTypes.setIllegalArgumentExceptionType(defContext.getClassType(IllegalArgumentException.class).resolve());
-            StandardTypes.setIllegalStateExceptionType(defContext.getClassType(IllegalStateException.class).resolve());
-            StandardTypes.setNullPointerExceptionType(defContext.getClassType(NullPointerException.class).resolve());
-            StandardTypes.clearParameterizedTypes();
-            StandardTypes.clearNullableTypes();
-            var collClasses = List.of(
-                    MetaList.class, ReadWriteMetaList.class, ChildMetaList.class, MetaSet.class);
-            var primitiveClasses = List.of(Long.class, Double.class, Boolean.class, String.class, Date.class);
-            for (var primitiveClass : primitiveClasses) {
-                var primitiveType = defContext.getType(primitiveClass);
-                StandardTypes.addNullableType(defContext.getNullableType(primitiveType));
-                for (Class<?> collClass : collClasses) {
-                    var collType = defContext.getClassType(collClass).resolve();
-                    StandardTypes.addParameterizedType(defContext.getParameterizedType(collType, List.of(primitiveType)));
-                }
-            }
+            StandardTypes.setEntityKlass(defContext.getClassType(Entity.class).resolve());
+            StandardTypes.setEnumKlass(defContext.getClassType(Enum.class).resolve());
+            StandardTypes.setThrowableKlass(defContext.getClassType(Throwable.class).resolve());
+            StandardTypes.setRuntimeExceptionKlass(defContext.getClassType(RuntimeException.class).resolve());
+            StandardTypes.setCollectionKlass(defContext.getClassType(Collection.class).resolve());
+            StandardTypes.setListKlass(defContext.getClassType(MetaList.class).resolve());
+            StandardTypes.setReadWriteListKlass(defContext.getClassType(ReadWriteMetaList.class).resolve());
+            StandardTypes.setChildListKlass(defContext.getClassType(ChildMetaList.class).resolve());
+            StandardTypes.setSetKlass(defContext.getClassType(MetaSet.class).resolve());
+            StandardTypes.setMapKlass(defContext.getClassType(MetaMap.class).resolve());
+            StandardTypes.setIteratorImplKlass(defContext.getClassType(IteratorImpl.class).resolve());
+            StandardTypes.setIteratorKlass(defContext.getClassType(MetaIterator.class).resolve());
+            StandardTypes.setIterableKlass(defContext.getClassType(MetaIterable.class).resolve());
+            StandardTypes.setRecordKlass(defContext.getClassType(Record.class).resolve());
+            StandardTypes.setExceptionKlass(defContext.getClassType(Exception.class).resolve());
+            StandardTypes.setIllegalArgumentExceptionKlass(defContext.getClassType(IllegalArgumentException.class).resolve());
+            StandardTypes.setIllegalStateExceptionKlass(defContext.getClassType(IllegalStateException.class).resolve());
+            StandardTypes.setNullPointerExceptionKlass(defContext.getClassType(NullPointerException.class).resolve());
             NativeFunctions.setIsSourcePresent(requireNonNull(defContext.selectFirstByKey(
                     Function.UNIQUE_IDX_CODE, "isSourcePResent"
             )));
@@ -133,9 +100,6 @@ public class BootstrapUtils {
                     Function.UNIQUE_IDX_CODE, "delete"
             )));
             NativeFunctions.setEmailSender(MockEmailSender.INSTANCE);
-            Instances.setFalseInstance(new BooleanInstance(false, StandardTypes.getBooleanType()));
-            Instances.setTrueInstance(new BooleanInstance(true, StandardTypes.getBooleanType()));
-            Instances.setNullInstance(new NullInstance(StandardTypes.getNullType()));
 
             var state = BootstrapUtils.state.copy();
             var instanceStore = new MemInstanceStore(

@@ -196,7 +196,7 @@ public class TypeNarrower {
         if (set.size() == 1) {
             return set.iterator().next();
         } else {
-            return new UnionType(null, set);
+            return new UnionType(set);
         }
     }
 

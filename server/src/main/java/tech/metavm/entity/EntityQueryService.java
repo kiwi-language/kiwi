@@ -24,9 +24,7 @@ public class EntityQueryService {
         InstanceQuery instanceQuery = convertToInstanceQuery(query, context);
         var idPage = instanceQueryService.query(instanceQuery,
                 context.getInstanceContext(),
-                context.getGenericContext(),
-                new ContextTypeDefRepository(context),
-                CompositeTypeFacadeImpl.fromContext(context)
+                new ContextTypeDefRepository(context)
         );
         return new Page<>(
                 NncUtils.map(idPage.data(), inst -> context.getEntity(query.entityType(), inst)),
@@ -40,10 +38,9 @@ public class EntityQueryService {
     }
 
     private InstanceQuery convertToInstanceQuery(EntityQuery<?> entityQuery, IEntityContext context) {
-        var type = ModelDefRegistry.getClassType(entityQuery.entityType());
-        EntityDef<?> entityDef = ModelDefRegistry.getEntityDef(type);
+        EntityDef<?> entityDef = (EntityDef<?>) ModelDefRegistry.getDef(entityQuery.entityType());
         return new InstanceQuery(
-                type,
+                entityDef.getKlass(),
                 entityQuery.searchText(),
                 entityQuery.expression(),
                 NncUtils.map(entityQuery.searchFields(), entityDef::getFieldByJavaFieldName),

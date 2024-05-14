@@ -1,7 +1,6 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.EntityChange;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.persistence.VersionRT;
@@ -17,15 +16,15 @@ public class CheckConstraintPlugin implements ContextPlugin {
         change.forEachInsertOrUpdate(v -> {
             var instance = context.get(v.id());
             if(instance instanceof ClassInstance classInstance)
-                checkConstraints(classInstance, context.parameterizedFlowProvider());
+                checkConstraints(classInstance);
         });
         return false;
     }
 
-    private void checkConstraints(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
+    private void checkConstraints(ClassInstance instance) {
         List<CheckConstraint> constraints = instance.getKlass().getConstraints(CheckConstraint.class);
         for (CheckConstraint constraint : constraints) {
-            if(!constraint.check(instance, parameterizedFlowProvider)) {
+            if(!constraint.check(instance)) {
                 throw BusinessException.constraintCheckFailed(instance, constraint);
             }
         }

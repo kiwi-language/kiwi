@@ -9,6 +9,7 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -19,7 +20,7 @@ public class NewArrayNode extends NodeRT implements NewNode {
     public static NewArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         NewArrayNodeParam param = nodeDTO.getParam();
-        var type = (ArrayType) context.getType(Id.parse(nodeDTO.outputTypeId()));
+        var type = (ArrayType) TypeParser.parse(nodeDTO.outputType(), context);
         var value = NncUtils.get(param.value(), v -> ValueFactory.create(v, parsingContext));
         var parentRef = param.parentRef() != null ?
                 ParentRef.create(param.parentRef(), parsingContext, context, type) : null;

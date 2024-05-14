@@ -24,7 +24,6 @@ public class InstanceContextTest extends TestCase {
 
     private EntityRepository entityRepository;
     private IInstanceStore instanceStore;
-    private TypeProviders typeProviders;
     private Cache cache;
     private EventQueue eventQueue;
     private EntityIdProvider idProvider;
@@ -36,7 +35,6 @@ public class InstanceContextTest extends TestCase {
         MockStandardTypesInitializer.init();
         instanceStore = new MemInstanceStore();
         entityRepository = new MockEntityRepository(new MemTypeRegistry());
-        typeProviders = new TypeProviders();
         cache = new MockCache();
         eventQueue = new MockEventQueue();
         idProvider = new MockIdProvider();
@@ -54,7 +52,6 @@ public class InstanceContextTest extends TestCase {
                 null,
                 entityRepository,
                 entityRepository,
-                typeProviders.parameterizedFlowProvider, typeProviders.createFacade(),
                 false,
                 cache,
                 eventQueue, false);
@@ -62,17 +59,17 @@ public class InstanceContextTest extends TestCase {
 
     public void test() {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        fooType.initId(DefaultPhysicalId.ofObject(101L, 0L, new ClassTypeKey("1")));
+        fooType.initId(DefaultPhysicalId.ofObject(101L, 0L, TestUtils.mockClassTypeKey()));
         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
                 .build();
-        fooNameField.initId(DefaultPhysicalId.ofObject(111L, 0L, new ClassTypeKey("1")));
+        fooNameField.initId(DefaultPhysicalId.ofObject(111L, 0L, TestUtils.mockClassTypeKey()));
 
         entityRepository.bind(fooType);
         var tmpId = TmpId.of(10001L);
         String name = "foo";
         Id id;
         try (var context = newContext()) {
-            var instance = ClassInstanceBuilder.newBuilder(fooType)
+            var instance = ClassInstanceBuilder.newBuilder(fooType.getType())
                     .id(tmpId)
                     .data(Map.of(fooNameField, Instances.stringInstance(name)))
                     .build();
@@ -103,7 +100,7 @@ public class InstanceContextTest extends TestCase {
             var foo = MockUtils.createFoo(fooTypes);
             var bars = (ArrayInstance) foo.getField(fooTypes.fooBarsField());
             var bar001 = (DurableInstance) (bars.get(0));
-            var baz = ClassInstanceBuilder.newBuilder(fooTypes.bazType())
+            var baz = ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
                     .data(Map.of(fooTypes.bazBarsField(), new ArrayInstance(fooTypes.barArrayType(), List.of(bar001))))
                     .build();
             context.bind(foo);

@@ -1,10 +1,12 @@
 package tech.metavm.object.instance.rest;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Serializable;
 import java.util.Set;
 
 public record InstanceFieldDTO(
-        String fieldId,
+        @NotNull String fieldId,
         String fieldName,
         Integer type,
         Boolean multiValued,

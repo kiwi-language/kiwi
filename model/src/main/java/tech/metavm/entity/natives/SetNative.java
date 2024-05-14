@@ -43,8 +43,8 @@ public class SetNative extends IterableNative {
     }
 
     public ClassInstance iterator(CallContext callContext) {
-        var iteratorImplType = (Klass) instance.getKlass().getDependency(StandardTypes.getIteratorImplType());
-        var it = ClassInstance.allocate(iteratorImplType);
+        var iteratorImplType = (Klass) instance.getKlass().getDependency(StandardTypes.getIteratorImplKlass());
+        var it = ClassInstance.allocate(iteratorImplType.getType());
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
         return it;

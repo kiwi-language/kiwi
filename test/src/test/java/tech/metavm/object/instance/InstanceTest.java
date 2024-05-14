@@ -43,8 +43,8 @@ public class InstanceTest extends TestCase {
     private ClassInstance getBarInstance(FooTypes fooTypes) {
         Map<Field, Instance> barData = new HashMap<>();
         barData.put(fooTypes.barCodeField(), stringInstance(CONST_BAR_CODE));
-        ClassInstance bar = ClassInstance.create(barData, fooTypes.barType());
-        bar.initId(DefaultPhysicalId.ofObject(2L, 0L, new ClassTypeKey("1")));
+        ClassInstance bar = ClassInstance.create(barData, fooTypes.barType().getType());
+        bar.initId(DefaultPhysicalId.ofObject(2L, 0L, TestUtils.mockClassTypeKey()));
         return bar;
     }
 
@@ -58,8 +58,8 @@ public class InstanceTest extends TestCase {
                 )
         );
         fooData.put(fooTypes.fooBazListField(), new ArrayInstance(fooTypes.bazArrayType()));
-        ClassInstance foo = ClassInstance.create(fooData, fooTypes.fooType());
-        foo.initId(DefaultPhysicalId.ofObject(1L, 0L, new ClassTypeKey("1")));
+        ClassInstance foo = ClassInstance.create(fooData, fooTypes.fooType().getType());
+        foo.initId(DefaultPhysicalId.ofObject(1L, 0L, TestUtils.mockClassTypeKey()));
         return foo;
     }
 
@@ -91,7 +91,7 @@ public class InstanceTest extends TestCase {
                 fooTypes.fooBazListField(),
                 new ArrayInstance(fooTypes.bazArrayType())
         );
-        var foo = ClassInstance.create(data, fooTypes.fooType());
+        var foo = ClassInstance.create(data, fooTypes.fooType().getType());
         var bars = foo.getInstanceArray(fooTypes.fooBarsField());
         var bar = (ClassInstance) bars.getInstance(0);
         Assert.assertEquals(1, bars.length());

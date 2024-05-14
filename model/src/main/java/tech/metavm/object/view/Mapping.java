@@ -8,7 +8,6 @@ import tech.metavm.entity.natives.CallContext;
 import tech.metavm.entity.natives.ExceptionNative;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.ResolutionStage;
 import tech.metavm.object.type.Type;
@@ -37,9 +36,9 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     @EntityField("编号")
     @Nullable
     private String code;
-    @EntityField("源头类型")
+    @ChildEntity("源头类型")
     protected final Type sourceType;
-    @EntityField("目标类型")
+    @ChildEntity("目标类型")
     protected final Type targetType;
     @EntityField("映射函数")
     protected @Nullable Method mapper;
@@ -53,8 +52,8 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         super(tmpId);
         this.name = NamingUtils.ensureValidName(name);
         this.code = NamingUtils.ensureValidCode(code);
-        this.sourceType = sourceType;
-        this.targetType = targetType;
+        this.sourceType = addChild(sourceType, "sourceType");
+        this.targetType = addChild(targetType, "targetType");
     }
 
     public DurableInstance mapRoot(DurableInstance instance, CallContext callContext) {
@@ -76,20 +75,20 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
             private void process(DurableInstance instance) {
                 var sourceRef = instance.getSourceRef();
                 var sourceId = sourceRef.source().tryGetId();
-                var mappingId = NncUtils.get(sourceRef.getMappingId(), Id::parse);
+                var mappingKey = sourceRef.getMappingKey();
                 boolean isArray = instance instanceof ArrayInstance;
-                if (sourceId != null && mappingId != null) {
+                if (sourceId != null && mappingKey != null) {
                     if (instance.isRoot())
-                        instance.initId(new DefaultViewId(isArray, mappingId, sourceId));
+                        instance.initId(new DefaultViewId(isArray, mappingKey, sourceId));
                     else
-                        instance.initId(new ChildViewId(isArray, mappingId, sourceId, (ViewId) instance.getRoot().tryGetId()));
+                        instance.initId(new ChildViewId(isArray, mappingKey, sourceId, (ViewId) instance.getRoot().tryGetId()));
                 } else if (/*mappingId != null && */getParent() != null && getParent().tryGetId() != null) {
 //                    if(mappingId == null)
 //                        mappingId = 0L;
                     if (getParentField() != null)
-                        instance.initId(new FieldViewId(isArray, (ViewId) getParent().tryGetId(), mappingId, getParentField().getId(), sourceId, instance.getType().toTypeKey()));
+                        instance.initId(new FieldViewId(isArray, (ViewId) getParent().tryGetId(), mappingKey, getParentField().getTag(), sourceId, instance.getType().toTypeKey()));
                     else
-                        instance.initId(new ElementViewId(isArray, (ViewId) getParent().tryGetId(), mappingId, getIndex(), sourceId, instance.getType().toTypeKey()));
+                        instance.initId(new ElementViewId(isArray, (ViewId) getParent().tryGetId(), mappingKey, getIndex(), sourceId, instance.getType().toTypeKey()));
                 }
             }
         });
@@ -98,7 +97,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
 
     public DurableInstance map(DurableInstance instance, CallContext callContext) {
         var view = (DurableInstance) getMapper().execute(null, List.of(instance), callContext).ret();
-        requireNonNull(view).setSourceRef(new SourceRef(instance, this));
+        requireNonNull(view).setSourceRef(new SourceRef(instance, (ObjectMapping) this));
         return view;
     }
 
@@ -153,23 +152,23 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         return requireNonNull(unmapper);
     }
 
-    public void generateCode(CompositeTypeFacade compositeTypeFacade) {
-        generateMappingCode(compositeTypeFacade);
-        generateUnmappingCode(compositeTypeFacade);
+    public void generateCode() {
+        generateMappingCode(true);
+        generateUnmappingCode(true);
         stage = ResolutionStage.DEFINITION;
     }
 
     @Override
-    public void generateCode(Flow flow, CompositeTypeFacade compositeTypeFacade) {
+    public void generateCode(Flow flow) {
         if (flow != mapper && flow != unmapper)
             throw new IllegalArgumentException();
         if (flow == mapper)
-            generateMappingCode(compositeTypeFacade);
+            generateMappingCode(false);
         else
-            generateUnmappingCode(compositeTypeFacade);
+            generateUnmappingCode(false);
     }
 
-    public void generateDeclarations(CompositeTypeFacade compositeTypeFacade) {
+    public void generateDeclarations() {
         var declaringType = getClassTypeForDeclaration();
         mapper = MethodBuilder
                 .newBuilder(declaringType, "映射$" + getQualifiedName(),
@@ -211,9 +210,9 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
 
     protected abstract Klass getClassTypeForDeclaration();
 
-    protected abstract Flow generateMappingCode(CompositeTypeFacade compositeTypeFacade);
+    protected abstract Flow generateMappingCode(boolean generateReadMethod);
 
-    protected abstract Flow generateUnmappingCode(CompositeTypeFacade compositeTypeFacade);
+    protected abstract Flow generateUnmappingCode(boolean generateWriteMethod);
 
     public boolean isCodeGenerated() {
         return mapper != null && mapper.isRootScopePresent();

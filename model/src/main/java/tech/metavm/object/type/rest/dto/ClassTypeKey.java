@@ -1,5 +1,6 @@
 package tech.metavm.object.type.rest.dto;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.TypeDefProvider;
@@ -7,7 +8,7 @@ import tech.metavm.util.InstanceOutput;
 
 import java.util.List;
 
-public record ClassTypeKey(String id) implements TypeKey {
+public record ClassTypeKey(@NotNull String id) implements TypeKey {
     @Override
     public void write(InstanceOutput output) {
         output.write(TypeKeyCodes.CLASS);
@@ -21,7 +22,7 @@ public record ClassTypeKey(String id) implements TypeKey {
 
     @Override
     public ClassType toType(TypeDefProvider typeDefProvider) {
-        return typeDefProvider.getKlass(id).getType();
+        return new ClassType(typeDefProvider.getKlass(id), List.of());
     }
 
     @Override
@@ -32,5 +33,10 @@ public record ClassTypeKey(String id) implements TypeKey {
     @Override
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
 
+    }
+
+    @Override
+    public int getCode() {
+        return TypeKeyCodes.CLASS;
     }
 }

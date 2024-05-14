@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import tech.metavm.object.instance.InstanceParamTypeIdResolver;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
+import tech.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -19,56 +20,56 @@ public record InstanceDTO(
         String type,
         String typeName,
         String title,
-        @Nullable String sourceMappingId,
+        @Nullable ObjectMappingRefDTO sourceMappingRef,
         @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
         @JsonTypeIdResolver(InstanceParamTypeIdResolver.class)
         InstanceParam param
 ) implements Serializable {
 
-    public static InstanceDTO createClassInstance(String typeId, List<InstanceFieldDTO> fields) {
-        return createClassInstance(null, typeId, fields);
+    public static InstanceDTO createClassInstance(String type, List<InstanceFieldDTO> fields) {
+        return createClassInstance(null, type, fields);
     }
 
-    public static InstanceDTO createClassInstance(@Nullable String id, String typeId, List<InstanceFieldDTO> fields) {
-        return createClassInstance(id, typeId, null, fields);
+    public static InstanceDTO createClassInstance(@Nullable String id, String type, List<InstanceFieldDTO> fields) {
+        return createClassInstance(id, type, null, fields);
     }
 
-    public static InstanceDTO createClassInstance(@Nullable String id, String typeId, String sourceMappingId, List<InstanceFieldDTO> fields) {
+    public static InstanceDTO createClassInstance(@Nullable String id, String type, ObjectMappingRefDTO sourceMappingRef, List<InstanceFieldDTO> fields) {
         return new InstanceDTO(
                 id,
-                typeId,
+                type,
                 null,
                 null,
-                sourceMappingId,
+                sourceMappingRef,
                 new ClassInstanceParam(fields)
         );
     }
 
-    public static InstanceDTO createArrayInstance(String typeId, boolean elementAsChild, List<FieldValue> elements) {
-        return createArrayInstance(null, typeId, elementAsChild, elements);
+    public static InstanceDTO createArrayInstance(String type, boolean elementAsChild, List<FieldValue> elements) {
+        return createArrayInstance(null, type, elementAsChild, elements);
     }
 
-    public static InstanceDTO createArrayInstance(@Nullable String id, String typeId, boolean elementAsChild, List<FieldValue> elements) {
+    public static InstanceDTO createArrayInstance(@Nullable String id, String type, boolean elementAsChild, List<FieldValue> elements) {
         return new InstanceDTO(
-                id, typeId, null, null, null,
+                id, type, null, null, null,
                 new ArrayInstanceParam(elementAsChild, elements)
         );
     }
 
-    public static InstanceDTO createListInstance(String typeId, boolean elementAsChild, List<FieldValue> elements) {
-        return createListInstance(null, typeId, elementAsChild, elements);
+    public static InstanceDTO createListInstance(String type, boolean elementAsChild, List<FieldValue> elements) {
+        return createListInstance(null, type, elementAsChild, elements);
     }
 
-    public static InstanceDTO createListInstance(@Nullable String id, String typeId, boolean elementAsChild, List<FieldValue> elements) {
+    public static InstanceDTO createListInstance(@Nullable String id, String type, boolean elementAsChild, List<FieldValue> elements) {
         return new InstanceDTO(
-                id, typeId, null, null, null,
+                id, type, null, null, null,
                 new ListInstanceParam(elementAsChild, elements)
         );
     }
 
 
     public InstanceDTO copyWithParam(InstanceParam param) {
-        return new InstanceDTO(id, type, typeName, title, sourceMappingId, param);
+        return new InstanceDTO(id, type, typeName, title, sourceMappingRef, param);
     }
 
     @Override

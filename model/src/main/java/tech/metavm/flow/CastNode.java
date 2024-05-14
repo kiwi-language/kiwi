@@ -9,6 +9,7 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.util.Instances;
 
 import javax.annotation.Nullable;
@@ -22,7 +23,7 @@ public class CastNode extends NodeRT {
         var node = (CastNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var object = ValueFactory.create(param.object(), parsingContext);
-        var type = context.getType(Id.parse(nodeDTO.outputTypeId()));
+        var type = TypeParser.parse(nodeDTO.outputType(), context);
         if (node == null)
             node = new CastNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), type, prev, scope, object);
         else {
@@ -71,7 +72,7 @@ public class CastNode extends NodeRT {
         if (type.isInstance(inst))
             return next(inst);
         else {
-            var exception = ClassInstance.allocate(StandardTypes.getExceptionType());
+            var exception = ClassInstance.allocate(StandardTypes.getExceptionKlass().getType());
             var exceptionNative = new ExceptionNative(exception);
             exceptionNative.Exception(Instances.stringInstance(
                     String.format("Can not cast instance '%s' to type '%s'", inst.getTitle(), type.getName())

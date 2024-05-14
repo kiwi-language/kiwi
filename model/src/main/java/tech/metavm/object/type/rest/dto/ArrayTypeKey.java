@@ -28,7 +28,7 @@ public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey 
 
     @Override
     public ArrayType toType(TypeDefProvider typeDefProvider) {
-        return new ArrayType(null, elementTypeKey.toType(typeDefProvider), ArrayKind.fromCode(kind));
+        return new ArrayType(elementTypeKey.toType(typeDefProvider), ArrayKind.fromCode(kind));
     }
 
     @Override
@@ -40,4 +40,14 @@ public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey 
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
         elementTypeKey.accept(visitor);
     }
+
+    @Override
+    public int getCode() {
+        return getTypeKeyCode(kind);
+    }
+
+    public static int getTypeKeyCode(int kind) {
+        return typeKeyCodes[kind];
+    }
+
 }

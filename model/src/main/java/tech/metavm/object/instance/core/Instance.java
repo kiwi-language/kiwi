@@ -132,10 +132,10 @@ public abstract class Instance {
         try (var serContext = SerializeContext.enter()) {
             return new InstanceDTO(
                     NncUtils.get(tryGetId(), Objects::toString),
-                    serContext.getId(getType()),
+                    getType().toExpression(serContext),
                     getType().getName(),
                     getTitle(),
-                    Instances.getSourceMappingId(this),
+                    Instances.getSourceMappingRefDTO(this),
                     param
             );
         }

@@ -18,8 +18,6 @@ public class TypeParsingContext extends BaseParsingContext {
         return new TypeParsingContext(
                 context.getInstanceContext(),
                 new ContextTypeDefRepository(context),
-                new ContextArrayTypeProvider(context),
-                context.getUnionTypeContext(),
                 type
         );
     }
@@ -30,10 +28,8 @@ public class TypeParsingContext extends BaseParsingContext {
 
     public TypeParsingContext(InstanceProvider instanceProvider,
                               IndexedTypeDefProvider typeProvider,
-                              ArrayTypeProvider arrayTypeProvider,
-                              UnionTypeProvider unionTypeProvider,
                               Klass klass) {
-        super(instanceProvider, typeProvider, arrayTypeProvider, unionTypeProvider);
+        super(instanceProvider, typeProvider);
         this.klass = klass;
         thisExpression = new ThisExpression(klass.getType());
         this.getInstanceFunc = instanceProvider::get;

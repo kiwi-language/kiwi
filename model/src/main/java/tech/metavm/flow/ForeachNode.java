@@ -11,9 +11,7 @@ import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.Klass;
-import tech.metavm.object.type.Field;
-import tech.metavm.object.type.FieldBuilder;
+import tech.metavm.object.type.*;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
@@ -24,7 +22,7 @@ import java.util.Map;
 public class ForeachNode extends LoopNode {
 
     public static ForeachNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var outputType = context.getKlass(Id.parse(nodeDTO.outputTypeId()));
+        var outputType = ((ClassType) TypeParser.parse(nodeDTO.outputType(), context)).resolve();
         ParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
         ForeachNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.getArray(), parsingContext);

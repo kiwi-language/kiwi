@@ -33,7 +33,7 @@ public interface Property extends ClassMember, LocalKey {
     void setCode(@Nullable String code);
 
     default String getCodeRequired() {
-        return NncUtils.requireNonNull(getCode(), "code is set for type " + getName());
+        return NncUtils.requireNonNull(getCode(), "code is null for property " + getName());
     }
 
     Type getType();
@@ -43,6 +43,8 @@ public interface Property extends ClassMember, LocalKey {
     boolean isStatic();
 
     void setStatic(boolean _static);
+
+    PropertyRef getRef();
 
     MetadataState getState();
 

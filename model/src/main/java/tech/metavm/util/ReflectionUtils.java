@@ -317,7 +317,7 @@ public class ReflectionUtils {
         );
     }
 
-    private static boolean isPrimitiveType(Class<?> klass) {
+    public static boolean isPrimitiveType(Class<?> klass) {
         return klass.isPrimitive() || PRIMITIVE_UNBOXING_MAP.containsKey(klass);
     }
 

@@ -15,11 +15,11 @@ public record NodeDTO(
         @Nullable String code,
         int kind,
         String prevId,
-        String outputTypeId,
+        String outputType,
         @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
         @JsonTypeIdResolver(NodeParamTypeIdResolver.class)
         Object param,
-        TypeDTO outputType,
+        TypeDTO outputKlass,
         String scopeId,
         @Nullable  String error
 ) implements BaseDTO {
@@ -47,9 +47,9 @@ public record NodeDTO(
                 code,
                 kind,
                 prevId,
-                outputTypeId,
-                newParam,
                 outputType,
+                newParam,
+                outputKlass,
                 scopeId,
                 error
         );
@@ -95,9 +95,9 @@ public record NodeDTO(
                 code,
                 kind,
                 prevId,
-                outputTypeId,
-                param,
                 outputType,
+                param,
+                outputKlass,
                 scopeId,
                 error
         );

@@ -1,15 +1,16 @@
 package tech.metavm.object.instance.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.Method;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
@@ -23,47 +24,47 @@ import java.util.function.Consumer;
 
 public class ClassInstance extends DurableInstance {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ClassInstance.class);
+    public static final Logger logger = LoggerFactory.getLogger(ClassInstance.class);
 
     private final ReadWriteArray<InstanceField> fields = new ReadWriteArray<>(InstanceField.class);
     private final ReadWriteArray<UnknownField> unknownFields = new ReadWriteArray<>(UnknownField.class);
     private final Klass klass;
     private transient Map<Flow, FlowInstance> functions;
 
-    public static ClassInstance create(Map<Field, Instance> data, Klass type) {
+    public static ClassInstance create(Map<Field, Instance> data, ClassType type) {
         return ClassInstanceBuilder.newBuilder(type).data(data).build();
     }
 
-    public static ClassInstance allocate(Klass type) {
+    public static ClassInstance allocate(ClassType type) {
         return ClassInstanceBuilder.newBuilder(type).build();
     }
 
-    public static ClassInstance allocate(Klass type, @Nullable InstanceParentRef parentRef) {
+    public static ClassInstance allocate(ClassType type, @Nullable InstanceParentRef parentRef) {
         return ClassInstanceBuilder.newBuilder(type)
                 .parentRef(parentRef)
                 .build();
     }
 
-    public ClassInstance(Id id, Klass klass, long version, long syncVersion,
+    public ClassInstance(Id id, @NotNull ClassType type, long version, long syncVersion,
                          @Nullable Consumer<DurableInstance> load, @Nullable InstanceParentRef parentRef,
                          @Nullable Map<Field, Instance> data, @Nullable SourceRef sourceRef, boolean ephemeral) {
-        super(id, klass.getType(), version, syncVersion, ephemeral, load);
-        this.klass = klass;
+        super(id, type, version, syncVersion, ephemeral, load);
+        this.klass = type.resolve();
         setParentRef(parentRef);
         setSourceRef(sourceRef);
         if (data != null)
             reset(data, 0L, 0L);
     }
 
-    public ClassInstance(Id id, Klass klass, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
-        super(id, klass.getType(), 0, 0, ephemeral, load);
-        this.klass = klass;
+    public ClassInstance(Id id, ClassType type, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
+        super(id, type, 0, 0, ephemeral, load);
+        this.klass = type.resolve();
     }
 
     public ClassInstance(Id id, Map<Field, Instance> data, Klass klass) {
         super(id, klass.getType(), 0, 0, klass.isEphemeral(), null);
-        reset(data, 0L, 0L);
         this.klass = klass;
+        reset(data, 0L, 0L);
     }
 
     @NoProxy
@@ -108,11 +109,11 @@ public class ClassInstance extends DurableInstance {
         unknownFields.forEach(f -> action.accept(f.getValue()));
     }
 
-    public Set<IndexKeyRT> getIndexKeys(ParameterizedFlowProvider parameterizedFlowProvider) {
+    public Set<IndexKeyRT> getIndexKeys() {
         ensureLoaded();
         return NncUtils.flatMapUnique(
                 klass.getConstraints(Index.class),
-                c -> c.createIndexKey(this, parameterizedFlowProvider)
+                c -> c.createIndexKey(this)
         );
     }
 
@@ -215,12 +216,12 @@ public class ClassInstance extends DurableInstance {
             if (!field.shouldSkipWrite())
                 numFields++;
         }
-        fields.sort(Comparator.comparing(InstanceField::getId));
+        fields.sort(Comparator.comparing(InstanceField::getTag));
         output.writeInt(numFields);
         for (InstanceField field : fields) {
             if (field.shouldSkipWrite())
                 continue;
-            output.writeId(field.getId());
+            output.writeId(field.getTag());
             if (includeChildren && field.getField().isChild() && !field.getField().isLazy())
                 output.writeValue(field.getValue());
             else
@@ -239,13 +240,13 @@ public class ClassInstance extends DurableInstance {
         int numFields = input.readInt();
         int j = 0;
         for (int i = 0; i < numFields; i++) {
-            var fieldId = input.readId();
-            while (j < fields.size() && fields.get(j).getId().compareTo(fieldId) < 0) {
+            var fieldTag = input.readId();
+            while (j < fields.size() && fields.get(j).getTag().compareTo(fieldTag) < 0) {
                 instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
                 j++;
             }
             Field field;
-            if (j < fields.size() && (field = fields.get(j)).getId().equals(fieldId)) {
+            if (j < fields.size() && (field = fields.get(j)).getTag().equals(fieldTag)) {
                 input.setParent(this, field);
                 var value = input.readInstance();
                 instFields.add(new InstanceField(this, field, value, false));
@@ -365,20 +366,19 @@ public class ClassInstance extends DurableInstance {
         return field(field).getValue();
     }
 
-    public FlowInstance getFunction(Method method, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public FlowInstance getFunction(Method method) {
         ensureLoaded();
-        if (functions == null) {
+        if (functions == null)
             functions = new HashMap<>();
-        }
-        var concreteFlow = klass.tryResolveMethod(method, parameterizedFlowProvider);
+        var concreteFlow = klass.tryResolveMethod(method);
         return functions.computeIfAbsent(concreteFlow,
-                k -> new FlowInstance(klass.tryResolveMethod(method, parameterizedFlowProvider), this));
+                k -> new FlowInstance(klass.tryResolveMethod(method), this));
     }
 
-    public Instance getProperty(Property property, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public Instance getProperty(Property property) {
         return switch (property) {
             case Field field -> getField(field);
-            case Method method -> getFunction(method, parameterizedFlowProvider);
+            case Method method -> getFunction(method);
             default -> throw new IllegalStateException("Unexpected value: " + property);
         };
     }
@@ -393,6 +393,13 @@ public class ClassInstance extends DurableInstance {
             instanceField = new InstanceField(this, field, unknownField.getValue());
             addField(instanceField);
             return instanceField;
+        }
+        if(DebugEnv.resolveVerbose) {
+            logger.info("initialized: {}, persisted: {}", isInitialized(), isPersisted());
+            logger.info("fields");
+            klass.forEachField(f -> logger.info("field: {}", f.getQualifiedName()));
+            logger.info("Instance fields:");
+            fields.forEach(f -> logger.info("field: {}", f.getField().getQualifiedName()));
         }
         throw new InternalException("Can not find instance field for '" + field + "'");
     }

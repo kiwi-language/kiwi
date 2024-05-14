@@ -31,8 +31,8 @@ public class InstanceField {
         return field;
     }
 
-    public Id getId() {
-        return field.getId();
+    public Id getTag() {
+        return field.getTag();
     }
 
     public String getName() {
@@ -105,7 +105,7 @@ public class InstanceField {
 
     public InstanceFieldDTO toDTO() {
         return new InstanceFieldDTO(
-                field.getStringId(),
+                field.getTag().toString(),
                 field.getName(),
                 field.getType().getConcreteType().getCategory().code(),
                 field.getType().isArray(),

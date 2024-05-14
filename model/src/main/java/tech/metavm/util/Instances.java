@@ -1,12 +1,11 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.EntityUtils;
-import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.entity.ReadonlyList;
-import tech.metavm.entity.StandardTypes;
+import tech.metavm.entity.*;
 import tech.metavm.entity.natives.ListNative;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
+import tech.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -14,12 +13,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class Instances {
-
-    private static BuiltinInstanceHolder holder = new GlobalBuiltinInstanceHolder();
-
-    public static void setHolder(BuiltinInstanceHolder holder) {
-        Instances.holder = holder;
-    }
 
     public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.of(
             Integer.class, new PrimitiveType(PrimitiveKind.LONG),
@@ -260,7 +253,7 @@ public class Instances {
     }
 
     public static BooleanInstance booleanInstance(boolean value) {
-        return value ? holder.getTrueInstance() : holder.getFalseInstance();
+        return new BooleanInstance(value, StandardTypes.getBooleanType());
     }
 
     public static BooleanInstance booleanInstance(boolean value, Function<Class<?>, Type> getTypeFunc) {
@@ -284,27 +277,15 @@ public class Instances {
     }
 
     public static NullInstance nullInstance() {
-        return holder.getNullInstance();
-    }
-
-    public static void setNullInstance(NullInstance nullInstance) {
-        holder.setNullInstance(nullInstance);
+        return new NullInstance(StandardTypes.getNullType());
     }
 
     public static BooleanInstance trueInstance() {
-        return holder.getTrueInstance();
+        return new BooleanInstance(true, StandardTypes.getBooleanType());
     }
 
     public static BooleanInstance falseInstance() {
-        return holder.getFalseInstance();
-    }
-
-    public static void setTrueInstance(BooleanInstance trueInstance) {
-        holder.setTrueInstance(trueInstance);
-    }
-
-    public static void setFalseInstance(BooleanInstance falseInstance) {
-        holder.setFalseInstance(falseInstance);
+        return new BooleanInstance(false, StandardTypes.getBooleanType());
     }
 
     public static PasswordInstance passwordInstance(String password) {
@@ -384,8 +365,8 @@ public class Instances {
         return b ? trueInstance() : falseInstance();
     }
 
-    private static ArrayType getObjectArrayType() {
-        return ModelDefRegistry.getDefContext().getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_WRITE);
+    private static ArrayType getAnyArrayType() {
+        return new ArrayType(new AnyType(), ArrayKind.READ_WRITE);
     }
 
     public static ArrayInstance createArray() {
@@ -393,7 +374,7 @@ public class Instances {
     }
 
     public static ArrayInstance createArray(List<Instance> instances) {
-        return new ArrayInstance(getObjectArrayType(), instances);
+        return new ArrayInstance(getAnyArrayType(), instances);
     }
 
     public static PrimitiveType getPrimitiveType(Class<?> javaClass) {
@@ -490,11 +471,24 @@ public class Instances {
         return sortAndLimit(new ArrayList<>(NncUtils.mergeUnique(result1, result2)), desc, limit);
     }
 
-    public static @Nullable String getSourceMappingId(Instance instance) {
+    public static @Nullable ObjectMappingRefDTO getSourceMappingRefDTO(Instance instance) {
         if (instance instanceof DurableInstance durableInstance)
-            return durableInstance.isView() ? durableInstance.getSourceRef().getMappingId() : null;
+            return durableInstance.isView() ? durableInstance.getSourceRef().getMappingRefDTO() : null;
         else
             return null;
     }
 
+    public static void reloadParent(Entity entity, DurableInstance instance, ObjectInstanceMap instanceMap, DefContext defContext) {
+//        try(var ignored = ContextUtil.getProfiler().enter("ModelDef.reloadParent")) {
+        if (entity.getParentEntity() != null) {
+            var parent = (DurableInstance) instanceMap.getInstance(entity.getParentEntity());
+            Field parentField = null;
+            if (entity.getParentEntityField() != null)
+                parentField = defContext.getField(entity.getParentEntityField());
+            instance.setParentInternal(parent, parentField);
+        } else {
+            instance.setParentInternal(null, null);
+        }
+//        }
+    }
 }

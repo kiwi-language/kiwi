@@ -66,6 +66,8 @@ public class BootstrapTest extends TestCase {
             TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
             LOGGER.info(profiler.finish(false, true).toString());
         }
+//        allocatorStore.dump();
+//        DebugEnv.bootstrapVerbose = true;
         {
             ContextUtil.resetProfiler();
             var profiler = ContextUtil.getProfiler();
@@ -80,7 +82,7 @@ public class BootstrapTest extends TestCase {
             ContextUtil.resetProfiler();
             var profiler = ContextUtil.getProfiler();
             var bootstrap = newBootstrap();
-            bootstrap.setFieldBlacklist(Set.of(ReflectionUtils.getDeclaredField(Type.class, "dummyFlag")));
+            bootstrap.setFieldBlacklist(Set.of(ReflectionUtils.getDeclaredField(Klass.class, "dummyFlag")));
             var result = bootstrap.boot();
             Assert.assertEquals(0, result.numInstancesWithNullIds());
             TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));

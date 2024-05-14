@@ -17,21 +17,21 @@ import java.util.function.Supplier;
 @EntityType("数组嵌套映射")
 public class ArrayNestedMapping extends NestedMapping {
 
-    @EntityField("来源类型")
+    @ChildEntity("来源类型")
     private final ArrayType sourceType;
-    @EntityField("目标类型")
+    @ChildEntity("目标类型")
     private final ArrayType targetType;
     @ChildEntity("元素嵌套映射")
     private final NestedMapping elementNestedMapping;
 
     public ArrayNestedMapping(ArrayType sourceType, ArrayType targetType, NestedMapping elementNestedMapping) {
-        this.sourceType = sourceType;
-        this.targetType = targetType;
+        this.sourceType = addChild(sourceType.copy(), "sourceType");
+        this.targetType = addChild(targetType.copy(), "targetType");
         this.elementNestedMapping = addChild(elementNestedMapping, "elementNestedMapping");
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
+    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
         var sourceElementType = sourceType.getElementType();
         var targetElementType = targetType.getElementType();
         var targetArray = Nodes.newArray(
@@ -50,15 +50,14 @@ public class ArrayNestedMapping extends NestedMapping {
                 List.of(
                         Nodes.argument(setSourceFunc, 0, Values.node(targetArray)),
                         Nodes.argument(setSourceFunc, 1, getSource.get())
-                ),
-                compositeTypeFacade
+                )
         );
         Nodes.forEach(
                 "遍历" + sourceType.getName(),
                 getSource,
                 (bodyScope, getElement, getIndex) -> {
                     var getTargetElement = elementNestedMapping.generateMappingCode(getElement,
-                            bodyScope, compositeTypeFacade);
+                            bodyScope);
                     Nodes.addElement(
                             "添加" + sourceElementType.getName(),
                             null,
@@ -73,9 +72,9 @@ public class ArrayNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
+    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
         var isSourcePresent = Nodes.functionCall("来源是否存在", scope, NativeFunctions.isSourcePresent(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())), compositeTypeFacade);
+                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())));
         Map<Branch, Value> branch2sourceNode = new HashMap<>();
         var sourceFieldRef = new Object() {
             Field sourceField;
@@ -88,7 +87,7 @@ public class ArrayNestedMapping extends NestedMapping {
                 trueBranch -> {
                     var source = Nodes.functionCall(sourceType.getName() + "来源", trueBranch.getScope(),
                             NativeFunctions.getSource(),
-                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())), compositeTypeFacade);
+                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())));
                     branch2sourceNode.put(trueBranch, Values.node(source));
                 },
                 falseBranch -> {
@@ -109,7 +108,7 @@ public class ArrayNestedMapping extends NestedMapping {
         Nodes.forEach(
                 "遍历" + targetType.getName(), getView,
                 (bodyScope, getElement, getIndex) -> {
-                    var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope, compositeTypeFacade);
+                    var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
                     Nodes.addElement("添加元素" + sourceType.getName(), null,
                             Values.nodeProperty(mergeNode, sourceField), getSourceElement.get(), bodyScope);
                 },
@@ -124,15 +123,20 @@ public class ArrayNestedMapping extends NestedMapping {
     }
 
     @Override
+    public String getText() {
+        return "{\"kind\": \"Array\", \"sourceType\": \"" + sourceType.getTypeDesc() + "\", \"targetType\": \"" + targetType.getTypeDesc()
+                + "\", \"elementMapping\": " + elementNestedMapping.getText() + "}";
+    }
+
+    @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof ArrayNestedMapping that)) return false;
-        if (!super.equals(object)) return false;
         return Objects.equals(sourceType, that.sourceType) && Objects.equals(targetType, that.targetType) && Objects.equals(elementNestedMapping, that.elementNestedMapping);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), sourceType, targetType, elementNestedMapping);
+        return Objects.hash(sourceType, targetType, elementNestedMapping);
     }
 }

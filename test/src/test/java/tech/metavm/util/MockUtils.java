@@ -31,12 +31,12 @@ public class MockUtils {
         var productType = ClassTypeBuilder.newBuilder("商品", "Product").build();
         var skuType = ClassTypeBuilder.newBuilder("SKU", "SKU").build();
         var couponType = ClassTypeBuilder.newBuilder("优惠券", "Coupon").build();
-        var couponArrayType = new ArrayType(null, couponType.getType(), ArrayKind.READ_WRITE);
+        var couponArrayType = new ArrayType(couponType.getType(), ArrayKind.READ_WRITE);
         var orderType = ClassTypeBuilder.newBuilder("订单", "Order").build();
         var couponStateType = ClassTypeBuilder.newBuilder("优惠券状态", "CouponState")
                 .kind(ClassKind.ENUM)
                 .build();
-        var enumKlass = getEnumType();
+        var enumKlass = getEnumKlass();
         var subst = new SubstitutorV2(
                 enumKlass, enumKlass.getTypeParameters(), List.of(couponStateType.getType()),
                 ResolutionStage.DEFINITION
@@ -45,7 +45,7 @@ public class MockUtils {
         couponStateType.setSuperType(couponStateEnumKlas.getType());
         var enumNameField = couponStateEnumKlas.getFieldByCode("name");
         var enumOrdinalField = couponStateEnumKlas.getFieldByCode("ordinal");
-        var couponNormalState = ClassInstanceBuilder.newBuilder(couponStateType)
+        var couponNormalState = ClassInstanceBuilder.newBuilder(couponStateType.getType())
                 .data(Map.of(
                         enumNameField,
                         Instances.stringInstance("正常"),
@@ -54,7 +54,7 @@ public class MockUtils {
                 ))
                 .id(TmpId.of(NncUtils.randomNonNegative()))
                 .build();
-        var couponUsedState = ClassInstanceBuilder.newBuilder(couponStateType)
+        var couponUsedState = ClassInstanceBuilder.newBuilder(couponStateType.getType())
                 .data(Map.of(
                         enumNameField,
                         Instances.stringInstance("已使用"),
@@ -68,7 +68,7 @@ public class MockUtils {
         var productTitleField = FieldBuilder.newBuilder("标题", "title", productType, getStringType())
                 .asTitle()
                 .build();
-        var skuChildArrayType = new ArrayType(null, skuType.getType(), ArrayKind.CHILD);
+        var skuChildArrayType = new ArrayType(skuType.getType(), ArrayKind.CHILD);
         var productSkuListField = FieldBuilder.newBuilder("sku列表", "skuList", productType, skuChildArrayType)
                 .isChild(true)
                 .build();
@@ -114,7 +114,7 @@ public class MockUtils {
     public static List<InstanceDTO> createCouponDTOs(InstanceManager instanceManager, ShoppingTypeIds shoppingTypeIds) {
         var couponFiveOff = new InstanceDTO(
                 null,
-                shoppingTypeIds.couponTypeId(),
+                TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
                 "优惠券",
                 "减5元",
                 null,
@@ -137,7 +137,7 @@ public class MockUtils {
         );
         var couponTenOff = new InstanceDTO(
                 null,
-                shoppingTypeIds.couponTypeId(),
+                TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
                 "优惠券",
                 "减10元",
                 null,
@@ -160,7 +160,7 @@ public class MockUtils {
         );
         var couponFifteenOff = new InstanceDTO(
                 null,
-                shoppingTypeIds.couponTypeId(),
+                TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
                 "优惠券",
                 "减15元",
                 null,
@@ -194,7 +194,7 @@ public class MockUtils {
     public static InstanceDTO createProductDTO(ShoppingTypeIds shoppingTypeIds) {
         return new InstanceDTO(
                 null,
-                shoppingTypeIds.productTypeId(),
+                TypeExpressions.getClassType(shoppingTypeIds.productTypeId()),
                 "商品",
                 "鞋子",
                 null,
@@ -208,13 +208,13 @@ public class MockUtils {
                                         shoppingTypeIds.productSkuListFieldId(),
                                         InstanceFieldValue.of(
                                                 InstanceDTO.createListInstance(
-                                                        shoppingTypeIds.skuChildArrayTypeId(),
+                                                        shoppingTypeIds.skuChildListType(),
                                                         true,
                                                         List.of(
                                                                 InstanceFieldValue.of(
                                                                         new InstanceDTO(
                                                                                 null,
-                                                                                shoppingTypeIds.skuTypeId(),
+                                                                                TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()),
                                                                                 "SKU",
                                                                                 "40",
                                                                                 null,
@@ -237,7 +237,7 @@ public class MockUtils {
                                                                         )),
                                                                 InstanceFieldValue.of(new InstanceDTO(
                                                                         null,
-                                                                        shoppingTypeIds.skuTypeId(),
+                                                                        TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()),
                                                                         "SKU",
                                                                         "41",
                                                                         null,
@@ -261,7 +261,7 @@ public class MockUtils {
                                                                 ,
                                                                 InstanceFieldValue.of(new InstanceDTO(
                                                                                 null,
-                                                                                shoppingTypeIds.skuTypeId(),
+                                                                                TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()),
                                                                                 "SKU",
                                                                                 "42",
                                                                                 null,
@@ -294,7 +294,7 @@ public class MockUtils {
     }
 
     public static ShoppingInstances createShoppingInstances(ShoppingTypes shoppingTypes) {
-        var sku40 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType())
+        var sku40 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType().getType())
                 .data(Map.of(
                         shoppingTypes.skuTitleField(),
                         Instances.stringInstance("40"),
@@ -304,7 +304,7 @@ public class MockUtils {
                         Instances.doubleInstance(100)
                 ))
                 .build();
-        var sku41 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType())
+        var sku41 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType().getType())
                 .data(Map.of(
                         shoppingTypes.skuTitleField(),
                         Instances.stringInstance("41"),
@@ -314,7 +314,7 @@ public class MockUtils {
                         Instances.doubleInstance(100)
                 ))
                 .build();
-        var sku42 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType())
+        var sku42 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType().getType())
                 .data(Map.of(
                         shoppingTypes.skuTitleField(),
                         Instances.stringInstance("42"),
@@ -324,7 +324,7 @@ public class MockUtils {
                         Instances.doubleInstance(100)
                 ))
                 .build();
-        var product = ClassInstanceBuilder.newBuilder(shoppingTypes.productType())
+        var product = ClassInstanceBuilder.newBuilder(shoppingTypes.productType().getType())
                 .data(Map.of(
                         shoppingTypes.productTitleField(),
                         Instances.stringInstance("鞋子"),
@@ -333,7 +333,7 @@ public class MockUtils {
                                 List.of(sku40, sku41, sku42))
                 ))
                 .build();
-        var couponFiveOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType())
+        var couponFiveOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
                 .data(Map.of(
                         shoppingTypes.couponTitleField(),
                         Instances.stringInstance("减5元"),
@@ -341,7 +341,7 @@ public class MockUtils {
                         Instances.longInstance(5L)
                 ))
                 .build();
-        var couponTenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType())
+        var couponTenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
                 .data(Map.of(
                         shoppingTypes.couponTitleField(),
                         Instances.stringInstance("减10元"),
@@ -349,7 +349,7 @@ public class MockUtils {
                         Instances.longInstance(10L)
                 ))
                 .build();
-        var couponFifteenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType())
+        var couponFifteenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
                 .data(Map.of(
                         shoppingTypes.couponTitleField(),
                         Instances.stringInstance("减15元"),
@@ -471,6 +471,7 @@ public class MockUtils {
                 livingBeingType.id(),
                 animalType.id(),
                 humanType.id(),
+                sentientType.id(),
                 TestUtils.getFieldIdByCode(livingBeingType, "age"),
                 TestUtils.getFieldIdByCode(livingBeingType, "extra"),
                 TestUtils.getFieldIdByCode(livingBeingType, "offsprings"),
@@ -500,7 +501,7 @@ public class MockUtils {
         var assembler = AssemblerFactory.createWithStandardTypes();
         assembler.assemble(List.of(source));
         FlowSavingContext.initConfig();
-        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(),  false)));
+        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(),  true)));
     }
 
     public static FooTypes createFooTypes() {
@@ -516,18 +517,18 @@ public class MockUtils {
         var barType = ClassTypeBuilder.newBuilder("巴", "Bar").build();
         var barCodeField = FieldBuilder.newBuilder("编号", "code", barType, getStringType())
                 .asTitle().build();
-        var barChildArrayType = new ArrayType(null, barType.getType(), ArrayKind.CHILD);
-        var barArrayType = new ArrayType(null, barType.getType(), ArrayKind.READ_WRITE);
+        var barChildArrayType = new ArrayType(barType.getType(), ArrayKind.CHILD);
+        var barArrayType = new ArrayType(barType.getType(), ArrayKind.READ_WRITE);
 //        var nullableBarType = new UnionType(null, Set.of(barType, getNullType()));
         var fooBarsField = FieldBuilder.newBuilder("巴列表", "bars", fooType, barChildArrayType)
                 .isChild(true).build();
         var bazType = ClassTypeBuilder.newBuilder("巴子", "Baz").build();
-        var bazArrayType = new ArrayType(null, bazType.getType(), ArrayKind.READ_WRITE);
+        var bazArrayType = new ArrayType(bazType.getType(), ArrayKind.READ_WRITE);
         var bazBarsField = FieldBuilder.newBuilder("巴列表", "bars", bazType, barArrayType).build();
         var fooBazListField = FieldBuilder.newBuilder("巴子列表", "bazList", fooType, bazArrayType).build();
         var quxType = ClassTypeBuilder.newBuilder("量子", "Qux").build();
         var quxAmountField = FieldBuilder.newBuilder("数量", "amount", quxType, getLongType()).build();
-        var nullableQuxType = new UnionType(null, Set.of(quxType.getType(), getNullType()));
+        var nullableQuxType = new UnionType(Set.of(quxType.getType(), getNullType()));
         var fooQuxField = FieldBuilder.newBuilder("量子", "qux", fooType, nullableQuxType).build();
         if (initIds)
             TestUtils.initEntityIds(fooType);
@@ -541,7 +542,7 @@ public class MockUtils {
                 .build();
         var livingBeingExtraInfoField = FieldBuilder.newBuilder("额外信息", "extraInfo", livingBeingType, getAnyType())
                 .build();
-        var livingBeingArrayType = new ArrayType(null, livingBeingType.getType(), ArrayKind.READ_WRITE);
+        var livingBeingArrayType = new ArrayType(livingBeingType.getType(), ArrayKind.READ_WRITE);
         var livingBeingOffspringsField = FieldBuilder.newBuilder("后代", "offsprings", livingBeingType, livingBeingArrayType)
                 .isChild(true)
                 .build();
@@ -575,7 +576,7 @@ public class MockUtils {
     }
 
     public static ClassInstance createHuman(LivingBeingTypes livingBeingTypes, boolean initIds) {
-        var human = ClassInstanceBuilder.newBuilder(livingBeingTypes.humanType())
+        var human = ClassInstanceBuilder.newBuilder(livingBeingTypes.humanType().getType())
                 .data(Map.of(
                         livingBeingTypes.livingBeingAgeField(),
                         Instances.longInstance(30L),
@@ -601,7 +602,7 @@ public class MockUtils {
     }
 
     public static ClassInstance createFoo(FooTypes fooTypes, boolean initIds) {
-        var foo = ClassInstanceBuilder.newBuilder(fooTypes.fooType())
+        var foo = ClassInstanceBuilder.newBuilder(fooTypes.fooType().getType())
                 .data(Map.of(
                         fooTypes.fooNameField(),
                         Instances.stringInstance("foo"),
@@ -609,13 +610,13 @@ public class MockUtils {
                         new ArrayInstance(
                                 fooTypes.barChildArrayType(),
                                 List.of(
-                                        ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                 .data(Map.of(
                                                         fooTypes.barCodeField(),
                                                         Instances.stringInstance("bar001")
                                                 ))
                                                 .build(),
-                                        ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                 .data(Map.of(
                                                         fooTypes.barCodeField(),
                                                         Instances.stringInstance("bar002")
@@ -624,7 +625,7 @@ public class MockUtils {
                                 )
                         ),
                         fooTypes.fooQuxField(),
-                        ClassInstanceBuilder.newBuilder(fooTypes.quxType())
+                        ClassInstanceBuilder.newBuilder(fooTypes.quxType().getType())
                                 .data(
                                         Map.of(
                                                 fooTypes.quxAmountField(),
@@ -636,19 +637,19 @@ public class MockUtils {
                         new ArrayInstance(
                                 fooTypes.bazArrayType(),
                                 List.of(
-                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType())
+                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
                                                 .data(Map.of(
                                                         fooTypes.bazBarsField(),
                                                         new ArrayInstance(
                                                                 fooTypes.barArrayType(),
                                                                 List.of(
-                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                                                 .data(Map.of(
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar003")
                                                                                 ))
                                                                                 .build(),
-                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                                                 .data(Map.of(
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar004")
@@ -658,19 +659,19 @@ public class MockUtils {
                                                         )
                                                 ))
                                                 .build(),
-                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType())
+                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
                                                 .data(Map.of(
                                                         fooTypes.bazBarsField(),
                                                         new ArrayInstance(
                                                                 fooTypes.barArrayType(),
                                                                 List.of(
-                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                                                 .data(Map.of(
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar005")
                                                                                 ))
                                                                                 .build(),
-                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                                                 .data(Map.of(
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar006")
@@ -694,13 +695,13 @@ public class MockUtils {
                 .code("PlatformUser")
                 .tmpId(NncUtils.randomNonNegative())
                 .titleFieldId(TmpId.of(NncUtils.randomNonNegative()).toString())
-                .addField(FieldDTOBuilder.newBuilder("登录名", getStringType().getStringId())
+                .addField(FieldDTOBuilder.newBuilder("登录名", "string")
                         .code("loginName")
                         .asTitle(true)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
                 )
-                .addField(FieldDTOBuilder.newBuilder("密码", getPasswordType().getStringId())
+                .addField(FieldDTOBuilder.newBuilder("密码", "password")
                         .code("password")
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
@@ -711,13 +712,13 @@ public class MockUtils {
                 .id(applicationTypeTmpId)
                 .code("Application")
                 .titleFieldId(TmpId.random().toString())
-                .addField(FieldDTOBuilder.newBuilder("名称", getStringType().getStringId())
+                .addField(FieldDTOBuilder.newBuilder("名称", "string")
                         .code("name")
                         .asTitle(true)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
                 )
-                .addField(FieldDTOBuilder.newBuilder("所有者", platformUserTypeDTO.id())
+                .addField(FieldDTOBuilder.newBuilder("所有者", TypeExpressions.getClassType(platformUserTypeDTO.id()))
                         .code("owner")
                         .access(Access.PRIVATE.code())
                         .tmpId(NncUtils.randomNonNegative())
@@ -726,7 +727,7 @@ public class MockUtils {
                 .addMethod(MethodDTOBuilder.newBuilder(applicationTypeTmpId, "获取所有者")
                         .tmpId(NncUtils.randomNonNegative())
                         .code("getOwner")
-                        .returnTypeId(platformUserTypeDTO.id())
+                        .returnType(TypeExpressions.getClassType(platformUserTypeDTO.id()))
                         .addNode(NodeDTOFactory.createSelfNode(
                                 NncUtils.randomNonNegative(),
                                 "当前记录",

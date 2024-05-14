@@ -5,23 +5,17 @@ import org.junit.Assert;
 import tech.metavm.entity.DummyGenericDeclaration;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
-import tech.metavm.entity.mocks.MockEntityRepository;
-import tech.metavm.object.type.MockDTOProvider;
 import tech.metavm.object.type.ResolutionStage;
 import tech.metavm.object.type.TypeVariable;
 import tech.metavm.object.type.generic.SubstitutorV2;
-import tech.metavm.object.type.mocks.TypeProviders;
 
 import java.util.List;
 
 public class FunctionTest extends TestCase {
 
-    private TypeProviders typeProviders;
-
     @Override
     protected void setUp() throws Exception {
         MockStandardTypesInitializer.init();
-        typeProviders = new TypeProviders();
     }
 
     public void testGeneric() {
@@ -40,7 +34,7 @@ public class FunctionTest extends TestCase {
         var parameterizedFunc = (Function) function.accept(subst);
         Assert.assertSame(function, parameterizedFunc.getHorizontalTemplate());
         Assert.assertEquals(List.of(StandardTypes.getStringType()), parameterizedFunc.getTypeArguments());
-        Assert.assertSame(StandardTypes.getStringType(), parameterizedFunc.getParameter(0).getType());
+        Assert.assertEquals(StandardTypes.getStringType(), parameterizedFunc.getParameter(0).getType());
     }
 
 }

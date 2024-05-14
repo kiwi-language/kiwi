@@ -30,7 +30,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
         memInstanceSearchServiceV2.bulk(TestConstants.APP_ID, List.of(foo), List.of());
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
-                Set.of(fooType.toTypeExpression()),
+                Set.of(fooType.toExpression()),
                 Expressions.and(
                         Expressions.and(
                                 Expressions.eq(
@@ -72,7 +72,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
         memInstanceSearchServiceV2.bulk(TestConstants.APP_ID, List.of(human), List.of());
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
-                Set.of(humanType.toTypeExpression()),
+                Set.of(humanType.toExpression()),
                 Expressions.eq(
                         Expressions.property(
                                 new ThisExpression(humanType),

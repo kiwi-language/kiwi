@@ -1,15 +1,13 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
 import tech.metavm.flow.Method;
 import tech.metavm.object.instance.core.FlowInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Property;
+import tech.metavm.object.type.PropertyRef;
 import tech.metavm.object.type.Type;
 
 import java.util.List;
@@ -18,16 +16,17 @@ import java.util.Objects;
 @EntityType("静态属性表达式")
 public class StaticPropertyExpression extends Expression {
 
-    @EntityField("属性")
-    private final Property property;
+    @ChildEntity("属性")
+    private final PropertyRef propertyRef;
 
-    public StaticPropertyExpression(@NotNull Property property) {
-        this.property = property;
+    public StaticPropertyExpression(@NotNull PropertyRef propertyRef) {
+        this.propertyRef = addChild((Entity & PropertyRef) propertyRef.copy(), "propertyRef");
     }
 
     @Override
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         try(var serContext = SerializeContext.enter()) {
+            var property = getProperty();
             if(serContext.isIncludeExpressionType()) {
                 serContext.writeTypeDef(property.getDeclaringType());
             }
@@ -46,7 +45,7 @@ public class StaticPropertyExpression extends Expression {
 
     @Override
     public Type getType() {
-        return property.getType();
+        return getProperty().getType();
     }
 
     @Override
@@ -55,11 +54,12 @@ public class StaticPropertyExpression extends Expression {
     }
 
     public Property getProperty() {
-        return property;
+        return propertyRef.resolve();
     }
 
     @Override
     protected Instance evaluateSelf(EvaluationContext context) {
+        var property = getProperty();
         if(property instanceof Field field)
             return field.getStaticValue();
         else if (property instanceof Method method)
@@ -72,12 +72,12 @@ public class StaticPropertyExpression extends Expression {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof StaticPropertyExpression that)) return false;
-        return Objects.equals(property, that.property);
+        return Objects.equals(propertyRef, that.propertyRef);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(property);
+        return Objects.hash(propertyRef);
     }
 
     @Override

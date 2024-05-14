@@ -43,4 +43,9 @@ public record ParameterizedTypeKey(String templateId, List<TypeKey> typeArgument
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
         typeArgumentKeys.forEach(k -> k.accept(visitor));
     }
+
+    @Override
+    public int getCode() {
+        return TypeKeyCodes.PARAMETERIZED;
+    }
 }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
@@ -17,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.lang.invoke.SerializedLambda;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.*;
@@ -39,6 +41,8 @@ public class NncUtils {
             .enable(JsonGenerator.Feature.IGNORE_UNKNOWN)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+    public static final ObjectMapper INDENT_OBJECT_MAPPER = new ObjectMapper();
+
     public static final Pattern DIGITS_PTN = Pattern.compile("\\d+");
 
     static {
@@ -52,6 +56,15 @@ public class NncUtils {
         OBJECT_MAPPER_IGNORE_NULL.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
         OBJECT_MAPPER_IGNORE_NULL.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         OBJECT_MAPPER_IGNORE_NULL.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+
+        SimpleModule module = new SimpleModule();
+        INDENT_OBJECT_MAPPER.registerModule(module);
+        INDENT_OBJECT_MAPPER.registerModule(new Jdk8Module());
+        INDENT_OBJECT_MAPPER.registerModule(new JavaTimeModule());
+        INDENT_OBJECT_MAPPER.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
+        INDENT_OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
+        INDENT_OBJECT_MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+
     }
 
     public static void requireLength(Collection<?> collection, int expectedSize) {
@@ -107,6 +120,10 @@ public class NncUtils {
 
     public static void writeJsonToFile(String filePath, Object object) {
         writeFile(filePath, toJSONString(object));
+    }
+
+    public static void writeJsonToFileWithIndent(String filePath, Object object) {
+        writeFile(filePath, toJSONStringWithIndent(object));
     }
 
     public static void writeFile(String filePath, byte[] bytes) {
@@ -320,6 +337,14 @@ public class NncUtils {
     public static String toJSONStringIgnoreNull(Object object) {
         try {
             return OBJECT_MAPPER_IGNORE_NULL.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Fail to write JSON string, object: " + object, e);
+        }
+    }
+
+    public static String toJSONStringWithIndent(Object object) {
+        try {
+            return INDENT_OBJECT_MAPPER.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Fail to write JSON string, object: " + object, e);
         }
@@ -1019,6 +1044,11 @@ public class NncUtils {
     public static <T> T findRequired(T[] array, Predicate<T> filter) {
         return Arrays.stream(array).filter(filter).findAny()
                 .orElseThrow(InternalException::new);
+    }
+
+    public static <T> T findRequired(T[] array, Predicate<T> filter, Supplier<String> messageSupplier) {
+        return Arrays.stream(array).filter(filter).findAny()
+                .orElseThrow(() -> new InternalException(messageSupplier.get()));
     }
 
     public static <T> int indexOf(List<T> list, Predicate<T> predicate) {

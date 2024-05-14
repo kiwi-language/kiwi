@@ -4,7 +4,7 @@ import java.util.List;
 
 public record TypeQuery(
         String searchText,
-        List<Integer> categories,
+        List<Integer> kinds,
         Boolean isTemplate,
         boolean includeAnonymous,
         boolean includeBuiltin,

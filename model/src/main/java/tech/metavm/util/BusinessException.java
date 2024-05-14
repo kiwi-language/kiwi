@@ -1,18 +1,21 @@
 package tech.metavm.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.expression.Func;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.expression.Func;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.Index;
-import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 
 import java.util.List;
 
 public class BusinessException extends RuntimeException {
+
+    public static final Logger logger = LoggerFactory.getLogger(BusinessException.class);
 
     private final ErrorCode errorCode;
     private final Object[] params;

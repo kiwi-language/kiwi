@@ -17,7 +17,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 
-public class SaveTypeBatch implements DTOProvider {
+public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public static SaveTypeBatch create(IEntityContext context,
                                        List<? extends TypeDefDTO> typeDefDTOs,
@@ -71,8 +71,8 @@ public class SaveTypeBatch implements DTOProvider {
         }
     }
 
-    public List<Type> getTypes() {
-        return NncUtils.map(typeDefMap.keySet(), id -> context.getType(Id.parse(id)));
+    public List<TypeDef> getTypes() {
+        return NncUtils.map(typeDefMap.keySet(), context::getTypeDef);
     }
 
     public IEntityContext getContext() {
@@ -92,10 +92,15 @@ public class SaveTypeBatch implements DTOProvider {
     }
 
     public TypeDef getTypeDef(String id) {
+        return getTypeDef(Id.parse(id));
+    }
+
+    @Override
+    public TypeDef getTypeDef(Id id) {
         var existing = context.getTypeDef(id);
         if(existing != null)
             return existing;
-        var typeDefDTO = NncUtils.requireNonNull(typeDefMap.get(id),
+        var typeDefDTO = NncUtils.requireNonNull(typeDefMap.get(id.toString()),
                 "TypeDef '" + id + "' not available");
         return Types.saveTypeDef(typeDefDTO, ResolutionStage.INIT, this);
     }
@@ -147,12 +152,22 @@ public class SaveTypeBatch implements DTOProvider {
         var dependencies = new HashSet<String>();
         if (typeDefDTO instanceof TypeDTO typeDTO) {
             var classParam = typeDTO.getClassParam();
-            if (classParam.superClassId() != null)
-                dependencies.add(classParam.superClassId());
-            if (classParam.interfaceIds() != null)
-                dependencies.addAll(classParam.interfaceIds());
+            if (classParam.superType() != null)
+                dependencies.add(getKlassId(classParam.superType()));
+            if (classParam.interfaces() != null)
+                classParam.interfaces().forEach(t -> dependencies.add(getKlassId(t)));
         }
         return dependencies;
+    }
+
+    private String getKlassId(String typeExpression) {
+        var typeKey = TypeKey.fromExpression(typeExpression);
+        if(typeKey instanceof ClassTypeKey ctKey)
+            return ctKey.id();
+        else if(typeKey instanceof ParameterizedTypeKey ptKey)
+            return ptKey.templateId();
+        else
+            throw new InternalException("Can not get klass id from type: " + typeExpression);
     }
 
     private static class Sorter {

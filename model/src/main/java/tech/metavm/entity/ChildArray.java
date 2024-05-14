@@ -50,9 +50,9 @@ public class ChildArray<T extends Entity> extends ReadonlyArray<T> {
     }
 
     @Override
-    public void forEachDescendant(Consumer<Entity> action) {
+    public void forEachDescendant(Consumer<Entity> action, boolean skipCopyIgnore) {
         action.accept(this);
-        forEach(child -> child.forEachDescendant(action));
+        forEach(child -> child.forEachDescendant(action, skipCopyIgnore));
     }
 
     @Override

@@ -71,8 +71,8 @@ public class Function extends Flow implements GlobalKey {
             return NativeFunctions.invoke(this, arguments, callContext);
         else
             return new MetaFrame(this.getRootNode(), null, null,
-                    arguments, callContext.instanceRepository(),
-                    callContext.parameterizedFlowProvider(), callContext.compositeTypeFacade()).execute();
+                    arguments, callContext.instanceRepository()
+            ).execute();
     }
 
     @Override
@@ -99,7 +99,18 @@ public class Function extends Flow implements GlobalKey {
     }
 
     @Override
-    public Function getParameterized(List<Type> typeArguments) {
+    public FunctionRef getRef() {
+        return new FunctionRef(this.getEffectiveHorizontalTemplate(), getTypeArguments());
+    }
+
+    @Nullable
+    @Override
+    public Function getExistingParameterized(List<? extends Type> typeArguments) {
+        return (Function) super.getExistingParameterized(typeArguments);
+    }
+
+    @Override
+    public Function getParameterized(List<? extends Type> typeArguments) {
         return (Function) super.getParameterized(typeArguments);
     }
 }

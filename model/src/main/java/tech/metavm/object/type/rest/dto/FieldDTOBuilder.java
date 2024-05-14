@@ -8,13 +8,13 @@ import tech.metavm.object.type.MetadataState;
 
 public class FieldDTOBuilder {
 
-    public static FieldDTOBuilder newBuilder(String name, String typeId) {
-        return new FieldDTOBuilder(name, typeId);
+    public static FieldDTOBuilder newBuilder(String name, String type) {
+        return new FieldDTOBuilder(name, type);
     }
 
     private final String name;
     private String code;
-    private final String typeId;
+    private final String type;
     private String id;
     private Long tmpId;
     private int access = Access.PUBLIC.code();
@@ -30,9 +30,9 @@ public class FieldDTOBuilder {
     private boolean searchable;
     private int state = MetadataState.READY.code();
 
-    private FieldDTOBuilder(String name, String typeId) {
+    private FieldDTOBuilder(String name, String type) {
         this.name = name;
-        this.typeId = typeId;
+        this.type = type;
     }
 
     public FieldDTOBuilder id(String id) {
@@ -121,7 +121,7 @@ public class FieldDTOBuilder {
                 defaultValue,
                 unique,
                 declaringTypeId,
-                typeId,
+                type,
                 isChild,
                 isStatic,
                 readonly,

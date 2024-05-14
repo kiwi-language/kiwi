@@ -1,9 +1,8 @@
 package tech.metavm.object.instance;
 
-import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.DefContext;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ModelDef;
+import tech.metavm.entity.Mapper;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PrimitiveInstance;
@@ -32,13 +31,13 @@ public class DefaultObjectInstanceMap implements ObjectInstanceMap {
             return entityContext.getInstance(object);
     }
 
-    public <T> T getEntity(Class<T> klass, Instance instance, @Nullable ModelDef<T, ?> def) {
+    public <T> T getEntity(Class<T> klass, Instance instance, Mapper<T, ?> mapper) {
         //noinspection unchecked
         klass = (Class<T>) ReflectionUtils.getBoxedClass(klass);
         if (instance instanceof PrimitiveInstance primitiveInstance)
             return klass.cast(Instances.deserializePrimitive(primitiveInstance, klass));
         else if(instance instanceof DurableInstance d)
-            return entityContext.getEntity(klass, d, def);
+            return entityContext.getEntity(klass, d, mapper);
         else
             throw new InternalException("Invalid instance: " + instance);
     }

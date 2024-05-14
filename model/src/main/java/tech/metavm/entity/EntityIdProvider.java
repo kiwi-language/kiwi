@@ -1,15 +1,11 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.object.type.Type;
 
 import java.util.List;
 import java.util.Map;
 
 public interface EntityIdProvider {
-
-    TypeId getTypeId(Id id);
 
     Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count);
 

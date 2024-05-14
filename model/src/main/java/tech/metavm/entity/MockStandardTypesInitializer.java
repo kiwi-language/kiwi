@@ -1,66 +1,94 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.BooleanInstance;
-import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.object.type.*;
-import tech.metavm.util.Instances;
+import tech.metavm.util.NncUtils;
 
 import java.util.List;
-import java.util.Set;
 
 public class MockStandardTypesInitializer {
 
     public static void init() {
-        StandardTypes.setAnyType(new AnyType());
-        StandardTypes.setNeverType(new NeverType());
-        StandardTypes.setNullType(new PrimitiveType(PrimitiveKind.NULL));
-        StandardTypes.setTimeType(new PrimitiveType(PrimitiveKind.TIME));
-        StandardTypes.setBooleanType(new PrimitiveType(PrimitiveKind.BOOLEAN));
-        StandardTypes.setLongType(new PrimitiveType(PrimitiveKind.LONG));
-        StandardTypes.setStringType(new PrimitiveType(PrimitiveKind.STRING));
-        StandardTypes.setVoidType(new PrimitiveType(PrimitiveKind.VOID));
-        StandardTypes.setPasswordType(new PrimitiveType(PrimitiveKind.PASSWORD));
-        StandardTypes.setDoubleType(new PrimitiveType(PrimitiveKind.DOUBLE));
-        StandardTypes.setNullableAnyType(new UnionType(null, Set.of(StandardTypes.getNullType(), StandardTypes.getAnyType())));
-        StandardTypes.setAnyArrayType(new ArrayType(null, StandardTypes.getAnyType(), ArrayKind.READ_WRITE));
-        StandardTypes.setReadonlyAnyArrayType(new ArrayType(null, StandardTypes.getAnyType(), ArrayKind.READ_ONLY));
-        StandardTypes.setNeverArrayType(new ArrayType(null, StandardTypes.getNeverType(), ArrayKind.READ_WRITE));
-        StandardTypes.setNullableStringType(new UnionType(null, Set.of(StandardTypes.getNullType(), StandardTypes.getStringType())));
-        StandardTypes.setListType(
+        StandardTypes.setListKlass(
                 ClassTypeBuilder.newBuilder("列表", List.class.getSimpleName())
                         .source(ClassSource.BUILTIN)
-                        .typeParameters(new TypeVariable(null, "元素类型", "E", DummyGenericDeclaration.INSTANCE))
+                        .tmpId(NncUtils.randomNonNegative())
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "元素类型", "E", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        StandardTypes.setReadWriteListType(
+        StandardTypes.setReadWriteListKlass(
                 ClassTypeBuilder.newBuilder("读写列表", "ReadWriteList")
                         .source(ClassSource.BUILTIN)
-                        .typeParameters(new TypeVariable(null, "读写列表元素", "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
+                        .tmpId(NncUtils.randomNonNegative())
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "读写列表元素", "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        StandardTypes.setChildListType(
+        StandardTypes.setChildListKlass(
                 ClassTypeBuilder.newBuilder("子对象列表", "ChildList")
                         .source(ClassSource.BUILTIN)
-                        .typeParameters(new TypeVariable(null, "子对象列表元素", "ChildListElement", DummyGenericDeclaration.INSTANCE))
+                        .tmpId(NncUtils.randomNonNegative())
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "子对象列表元素", "ChildListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        var enumTypeParam = new TypeVariable(null, "枚举类型", "EnumType",
+        var enumTypeParam = new TypeVariable(NncUtils.randomNonNegative(), "枚举类型", "EnumType",
                 DummyGenericDeclaration.INSTANCE);
         var enumType = ClassTypeBuilder.newBuilder("枚举", Enum.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
+                .tmpId(NncUtils.randomNonNegative())
                 .build();
         enumTypeParam.setBounds(List.of(enumType.getType()));
         FieldBuilder.newBuilder("名称", "name", enumType, StandardTypes.getStringType()).build();
         FieldBuilder.newBuilder("序号", "ordinal", enumType, StandardTypes.getLongType()).build();
-        StandardTypes.setEnumType(enumType);
-        Instances.setNullInstance(new NullInstance(StandardTypes.getNullType()));
-        Instances.setTrueInstance(new BooleanInstance(true, StandardTypes.getBooleanType()));
-        Instances.setFalseInstance(new BooleanInstance(false, StandardTypes.getBooleanType()));
-
-        StandardTypes.setEntityType(ClassTypeBuilder.newBuilder("实体", Entity.class.getSimpleName())
+        StandardTypes.setEnumKlass(enumType);
+        StandardTypes.setEntityKlass(ClassTypeBuilder.newBuilder("实体", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .build());
+        StandardTypes.setPredicateKlass(
+                ClassTypeBuilder.newBuilder("断言", "Predicate")
+                        .source(ClassSource.BUILTIN)
+                        .tmpId(NncUtils.randomNonNegative())
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "元素", "T", DummyGenericDeclaration.INSTANCE))
+                        .build()
+        );
+        StandardTypes.setConsumerKlass(
+                ClassTypeBuilder.newBuilder("消费者", "Consumer")
+                        .source(ClassSource.BUILTIN)
+                        .tmpId(NncUtils.randomNonNegative())
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "元素", "T", DummyGenericDeclaration.INSTANCE))
+                        .build()
+        );
+        StandardTypes.setThrowableKlass(
+                ClassTypeBuilder.newBuilder("Throwable", "Throwable")
+                        .source(ClassSource.BUILTIN)
+                        .tmpId(NncUtils.randomNonNegative())
+                        .build()
+        );
+        StandardTypes.setExceptionKlass(
+                ClassTypeBuilder.newBuilder("Exception", "Exception")
+                        .source(ClassSource.BUILTIN)
+                        .tmpId(NncUtils.randomNonNegative())
+                        .build()
+        );
+        StandardTypes.setRuntimeExceptionKlass(
+                ClassTypeBuilder.newBuilder("RuntimeException", "RuntimeException")
+                        .source(ClassSource.BUILTIN)
+                        .tmpId(NncUtils.randomNonNegative())
+                        .build()
+        );
+        StandardTypes.setIterableKlass(
+                ClassTypeBuilder.newBuilder("Iterable", "Iterable")
+                        .source(ClassSource.BUILTIN)
+                        .tmpId(NncUtils.randomNonNegative())
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "T", "T", DummyGenericDeclaration.INSTANCE))
+                        .build()
+        );
+        StandardTypes.setIteratorKlass(
+                ClassTypeBuilder.newBuilder("Iterator", "Iterator")
+                        .source(ClassSource.BUILTIN)
+                        .tmpId(NncUtils.randomNonNegative())
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "T", "T", DummyGenericDeclaration.INSTANCE))
+                        .build()
+        );
     }
 
 }

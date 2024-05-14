@@ -4,8 +4,12 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.LoopNode;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
-import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.InstanceProvider;
+import tech.metavm.object.type.ContextTypeDefRepository;
+import tech.metavm.object.type.IndexedTypeDefProvider;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 
@@ -21,8 +25,6 @@ public class FlowParsingContext extends BaseParsingContext {
         return new FlowParsingContext(
                 entityContext.getInstanceContext(),
                 new ContextTypeDefRepository(entityContext),
-                new ContextArrayTypeProvider(entityContext),
-                entityContext.getUnionTypeContext(),
                 scope, prev);
     }
 
@@ -36,10 +38,8 @@ public class FlowParsingContext extends BaseParsingContext {
 
     public FlowParsingContext(
             InstanceProvider instanceProvider, IndexedTypeDefProvider typeDefProvider,
-            ArrayTypeProvider arrayTypeProvider,
-            UnionTypeProvider unionTypeProvider,
             ScopeRT scope, NodeRT prev) {
-        super(instanceProvider, typeDefProvider, arrayTypeProvider, unionTypeProvider);
+        super(instanceProvider, typeDefProvider);
         this.scope = scope;
         this.prev = prev;
         this.lastNode = prev != null ? prev : scope.getOwner();

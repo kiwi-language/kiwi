@@ -3,16 +3,13 @@ package tech.metavm.instance.core;
 import tech.metavm.entity.IdInitializer;
 import tech.metavm.entity.VersionSource;
 import tech.metavm.event.EventQueue;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.BufferingInstanceContext;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.TypeDefProvider;
-import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
 import javax.annotation.Nullable;
@@ -28,15 +25,13 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
                                    IInstanceContext parent,
                                    TypeDefProvider typeDefProvider,
                                    MappingProvider mappingProvider,
-                                   ParameterizedFlowProvider parameterizedFlowProvider,
-                                   CompositeTypeFacade compositeTypeFacade,
                                    boolean readonly) {
         super(appId,
                 treeSources, versionSource,
                 indexSource, idService,
                 parent,
                 typeDefProvider,
-                mappingProvider, parameterizedFlowProvider, compositeTypeFacade, readonly);
+                mappingProvider, readonly);
     }
 
     @Override

@@ -82,16 +82,16 @@ public class NativeMethods {
         return ReflectionUtils.invokeConstructor(constructor, instance);
     }
 
-    private static Class<?> tryGetNativeClass(Klass type) {
-        while (type != null) {
-            var def = ModelDefRegistry.tryGetDef(type.getEffectiveTemplate().getType());
+    private static Class<?> tryGetNativeClass(Klass klass) {
+        while (klass != null) {
+            var def = ModelDefRegistry.tryGetDef(klass.getEffectiveTemplate());
             if (def != null) {
                 if (def instanceof DirectDef<?> directDef && directDef.getNativeClass() != null)
                     return directDef.getNativeClass();
                 else
                     return null;
             } else
-                type = NncUtils.get(type.getSuperType(), ClassType::resolve);
+                klass = NncUtils.get(klass.getSuperType(), ClassType::resolve);
         }
         return null;
     }

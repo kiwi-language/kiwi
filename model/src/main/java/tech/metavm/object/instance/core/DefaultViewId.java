@@ -2,7 +2,9 @@ package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.view.MappingProvider;
+import tech.metavm.object.view.rest.dto.MappingKey;
 import tech.metavm.util.InstanceOutput;
 
 import java.util.Objects;
@@ -13,21 +15,21 @@ public class DefaultViewId extends ViewId {
 
     private final Id sourceId;
 
-    public DefaultViewId(boolean isArray, @NotNull Id mappingId, Id sourceId) {
-        super(isArray, mappingId);
+    public DefaultViewId(boolean isArray, @NotNull MappingKey mappingKey, Id sourceId) {
+        super(isArray, mappingKey);
         this.sourceId = sourceId;
     }
 
     @Override
     public void write(InstanceOutput output) {
         output.writeIdTag(IdTag.DEFAULT_VIEW, isArray());
-        getMappingId().write(output);
+        getMappingKey().write(output);
         sourceId.write(output);
     }
 
     @Override
-    public @NotNull Id getMappingId() {
-        return requireNonNull(super.getMappingId());
+    public @NotNull MappingKey getMappingKey() {
+        return requireNonNull(super.getMappingKey());
     }
 
     public Id getSourceId() {
@@ -65,8 +67,8 @@ public class DefaultViewId extends ViewId {
 
     @Nullable
     @Override
-    public SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider) {
-        return new SourceRef(instanceProvider.get(sourceId), mappingProvider.getMapping(getMappingId()));
+    public SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
+        return new SourceRef(instanceProvider.get(sourceId), getMappingKey().toMapping(mappingProvider, typeDefProvider));
     }
 
 }

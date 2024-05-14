@@ -31,4 +31,9 @@ public record AnyTypeKey() implements TypeKey {
 
     }
 
+    @Override
+    public int getCode() {
+        return TypeKeyCodes.ANY;
+    }
+
 }

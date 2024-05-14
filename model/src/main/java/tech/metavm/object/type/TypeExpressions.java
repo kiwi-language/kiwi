@@ -78,15 +78,15 @@ public class TypeExpressions {
     }
 
     public static String getListType(String elementType) {
-        return getParameterizedType(StandardTypes.getListType().getStringId(), elementType);
+        return getParameterizedType(StandardTypes.getListKlass().getStringId(), elementType);
     }
 
     public static String getReadWriteListType(String elementType) {
-        return getParameterizedType(StandardTypes.getReadWriteListType().getStringId(), elementType);
+        return getParameterizedType(StandardTypes.getReadWriteListKlass().getStringId(), elementType);
     }
 
     public static String getChildListType(String elementType) {
-        return getParameterizedType(StandardTypes.getChildListType().getStringId(), elementType);
+        return getParameterizedType(StandardTypes.getChildListKlass().getStringId(), elementType);
     }
 
 }

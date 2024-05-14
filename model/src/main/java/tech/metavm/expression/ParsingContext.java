@@ -21,8 +21,4 @@ public interface ParsingContext {
 
     IndexedTypeDefProvider getTypeDefProvider();
 
-    ArrayTypeProvider getArrayTypeProvider();
-
-    UnionTypeProvider getUnionTypeProvider();
-
 }

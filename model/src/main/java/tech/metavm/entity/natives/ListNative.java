@@ -68,8 +68,8 @@ public class ListNative extends IterableNative {
     }
 
     public ClassInstance iterator(CallContext callContext) {
-        var iteratorImplType = (Klass) instance.getKlass().getDependency(StandardTypes.getIteratorImplType());
-        var it = ClassInstance.allocate(iteratorImplType);
+        var iteratorImplType = (Klass) instance.getKlass().getDependency(StandardTypes.getIteratorImplKlass());
+        var it = ClassInstance.allocate(iteratorImplType.getType());
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
         return it;
@@ -100,6 +100,9 @@ public class ListNative extends IterableNative {
     }
 
     public void clear() {
+        if(array == null) {
+            System.out.println("Caught");
+        }
         array.clear();
     }
 
@@ -123,9 +126,9 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public static ClassInstance of(Klass type, Instance values, CallContext callContext) {
+    public static ClassInstance of(Klass klass, Instance values, CallContext callContext) {
         if(values instanceof ArrayInstance array) {
-            var list = ClassInstance.allocate(type);
+            var list = ClassInstance.allocate(klass.getType());
             var listNative = (ListNative) NativeMethods.getNativeObject(list);
             listNative.List(callContext);
             array.forEach(e -> listNative.add(e, callContext));

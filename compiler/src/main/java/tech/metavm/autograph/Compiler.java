@@ -16,10 +16,7 @@ import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.object.type.rest.dto.TypeDefDTO;
 import tech.metavm.system.RegionConstants;
-import tech.metavm.util.CompilerException;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -30,7 +27,7 @@ import static java.util.Objects.requireNonNull;
 
 public class Compiler {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(Compiler.class);
+    public static final Logger logger = LoggerFactory.getLogger(Compiler.class);
 
     public static final String REQUEST_DIR = "/Users/leen/workspace/object/compiler/src/test/resources/requests";
 
@@ -109,17 +106,17 @@ public class Compiler {
                     //NncUtils.exclude(typeResolver.getGeneratedTypes(), this::isCapturedByParameterizedFlow);
 //            var generatedPFlows = NncUtils.exclude(typeResolver.getGeneratedParameterizedFlows(), this::isCapturedByParameterizedFlow);
             long elapsed = System.currentTimeMillis() - start;
-            LOGGER.info("Compilation done in {} ms. {} types generated", elapsed, generatedTypes.size());
+            logger.info("Compilation done in {} ms. {} types generated", elapsed, generatedTypes.size());
             deploy(generatedTypes, typeResolver);
-            LOGGER.info("Deploy done");
+            logger.info("Deploy done");
             return true;
         }
         catch (CompilerException e) {
-            LOGGER.error("Compilation failed: {}", e.getMessage());
+            logger.error("Compilation failed: {}", e.getMessage());
             return false;
         }
         finally {
-            LOGGER.info(profiler.finish(false, true).output());
+            logger.info(profiler.finish(false, true).output());
         }
 
     }
@@ -164,9 +161,10 @@ public class Compiler {
                     }
             );
 //            var pFlowDTOs = NncUtils.map(generatedPFlows, f -> f.toPFlowDTO(serContext));
-            LOGGER.info("Compile successful");
+            logger.info("Compile successful");
             var request = new BatchSaveRequest(typeDefDTOs, List.of(), true);
-            saveRequest(request);
+            if(DebugEnv.saveCompileResult)
+                saveRequest(request);
             typeClient.batchSave(request);
         }
     }
@@ -178,7 +176,7 @@ public class Compiler {
     private void saveRequest(BatchSaveRequest request) {
         var path = REQUEST_DIR + File.separator
                 + "request." + ValueFormatter.formatTime(System.currentTimeMillis()) + ".json";
-        NncUtils.writeJsonToFile(path, request);
+        NncUtils.writeJsonToFileWithIndent(path, request);
     }
 
     public PsiJavaFile getPsiJavaFile(String path) {

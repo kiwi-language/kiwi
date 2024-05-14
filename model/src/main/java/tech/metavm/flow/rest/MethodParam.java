@@ -9,8 +9,8 @@ public record MethodParam(
         boolean isStatic,
         @Nullable String verticalTemplateId,
         String declaringTypeId,
-        String staticTypeId,
-        List<String> overriddenIds,
+        String staticType,
+        List<MethodRefDTO> overriddenRefs,
         int access
 ) implements FlowParam {
     @Override

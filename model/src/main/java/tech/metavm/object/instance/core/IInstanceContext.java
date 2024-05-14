@@ -6,9 +6,8 @@ import tech.metavm.entity.InstanceSink;
 import tech.metavm.entity.LockMode;
 import tech.metavm.entity.natives.CallContext;
 import tech.metavm.event.EventQueue;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.profile.Profiler;
@@ -68,12 +67,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 //    boolean existsInstances(Type type, boolean persistedOnly);
 
     List<DurableInstance> scan(long start, long limit);
-
-    @Override
-    ParameterizedFlowProvider parameterizedFlowProvider();
-
-    @Override
-    CompositeTypeFacade compositeTypeFacade();
 
     @Override
     default InstanceRepository instanceRepository() {

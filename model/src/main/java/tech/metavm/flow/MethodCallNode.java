@@ -7,8 +7,8 @@ import tech.metavm.expression.VarType;
 import tech.metavm.flow.rest.MethodCallNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -23,16 +23,16 @@ public class MethodCallNode extends CallNode {
         MethodCallNodeParam param = nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         if (param.isResolved()) {
-            var method = context.getMethod(Id.parse(param.getFlowId()));
+            var methodRef = MethodRef.create(Objects.requireNonNull(param.getFlowRef()), context);
             var self = NncUtils.get(param.getSelf(), s -> ValueFactory.create(s, parsingContext));
             List<Argument> arguments = NncUtils.biMap(
-                    method.getParameters(),
+                    methodRef.resolve().getParameters(),
                     param.getArguments(),
-                    (p, a) -> new Argument(a.tmpId(), p, ValueFactory.create(a.value(), parsingContext))
+                    (p, a) -> new Argument(a.tmpId(), p.getRef(), ValueFactory.create(a.value(), parsingContext))
             );
             //noinspection DuplicatedCode
-            var node = saveNode0(nodeDTO, self, method, arguments, prev, scope, context);
-            node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypeIds(), context::getType));
+            var node = saveNode0(nodeDTO, self, methodRef, arguments, prev, scope, context);
+            node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypes(), t -> TypeParser.parse(t, context)));
             node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
             return node;
         } else {
@@ -43,7 +43,7 @@ public class MethodCallNode extends CallNode {
                 var exprTypes = prev != null ? prev.getExpressionTypes() : scope.getExpressionTypes();
                 declaringType = (ClassType) exprTypes.getType(self.getExpression());
             } else
-                declaringType = (ClassType) TypeParser.parse(Objects.requireNonNull(param.getTypeId()), new ContextTypeDefRepository(context));
+                declaringType = (ClassType) TypeParser.parse(Objects.requireNonNull(param.getType()), context);
             var argumentValues = NncUtils.map(
                     param.getArgumentValues(),
                     arg -> ValueFactory.create(arg, parsingContext)
@@ -52,22 +52,22 @@ public class MethodCallNode extends CallNode {
             var klass = declaringType.resolve();
             var method = klass.resolveMethod(param.getFlowCode(),
                     argumentTypes,
-                    NncUtils.map(param.getTypeArgumentIds(), context::getType),
-                    isStatic,
-                    context.getGenericContext());
-            if (NncUtils.isNotEmpty(param.getTypeArgumentIds())) {
-                method = context.getGenericContext().getParameterizedFlow(method, NncUtils.map(param.getTypeArgumentIds(), context::getType));
+                    NncUtils.map(param.getTypeArguments(), context::getType),
+                    isStatic);
+            if (NncUtils.isNotEmpty(param.getTypeArguments())) {
+                method = method.getParameterized(NncUtils.map(param.getTypeArguments(), context::getType));
             }
+            var methodRef = method.getRef();
             var arguments = new ArrayList<Argument>();
-            NncUtils.biForEach(method.getParameters(), argumentValues, (p, v) ->
-                    arguments.add(new Argument(null, p, v))
+            NncUtils.biForEach(methodRef.getRawFlow().getParameters(), argumentValues, (p, v) ->
+                    arguments.add(new Argument(null, p.getRef(), v))
             );
-            return saveNode0(nodeDTO, self, method, arguments, prev, scope, context);
+            return saveNode0(nodeDTO, self, methodRef, arguments, prev, scope, context);
         }
     }
 
     private static MethodCallNode saveNode0(NodeDTO nodeDTO, Value self,
-                                            Method method,
+                                            MethodRef methodRef,
                                             List<Argument> arguments,
                                             NodeRT prev,
                                             ScopeRT scope,
@@ -75,15 +75,10 @@ public class MethodCallNode extends CallNode {
         var node = (MethodCallNode) context.getNode(nodeDTO.id());
         if (node != null) {
             node.setSelf(self);
-            node.setSubFlow(method);
+            node.setFlowRef(methodRef);
             node.setArguments(arguments);
         } else {
-            var outputType = NncUtils.getOrElse(
-                    nodeDTO.outputTypeId(),
-                    context::getType,
-                    method.getReturnType().isVoid() ? null : method.getReturnType()
-            );
-            node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, self, method, arguments);
+            node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, self, methodRef, arguments);
         }
         return node;
     }
@@ -95,49 +90,45 @@ public class MethodCallNode extends CallNode {
     public MethodCallNode(Long tmpId,
                           String name,
                           @Nullable String code,
-                          @Nullable Type outputType,
                           NodeRT prev,
                           ScopeRT scope,
                           Value self,
-                          Method method,
+                          MethodRef methodRef,
                           List<Argument> arguments) {
-        super(tmpId, name, code, outputType, prev, scope, method, arguments);
-        NncUtils.requireTrue(method.getReturnType().isVoid() == (outputType == null));
+        super(tmpId, name, code, prev, scope, methodRef, arguments);
         this.self = NncUtils.get(self, s -> addChild(s, "self"));
     }
 
     @Override
     protected MethodCallNodeParam getParam(SerializeContext serializeContext) {
-        try (var serContext = SerializeContext.enter()) {
-            var method = getMethod();
-            return new MethodCallNodeParam(
-                    NncUtils.get(self, Value::toDTO),
-                    serContext.getId(method),
-                    null,
-                    null,
-                    serContext.getId(method.getDeclaringType()),
-                    NncUtils.map(arguments, Argument::toDTO),
-                    null,
-                    NncUtils.map(capturedExpressionTypes, serContext::getId),
-                    NncUtils.map(capturedExpressions, e -> e.build(VarType.NAME))
-            );
-        }
+        var method = getMethod();
+        return new MethodCallNodeParam(
+                NncUtils.get(self, Value::toDTO),
+                getFlowRef().toDTO(serializeContext),
+                null,
+                null,
+                method.getDeclaringType().getType().toExpression(serializeContext),
+                NncUtils.map(arguments, Argument::toDTO),
+                null,
+                NncUtils.map(capturedExpressionTypes, t -> t.toExpression(serializeContext)),
+                NncUtils.map(capturedExpressions, e -> e.build(VarType.NAME))
+        );
     }
 
     @Override
-    public Method getSubFlow() {
-        return (Method) super.getSubFlow();
+    public MethodRef getFlowRef() {
+        return (MethodRef) super.getFlowRef();
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        var method = getSubFlow();
+        var method = getFlowRef().resolve();
         writer.write(method.getDeclaringType().getName() + "." + method.getNameWithTypeArguments()
                 + "(" + NncUtils.join(arguments, Argument::getText, ", ") + ")");
     }
 
     private Method getMethod() {
-        return (Method) super.getSubFlow();
+        return (Method) super.getFlowRef().resolve();
     }
 
     public @Nullable Value getSelf() {

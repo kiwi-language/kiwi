@@ -30,7 +30,7 @@ public class ClassInstanceTest extends TestCase {
 
     public void testToFieldValueDTO_for_reference() {
         var fooType = MockUtils.createFooTypes(true);
-        var foo = ClassInstanceBuilder.newBuilder(fooType.fooType())
+        var foo = ClassInstanceBuilder.newBuilder(fooType.fooType().getType())
                 .data(Map.of(
                         fooType.fooNameField(),
                         Instances.stringInstance("foo"),
@@ -43,7 +43,7 @@ public class ClassInstanceTest extends TestCase {
                         new ArrayInstance(fooType.bazArrayType())
                 ))
                 .build();
-        foo.initId(DefaultPhysicalId.ofObject(100000L, 0L, new ClassTypeKey("1")));
+        foo.initId(DefaultPhysicalId.ofObject(100000L, 0L, TestUtils.mockClassTypeKey()));
         FieldValue fieldValueDTO = foo.toFieldValueDTO();
         Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
         Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
@@ -63,7 +63,7 @@ public class ClassInstanceTest extends TestCase {
 
     public void testIsChild() {
         var fooTypes = MockUtils.createFooTypes(true);
-        ClassInstance foo = ClassInstanceBuilder.newBuilder(fooTypes.fooType())
+        ClassInstance foo = ClassInstanceBuilder.newBuilder(fooTypes.fooType().getType())
                 .data(Map.of(
                         fooTypes.fooNameField(),
                         Instances.stringInstance("foo"),
@@ -93,9 +93,9 @@ public class ClassInstanceTest extends TestCase {
                         titleField,
                         Instances.stringInstance("Big Foo")
                 ),
-                type
+                type.getType()
         );
-        instance.initId(DefaultPhysicalId.ofObject(10001L, 0L, new ClassTypeKey("1")));
+        instance.initId(DefaultPhysicalId.ofObject(10001L, 0L, TestUtils.mockClassTypeKey()));
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 
@@ -110,16 +110,16 @@ public class ClassInstanceTest extends TestCase {
     public void testEphemeral() {
         var flowType = ClassTypeBuilder.newBuilder("Flow", "Flow").build();
         var scopeType = ClassTypeBuilder.newBuilder("Scope", "Scope").build();
-        var nullableScopeType = new UnionType(null, Set.of(StandardTypes.getNullType(), scopeType.getType()));
+        var nullableScopeType = new UnionType(Set.of(StandardTypes.getNullType(), scopeType.getType()));
         var rootScopeField = FieldBuilder.newBuilder("rootScope", "rootScope", flowType, nullableScopeType)
                 .isChild(true)
                 .build();
 
         TestUtils.initEntityIds(flowType);
-        var flow = ClassInstanceBuilder.newBuilder(flowType)
+        var flow = ClassInstanceBuilder.newBuilder(flowType.getType())
                 .data(Map.of(
                         rootScopeField,
-                        ClassInstanceBuilder.newBuilder(scopeType)
+                        ClassInstanceBuilder.newBuilder(scopeType.getType())
                                 .ephemeral(true)
                                 .build()
                 ))
@@ -144,7 +144,7 @@ public class ClassInstanceTest extends TestCase {
         var input = new InstanceInput(bin, id -> {
             var inst = id2instance.get(id);
             if(inst instanceof ClassInstance classInst)
-                return new ClassInstance(id, classInst.getKlass(), classInst.isEphemeral(), null);
+                return new ClassInstance(id, classInst.getType(), classInst.isEphemeral(), null);
             else
                 throw new RuntimeException("Unexpected instance: " + inst);
         });

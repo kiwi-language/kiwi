@@ -24,12 +24,9 @@ public class SubstitutorV2Test extends TestCase {
 
     public static final String JSON_FILE_PATH = "/Users/leen/workspace/object/test.json";
 
-    private TypeProviders typeProviders;
-
     @Override
     protected void setUp() throws Exception {
         MockStandardTypesInitializer.init();
-        typeProviders = new TypeProviders();
     }
 
     public void test() {
@@ -46,15 +43,15 @@ public class SubstitutorV2Test extends TestCase {
                 .build();
         {
             var getValueFlow = MethodBuilder.newBuilder(foo, "getValue", "getValue")
-                    .type(new FunctionType(null, List.of(), typeVar.getType()))
-                    .staticType(new FunctionType(null, List.of(foo.getType()), typeVar.getType()))
+                    .type(new FunctionType(List.of(), typeVar.getType()))
+                    .staticType(new FunctionType(List.of(foo.getType()), typeVar.getType()))
                     .returnType(typeVar.getType())
                     .build();
             var selfNode = new SelfNode(null, "self", null, foo.getType(), null, getValueFlow.getRootScope());
             var valueNode = new ValueNode(
                     null, "value", null, typeVar.getType(), selfNode, getValueFlow.getRootScope(),
                     Values.expression(
-                            new PropertyExpression(new NodeExpression(selfNode), valueField)
+                            new PropertyExpression(new NodeExpression(selfNode), valueField.getRef())
                     )
             );
             new ReturnNode(
@@ -65,8 +62,8 @@ public class SubstitutorV2Test extends TestCase {
 
         {
             var flow = MethodBuilder.newBuilder(foo, "setValue", "setValue")
-                    .type(new FunctionType(null, List.of(typeVar.getType()), voidType))
-                    .staticType(new FunctionType(null, List.of(foo.getType(), typeVar.getType()), voidType))
+                    .type(new FunctionType(List.of(typeVar.getType()), voidType))
+                    .staticType(new FunctionType(List.of(foo.getType(), typeVar.getType()), voidType))
                     .returnType(voidType)
                     .parameters(new Parameter(null, "value", "value", typeVar.getType()))
                     .build();
@@ -80,10 +77,10 @@ public class SubstitutorV2Test extends TestCase {
                     .build();
             var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getRootScope());
             var updateNode = new UpdateObjectNode(null, "update", null, inputNode, flow.getRootScope(),
-                    Values.reference(new NodeExpression(selfNode)));
+                    Values.reference(new NodeExpression(selfNode)), List.of());
             updateNode.setUpdateField(
                     valueField, UpdateOp.SET,
-                    Values.reference(new PropertyExpression(new NodeExpression(inputNode), inputValueField))
+                    Values.reference(new PropertyExpression(new NodeExpression(inputNode), inputValueField.getRef()))
             );
             new ReturnNode(null, "return", null, updateNode, flow.getRootScope(), null);
         }
@@ -98,13 +95,11 @@ public class SubstitutorV2Test extends TestCase {
             throw new InternalException("Type not found: " + t.getTypeName());
         });
 
-        stringType.initId(DefaultPhysicalId.ofObject(1L, 0L, new ClassTypeKey("1")));
+        stringType.initId(DefaultPhysicalId.ofObject(1L, 0L, TestUtils.mockClassTypeKey()));
 
         var typeProviders = new TypeProviders();
 
         var entityRepo = new MockEntityRepository(typeProviders.typeRegistry);
-
-        var compositeTypeFacade = new TypeProviders().createFacade();
 
         var subst = new SubstitutorV2(
                 foo, List.of(typeVar), List.of(stringType),
@@ -126,13 +121,8 @@ public class SubstitutorV2Test extends TestCase {
                         new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE)
                 ))
                 .build();
-        var bar1 = typeProviders.parameterizedFlowProvider.getParameterizedFlow(
-                barMethod, List.of(StandardTypes.getStringType())
-        );
-
-        var bar2 = typeProviders.parameterizedFlowProvider.getParameterizedFlow(
-                barMethod, List.of(StandardTypes.getStringType())
-        );
+        var bar1 = barMethod.getParameterized(List.of(StandardTypes.getStringType()));
+        var bar2 = barMethod.getParameterized(List.of(StandardTypes.getStringType()));
         Assert.assertSame(bar1, bar2);
     }
 

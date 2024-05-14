@@ -22,7 +22,7 @@ public class GetUniqueNode extends NodeRT {
         GetUniqueNodeParam param = nodeDTO.getParam();
         Index index = context.getEntity(Index.class, Id.parse(param.indexId()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var type = context.getNullableType(index.getDeclaringType().getType());
+        var type = StandardTypes.getNullableType(index.getDeclaringType().getType());
         var values = NncUtils.map(param.values(), v -> ValueFactory.create(v, parsingContext));
         GetUniqueNode node = (GetUniqueNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null) {

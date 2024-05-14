@@ -6,8 +6,9 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record FlowExecutionRequest(
-        String flowId,
+        FlowRefDTO flowRef,
         @Nullable String instanceId,
         List<FieldValue> arguments
 ) {
+
 }

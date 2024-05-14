@@ -194,7 +194,7 @@ public class Declarator extends CodeGenVisitor {
     private Type resolveParameterType(PsiParameter parameter) {
         var type = resolveType(parameter.getType());
         if (TranspileUtil.getAnnotation(parameter, Nullable.class) != null)
-            type = context.getNullableType(type);
+            type = StandardTypes.getNullableType(type);
         return type;
     }
 
@@ -211,7 +211,7 @@ public class Declarator extends CodeGenVisitor {
         }
         var type = resolveType(psiField.getType());
         if (TranspileUtil.getAnnotation(psiField, Nullable.class) != null)
-            type = context.getNullableType(type);
+            type = StandardTypes.getNullableType(type);
         var klass = currentClass();
         var field = TranspileUtil.isStatic(psiField) ?
                 klass.findSelfStaticFieldByCode(psiField.getName())
@@ -261,7 +261,7 @@ public class Declarator extends CodeGenVisitor {
         var metaType = resolveType(type);
         if (TranspileUtil.getAnnotation(method, Nullable.class) != null ||
                 method.getReturnType() != null && TranspileUtil.getAnnotation(method.getReturnType(), Nullable.class) != null)
-            metaType = context.getNullableType(metaType);
+            metaType = StandardTypes.getNullableType(metaType);
         return metaType;
     }
 

@@ -15,6 +15,7 @@ import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.MethodParam;
+import tech.metavm.flow.rest.MethodRefDTO;
 import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.cache.MockCache;
@@ -22,6 +23,7 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
@@ -38,26 +40,24 @@ public class TestUtils {
 
     public static final String TEST_RESOURCE_TARGET_ROOT = "/Users/leen/workspace/object/target/test-classes";
 
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    private static final char[] buf = new char[64 * 1024 * 1024];
+    public static final ObjectMapper INDENT_OBJECT_MAPPER = new ObjectMapper();
 
     static {
         SimpleModule module = new SimpleModule();
         module.addSerializer(new TypeReference<Class<?>>() {
         }.getType(), new ReflectClassSerializer());
         module.addSerializer(Field.class, new ReflectFieldSerializer());
-        OBJECT_MAPPER.registerModule(module);
-        OBJECT_MAPPER.registerModule(new Jdk8Module());
-        OBJECT_MAPPER.registerModule(new JavaTimeModule());
-        OBJECT_MAPPER.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
-        OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
-        OBJECT_MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        INDENT_OBJECT_MAPPER.registerModule(module);
+        INDENT_OBJECT_MAPPER.registerModule(new Jdk8Module());
+        INDENT_OBJECT_MAPPER.registerModule(new JavaTimeModule());
+        INDENT_OBJECT_MAPPER.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
+        INDENT_OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
+        INDENT_OBJECT_MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
     public static String toJSONString(Object object) {
         try {
-            return OBJECT_MAPPER.writeValueAsString(object);
+            return INDENT_OBJECT_MAPPER.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new InternalException(e);
         }
@@ -85,7 +85,7 @@ public class TestUtils {
 
     public static <T> T readJSON(Class<T> klass, String json) {
         try {
-            return OBJECT_MAPPER.readValue(json, klass);
+            return INDENT_OBJECT_MAPPER.readValue(json, klass);
         } catch (JsonProcessingException e) {
             throw new InternalException("Fail to read JSON '" + json + "'", e);
         }
@@ -93,7 +93,7 @@ public class TestUtils {
 
     public static <T> T readJSON(Class<T> klass, Reader reader) {
         try {
-            return OBJECT_MAPPER.readValue(reader, klass);
+            return INDENT_OBJECT_MAPPER.readValue(reader, klass);
         } catch (IOException e) {
             throw new InternalException("Fail to read JSON", e);
         }
@@ -101,7 +101,7 @@ public class TestUtils {
 
     public static void printJSON(Object object) {
         try {
-            OBJECT_MAPPER.writeValue(System.out, object);
+            INDENT_OBJECT_MAPPER.writeValue(System.out, object);
         } catch (IOException e) {
             throw new InternalException(e);
         }
@@ -113,7 +113,7 @@ public class TestUtils {
 
     public static <R> R readJson(String path, Class<R> klass) {
         try {
-            return OBJECT_MAPPER.readValue(readEntireFile(path), klass);
+            return INDENT_OBJECT_MAPPER.readValue(readEntireFile(path), klass);
         } catch (JsonProcessingException e) {
             throw new InternalException("JSON deserialization failed", e);
         }
@@ -121,7 +121,7 @@ public class TestUtils {
 
     public static <R> R readJson(String path, com.fasterxml.jackson.core.type.TypeReference<R> typeRef) {
         try {
-            return OBJECT_MAPPER.readValue(readEntireFile(path), typeRef);
+            return INDENT_OBJECT_MAPPER.readValue(readEntireFile(path), typeRef);
         } catch (JsonProcessingException e) {
             throw new InternalException("JSON deserialization failed", e);
         }
@@ -129,8 +129,14 @@ public class TestUtils {
 
     public static String readEntireFile(String path) {
         try (FileReader reader = new FileReader(path)) {
-            int n = reader.read(buf);
-            return new String(buf, 0, n);
+            var builder = new StringBuilder();
+            var buf = new char[256];
+            while (true) {
+                int n = reader.read(buf);
+                if (n == -1)
+                    return builder.toString();
+                builder.append(buf, 0, n);
+            }
         } catch (IOException e) {
             throw new RuntimeException("Fail to read file '" + path + "'", e);
         }
@@ -325,7 +331,8 @@ public class TestUtils {
 
     public static TypeDTO getViewType(TypeDTO type, TypeManager typeManager) {
         var defaultMapping = getDefaultMapping(type);
-        return typeManager.getType(new GetTypeRequest(defaultMapping.targetType(), false)).type();
+        var targetKlassId = TypeExpressions.extractKlassId(defaultMapping.targetType());
+        return typeManager.getType(new GetTypeRequest(targetKlassId, false)).type();
     }
 
     public static ObjectMappingDTO getDefaultMapping(TypeDTO typeDTO) {
@@ -335,12 +342,28 @@ public class TestUtils {
         );
     }
 
-    public static String getDefaultViewTypeId(TypeDTO typeDTO) {
+    public static String getDefaultViewType(TypeDTO typeDTO) {
         return getDefaultMapping(typeDTO).targetType();
+    }
+
+    public static String getDefaultViewKlassId(TypeDTO typeDTO) {
+        return TypeExpressions.extractKlassId(getDefaultViewType(typeDTO));
     }
 
     public static String getMethodIdByCode(TypeDTO typeDTO, String methodCode) {
         return NncUtils.findRequired(typeDTO.getClassParam().flows(), f -> methodCode.equals(f.code())).id();
+    }
+
+    public static MethodRefDTO getMethodRefByCode(TypeDTO typeDTO, String methodCode) {
+        return new MethodRefDTO(
+                TypeExpressions.getClassType(typeDTO.id()),
+                getMethodIdByCode(typeDTO, methodCode),
+                List.of()
+        );
+    }
+
+    public static MethodRefDTO createMethodRef(String klassId, String methodId) {
+        return new MethodRefDTO(TypeExpressions.getClassType(klassId), methodId, List.of());
     }
 
     public static FlowDTO getMethodByCode(TypeDTO typeDTO, String methodCode) {
@@ -353,13 +376,25 @@ public class TestUtils {
         ).id();
     }
 
+    public static MethodRefDTO getStaticMethodRefByCode(TypeDTO typeDTO, String methodCode) {
+        var method = NncUtils.findRequired(typeDTO.getClassParam().flows(),
+                f -> methodCode.equals(f.code()) && ((MethodParam) f.param()).isStatic()
+        );
+        return createMethodRef(typeDTO.id(), method.id());
+    }
+
     public static String getStaticMethod(TypeDTO typeDTO, String code, String...parameterTypes) {
-        var paramTypeRefList = List.of(parameterTypes);
+        var paramTypeList = List.of(parameterTypes);
         return NncUtils.findRequired(typeDTO.getClassParam().flows(),
                 f -> code.equals(f.code()) &&
                         ((MethodParam) f.param()).isStatic() &&
-                        paramTypeRefList.equals(NncUtils.map(f.parameters(), ParameterDTO::type))
+                        paramTypeList.equals(NncUtils.map(f.parameters(), ParameterDTO::type)),
+                () -> new InternalException("Can not find static method " + code + "(" + String.join(",", paramTypeList) + ") in type " + typeDTO.name())
         ).id();
+    }
+
+    public static MethodRefDTO getStaticMethodRef(TypeDTO typeDTO, String code, String...parameterTypes) {
+        return new MethodRefDTO(TypeExpressions.getClassType(typeDTO.id()), getStaticMethod(typeDTO, code, parameterTypes), List.of());
     }
 
     public static String getMethodId(TypeDTO typeDTO, String code, String... parameterTypeIds) {
@@ -371,6 +406,10 @@ public class TestUtils {
         ).id();
     }
 
+    public static MethodRefDTO getMethodRef(TypeDTO typeDTO, String code, String...parameterTypeIds) {
+        return new MethodRefDTO(TypeExpressions.getClassType(typeDTO.id()), getMethodId(typeDTO, code, parameterTypeIds), List.of());
+    }
+
     public static String getEnumConstantIdByName(TypeDTO typeDTO, String name) {
         return NncUtils.findRequired(typeDTO.getClassParam().enumConstants(), f -> name.equals(f.title())).id();
     }
@@ -378,4 +417,13 @@ public class TestUtils {
     public static InstanceDTO getEnumConstantByName(TypeDTO typeDTO, String name) {
         return NncUtils.findRequired(typeDTO.getClassParam().enumConstants(), f -> name.equals(f.title()));
     }
+
+    public static ClassTypeKey mockClassTypeKey() {
+        return new ClassTypeKey(TaggedPhysicalId.ofClass(1L, 0L).toString());
+    }
+
+    public static void printIdClassName(String id) {
+        System.out.println(Id.parse(id).getClass().getName());
+    }
+
 }

@@ -4,11 +4,10 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.flow.FunctionBuilder;
 import tech.metavm.flow.Parameter;
-import tech.metavm.object.type.FunctionTypeProvider;
 
 public class MockNativeFunctionsInitializer {
 
-    public static void init(FunctionTypeProvider functionTypeProvider) {
+    public static void init() {
         NativeFunctions.setGetSourceFunc(
                 FunctionBuilder.newBuilder("获取来源", "getSource")
                         .parameters(new Parameter(null, "视图", "view", StandardTypes.getAnyType()))

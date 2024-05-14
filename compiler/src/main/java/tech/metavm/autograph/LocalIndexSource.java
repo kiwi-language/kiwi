@@ -23,13 +23,11 @@ public class LocalIndexSource implements IndexSource {
     private CompilerInstanceContextFactory contextFactory;
     private final DiskTreeStore treeStore;
     private final LocalIndex index;
-    private final LocalTypeIndex typeIndex;
 
     public LocalIndexSource(long appId, DiskTreeStore treeStore, String indexDir) {
         NncUtils.ensureDirectoryExists(indexDir);
         this.treeStore = treeStore;
         this.index = new LocalIndex(appId, indexDir + File.separator + "index");
-        this.typeIndex = new LocalTypeIndex(indexDir + File.separator + "type_index");
     }
 
     public void populateIndex() {
@@ -37,15 +35,13 @@ public class LocalIndexSource implements IndexSource {
             var ids = treeStore.getAllInstanceIds();
             var instanceContext = context.getInstanceContext();
             Map<IndexKeyPO, String> indexMap = new HashMap<>();
-            Map<Long, List<Long>> typeId2ids = new HashMap<>();
             for (var id : ids) {
                 instanceContext.get(id).accept(new StructuralVisitor() {
                     @Override
                     public Void visitClassInstance(ClassInstance instance) {
                         if (instance.isEphemeral())
                             return null;
-                        typeId2ids.computeIfAbsent(instance.getType().getPhysicalId(), k -> new ArrayList<>()).add(instance.getPhysicalId());
-                        var keys = instance.getIndexKeys(context.getGenericContext());
+                        var keys = instance.getIndexKeys();
                         for (IndexKeyRT key : keys) {
                             indexMap.put(convertKey(key), instance.getStringId());
                         }
@@ -54,7 +50,6 @@ public class LocalIndexSource implements IndexSource {
                 });
             }
             index.reset(indexMap);
-            typeIndex.reset(typeId2ids);
         }
     }
 

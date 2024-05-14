@@ -1,9 +1,6 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
-import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.object.type.BootIdProvider;
 
 import java.util.ArrayList;
@@ -20,11 +17,6 @@ public class BootIdInitializer implements IdInitializer {
         this.bootIdProvider = bootIdProvider;
         defaultIdInitializer = new DefaultIdInitializer(bootIdProvider);
         this.identityContext = identityContext;
-    }
-
-    @Override
-    public TypeId getTypeId(Id id) {
-        return bootIdProvider.getTypeId(id);
     }
 
     @Override

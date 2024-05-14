@@ -5,13 +5,10 @@ import tech.metavm.entity.IdInitializer;
 import tech.metavm.entity.LoadingBuffer;
 import tech.metavm.entity.Tree;
 import tech.metavm.entity.VersionSource;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.TreeNotFoundException;
 import tech.metavm.object.instance.TreeSource;
-import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.TypeDefProvider;
-import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InstanceInput;
@@ -34,9 +31,8 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
                                     @Nullable IInstanceContext parent,
                                     TypeDefProvider typeDefProvider,
                                     MappingProvider mappingProvider,
-                                    ParameterizedFlowProvider parameterizedFlowProvider,
-                                    CompositeTypeFacade compositeTypeFacade, boolean readonly) {
-        super(appId, parent, readonly, indexSource, typeDefProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade);
+                                    boolean readonly) {
+        super(appId, parent, readonly, indexSource, typeDefProvider, mappingProvider);
         this.idInitializer = idInitializer;
         this.loadingBuffer = new LoadingBuffer(this, treeSources, versionSource);
     }

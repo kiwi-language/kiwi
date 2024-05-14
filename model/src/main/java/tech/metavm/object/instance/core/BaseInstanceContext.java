@@ -9,10 +9,12 @@ import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.LockMode;
 import tech.metavm.entity.natives.CallContext;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.*;
@@ -28,7 +30,7 @@ import static tech.metavm.util.NncUtils.requireNonNull;
 
 public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<DurableInstance>, CallContext {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(BaseInstanceContext.class);
+    public static final Logger logger = LoggerFactory.getLogger(BaseInstanceContext.class);
 
     protected final long appId;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
@@ -50,8 +52,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final TypeDefProvider typeDefProvider;
     private final IndexSource indexSource;
     private final MappingProvider mappingProvider;
-    private final ParameterizedFlowProvider parameterizedFlowProvider;
-    private final CompositeTypeFacade compositeTypeFacade;
     private int seq;
 
     public BaseInstanceContext(long appId,
@@ -59,9 +59,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                                boolean readonly,
                                IndexSource indexSource,
                                TypeDefProvider typeDefProvider,
-                               MappingProvider mappingProvider,
-                               ParameterizedFlowProvider parameterizedFlowProvider,
-                               CompositeTypeFacade compositeTypeFacade) {
+                               MappingProvider mappingProvider) {
         this.appId = appId;
         this.readonly = readonly;
         this.parent = parent;
@@ -69,9 +67,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //        this.typeProvider = typeProvider;
         this.typeDefProvider = typeDefProvider;
         this.mappingProvider = mappingProvider;
-        this.parameterizedFlowProvider = parameterizedFlowProvider;
-        this.compositeTypeFacade = compositeTypeFacade;
-        memIndex = new InstanceMemoryIndex(parameterizedFlowProvider);
+        memIndex = new InstanceMemoryIndex();
     }
 
 
@@ -269,17 +265,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return checkAliveInStore(id);
     }
 
-    @Override
-    public ParameterizedFlowProvider parameterizedFlowProvider() {
-        return parameterizedFlowProvider;
-    }
-
     private DurableInstance allocateView(ViewId viewId) {
-        var viewType = viewId.getViewTypeKey(mappingProvider).toType(typeDefProvider);
+        var viewType = viewId.getViewTypeKey(mappingProvider, typeDefProvider).toType(typeDefProvider);
         DurableInstance view;
         if(viewType instanceof ClassType classViewType) {
-            view = ClassInstanceBuilder.newBuilder(classViewType.resolve())
-                    .sourceRef(viewId.getSourceRef(this, mappingProvider))
+            view = ClassInstanceBuilder.newBuilder(classViewType)
+                    .sourceRef(viewId.getSourceRef(this, mappingProvider, typeDefProvider))
                     .load(this::initializeView)
                     .id(viewId)
                     .ephemeral(true)
@@ -287,7 +278,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
         else if(viewType instanceof ArrayType arrayViewType) {
             view = new ArrayInstance(viewId, arrayViewType, true, this::initializeView);
-            view.setSourceRef(viewId.getSourceRef(this, mappingProvider));
+            view.setSourceRef(viewId.getSourceRef(this, mappingProvider, typeDefProvider));
         }
         else
             throw new InternalException("Invalid view type: " + viewType);
@@ -298,7 +289,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private void initializeView(DurableInstance view) {
         var id = (ViewId) requireNonNull(view.tryGetId());
         view = internalGet(id.getRootId());
-        var mapping = mappingProvider.getMapping(view.getMappingId());
+        var mapping = view.getMappingKey().toMapping(mappingProvider, typeDefProvider);
         var r = mapping.mapRoot(view.getSource(), this);
         r.accept(new InstanceCopier(r) {
             @Override
@@ -317,7 +308,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private Type getTypeByInstanceId(Id id) {
         TypeKey typeKey = switch (id) {
             case PhysicalId physicalId -> physicalId.getTypeKey();
-            case ViewId viewId -> viewId.getViewTypeKey(mappingProvider);
+            case ViewId viewId -> viewId.getViewTypeKey(mappingProvider, typeDefProvider);
             default -> throw new IllegalStateException("Unexpected value: " + id);
         };
         return typeKey.toType(typeDefProvider);
@@ -352,7 +343,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         } else {
             return switch (id) {
                 case PhysicalId physicalId ->
-                        new ClassInstance(physicalId, ((ClassType) type).resolve(), false, this::initializeInstance);
+                        new ClassInstance(physicalId, ((ClassType) type), false, this::initializeInstance);
                 case ViewId viewId -> allocateView(viewId);
                 default -> throw new IllegalStateException("Unexpected value: " + id);
             };
@@ -410,7 +401,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private void saveView(ClassInstance view) {
         view.setViewSaved();
-        var mapping = mappingProvider.getMapping(view.getMappingId());
+        var mapping = view.getMappingKey().toMapping(mappingProvider, typeDefProvider);
         mapping.unmap(view, this);
     }
 
@@ -451,7 +442,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         forEachView(instance, v ->
                 v.initId(new DefaultViewId(
                         v instanceof ArrayInstance,
-                        requireNonNull(requireNonNull(v.getSourceRef().mapping()).getEntityId()), v.getSource().tryGetId())));
+                        requireNonNull(requireNonNull(v.getSourceRef().mapping()).toKey()), v.getSource().tryGetId())));
     }
 
     protected void onContextInitializeId() {
@@ -710,7 +701,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
         var orphans = new ArrayList<DurableInstance>();
         for (var instance : this) {
-            if(!instance.isRemoved() && !instance.isMarked())
+            if(instance.isNew() && !instance.isRemoved()  && !instance.isMarked())
                 orphans.add(instance);
         }
         return orphans;
@@ -721,8 +712,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 () -> new InternalException(String.format("Can not add a removed instance: %d", instance.tryGetPhysicalId())));
         NncUtils.requireTrue(instance.getContext() == null
                 && instance.getNext() == null && instance.getPrev() == null);
-        if(DebugEnv.gettingBufferedTrees)
-            System.out.println("Caught");
         if (tail == null)
             head = tail = instance;
         else {
@@ -735,7 +724,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             source2views.computeIfAbsent(instance.getSource(), k -> new ArrayList<>()).add(instance);
         if(instance.tryGetId() != null) {
             if (instanceMap.put(instance.tryGetId(), instance) != null)
-                LOGGER.warn("Duplicate instance add to context: " + instance.tryGetId());
+                logger.warn("Duplicate instance add to context: " + instance.tryGetId());
         }
 //        if (instance.getTmpId() != null) {
 //            tmpId2Instance.put(instance.getTmpId(), instance);
@@ -850,11 +839,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 return i;
             }
         };
-    }
-
-    @Override
-    public CompositeTypeFacade compositeTypeFacade() {
-        return compositeTypeFacade;
     }
 
 }

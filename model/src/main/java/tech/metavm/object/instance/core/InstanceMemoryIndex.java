@@ -1,7 +1,6 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.entity.InstanceIndexQuery;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexEntryRT;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.type.Index;
@@ -16,11 +15,9 @@ import static tech.metavm.object.instance.IndexKeyRT.MIN_INSTANCE;
 public class InstanceMemoryIndex {
 
     private final Map<Index, SubIndex> indexMap = new IdentityHashMap<>();
-    private final ParameterizedFlowProvider parameterizedFlowProvider;
     private final Map<ClassInstance, List<IndexKeyRT>> keyMap = new IdentityHashMap<>();
 
-    public InstanceMemoryIndex(ParameterizedFlowProvider parameterizedFlowProvider) {
-        this.parameterizedFlowProvider = parameterizedFlowProvider;
+    public InstanceMemoryIndex() {
     }
 
     public @Nullable ClassInstance selectUnique(IndexKeyRT key) {
@@ -50,7 +47,7 @@ public class InstanceMemoryIndex {
 
     public void save(ClassInstance instance) {
         remove(instance);
-        var keys = instance.getIndexKeys(parameterizedFlowProvider);
+        var keys = instance.getIndexKeys();
         keyMap.put(instance, new ArrayList<>(keys));
         for (IndexKeyRT key : keys) {
             indexMap.computeIfAbsent(key.getIndex(), SubIndex::new).add(key, instance);

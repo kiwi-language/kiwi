@@ -15,17 +15,17 @@ import java.util.function.Supplier;
 @EntityType("联合嵌套映射")
 public class UnionNestedMapping extends NestedMapping {
 
-    @EntityField("来源类型")
+    @ChildEntity("来源类型")
     private final UnionType sourceType;
-    @EntityField("目标类型")
+    @ChildEntity("目标类型")
     private final UnionType targetType;
     @ChildEntity("成员嵌套映射列表")
     private final ChildArray<NestedMapping> memberNestedMappings =
             addChild(new ChildArray<>(NestedMapping.class), "memberNestedMappings");
 
     public UnionNestedMapping(UnionType sourceType, UnionType targetType, List<NestedMapping> nestedMappings) {
-        this.sourceType = sourceType;
-        this.targetType = targetType;
+        this.sourceType = addChild(sourceType.copy(), "sourceType");
+        this.targetType = addChild(targetType.copy(), "targetType");
         this.memberNestedMappings.resetChildren(nestedMappings);
     }
 
@@ -34,7 +34,7 @@ public class UnionNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
+    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
         Map<Type, Type> viewType2sourceType = new HashMap<>();
         for (Type member : sourceType.getMembers()) {
             viewType2sourceType.put(getViewType(member, targetType), member);
@@ -66,7 +66,7 @@ public class UnionNestedMapping extends NestedMapping {
                                     t, branch.getScope(), Values.node(source));
                             values.put(
                                     branch,
-                                    sourceType2codeGenerator.get(t).generateMappingCode(() -> Values.node(castSource), branch.getScope(), compositeTypeFacade).get()
+                                    sourceType2codeGenerator.get(t).generateMappingCode(() -> Values.node(castSource), branch.getScope()).get()
                             );
                         }
                 ),
@@ -80,7 +80,7 @@ public class UnionNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
+    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
         var targetType2codeGenerator = new HashMap<Type, NestedMapping>();
         for (var memberCodeGenerator : memberNestedMappings) {
             targetType2codeGenerator.put(memberCodeGenerator.getTargetType(), memberCodeGenerator);
@@ -106,7 +106,7 @@ public class UnionNestedMapping extends NestedMapping {
                             var castView =  Nodes.cast("CastView" + NncUtils.randomNonNegative(), t, Values.node(view), branch.getScope());
                             values.put(
                                     branch,
-                                    targetType2codeGenerator.get(t).generateUnmappingCode(() -> Values.node(castView), branch.getScope(), compositeTypeFacade).get()
+                                    targetType2codeGenerator.get(t).generateUnmappingCode(() -> Values.node(castView), branch.getScope()).get()
                             );
                         }
                 ),
@@ -126,16 +126,21 @@ public class UnionNestedMapping extends NestedMapping {
     }
 
     @Override
+    public String getText() {
+        return "{\"kind\": \"Union\", \"sourceType\": \"" + sourceType.getTypeDesc() + "\", \"targetType\": \"" + targetType.getTypeDesc()
+                + "\", \"memberMappings\": [" + NncUtils.join(memberNestedMappings, NestedMapping::getText) + "]}";
+    }
+
+    @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof UnionNestedMapping that)) return false;
-        if (!super.equals(object)) return false;
         return Objects.equals(sourceType, that.sourceType) && Objects.equals(targetType, that.targetType) &&
                 Objects.equals(Set.of(memberNestedMappings), Set.of(that.memberNestedMappings));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), sourceType, targetType, Set.of(memberNestedMappings));
+        return Objects.hash(sourceType, targetType, Set.of(memberNestedMappings));
     }
 }

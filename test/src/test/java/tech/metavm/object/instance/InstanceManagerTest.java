@@ -3,12 +3,12 @@ package tech.metavm.object.instance;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
-import tech.metavm.flow.rest.FlowExecutionRequest;
-import tech.metavm.flow.rest.GetParameterizedFlowRequest;
-import tech.metavm.flow.rest.UpdateFieldDTO;
+import tech.metavm.flow.rest.*;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
@@ -21,12 +21,17 @@ import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
+import tech.metavm.object.type.rest.dto.FieldRefDTO;
+import tech.metavm.object.type.rest.dto.GetTypeRequest;
+import tech.metavm.object.view.rest.dto.DirectMappingKey;
 import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
 
 import java.util.List;
 
 public class InstanceManagerTest extends TestCase {
+
+    public static final Logger logger = LoggerFactory.getLogger(InstanceManagerTest.class);
 
     private InstanceManager instanceManager;
     private EntityContextFactory entityContextFactory;
@@ -133,7 +138,7 @@ public class InstanceManagerTest extends TestCase {
         var foo = saveFoo();
         var fooType = ModelDefRegistry.getClassType(Foo.class);
         var page = instanceManager.select(new SelectRequest(
-                fooType.getStringId(),
+                fooType.toExpression(),
                 List.of(
                         "巴.编号",
                         "量子X"
@@ -163,7 +168,7 @@ public class InstanceManagerTest extends TestCase {
         var utilsType = typeManager.getTypeByCode("Utils").type();
         var contains = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        TestUtils.getMethodByCode(utilsType, "test").id(),
+                        TestUtils.getMethodRefByCode(utilsType, "test"),
                         null,
                         List.of(
                                 new ListFieldValue(
@@ -190,7 +195,7 @@ public class InstanceManagerTest extends TestCase {
 
         var contains2 = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        TestUtils.getMethodIdByCode(utilsType, "test2"),
+                        TestUtils.getMethodRefByCode(utilsType, "test2"),
                         null,
                         List.of(
                                 new ListFieldValue(
@@ -215,19 +220,19 @@ public class InstanceManagerTest extends TestCase {
         var baseType = typeManager.getTypeByCode("Base").type();
         var subType = typeManager.getTypeByCode("Sub").type();
         var testMethodId = TestUtils.getMethodByCode(baseType, "test").id();
-        var pTestMethodId = flowManager.getParameterizedFlow(new GetParameterizedFlowRequest(
-                testMethodId,
-                List.of(StandardTypes.getStringType().getStringId())
-        )).getStringId();
         var subId = TestUtils.doInTransaction(() -> instanceManager.create(
                 InstanceDTO.createClassInstance(
-                       subType.id(),
+                        Constants.CONSTANT_ID_PREFIX + subType.id(),
                         List.of()
                 )
         ));
         var result = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        pTestMethodId,
+                        new MethodRefDTO(
+                                TypeExpressions.getClassType(baseType.id()),
+                                testMethodId,
+                                List.of("string")
+                        ),
                         subId,
                         List.of(PrimitiveFieldValue.createString("abc"))
                 )
@@ -238,10 +243,9 @@ public class InstanceManagerTest extends TestCase {
     public void testLambda() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm", typeManager);
         var utilsType = typeManager.getTypeByCode("Utils").type();
-        var findGtMethodId = TestUtils.getMethodByCode(utilsType, "findGt").id();
         var result = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        findGtMethodId,
+                        TestUtils.getMethodRefByCode(utilsType, "findGt"),
                         null,
                         List.of(
                                 new ListFieldValue(
@@ -264,7 +268,7 @@ public class InstanceManagerTest extends TestCase {
         var typeIds = MockUtils.createLivingBeingTypes(typeManager);
         var human = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        typeIds.humanConstructorId(),
+                        new MethodRefDTO(TypeExpressions.getClassType(typeIds.humanTypeId()), typeIds.humanConstructorId(), List.of()),
                         null,
                         List.of(
                                 PrimitiveFieldValue.createLong(30),
@@ -274,22 +278,25 @@ public class InstanceManagerTest extends TestCase {
                         )
                 )
         ));
+        var humanType = typeManager.getType(new GetTypeRequest(typeIds.humanTypeId(), false)).type();
+        var method = TestUtils.getMethodByCode(humanType, "makeSound");
+        logger.info("overridden of Human.makeSound: {}", ((MethodParam) method.param()).overriddenRefs());
         Assert.assertEquals("30", human.getFieldValue(typeIds.livingBeingAgeFieldId()).getDisplayValue());
         Assert.assertEquals("空", human.getFieldValue(typeIds.livingBeingExtraFieldId()).getDisplayValue());
         Assert.assertEquals("180", human.getFieldValue(typeIds.animalIntelligenceFieldId()).getDisplayValue());
         Assert.assertEquals("Inventor", human.getFieldValue(typeIds.humanOccupationFieldId()).getDisplayValue());
         Assert.assertEquals("否", human.getFieldValue(typeIds.humanThinkingFieldId()).getDisplayValue());
-        var isMultiCellular = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+        var makeSoundResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        typeIds.makeSoundMethodId(),
+                        TestUtils.createMethodRef(typeIds.livingBeingTypeId(), typeIds.makeSoundMethodId()),
                         human.id(),
                         List.of()
                 )
         ));
-        Assert.assertEquals("I am a human being", isMultiCellular.title());
+        Assert.assertEquals("I am a human being", makeSoundResult.title());
         TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        typeIds.thinkMethodId(),
+                        TestUtils.createMethodRef(typeIds.sentientTypeId(), typeIds.thinkMethodId()),
                         human.id(),
                         List.of()
                 )
@@ -300,11 +307,11 @@ public class InstanceManagerTest extends TestCase {
 
     public void testRemoveChildInUse() {
         var childType = TestUtils.doInTransaction(() -> typeManager.saveType(
-                ClassTypeDTOBuilder.newBuilder("Child")
-                        .build()
+                ClassTypeDTOBuilder.newBuilder("Child").tmpId(NncUtils.randomNonNegative()).build()
         ));
         var nullableChildType = TypeExpressions.getNullableType(TypeExpressions.getClassType(childType.id()));
         var typeTmpId = TmpId.random().toString();
+        var typeExpr  = TypeExpressions.getClassType(typeTmpId);
         var childFieldTmpId = TmpId.random().toString();
         var childRefFieldTmpId = TmpId.random().toString();
         var parentType = TestUtils.doInTransaction(() -> typeManager.saveType(
@@ -318,7 +325,7 @@ public class InstanceManagerTest extends TestCase {
                                         .build()
                         )
                         .addField(
-                                FieldDTOBuilder.newBuilder("childRef", childType.id())
+                                FieldDTOBuilder.newBuilder("childRef", TypeExpressions.getClassType(childType.id()))
                                         .code("childRef")
                                         .id(childRefFieldTmpId)
                                         .build()
@@ -327,16 +334,16 @@ public class InstanceManagerTest extends TestCase {
                                 MethodDTOBuilder.newBuilder(typeTmpId, "Parent")
                                         .code("Parent")
                                         .tmpId(NncUtils.randomNonNegative())
-                                        .returnTypeId(typeTmpId)
+                                        .returnType(typeExpr)
                                         .isConstructor(true)
                                         .addNode(
-                                                NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "self", typeTmpId)
+                                                NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "self", typeExpr)
                                         )
                                         .addNode(
                                                 NodeDTOFactory.createAddObjectNode(
                                                         NncUtils.randomNonNegative(),
                                                         "child",
-                                                        childType.id(),
+                                                        TypeExpressions.getClassType(childType.id()),
                                                         List.of()
                                                 )
                                         )
@@ -347,13 +354,19 @@ public class InstanceManagerTest extends TestCase {
                                                         ValueDTOFactory.createReference("self"),
                                                         List.of(
                                                                 new UpdateFieldDTO(
-                                                                        childFieldTmpId,
+                                                                        new FieldRefDTO(
+                                                                                typeExpr,
+                                                                                childFieldTmpId
+                                                                        ),
                                                                         null,
                                                                         UpdateOp.SET.code(),
                                                                         ValueDTOFactory.createReference("child")
                                                                 ),
                                                                 new UpdateFieldDTO(
-                                                                        childRefFieldTmpId,
+                                                                        new FieldRefDTO(
+                                                                                typeExpr,
+                                                                                childRefFieldTmpId
+                                                                        ),
                                                                         null,
                                                                         UpdateOp.SET.code(),
                                                                         ValueDTOFactory.createReference("child")
@@ -373,12 +386,11 @@ public class InstanceManagerTest extends TestCase {
                         .build()
         ));
 
-        var parentConstructorId = TestUtils.getMethodIdByCode(parentType, "Parent");
         var childFieldId = TestUtils.getFieldIdByCode(parentType, "child");
         var childRefFieldId = TestUtils.getFieldIdByCode(parentType, "childRef");
         var parentId = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        parentConstructorId,
+                        TestUtils.getMethodRefByCode(parentType, "Parent"),
                         null,
                         List.of()
                 )
@@ -389,7 +401,7 @@ public class InstanceManagerTest extends TestCase {
             TestUtils.doInTransactionWithoutResult(() -> instanceManager.update(
                     InstanceDTO.createClassInstance(
                             parent.id(),
-                            parentType.id(),
+                            TypeExpressions.getClassType(parentType.id()),
                             List.of(
                                     InstanceFieldDTO.create(
                                             childFieldId,
@@ -413,15 +425,13 @@ public class InstanceManagerTest extends TestCase {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
         MockUtils.assemble(parentChildMasm, typeManager);
         var parentType = typeManager.getTypeByCode("Parent").type();
-        var parentConstructorId = TestUtils.getMethodByCode(parentType, "Parent").id();
         var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                parentConstructorId,
+                TestUtils.getMethodRefByCode(parentType, "Parent"),
                 null,
                 List.of()
         )));
-        var parentTestMethodId = TestUtils.getMethodIdByCode(parentType, "test");
         TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                parentTestMethodId,
+                TestUtils.getMethodRefByCode(parentType, "test"),
                 parent.id(),
                 List.of()
         )));
@@ -430,11 +440,9 @@ public class InstanceManagerTest extends TestCase {
         var children = ((InstanceFieldValue) reloadedParent.getFieldValue(parentChildrenFieldId)).getInstance();
         Assert.assertEquals(0, children.getListSize());
 
-//        DebugEnv.DEBUG_ON = true;
-        var parentTest2MethodId = TestUtils.getMethodIdByCode(parentType, "test2");
         try {
             TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                    parentTest2MethodId,
+                    TestUtils.getMethodRefByCode(parentType, "test2"),
                     parent.id(),
                     List.of()
             )));
@@ -449,13 +457,12 @@ public class InstanceManagerTest extends TestCase {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
         MockUtils.assemble(parentChildMasm, typeManager);
         var parentType = typeManager.getTypeByCode("Parent").type();
-        var parentConstructorId = TestUtils.getMethodByCode(parentType, "Parent").id();
         var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                parentConstructorId,
+                TestUtils.getMethodRefByCode(parentType, "Parent"),
                 null,
                 List.of()
         )));
-        var mappingId = Id.parse(TestUtils.getDefaultMapping(parentType).id());
+        var mappingId = new DirectMappingKey(TestUtils.getDefaultMapping(parentType).id());
         var viewId = new DefaultViewId(false, mappingId, Id.parse(parent.id()));
 //        var parentMapping = instanceManager.get(viewId.toString(), 2);
 //        DebugEnv.DEBUG_ON = true;

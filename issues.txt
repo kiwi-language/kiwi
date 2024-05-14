@@ -9,3 +9,5 @@
     }
 
 2 Simplify the process of adding standard exception types
+
+3 Circular reference problem arising from Enum Klass and its enum constants.

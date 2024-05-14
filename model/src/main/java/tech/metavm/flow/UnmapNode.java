@@ -10,7 +10,7 @@ import tech.metavm.flow.rest.UnmapNodeParam;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Type;
-import tech.metavm.object.view.Mapping;
+import tech.metavm.object.view.ObjectMappingRef;
 import tech.metavm.util.AssertUtils;
 
 @EntityType("反映射节点")
@@ -19,26 +19,26 @@ public class UnmapNode extends NodeRT {
     public static UnmapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var node = (UnmapNode) context.getNode(Id.parse(nodeDTO.id()));
         var param = (UnmapNodeParam) nodeDTO.param();
-        var mapping = context.getMapping(Id.parse(param.mappingId()));
+        var mappingRef = ObjectMappingRef.create(param.mappingRef(), context);
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var view = ValueFactory.create(param.view(), parsingContext);
         if (node == null)
-            node = new UnmapNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, view, mapping);
+            node = new UnmapNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, view, mappingRef);
         else
-            node.update(view, mapping);
+            node.update(view, mappingRef);
         return node;
     }
 
     @ChildEntity("视图")
     private Value view;
-    @EntityField("映射")
-    private Mapping mapping;
+    @ChildEntity("映射")
+    private ObjectMappingRef mappingRef;
 
     public UnmapNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope,
-                     Value view, Mapping mapping) {
+                     Value view, ObjectMappingRef mappingRef) {
         super(tmpId, name, code, null, previous, scope);
         this.view = addChild(view, "view");
-        this.mapping = mapping;
+        this.mappingRef = addChild(mappingRef.copy(), "mappingRef");
     }
 
     @Override
@@ -48,30 +48,30 @@ public class UnmapNode extends NodeRT {
 
     @Override
     protected UnmapNodeParam getParam(SerializeContext serializeContext) {
-        return new UnmapNodeParam(view.toDTO(), serializeContext.getId(mapping));
+        return new UnmapNodeParam(view.toDTO(), mappingRef.toDTO(serializeContext));
     }
 
-    public void update(Value view, Mapping mapping) {
-        AssertUtils.assertTrue(mapping.getTargetType().isAssignableFrom(view.getType()),
+    public void update(Value view, ObjectMappingRef mappingRef) {
+        AssertUtils.assertTrue(mappingRef.resolve().getTargetType().isAssignableFrom(view.getType()),
                 ErrorCode.INCORRECT_MAPPING);
         this.view = addChild(view, "view");
-        this.mapping = mapping;
+        this.mappingRef = addChild(mappingRef.copy(), "mappingRef");
     }
 
     @NotNull
     @Override
     public Type getType() {
-        return mapping.getSourceType();
+        return mappingRef.resolve().getSourceType();
     }
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var viewInst = (DurableInstance) view.evaluate(frame);
-        return next(mapping.unmap(viewInst, frame));
+        return next(mappingRef.resolve().unmap(viewInst, frame));
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("unmap " + mapping.getName() + "(" + view.getText() + ")");
+        writer.write("unmap " + mappingRef.resolve().getName() + "(" + view.getText() + ")");
     }
 }

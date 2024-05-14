@@ -1,6 +1,5 @@
 package tech.metavm.expression;
 
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.query.ObjectNode;
 import tech.metavm.object.instance.query.PathResolver;
@@ -9,12 +8,10 @@ public class TreeEvaluationContext implements EvaluationContext {
 
     private final ObjectNode objectNode;
     private final Instance instance;
-    private final ParameterizedFlowProvider parameterizedFlowProvider;
 
-    public TreeEvaluationContext(ObjectNode objectNode, Instance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public TreeEvaluationContext(ObjectNode objectNode, Instance instance) {
         this.objectNode = objectNode;
         this.instance = instance;
-        this.parameterizedFlowProvider = parameterizedFlowProvider;
     }
 
     @Override
@@ -28,11 +25,6 @@ public class TreeEvaluationContext implements EvaluationContext {
     @Override
     public boolean isContextExpression(Expression expression) {
         return expression instanceof PropertyExpression;
-    }
-
-    @Override
-    public ParameterizedFlowProvider parameterizedFlowProvider() {
-        return parameterizedFlowProvider;
     }
 
 }

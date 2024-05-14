@@ -21,7 +21,7 @@ import static tech.metavm.entity.ContextAttributeKey.CHANGE_LOGS;
 @Order(100)
 public class ChangeLogPlugin implements ContextPlugin {
 
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
+    public static final Logger logger = LoggerFactory.getLogger(ChangeLogPlugin.class);
 
     private final InstanceLogService instanceLogService;
 
@@ -31,8 +31,6 @@ public class ChangeLogPlugin implements ContextPlugin {
 
     @Override
     public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
-        if(DebugEnv.debugging)
-            debugLogger.info("generating change logs");
         List<InstanceLog> logs = new ArrayList<>();
         for (var instance : change.inserts()) {
             logs.add(InstanceLog.insert(instance));
@@ -52,13 +50,12 @@ public class ChangeLogPlugin implements ContextPlugin {
         // TODO save change logs
     }
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ChangeLogPlugin.class);
 
     @Override
     public void postProcess(IInstanceContext context) {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
-        if(NncUtils.isNotEmpty(logs)) {
-        instanceLogService.process(logs, context.getClientId());
+        if (NncUtils.isNotEmpty(logs)) {
+            instanceLogService.process(logs, context.getClientId());
         }
     }
 

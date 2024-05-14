@@ -22,7 +22,7 @@ public record UnionTypeKey(Set<TypeKey> memberKeys) implements TypeKey {
 
     @Override
     public UnionType toType(TypeDefProvider typeDefProvider) {
-        return new UnionType(null, NncUtils.mapUnique(memberKeys, k -> k.toType(typeDefProvider)));
+        return new UnionType(NncUtils.mapUnique(memberKeys, k -> k.toType(typeDefProvider)));
     }
 
     @Override
@@ -33,5 +33,10 @@ public record UnionTypeKey(Set<TypeKey> memberKeys) implements TypeKey {
     @Override
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
         memberKeys.forEach(k -> k.accept(visitor));
+    }
+
+    @Override
+    public int getCode() {
+        return TypeKeyCodes.UNION;
     }
 }

@@ -7,8 +7,8 @@ import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.NullInstance;
-import tech.metavm.object.type.*;
 import tech.metavm.object.type.Index;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.MappingSaver;
 import tech.metavm.util.*;
 
@@ -93,7 +93,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
 
     @Override
     public void generateSignature() {
-        var type = def.getType();
+        var klass = def.getTypeDef();
         if (javaType instanceof Class<?> && RuntimeGeneric.class.isAssignableFrom(javaClass)) {
             for (var javaTypeParam : javaClass.getTypeParameters()) {
                 defContext.getDef(javaTypeParam, INIT);
@@ -102,10 +102,9 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         List<Type> typeArgs = new ArrayList<>();
         if (javaType instanceof java.lang.reflect.ParameterizedType pType) {
             for (var javaTypeArg : pType.getActualTypeArguments()) {
-                typeArgs.add(defContext.getType(javaTypeArg, INIT));
+                typeArgs.add(defContext.getType(javaTypeArg));
             }
         }
-        var klass = type.resolve();
         klass.setTypeArguments(typeArgs);
         klass.setStage(SIGNATURE);
     }
@@ -116,9 +115,8 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         if (klass.getSuperType() != null)
             defContext.ensureStage(klass.getSuperType(), DECLARATION);
         klass.getInterfaces().forEach(it -> defContext.ensureStage(it, DECLARATION));
-        defContext.createCompositeTypes(def.getType());
         getPropertyFields().forEach(f -> {
-            if(!defContext.isFieldBlacklisted(f))
+            if (!defContext.isFieldBlacklisted(f))
                 parseField(f, def);
         });
         getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
@@ -149,11 +147,11 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
             Type fieldType;
             Class<?> javaFieldClass = javaField.getType();
             if (javaFieldClass == ArrayInstance.class)
-                fieldType = defContext.getType(ReadWriteArray.class, INIT);
+                fieldType = defContext.getType(ReadWriteArray.class);
             else if (javaFieldClass == ClassInstance.class)
-                fieldType = defContext.getType(Object.class, INIT);
+                fieldType = defContext.getType(Object.class);
             else
-                fieldType = defContext.getType(BiUnion.createNullableType(Object.class), INIT);
+                fieldType = defContext.getType(BiUnion.createNullableType(Object.class));
             tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, fieldType);
             new InstanceFieldDef(
                     javaField,
@@ -161,7 +159,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
                     declaringTypeDef
             );
         } else if (Class.class == javaField.getType()) {
-            tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, defContext.getType(Klass.class, INIT));
+            tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, defContext.getType(Klass.class));
             new ClassFieldDef(
                     declaringTypeDef,
                     field,
@@ -169,14 +167,20 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
                     defContext
             );
         } else {
-            ModelDef<?, ?> targetDef = defContext.getDef(evaluateFieldType(javaField), INIT);
-            tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, getFieldType(javaField, targetDef));
+            var javaFieldType = evaluateFieldType(javaField);
+            var fieldType = defContext.getType(javaFieldType);
+            var targetMapper = fieldType instanceof PrimitiveType ? null : defContext.getMapper(javaFieldType);
+            if (javaField.isAnnotationPresent(Nullable.class) ||
+                    javaField.isAnnotationPresent(org.jetbrains.annotations.Nullable.class)) {
+                fieldType = StandardTypes.getNullableType(fieldType);
+            }
+            tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, fieldType);
             new FieldDef(
                     field,
                     typeFactory.isNullable(field.getType()),
                     javaField,
                     declaringTypeDef,
-                    targetDef
+                    targetMapper
             );
         }
     }
@@ -238,15 +242,6 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         if (asTitle)
             declaringType.setTitleField(field);
         return field;
-    }
-
-    private Type getFieldType(Field javaField, ModelDef<?, ?> targetDef) {
-        Type refType = targetDef.getType();
-        if (javaField.isAnnotationPresent(Nullable.class) ||
-                javaField.isAnnotationPresent(org.jetbrains.annotations.Nullable.class)) {
-            return defContext.getNullableType(refType);
-        } else
-            return refType;
     }
 
     private java.lang.reflect.Type evaluateFieldType(Field javaField) {

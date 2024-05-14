@@ -1,7 +1,7 @@
 package tech.metavm.object.type.rest.dto;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.BaseDTO;
-import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceDTO;
 
@@ -15,7 +15,7 @@ public record FieldDTO(
         FieldValue defaultValue,
         boolean unique,
         String declaringTypeId,
-        String typeId,
+        @NotNull String type,
         boolean isChild,
         boolean isStatic,
         boolean readonly,

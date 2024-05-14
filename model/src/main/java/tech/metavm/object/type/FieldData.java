@@ -1,8 +1,11 @@
 package tech.metavm.object.type;
 
-import tech.metavm.entity.*;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.IndexDef;
 import tech.metavm.object.instance.InstanceFactory;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.CreatingFieldDTO;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.util.Column;
@@ -17,7 +20,7 @@ public class FieldData extends Entity {
 
     public static FieldData fromFieldDTO(FieldDTO fieldDTO, IEntityContext context) {
         var declaringType = context.getKlass(fieldDTO.declaringTypeId());
-        var fieldType = context.getType(fieldDTO.typeId());
+        var fieldType = TypeParser.parse(fieldDTO.type(), context);
         var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
         var column = declaringType.allocateColumn(fieldType, null);
         return new FieldData(

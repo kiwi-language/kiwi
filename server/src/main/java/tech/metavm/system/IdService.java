@@ -2,9 +2,9 @@ package tech.metavm.system;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.object.instance.core.TypeId;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeCategory;
 import tech.metavm.system.persistence.BlockMapper;
@@ -30,7 +30,7 @@ public class IdService extends BaseIdService implements EntityIdProvider {
 
     private Map<TypeId, BlockRT> getActiveBlockMap(long appId, Collection<Type> types) {
         try (var ignored = ContextUtil.getProfiler().enter("IdService.getActiveBlockMap")) {
-            List<BlockRT> blocks = blockSource.getActive(NncUtils.map(types, Entity::getPhysicalId));
+            List<BlockRT> blocks = blockSource.getActive(NncUtils.map(types, t -> ((ClassType) t).resolve().getPhysicalId()));
             Map<TypeId, BlockRT> result = NncUtils.toMap(blocks, BlockRT::getTypeId);
             List<Type> residualTypes = NncUtils.exclude(types, t -> result.containsKey(t.getTypeId()));
             if (!residualTypes.isEmpty()) {

@@ -3,17 +3,13 @@ package tech.metavm.asm;
 import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.asm.Assembler.AsmPrimitiveKind;
-import tech.metavm.asm.Assembler.AsmType;
-import tech.metavm.asm.Assembler.ClassAsmType;
-import tech.metavm.asm.Assembler.PrimitiveAsmType;
 import tech.metavm.entity.EntityQueryService;
+import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.task.TaskManager;
@@ -21,17 +17,20 @@ import tech.metavm.util.BootstrapUtils;
 import tech.metavm.util.MockTransactionOperations;
 import tech.metavm.util.TestUtils;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 public class AssemblerTest extends TestCase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(AssemblerTest.class);
 
-    public void testParentChild() {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm");
+    @Override
+    protected void setUp() throws Exception {
+        MockStandardTypesInitializer.init();
     }
+
+    public void testParentChild() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm");
+}
 
     public void testMyList() {
 //        assemble(List.of(source));
@@ -59,33 +58,13 @@ public class AssemblerTest extends TestCase {
     }
 
     private void assemble(String source) {
-        var stdTypeIds = new HashMap<AsmType, String>();
-        for (AsmPrimitiveKind primitiveKind : AsmPrimitiveKind.values()) {
-            stdTypeIds.put(new PrimitiveAsmType(primitiveKind), TmpId.randomString());
-        }
-        stdTypeIds.put(Assembler.AnyAsmType.INSTANCE, TmpId.randomString());
-        stdTypeIds.put(Assembler.NeverAsmType.INSTANCE, TmpId.randomString());
-        stdTypeIds.put(new Assembler.UnionAsmType(Set.of(Assembler.AnyAsmType.INSTANCE, new Assembler.PrimitiveAsmType(Assembler.AsmPrimitiveKind.NULL))),
-                TmpId.randomString());
-        stdTypeIds.put(ClassAsmType.create("Enum"), TmpId.randomString());
-        stdTypeIds.put(ClassAsmType.create("RuntimeException"), TmpId.randomString());
-        var collTypeNames = List.of("List", "ReadWriteList", "ChildList", "Iterable", "Iterator", "Predicate", "Consumer");
-        collTypeNames.forEach(name -> stdTypeIds.put(ClassAsmType.create(name), TmpId.randomString()));
-        var nullType = new PrimitiveAsmType(AsmPrimitiveKind.NULL);
-        for (AsmPrimitiveKind kind : AsmPrimitiveKind.values()) {
-            if(kind != AsmPrimitiveKind.VOID && kind != AsmPrimitiveKind.NULL) {
-                var primType = new PrimitiveAsmType(kind);
-                stdTypeIds.put(new Assembler.UnionAsmType(Set.of(primType, nullType)), TmpId.randomString());
-                collTypeNames.forEach(name -> stdTypeIds.put(new ClassAsmType(name, List.of(primType)), TmpId.randomString()));
-            }
-        }
-        var assembler = new Assembler(stdTypeIds);
+        var assembler = AssemblerFactory.createWithStandardTypes();
         assemble(List.of(source), assembler);
     }
 
     private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {
         assembler.assemble(sources);
-        var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), false);
+        var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
         TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
         return request;
     }

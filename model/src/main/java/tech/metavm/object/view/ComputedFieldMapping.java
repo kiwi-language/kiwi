@@ -5,8 +5,8 @@ import tech.metavm.expression.NodeExpression;
 import tech.metavm.expression.ThisExpression;
 import tech.metavm.flow.SelfNode;
 import tech.metavm.flow.Value;
-import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.FieldRef;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.view.rest.dto.ComputedFieldMappingParam;
 
@@ -25,11 +25,11 @@ public class ComputedFieldMapping extends FieldMapping {
     private final ComputedFieldMapping template;
 
     public ComputedFieldMapping(Long tmpId,
-                                Field targetField,
+                                FieldRef targetFieldRef,
                                 FieldsObjectMapping containingMapping,
                                 @Nullable NestedMapping nestedMapping,
                                 Value value) {
-        super(tmpId, targetField, containingMapping, nestedMapping);
+        super(tmpId, targetFieldRef, containingMapping, nestedMapping);
         this.value = value;
         this.template = null;
     }
@@ -69,8 +69,8 @@ public class ComputedFieldMapping extends FieldMapping {
     }
 
     @Override
-    public Supplier<Value> generateReadCode0(SelfNode selfNode, CompositeTypeFacade compositeTypeFacade) {
-        return () -> (Value) new CopyVisitor(value) {
+    public Supplier<Value> generateReadCode0(SelfNode selfNode) {
+        return () -> (Value) new CopyVisitor(value, value.isStrictEphemeral()) {
             @Override
             public Element visitThisExpression(ThisExpression expression) {
                 return new NodeExpression(selfNode);

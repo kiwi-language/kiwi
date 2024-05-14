@@ -3,7 +3,6 @@ package tech.metavm.object.type.mocks;
 import tech.metavm.entity.EntityRepository;
 import tech.metavm.entity.MemTypeRegistry;
 import tech.metavm.entity.mocks.MockEntityRepository;
-import tech.metavm.flow.mocks.MockParameterizedFlowProvider;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.SubstitutorV2;
 
@@ -12,26 +11,8 @@ import java.util.List;
 public class TypeProviders {
 
     public final MemTypeRegistry typeRegistry = new MemTypeRegistry();
-    public final MockFunctionTypeProvider functionTypeProvider = new MockFunctionTypeProvider();
-    public final MockUncertainTypeProvider uncertainTypeProvider = new MockUncertainTypeProvider();
-    public final MockUnionTypeProvider unionTypeProvider = new MockUnionTypeProvider();
-    public final MockIntersectionTypeProvider intersectionTypeProvider = new MockIntersectionTypeProvider();
-    public final MockArrayTypeProvider arrayTypeProvider = new MockArrayTypeProvider();
-    public final MockParameterizedTypeRepository parameterizedTypeProvider = new MockParameterizedTypeRepository(this);
-    public final MockParameterizedFlowProvider parameterizedFlowProvider = new MockParameterizedFlowProvider(this);
     public final EntityRepository entityRepository = new MockEntityRepository(typeRegistry);
     public final MockTypeDefRepository typeDefRepository = new MockTypeDefRepository();
-
-    public CompositeTypeFacade createFacade() {
-        return new CompositeTypeFacadeImpl(
-                arrayTypeProvider,
-                functionTypeProvider,
-                unionTypeProvider,
-                intersectionTypeProvider,
-                uncertainTypeProvider,
-                parameterizedTypeProvider
-        );
-    }
 
     public SubstitutorV2 createSubstitutor(Object template, List<TypeVariable> typeParameters, List<? extends Type> typeArguments, ResolutionStage stage) {
         return new SubstitutorV2(
@@ -45,16 +26,6 @@ public class TypeProviders {
     public void addTypeDef(TypeDef typeDef) {
         entityRepository.bind(typeDef);
         typeDefRepository.save(typeDef);
-        /*switch (typeDef) {
-            case ArrayType arrayType -> arrayTypeProvider.add(arrayType);
-            case ClassType classType when !classType.getTypeArguments().isEmpty() ->
-                parameterizedTypeProvider.add(classType.resolve());
-            case UnionType unionType -> unionTypeProvider.add(unionType);
-            case IntersectionType intersectionType -> intersectionTypeProvider.add(intersectionType);
-            case FunctionType functionType -> functionTypeProvider.add(functionType);
-            case UncertainType uncertainType -> uncertainTypeProvider.add(uncertainType);
-            default -> {}
-        }*/
     }
 
 }

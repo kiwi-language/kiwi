@@ -5,6 +5,7 @@ import tech.metavm.common.ErrorDTO;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.type.ClassKind;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.util.NncUtils;
 
@@ -19,7 +20,7 @@ public class ClassTypeDTOBuilder {
     }
 
     private final String name;
-    private int category = TypeCategoryCodes.CLASS;
+    private int kind = ClassKind.CLASS.code();
     @Nullable
     private String id;
     @Nullable
@@ -71,7 +72,7 @@ public class ClassTypeDTOBuilder {
     }
 
     public ClassTypeDTOBuilder category(int category) {
-        this.category = category;
+        this.kind = category;
         return this;
     }
 
@@ -80,8 +81,8 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder typeCategory(int typeCategory) {
-        this.category = typeCategory;
+    public ClassTypeDTOBuilder kind(int kind) {
+        this.kind = kind;
         return this;
     }
 
@@ -285,7 +286,7 @@ public class ClassTypeDTOBuilder {
                 id,
                 name,
                 code,
-                category,
+                kind,
                 ephemeral,
                 anonymous,
                 buildClassTypeParam()

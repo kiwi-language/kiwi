@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
@@ -10,8 +11,10 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
@@ -25,13 +28,13 @@ public class InputNode extends ChildTypeNode {
     public static InputNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var node = (InputNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
-            node = new InputNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
-                    context.getKlass(Id.parse(nodeDTO.outputTypeId())), prev, scope);
+            var klass = ((ClassType) TypeParser.parse(nodeDTO.outputType(), context)).resolve();
+            node = new InputNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), klass, prev, scope);
         }
         return node;
     }
 
-    public InputNode(Long tmpId, String name, @Nullable String code, Klass type, NodeRT prev, ScopeRT scope) {
+    public InputNode(Long tmpId, String name, @Nullable String code, @NotNull Klass type, NodeRT prev, ScopeRT scope) {
         super(tmpId, name, code, type, prev, scope);
     }
 
@@ -45,7 +48,7 @@ public class InputNode extends ChildTypeNode {
             return new InputFieldDTO(
                     serContext.getId(field),
                     field.getName(),
-                    serContext.getId(field.getType()),
+                    field.getType().toExpression(serContext),
                     NncUtils.get(field.getDefaultValue(), Instance::toFieldValueDTO),
                     NncUtils.get(getFieldCondition(field), Value::toDTO)
             );
@@ -68,7 +71,7 @@ public class InputNode extends ChildTypeNode {
         try(var ignored = ContextUtil.getProfiler().enter("InputNode.execute")) {
             Map<Field, Instance> fieldValues = new HashMap<>();
             NncUtils.biForEach(getKlass().getReadyFields(), frame.getArguments(), fieldValues::put);
-            return next(ClassInstance.create(fieldValues, getKlass()));
+            return next(ClassInstance.create(fieldValues, getType()));
         }
     }
 

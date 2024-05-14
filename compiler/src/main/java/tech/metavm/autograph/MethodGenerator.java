@@ -1,7 +1,6 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.PsiMethod;
-import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.NativeFunctions;
@@ -31,85 +30,12 @@ public class MethodGenerator {
     private final TypeNarrower typeNarrower = new TypeNarrower(this::getExpressionType);
     private final Map<BranchNode, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
     private final Map<String, Integer> varNames = new HashMap<>();
-    private final CompositeTypeFacade compositeTypeFacade;
-    private final Set<Type> capturedCompositeTypes = new HashSet<>();
 
-    public MethodGenerator(Method method, TypeResolver typeResolver,
-                           IEntityContext context,
-                           VisitorBase visitor) {
-        this(method, typeResolver,
-                CompositeTypeFacadeImpl.fromContext(context), context.getGenericContext(), visitor);
-    }
-
-    public MethodGenerator(Method method, TypeResolver typeResolver,
-                           CompositeTypeFacade compositeTypeFacade,
-                           ParameterizedFlowProvider parameterizedFlowProvider,
-                           VisitorBase visitor) {
+    public MethodGenerator(Method method, TypeResolver typeResolver, VisitorBase visitor) {
         this.method = method;
         this.typeResolver = typeResolver;
-        this.compositeTypeFacade = compositeTypeFacade; //new MyCompositeTypeFacade(compositeTypeFacade);
         expressionResolver = new ExpressionResolver(this, variableTable, typeResolver,
-                this.compositeTypeFacade,
-                parameterizedFlowProvider,
                 visitor);
-    }
-
-    private class MyCompositeTypeFacade implements CompositeTypeFacade {
-
-        private final CompositeTypeFacade delegate;
-
-        private MyCompositeTypeFacade(CompositeTypeFacade delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public ArrayType getArrayType(Type elementType, ArrayKind kind, @Nullable Long tmpId) {
-            var type = delegate.getArrayType(elementType, kind, tmpId);
-            if (type.isCaptured() && capturedCompositeTypes.add(type))
-                method.addCapturedCompositeType(type);
-            return type;
-        }
-
-        @Override
-        public FunctionType getFunctionType(List<Type> parameterTypes, Type returnType, @Nullable Long tmpId) {
-            var type = delegate.getFunctionType(parameterTypes, returnType, tmpId);
-            if (type.isCaptured() && capturedCompositeTypes.add(type))
-                method.addCapturedCompositeType(type);
-            return type;
-        }
-
-        @Override
-        public UnionType getUnionType(Set<Type> types, @Nullable Long tmpId) {
-            var type = delegate.getUnionType(types, tmpId);
-            if (type.isCaptured() && capturedCompositeTypes.add(type))
-                method.addCapturedCompositeType(type);
-            return type;
-        }
-
-        @Override
-        public IntersectionType getIntersectionType(Set<Type> types, @Nullable Long tmpId) {
-            var type = delegate.getIntersectionType(types, tmpId);
-            if (type.isCaptured() && capturedCompositeTypes.add(type))
-                method.addCapturedCompositeType(type);
-            return type;
-        }
-
-        @Override
-        public UncertainType getUncertainType(Type lowerBound, Type upperBound, @Nullable Long tmpId) {
-            var type = delegate.getUncertainType(lowerBound, upperBound, tmpId);
-            if (type.isCaptured() && capturedCompositeTypes.add(type))
-                method.addCapturedCompositeType(type);
-            return type;
-        }
-
-        @Override
-        public Klass getParameterizedType(Klass template, List<? extends Type> typeArguments, ResolutionStage stage, DTOProvider dtoProvider) {
-            var klass = delegate.getParameterizedType(template, typeArguments, stage, dtoProvider);
-            var type = klass.getType();
-            if (type.isCaptured() && capturedCompositeTypes.add(type))
-                method.addCapturedCompositeType(type);
-            return klass;
-        }
     }
 
     Method getMethod() {
@@ -157,7 +83,7 @@ public class MethodGenerator {
                 scope()
         );
         FieldBuilder.newBuilder("异常", "exception", node.getKlass(),
-                        StandardTypes.getNullableThrowableType())
+                        StandardTypes.getNullableThrowableKlass())
                 .build();
         return node;
     }
@@ -242,8 +168,7 @@ public class MethodGenerator {
                     .filter(Objects::nonNull)
                     .toList();
             var yieldType = Types.getUnionType(
-                    yields.stream().map(Expression::getType).collect(Collectors.toSet()),
-                    expressionResolver.getCompositeTypeFacade()
+                    yields.stream().map(Expression::getType).collect(Collectors.toSet())
             );
             var yieldField = FieldBuilder.newBuilder("yield", "yield", mergeNode.getKlass(), yieldType).build();
             new MergeNodeField(
@@ -332,7 +257,7 @@ public class MethodGenerator {
     }
 
     UpdateObjectNode createUpdateObject(Expression objectId) {
-        return setNodeExprTypes(new UpdateObjectNode(null, nextName("Update"), null, scope().getLastNode(), scope(), Values.expression(objectId)));
+        return setNodeExprTypes(new UpdateObjectNode(null, nextName("Update"), null, scope().getLastNode(), scope(), Values.expression(objectId), List.of()));
     }
 
     UpdateObjectNode createUpdate(Expression self, Map<Field, Expression> fields) {
@@ -344,15 +269,15 @@ public class MethodGenerator {
     UpdateStaticNode createUpdateStatic(Klass klass, Map<Field, Expression> fields) {
         var node = new UpdateStaticNode(
                 null, nextName("UpdateStatic"), null,
-                scope().getLastNode(), scope(), klass
-        );
+                scope().getLastNode(), scope(), klass,
+                List.of());
         fields.forEach((field, expr) -> node.setUpdateField(field, UpdateOp.SET, Values.expression(expr)));
         return setNodeExprTypes(node);
     }
 
     AddObjectNode createAddObject(Klass klass) {
         return setNodeExprTypes(new AddObjectNode(null, nextName("Add"),
-                null, false, false, klass,
+                null, false, false, klass.getType(),
                 scope().getLastNode(), scope()));
     }
 
@@ -433,7 +358,7 @@ public class MethodGenerator {
     }
 
     IndexScanNode createIndexScan(Index index, IndexQueryKey from, IndexQueryKey to) {
-        var arrayType = compositeTypeFacade.getArrayType(index.getDeclaringType().getType(), ArrayKind.READ_ONLY);
+        var arrayType = new ArrayType(index.getDeclaringType().getType(), ArrayKind.READ_ONLY);
         return setNodeExprTypes(new IndexScanNode(
                 null, nextName("IndexScan"), null, arrayType, scope().getLastNode(),
                 scope(), index, from, to
@@ -441,8 +366,7 @@ public class MethodGenerator {
     }
 
     public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
-        var listType = compositeTypeFacade.getParameterizedType(
-                StandardTypes.getReadWriteListType(), List.of(index.getDeclaringType().getType()));
+        var listType = StandardTypes.getReadWriteListKlass().getParameterized(List.of(index.getDeclaringType().getType()));
         return setNodeExprTypes(new IndexSelectNode(
                 null, nextName("IndexSelect"), null, listType.getType(),
                 scope().getLastNode(), scope(), index, key
@@ -468,21 +392,20 @@ public class MethodGenerator {
                 .build();
     }
 
-    MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments, CompositeTypeFacade compositeTypeFacade) {
-        return createMethodCall(self, method, arguments, compositeTypeFacade, List.of(), List.of());
+    MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments) {
+        return createMethodCall(self, method, arguments, List.of(), List.of());
     }
 
-    MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments, CompositeTypeFacade compositeTypeFacade,
+    MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments,
                                     List<Type> capturedExpressionTypes,
                                     List<Expression> capturedExpressions) {
         List<Argument> args = NncUtils.biMap(
                 method.getParameters(), arguments,
-                (param, arg) -> new Argument(null, param, Values.expression(arg))
+                (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
         );
-        var outputType = method.getReturnType().isVoid() ? null : Types.tryCapture(method.getReturnType(), this.method, compositeTypeFacade, null);
-        var node = new MethodCallNode(null, nextName(method.getName()), null, outputType,
+        var node = new MethodCallNode(null, nextName(method.getName()), null,
                 scope().getLastNode(), scope(),
-                NncUtils.get(self, Values::expression), method, args);
+                NncUtils.get(self, Values::expression), method.getRef(), args);
         node.setCapturedExpressions(capturedExpressions);
         node.setCapturedExpressionTypes(capturedExpressionTypes);
         return setNodeExprTypes(node);
@@ -490,46 +413,43 @@ public class MethodGenerator {
 
     NodeRT createTypeCast(Expression operand, Type targetType) {
         if (operand.getType().isNullable() && !targetType.isNullable())
-            targetType = compositeTypeFacade.getUnionType(Set.of(targetType, StandardTypes.getNullType()));
+            targetType = new UnionType(Set.of(targetType, StandardTypes.getNullType()));
         return createFunctionCall(
-                expressionResolver.getParameterizedFlowProvider().getParameterizedFlow(NativeFunctions.getTypeCast(), List.of(targetType)),
+                NativeFunctions.getTypeCast().getParameterized(List.of(targetType)),
                 List.of(operand)
         );
     }
 
     FunctionCallNode createFunctionCall(Function function, List<Expression> arguments) {
+        var functionRef = function.getRef();
         List<Argument> args = NncUtils.biMap(
-                function.getParameters(), arguments,
-                (param, arg) -> new Argument(null, param, Values.expression(arg))
+                functionRef.getRawFlow().getParameters(), arguments,
+                (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
         );
-        var outputType = function.getReturnType().isVoid() ? null : Types.tryCapture(function.getReturnType(), this.method, compositeTypeFacade, null);
         return setNodeExprTypes(new FunctionCallNode(
                 null,
-                nextName(function.getEffectiveHorizontalTemplate().getName()),
+                nextName(functionRef.getRawFlow().getName()),
                 null,
-                outputType,
                 scope().getLastNode(), scope(),
-                function, args));
+                functionRef, args));
     }
 
     LambdaNode createLambda(List<Parameter> parameters, Type returnType, Klass functionalInterface) {
-        var funcType = compositeTypeFacade.getFunctionType(
-                NncUtils.map(parameters, Parameter::getType), returnType
-        );
         var node = new LambdaNode(
                 null, nextName("Lambda"), null, scope().getLastNode(), scope(),
                 parameters, returnType, functionalInterface.getType()
         );
-        node.createSAMImpl(compositeTypeFacade, compositeTypeFacade);
+        node.createSAMImpl();
         return node;
     }
 
-    NewObjectNode createNew(Flow flow, List<Expression> arguments, boolean ephemeral) {
+    NewObjectNode createNew(Method method, List<Expression> arguments, boolean ephemeral) {
+        var methodRef = method.getRef();
         List<Argument> args = NncUtils.biMap(
-                flow.getParameters(), arguments,
-                (param, arg) -> new Argument(null, param, Values.expression(arg))
+                methodRef.getRawFlow().getParameters(), arguments,
+                (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
         );
-        return setNodeExprTypes(new NewObjectNode(null, nextName(flow.getName()), null, flow, args,
+        return setNodeExprTypes(new NewObjectNode(null, nextName(methodRef.resolve().getName()), null, methodRef, args,
                 scope().getLastNode(), scope(), null, ephemeral, false));
     }
 
@@ -617,10 +537,6 @@ public class MethodGenerator {
                 null, nextName("ClearArray"), null,
                 scope().getLastNode(), scope(), Values.expression(array)
         ));
-    }
-
-    public CompositeTypeFacade getCompositeTypeFacade() {
-        return compositeTypeFacade;
     }
 
     private static final class ScopeInfo {

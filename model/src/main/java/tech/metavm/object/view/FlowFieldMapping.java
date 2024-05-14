@@ -5,10 +5,9 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.FieldRef;
 import tech.metavm.object.type.Type;
-import tech.metavm.object.type.Types;
 import tech.metavm.object.view.rest.dto.FlowFieldMappingParam;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
@@ -34,11 +33,11 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     public FlowFieldMapping(Long tmpId,
                             FieldsObjectMapping containingMapping,
                             @Nullable NestedMapping nestedMapping,
-                            Field targetField,
+                            FieldRef targetFieldRef,
                             Method getter,
                             @Nullable Method setter,
                             @Nullable FlowFieldMapping copySource) {
-        super(tmpId, targetField, containingMapping, nestedMapping);
+        super(tmpId, targetFieldRef, containingMapping, nestedMapping);
         check(getter, setter);
         this.getter = getter;
         this.setter = setter;
@@ -76,16 +75,15 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     }
 
     @Override
-    public Supplier<Value> generateReadCode0(SelfNode selfNode, CompositeTypeFacade compositeTypeFacade) {
+    public Supplier<Value> generateReadCode0(SelfNode selfNode) {
         var node = new MethodCallNode(
                 null,
                 getter.getName(),
                 getter.getCode(),
-                Types.tryCapture(getter.getReturnType(), selfNode.getFlow(), compositeTypeFacade, null),
                 selfNode.getScope().getLastNode(),
                 selfNode.getScope(),
                 Values.node(selfNode),
-                getter,
+                getter.getRef(),
                 List.of()
         );
         return () -> Values.node(node);
@@ -98,11 +96,10 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
                 null,
                 setter.getName(),
                 setter.getCode(),
-                null,
                 selfNode.getScope().getLastNode(),
                 selfNode.getScope(),
                 Values.node(selfNode),
-                setter, List.of(Nodes.argument(setter, 0, fieldValueSupplier.get()))
+                setter.getRef(), List.of(Nodes.argument(setter, 0, fieldValueSupplier.get()))
         );
     }
 
@@ -111,13 +108,12 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
         return getter.getReturnType();
     }
 
-    public void setFlows(Method getter, @Nullable Method setter, Type fieldType, CompositeTypeFacade compositeTypeFacade) {
+    public void setFlows(Method getter, @Nullable Method setter, Type fieldType) {
         check(getter, setter);
         this.getter = getter;
         this.setter = setter;
         setReadonly(setter == null);
         getTargetField().setType(fieldType);
-//        resetTargetFieldType(compositeTypeFacade);
     }
 
     private void check(Flow getter, @Nullable Flow setter) {

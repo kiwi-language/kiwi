@@ -3,7 +3,6 @@ package tech.metavm.object.type;
 import tech.metavm.entity.*;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.InstanceEvaluationContext;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -71,14 +70,14 @@ public class Index extends Constraint implements LocalKey {
         return createIndexKey(instanceValues);
     }
 
-    public List<IndexKeyRT> createIndexKey(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public List<IndexKeyRT> createIndexKey(ClassInstance instance) {
         var result = new ArrayList<IndexKeyRT>();
-        forEachIndexKey(instance, parameterizedFlowProvider, result::add);
+        forEachIndexKey(instance, result::add);
         return result;
     }
 
-    public void forEachIndexKey(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider, Consumer<IndexKeyRT> action) {
-        EvaluationContext evaluationContext = new InstanceEvaluationContext(instance, parameterizedFlowProvider);
+    public void forEachIndexKey(ClassInstance instance, Consumer<IndexKeyRT> action) {
+        EvaluationContext evaluationContext = new InstanceEvaluationContext(instance);
         Map<IndexField, Instance> values = new HashMap<>();
         for (int i = 0; i < fields.size() - 1; i++) {
             var field = fields.get(i);

@@ -3,12 +3,12 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.expression.ParsingContext;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.FieldRef;
 import tech.metavm.util.AssertUtils;
 import tech.metavm.util.NncUtils;
 
@@ -18,29 +18,29 @@ import java.util.Objects;
 public class FieldParam extends Entity implements LocalKey {
 
     public static FieldParam create(FieldParamDTO fieldParamDTO,
-                                    ParsingContext parsingContext, IEntityContext entityContext) {
+                                    ParsingContext parsingContext, IEntityContext context) {
         return new FieldParam(
-                entityContext.getField(Id.parse(fieldParamDTO.fieldId())),
+                FieldRef.create(fieldParamDTO.fieldRef(), context),
                 ValueFactory.create(fieldParamDTO.value(), parsingContext)
         );
     }
 
-    @EntityField("字段")
-    private final Field field;
+    @ChildEntity("字段引用")
+    private final FieldRef fieldRef;
     @ChildEntity("值")
     private Value value;
 
-    public FieldParam(Field field, ValueDTO valueDTO, ParsingContext parsingContext) {
-        this(field, ValueFactory.create(valueDTO, parsingContext));
+    public FieldParam(FieldRef fieldRef, ValueDTO valueDTO, ParsingContext parsingContext) {
+        this(fieldRef, ValueFactory.create(valueDTO, parsingContext));
     }
 
-    public FieldParam(Field field, Value value) {
-        this.field = field;
+    public FieldParam(FieldRef fieldRef, Value value) {
+        this.fieldRef = addChild(fieldRef.copy(), "fieldRef");
         setValue(value);
     }
 
     public Field getField() {
-        return field;
+        return fieldRef.resolve();
     }
 
     public Value getValue() {
@@ -55,15 +55,15 @@ public class FieldParam extends Entity implements LocalKey {
         try(var serContext = SerializeContext.enter()) {
             return new FieldParamDTO(
                     serContext.getId(this),
-                    serContext.getId(field), NncUtils.get(value, Value::toDTO));
+                    fieldRef.toDTO(serContext), NncUtils.get(value, Value::toDTO));
         }
     }
 
     public void update(FieldParamDTO fieldParamDTO, ParsingContext parsingContext) {
         if(fieldParamDTO.value() != null) {
             var value = ValueFactory.create(fieldParamDTO.value(), parsingContext);
-            AssertUtils.assertTrue(field.getType().isAssignableFrom(value.getType()),
-                    ErrorCode.INCORRECT_FIELD_VALUE, field.getName());
+            AssertUtils.assertTrue(getField().getType().isAssignableFrom(value.getType()),
+                    ErrorCode.INCORRECT_FIELD_VALUE, getField().getName());
             setValue(value);
         }
     }
@@ -77,26 +77,26 @@ public class FieldParam extends Entity implements LocalKey {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FieldParam that = (FieldParam) o;
-        return Objects.equals(field, that.field) && Objects.equals(value, that.value);
+        return Objects.equals(fieldRef, that.fieldRef) && Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(field, value);
+        return Objects.hash(fieldRef, value);
     }
 
     @Override
     public boolean isValidLocalKey() {
-        return field.getCode() != null;
+        return fieldRef.getRawField().getCode() != null;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return Objects.requireNonNull(field.getCode());
+        return Objects.requireNonNull(fieldRef.getRawField().getCode());
     }
 
     public String getText() {
-        return field.getName() + ": " + value.getText();
+        return fieldRef.getRawField().getName() + ": " + value.getText();
     }
 
 }

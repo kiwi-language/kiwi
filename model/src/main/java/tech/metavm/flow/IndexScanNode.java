@@ -20,7 +20,7 @@ public class IndexScanNode extends NodeRT {
         var param = (IndexScanNodeParam) nodeDTO.param();
         var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var type = context.getArrayType(index.getDeclaringType().getType(), ArrayKind.READ_ONLY);
+        var type = new ArrayType(index.getDeclaringType().getType(), ArrayKind.READ_ONLY);
         var node = (IndexScanNode) context.getNode(Id.parse(nodeDTO.id()));
         var from = IndexQueryKey.create(param.from(), context, parsingContext);
         var to = IndexQueryKey.create(param.to(), context, parsingContext);

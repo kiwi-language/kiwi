@@ -23,12 +23,12 @@ public class InterfaceDef<T> extends PojoDef<T>  {
     }
 
     @Override
-    public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public void initEntity(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public void updateEntity(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 

@@ -5,11 +5,12 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.EntityQueryService;
+import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
-import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchServiceV2;
@@ -23,7 +24,6 @@ import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
 
 import java.util.List;
-import java.util.Map;
 
 public class TypeManagerTest extends TestCase {
 
@@ -73,7 +73,7 @@ public class TypeManagerTest extends TestCase {
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
                 .tmpId(NncUtils.randomNonNegative())
                 .addField(
-                        FieldDTOBuilder.newBuilder("name", StandardTypes.getStringType().getStringId())
+                        FieldDTOBuilder.newBuilder("name", "string")
                                 .build()
                 )
                 .build();
@@ -98,7 +98,7 @@ public class TypeManagerTest extends TestCase {
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
                 .tmpId(NncUtils.randomNonNegative())
                 .addField(
-                        FieldDTOBuilder.newBuilder("name", StandardTypes.getStringType().getStringId())
+                        FieldDTOBuilder.newBuilder("name", "string")
                                 .build()
                 )
                 .build();
@@ -106,25 +106,6 @@ public class TypeManagerTest extends TestCase {
         Assert.assertTrue(instanceSearchService.contains(TestUtils.getTypeId(savedTypeDTO)));
         TestUtils.doInTransactionWithoutResult(() -> typeManager.remove(savedTypeDTO.id()));
         Assert.assertFalse(instanceSearchService.contains(TestUtils.getTypeId(savedTypeDTO)));
-    }
-
-    public void testLoadByPaths() {
-        ContextUtil.setAppId(Constants.ROOT_APP_ID);
-        var fooType = ModelDefRegistry.getClassType(Foo.class);
-        var stringType = StandardTypes.getStringType();
-        String path1 = "傻.巴.编号";
-        String path2 = "$$" + fooType.getId() + ".巴子.*.巴列表.*.编号";
-        LoadByPathsResponse response = typeManager.loadByPaths(List.of(path1, path2));
-
-        Assert.assertEquals(
-                Map.of(path1, stringType.getStringId(), path2, stringType.getStringId()),
-                response.path2typeId()
-        );
-//        try (var context = entityContextFactory.newContext(10L)) {
-        Assert.assertEquals(response.types(), List.of(stringType.toDTO()));
-//        }
-
-
     }
 
     public void testShopping() {
@@ -144,10 +125,11 @@ public class TypeManagerTest extends TestCase {
     }
 
     public void testAddFieldWithDefaultValueToTemplate() {
-        var nodeTypeIds = MockUtils.createNodeTypes(typeManager);
-        var nodeType = typeManager.getType(new GetTypeRequest(nodeTypeIds.nodeTypeId(), false)).type();
-        var pNodeType = TypeExpressions.getParameterizedType(TypeExpressions.getClassType(nodeTypeIds.nodeTypeId()),
-                TypeExpressions.getClassType(StandardTypes.getStringType().getStringId()));
+//        var nodeTypeIds = MockUtils.createNodeTypes(typeManager);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Node.masm", typeManager);
+        var nodeType = typeManager.getTypeByCode("Node").type();
+//        var nodeType = typeManager.getType(new GetTypeRequest(nodeTypeIds.nodeTypeId(), false)).type();
+        var pNodeType = TypeExpressions.getParameterizedType(nodeType.id(), "string");
         var labelFieldId = TestUtils.getFieldIdByCode(nodeType, "label");
         var valueFieldId = TestUtils.getFieldIdByCode(nodeType, "value");
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.create(new InstanceDTO(
@@ -163,8 +145,9 @@ public class TypeManagerTest extends TestCase {
                         )
                 )
         )));
-        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(FieldDTOBuilder.newBuilder("编号", StandardTypes.getStringType().getStringId())
-                .declaringTypeId(nodeTypeIds.nodeTypeId())
+        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(FieldDTOBuilder.newBuilder("编号", "string")
+                .declaringTypeId(nodeType.id())
+                .code("code")
                 .defaultValue(PrimitiveFieldValue.createString("000"))
                 .build()));
     }
@@ -173,12 +156,12 @@ public class TypeManagerTest extends TestCase {
         var typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
                 .tmpId(NncUtils.randomNonNegative())
                 .addField(
-                        FieldDTOBuilder.newBuilder("名称", StandardTypes.getStringType().getStringId())
+                        FieldDTOBuilder.newBuilder("名称", "string")
                                 .build()
                 )
                 .build();
         var savedTypeDTO = TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
-        var updatedFieldDTO = FieldDTOBuilder.newBuilder("名称", StandardTypes.getStringType().getStringId())
+        var updatedFieldDTO = FieldDTOBuilder.newBuilder("名称", "string")
                 .id(savedTypeDTO.getClassParam().fields().get(0).id())
                 .declaringTypeId(savedTypeDTO.id())
                 .code("name")
@@ -192,21 +175,21 @@ public class TypeManagerTest extends TestCase {
         var titleFieldId = TmpId.random().toString();
         var skuType = TestUtils.doInTransaction(() -> typeManager.saveType(ClassTypeDTOBuilder.newBuilder("SKU")
                 .id(TmpId.random().toString())
-                .addField(FieldDTOBuilder.newBuilder("title", StandardTypes.getStringType().getStringId())
+                .addField(FieldDTOBuilder.newBuilder("title", "string")
                         .id(titleFieldId)
                         .build())
                 .titleFieldId(titleFieldId)
                 .build()));
 
         TestUtils.doInTransaction(() -> typeManager.saveField(
-                FieldDTOBuilder.newBuilder("price", StandardTypes.getDoubleType().getStringId())
+                FieldDTOBuilder.newBuilder("price", "double")
                         .id(TmpId.random().toString())
                         .declaringTypeId(skuType.id())
                         .build()
         ));
 
         TestUtils.doInTransaction(() -> typeManager.saveField(
-                FieldDTOBuilder.newBuilder("quantity", StandardTypes.getLongType().getStringId())
+                FieldDTOBuilder.newBuilder("quantity", "long")
                         .id(TmpId.random().toString())
                         .declaringTypeId(skuType.id())
                         .build()
@@ -216,7 +199,7 @@ public class TypeManagerTest extends TestCase {
 
         var productType = TestUtils.doInTransaction(() -> typeManager.saveType(ClassTypeDTOBuilder.newBuilder("Product")
                 .id(TmpId.random().toString())
-                .addField(FieldDTOBuilder.newBuilder("title", StandardTypes.getStringType().getStringId())
+                .addField(FieldDTOBuilder.newBuilder("title", "string")
                         .id(titleFieldId)
                         .build())
                 .titleFieldId(titleFieldId)
@@ -235,10 +218,10 @@ public class TypeManagerTest extends TestCase {
         var skuViewChildArrayType = TypeExpressions.getChildArrayType(TypeExpressions.getClassType(skuViewType.id()));
 
         var productViewSkuField = TestUtils.getFieldByName(productViewType, "sku");
-        Assert.assertEquals(skuViewChildArrayType, productViewSkuField.typeId());
+        Assert.assertEquals(skuViewChildArrayType, productViewSkuField.type());
 
         TestUtils.doInTransaction(() -> typeManager.saveField(
-                FieldDTOBuilder.newBuilder("desc", StandardTypes.getStringType().getStringId())
+                FieldDTOBuilder.newBuilder("desc", "string")
                         .id(TmpId.random().toString())
                         .declaringTypeId(productType.id())
                         .build()
@@ -246,7 +229,7 @@ public class TypeManagerTest extends TestCase {
 
         var reloadedProductViewType = TestUtils.getViewType(productType, typeManager);
         var reloadedProductViewSkuField = TestUtils.getFieldByName(reloadedProductViewType, "sku");
-        Assert.assertEquals(skuViewChildArrayType, reloadedProductViewSkuField.typeId());
+        Assert.assertEquals(skuViewChildArrayType, reloadedProductViewSkuField.type());
     }
 
 }

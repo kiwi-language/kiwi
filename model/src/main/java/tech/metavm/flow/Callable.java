@@ -28,4 +28,6 @@ public interface Callable {
         return NncUtils.map(getParameters(), Parameter::getType);
     }
 
+    CallableRef getRef();
+
 }

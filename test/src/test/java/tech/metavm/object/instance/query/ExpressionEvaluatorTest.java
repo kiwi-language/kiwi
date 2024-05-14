@@ -9,14 +9,10 @@ import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.expression.TypeParsingContext;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
-import tech.metavm.object.type.ArrayTypeProvider;
 import tech.metavm.object.type.IndexedTypeDefProvider;
-import tech.metavm.object.type.IndexedTypeProvider;
-import tech.metavm.object.type.UnionTypeProvider;
-import tech.metavm.object.type.mocks.*;
+import tech.metavm.object.type.mocks.MockTypeDefRepository;
 import tech.metavm.util.Instances;
 import tech.metavm.util.MockUtils;
 
@@ -29,18 +25,12 @@ public class ExpressionEvaluatorTest extends TestCase {
 
     private InstanceProvider instanceProvider;
     private IndexedTypeDefProvider typeDefProvider;
-    private ArrayTypeProvider arrayTypeProvider;
-    private UnionTypeProvider unionTypeProvider;
-    private ParameterizedFlowProvider parameterizedFlowProvider;
 
     @Override
     protected void setUp() throws Exception {
         MockStandardTypesInitializer.init();
         typeDefProvider = new MockTypeDefRepository();
         instanceProvider = new MockInstanceRepository();
-        arrayTypeProvider = new MockArrayTypeProvider();
-        unionTypeProvider = new MockUnionTypeProvider();
-        parameterizedFlowProvider = new TypeProviders().parameterizedFlowProvider;
     }
 
     public void testAllMatch() {
@@ -51,13 +41,11 @@ public class ExpressionEvaluatorTest extends TestCase {
                 str, new TypeParsingContext(
                         instanceProvider,
                         typeDefProvider,
-                        arrayTypeProvider,
-                        unionTypeProvider,
                         fooType
                 )
         );
 
-        ClassInstance fooInst = ClassInstanceBuilder.newBuilder(fooType)
+        ClassInstance fooInst = ClassInstanceBuilder.newBuilder(fooType.getType())
                 .data(
                         Map.of(
                                 fooTypes.fooNameField(),
@@ -68,16 +56,16 @@ public class ExpressionEvaluatorTest extends TestCase {
                                 new ArrayInstance(fooTypes.barChildArrayType()),
                                 fooTypes.fooBazListField(),
                                 new ArrayInstance(fooTypes.bazArrayType(), List.of(
-                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType())
+                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
                                                 .data(Map.of(
                                                         fooTypes.bazBarsField(),
                                                         new ArrayInstance(fooTypes.barArrayType(), List.of(
-                                                                ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                                         .data(Map.of(
                                                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                                                         ))
                                                                         .build(),
-                                                                ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                                         .data(Map.of(
                                                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                                                         ))
@@ -89,25 +77,25 @@ public class ExpressionEvaluatorTest extends TestCase {
                         )
                 )
                 .build();
-        Instance result = expression.evaluate(new InstanceEvaluationContext(fooInst, parameterizedFlowProvider));
+        Instance result = expression.evaluate(new InstanceEvaluationContext(fooInst));
         Assert.assertTrue(Instances.isTrue(result));
     }
 
     public void testAllMatchListView() {
         var fooTypes = MockUtils.createFooTypes(true);
         var fooType = fooTypes.fooType();
-        var foo = ClassInstanceBuilder.newBuilder(fooType)
+        var foo = ClassInstanceBuilder.newBuilder(fooType.getType())
                 .data(Map.of(
                         fooTypes.fooNameField(), Instances.stringInstance("foo"),
                         fooTypes.fooCodeField(), Instances.stringInstance("001"),
                         fooTypes.fooBarsField(),
                         new ArrayInstance(fooTypes.barChildArrayType(), List.of(
-                                ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                         .data(Map.of(
                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                         ))
                                         .build(),
-                                ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                         .data(Map.of(
                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                         ))
@@ -119,9 +107,9 @@ public class ExpressionEvaluatorTest extends TestCase {
                 .build();
         String str = "allmatch(巴列表, 编号 = this.编号)";
         Expression expression = ExpressionParser.parse(
-                str, new TypeParsingContext(instanceProvider, typeDefProvider, arrayTypeProvider, unionTypeProvider, fooType)
+                str, new TypeParsingContext(instanceProvider, typeDefProvider, fooType)
         );
-        Instance result = expression.evaluate(new InstanceEvaluationContext(foo, parameterizedFlowProvider));
+        Instance result = expression.evaluate(new InstanceEvaluationContext(foo));
         Assert.assertTrue(Instances.isTrue(result));
     }
 

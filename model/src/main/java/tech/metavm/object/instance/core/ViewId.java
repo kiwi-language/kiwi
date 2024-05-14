@@ -1,7 +1,9 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.view.MappingProvider;
+import tech.metavm.object.view.rest.dto.MappingKey;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 
@@ -10,48 +12,48 @@ import java.util.Objects;
 
 public abstract class ViewId extends Id {
 
-    private final @Nullable Id mappingId;
+    private final @Nullable MappingKey mappingKey;
 
-    public ViewId(boolean isArray, @Nullable Id mappingId) {
+    public ViewId(boolean isArray, @Nullable MappingKey mappingKey) {
         super(isArray);
-        this.mappingId = mappingId;
+        this.mappingKey = mappingKey;
     }
 
-    public @Nullable Id getMappingId() {
-        return mappingId;
+    public @Nullable MappingKey getMappingKey() {
+        return mappingKey;
     }
 
     public abstract ViewId getRootId();
 
-    public abstract @Nullable SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider);
+    public abstract @Nullable SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider, TypeDefProvider typeDefProvider);
 
-    public TypeKey getViewTypeKey(MappingProvider mappingProvider) {
-        return mappingProvider.getMapping(mappingId).getTargetType().toTypeKey();
+    public TypeKey getViewTypeKey(MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
+        return Objects.requireNonNull(mappingKey).toMapping(mappingProvider, typeDefProvider).getTargetType().toTypeKey();
     }
 
-    public void writeMappingId(InstanceOutput output) {
-        if(mappingId != null) {
+    public void writeMappingKey(InstanceOutput output) {
+        if(mappingKey != null) {
             output.writeBoolean(true);
-            mappingId.write(output);
+            mappingKey.write(output);
         }
         else
             output.writeBoolean(false);
     }
 
-    public static @Nullable Id readMappingId(InstanceInput input) {
+    public static @Nullable MappingKey readMappingKey(InstanceInput input) {
         var hasMapping = input.readBoolean();
-        return hasMapping ? Id.readId(input) : null;
+        return hasMapping ? MappingKey.read(input) : null;
     }
 
     @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof ViewId viewId)) return false;
-        return Objects.equals(mappingId, viewId.mappingId);
+        return Objects.equals(mappingKey, viewId.mappingKey);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mappingId);
+        return Objects.hash(mappingKey);
     }
 }

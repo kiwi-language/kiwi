@@ -1,6 +1,9 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tech.metavm.flow.Method;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.util.*;
@@ -11,6 +14,8 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware, BindAware {
+
+    public static final Logger logger = LoggerFactory.getLogger(Entity.class);
 
     private transient boolean removed;
     private transient boolean persisted;
@@ -23,7 +28,8 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     private transient Field parentEntityField;
     private transient long version;
     private transient long syncVersion;
-    private boolean ephemeralEntity;
+    private transient boolean ephemeralEntity;
+    private transient boolean strictEphemeral;
 
     public Entity() {
         this(null);
@@ -87,6 +93,21 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         }
     }
 
+    public boolean isStrictEphemeral() {
+        return strictEphemeral;
+    }
+
+    public void setStrictEphemeral(boolean strictEphemeral) {
+        this.strictEphemeral = strictEphemeral;
+        if(strictEphemeral) {
+            this.ephemeralEntity = true;
+            EntityUtils.forEachDescendant(this, e -> {
+                if(e instanceof Entity entity)
+                    entity.ephemeralEntity = entity.strictEphemeral = true;
+            });
+        }
+    }
+
 //    @NoProxy
 //    public final long getId() {
 //        if (id != null)
@@ -139,6 +160,13 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         return parentEntity;
     }
 
+    public Entity getRootEntity() {
+        Entity root = this;
+        while (root.parentEntity != null)
+            root = root.parentEntity;
+        return root;
+    }
+
     public <T extends Entity> T addChild(T child, @Nullable String fieldName) {
         NncUtils.requireNonNull(child, "Child object can not be null");
         var field = fieldName != null ?
@@ -158,8 +186,16 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         } else {
             this.parentEntity = parent;
             this.parentEntityField = parentField;
-            if (parent != null && parent.isEphemeralEntity() && !ephemeralEntity)
-                forEachDescendant(e -> e.ephemeralEntity = true);
+            if (parent != null) {
+                if(parent.isStrictEphemeral() && !strictEphemeral)
+                    forEachDescendant(e -> e.strictEphemeral = e.ephemeralEntity = true);
+                else if(parent.isEphemeralEntity() && !ephemeralEntity)
+                    forEachDescendant(e -> e.ephemeralEntity = true);
+                else if(!parent.isEphemeralEntity() && strictEphemeral) {
+                    throw new InternalException("Can not add a strict ephemeral child to a non-ephemeral entity. parent: " + EntityUtils.getEntityPath(parent)
+                            + ", child: " + EntityUtils.getEntityDesc(this));
+                }
+            }
         }
     }
 
@@ -167,19 +203,32 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         var desc = DescStore.get(EntityUtils.getRealType(this));
         for (var prop : desc.getNonTransientProps()) {
             var ref = prop.get(this);
-            if (ref != null && !ValueUtil.isPrimitive(ref))
-                action.accept(ref);
+            if (ref != null && !ValueUtil.isPrimitive(ref)) {
+                if(DebugEnv.recordPath) {
+                    EntityUtils.enterPathItem(prop.getName());
+                    action.accept(ref);
+                    EntityUtils.exitPathItem();
+                }
+                else
+                    action.accept(ref);
+            }
         }
     }
 
     public void forEachDescendant(Consumer<Entity> action) {
+        forEachDescendant(action, false);
+    }
+
+    public void forEachDescendant(Consumer<Entity> action, boolean skipCopyIgnore) {
         action.accept(this);
         var desc = DescStore.get(EntityUtils.getRealType(this));
         for (var prop : desc.getNonTransientProps()) {
             if (prop.getField().isAnnotationPresent(ChildEntity.class)) {
+                if(skipCopyIgnore && prop.getField().isAnnotationPresent(CopyIgnore.class))
+                    continue;
                 var child = (Entity) prop.get(this);
                 if (child != null)
-                    child.forEachDescendant(action);
+                    child.forEachDescendant(action, skipCopyIgnore);
             }
         }
     }
@@ -289,7 +338,6 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public boolean afterContextInitIds() {
         return false;
     }
-
 
     @Override
     @NoProxy

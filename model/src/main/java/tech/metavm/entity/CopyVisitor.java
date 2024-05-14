@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.object.type.Klass;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 
 import javax.annotation.Nullable;
@@ -20,10 +21,12 @@ public class CopyVisitor extends ElementVisitor<Element> {
     private final Set<Object> descendants = new IdentitySet<>();
     private final Map<Object, List<Consumer<Object>>> valueListeners = new HashMap<>();
     private final LinkedList<Object> elements = new LinkedList<>();
+    private final boolean strictEphemeral;
 
-    public CopyVisitor(Object root) {
+    public CopyVisitor(Object root, boolean strictEphemeral) {
         this.root = root;
-        EntityUtils.forEachDescendant(root, descendants::add);
+        this.strictEphemeral = strictEphemeral;
+        EntityUtils.forEachDescendant(root, descendants::add, true);
     }
 
     public void enterElement(Object element) {
@@ -66,7 +69,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
 
     public void check() {
         if (!valueListeners.isEmpty()) {
-            throw new InternalException("Unprocessed children");
+            throw new InternalException("Unprocessed children: " + NncUtils.join(valueListeners.keySet(), EntityUtils::getEntityDesc));
         }
     }
 
@@ -84,13 +87,9 @@ public class CopyVisitor extends ElementVisitor<Element> {
     }
 
     protected Object getValue(Object value, Consumer<Object> setter) {
-        if (descendants.contains(value)) {
-            var existing = map.get(value);
-            if (existing != null)
-                return existing;
-            else
-                return addDummy(value, setter);
-        } else
+        if (descendants.contains(value))
+            return Objects.requireNonNullElseGet(map.get(value), () -> addDummy(value, setter));
+        else
             return substituteReference(value);
     }
 
@@ -116,7 +115,10 @@ public class CopyVisitor extends ElementVisitor<Element> {
     }
 
     protected Object allocateCopy(Object entity) {
-        return ReflectionUtils.allocateInstance(EntityUtils.getRealType(entity.getClass()));
+        var copy = ReflectionUtils.allocateInstance(EntityUtils.getRealType(entity.getClass()));
+        if (copy instanceof Entity e)
+            e.setStrictEphemeral(strictEphemeral);
+        return copy;
     }
 
 
@@ -133,8 +135,10 @@ public class CopyVisitor extends ElementVisitor<Element> {
                     if (existing != null) {
                         copy = (ChildArray) existing;
                         copy.clear();
-                    } else
+                    } else {
                         copy = new ChildArray<>(childArray.getElementType());
+                        copy.setStrictEphemeral(strictEphemeral);
+                    }
                     addCopy(entity, copy);
                     for (Entity child : childArray) {
                         copy.addChild((Entity) copy(child));
@@ -146,8 +150,10 @@ public class CopyVisitor extends ElementVisitor<Element> {
                     if (existing != null) {
                         copy = (ReadWriteArray) existing;
                         copy.clear();
-                    } else
+                    } else {
                         copy = new ReadWriteArray<>(readWriteArray.getElementType());
+                        copy.setStrictEphemeral(strictEphemeral);
+                    }
                     addCopy(entity, copy);
                     for (int i = 0; i < readWriteArray.size(); i++) {
                         final int _i = i;
@@ -179,8 +185,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
                             fieldValueCopy = getValue(fieldValue, v -> prop.set(copy, v));
                         try {
                             prop.set(copy, fieldValueCopy);
-                        }
-                        catch (RuntimeException e) {
+                        } catch (RuntimeException e) {
                             logger.info("Fail to set field {}. entity: {}, fieldValue: {}, fieldValueCopy: {}", prop, EntityUtils.getEntityPath(entity),
                                     EntityUtils.getEntityDesc(fieldValue), EntityUtils.getEntityDesc(fieldValueCopy));
                             throw e;

@@ -3,10 +3,9 @@ package tech.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.flow.Flow;
 import tech.metavm.flow.Method;
+import tech.metavm.flow.MethodRef;
 import tech.metavm.flow.Parameter;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
@@ -21,24 +20,25 @@ public class MethodExpression extends Expression {
     @ChildEntity("实例")
     private final Expression self;
 
-    @EntityField("方法")
-    private final Method method;
+    @ChildEntity("方法")
+    private final MethodRef methodRef;
 
-    public MethodExpression(@NotNull Expression self, @NotNull Method method) {
+    public MethodExpression(@NotNull Expression self, @NotNull MethodRef methodRef) {
         this.self = addChild(self.copy(), "self");
-        this.method = method;
+        this.methodRef = addChild(methodRef.copy(), "methodRef");
     }
 
     public Expression getSelf() {
         return self;
     }
 
-    public Flow getMethod() {
-        return method;
+    public Method getMethod() {
+        return methodRef.resolve();
     }
 
     @Override
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
+        var method = getMethod();
         return self.buildSelf(symbolType, relaxedCheck) + "." + method.getName()
                 + "(" + NncUtils.join(method.getParameters(), Parameter::getName, ", ") + ")";
     }
@@ -50,7 +50,7 @@ public class MethodExpression extends Expression {
 
     @Override
     public Type getType() {
-        return method.getType();
+        return getMethod().getType();
     }
 
     @Override
@@ -60,7 +60,7 @@ public class MethodExpression extends Expression {
 
     @Override
     protected Instance evaluateSelf(EvaluationContext context) {
-        return ((ClassInstance) self.evaluate(context)).getFunction(method, context.parameterizedFlowProvider());
+        return ((ClassInstance) self.evaluate(context)).getFunction(getMethod());
     }
 
     @Override

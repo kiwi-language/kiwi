@@ -7,6 +7,7 @@ import tech.metavm.entity.ChildList;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.object.type.ArrayKind;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.BusinessException;
 
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ public class NewListResolver implements NewResolver {
         var elementType = methodGenerics.getSubstitutor().substitute(type.getParameters()[0]);
         var typeResolver = expressionResolver.getTypeResolver();
         var mvElementType = typeResolver.resolve(elementType);
-        var mvArrayType = expressionResolver.getCompositeTypeFacade().getArrayType(mvElementType,
+        var mvArrayType = new ArrayType(mvElementType,
                 CHILD_LIST_TYPE.isAssignableFrom(type) ? ArrayKind.CHILD : ArrayKind.READ_WRITE);
         return new NodeExpression(methodGenerator.createNewArray(mvArrayType, null));
     }

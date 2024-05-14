@@ -6,8 +6,10 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorDTO;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.rest.FlowExecutionRequest;
-import tech.metavm.flow.rest.GetParameterizedFlowRequest;
+import tech.metavm.flow.rest.MethodRefDTO;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.TypeExpressions;
+import tech.metavm.util.Constants;
 import tech.metavm.util.TestUtils;
 
 import java.util.List;
@@ -43,7 +45,7 @@ public class BasicCompileTest extends CompilerTestBase {
 
         var labId = TestUtils.doInTransaction(() ->
                 instanceManager.create(InstanceDTO.createClassInstance(
-                        labType.id(),
+                        TypeExpressions.getClassType(labType.id()),
                         List.of(
                                 InstanceFieldDTO.create(
                                         labFoosFieldId,
@@ -53,7 +55,7 @@ public class BasicCompileTest extends CompilerTestBase {
                                                 List.of(
                                                         InstanceFieldValue.of(
                                                                 InstanceDTO.createClassInstance(
-                                                                        fooType.id(),
+                                                                        TypeExpressions.getClassType(fooType.id()),
                                                                         List.of(
                                                                                 InstanceFieldDTO.create(
                                                                                         fooNameFieldId,
@@ -64,7 +66,7 @@ public class BasicCompileTest extends CompilerTestBase {
                                                         ),
                                                         InstanceFieldValue.of(
                                                                 InstanceDTO.createClassInstance(
-                                                                        fooType.id(),
+                                                                        TypeExpressions.getClassType(fooType.id()),
                                                                         List.of(
                                                                                 InstanceFieldDTO.create(
                                                                                         fooNameFieldId,
@@ -75,7 +77,7 @@ public class BasicCompileTest extends CompilerTestBase {
                                                         ),
                                                         InstanceFieldValue.of(
                                                                 InstanceDTO.createClassInstance(
-                                                                        fooType.id(),
+                                                                        TypeExpressions.getClassType(fooType.id()),
                                                                         List.of(
                                                                                 InstanceFieldDTO.create(
                                                                                         fooNameFieldId,
@@ -95,11 +97,10 @@ public class BasicCompileTest extends CompilerTestBase {
         Assert.assertEquals(3, foos.getElements().size());
         var foo002 = ((InstanceFieldValue) foos.getElements().get(1)).getInstance();
 
-        var labGetFooByNameMethodId = TestUtils.getMethodIdByCode(labType, "getFooByName");
         var foundFoo = TestUtils.doInTransaction(() ->
                 flowExecutionService.execute(
                         new FlowExecutionRequest(
-                                labGetFooByNameMethodId,
+                                TestUtils.getMethodRefByCode(labType, "getFooByName"),
                                 labId,
                                 List.of(
                                         PrimitiveFieldValue.createString("foo002")
@@ -115,21 +116,23 @@ public class BasicCompileTest extends CompilerTestBase {
         var subType = getClassTypeByCode("genericoverride.Sub");
         var subId = TestUtils.doInTransaction(() -> instanceManager.create(
                 InstanceDTO.createClassInstance(
-                        subType.id(),
+                        TypeExpressions.getClassType(subType.id()),
                         List.of()
                 )
         ));
         var containsAnyMethodId = TestUtils.getMethodIdByCode(baseType, "containsAny");
-        var pContainsAnyMethodId = flowManager.getParameterizedFlow(new GetParameterizedFlowRequest(
-                containsAnyMethodId, List.of(StandardTypes.getStringType().getStringId())
-        )).getStringId();
-        var stringListType = StandardTypes.getParameterizedType(StandardTypes.getReadWriteListType(), List.of(StandardTypes.getStringType()));
+        var stringListType = StandardTypes.getReadWriteListKlass().getParameterized(List.of(StandardTypes.getStringType()));
         var result = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                pContainsAnyMethodId, subId,
+                new MethodRefDTO(
+                        TypeExpressions.getClassType(baseType),
+                        containsAnyMethodId,
+                        List.of("string")
+                ),
+                subId,
                 List.of(
                         InstanceFieldValue.of(
                                 InstanceDTO.createListInstance(
-                                        stringListType.getStringId(),
+                                        stringListType.getType().toExpression(),
                                         false,
                                         List.of(
                                                 PrimitiveFieldValue.createString("a"),
@@ -140,7 +143,7 @@ public class BasicCompileTest extends CompilerTestBase {
                         ),
                         InstanceFieldValue.of(
                                 InstanceDTO.createListInstance(
-                                        stringListType.getStringId(),
+                                        stringListType.getType().toExpression(),
                                         false,
                                         List.of(
                                                 PrimitiveFieldValue.createString("c"),

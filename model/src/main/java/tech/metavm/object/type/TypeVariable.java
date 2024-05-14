@@ -20,7 +20,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     private String name;
     private @Nullable String code;
     @ChildEntity("类型上界")
-    private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");
+    private final ChildArray<Type> bounds = addChild(new ChildArray<>(Type.class), "bounds");
     @EntityField("范型声明")
     private @NotNull GenericDeclaration genericDeclaration;
     @EntityField("模板")
@@ -28,7 +28,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     @Nullable
     private TypeVariable copySource;
     private transient VariableType type;
-    private transient IntersectionType intersection;
+    private transient Type bound;
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
     public TypeVariable(Long tmpId, @NotNull String name, @Nullable String code, @NotNull GenericDeclaration genericDeclaration) {
@@ -77,9 +77,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     }
 
     public void setBounds(List<Type> bounds) {
-        this.bounds.clear();
-        this.bounds.addAll(bounds);
-//        onSuperTypesChanged();
+        this.bounds.resetChildren(NncUtils.map(bounds, Type::copy));
     }
 
     @Override
@@ -97,13 +95,11 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     }
 
     public Type getUpperBound() {
-        if (bounds.size() == 1) {
+        if (bounds.size() == 1)
             return bounds.get(0);
-        }
-        if (intersection != null) {
-            return intersection;
-        }
-        return intersection = new IntersectionType(null, new HashSet<>(bounds));
+        if (bound != null)
+            return bound;
+        return bound = bounds.isEmpty() ? new AnyType() : new IntersectionType(new HashSet<>(bounds.toList()));
     }
 
     @Override
@@ -112,7 +108,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     }
 
     public List<? extends Type> getSuperTypes() {
-        return Collections.unmodifiableList(bounds);
+        return Collections.unmodifiableList(bounds.toList());
     }
 
     public List<Type> getBounds() {
@@ -154,7 +150,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
                 code,
                 serializeContext.getId(genericDeclaration),
                 genericDeclaration.getTypeParameterIndex(this),
-                NncUtils.map(bounds, type1 -> type1.toTypeExpression(serializeContext))
+                NncUtils.map(bounds, type1 -> type1.toExpression(serializeContext, null))
         );
     }
 
@@ -177,9 +173,18 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
         return getCodeRequired();
     }
 
-    public VariableType getType() {
+    public @NotNull VariableType getType() {
         if(type == null)
             type = new VariableType(this);
         return type;
+    }
+
+    public int getIndex() {
+        return genericDeclaration.getTypeParameterIndex(this);
+    }
+
+    @Override
+    protected String toString0() {
+        return "TypeVariable" + getTypeDesc();
     }
 }

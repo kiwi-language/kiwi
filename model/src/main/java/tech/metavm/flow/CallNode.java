@@ -6,18 +6,21 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.VarType;
-import tech.metavm.flow.rest.CallNodeParam;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.CapturedType;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.Types;
 import tech.metavm.object.type.generic.TypeSubstitutor;
 import tech.metavm.util.DebugEnv;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -27,32 +30,28 @@ public abstract class CallNode extends NodeRT {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    public static Flow getFlow(CallNodeParam param, IEntityContext context) {
-        return context.getEntity(Method.class, Id.parse(param.getFlowId()));
-    }
-
-    @EntityField("子流程")
-    private Flow subFlow;
+    @ChildEntity("flowRef")
+    private FlowRef flowRef;
     @ChildEntity("参数列表")
     protected final ChildArray<Argument> arguments = addChild(new ChildArray<>(Argument.class), "arguments");
     @ChildEntity("捕获类型列表")
-    protected final ReadWriteArray<Type> capturedExpressionTypes = addChild(new ReadWriteArray<>(Type.class), "capturedExpressionTypes");
+    protected final ChildArray<Type> capturedExpressionTypes = addChild(new ChildArray<>(Type.class), "capturedExpressionTypes");
     @ChildEntity("捕获类型表达式列表")
     protected final ChildArray<Expression> capturedExpressions = addChild(new ChildArray<>(Expression.class), "capturedExpressions");
 
-    public CallNode(Long tmpId, String name, @Nullable String code, @Nullable Type outputType, NodeRT prev, ScopeRT scope, @NotNull Flow subFlow,
+    public CallNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, @NotNull FlowRef flowRef,
                     @NotNull List<Argument> arguments) {
-        super(tmpId, name, code, outputType, prev, scope);
-        this.subFlow = subFlow;
+        super(tmpId, name, code, null, prev, scope);
+        this.flowRef = addChild(flowRef.copy(), "flowRef");
         this.arguments.addChildren(arguments);
     }
 
-    public Flow getSubFlow() {
-        return subFlow;
+    public FlowRef getFlowRef() {
+        return flowRef;
     }
 
-    public void setSubFlow(Flow subFlow) {
-        this.subFlow = subFlow;
+    public void setFlowRef(FlowRef flowRef) {
+        this.flowRef = addChild(flowRef.copy(), "flowRef");
     }
 
     public void setArguments(List<Argument> arguments) {
@@ -64,7 +63,7 @@ public abstract class CallNode extends NodeRT {
     }
 
     public void setCapturedExpressionTypes(List<Type> capturedExpressionTypes) {
-        this.capturedExpressionTypes.reset(capturedExpressionTypes);
+        this.capturedExpressionTypes.resetChildren(NncUtils.map(capturedExpressionTypes, Type::copy));
     }
 
     public void setCapturedExpressions(List<Expression> capturedExpressions) {
@@ -76,7 +75,8 @@ public abstract class CallNode extends NodeRT {
     @Override
     protected String check0() {
         var argMap = NncUtils.toMap(arguments, Argument::getParameter, Function.identity());
-        for (Parameter parameter : subFlow.getParameters()) {
+        var targetFlow = flowRef.resolve();
+        for (Parameter parameter : targetFlow.getParameters()) {
             if (parameter.getType().isNotNull() && argMap.get(parameter) == null)
                 return String.format("必填参数'%s'未配置", parameter.getName());
         }
@@ -105,7 +105,7 @@ public abstract class CallNode extends NodeRT {
                 && NncUtils.anyMatch(method.getDeclaringType().getTypeArguments(), Type::isCaptured)) {
             var declaringType = method.getDeclaringType();
             var actualTypeArgs = NncUtils.map(declaringType.getTypeArguments(), t -> t.accept(typeSubst));
-            var actualDeclaringType = frame.compositeTypeFacade().getParameterizedType(declaringType.getEffectiveTemplate(), actualTypeArgs);
+            var actualDeclaringType = declaringType.getEffectiveTemplate().getParameterized(actualTypeArgs);
             if(DebugEnv.debugging)
                 debugLogger.info("uncapture flow declaring type from {} to {}",
                         declaringType.getTypeDesc(),
@@ -115,7 +115,7 @@ public abstract class CallNode extends NodeRT {
         }
         if(NncUtils.anyMatch(flow.getTypeArguments(), Type::isCaptured)) {
             var actualTypeArgs = NncUtils.map(flow.getTypeArguments(), t -> t.accept(typeSubst));
-            var uncapturedFlow =  frame.parameterizedFlowProvider().getParameterizedFlow(flow.getHorizontalTemplate(), actualTypeArgs);
+            var uncapturedFlow = Objects.requireNonNull(flow.getHorizontalTemplate()).getParameterized(actualTypeArgs);
             if(DebugEnv.debugging) {
                 debugLogger.info("uncapture flow from {} to {}, captured expressions: {}, captured expression types: {}, " +
                                 "actual expression types: {}, captured types: {}, actual types: {}",
@@ -133,9 +133,15 @@ public abstract class CallNode extends NodeRT {
             return flow;
     }
 
+    @NotNull
+    @Override
+    public Type getType() {
+        return getFlowRef().resolve().getReturnType();
+    }
+
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var flow = subFlow;
+        var flow = flowRef.resolve();
         var args = arguments;
         List<Instance> argInstances = new ArrayList<>();
         out:
@@ -151,7 +157,7 @@ public abstract class CallNode extends NodeRT {
         flow = tryUncaptureFlow(flow, frame);
         var self = getSelf(frame);
         if (flow instanceof Method method && method.isInstanceMethod())
-            flow = requireNonNull(self).getKlass().resolveMethod(method, frame.parameterizedFlowProvider());
+            flow = requireNonNull(self).getKlass().resolveMethod(method);
         FlowExecResult result = flow.execute(self, argInstances, frame);
         if (result.exception() != null)
             return frame.catchException(this, result.exception());
@@ -161,6 +167,6 @@ public abstract class CallNode extends NodeRT {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write(subFlow.getName() + "(" + NncUtils.join(arguments, Argument::getText, ", ") + ")");
+        writer.write(flowRef.resolve().getName() + "(" + NncUtils.join(arguments, Argument::getText, ", ") + ")");
     }
 }

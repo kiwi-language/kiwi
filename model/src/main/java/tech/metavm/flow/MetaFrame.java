@@ -27,8 +27,6 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     private final Map<NodeRT, Instance> outputs = new HashMap<>();
     private final Set<LoopNode> loopingNodes = new IdentitySet<>();
     private NodeRT entry;
-    private final ParameterizedFlowProvider parameterizedFlowProvider;
-    private final CompositeTypeFacade compositeTypeFacade;
     private final InstanceRepository instanceRepository;
     private final Map<BranchNode, Branch> selectedBranches = new IdentityHashMap<>();
     private final Map<BranchNode, Branch> exitBranches = new IdentityHashMap<>();
@@ -40,16 +38,12 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     private final Map<TryNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
 
     public MetaFrame(NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<Instance> arguments,
-                     InstanceRepository instanceRepository,
-                     ParameterizedFlowProvider parameterizedFlowProvider,
-                     CompositeTypeFacade compositeTypeFacade) {
+                     InstanceRepository instanceRepository) {
         this.entry = entry;
         this.owner = owner;
         this.self = self;
         this.arguments = arguments;
         this.instanceRepository = instanceRepository;
-        this.parameterizedFlowProvider = parameterizedFlowProvider;
-        this.compositeTypeFacade = compositeTypeFacade;
     }
 
     public Instance getOutput(NodeRT node) {
@@ -194,16 +188,6 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     @Override
     public boolean isContextExpression(Expression expression) {
         return expression instanceof NodeExpression;
-    }
-
-    @Override
-    public ParameterizedFlowProvider parameterizedFlowProvider() {
-        return parameterizedFlowProvider;
-    }
-
-    @Override
-    public CompositeTypeFacade compositeTypeFacade() {
-        return compositeTypeFacade;
     }
 
     public @Nullable ClassInstance getSelf() {

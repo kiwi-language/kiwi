@@ -52,11 +52,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private final ClassKind kind;
     private boolean anonymous;
     private boolean ephemeral;
-    @EntityField("超类")
+    @ChildEntity("超类")
     @Nullable
     private ClassType superType;
     @ChildEntity("接口")
-    private final ReadWriteArray<ClassType> interfaces = addChild(new ReadWriteArray<>(ClassType.class), "interfaces");
+    private final ChildArray<ClassType> interfaces = addChild(new ChildArray<>(ClassType.class), "interfaces");
     @EntityField("来源")
     private ClassSource source;
     @ChildEntity("子类列表")
@@ -88,12 +88,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @EntityField("是否模版")
     private boolean isTemplate;
     // Don't remove, used for search
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     @EntityField("是否参数化")
     private boolean isParameterized;
     @ChildEntity("类型参数")
     private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
     @ChildEntity("类型实参")
-    private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
+    private final ChildArray<Type> typeArguments = addChild(new ChildArray<>(Type.class), "typeArguments");
 
     // TODO (Important!) not scalable, must be optimized before going to production
     @ChildEntity("依赖")
@@ -124,6 +125,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private boolean struct;
 
+    @SuppressWarnings("FieldMayBeFinal") // for unit test
+    private boolean dummyFlag = false;
+
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
     private transient volatile MethodTable methodTable;
@@ -144,7 +148,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private transient List<Runnable> ancestorChangeListeners = new ArrayList<>();
 
-    private transient Map<List<Type>, Klass> parameterizedClasses = new HashMap<>();
+    private transient ParameterizedElementMap<List<? extends Type>, Klass> parameterizedClasses;
 
     public Klass(
             Long tmpId,
@@ -269,20 +273,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.titleField = titleField;
     }
 
-    @Override
-    public void onBind(IEntityContext context) {
-        if (isTemplate())
-            context.getGenericContext().add(this);
-    }
-
-//    public boolean isView() {
-//        return sourceMapping != null;
-//    }
-//
-//    public ObjectMapping getSourceMapping() {
-//        return Objects.requireNonNull(sourceMapping, String.format("Type '%s' is not a view", getName()));
-//    }
-
     public boolean isTemplate() {
         return !typeParameters.isEmpty();
     }
@@ -340,6 +330,20 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return mappings.toList();
     }
 
+    public ObjectMapping getMapping(Predicate<ObjectMapping> predicate) {
+        return Objects.requireNonNull(findMapping(predicate),
+                () -> "Can not find mapping with predicate in klass " + getTypeDesc());
+    }
+
+    public @Nullable ObjectMapping findMapping(Predicate<ObjectMapping> predicate) {
+        var found = NncUtils.find(mappings, predicate);
+        if(found != null)
+            return found;
+        if(superType != null && (found = superType.resolve().findMapping(predicate)) != null)
+            return found;
+        return null;
+    }
+
     public @Nullable ObjectMapping getBuiltinMapping() {
         return NncUtils.find(mappings, ObjectMapping::isBuiltin);
     }
@@ -360,11 +364,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public int getRank() {
         if (rank == 0) {
-            int r = superType != null ? superType.resolve().rank : 0;
+            int r = superType != null ? superType.resolve().getRank() : 0;
             for (var it : interfaces) {
-                var itKlass = it.resolve();
-                if (itKlass.rank > r)
-                    r = itKlass.rank;
+                var itRank = it.resolve().getRank();
+                if (itRank > r)
+                    r = itRank;
             }
             rank = r + 1;
         }
@@ -421,10 +425,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 if (sortedFields == null) {
                     var sf = new ArrayList<Field>();
                     forEachField(f -> {
-                        if (f.isIdNotNull())
+                        if (f.isTagNotNull())
                             sf.add(f);
                     });
-                    sf.sort(Comparator.comparing(Field::getId));
+                    sf.sort(Comparator.comparing(Field::getTag));
                     sortedFields = sf;
                 }
             }
@@ -529,7 +533,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public @Nullable Method findMethodByCode(String code) {
-        return getMethod(Method::getCode, code);
+        return findMethod(Method::getCode, code);
     }
 
     public @Nullable Method findSelfMethodByCode(String code) {
@@ -537,25 +541,49 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public @Nullable Method findMethodByVerticalTemplate(Method template) {
-        return getMethod(Method::getVerticalTemplate, template);
+        return findMethod(Method::getVerticalTemplate, template);
     }
 
     public Method findSelfMethod(Predicate<Method> predicate) {
         return NncUtils.find(methods.toList(), predicate);
     }
 
-    public <T> Method getMethod(IndexMapper<Method, T> property, T value) {
+    public Method getMethod(Predicate<Method> predicate) {
+        var found = findMethod(predicate);
+        if(found != null)
+            return found;
+        if(DebugEnv.resolveVerbose) {
+            logger.info("Fail to resolve method with predicate in klass " + getTypeDesc());
+            forEachMethod(m -> logger.info(m.getQualifiedName()));
+        }
+        throw new NullPointerException("Can not find method with predicate in klass " + this);
+    }
+
+    public @Nullable Method findMethod(Predicate<Method> predicate) {
+        var found = NncUtils.find(methods, predicate);
+        if(found != null)
+            return found;
+        if(superType != null && (found = superType.resolve().findMethod(predicate)) != null)
+            return found;
+        for (ClassType it : interfaces) {
+            if((found = it.resolve().findMethod(predicate)) != null)
+                return found;
+        }
+        return null;
+    }
+
+    public <T> @Nullable Method findMethod(IndexMapper<Method, T> property, T value) {
         var method = methods.get(property, value);
         if (method != null)
             return method;
         if (superType != null) {
-            var m = superType.resolve().getMethod(property, value);
+            var m = superType.resolve().findMethod(property, value);
             if (m != null)
                 return m;
         }
         if (isEffectiveAbstract()) {
             for (var it : interfaces) {
-                var m = it.resolve().getMethod(property, value);
+                var m = it.resolve().findMethod(property, value);
                 if (m != null)
                     return m;
             }
@@ -710,6 +738,40 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (superType != null)
             return superType.resolve().findField(predicate);
         return null;
+    }
+
+    public Field getField(Predicate<Field> predicate) {
+        var found = findField(predicate);
+        if(found != null)
+            return found;
+        if(DebugEnv.resolveVerbose)
+            forEachField(f -> logger.info(f.getQualifiedName()));
+        throw new NullPointerException("Fail to find field satisfying the specified criteria in klass: " + this);
+    }
+
+    public @Nullable Field findStaticField(Predicate<Field> predicate) {
+        var field = NncUtils.find(staticFields, predicate);
+        if (field != null)
+            return field;
+        if (superType != null)
+            return superType.resolve().findStaticField(predicate);
+        return null;
+    }
+
+    public Field getStaticField(Predicate<Field> predicate) {
+        var found = findStaticField(predicate);
+        if(found != null)
+            return found;
+        if(DebugEnv.resolveVerbose) {
+            forEachStaticField(field -> logger.info("field: {}, id: {}", field.getQualifiedName(), field.getStringId()));
+        }
+        throw new NullPointerException("Fail to find static field satisfying the specified criteria in klass: " + this);
+    }
+
+    public void forEachStaticField(Consumer<Field> action) {
+        staticFields.forEach(action);
+        if(superType != null)
+            superType.resolve().forEachStaticField(action);
     }
 
     private List<Field> readyFields() {
@@ -912,7 +974,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public Field getFieldByJavaField(java.lang.reflect.Field javaField) {
         String fieldName = EntityUtils.getMetaFieldName(javaField);
         return requireNonNull(tryGetFieldByName(fieldName),
-                "Can not find field for java indexItem " + javaField);
+                "Can not find field for java field " + javaField);
     }
 
     public boolean checkColumnAvailable(Column column) {
@@ -991,35 +1053,49 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return false;
     }
 
-    public ClassType getType() {
+    public @NotNull ClassType getType() {
         if (type == null)
-            type = new ClassType(this.getEffectiveTemplate(), typeArguments);
+            type = new ClassType(this.getEffectiveTemplate(), isParameterized() ? typeArguments.toList() : List.of());
         return type;
     }
 
     public void addParameterized(Klass parameterized) {
         NncUtils.requireTrue(parameterized.getTemplate() == this);
-        parameterizedClasses.putIfAbsent(parameterized.getTypeArguments(), parameterized);
+        NncUtils.requireNull(parameterizedClasses().put(parameterized.typeArguments.getTable(), parameterized),
+                () -> new InternalException("Parameterized klass " + parameterized.getTypeDesc() + " already exists"));
     }
 
-    public Klass getExistingParameterized(List<Type> typeArguments) {
-        if (parameterizedClasses == null)
-            parameterizedClasses = new HashMap<>();
+    public Klass getExistingParameterized(List<? extends Type> typeArguments) {
         if (NncUtils.map(typeParameters, TypeVariable::getType).equals(typeArguments))
             return this;
-        return parameterizedClasses.get(typeArguments);
+        return parameterizedClasses().get(typeArguments);
     }
 
-    public Klass getParameterized(List<Type> typeArguments) {
-        if (!isTemplate)
-            throw new InternalException(this + " is not a template class");
+    private ParameterizedElementMap<List<? extends Type>, Klass> parameterizedClasses() {
+        if(parameterizedClasses == null)
+            parameterizedClasses = new ParameterizedElementMap<>();
+        return parameterizedClasses;
+    }
+
+    public Klass getParameterized(List<? extends Type> typeArguments) {
+        return getParameterized(typeArguments, ResolutionStage.DEFINITION);
+    }
+
+    public Klass getParameterized(List<? extends Type> typeArguments, ResolutionStage stage) {
+        if (!isTemplate) {
+            if(typeArguments.isEmpty())
+                return this;
+            else
+                throw new InternalException(this + " is not a template class");
+        }
         var pClass = getExistingParameterized(typeArguments);
+        if(pClass == this)
+            return this;
         if (pClass != null && pClass.getStage().isAfterOrAt(stage))
             return pClass;
         var subst = new SubstitutorV2(
                 this, typeParameters.toList(), typeArguments, stage);
         pClass = (Klass) this.accept(subst);
-        parameterizedClasses.put(typeArguments, pClass);
         return pClass;
     }
 
@@ -1051,7 +1127,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public List<ClassType> getInterfaces() {
-        return Collections.unmodifiableList(interfaces);
+        return Collections.unmodifiableList(interfaces.toList());
     }
 
     public void forEachSuper(Consumer<Klass> action) {
@@ -1087,16 +1163,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     protected ClassTypeParam getParam(SerializeContext serContext) {
-        typeParameters.forEach(serContext::writeTypeVariable);
-//        typeArguments.forEach(serContext::writeType);
-//        if (superType != null)
-//            serContext.writeClass(superType);
-//        interfaces.forEach(serContext::writeClass);
+        typeParameters.forEach(serContext::writeTypeDef);
         if (template != null)
-            serContext.writeClass(template);
-        var param = new ClassTypeParam(
-                NncUtils.get(superType, serContext::getId),
-                NncUtils.map(interfaces, serContext::getId),
+            serContext.writeTypeDef(template);
+        return new ClassTypeParam(
+                NncUtils.get(superType, t -> t.toExpression(serContext)),
+                NncUtils.map(interfaces, t -> t.toExpression(serContext)),
                 source.code(),
                 NncUtils.map(fields, Field::toDTO),
                 NncUtils.map(staticFields, Field::toDTO),
@@ -1119,7 +1191,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 struct,
                 NncUtils.map(errors, Error::toDTO)
         );
-        return param;
     }
 
     protected Object getExtra() {
@@ -1199,13 +1270,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public boolean isType(Type type) {
-        if (type instanceof ClassType classType) {
-            if (isParameterized())
-                return classType.getKlass().equals(getTemplate()) && classType.getTypeArguments().equals(typeArguments);
-            else
-                return classType.getKlass() == this && classType.getTypeArguments().isEmpty();
-        } else
-            return false;
+        return getType().equals(type);
     }
 
     // BFS
@@ -1219,16 +1284,16 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         }
     }
 
-    public Method resolveMethod(@NotNull Method methodRef, @NotNull ParameterizedFlowProvider parameterizedFlowProvider) {
+    public Method resolveMethod(@NotNull Method methodRef) {
         return Objects.requireNonNull(
-                tryResolveMethod(methodRef, parameterizedFlowProvider),
+                tryResolveMethod(methodRef),
                 () -> String.format("Fail to resolve method %s.%s in type %s",
                         methodRef.getDeclaringType().getTypeDesc(),
                         methodRef.getTypeDesc(), this)
         );
     }
 
-    public @Nullable Method tryResolveMethod(@NotNull Method methodRef, @NotNull ParameterizedFlowProvider parameterizedFlowProvider) {
+    public @Nullable Method tryResolveMethod(@NotNull Method methodRef) {
         if (methodRef.getDeclaringType() == this)
             return methodRef;
         var hTemplate = methodRef.getHorizontalTemplate();
@@ -1236,22 +1301,36 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             var resolvedTemplate = tryResolveNonParameterizedMethod(hTemplate);
             if (resolvedTemplate == null)
                 return null;
-            return parameterizedFlowProvider.getParameterizedFlow(resolvedTemplate, methodRef.getTypeArguments());
+            return (Method) resolvedTemplate.getParameterized(methodRef.getTypeArguments());
         } else
             return tryResolveNonParameterizedMethod(methodRef);
     }
 
-    public Method resolveMethod(String code, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly, ParameterizedFlowProvider parameterizedFlowProvider) {
-        return Objects.requireNonNull(tryResolveMethod(code, argumentTypes, typeArguments, staticOnly, parameterizedFlowProvider), () ->
+    public void forEachMethod(Consumer<Method> action) {
+        methods.forEach(action);
+        if(superType != null)
+            superType.resolve().forEachMethod(action);
+        interfaces.forEach(it -> it.resolve().forEachMethod(action));
+    }
+
+    public Method resolveMethod(String code, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly) {
+        var found = tryResolveMethod(code, argumentTypes, typeArguments, staticOnly);
+        if(found != null)
+            return found;
+        if(DebugEnv.resolveVerbose) {
+            logger.info("method resolution failed");
+            forEachMethod(m -> logger.info(m.getSignatureString()));
+        }
+        throw new NullPointerException(
                 String.format("Can not find method %s%s(%s) in type %s",
                         NncUtils.isNotEmpty(typeArguments) ? "<" + NncUtils.join(typeArguments, Type::getName) + ">" : "",
                         code,
                         NncUtils.join(argumentTypes, Type::getName, ","), getName()));
     }
 
-    public @Nullable Method tryResolveMethod(String code, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public @Nullable Method tryResolveMethod(String code, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly) {
         var candidates = new ArrayList<Method>();
-        getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates, parameterizedFlowProvider);
+        getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates);
         out:
         for (Method m1 : candidates) {
             for (Method m2 : candidates) {
@@ -1267,13 +1346,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                                    List<Type> argumentTypes,
                                    List<Type> typeArguments,
                                    boolean staticOnly,
-                                   List<Method> candidates,
-                                   ParameterizedFlowProvider parameterizedFlowProvider) {
+                                   List<Method> candidates) {
         methods.forEach(m -> {
             if ((m.isStatic() || !staticOnly) && code.equals(m.getCode()) && m.getParameters().size() == argumentTypes.size()) {
                 if (NncUtils.isNotEmpty(typeArguments)) {
                     if (m.getTypeParameters().size() == typeArguments.size()) {
-                        var pMethod = parameterizedFlowProvider.getParameterizedFlow(m, typeArguments);
+                        var pMethod = (Method) m.getParameterized(typeArguments);
                         if (pMethod.matches(code, argumentTypes))
                             candidates.add(pMethod);
                     }
@@ -1284,10 +1362,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             }
         });
         if (superType != null)
-            superType.resolve().getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates, parameterizedFlowProvider);
+            superType.resolve().getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates);
         if (isInterface() || isAbstract || staticOnly) {
-            interfaces.forEach(it -> it.resolve().getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates, parameterizedFlowProvider));
+            interfaces.forEach(it -> it.resolve().getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates));
         }
+    }
+
+    public @NotNull Method resolveNonParameterizedMethod(Method methodRef) {
+        return Objects.requireNonNull(tryResolveNonParameterizedMethod(methodRef), () -> "Can not resolve method " + methodRef.getTypeDesc() + " in klass " + this);
     }
 
     @Nullable
@@ -1306,6 +1388,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @Nullable
     public Klass getTemplate() {
         return template;
+    }
+
+    public Collection<Klass> getParameterized() {
+        return parameterizedClasses().values();
     }
 
     //    @Override
@@ -1331,7 +1417,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void addTypeParameter(TypeVariable typeParameter) {
         isTemplate = true;
         typeParameters.addChild(typeParameter);
-        typeArguments.add(typeParameter.getType().copy());
+        typeArguments.addChild(typeParameter.getType().copy());
     }
 
     @Override
@@ -1404,13 +1490,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     @Override
     protected String toString0() {
-        return "ClassType " + name + " (id:" + id + ")";
+        return "Klass " + name + " (id:" + id + ")";
     }
 
     public void setTypeArguments(List<? extends Type> typeArguments) {
         if (isTemplate() && !NncUtils.iterableEquals(NncUtils.map(typeParameters, TypeVariable::getType), typeArguments))
             throw new InternalException("Type arguments must equal to type parameters for a template type. Actual type arguments: " + typeArguments);
-        this.typeArguments.reset(NncUtils.map(typeArguments, Type::copy));
+        this.typeArguments.resetChildren(NncUtils.map(typeArguments, Type::copy));
         parameterizedTypeKey = null;
     }
 
@@ -1462,9 +1548,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void setSuperType(@Nullable ClassType superType) {
         if (this.superType != null)
             this.superType.resolve().removeSubType(this);
-        this.superType = superType;
-        if (superType != null)
+        if (superType != null) {
+            this.superType = addChild(superType.copy(), "superType");
             superType.resolve().addSubType(this);
+        }
+        else
+            this.superType = null;
         onSuperTypesChanged();
         supers = null;
     }
@@ -1474,8 +1563,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             anInterface.resolve().removeSubType(this);
         }
         this.interfaces.clear();
-        this.interfaces.addAll(interfaces);
         for (var anInterface : interfaces) {
+            this.interfaces.addChild(anInterface.copy());
             anInterface.resolve().addSubType(this);
         }
         onSuperTypesChanged();
@@ -1577,7 +1666,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public boolean afterContextInitIds() {
         if (template != null || isTemplate()) {
             if (parameterizedTypeKey == null) {
-                parameterizedTypeKey = Types.getParameterizedKey(getEffectiveTemplate(), typeArguments);
+                parameterizedTypeKey = Types.getParameterizedKey(getEffectiveTemplate(), typeArguments.toList());
             }
         }
         return true;
@@ -1704,7 +1793,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public boolean isViewType(Type type) {
         if (isType(type))
             return true;
-        return NncUtils.anyMatch(mappings, m -> m.getTargetType() == type);
+        return NncUtils.anyMatch(mappings, m -> m.getTargetType().equals(type));
     }
 
     @Override
@@ -1717,11 +1806,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public boolean isList() {
         var t = getEffectiveTemplate();
-        return t == StandardTypes.getListType() || StandardTypes.getChildListType() == t || StandardTypes.getReadWriteListType() == t;
+        return t == StandardTypes.getListKlass() || StandardTypes.getChildListKlass() == t || StandardTypes.getReadWriteListKlass() == t;
     }
 
     public boolean isChildList() {
-        return getEffectiveTemplate() == StandardTypes.getChildListType();
+        return getEffectiveTemplate() == StandardTypes.getChildListKlass();
     }
 
     public Type getListElementType() {

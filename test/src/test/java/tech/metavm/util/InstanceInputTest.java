@@ -6,7 +6,6 @@ import org.junit.Assert;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.rest.dto.ClassTypeKey;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,15 +13,6 @@ import java.util.*;
 import java.util.function.Function;
 
 public class InstanceInputTest extends TestCase {
-
-    @Override
-    protected void setUp() throws Exception {
-        StandardTypes.setBooleanType(new PrimitiveType(PrimitiveKind.BOOLEAN));
-        StandardTypes.setLongType(new PrimitiveType(PrimitiveKind.LONG));
-        StandardTypes.setStringType(new PrimitiveType(PrimitiveKind.STRING));
-        StandardTypes.setDoubleType(new PrimitiveType(PrimitiveKind.DOUBLE));
-        StandardTypes.setNullType(new PrimitiveType(PrimitiveKind.NULL));
-    }
 
     public void testWriteString() {
         String s = "hello world";
@@ -106,29 +96,29 @@ public class InstanceInputTest extends TestCase {
         Klass barType = ClassTypeBuilder.newBuilder("Bar", "Bar").build();
         Klass quxType = ClassTypeBuilder.newBuilder("Qux", "Qux").build();
 
-        fooType.initId(DefaultPhysicalId.ofObject(10001L, 0L, new ClassTypeKey("1")));
-        barType.initId(DefaultPhysicalId.ofObject(10002L, 0L, new ClassTypeKey("1")));
-        quxType.initId(DefaultPhysicalId.ofObject(10003L, 0L, new ClassTypeKey("1")));
+        fooType.initId(DefaultPhysicalId.ofObject(10001L, 0L, TestUtils.mockClassTypeKey()));
+        barType.initId(DefaultPhysicalId.ofObject(10002L, 0L, TestUtils.mockClassTypeKey()));
+        quxType.initId(DefaultPhysicalId.ofObject(10003L, 0L, TestUtils.mockClassTypeKey()));
 
         Field nameField = FieldBuilder
                 .newBuilder("name", "name", fooType, StandardTypes.getStringType()).build();
-        nameField.initId(DefaultPhysicalId.ofObject(20001L, 0L, new ClassTypeKey("1")));
+        nameField.initId(DefaultPhysicalId.ofObject(20001L, 0L, TestUtils.mockClassTypeKey()));
         Field barField = FieldBuilder
                 .newBuilder("bar", "bar", fooType, barType.getType()).isChild(true).build();
-        barField.initId(DefaultPhysicalId.ofObject(20002L, 0L, new ClassTypeKey("1")));
+        barField.initId(DefaultPhysicalId.ofObject(20002L, 0L, TestUtils.mockClassTypeKey()));
         Field quxField = FieldBuilder.newBuilder("qux", "qux", fooType, quxType.getType()).build();
-        quxField.initId(DefaultPhysicalId.ofObject(20003L, 0L, new ClassTypeKey("1")));
+        quxField.initId(DefaultPhysicalId.ofObject(20003L, 0L, TestUtils.mockClassTypeKey()));
 
         Field barCodeField = FieldBuilder
                 .newBuilder("code", "code", barType, StandardTypes.getStringType()).build();
-        barCodeField.initId(DefaultPhysicalId.ofObject(20004L, 0L, new ClassTypeKey("1")));
+        barCodeField.initId(DefaultPhysicalId.ofObject(20004L, 0L, TestUtils.mockClassTypeKey()));
 
         Field quxNameField = FieldBuilder
                 .newBuilder("name", "name", quxType, StandardTypes.getStringType()).build();
-        quxNameField.initId(DefaultPhysicalId.ofObject(20005L, 0L, new ClassTypeKey("1")));
+        quxNameField.initId(DefaultPhysicalId.ofObject(20005L, 0L, TestUtils.mockClassTypeKey()));
 
         var barInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30002L, 0L, new ClassTypeKey("1")),
+                DefaultPhysicalId.ofObject(30002L, 0L, TestUtils.mockClassTypeKey()),
                 Map.of(
                         barCodeField,
                         new StringInstance(barCode, StandardTypes.getStringType())
@@ -137,7 +127,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var quxInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30003L, 0L, new ClassTypeKey("1")),
+                DefaultPhysicalId.ofObject(30003L, 0L, TestUtils.mockClassTypeKey()),
                 Map.of(
                         quxNameField,
                         new StringInstance("qux001", StandardTypes.getStringType())
@@ -146,7 +136,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var fooInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30001L, 0L, new ClassTypeKey("1")),
+                DefaultPhysicalId.ofObject(30001L, 0L, TestUtils.mockClassTypeKey()),
                 Map.of(
                         nameField, new StringInstance(fooName, StandardTypes.getStringType()),
                         barField, barInst,
@@ -158,18 +148,14 @@ public class InstanceInputTest extends TestCase {
 
         Function<Id, DurableInstance> resolveInst = id -> {
             if(Objects.equals(id, fooInst.tryGetId()))
-                return new ClassInstance(id, fooType, false, null);
+                return new ClassInstance(id, fooType.getType(), false, null);
             else if(Objects.equals(id, barInst.tryGetId()))
-                return new ClassInstance(id, barType, false, null);
+                return new ClassInstance(id, barType.getType(), false, null);
             else if(Objects.equals(id, quxInst.tryGetId()))
                 return quxInst;
             else
                 throw new InternalException(String.format("Invalid id %s", id));
         };
-
-        var instanceMap = new HashMap<Long, Instance>();
-        instanceMap.put(fooInst.getPhysicalId(), fooInst);
-        instanceMap.put(barInst.getPhysicalId(), barInst);
         var bytes = InstanceOutput.toMessage(fooInst);
         var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst);
         var recoveredFooInst = input.readMessage();
@@ -177,9 +163,6 @@ public class InstanceInputTest extends TestCase {
 
         new StreamVisitor(new ByteArrayInputStream(bytes)) {
         }.visitMessage();
-
     }
-
-
 
 }

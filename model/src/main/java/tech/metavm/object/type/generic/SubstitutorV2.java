@@ -10,11 +10,13 @@ import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.GenericElementDTO;
 import tech.metavm.object.view.FieldsObjectMapping;
 import tech.metavm.object.view.ObjectMapping;
+import tech.metavm.object.view.ObjectMappingRef;
 import tech.metavm.util.DebugEnv;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,19 +38,17 @@ public class SubstitutorV2 extends CopyVisitor {
     private final TypeSubstitutor typeSubstitutor;
     private final ResolutionStage stage;
     private final Map<String, String> copyTmpIds = new HashMap<>();
-    private final Map<Object, Object> existingCopies = new HashMap<>();
+    private final Map<Object, Object> existingCopies = new IdentityHashMap<>();
 
     public SubstitutorV2(Object root,
                          List<TypeVariable> typeParameters,
                          List<? extends Type> typeArguments,
                          ResolutionStage stage) {
-        super(root);
-        if(typeParameters.size() != typeArguments.size()) {
+        super(root, true);
+        if (typeParameters.size() != typeArguments.size()) {
             logger.info("#type parameters != #type arguments. root: {}", EntityUtils.getEntityDesc(root));
         }
         if (DebugEnv.debugging) {
-            if (root instanceof Klass ct && ct.getTypeDesc().equals("Node") && typeArguments.get(0).getTypeDesc().equals("MyList_T") && stage == DEFINITION)
-                System.out.println("Caught");
             debugLogger.info("substituting {}, type parameters: {}, type arguments: {}, stage: {}",
                     EntityUtils.getEntityDesc(root), NncUtils.map(typeParameters, TypeVariable::getTypeDesc),
                     NncUtils.map(typeArguments, Type::getTypeDesc), stage.name());
@@ -92,8 +92,14 @@ public class SubstitutorV2 extends CopyVisitor {
                         });
                     }
                 }
-            });
+            }, true);
         }
+        /*if (!existingCopies.isEmpty()) {
+            logger.info("existing copies");
+            existingCopies.forEach((source, copy) -> {
+                logger.info("source: {}, copy: {}", EntityUtils.getEntityPath(source), EntityUtils.getEntityPath(copy));
+            });
+        }*/
 //        if(root instanceof Flow flow && flow.getName().equals("findRequired")) {
 //            debugLogger.info("Substituting {}, with type arguments: {}", EntityUtils.getEntityDesc(root),
 //                    NncUtils.join(typeArguments, EntityUtils::getEntityDesc));
@@ -235,6 +241,7 @@ public class SubstitutorV2 extends CopyVisitor {
                         .isStatic(method.isStatic())
                         .typeArguments(typeArgs)
                         .build();
+                copy.setStrictEphemeral(true);
                 if (method.isEphemeralEntity() || NncUtils.anyMatch(typeArgs, Entity::isEphemeralEntity))
                     copy.setEphemeralEntity(true);
                 method.addParameterized(copy);
@@ -252,6 +259,7 @@ public class SubstitutorV2 extends CopyVisitor {
             copy.setReturnType(substituteType(method.getReturnType()));
             processFlowBody(method, copy);
             exitElement();
+            check();
             return copy;
         } else
             return super.visitFlow(method);
@@ -272,6 +280,7 @@ public class SubstitutorV2 extends CopyVisitor {
                         .typeArguments(typeArgs)
                         .isSynthetic(function.isSynthetic())
                         .build();
+                copy.setStrictEphemeral(true);
                 if (function.isEphemeralEntity() || NncUtils.anyMatch(typeArgs, Entity::isEphemeralEntity))
                     copy.setEphemeralEntity(true);
                 function.addParameterized(copy);
@@ -286,6 +295,7 @@ public class SubstitutorV2 extends CopyVisitor {
             copy.setReturnType(substituteType(function.getReturnType()));
             processFlowBody(function, copy);
             exitElement();
+            check();
             return copy;
         } else
             return super.visitFunction(function);
@@ -315,8 +325,60 @@ public class SubstitutorV2 extends CopyVisitor {
     }
 
     @Override
+    public Element visitMethodRef(MethodRef methodRef) {
+        var rawMethod = methodRef.getRawFlow();
+        if (rawMethod == root || rawMethod.getDeclaringType() == root) {
+            return new MethodRef(
+                    (ClassType) methodRef.getDeclaringType().accept(this),
+                    rawMethod,
+                    NncUtils.map(methodRef.getTypeArguments(), t -> (Type) t.accept(this))
+            );
+        } else
+            return super.visitMethodRef(methodRef);
+    }
+
+    @Override
+    public Element visitFieldRef(FieldRef fieldRef) {
+        var rawField = fieldRef.getRawField();
+        if (rawField.getDeclaringType() == root)
+            return new FieldRef((ClassType) fieldRef.getDeclaringType().accept(this), rawField);
+        else
+            return super.visitFieldRef(fieldRef);
+    }
+
+    @Override
+    public Element visitObjectMappingRef(ObjectMappingRef objectMappingRef) {
+        var rawMapping = objectMappingRef.getRawMapping();
+        if (rawMapping.getSourceKlass() == root)
+            return new ObjectMappingRef((ClassType) objectMappingRef.getDeclaringType().accept(this), rawMapping);
+        else
+            return super.visitObjectMappingRef(objectMappingRef);
+    }
+
+    @Override
+    public Element visitParameterRef(ParameterRef parameterRef) {
+        var rawParam = parameterRef.getRawParameter();
+        if (rawParam.getCallable() == root || rawParam.getCallable() instanceof Method m && m.getDeclaringType() == root)
+            return new ParameterRef((CallableRef) parameterRef.getCallableRef().accept(this), rawParam);
+        else
+            return super.visitParameterRef(parameterRef);
+    }
+
+    @Override
+    public Element visitClassType(ClassType type) {
+        var klass = type.getKlass();
+        if (klass == root)
+            return new ClassType(type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> (Type) t.accept(this)));
+        else
+            return super.visitClassType(type);
+    }
+
+    @Override
     public Type visitType(Type type) {
-        return type.accept(typeSubstitutor);
+        var mapped = typeSubstitutor.getVariableMap().get(type);
+        if (mapped != null)
+            return mapped.copy();
+        return (Type) super.visitType(type);
     }
 
     @Override
@@ -327,6 +389,7 @@ public class SubstitutorV2 extends CopyVisitor {
                     (UncertainType) substituteType(type.getUncertainType()),
                     (CapturedTypeScope) getCopy(type.getScope())
             );
+            copy.setStrictEphemeral(true);
             copy.setCopySource(type);
         }
         addCopy(type, copy);
@@ -350,6 +413,7 @@ public class SubstitutorV2 extends CopyVisitor {
                         .template(template)
                         .tmpId(getCopyTmpId(template))
                         .build();
+                copy.setStrictEphemeral(true);
                 if (klass.isEphemeralEntity() || NncUtils.anyMatch(typeArguments, Entity::isEphemeralEntity))
                     copy.setEphemeralEntity(true);
                 klass.addParameterized(copy);
@@ -385,8 +449,7 @@ public class SubstitutorV2 extends CopyVisitor {
 //                    }));
             }
             exitElement();
-            if (klass == root && stage.isAfterOrAt(DEFINITION))
-                check();
+            check();
             return copy;
         } else {
             return super.visitKlass(klass);

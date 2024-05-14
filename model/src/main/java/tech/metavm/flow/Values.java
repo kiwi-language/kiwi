@@ -1,7 +1,9 @@
 package tech.metavm.flow;
 
 import tech.metavm.expression.Expression;
+import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.Expressions;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.object.type.Property;
 
 public class Values {
@@ -32,6 +34,10 @@ public class Values {
 
     public static Value expression(Expression expression) {
         return new DynamicValue(ValueKind.EXPRESSION, expression);
+    }
+
+    public static Value expression(String expression, ParsingContext parsingContext) {
+        return expression(ExpressionParser.parse(expression, parsingContext));
     }
 
     public static Value nullValue() {

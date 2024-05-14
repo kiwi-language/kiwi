@@ -14,30 +14,30 @@ import java.util.Objects;
 @EntityType("数组表达式")
 public class ArrayExpression extends Expression {
 
-    public static ArrayExpression create(List<Expression> expressions, ArrayTypeProvider arrayTypeProvider) {
-        var type = arrayTypeProvider.getArrayType(Types.getLeastUpperBound(NncUtils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
+    public static ArrayExpression create(List<Expression> expressions) {
+        var type = new ArrayType(Types.getLeastUpperBound(NncUtils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
         return new ArrayExpression(expressions, type);
     }
 
     @ChildEntity("表达式列表")
     private final ChildArray<Expression> expressions = addChild(new ChildArray<>(Expression.class), "expressions");
-    @EntityField("类型")
+    @ChildEntity("类型")
     private final ArrayType type;
 
     public ArrayExpression(Collection<Expression> expressions, ArrayType type) {
         this.expressions.addChildren(NncUtils.map(expressions, Expression::copy));
-        this.type = type;
+        this.type = addChild(type.copy(), "type");
     }
 
-    public static ArrayExpression merge(Expression first, Expression second, IEntityContext entityContext) {
+    public static ArrayExpression merge(Expression first, Expression second) {
         if (first instanceof ArrayExpression listExpression) {
             var rest = listExpression.expressions;
             List<Expression> expressions = new ArrayList<>(rest.size() + 1);
             rest.forEach(expressions::add);
             expressions.add(second);
-            return create(expressions, new ContextArrayTypeProvider(entityContext));
+            return create(expressions);
         } else {
-            return create(List.of(first, second), new ContextArrayTypeProvider(entityContext));
+            return create(List.of(first, second));
         }
     }
 
@@ -58,9 +58,6 @@ public class ArrayExpression extends Expression {
     @Override
     public ArrayType getType() {
         return type;
-//        return TypeUtil.getArrayType(
-//                ValueUtil.getCommonSuperType(NncUtils.map(expressions, Expression::getType))
-//        );
     }
 
     @Override

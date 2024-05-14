@@ -6,6 +6,8 @@ import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.PrimitiveKind;
+import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
@@ -58,7 +60,7 @@ public class AllMatchExpression extends Expression {
 
     @Override
     public Type getType() {
-        return ModelDefRegistry.getType(Boolean.class);
+        return new PrimitiveType(PrimitiveKind.BOOLEAN);
     }
 
     public @Nullable CursorExpression createCursor() {

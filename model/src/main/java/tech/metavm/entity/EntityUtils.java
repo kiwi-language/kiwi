@@ -7,10 +7,11 @@ import tech.metavm.flow.Flow;
 import tech.metavm.flow.Function;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.EnumConstantRT;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.*;
+import tech.metavm.util.Reference;
 
 import java.lang.reflect.*;
 import java.math.BigDecimal;
@@ -54,14 +55,14 @@ public class EntityUtils {
     }
 
     public static void forEachDescendant(Object object, Consumer<Object> action) {
-        if (object instanceof Entity entity)
-            entity.forEachDescendant(action::accept);
-        else
-            action.accept(object);
+        forEachDescendant(object, action, false);
     }
 
-    public static void forEachReference(Entity entity, Consumer<Object> action) {
-        entity.forEachReference(action);
+    public static void forEachDescendant(Object object, Consumer<Object> action, boolean skipCopyIgnore) {
+        if (object instanceof Entity entity)
+            entity.forEachDescendant(action::accept, skipCopyIgnore);
+        else
+            action.accept(object);
     }
 
     public static Object getRoot(Object object) {
@@ -84,6 +85,18 @@ public class EntityUtils {
 
     public static boolean isEphemeral(Object object) {
         return object instanceof Entity entity && entity.isEphemeralEntity();
+    }
+
+    public static boolean isOrphaned(Object object) {
+        if(object instanceof Entity entity) {
+            if(entity.getParentEntity() != null) {
+                if(entity.getParentEntityField() == null)
+                    return !((ReadonlyArray<?>) entity.getParentEntity()).contains(entity);
+                else
+                    return ReflectionUtils.get(entity.getParentEntity(), entity.getParentEntityField()) != entity;
+            }
+        }
+        return false;
     }
 
     public static void traverseModelGraph(Object model, BiConsumer<List<String>, Object> action) {
@@ -117,14 +130,48 @@ public class EntityUtils {
 
     public static void visitGraph(Collection<?> objects, Consumer<Object> action) {
         var visited = new IdentitySet<>();
-        objects.forEach(object -> visitGraph(object, visited, action));
+        objects.forEach(object -> {
+            if(DebugEnv.recordPath) {
+                EntityUtils.enterPath();
+                visitGraph(object, visited, action);
+                EntityUtils.exitPath();
+            }
+            else
+                visitGraph(object, visited, action);
+        });
+    }
+
+    private static final LinkedList<LinkedList<String>> paths = new LinkedList<>();
+
+    private static LinkedList<String> path() {
+        return Objects.requireNonNull(paths.peek());
+    }
+
+    public static String currentPath() {
+        return String.join(".", path());
+    }
+
+    public static void enterPathItem(String item) {
+        path().addLast(item);
+    }
+
+    public static void exitPathItem() {
+        path().removeLast();
+    }
+
+    public static void enterPath() {
+        paths.addLast(new LinkedList<>());
+    }
+
+    public static void exitPath() {
+        paths.removeLast();
     }
 
     private static void visitGraph(Object object, IdentitySet<Object> visited, Consumer<Object> action) {
         if (visited.add(object)) {
             action.accept(object);
             if (object instanceof Entity entity)
-                forEachReference(entity, o -> visitGraph(o, visited, action));
+                entity.forEachReference(o -> visitGraph(o, visited, action));
         }
     }
 
@@ -260,17 +307,17 @@ public class EntityUtils {
         }
     }
 
-    public static Map<Object, List<Reference>> buildInvertedIndex(Collection<Object> objects, Predicate<Object> filter) {
-        List<Reference> references = extractReferences(objects, filter);
-        Map<Object, List<Reference>> index = new IdentityHashMap<>();
-        for (Reference reference : references) {
+    public static Map<Object, List<tech.metavm.util.Reference>> buildInvertedIndex(Collection<Object> objects, Predicate<Object> filter) {
+        var references = extractReferences(objects, filter);
+        Map<Object, List<tech.metavm.util.Reference>> index = new IdentityHashMap<>();
+        for (var reference : references) {
             index.computeIfAbsent(reference.target(), t -> new ArrayList<>()).add(reference);
         }
         return index;
     }
 
-    public static List<Reference> extractReferences(Collection<Object> objects, Predicate<Object> filter) {
-        List<Reference> result = new LinkedList<>();
+    public static List<tech.metavm.util.Reference> extractReferences(Collection<Object> objects, Predicate<Object> filter) {
+        List<tech.metavm.util.Reference> result = new LinkedList<>();
         Set<Object> visited = new IdentitySet<>();
         for (Object object : objects) {
             extractReferences0(object, visited, filter, result);
@@ -278,7 +325,7 @@ public class EntityUtils {
         return result;
     }
 
-    private static void extractReferences0(Object object, Set<Object> visited, Predicate<Object> filter, List<Reference> result) {
+    private static void extractReferences0(Object object, Set<Object> visited, Predicate<Object> filter, List<tech.metavm.util.Reference> result) {
         if (object == null || ValueUtil.isPrimitive(object) || ValueUtil.isJavaType(object)
                 || !filter.test(object) || visited.contains(object)) {
             return;
@@ -481,24 +528,6 @@ public class EntityUtils {
 //        return tmp.asSubclass(Entity.class);
     }
 
-    public static Class<? extends Value> getValueType(Value value) {
-        return getValueType(value.getClass());
-    }
-
-    public static Class<? extends Value> getValueType(Class<? extends Value> type) {
-        Class<?> tmp = type;
-        while (tmp.getSuperclass() != Value.class && tmp != Object.class) {
-//            if(tmp.isAnnotationPresent(EntityType.class)) {
-//                return tmp.asSubclass(Value.class);
-//            }
-            tmp = tmp.getSuperclass();
-        }
-        if (tmp == Object.class) {
-            throw new RuntimeException("Class '" + type.getName() + "' is not an value type");
-        }
-        return tmp.asSubclass(Value.class);
-    }
-
     @SuppressWarnings("unused")
     private static boolean isEntity(Class<?> klass) {
         return Entity.class.isAssignableFrom(klass) || ENTITY_CLASSES.contains(klass);
@@ -540,8 +569,8 @@ public class EntityUtils {
             return flow.getNameWithTypeArguments();
         if (entity instanceof ReadonlyArray<?> array)
             return getRealType(array.getClass()).getSimpleName();
-        if (entity instanceof tech.metavm.object.type.Type type)
-            return type.getTypeDesc();
+        if(entity instanceof Klass klass)
+            return klass.getTypeDesc();
         return entity.toString();
     }
 

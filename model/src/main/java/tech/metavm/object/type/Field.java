@@ -48,7 +48,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private boolean readonly;
     @EntityField("状态")
     private MetadataState state;
-    @EntityField("类型")
+    @ChildEntity("类型")
     private Type type;
 
     public Field(
@@ -56,7 +56,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             String name,
             @Nullable String code,
             Klass declaringType,
-            Type type,
+            @NotNull Type type,
             Access access,
             boolean readonly,
             Boolean unique,
@@ -77,7 +77,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this._static = isStatic;
         this.access = access;
         this.state = state;
-        this.type = Objects.requireNonNull(type, () -> "type is missing for field: " + declaringType.getTypeDesc() + "." + name);
+        this.type = addChild(type.copy(), "type");
         this.readonly = readonly;
         if (column != null) {
             NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
@@ -114,7 +114,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     public void update(FieldDTO update) {
-        if (update.typeId() != null && !Objects.equals(getType().getStringId(), update.typeId()))
+        if (update.type() != null && !Objects.equals(getType().toExpression(), update.type()))
             throw BusinessException.invalidField(this, "类型不支持修改");
         setName(update.name());
         setCode(update.code());
@@ -123,7 +123,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     public Field getEffectiveTemplate() {
-        return getCopySource() != null ? getCopySource() : this;
+        return declaringType.isParameterized() ? Objects.requireNonNull(copySource) : this;
     }
 
     public void setDefaultValue(Instance defaultValue) {
@@ -315,7 +315,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
                     defaultValue.toFieldValueDTO(),
                     isUnique(),
                     declaringType.getStringId(),
-                    serContext.getId(getType()),
+                    type.toExpression(serContext),
                     isChild,
                     isStatic(),
                     readonly,
@@ -437,7 +437,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     public void setType(Type type) {
-        this.type = type;
+        this.type = addChild(type.copy(), "type");
     }
 
     @Override
@@ -459,4 +459,17 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     public void setState(MetadataState state) {
         this.state = state;
     }
+
+    public FieldRef getRef() {
+        return new FieldRef(declaringType.getType(), this.getEffectiveTemplate());
+    }
+
+    public boolean isTagNotNull() {
+        return getEffectiveTemplate().isIdNotNull();
+    }
+
+    public Id getTag() {
+        return getEffectiveTemplate().getId();
+    }
+
 }

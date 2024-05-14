@@ -37,54 +37,15 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 //    private final Map<Long, Object> removedEntityMap = new HashMap<>();
     @Nullable
     private final IEntityContext parent;
-    private final GenericContext genericContext;
-    private final Map<TypeCategory, CompositeTypeContext<?>> compositeTypeContexts = new IdentityHashMap<>();
-
     private final ObjectInstanceMap objectInstanceMap = new DefaultObjectInstanceMap(this);
 
     public BaseEntityContext(IInstanceContext instanceContext, @Nullable IEntityContext parent) {
         this.instanceContext = instanceContext;
         this.parent = parent;
-        initCompositeTypeContexts();
-        genericContext = new GenericContext(this, getTypeFactory(),
-                NncUtils.get(parent, IEntityContext::getGenericContext));
         instanceContext.addListener(this);
     }
 
     protected abstract TypeFactory getTypeFactory();
-
-    private void initCompositeTypeContexts() {
-        compositeTypeContexts.put(TypeCategory.READ_WRITE_ARRAY,
-                new ArrayTypeContext(this, ArrayKind.READ_WRITE,
-                        NncUtils.get(parent, p -> p.getArrayTypeContext(ArrayKind.READ_WRITE))));
-        compositeTypeContexts.put(TypeCategory.READ_ONLY_ARRAY,
-                new ArrayTypeContext(this, ArrayKind.READ_ONLY,
-                        NncUtils.get(parent, p -> p.getArrayTypeContext(ArrayKind.READ_ONLY))));
-        compositeTypeContexts.put(TypeCategory.CHILD_ARRAY, new ArrayTypeContext(this, ArrayKind.CHILD,
-                NncUtils.get(parent, p -> p.getArrayTypeContext(ArrayKind.CHILD))));
-        compositeTypeContexts.put(TypeCategory.UNCERTAIN, new UncertainTypeContext(this,
-                NncUtils.get(parent, IEntityContext::getUncertainTypeContext)));
-        compositeTypeContexts.put(TypeCategory.FUNCTION, new FunctionTypeContext(this,
-                NncUtils.get(parent, IEntityContext::getFunctionTypeContext)));
-        compositeTypeContexts.put(TypeCategory.UNION, new UnionTypeContext(this,
-                NncUtils.get(parent, IEntityContext::getUnionTypeContext)));
-        compositeTypeContexts.put(TypeCategory.INTERSECTION, new IntersectionTypeContext(this,
-                NncUtils.get(parent, IEntityContext::getIntersectionTypeContext)));
-    }
-
-//    @Override
-//    public <T> List<T> getByType(Class<? extends T> javaType, @Nullable T startExclusive, long limit) {
-//        NncUtils.requireNonNull(instanceContext);
-//        var startInstance = NncUtils.get(startExclusive, this::getInstance);
-//        Type type = getDefContext().getType(javaType);
-//        var instances = instanceContext.getByType(type, startInstance, limit);
-//        return NncUtils.map(instances, i -> getEntity(javaType, i));
-//    }
-
-//    @Override
-//    public boolean existsInstances(Class<?> type) {
-//        return NncUtils.isNotEmpty(getByType(type, null, 1));
-//    }
 
     @Override
     public <T> T getEntity(Class<T> klass, DurableInstance instance) {
@@ -96,21 +57,21 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> T getEntity(Class<T> entityClass, DurableInstance instance, @Nullable ModelDef<T, ?> def) {
+    public <T> T getEntity(Class<T> entityClass, DurableInstance instance, @Nullable Mapper<T, ?> mapper) {
         var found = instance.getMappedEntity();
         if (found != null)
             return entityClass.cast(found);
         NncUtils.requireNonNull(instance.getContext());
-        if (def == null) {
-            var resolvedDef = getDefContext().tryGetDef(instance.getType());
-            if (resolvedDef == null || resolvedDef instanceof DirectDef<?>)
+        if (mapper == null) {
+            var resolvedMapper = getDefContext().tryGetMapper(instance.getType());
+            if (resolvedMapper == null || resolvedMapper instanceof DirectDef<?>)
                 return entityClass.cast(instance);
-            def = resolvedDef.as(entityClass);
+            mapper = resolvedMapper.as(entityClass);
         }
         if (instance.getContext() == instanceContext)
-            return createEntity(instance, def);
+            return createEntity(instance, mapper);
         if (parent != null)
-            return parent.createEntity(instance, def);
+            return parent.createEntity(instance, mapper);
         else
             throw new InternalException(String.format("Instance '%s' is not contained in the context", instance));
     }
@@ -152,8 +113,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public void onInstanceInitialized(DurableInstance instance) {
         Object model = instance.getMappedEntity();
         if (model != null && model2instance.containsKey(model)) {
-            var def = getDefContext().getDefByModel(model);
-            initializeModel0(model, instance, def);
+            var mapper = getDefContext().getMapperByEntity(model);
+            initializeModel0(model, instance, mapper);
         }
     }
 
@@ -201,59 +162,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public GenericContext getGenericContext() {
-        return genericContext;
-    }
-
-    @Override
-    public FunctionTypeContext getFunctionTypeContext() {
-        return (FunctionTypeContext) getCompositeTypeContext(TypeCategory.FUNCTION);
-    }
-
-    @Override
-    public UncertainTypeContext getUncertainTypeContext() {
-        return (UncertainTypeContext) getCompositeTypeContext(TypeCategory.UNCERTAIN);
-    }
-
-    @Override
-    public ArrayTypeContext getArrayTypeContext(ArrayKind kind) {
-        return (ArrayTypeContext) getCompositeTypeContext(kind.category());
-    }
-
-    @Override
-    public UnionTypeContext getUnionTypeContext() {
-        return (UnionTypeContext) getCompositeTypeContext(TypeCategory.UNION);
-    }
-
-    @Override
-    public IntersectionTypeContext getIntersectionTypeContext() {
-        return (IntersectionTypeContext) getCompositeTypeContext(TypeCategory.INTERSECTION);
-    }
-
-    @Override
-    public Klass getParameterizedType(Klass template, List<? extends Type> typeArguments) {
-        return genericContext.getParameterizedType(template, typeArguments);
-    }
-
-    @Override
-    public FunctionType getFunctionType(List<Type> parameterTypes, Type returnType) {
-        return getFunctionTypeContext().getFunctionType(parameterTypes, returnType);
-    }
-
-    @Override
-    public CompositeTypeContext<?> getCompositeTypeContext(TypeCategory category) {
-        return NncUtils.requireNonNull(
-                compositeTypeContexts.get(category),
-                "Can not find composite type context for category '" + category + "'"
-        );
-    }
-
-    @Override
-    public Collection<CompositeTypeContext<?>> getCompositeTypeContexts() {
-        return Collections.unmodifiableCollection(compositeTypeContexts.values());
-    }
-
-    @Override
     public boolean containsEntity(Object entity) {
         return model2instance.containsKey(entity) || parent != null && parent.containsEntity(entity);
     }
@@ -263,18 +171,18 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> T createEntity(DurableInstance instance, ModelDef<T, ?> def) {
+    public <T> T createEntity(DurableInstance instance, Mapper<T, ?> mapper) {
         T model;
-        if (def.isProxySupported()) {
-            final ModelDef<?, ?> defFinal = def;
+        if (mapper.isProxySupported()) {
+            final Mapper<?, ?> defFinal = mapper;
             model = EntityProxyFactory.getProxy(
-                    def.getJavaClass(),
+                    mapper.getEntityClass(),
                     instance.tryGetId(),
-                    k -> def.getJavaClass().cast(defFinal.createModelProxyHelper(k)),
+                    k -> mapper.getEntityClass().cast(defFinal.createModelProxyHelper(k)),
                     m -> initializeModel(m, instance, defFinal)
             );
         } else
-            model = def.getJavaClass().cast(def.createModelHelper(instance, objectInstanceMap));
+            model = mapper.getEntityClass().cast(mapper.createEntityHelper(instance, objectInstanceMap));
         addMapping(model, instance);
         return model;
     }
@@ -318,15 +226,15 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
-    private void initializeModel(Object model, Instance instance, ModelDef<?, ?> def) {
+    private void initializeModel(Object model, Instance instance, Mapper<?, ?> mapper) {
         EntityUtils.ensureProxyInitialized(instance);
         if (!EntityUtils.isModelInitialized(model)) {
-            initializeModel0(model, instance, def);
+            initializeModel0(model, instance, mapper);
         }
     }
 
-    private void initializeModel0(Object model, Instance instance, ModelDef<?, ?> def) {
-        def.initModelHelper(model, instance, objectInstanceMap);
+    private void initializeModel0(Object model, Instance instance, Mapper<?, ?> def) {
+        def.initEntityHelper(model, instance, objectInstanceMap);
         if(model instanceof LoadAware loadAware)
             loadAware.onLoad(this);
         EntityUtils.setProxyState(model, EntityMethodHandler.State.INITIALIZED);
@@ -444,7 +352,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public void beforeFinish() {
-        genericContext.ensureAllDefined();
         try (var ignored1 = getProfiler().enter("flush")) {
             flush();
         }
@@ -511,8 +418,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private void updateInstance(Object object, DurableInstance instance) {
 //        try(var ignored = getProfiler().enter("updateInstance")) {
             if (isModelInitialized(object) && !instance.isRemoved()) {
-                ModelDef<?, ?> def = getDefContext().getDef(instance.getType());
-                def.updateInstanceHelper(object, instance, objectInstanceMap);
+                var mapper = getDefContext().getMapper(instance.getType());
+                mapper.updateInstanceHelper(object, instance, objectInstanceMap);
                 updateMemIndex(object);
             }
 //        }
@@ -684,19 +591,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
-    @Override
-    public UncertainType getUncertainType(Type lowerBound, Type upperBound) {
-        return getUncertainTypeContext().get(List.of(lowerBound, upperBound));
-    }
-
-    public Set<CompositeType> getNewCompositeTypes() {
-        Set<CompositeType> newTypes = new HashSet<>();
-        for (CompositeTypeContext<?> ctx : compositeTypeContexts.values()) {
-            newTypes.addAll(ctx.getNewTypes());
-        }
-        return newTypes;
-    }
-
     private Set<Object> getNonEphemeralChildren(Object object) {
         Set<Object> children = new IdentitySet<>();
         Type type = getDefContext().getType(getRuntimeType(object));
@@ -707,7 +601,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             var klass = classType.resolve();
             for (Field field : klass.getAllFields()) {
                 if (field.isChild()) {
-                    Object child = ReflectionUtils.get(object, getDefContext().getJavaField(field));
+                Object child = ReflectionUtils.get(object, getDefContext().getJavaField(field));
                     if (child != null && !EntityUtils.isEphemeral(child))
                         children.add(child);
                 }
@@ -732,21 +626,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         var constraint = getDefContext().getIndexConstraint(uniqueConstraintDef);
         NncUtils.requireNonNull(constraint);
         return constraint.createIndexKeyByModels(Arrays.asList(values), this);
-    }
-
-    @Override
-    public UnionType getUnionType(Set<Type> members) {
-        return getUnionTypeContext().get(new ArrayList<>(members));
-    }
-
-    @Override
-    public IntersectionType getIntersectionType(Set<Type> types) {
-        return getIntersectionTypeContext().get(new ArrayList<>(types));
-    }
-
-    @Override
-    public ArrayType getArrayType(Type elementType, ArrayKind kind) {
-        return getArrayTypeContext(kind).get(List.of(elementType));
     }
 
     @Override
@@ -775,16 +654,16 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     private DurableInstance newInstance(Object object) {
-        ModelDef<?, ?> def = getDefContext().getDefByModel(object);
-        if (def.isProxySupported()) {
-            var instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), tryGetId(object),
+        Mapper<?, ?> mapper = getDefContext().getMapperByEntity(object);
+        if (mapper.isProxySupported()) {
+            var instance = InstanceFactory.allocate(mapper.getInstanceClass(), mapper.getType(), tryGetId(object),
                     EntityUtils.isEphemeral(object));
             addBinding(object, instance);
-            def.initInstanceHelper(instance, object, objectInstanceMap);
+            mapper.initInstanceHelper(instance, object, objectInstanceMap);
             updateMemIndex(object);
             return instance;
         } else {
-            var instance = def.createInstanceHelper(object, objectInstanceMap, null);
+            var instance = mapper.createInstanceHelper(object, objectInstanceMap, null);
             addBinding(object, instance);
             updateMemIndex(object);
             return instance;
@@ -834,11 +713,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     @Override
     public Type getType(Class<?> javaType) {
         return getDefContext().getType(javaType);
-    }
-
-    @Override
-    public UnionType getNullableType(Type type) {
-        return getUnionType(Set.of(type, StandardTypes.getNullType()));
     }
 
     @Override

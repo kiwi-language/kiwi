@@ -3,8 +3,9 @@ package tech.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.type.PrimitiveKind;
+import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.Constants;
 import tech.metavm.util.Instances;
 
 import java.util.List;
@@ -27,7 +28,7 @@ public class InstanceOfExpression extends Expression {
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         try(var serContext = SerializeContext.enter()) {
             return operand.build(symbolType, false, relaxedCheck) + " instanceof "
-                    + Constants.CONSTANT_ID_PREFIX + serContext.getId(targetType);
+                    + targetType.toExpression(serContext);
         }
     }
 
@@ -38,7 +39,7 @@ public class InstanceOfExpression extends Expression {
 
     @Override
     public Type getType() {
-        return ModelDefRegistry.getType(Boolean.class);
+        return new PrimitiveType(PrimitiveKind.BOOLEAN);
     }
 
     @Override

@@ -84,7 +84,7 @@ public class InstanceCopier extends InstanceVisitor<Instance> {
 
     private Instance createDummy(Instance instance) {
         if (instance instanceof ClassInstance classInstance)
-            return ClassInstance.allocate(classInstance.getKlass());
+            return ClassInstance.allocate(classInstance.getType());
         else if (instance instanceof ArrayInstance arrayInstance)
             return ArrayInstance.allocate(arrayInstance.getType());
         else
@@ -95,7 +95,7 @@ public class InstanceCopier extends InstanceVisitor<Instance> {
     public Instance visitClassInstance(ClassInstance instance) {
         var copy = (ClassInstance) getExisting(instance);
         if (copy == null) {
-            copy = ClassInstanceBuilder.newBuilder(instance.getKlass())
+            copy = ClassInstanceBuilder.newBuilder(instance.getType())
                     .sourceRef(instance.isView() ? instance.getSourceRef() : null)
                     .build();
             addCopy(instance, copy);

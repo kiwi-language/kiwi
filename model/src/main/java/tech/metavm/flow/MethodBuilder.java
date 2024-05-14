@@ -184,7 +184,7 @@ public class MethodBuilder {
                     isSynthetic,
                     parameters,
                     returnType,
-                    overridden,
+                    NncUtils.map(overridden, Method::getRef),
                     typeParameters,
                     typeArguments,
                     _static,

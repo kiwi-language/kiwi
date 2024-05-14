@@ -18,6 +18,7 @@ import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Predicate;
 
 @EntityType("流程")
 public abstract class Flow extends Element implements GenericDeclaration, Callable, LoadAware, CapturedTypeScope {
@@ -41,7 +42,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     private final boolean isSynthetic;
     @ChildEntity("参数列表")
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
-    @EntityField("返回类型")
+    @ChildEntity("返回类型")
     private @NotNull Type returnType;
     @ChildEntity("根流程范围")
     private @Nullable ScopeRT rootScope;
@@ -57,7 +58,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @Nullable
     private final Flow horizontalTemplate;
     @ChildEntity("类型实参列表")
-    private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
+    private final ChildArray<Type> typeArguments = addChild(new ChildArray<>(Type.class), "typeArguments");
     @EntityField("状态")
     private @NotNull MetadataState state;
     @ChildEntity("类型")
@@ -69,16 +70,13 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @Nullable
     @EntityField("代码来源")
     private final CodeSource codeSource;
-    @ChildEntity("模板实例列表")
-    @CopyIgnore
-    private @Nullable ChildArray<Flow> templateInstances;
     @ChildEntity("捕获类型列表")
     private final ChildArray<CapturedTypeVariable> capturedTypeVariables = addChild(new ChildArray<>(CapturedTypeVariable.class), "capturedTypeVariables");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);
     private transient ReadWriteArray<NodeRT> nodes = new ReadWriteArray<>(NodeRT.class);
-    private transient Map<List<Type>, Flow> parameterizedFlows = new HashMap<>();
+    private transient ParameterizedElementMap<List<? extends Type>, Flow> parameterizedFlows;
 
     public Flow(Long tmpId,
                 @NotNull String name,
@@ -101,12 +99,8 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         this.code = NamingUtils.ensureValidFlowCode(code);
         this.isNative = isNative;
         this.isSynthetic = isSynthetic;
-        this.returnType = returnType;
-        this.type = new FunctionType(
-                NncUtils.randomNonNegative(),
-                NncUtils.map(parameters, Parameter::getType),
-                returnType
-        );
+        this.returnType = addChild(returnType.copy(), "returnType");
+        this.type = addChild(new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType), "type");
         rootScope = !noCode && codeSource == null && !isNative ? addChild(new ScopeRT(this), "rootScope") : null;
         setTypeParameters(typeParameters);
         setTypeArguments(typeArguments);
@@ -127,7 +121,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public @NotNull ScopeRT getRootScope() {
-        return Objects.requireNonNull(rootScope);
+        return Objects.requireNonNull(rootScope, () -> "Root scope not present in flow: " + getQualifiedName());
     }
 
     public boolean isRootScopePresent() {
@@ -142,7 +136,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     public boolean afterContextInitIds() {
         if (horizontalTemplate != null || isTemplate()) {
             if (parameterizedKey == null)
-                parameterizedKey = Types.getParameterizedKey(getEffectiveHorizontalTemplate(), typeArguments);
+                parameterizedKey = Types.getParameterizedKey(getEffectiveHorizontalTemplate(), typeArguments.toList());
         }
         return true;
     }
@@ -151,7 +145,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     public void onLoad(IEntityContext context) {
         stage = ResolutionStage.INIT;
         if (codeSource != null)
-            codeSource.generateCode(this, CompositeTypeFacadeImpl.fromContext(context));
+            codeSource.generateCode(this);
     }
 
     @SuppressWarnings("unused")
@@ -165,10 +159,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public boolean matches(String code, List<Type> argumentTypes) {
-        if(this.code != null && this.code.equals(code)) {
-            if(parameters.size() == argumentTypes.size()) {
-                for(int i = 0; i < parameters.size(); i++) {
-                    if(!parameters.get(i).getType().isAssignableFrom(argumentTypes.get(i)))
+        if (this.code != null && this.code.equals(code)) {
+            if (parameters.size() == argumentTypes.size()) {
+                for (int i = 0; i < parameters.size(); i++) {
+                    if (!parameters.get(i).getType().isAssignableFrom(argumentTypes.get(i)))
                         return false;
                 }
                 return true;
@@ -178,27 +172,24 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public FlowDTO toDTO(boolean includeCode, SerializeContext serContext) {
-        if (includeCode) {
-            getTypeParameters().forEach(serContext::writeTypeVariable);
-        }
-        capturedTypeVariables.forEach(serContext::writeCapturedTypeVariable);
+        if (includeCode)
+            getTypeParameters().forEach(serContext::writeTypeDef);
+        capturedTypeVariables.forEach(serContext::writeTypeDef);
         return new FlowDTO(
                 serContext.getId(this),
                 getName(),
                 getCode(),
                 isNative,
                 includeCode && isRootScopePresent() ? getRootScope().toDTO(true, serContext) : null,
-                serContext.getId(getReturnType()),
+                returnType.toExpression(serContext),
                 NncUtils.map(parameters, Parameter::toDTO),
-                serContext.getId(getType()),
+                type.toExpression(serContext),
                 NncUtils.map(typeParameters, serContext::getId),
                 NncUtils.get(horizontalTemplate, serContext::getId),
-                NncUtils.map(typeArguments, serContext::getId),
+                NncUtils.map(typeArguments, t -> t.toExpression(serContext)),
                 NncUtils.map(capturedTypeVariables, serContext::getId),
-List.of(),
-List.of(),
-//                NncUtils.map(capturedCompositeTypes, serContext::getId),
-//                NncUtils.map(capturedFlows, serContext::getId),
+                List.of(),
+                List.of(),
                 isTemplate(),
                 getState().code(),
                 getParam(includeCode, serContext)
@@ -237,7 +228,7 @@ List.of(),
         if (nodes == null) {
             nodes = new ReadWriteArray<>(new TypeReference<>() {
             });
-            if(rootScope != null) {
+            if (rootScope != null) {
                 rootScope.accept(new VoidStructuralVisitor() {
                     @Override
                     public Void visitNode(NodeRT node) {
@@ -260,7 +251,7 @@ List.of(),
     }
 
     public String getNameWithTypeArguments() {
-        if(NncUtils.allMatch(typeArguments, t -> t instanceof VariableType v && v.getVariable().getGenericDeclaration() == this))
+        if (NncUtils.allMatch(typeArguments, t -> t instanceof VariableType v && v.getVariable().getGenericDeclaration() == this))
             return name;
         else
             return name + "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">";
@@ -282,13 +273,6 @@ List.of(),
 
     public void setCode(@Nullable String code) {
         this.code = code;
-    }
-
-    public void addTemplateInstance(Flow flow) {
-        assert !typeParameters.isEmpty();
-        if (templateInstances == null)
-            templateInstances = addChild(new ChildArray<>(Flow.class), "templateInstances");
-        templateInstances.addChild(flow);
     }
 
     public boolean check() {
@@ -378,7 +362,7 @@ List.of(),
     }
 
     public List<? extends Type> getEffectiveTypeArguments() {
-        return horizontalTemplate == null ? NncUtils.map(typeParameters, TypeVariable::getType) : typeArguments;
+        return horizontalTemplate == null ? NncUtils.map(typeParameters, TypeVariable::getType) : typeArguments.toList();
     }
 
     public void setParameters(List<Parameter> parameters) {
@@ -388,35 +372,46 @@ List.of(),
     private void setParameters(List<Parameter> parameters, boolean resetType) {
         parameters.forEach(p -> p.setCallable(this));
         this.parameters.resetChildren(parameters);
-        if(resetType)
+        if (resetType)
             resetType();
     }
 
+    public void addParameter(Parameter parameter) {
+        parameters.addChild(parameter);
+        resetType();
+    }
+
     protected void resetType() {
-        type = new FunctionType(
-                NncUtils.randomNonNegative(),
-                NncUtils.map(parameters, Parameter::getType),
-                returnType
-        );
+        type = addChild(new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType), "type");
     }
 
     @Override
     public void addTypeParameter(TypeVariable typeParameter) {
         isTemplate = true;
         typeParameters.addChild(typeParameter);
-        typeArguments.add(typeParameter.getType());
+        typeArguments.addChild(typeParameter.getType().copy());
     }
 
     public List<Parameter> getParameters() {
         return NncUtils.listOf(parameters);
     }
 
+    public @Nullable Parameter findParameter(Predicate<Parameter> predicate) {
+        return NncUtils.find(parameters, predicate);
+    }
+
+    public Parameter getParameter(Predicate<Parameter> predicate) {
+        return Objects.requireNonNull(findParameter(predicate),
+                "Can not find parameter in flow " + this + " with predicate");
+    }
+
+
     public String getCodeRequired() {
         return Objects.requireNonNull(code);
     }
 
     public void setReturnType(Type returnType) {
-        this.returnType = returnType;
+        this.returnType = addChild(returnType.copy(), "returnType");
         resetType();
     }
 
@@ -432,6 +427,10 @@ List.of(),
         return typeArguments.toList();
     }
 
+    public boolean isParameterized() {
+        return horizontalTemplate != null && horizontalTemplate != this;
+    }
+
     public void setNative(boolean aNative) {
         isNative = aNative;
     }
@@ -439,7 +438,7 @@ List.of(),
     public void setTypeArguments(List<? extends Type> typeArguments) {
         if (isTemplate() && !NncUtils.iterableEquals(NncUtils.map(this.typeParameters, TypeVariable::getType), typeArguments))
             throw new InternalException("Type arguments must equal to type parameters for a template flow. Actual type arguments: " + typeArguments);
-        this.typeArguments.reset(typeArguments);
+        this.typeArguments.resetChildren(NncUtils.map(typeArguments, Type::copy));
         this.parameterizedKey = null;
     }
 
@@ -460,7 +459,7 @@ List.of(),
 
     public void setCapturedTypeVariables(List<CapturedTypeVariable> capturedTypeVariables) {
         capturedTypeVariables.forEach(ct -> {
-            if(ct.getScope() != this)
+            if (ct.getScope() != this)
                 ct.setScope(this);
         });
         this.capturedTypeVariables.resetChildren(capturedTypeVariables);
@@ -507,13 +506,11 @@ List.of(),
                 var arg = argIt.next();
                 if (param.getType().isInstance(arg)) {
                     convertedArgs.add(arg);
-                }
-                else {
+                } else {
                     try {
                         convertedArgs.add(arg.convert(param.getType()));
-                    }
-                    catch (BusinessException e) {
-                        if(DebugEnv.debugging) {
+                    } catch (BusinessException e) {
+                        if (DebugEnv.debugging) {
                             debugLogger.info("Argument type mismatch: {} is not assignable from {}",
                                     param.getType().getTypeDesc(),
                                     arg.getType().getTypeDesc());
@@ -524,7 +521,8 @@ List.of(),
             }
             return convertedArgs;
         }
-        throw new BusinessException(ErrorCode.ILLEGAL_FUNCTION_ARGUMENT, getTypeDesc(),
+        logger.info("class: {}, number type parameters: {}", EntityUtils.getRealType(this).getSimpleName(), getTypeParameters().size());
+        throw new BusinessException(ErrorCode.ILLEGAL_FUNCTION_ARGUMENT, getQualifiedName(),
                 NncUtils.join(getParameterTypes(), Type::getTypeDesc),
                 NncUtils.join(arguments, arg -> EntityUtils.getEntityDesc(arg.getType())));
     }
@@ -550,14 +548,14 @@ List.of(),
         for (var type : capturedTypeVariables) {
             if (type == capturedTypeVariable)
                 return index;
-            if(type.getUncertainType() == capturedTypeVariable.getUncertainType())
+            if (type.getUncertainType() == capturedTypeVariable.getUncertainType())
                 index++;
         }
         throw new InternalException("Captured type not found: " + capturedTypeVariable);
     }
 
     public void addCapturedTypeVariable(CapturedTypeVariable capturedTypeVariable) {
-        if(capturedTypeVariables.contains(capturedTypeVariable))
+        if (capturedTypeVariables.contains(capturedTypeVariable))
             throw new InternalException("Captured type already present: " + EntityUtils.getEntityDesc(capturedTypeVariable));
         capturedTypeVariables.addChild(capturedTypeVariable);
     }
@@ -571,7 +569,7 @@ List.of(),
     }
 
     public ResolutionStage getStage() {
-        return stage;
+        return stage();
     }
 
     public void setStage(ResolutionStage stage) {
@@ -586,7 +584,7 @@ List.of(),
                         + ")"
                         + ": " + getReturnType().getName()
         );
-        if(isRootScopePresent())
+        if (isRootScopePresent())
             getRootScope().writeCode(writer);
         else
             writer.write(";");
@@ -610,24 +608,43 @@ List.of(),
 
     public void addParameterized(Flow parameterized) {
         NncUtils.requireTrue(parameterized.getTemplate() == this);
-        this.parameterizedFlows.putIfAbsent(parameterized.getTypeArguments(), parameterized);
+        NncUtils.requireNull(parameterizedFlows().put(parameterized.typeArguments.getTable(), parameterized),
+                () -> new InternalException("Parameterized flow " + parameterized.getTypeDesc() + " already exists"));
     }
 
-    public @Nullable Flow getExistingParameterized(List<Type> typeArguments) {
-        if(typeArguments.equals(NncUtils.map(typeParameters, TypeVariable::getType)))
+    public @Nullable Flow getExistingParameterized(List<? extends Type> typeArguments) {
+        if (typeArguments.equals(NncUtils.map(typeParameters, TypeVariable::getType)))
             return this;
-        if(parameterizedFlows == null)
-            parameterizedFlows = new HashMap<>();
-        return parameterizedFlows.get(typeArguments);
+        return parameterizedFlows().get(typeArguments);
     }
 
-    public Flow getParameterized(List<Type> typeArguments) {
-        var pFlow = getExistingParameterized(typeArguments);
-        if(pFlow != null && pFlow.getStage().isAfterOrAt(stage))
-            return pFlow;
-        var subst = new SubstitutorV2(this, typeParameters.toList(), typeArguments, stage);
-        return (Flow) accept(subst);
+    private ResolutionStage stage() {
+        if(stage == null)
+            stage = ResolutionStage.INIT;
+        return stage;
     }
+
+    public Flow getParameterized(List<? extends Type> typeArguments) {
+        var pFlow = getExistingParameterized(typeArguments);
+        if(pFlow == this)
+            return pFlow;
+        if (pFlow != null && pFlow.getStage().isAfterOrAt(stage()))
+            return pFlow;
+        var subst = new SubstitutorV2(this, typeParameters.toList(), typeArguments, ResolutionStage.DEFINITION);
+        return substitute(subst);
+    }
+
+    private ParameterizedElementMap<List<? extends Type>, Flow> parameterizedFlows() {
+        if (parameterizedFlows == null)
+            parameterizedFlows = new ParameterizedElementMap<>();
+        return parameterizedFlows;
+    }
+
+    protected Flow substitute(SubstitutorV2 substitutor) {
+        return (Flow) accept(substitutor);
+    }
+
+    public abstract FlowRef getRef();
 
 }
 

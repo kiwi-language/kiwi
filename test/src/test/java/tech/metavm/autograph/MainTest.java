@@ -4,12 +4,12 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.application.rest.dto.ApplicationCreateRequest;
-import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.ClassKind;
 import tech.metavm.object.type.PrimitiveKind;
-import tech.metavm.object.type.TypeCategory;
+import tech.metavm.object.type.TypeExpressionBuilder;
 import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
@@ -38,7 +38,7 @@ public class MainTest extends CompilerTestBase {
             var productNormalState = TestUtils.getEnumConstantByName(productStateType, "正常");
             var productType = queryClassType("AST产品");
             var product = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
-                    productType.id(),
+                    Constants.CONSTANT_ID_PREFIX + productType.id(),
                     List.of(
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(productType, "title"),
@@ -66,7 +66,7 @@ public class MainTest extends CompilerTestBase {
             var couponStateType = queryClassType("优惠券状态");
             var couponNormalState = TestUtils.getEnumConstantByName(couponStateType, "未使用");
             var coupon = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
-                    directCouponType.id(),
+                    TypeExpressions.getClassType(directCouponType.id()),
                     List.of(
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(directCouponType, "discount"),
@@ -82,15 +82,14 @@ public class MainTest extends CompilerTestBase {
                             )
                     )
             ));
-            var buyMethodId = TestUtils.getMethodIdByCode(productType, "buy");
             var couponType = queryClassType("AST优惠券");
             var order = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                    buyMethodId,
+                    TestUtils.getMethodRefByCode(productType, "buy"),
                     product.id(),
                     List.of(
                             PrimitiveFieldValue.createLong(1L),
                             InstanceFieldValue.of(InstanceDTO.createArrayInstance(
-                                    String.format("$$%s[rw]", couponType.id()),
+                                    TypeExpressions.getReadWriteArrayType(TypeExpressions.getClassType(couponType.id())),
                                     false,
                                     List.of(ReferenceFieldValue.create(coupon))
                             ))
@@ -124,7 +123,7 @@ public class MainTest extends CompilerTestBase {
 //        compile(USERS_SOURCE_ROOT);
         submit(() -> {
             var roleType = queryClassType("LabRole");
-            var roleReadWriteListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(roleType.id()));
+            var roleReadWriteListType = TypeExpressionBuilder.fromKlassId(roleType.id()).readWriteList().build();
             /* typeManager.getParameterizedType(
                     new GetParameterizedTypeRequest(
                             StandardTypes.getReadWriteListType().getStringId(),
@@ -133,10 +132,9 @@ public class MainTest extends CompilerTestBase {
                     )
             ).type(); */
             var roleNameFieldId = getFieldIdByCode(roleType, "name");
-            var roleConstructorId = TestUtils.getMethodId(roleType, "LabRole", StandardTypes.getStringType().getStringId());
             var role = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            roleConstructorId,
+                            TestUtils.getMethodRef(roleType, "LabRole", "string"),
                             null,
                             List.of(PrimitiveFieldValue.createString("admin"))
                     )
@@ -145,33 +143,30 @@ public class MainTest extends CompilerTestBase {
                     "admin",
                     ((PrimitiveFieldValue) role.getFieldValue(roleNameFieldId)).getValue()
             );
-            var userType = queryClassType("LabUser", List.of(TypeCategory.CLASS.code()));
+            var userType = queryClassType("LabUser", List.of(ClassKind.CLASS.code()));
             assertNoError(userType);
             var userLoginNameFieldId = getFieldIdByCode(userType, "loginName");
             var userNameFieldId = getFieldIdByCode(userType, "name");
             var userPasswordFieldId = getFieldIdByCode(userType, "password");
             var userRolesFieldId = getFieldIdByCode(userType, "roles");
-            var userConstructorId = TestUtils.getMethodIdByCode(userType, "LabUser");
 
-            var platformUserType = queryClassType("LabPlatformUser", List.of(TypeCategory.CLASS.code()));
+            var platformUserType = queryClassType("LabPlatformUser", List.of(ClassKind.CLASS.code()));
             assertNoError(platformUserType);
-            var platformUserConstructorId = TestUtils.getMethodIdByCode(platformUserType, "LabPlatformUser");
 
             // send verification code by invoking LabVerificationCode.sendVerificationCode
             var verificationCodeType = queryClassType("LabVerificationCode");
             String email = "15968879210@163.com";
             sendVerificationCode(verificationCodeType, email);
             var verificationCode = getLastSentEmailContent();
-            var registerMethodId = TestUtils.getMethodIdByCode(platformUserType, "register");
             var registerRequestType = queryClassType("LabRegisterRequest");
             var platformUser = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            registerMethodId,
+                            TestUtils.getMethodRefByCode(platformUserType, "register"),
                             null,
                             List.of(
                                     InstanceFieldValue.of(
                                             InstanceDTO.createClassInstance(
-                                                    registerRequestType.id(),
+                                                    TypeExpressions.getClassType(registerRequestType.id()),
                                                     List.of(
                                                             InstanceFieldDTO.create(
                                                                     getFieldIdByCode(registerRequestType, "loginName"),
@@ -211,10 +206,10 @@ public class MainTest extends CompilerTestBase {
 
             // test platform user view list
             var platformUserMapping = TestUtils.getDefaultMapping(platformUserType);
-            var platformUserViewType = typeManager.getType(new GetTypeRequest(platformUserMapping.targetType(), false)).type();
+            var platformUserViewType = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(platformUserMapping.targetType()), false)).type();
             var platformUserViewList = instanceManager.query(
                     new InstanceQueryDTO(
-                            platformUserViewType.id(),
+                            TypeExpressions.getClassType(platformUserViewType.id()),
                             platformUserMapping.id(),
                             null,
                             null,
@@ -238,10 +233,9 @@ public class MainTest extends CompilerTestBase {
 
             // create an UserApplication by invoking the UserApplication.create method
             var userApplicationType = queryClassType("UserApplication");
-            var createApplicationMethodId = TestUtils.getMethodIdByCode(userApplicationType, "create");
             var application = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            createApplicationMethodId,
+                            TestUtils.getMethodRefByCode(userApplicationType, "create"),
                             null,
                             List.of(
                                     PrimitiveFieldValue.createString("lab"),
@@ -256,10 +250,10 @@ public class MainTest extends CompilerTestBase {
 
             // get PlatformApplication
             var platformApplicationType = queryClassType("PlatformApplication");
-            var getInstanceMethodId = TestUtils.getMethodIdByCode(platformApplicationType, "getInstance");
+            DebugEnv.flag = true;
             var platformApplication = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            getInstanceMethodId,
+                            TestUtils.getMethodRefByCode(platformApplicationType, "getInstance"),
                             null,
                             List.of()
                     )
@@ -270,12 +264,13 @@ public class MainTest extends CompilerTestBase {
             // login
             var token = login(userType, loginResultType, platformApplication, email, "123456");
 
+            var enterAppMethodRef = TestUtils.getStaticMethodRef(platformUserType, "enterApp",
+                    TypeExpressions.getClassType(platformUserType.id()), TypeExpressions.getClassType(userApplicationType.id()));
+
             // enter application
-            var enterApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "enterApp",
-                    platformUserType.id(), userApplicationType.id());
             var loginResult = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            enterApplicationMethodId,
+                            enterAppMethodRef,
                             null,
                             List.of(
                                     ReferenceFieldValue.create(platformUser),
@@ -288,13 +283,14 @@ public class MainTest extends CompilerTestBase {
 
             // test leave application
             var platformUserListType = TypeExpressions.getListType(TypeExpressions.getClassType(platformUserType.id()));
-            var platformUserReadWriteListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(platformUserType.id()));
-            var leaveApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "leaveApp",
+            var platformUserReadWriteListType = TypeExpressionBuilder.fromKlassId(platformUserType.id()).readWriteList().build();
+            var leaveAppMethodRef = TestUtils.getStaticMethodRef(platformUserType, "leaveApp",
                     platformUserListType, TypeExpressions.getClassType(userApplicationType.id()));
+
             try {
                 doInTransaction(() -> flowExecutionService.execute(
                         new FlowExecutionRequest(
-                                leaveApplicationMethodId,
+                                leaveAppMethodRef,
                                 null,
                                 List.of(
                                         new InstanceFieldValue(
@@ -316,7 +312,7 @@ public class MainTest extends CompilerTestBase {
             // create a platform user to join the application and then leave
             var anotherPlatformUser = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            platformUserConstructorId,
+                            TestUtils.getMethodRefByCode(platformUserType, "LabPlatformUser"),
                             null,
                             List.of(
                                     PrimitiveFieldValue.createString("lyq2"),
@@ -336,15 +332,14 @@ public class MainTest extends CompilerTestBase {
 
             // send invitation
             var appInvitationRequestType = queryClassType("LabAppInvitationRequest");
-            var inviteMethodId = TestUtils.getMethodIdByCode(userApplicationType, "invite");
             doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            inviteMethodId,
+                            TestUtils.getMethodRefByCode(userApplicationType, "invite"),
                             null,
                             List.of(
                                     InstanceFieldValue.of(
                                             InstanceDTO.createClassInstance(
-                                                    appInvitationRequestType.id(),
+                                                    TypeExpressions.getClassType(appInvitationRequestType.id()),
                                                     List.of(
                                                             InstanceFieldDTO.create(
                                                                     getFieldIdByCode(appInvitationRequestType, "application"),
@@ -369,10 +364,10 @@ public class MainTest extends CompilerTestBase {
             login(userType, loginResultType, platformApplication, "lyq2", "123456");
 
             // query the latest message
-            var messageType = queryClassType("LabMessage", List.of(TypeCategory.CLASS.code()));
+            var messageType = queryClassType("LabMessage", List.of(ClassKind.CLASS.code()));
             var messageList = instanceManager.query(
                     new InstanceQueryDTO(
-                            messageType.id(),
+                            TypeExpressions.getClassType(messageType.id()),
                             null,
                             null,
                             "接受者 = $$" + anotherPlatformUser.id(),
@@ -390,10 +385,9 @@ public class MainTest extends CompilerTestBase {
             var messageReadFieldId = getFieldIdByCode(messageType, "read");
             Assert.assertFalse((boolean) ((PrimitiveFieldValue) message.getFieldValue(messageReadFieldId)).getValue());
             // read the message
-            var messageReadMethodId = TestUtils.getMethodIdByCode(messageType, "read");
             doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            messageReadMethodId,
+                            TestUtils.getMethodRefByCode(messageType, "read"),
                             null,
                             List.of(ReferenceFieldValue.create(message))
                     )
@@ -403,13 +397,12 @@ public class MainTest extends CompilerTestBase {
             var messageTargetFieldId = getFieldIdByCode(messageType, "target");
 
             // accept invitation
-            var acceptInvitationMethodId = TestUtils.getMethodIdByCode(userApplicationType, "acceptInvitation");
             doInTransaction(() -> flowExecutionService.execute(
-                    new FlowExecutionRequest(
-                            acceptInvitationMethodId,
-                            null,
-                            List.of(
-                                    message.getFieldValue(messageTargetFieldId))
+                            new FlowExecutionRequest(
+                                    TestUtils.getMethodRefByCode(userApplicationType, "acceptInvitation"),
+                                    null,
+                                    List.of(
+                                            message.getFieldValue(messageTargetFieldId))
                             )
                     )
             );
@@ -420,7 +413,7 @@ public class MainTest extends CompilerTestBase {
             Assert.assertEquals(1, anotherJoinedApplications.getListSize());
             loginResult = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            enterApplicationMethodId,
+                            enterAppMethodRef,
                             null,
                             List.of(
                                     ReferenceFieldValue.create(anotherPlatformUser),
@@ -435,7 +428,7 @@ public class MainTest extends CompilerTestBase {
             // test leaving the application
             doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            leaveApplicationMethodId,
+                            leaveAppMethodRef,
                             null,
                             List.of(
                                     InstanceFieldValue.of(
@@ -457,7 +450,7 @@ public class MainTest extends CompilerTestBase {
             try {
                 doInTransaction(() -> flowExecutionService.execute(
                         new FlowExecutionRequest(
-                                enterApplicationMethodId,
+                                enterAppMethodRef,
                                 null,
                                 List.of(
                                         ReferenceFieldValue.create(anotherPlatformUser),
@@ -472,10 +465,10 @@ public class MainTest extends CompilerTestBase {
 
             // test application view list
             var applicationMapping = TestUtils.getDefaultMapping(userApplicationType);
-            var applicationViewType = typeManager.getType(new GetTypeRequest(applicationMapping.targetType(), false)).type();
+            var applicationViewType = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(applicationMapping.targetType()), false)).type();
             var applicationViewList = instanceManager.query(
                     new InstanceQueryDTO(
-                            applicationViewType.id(),
+                            TypeExpressions.getClassType(applicationViewType.id()),
                             applicationMapping.id(),
                             null,
                             null,
@@ -502,7 +495,7 @@ public class MainTest extends CompilerTestBase {
             // create an ordinary user
             var user = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            userConstructorId,
+                            TestUtils.getMethodRefByCode(userType, "LabUser"),
                             null,
                             List.of(
                                     PrimitiveFieldValue.createString("leen"),
@@ -560,10 +553,9 @@ public class MainTest extends CompilerTestBase {
             Assert.assertEquals(user.id(), ((ReferenceFieldValue) loginInfo.getFieldValue(userFieldId)).getId());
 
             // test logout
-            var logoutMethodId = TestUtils.getMethodIdByCode(userType, "logout");
             doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            logoutMethodId,
+                            TestUtils.getMethodRefByCode(userType, "logout"),
                             null,
                             List.of(
                                     InstanceFieldValue.of(
@@ -593,16 +585,15 @@ public class MainTest extends CompilerTestBase {
             // test changePassword
             sendVerificationCode(verificationCodeType, email);
 
-            var changePasswordMethodId = TestUtils.getMethodIdByCode(platformUserType, "changePassword");
             var changePasswordRequestType = queryClassType("LabChangePasswordRequest");
             doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            changePasswordMethodId,
+                            TestUtils.getMethodRefByCode(platformUserType, "changePassword"),
                             null,
                             List.of(
                                     InstanceFieldValue.of(
                                             InstanceDTO.createClassInstance(
-                                                    changePasswordRequestType.id(),
+                                                    TypeExpressions.getClassType(changePasswordRequestType.id()),
                                                     List.of(
                                                             InstanceFieldDTO.create(
                                                                     getFieldIdByCode(changePasswordRequestType, "verificationCode"),
@@ -629,10 +620,9 @@ public class MainTest extends CompilerTestBase {
     }
 
     private void sendVerificationCode(TypeDTO verificationCodeType, String email) {
-        var sendVerificationCodeMethodId = TestUtils.getMethodIdByCode(verificationCodeType, "sendVerificationCode");
         doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        sendVerificationCodeMethodId,
+                        TestUtils.getMethodRefByCode(verificationCodeType, "sendVerificationCode"),
                         null,
                         List.of(
                                 PrimitiveFieldValue.createString(email),
@@ -648,10 +638,9 @@ public class MainTest extends CompilerTestBase {
     }
 
     private void logout(TypeDTO platformUserType) {
-        var logoutPlatformUserMethodId = TestUtils.getMethodIdByCode(platformUserType, "logout");
         doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        logoutPlatformUserMethodId,
+                        TestUtils.getMethodRefByCode(platformUserType, "logout"),
                         null,
                         List.of()
                 )
@@ -664,10 +653,9 @@ public class MainTest extends CompilerTestBase {
     }
 
     private InstanceDTO verify(TypeDTO userType, FieldValue tokenValue) {
-        var verifyMethodId = TestUtils.getMethodIdByCode(userType, "verify");
         return doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        verifyMethodId,
+                        TestUtils.getMethodRefByCode(userType, "verify"),
                         null,
                         List.of(tokenValue)
                 )
@@ -679,10 +667,9 @@ public class MainTest extends CompilerTestBase {
     }
 
     private String login(TypeDTO userType, TypeDTO loginResultType, InstanceDTO platformApplication, String loginName, String password, String clientIP, boolean checkToken) {
-        var loginMethodId = TestUtils.getMethodIdByCode(userType, "login");
         var loginResult = doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
-                        loginMethodId,
+                        TestUtils.getMethodRefByCode(userType, "login"),
                         null,
                         List.of(
                                 ReferenceFieldValue.create(platformApplication),
@@ -700,7 +687,7 @@ public class MainTest extends CompilerTestBase {
 
     private FieldValue createTokenValue(TypeDTO tokenType, InstanceDTO application, String token) {
         return InstanceFieldValue.of(InstanceDTO.createClassInstance(
-                tokenType.id(),
+                TypeExpressions.getClassType(tokenType.id()),
                 List.of(
                         InstanceFieldDTO.create(
                                 getFieldIdByCode(tokenType, "application"),

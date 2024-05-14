@@ -10,24 +10,17 @@ import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.rest.dto.*;
+import tech.metavm.object.type.rest.dto.CapturedTypeVariableDTO;
+import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.object.type.rest.dto.TypeVariableDTO;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
-import javax.annotation.Nullable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public abstract class TypeFactory {
-
-    public PrimitiveType createPrimitive(PrimitiveKind kind) {
-        var type = new PrimitiveType(kind);
-        if (isPutTypeSupported())
-            putType(kind.getJavaClass(), type);
-        return type;
-    }
 
     public TypeVariable saveTypeVariable(TypeVariableDTO typeVariableDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveTypeVariable")) {
@@ -47,71 +40,25 @@ public abstract class TypeFactory {
         }
     }
 
-    public ArrayType saveArrayType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveArrayType")) {
-            var context = batch.getContext();
-            var param = typeDTO.getArrayTypeParam();
-            var elementType = context.getType(Id.parse(param.elementTypeId()));
-            var kind = ArrayKind.fromCode(param.kind());
-            return context.getArrayTypeContext(kind).get(elementType, typeDTO.tmpId());
-        }
-    }
-
-    /*public UnionType saveUnionType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveUnionType")) {
-            var context = batch.getContext();
-            var param = typeDTO.getUnionParam();
-            var members = NncUtils.mapUnique(param.memberIds(), batch::get);
-            return context.getUnionTypeContext().getUnionType(members, typeDTO.tmpId());
-        }
-    }*/
-
-    /*public UncertainType saveUncertainType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveUncertainType")) {
-            var context = batch.getContext();
-            var param = typeDTO.getUncertainTypeParam();
-            var lb = batch.get(param.lowerBoundId());
-            var ub = batch.get(param.upperBoundId());
-            return context.getUncertainTypeContext().getUncertainType(lb, ub, typeDTO.tmpId());
-        }
-    }*/
-
     public CapturedTypeVariable saveCapturedTypeVariable(CapturedTypeVariableDTO capturedTypeVariableDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveCapturedType")) {
             var context = batch.getContext();
             var type = context.getCapturedTypeVariable(capturedTypeVariableDTO.id());
             if (type == null) {
-                var uncertainType = (UncertainType) TypeParser.parse(capturedTypeVariableDTO.uncertainType(), context);
                 type = new CapturedTypeVariable(
-                        uncertainType,
+                        new UncertainType(new NeverType(), new AnyType()),
                         DummyCapturedTypeScope.INSTANCE
                 );
                 if (capturedTypeVariableDTO.tmpId() != null)
                     type.setTmpId(capturedTypeVariableDTO.tmpId());
                 context.bind(type);
             }
+            var curStage = type.setStage(stage);
+            if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION))
+                type.setUncertainType((UncertainType) TypeParser.parse(capturedTypeVariableDTO.uncertainType(), context));
             return type;
         }
     }
-
-    /*public FunctionType saveFunctionType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveFunctionType")) {
-            var context = batch.getContext();
-            var param = typeDTO.getFunctionTypeParam();
-            var paramTypes = NncUtils.map(param.parameterTypeIds(), batch::get);
-            var returnType = batch.get(param.returnTypeId());
-            return context.getFunctionTypeContext().getFunctionType(paramTypes, returnType, typeDTO.tmpId());
-        }
-    }*/
-
-    /*public Klass saveParameterized(PTypeDTO pTypeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveParameterized")) {
-            var template = batch.getClassType(pTypeDTO.getTemplateId());
-            var typeArgs = NncUtils.map(pTypeDTO.getTypeArgumentIds(), batch::get);
-            return batch.getContext().getGenericContext()
-                    .getParameterizedType(template, typeArgs, stage, batch);
-        }
-    }*/
 
     public Klass saveKlass(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveClassType")) {
@@ -144,11 +91,11 @@ public abstract class TypeFactory {
             if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {
                 if (type.isEnum()) {
                     // TODO handle memory leak
-                    var enumSuperClass = StandardTypes.getEnumType().getParameterized(List.of(type.getType()));
+                    var enumSuperClass = StandardTypes.getEnumKlass().getParameterized(List.of(type.getType()));
                     type.setSuperType(enumSuperClass.getType());
                 } else
-                    type.setSuperType(NncUtils.get(param.superClassId(), id -> batch.getKlass(id).getType()));
-                type.setInterfaces(NncUtils.map(param.interfaceIds(), id -> batch.getKlass(id).getType()));
+                    type.setSuperType(NncUtils.get(param.superType(), t -> (ClassType) TypeParser.parse(t, batch)));
+                type.setInterfaces(NncUtils.map(param.interfaces(), t -> (ClassType) TypeParser.parse(t, batch)));
                 if (!type.isTemplate())
                     type.setTypeArguments(NncUtils.map(param.typeArgumentIds(), id -> context.getType(Id.parse(id))));
                 if (param.dependencyIds() != null)
@@ -184,24 +131,13 @@ public abstract class TypeFactory {
         context.getFlow(flowDTO.id()).setCapturedFlows(NncUtils.map(flowDTO.capturedFlowIds(), context::getFlow));
     }
 
-    /*public TypeVariable createTypeVariable(TypeDTO typeDTO,
-                                           boolean withBounds, IEntityContext context) {
-        var param = (TypeVariableParam) typeDTO.param();
-        var typeVariable = new TypeVariable(typeDTO.tmpId(), typeDTO.name(), typeDTO.code(),
-                requireNonNull(context.getEntity(GenericDeclaration.class, Id.parse(param.genericDeclarationId()))));
-        if (withBounds)
-            typeVariable.setBounds(NncUtils.map(param.boundIds(), id -> context.getType(Id.parse(id))));
-        context.bind(typeVariable);
-        return typeVariable;
-    }*/
-
     public boolean isNullable(Type type) {
         return type.isNullable();
     }
 
     public Field saveField(Klass declaringType, FieldDTO fieldDTO, IEntityContext context) {
         Field field = context.getField(fieldDTO.id());
-        Type fieldType = context.getType(Id.parse(fieldDTO.typeId()));
+        Type fieldType = TypeParser.parse(fieldDTO.type(), context);
         var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
         var access = Access.getByCode(fieldDTO.access());
         if (field == null) {
@@ -228,40 +164,30 @@ public abstract class TypeFactory {
 
     public Method saveMethod(FlowDTO flowDTO, ResolutionStage stage, SaveTypeBatch batch) {
         var context = batch.getContext();
-        var flow = context.getMethod(flowDTO.id());
+        var method = context.getMethod(flowDTO.id());
         var param = (MethodParam) flowDTO.param();
-        if (flow == null) {
+        if (method == null) {
             var declaringType = batch.getKlass(param.declaringTypeId());
-            flow = MethodBuilder.newBuilder(declaringType, flowDTO.name(), flowDTO.code())
+            method = MethodBuilder.newBuilder(declaringType, flowDTO.name(), flowDTO.code())
                     .access(Access.findByCode(param.access()))
                     .isStatic(param.isStatic())
                     .tmpId(flowDTO.tmpId())
                     .build();
-            context.bind(flow);
+            context.bind(method);
         } else {
-            flow.setName(flowDTO.name());
-            flow.setCode(flowDTO.code());
+            method.setName(flowDTO.name());
+            method.setCode(flowDTO.code());
         }
-        flow.setNative(flowDTO.isNative());
-        flow.setAbstract(param.isAbstract());
-        flow.setConstructor(param.isConstructor());
-        flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
-        flow.setCapturedTypeVariables(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedTypeVariable));
-//        flow.setCapturedCompositeTypes(NncUtils.map(flowDTO.capturedCompositeTypeIds(), batch::get));
-        flow.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)));
-        flow.setReturnType(TypeParser.parse(flowDTO.returnType(), context));
-        flow.setAbstract(param.isAbstract());
-//        if(flowDTO.horizontalInstances() != null) {
-//            for (FlowDTO templateInstance : flowDTO.horizontalInstances()) {
-//                context.getGenericContext().getParameterizedFlow(
-//                        flow,
-//                        NncUtils.map(templateInstance.typeArgumentIds(), batch::get),
-//                        stage,
-//                        batch
-//                );
-//            }
-//        }
-        return flow;
+        method.setNative(flowDTO.isNative());
+        method.setAbstract(param.isAbstract());
+        method.setConstructor(param.isConstructor());
+        method.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
+        method.setCapturedTypeVariables(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedTypeVariable));
+        method.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)));
+        method.setReturnType(TypeParser.parse(flowDTO.returnType(), context));
+        method.setOverridden(NncUtils.map(param.overriddenRefs(), r -> MethodRef.create(r, context).resolve()));
+        method.setAbstract(param.isAbstract());
+        return method;
     }
 
     public Function saveFunction(FlowDTO flowDTO, ResolutionStage stage, SaveTypeBatch batch) {
@@ -280,19 +206,8 @@ public abstract class TypeFactory {
         function.setNative(flowDTO.isNative());
         function.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
         function.setCapturedTypeVariables(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedTypeVariable));
-//        function.setCapturedCompositeTypes(NncUtils.map(flowDTO.capturedCompositeTypeIds(), batch::get));
         function.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)));
         function.setReturnType(TypeParser.parse(flowDTO.returnType(), context));
-//        if(flowDTO.horizontalInstances() != null) {
-//            for (FlowDTO templateInstance : flowDTO.horizontalInstances()) {
-//                context.getGenericContext().getParameterizedFlow(
-//                        function,
-//                        NncUtils.map(templateInstance.typeArgumentIds(), batch::get),
-//                        stage,
-//                        batch
-//                );
-//            }
-//        }
         return function;
     }
 
@@ -313,30 +228,7 @@ public abstract class TypeFactory {
         return param;
     }
 
-    private Map<String, FlowDTO> getFlowDTOMap(@Nullable TypeDTO typeDTO) {
-        Map<String, FlowDTO> flowDTOMap = new HashMap<>();
-        if (typeDTO != null && typeDTO.param() instanceof ClassTypeParam param)
-            flowDTOMap.putAll(NncUtils.toMap(param.flows(), FlowDTO::code));
-        return flowDTOMap;
-    }
-
-    public void putType(java.lang.reflect.Type javaType, Type type) {
-        throw new UnsupportedOperationException();
-    }
-
-    public void addType(Type type) {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean isPutTypeSupported() {
-        return false;
-    }
-
-    public boolean isAddTypeSupported() {
-        return false;
-    }
-
-    public java.lang.reflect.Type getJavaType(Type type) {
+    public void putType(java.lang.reflect.Type javaType, TypeDef typeDef) {
         throw new UnsupportedOperationException();
     }
 

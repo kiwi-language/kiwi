@@ -10,7 +10,7 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Type;
-import tech.metavm.object.view.Mapping;
+import tech.metavm.object.view.ObjectMappingRef;
 import tech.metavm.util.AssertUtils;
 
 @EntityType("映射节点")
@@ -19,26 +19,26 @@ public class MapNode extends NodeRT {
     public static MapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var node = (MapNode) context.getNode(Id.parse(nodeDTO.id()));
         var param = (MapNodeParam) nodeDTO.param();
-        var mapping = context.getMapping(Id.parse(param.mappingId()));
+        var mappingRef = ObjectMappingRef.create(param.mappingRef(), context);
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var source = ValueFactory.create(param.source(), parsingContext);
         if (node == null)
-            node = new MapNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, source, mapping);
+            node = new MapNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, source, mappingRef);
         else
-            node.update(source, mapping);
+            node.update(source, mappingRef);
         return node;
     }
 
     @ChildEntity("来源")
     private Value source;
-    @EntityField("映射")
-    private Mapping mapping;
+    @ChildEntity("映射")
+    private ObjectMappingRef mappingRef;
 
     public MapNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope,
-                   Value source, Mapping mapping) {
+                   Value source, ObjectMappingRef mappingRef) {
         super(tmpId, name, code, null, previous, scope);
         this.source = addChild(source, "source");
-        this.mapping = mapping;
+        this.mappingRef = addChild(mappingRef.copy(), "mappingRef");
     }
 
     @Override
@@ -48,31 +48,31 @@ public class MapNode extends NodeRT {
 
     @Override
     protected MapNodeParam getParam(SerializeContext serializeContext) {
-        return new MapNodeParam(source.toDTO(), serializeContext.getId(mapping));
+        return new MapNodeParam(source.toDTO(), mappingRef.toDTO(serializeContext));
     }
 
-    public void update(Value source, Mapping mapping) {
-        AssertUtils.assertTrue(mapping.getSourceType().isAssignableFrom(source.getType()),
+    public void update(Value source, ObjectMappingRef mappingRef) {
+        AssertUtils.assertTrue(mappingRef.resolve().getSourceType().isAssignableFrom(source.getType()),
                 ErrorCode.INCORRECT_MAPPING);
         this.source = addChild(source, "source");
-        this.mapping = mapping;
+        this.mappingRef = addChild(mappingRef.copy(), "mappingRef");
     }
 
     @NotNull
     @Override
     public Type getType() {
-        return mapping.getTargetType();
+        return mappingRef.resolve().getTargetType();
     }
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var sourceInst = (DurableInstance) source.evaluate(frame);
-        return next(mapping.map(sourceInst, frame));
+        return next(mappingRef.resolve().map(sourceInst, frame));
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("map " + mapping.getName() + "(" + source.getText() + ")");
+        writer.write("map " + mappingRef.resolve().getName() + "(" + source.getText() + ")");
     }
 
 }

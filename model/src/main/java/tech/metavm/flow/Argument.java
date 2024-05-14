@@ -11,19 +11,19 @@ import java.util.Objects;
 @EntityType("实参")
 public class Argument extends Element implements LocalKey {
 
-    @EntityField("形参")
-    private final Parameter parameter;
+    @ChildEntity("形参引用")
+    private final ParameterRef parameterRef;
     @ChildEntity("值")
     private Value value;
 
-    public Argument(Long tmpId, Parameter parameter, Value value) {
+    public Argument(Long tmpId, ParameterRef parameterRef, Value value) {
         super(tmpId);
-        this.parameter = parameter;
+        this.parameterRef = addChild(parameterRef.copy(), "parameterRef");
         this.value = addChild(value, "value");
     }
 
     public Parameter getParameter() {
-        return parameter;
+        return parameterRef.resolve();
     }
 
     public Value getValue() {
@@ -40,7 +40,7 @@ public class Argument extends Element implements LocalKey {
 
     public ArgumentDTO toDTO() {
         try(var serContext = SerializeContext.enter()) {
-            return new ArgumentDTO(null, serContext.getId(parameter), value.toDTO());
+            return new ArgumentDTO(null, parameterRef.toDTO(serContext), value.toDTO());
         }
     }
 
@@ -51,12 +51,12 @@ public class Argument extends Element implements LocalKey {
 
     @Override
     public boolean isValidLocalKey() {
-        return parameter.getCode() != null;
+        return parameterRef.getRawParameter().getCode() != null;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return Objects.requireNonNull(parameter.getCode());
+        return Objects.requireNonNull(parameterRef.getRawParameter().getCode());
     }
 
     public String getText() {

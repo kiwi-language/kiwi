@@ -3,7 +3,7 @@ class Child {
     private Child|null next;
 
     public Child(string name) {
-        this.name = _input.name;
+        this.name = name;
         this.next = null;
     }
 
@@ -16,7 +16,7 @@ class Child {
     }
 
     public void setNext(Child|null next) {
-        this.next = _input.next;
+        this.next = next;
     }
 
 }

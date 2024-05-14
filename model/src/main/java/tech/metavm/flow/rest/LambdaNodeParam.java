@@ -6,15 +6,15 @@ import java.util.List;
 public class LambdaNodeParam extends ScopeNodeParamDTO {
 
     private final List<ParameterDTO> parameters;
-    private final String returnTypeId;
+    private final String returnType;
     @Nullable
     private final String functionalInterface;
 
-    public LambdaNodeParam(ScopeDTO bodyScope, List<ParameterDTO> parameters, String returnTypeId,
+    public LambdaNodeParam(ScopeDTO bodyScope, List<ParameterDTO> parameters, String returnType,
                            @Nullable String functionalInterface) {
         super(bodyScope);
         this.parameters = parameters;
-        this.returnTypeId = returnTypeId;
+        this.returnType = returnType;
         this.functionalInterface = functionalInterface;
     }
 
@@ -22,8 +22,8 @@ public class LambdaNodeParam extends ScopeNodeParamDTO {
         return parameters;
     }
 
-    public String getReturnTypeId() {
-        return returnTypeId;
+    public String getReturnType() {
+        return returnType;
     }
 
     @Nullable

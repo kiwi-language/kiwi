@@ -1,11 +1,16 @@
 package tech.metavm.object.type;
 
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 
 public class MemAllocatorStore implements AllocatorStore {
+
+
+    public static final String DUMP_DIR = "/Users/leen/workspace/object/test/src/test/resources/tmp";
 
     private final List<String> fileNames = new ArrayList<>();
     private final Map<String, Properties> propertiesMap = new HashMap<>();
@@ -63,6 +68,18 @@ public class MemAllocatorStore implements AllocatorStore {
         try {
             props.store(System.out, "test");
         } catch (IOException ignored) {
+        }
+    }
+
+    public void dump() {
+        for (var entry : propertiesMap.entrySet()) {
+            var fileName = entry.getKey();
+            var props = entry.getValue();
+            try (var output = new FileOutputStream(DUMP_DIR + fileName)) {
+                props.store(output, "test");
+            } catch (IOException e) {
+                throw new InternalException(e);
+            }
         }
     }
 }

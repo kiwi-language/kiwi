@@ -21,29 +21,6 @@ public class Flows {
         return exprTypeMap.getType(expression);
     }
 
-    public static void retransformFlowIfRequired(Flow flow, IEntityContext context) {
-        if (flow instanceof Method method) {
-            if (method.getDeclaringType().isTemplate() && context.isPersisted(method.getDeclaringType())) {
-                flow.analyze();
-                var templateInstances = context.getTemplateInstances(method.getDeclaringType());
-                for (Klass templateInstance : templateInstances) {
-                    context.getGenericContext().retransformMethod(method, templateInstance);
-                }
-            }
-        }
-        if (flow.isTemplate()) {
-            for (Flow horizontalInstance : context.selectByKey(Flow.IDX_HORIZONTAL_TEMPLATE, flow)) {
-                if (DebugEnv.debugging)
-                    debugLogger.info("retransforming " + EntityUtils.getEntityPath(horizontalInstance));
-                context.getGenericContext().retransformHorizontalFlowInstances(flow, horizontalInstance);
-            }
-        }
-    }
-
-    public static Flow getParameterizedFlow(Flow template, List<Type> typeArguments, ResolutionStage stage, SaveTypeBatch batch) {
-        return batch.getContext().getGenericContext().getParameterizedFlow(template, typeArguments, stage, batch);
-    }
-
     public static boolean isConstructor(Flow flow) {
         return flow instanceof Method method && method.isConstructor();
     }

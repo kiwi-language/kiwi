@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.type.rest.dto.TypeDefDTO;
+import tech.metavm.object.view.MappingSaver;
 
 public enum ResolutionStage {
 
@@ -35,10 +36,9 @@ public enum ResolutionStage {
     DEFINITION(4) {
         @Override
         TypeDef saveTypeDef(TypeDefDTO typeDefDTO, SaveTypeBatch batch) {
-            //            if (type instanceof Klass classType)
-//                batch.saveParameterizedFlows(classType, DEFINITION);
-//            if (type instanceof Klass classType && classType.isClass() && !classType.isAnonymous())
-//                MappingSaver.create(batch.getContext()).saveBuiltinMapping(classType, false);
+            var typeDef = batch.getTypeDef(typeDefDTO.id());
+            if (typeDef instanceof Klass klass && klass.isClass() && !klass.isAnonymous())
+                MappingSaver.create(batch.getContext()).saveBuiltinMapping(klass, false);
             return Types.saveTypeDef(typeDefDTO, DEFINITION, batch);
         }
 
@@ -47,9 +47,10 @@ public enum ResolutionStage {
     MAPPING_DEFINITION(5) {
         @Override
         TypeDef saveTypeDef(TypeDefDTO typeDefDTO, SaveTypeBatch batch) {
-            //            if (type instanceof Klass classType && classType.isClass() && !classType.isAnonymous())
-//                MappingSaver.create(batch.getContext()).saveBuiltinMapping(classType, true);
-            return batch.getTypeDef(typeDefDTO.id());
+            var typeDef = batch.getTypeDef(typeDefDTO.id());
+            if (typeDef instanceof Klass klass && klass.isClass() && !klass.isAnonymous())
+                MappingSaver.create(batch.getContext()).saveBuiltinMapping(klass, true);
+            return typeDef;
         }
     };
 

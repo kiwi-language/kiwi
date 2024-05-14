@@ -29,4 +29,9 @@ public record NeverTypeKey() implements TypeKey {
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
 
     }
+
+    @Override
+    public int getCode() {
+        return TypeKeyCodes.NEVER;
+    }
 }

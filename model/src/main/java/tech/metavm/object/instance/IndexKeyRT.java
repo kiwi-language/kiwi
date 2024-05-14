@@ -19,9 +19,9 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
 
     private static final Klass DUMMY_TYPE = ClassTypeBuilder.newBuilder("Dummy", "Dummy").build();
 
-    public  static final ClassInstance MIN_INSTANCE = ClassInstance.allocate(DUMMY_TYPE);
+    public  static final ClassInstance MIN_INSTANCE = ClassInstance.allocate(DUMMY_TYPE.getType());
 
-    public static final ClassInstance MAX_INSTANCE = ClassInstance.allocate(DUMMY_TYPE);
+    public static final ClassInstance MAX_INSTANCE = ClassInstance.allocate(DUMMY_TYPE.getType());
 
     static {
         MIN_INSTANCE.initId(new NullId());

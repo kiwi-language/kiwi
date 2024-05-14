@@ -1,6 +1,5 @@
 package tech.metavm.expression;
 
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.InternalException;
 
@@ -37,11 +36,6 @@ public class SubEvaluationContext implements EvaluationContext {
     @Override
     public boolean isContextExpression(Expression expression) {
         return isSelfContextExpression(expression) || this.parent.isContextExpression(expression);
-    }
-
-    @Override
-    public ParameterizedFlowProvider parameterizedFlowProvider() {
-        return parent.parameterizedFlowProvider();
     }
 
 }

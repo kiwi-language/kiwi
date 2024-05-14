@@ -12,8 +12,10 @@ import tech.metavm.flow.rest.TryEndValueDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
@@ -30,9 +32,8 @@ public class TryEndNode extends ChildTypeNode {
     public static TryEndNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var node = (TryEndNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
-            node = new TryEndNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
-                    context.getEntity(Klass.class, Id.parse(nodeDTO.outputTypeId())),
-                    (TryNode) prev, scope);
+            var outputKlass = ((ClassType) TypeParser.parse(nodeDTO.outputType(), context)).resolve();
+            node = new TryEndNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputKlass, (TryNode) prev, scope);
         }
         var param = (TryEndNodeParam) nodeDTO.getParam();
         if (param.fields().size() != node.getKlass().getReadyFields().size() - 1)
@@ -112,7 +113,7 @@ public class TryEndNode extends ChildTypeNode {
                 f -> f.getValue(raiseNode).evaluate(frame)
         ));
         fieldValues.put(exceptionField, exception);
-        return next(ClassInstance.create(fieldValues, getKlass()));
+        return next(ClassInstance.create(fieldValues, getType()));
     }
 
     @Override

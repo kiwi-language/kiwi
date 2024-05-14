@@ -5,12 +5,12 @@ import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeKey;
-import tech.metavm.object.type.rest.dto.PrimitiveTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 @EntityType("基础类型")
 public class PrimitiveType extends Type {
@@ -19,12 +19,32 @@ public class PrimitiveType extends Type {
     private final PrimitiveKind kind;
 
     public PrimitiveType(PrimitiveKind kind) {
-        super(kind.getName(), kind.getTypeCode(), false, true, kind.getTypeCategory());
+        super();
         this.kind = kind;
     }
 
     @Override
-    public TypeKey toTypeKey() {
+    public String getName() {
+        return kind.getName();
+    }
+
+    @Override
+    public @NotNull String getCode() {
+        return kind.getTypeCode();
+    }
+
+    @Override
+    public TypeCategory getCategory() {
+        return kind.getTypeCategory();
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return false;
+    }
+
+    @Override
+    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
         return new PrimitiveTypeKey(kind.code());
     }
 
@@ -34,7 +54,12 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitPrimitiveType(this, s);
+    }
+
+    @Override
+    protected boolean equals0(Object obj) {
         return obj instanceof PrimitiveType that && kind == that.kind;
     }
 
@@ -92,11 +117,6 @@ public class PrimitiveType extends Type {
         return kind == PrimitiveKind.PASSWORD;
     }
 
-    @Override
-    protected PrimitiveTypeParam getParam(SerializeContext serializeContext) {
-        return new PrimitiveTypeParam(kind.code());
-    }
-
     public PrimitiveKind getKind() {
         return kind;
     }
@@ -104,11 +124,6 @@ public class PrimitiveType extends Type {
     @Override
     protected String toString0() {
         return "PrimitiveType " + kind.getName();
-    }
-
-    @Override
-    public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return kind.getJavaClass().getName();
     }
 
     @Override
@@ -122,8 +137,13 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public String toTypeExpression(SerializeContext serializeContext) {
+    public String toExpression(SerializeContext serializeContext, @javax.annotation.Nullable Function<TypeDef, String> getTypeDefExpr) {
         return kind.name().toLowerCase();
+    }
+
+    @Override
+    public int getTypeKeyCode() {
+        return PrimitiveTypeKey.getTypeKeyCode(kind.code());
     }
 
     @Override

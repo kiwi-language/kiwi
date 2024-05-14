@@ -1,6 +1,8 @@
 package tech.metavm.object.view;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.CallContext;
 import tech.metavm.entity.natives.NativeFunctions;
@@ -8,9 +10,11 @@ import tech.metavm.expression.Expressions;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.type.*;
-import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
-import tech.metavm.object.view.rest.dto.ObjectMappingParam;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.rest.dto.ParameterizedTypeKey;
+import tech.metavm.object.view.rest.dto.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -20,51 +24,49 @@ import java.util.Objects;
 
 public abstract class ObjectMapping extends Mapping implements LocalKey {
 
+    public static final Logger logger = LoggerFactory.getLogger(ObjectMapping.class);
+
     @ChildEntity("被复写映射列表")
     protected final ReadWriteArray<ObjectMapping> overridden =
             addChild(new ReadWriteArray<>(ObjectMapping.class), "overridden");
     @EntityField("是否预置")
     private final boolean builtin;
     private final Klass sourceKlass;
-    private final Klass targetKlass;
 
-    public ObjectMapping(Long tmpId, String name, @Nullable String code, Klass sourceKlass, Klass targetKlass, boolean builtin) {
-        super(tmpId, name, code, sourceKlass.getType(), targetKlass.getType());
+    public ObjectMapping(Long tmpId, String name, @Nullable String code, Klass sourceKlass, ClassType targetType, boolean builtin) {
+        super(tmpId, name, code, sourceKlass.getType(), targetType);
         this.builtin = builtin;
         this.sourceKlass = sourceKlass;
-        this.targetKlass = targetKlass;
     }
 
     @Override
-    protected Flow generateMappingCode(CompositeTypeFacade compositeTypeFacade) {
+    protected Flow generateMappingCode(boolean generateReadMethod) {
         var scope = Objects.requireNonNull(mapper).newEphemeralRootScope();
-        var input = Nodes.input(mapper, compositeTypeFacade);
+        var input = Nodes.input(mapper);
         var actualSourceType = (ClassType) mapper.getParameter(0).getType();
         var readMethod = getSourceMethod(actualSourceType.resolve(), getReadMethod());
         var view = new MethodCallNode(
                 null, "视图", "view",
-                targetType,
                 scope.getLastNode(), scope,
                 Values.inputValue(input, 0),
-                readMethod, List.of()
+                readMethod.getRef(), List.of()
         );
 //        Nodes.setSource(Values.node(view), Values.inputValue(input, 0), scope);
         new ReturnNode(null, "结束", "Return", scope.getLastNode(), scope, Values.node(view));
         return mapper;
     }
 
-    protected Flow generateUnmappingCode(CompositeTypeFacade compositeTypeFacade) {
+    protected Flow generateUnmappingCode(boolean generateWriteMethod) {
         Objects.requireNonNull(unmapper);
         var actualSourceKlass = ((ClassType) unmapper.getReturnType()).resolve();
         var fromViewMethod = findSourceMethod(actualSourceKlass, findFromViewMethod());
         var writeMethod = getSourceMethod(actualSourceKlass, getWriteMethod());
         var scope = unmapper.newEphemeralRootScope();
-        var input = Nodes.input(unmapper, compositeTypeFacade);
+        var input = Nodes.input(unmapper);
         var isSourcePresent = Nodes.functionCall(
                 "来源是否存在", scope,
                 NativeFunctions.isSourcePresent(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, Values.inputValue(input, 0))),
-                compositeTypeFacade
+                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, Values.inputValue(input, 0)))
         );
         Nodes.branch(
                 "分支", null, scope,
@@ -74,14 +76,12 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                     var source = Nodes.functionCall(
                             "来源", bodyScope,
                             NativeFunctions.getSource(),
-                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, Values.inputValue(input, 0))),
-                            compositeTypeFacade
+                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, Values.inputValue(input, 0)))
                     );
                     var castedSource = Nodes.cast("Casted来源", getSourceType(), Values.node(source), bodyScope);
                     Nodes.methodCall(
                             "保存视图", bodyScope, Values.node(castedSource),
-                            writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.inputValue(input, 0))),
-                            compositeTypeFacade
+                            writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.inputValue(input, 0)))
                     );
                     Nodes.ret("返回", bodyScope, Values.node(castedSource));
                 },
@@ -93,8 +93,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                                 null, fromViewMethod,
                                 List.of(
                                         Nodes.argument(fromViewMethod, 0, Values.inputValue(input, 0))
-                                ),
-                                compositeTypeFacade
+                                )
                         );
                         Nodes.ret("返回", bodyScope, Values.node(fromView));
                     } else
@@ -107,7 +106,13 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     }
 
     private Method getSourceMethod(Klass actualSourceType, Method method) {
-        return Objects.requireNonNull(findSourceMethod(actualSourceType, method));
+        var found = findSourceMethod(actualSourceType, method);
+        if (found != null) {
+            return found;
+        }
+        throw new NullPointerException("Can not find source method of " + method.getQualifiedName()
+                + " in klass " + actualSourceType.getTypeDesc()
+                + ", mapping.sourceType: " + getSourceType().resolve().getTypeDesc());
     }
 
     @Override
@@ -116,13 +121,16 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     }
 
     private @Nullable Method findSourceMethod(Klass actualSourceKlass, Method method) {
-        if(method == null)
+        if (method == null) {
             return null;
+        }
         var sourceType = getSourceType();
-        if(actualSourceKlass.isType(sourceType))
+        if (actualSourceKlass.isType(sourceType)) {
             return method;
+        }
         else {
-            assert actualSourceKlass.getEffectiveTemplate().isType(sourceType.getEffectiveTemplate());
+            assert actualSourceKlass.getEffectiveTemplate().isType(sourceType.getEffectiveTemplate()) :
+                    sourceType.getEffectiveTemplate().toExpression() + " is not a type of " + actualSourceKlass.getEffectiveTemplate().getTypeDesc();
             return actualSourceKlass.findMethodByVerticalTemplate(method.getEffectiveVerticalTemplate());
         }
     }
@@ -161,7 +169,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     }
 
     public Klass getTargetKlass() {
-        return targetKlass;
+        return getTargetType().resolve();
     }
 
     public ClassType getTargetType() {
@@ -181,8 +189,8 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                 serializeContext.getId(this),
                 getName(),
                 getCode(),
-                getSourceType().toTypeExpression(serializeContext),
-                getTargetType().toTypeExpression(serializeContext),
+                getSourceType().toExpression(serializeContext, null),
+                getTargetType().toExpression(serializeContext, null),
                 isDefault(),
                 isBuiltin(),
                 NncUtils.map(overridden, Entity::getStringId),
@@ -192,12 +200,29 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
 
     protected abstract ObjectMappingParam getParam(SerializeContext serializeContext);
 
+    public ObjectMapping getEffectiveTemplate() {
+        return sourceKlass.isParameterized() ? (ObjectMapping) Objects.requireNonNull(copySource) : this;
+    }
+
+    public ObjectMappingRef getRef() {
+        return new ObjectMappingRef(sourceKlass.getType(), getEffectiveTemplate());
+    }
+
     public boolean isDefault() {
         return sourceKlass.getDefaultMapping() == this;
     }
 
     public void setDefault() {
         sourceKlass.setDefaultMapping(this);
+    }
+
+    public MappingKey toKey() {
+        try (var serContext = SerializeContext.enter()) {
+            if(sourceKlass.isParameterized())
+                return new ParameterizedMappingKey((ParameterizedTypeKey) sourceType.toTypeKey(), serContext.getId(getEffectiveTemplate()));
+            else
+                return new DirectMappingKey(serContext.getId(this));
+        }
     }
 
     public String getLocalKey(@NotNull BuildKeyContext context) {

@@ -1,7 +1,6 @@
 package tech.metavm.object.instance.persistence;
 
 import tech.metavm.entity.InstanceIndexQuery;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
@@ -16,15 +15,15 @@ import static java.util.Objects.requireNonNull;
 
 public class PersistenceUtils {
 
-    public static void forEachIndexEntries(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider, long appId, Consumer<IndexEntryPO> action,
+    public static void forEachIndexEntries(ClassInstance instance, long appId, Consumer<IndexEntryPO> action,
                                            Consumer<IndexEntryPO> actionForUnique) {
         instance.ensureLoaded();
-        instance.getKlass().getConstraints(Index.class).forEach(index -> forEachIndexEntries(index, instance, parameterizedFlowProvider, appId, action, actionForUnique));
+        instance.getKlass().getConstraints(Index.class).forEach(index -> forEachIndexEntries(index, instance, appId, action, actionForUnique));
     }
 
-    private static void forEachIndexEntries(Index index, ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider,
-                                                          long appId, Consumer<IndexEntryPO> action, Consumer<IndexEntryPO> actionForUnique) {
-        index.forEachIndexKey(instance, parameterizedFlowProvider,
+    private static void forEachIndexEntries(Index index, ClassInstance instance,
+                                            long appId, Consumer<IndexEntryPO> action, Consumer<IndexEntryPO> actionForUnique) {
+        index.forEachIndexKey(instance,
                 key -> {
                     var entryPO = new IndexEntryPO(appId, key.toPO(), requireNonNull(instance.tryGetId()).toBytes());
                     action.accept(entryPO);

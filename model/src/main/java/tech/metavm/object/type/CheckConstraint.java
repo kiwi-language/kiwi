@@ -2,7 +2,6 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.*;
 import tech.metavm.expression.*;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.ValueFactory;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -70,8 +69,8 @@ public class CheckConstraint extends Constraint {
         return condition;
     }
 
-    public boolean check(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
-        return Instances.isTrue(condition.evaluate(new InstanceEvaluationContext(instance, parameterizedFlowProvider)));
+    public boolean check(ClassInstance instance) {
+        return Instances.isTrue(condition.evaluate(new InstanceEvaluationContext(instance)));
     }
 
     public ConstraintDef<?> getConstraintDef() {

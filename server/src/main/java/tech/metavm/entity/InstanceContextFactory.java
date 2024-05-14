@@ -4,12 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.event.EventQueue;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
-import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.TypeDefProvider;
-import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
 import java.util.concurrent.*;
@@ -46,12 +43,10 @@ public class InstanceContextFactory {
 
     public InstanceContextBuilder newBuilder(long appId,
                                              TypeDefProvider typeDefProvider,
-                                             MappingProvider mappingProvider,
-                                             ParameterizedFlowProvider parameterizedFlowProvider,
-                                             CompositeTypeFacade compositeTypeFacade) {
+                                             MappingProvider mappingProvider) {
         return InstanceContextBuilder.newBuilder(appId, instanceStore,
                         new DefaultIdInitializer(idService),
-                        typeDefProvider, mappingProvider, parameterizedFlowProvider, compositeTypeFacade)
+                        typeDefProvider, mappingProvider)
                 .executor(executor)
                 .eventQueue(eventQueue)
                 .cache(cache)

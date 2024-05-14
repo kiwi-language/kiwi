@@ -19,7 +19,7 @@ public record UncertainTypeKey(TypeKey lowerBoundKey, TypeKey upperBoundKey) imp
 
     @Override
     public UncertainType toType(TypeDefProvider typeDefProvider) {
-        return new UncertainType(null, lowerBoundKey.toType(typeDefProvider), upperBoundKey.toType(typeDefProvider));
+        return new UncertainType(lowerBoundKey.toType(typeDefProvider), upperBoundKey.toType(typeDefProvider));
     }
 
     @Override
@@ -31,5 +31,10 @@ public record UncertainTypeKey(TypeKey lowerBoundKey, TypeKey upperBoundKey) imp
     public void acceptChildren(TypeKeyVisitor<?> visitor) {
         lowerBoundKey.accept(visitor);
         upperBoundKey.accept(visitor);
+    }
+
+    @Override
+    public int getCode() {
+        return TypeKeyCodes.UNCERTAIN;
     }
 }

@@ -1,6 +1,8 @@
 package tech.metavm.entity.natives;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.flow.FlowExecResult;
 import tech.metavm.flow.Function;
@@ -16,6 +18,8 @@ import java.util.Map;
 import java.util.Objects;
 
 public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
+
+    public static final Logger logger = LoggerFactory.getLogger(GlobalNativeFunctionsHolder.class);
 
     private final Map<Function, TriFunction<Function, List<Instance>, CallContext, Instance>> functions = new IdentityHashMap<>();
 
@@ -65,9 +69,9 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
             throw new InternalException("Can not set source for a non-durable instance: " + instance);
     }
 
-    private static Instance functionToInstance(Function function, @NotNull FunctionInstance functionInstance, CallContext callContext) {
+    private static Instance functionToInstance(Function function, @NotNull FunctionInstance functionInstance) {
         var samInterface = ((ClassType) function.getTypeArguments().get(0)).resolve();
-        var type = Types.createSAMInterfaceImpl(samInterface, functionInstance, callContext.compositeTypeFacade());
+        var type = Types.createSAMInterfaceImpl(samInterface, functionInstance);
         return new ClassInstance(null, Map.of(), type);
     }
 
@@ -118,7 +122,14 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     @Override
     public void setFunctionToInstance(Function function) {
         this.functionToInstance = function;
-        functions.put(function, (func, args, callContext) -> functionToInstance(func, (FunctionInstance) args.get(0), callContext));
+        functions.put(function, (func, args, callContext) -> {
+            if(args.get(0) instanceof FunctionInstance) {
+                return functionToInstance(func, (FunctionInstance) args.get(0));
+            }
+            else {
+                throw new InternalException("Invalid function instance: " + Instances.getInstancePath(args.get(0)));
+            }
+        });
     }
 
     @Override

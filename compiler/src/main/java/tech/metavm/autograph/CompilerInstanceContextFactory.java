@@ -52,8 +52,6 @@ public class CompilerInstanceContextFactory {
                 stdContext,
                 bridge,
                 bridge,
-                bridge,
-                bridge,
                 false
         );
     }

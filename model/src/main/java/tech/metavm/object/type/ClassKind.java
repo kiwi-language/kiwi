@@ -1,11 +1,18 @@
 package tech.metavm.object.type;
 
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.EnumConstant;
 import tech.metavm.util.NncUtils;
 
+@EntityType("ClassKind")
 public enum ClassKind {
+    @EnumConstant("CLASS")
     CLASS(1, TypeCategory.CLASS),
+    @EnumConstant("ENUM")
     ENUM(2, TypeCategory.ENUM),
+    @EnumConstant("INTERFACE")
     INTERFACE(3, TypeCategory.INTERFACE),
+    @EnumConstant("VALUE")
     VALUE(4, TypeCategory.VALUE)
     ;
 
@@ -27,7 +34,7 @@ public enum ClassKind {
     }
 
     public static ClassKind fromCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
+        return NncUtils.findRequired(values(), v -> v.code == code, () -> "Can not find ClassKind for code: " + code);
     }
 
     public static ClassKind fromTypeCategory(TypeCategory typeCategory) {

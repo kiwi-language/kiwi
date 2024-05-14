@@ -2,21 +2,22 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.entity.BuildKeyContext;
-import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.AnyTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
-import tech.metavm.object.type.rest.dto.TypeParam;
+import tech.metavm.object.type.rest.dto.TypeKeyCodes;
 import tech.metavm.util.InstanceOutput;
+
+import java.util.function.Function;
 
 @EntityType("任意类型")
 public class AnyType extends Type {
 
     public AnyType() {
-        super("对象", "Any", false, false, TypeCategory.OBJECT);
+        super();
     }
 
     @Override
@@ -25,7 +26,27 @@ public class AnyType extends Type {
     }
 
     @Override
-    public TypeKey toTypeKey() {
+    public String getName() {
+        return "对象";
+    }
+
+    @Override
+    public @NotNull String getCode() {
+        return "Any";
+    }
+
+    @Override
+    public TypeCategory getCategory() {
+        return TypeCategory.ANY;
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return false;
+    }
+
+    @Override
+    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
         return new AnyTypeKey();
     }
 
@@ -35,13 +56,8 @@ public class AnyType extends Type {
     }
 
     @Override
-    protected TypeParam getParam(SerializeContext serializeContext) {
-        return null;
-    }
-
-    @Override
-    public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return "Any";
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitAnyType(this, s);
     }
 
     @Override
@@ -55,8 +71,13 @@ public class AnyType extends Type {
     }
 
     @Override
-    public String toTypeExpression(SerializeContext serializeContext) {
+    public String toExpression(SerializeContext serializeContext, @javax.annotation.Nullable Function<TypeDef, String> getTypeDefExpr) {
         return "any";
+    }
+
+    @Override
+    public int getTypeKeyCode() {
+        return TypeKeyCodes.ANY;
     }
 
     @Override
@@ -65,7 +86,7 @@ public class AnyType extends Type {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    protected boolean equals0(Object obj) {
         return obj instanceof AnyType;
     }
 

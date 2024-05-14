@@ -3,12 +3,10 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.ParameterDTO;
-import tech.metavm.object.type.CapturedType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Objects;
 
 @EntityType("参数")
@@ -18,7 +16,7 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     @EntityField(value = "编号", asKey = true)
     @Nullable
     private String code;
-    @EntityField("类型")
+    @ChildEntity("类型")
     private Type type;
     @ChildEntity("条件")
     @Nullable
@@ -42,7 +40,7 @@ public class Parameter extends Element implements GenericElement, LocalKey {
         this.callable = callable;
         this.name = name;
         this.code = code;
-        this.type = type;
+        this.type = addChild(type.copy(), "type");
         this.copySource = copySource;
         setCondition(condition);
     }
@@ -68,7 +66,7 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     }
 
     public void setType(Type type) {
-        this.type = type;
+        this.type = addChild(type.copy(), "type");
     }
 
     public String getName() {
@@ -94,7 +92,7 @@ public class Parameter extends Element implements GenericElement, LocalKey {
                     serContext.getId(this),
                     name,
                     code,
-                    serContext.getId(type),
+                    type.toExpression(serContext),
                     NncUtils.get(condition, Value::toDTO),
                     NncUtils.get(copySource, serContext::getId),
                     serContext.getId(callable)
@@ -105,6 +103,28 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     @Nullable
     public Parameter getCopySource() {
         return copySource;
+    }
+
+    public Parameter getUltimateTemplate() {
+        return getEffectiveVerticalTemplate().getEffectiveHorizontalTemplate().getEffectiveVerticalTemplate();
+    }
+
+    public Parameter getEffectiveHorizontalTemplate() {
+        if(callable instanceof Flow flow && flow.isParameterized())
+            return Objects.requireNonNull(copySource);
+        else
+            return this;
+    }
+
+    public Parameter getEffectiveVerticalTemplate() {
+        if(callable instanceof Method method && !method.isParameterized() && method.getDeclaringType().isParameterized())
+            return Objects.requireNonNull(copySource);
+        else
+            return this;
+    }
+
+    public ParameterRef getRef() {
+        return new ParameterRef(callable.getRef(), getUltimateTemplate());
     }
 
     @Override

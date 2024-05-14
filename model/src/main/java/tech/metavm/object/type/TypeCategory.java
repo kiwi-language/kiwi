@@ -46,7 +46,7 @@ public enum TypeCategory {
     @EnumConstant("时间")
     TIME(TypeCategoryCodes.TIME, ColumnKind.INT, PrimitiveTypeParam.class, 5),
     @EnumConstant("任意类型")
-    OBJECT(TypeCategoryCodes.OBJECT, ColumnKind.UNSPECIFIED, 5),
+    ANY(TypeCategoryCodes.OBJECT, ColumnKind.UNSPECIFIED, 5),
     @EnumConstant("密码")
     PASSWORD(TypeCategoryCodes.PASSWORD, ColumnKind.STRING, PrimitiveTypeParam.class, 5),
     @EnumConstant("Void")
@@ -60,7 +60,7 @@ public enum TypeCategory {
     @EnumConstant("不确定")
     UNCERTAIN(TypeCategoryCodes.UNCERTAIN, ColumnKind.UNSPECIFIED, UncertainTypeParam.class, 5),
     @EnumConstant("不可能")
-    NOTHING(TypeCategoryCodes.NOTHING, ColumnKind.UNSPECIFIED, 5),
+    NEVER(TypeCategoryCodes.NOTHING, ColumnKind.UNSPECIFIED, 5),
     @EnumConstant("捕获")
     CAPTURED(TypeCategoryCodes.CAPTURED, ColumnKind.UNSPECIFIED, 5),
 
@@ -130,7 +130,7 @@ public enum TypeCategory {
     }
 
     public boolean isObject() {
-        return this == OBJECT;
+        return this == ANY;
     }
 
     public boolean isPrimitive() {

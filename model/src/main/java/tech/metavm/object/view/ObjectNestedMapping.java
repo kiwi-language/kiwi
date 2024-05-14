@@ -1,12 +1,12 @@
 package tech.metavm.object.view;
 
-import tech.metavm.entity.EntityField;
+import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Nodes;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.Values;
-import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
@@ -16,47 +16,50 @@ import java.util.function.Supplier;
 @EntityType("对象嵌套映射")
 public class ObjectNestedMapping extends NestedMapping {
 
-    @EntityField("映射")
-    private final ObjectMapping mapping;
+    @ChildEntity("映射")
+    private final @NotNull ObjectMappingRef mappingRef;
 
-    public ObjectNestedMapping(ObjectMapping mapping) {
-        this.mapping = mapping;
+    public ObjectNestedMapping(@NotNull ObjectMappingRef mappingRef) {
+        this.mappingRef = addChild(mappingRef.copy(), "mappingRef");
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
-        var mapNode = Nodes.map("嵌套映射", scope, getSource.get(),
-                Objects.requireNonNull(mapping, "nested mapping required"));
+    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
+        var mapNode = Nodes.map("嵌套映射", scope, getSource.get(), mappingRef.resolve());
         return () -> Values.node(mapNode);
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope, CompositeTypeFacade compositeTypeFacade) {
+    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
 //        if (sourceType == targetType)
 //            return getView;
-        var source = Nodes.unmap("反映射" + NncUtils.randomNonNegative(), scope, getView.get(), Objects.requireNonNull(mapping));
+        var source = Nodes.unmap("反映射" + NncUtils.randomNonNegative(), scope, getView.get(), mappingRef.resolve());
         return () -> Values.node(source);
     }
 
     public ObjectMapping getMapping() {
-        return mapping;
+        return mappingRef.resolve();
     }
 
     @Override
     public Type getTargetType() {
-        return mapping.targetType;
+        return mappingRef.resolve().targetType;
+    }
+
+    @Override
+    public String getText() {
+        return "{\"kind\": \"Object\"}";
     }
 
     @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof ObjectNestedMapping that)) return false;
-        if (!super.equals(object)) return false;
-        return Objects.equals(mapping, that.mapping);
+        return Objects.equals(mappingRef, that.mappingRef);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), mapping);
+        return Objects.hash(mappingRef);
     }
 }

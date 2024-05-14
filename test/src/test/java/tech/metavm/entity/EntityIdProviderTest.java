@@ -5,13 +5,13 @@ import org.junit.Assert;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.DefaultPhysicalId;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.system.IdService;
 import tech.metavm.system.RegionManager;
 import tech.metavm.system.persistence.MemBlockMapper;
 import tech.metavm.system.persistence.MemRegionMapper;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.TestConstants;
+import tech.metavm.util.TestUtils;
 import tech.metavm.util.TypeReference;
 
 import java.util.HashSet;
@@ -24,15 +24,14 @@ public class EntityIdProviderTest extends TestCase {
     private void testAllocate(EntityIdProvider entityIdProvider) {
         Klass typeType = ClassTypeBuilder.newBuilder("Type", null).build();
         Klass fooType = ClassTypeBuilder.newBuilder("Foo", null).build();
-        ArrayType fooArrayType = new ArrayType(null, fooType.getType(), ArrayKind.READ_WRITE);
-        typeType.initId(DefaultPhysicalId.ofObject(1L, 0L, new ClassTypeKey("1")));
+        ArrayType fooArrayType = new ArrayType(fooType.getType(), ArrayKind.READ_WRITE);
+        typeType.initId(DefaultPhysicalId.ofObject(1L, 0L, TestUtils.mockClassTypeKey()));
         fooType.initId(DefaultPhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
         fooArrayType.initId(DefaultPhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
 
-        int numIdsForClass = 10, numIdsForArray = 5;
+        int numIdsForClass = 10;
         Map<Type, Integer> type2count = Map.of(
-                fooType.getType(), numIdsForClass,
-                fooArrayType, numIdsForArray
+                fooType.getType(), numIdsForClass
         );
 
         var idMap = entityIdProvider.allocate(
@@ -40,7 +39,7 @@ public class EntityIdProviderTest extends TestCase {
         );
 
         Set<Long> visitedIds = new HashSet<>();
-        for (var type : List.of(fooType.getType(), fooArrayType)) {
+        for (var type : List.of(fooType.getType())) {
             var idsForType = idMap.get(type);
             Assert.assertNotNull(idsForType);
             Assert.assertEquals((int) type2count.get(type), idsForType.size());

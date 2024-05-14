@@ -2,6 +2,8 @@ package tech.metavm.autograph;
 
 import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.builtin.Password;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
@@ -21,6 +23,8 @@ import static java.util.Objects.requireNonNull;
 import static tech.metavm.object.type.ResolutionStage.*;
 
 public class TypeResolverImpl implements TypeResolver {
+
+    public static final Logger logger = LoggerFactory.getLogger(TypeResolverImpl.class);
 
     public static final Set<String> PRIM_CLASS_NAMES = Set.of(
             String.class.getName(),
@@ -52,32 +56,32 @@ public class TypeResolverImpl implements TypeResolver {
 
     private final Map<PsiCapturedWildcardType, CapturedType> capturedTypeMap = new IdentityHashMap<>();
 
-    private final Map<CapturedType, PsiCapturedWildcardType> capturedTypeReverseMap = new IdentityHashMap<>();
+    private final Map<CapturedType, PsiCapturedWildcardType> capturedTypeReverseMap = new HashMap<>();
 
     private final IEntityContext context;
 
     private static final Map<PsiClassType, Supplier<Klass>> STANDARD_CLASSES = Map.ofEntries(
-            Map.entry(TranspileUtil.createClassType(Entity.class), StandardTypes::getEntityType),
-            Map.entry(TranspileUtil.createClassType(Enum.class), StandardTypes::getEnumType),
-            Map.entry(TranspileUtil.createClassType(Record.class), StandardTypes::getRecordType),
-            Map.entry(TranspileUtil.createClassType(Throwable.class), StandardTypes::getThrowableType),
-            Map.entry(TranspileUtil.createClassType(Exception.class), StandardTypes::getExceptionType),
-            Map.entry(TranspileUtil.createClassType(RuntimeException.class), StandardTypes::getRuntimeExceptionType),
-            Map.entry(TranspileUtil.createClassType(IllegalArgumentException.class), StandardTypes::getIllegalArgumentExceptionType),
-            Map.entry(TranspileUtil.createClassType(IllegalStateException.class), StandardTypes::getIllegalStateExceptionType),
-            Map.entry(TranspileUtil.createClassType(NullPointerException.class), StandardTypes::getNullPointerExceptionType),
-            Map.entry(TranspileUtil.createClassType(IteratorImpl.class), StandardTypes::getIteratorImplType),
-            Map.entry(TranspileUtil.createClassType(Iterator.class), StandardTypes::getIteratorType),
-            Map.entry(TranspileUtil.createClassType(Iterable.class), StandardTypes::getIterableType),
-            Map.entry(TranspileUtil.createClassType(List.class), StandardTypes::getListType),
-            Map.entry(TranspileUtil.createClassType(ArrayList.class), StandardTypes::getReadWriteListType),
-            Map.entry(TranspileUtil.createClassType(LinkedList.class), StandardTypes::getReadWriteListType),
-            Map.entry(TranspileUtil.createClassType(tech.metavm.util.LinkedList.class), StandardTypes::getReadWriteListType),
-            Map.entry(TranspileUtil.createClassType(ChildList.class), StandardTypes::getChildListType),
-            Map.entry(TranspileUtil.createClassType(Set.class), StandardTypes::getSetType),
-            Map.entry(TranspileUtil.createClassType(Collection.class), StandardTypes::getCollectionType),
-            Map.entry(TranspileUtil.createClassType(Consumer.class), StandardTypes::getConsumerType),
-            Map.entry(TranspileUtil.createClassType(Predicate.class), StandardTypes::getPredicateType)
+            Map.entry(TranspileUtil.createClassType(Entity.class), StandardTypes::getEntityKlass),
+            Map.entry(TranspileUtil.createClassType(Enum.class), StandardTypes::getEnumKlass),
+            Map.entry(TranspileUtil.createClassType(Record.class), StandardTypes::getRecordKlass),
+            Map.entry(TranspileUtil.createClassType(Throwable.class), StandardTypes::getThrowableKlass),
+            Map.entry(TranspileUtil.createClassType(Exception.class), StandardTypes::getExceptionKlass),
+            Map.entry(TranspileUtil.createClassType(RuntimeException.class), StandardTypes::getRuntimeExceptionKlass),
+            Map.entry(TranspileUtil.createClassType(IllegalArgumentException.class), StandardTypes::getIllegalArgumentExceptionKlass),
+            Map.entry(TranspileUtil.createClassType(IllegalStateException.class), StandardTypes::getIllegalStateExceptionKlass),
+            Map.entry(TranspileUtil.createClassType(NullPointerException.class), StandardTypes::getNullPointerExceptionKlass),
+            Map.entry(TranspileUtil.createClassType(IteratorImpl.class), StandardTypes::getIteratorImplKlass),
+            Map.entry(TranspileUtil.createClassType(Iterator.class), StandardTypes::getIteratorKlass),
+            Map.entry(TranspileUtil.createClassType(Iterable.class), StandardTypes::getIterableKlass),
+            Map.entry(TranspileUtil.createClassType(List.class), StandardTypes::getListKlass),
+            Map.entry(TranspileUtil.createClassType(ArrayList.class), StandardTypes::getReadWriteListKlass),
+            Map.entry(TranspileUtil.createClassType(LinkedList.class), StandardTypes::getReadWriteListKlass),
+            Map.entry(TranspileUtil.createClassType(tech.metavm.util.LinkedList.class), StandardTypes::getReadWriteListKlass),
+            Map.entry(TranspileUtil.createClassType(ChildList.class), StandardTypes::getChildListKlass),
+            Map.entry(TranspileUtil.createClassType(Set.class), StandardTypes::getSetKlass),
+            Map.entry(TranspileUtil.createClassType(Collection.class), StandardTypes::getCollectionKlass),
+            Map.entry(TranspileUtil.createClassType(Consumer.class), StandardTypes::getConsumerKlass),
+            Map.entry(TranspileUtil.createClassType(Predicate.class), StandardTypes::getPredicateKlass)
     );
 
     private static final List<Class<?>> COLLECTION_CLASSES = List.of(
@@ -131,7 +135,7 @@ public class TypeResolverImpl implements TypeResolver {
 
     private ArrayType resolveArrayType(PsiArrayType psiArrayType, ResolutionStage stage) {
         try (var entry = ContextUtil.getProfiler().enter("resolveArrayType: " + stage)) {
-            return context.getArrayType(resolve(psiArrayType.getComponentType(), stage), ArrayKind.READ_WRITE);
+            return new ArrayType(resolve(psiArrayType.getComponentType(), stage), ArrayKind.READ_WRITE);
         }
     }
 
@@ -139,17 +143,15 @@ public class TypeResolverImpl implements TypeResolver {
         try (var entry = ContextUtil.getProfiler().enter("resolveWildcardType: " + stage)) {
             if (wildcardType.isBounded()) {
                 if (wildcardType.isExtends()) {
-                    return context.getUncertainType(
-                            StandardTypes.getNeverType(), resolve(wildcardType.getExtendsBound(), stage)
-                    );
+                    return new UncertainType(StandardTypes.getNeverType(), resolve(wildcardType.getExtendsBound(), stage));
                 } else {
-                    return context.getUncertainType(
+                    return new UncertainType(
                             resolve(wildcardType.getSuperBound(), stage),
                             StandardTypes.getNullableAnyType()
                     );
                 }
             } else {
-                return context.getUncertainType(
+                return new UncertainType(
                         StandardTypes.getNeverType(),
                         StandardTypes.getNullableAnyType()
                 );
@@ -177,7 +179,8 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     public PsiCapturedWildcardType getPsiCapturedType(CapturedType capturedType) {
-        return requireNonNull(capturedTypeReverseMap.get(capturedType));
+        return requireNonNull(capturedTypeReverseMap.get(capturedType),
+                () -> "Can not find PsiCapturedWildcardType for captured type " + capturedType);
     }
 
     private Type resolveClassType(PsiClassType classType, ResolutionStage stage) {
@@ -212,7 +215,7 @@ public class TypeResolverImpl implements TypeResolver {
                     List<Type> typeArgs = NncUtils.map(
                             classType.getParameters(), this::resolveTypeOnly
                     );
-                    return context.getGenericContext().getParameterizedType(type, typeArgs, stage).getType();
+                    return type.getParameterized(typeArgs, stage).getType();
                 } else {
                     return type.getType();
                 }
@@ -222,21 +225,6 @@ public class TypeResolverImpl implements TypeResolver {
 
     public Set<TypeDef> getGeneratedTypeDefs() {
         return generatedTypeDefs;
-    }
-
-    public Set<Flow> getGeneratedParameterizedFlows() {
-        return context.getGenericContext().getNewFlows();
-    }
-
-    private PsiClassType createParameterizedEnumType() {
-        if (parameterizedEnumType != null) {
-            return parameterizedEnumType;
-        }
-        var psiEnumClass = TranspileUtil.createClassType(Enum.class).resolve();
-        var typeArg = TranspileUtil.createType(
-                requireNonNull(requireNonNull(psiEnumClass).getTypeParameterList()).getTypeParameters()[0]
-        );
-        return parameterizedEnumType = TranspileUtil.createType(Enum.class, typeArg);
     }
 
     public Flow resolveFlow(PsiMethod method) {
@@ -324,26 +312,26 @@ public class TypeResolverImpl implements TypeResolver {
             var ownerType = TranspileUtil.createType(psiClass);
             var childListType = TranspileUtil.createClassType(ChildList.class);
             if (childListType.isAssignableFrom(ownerType))
-                return StandardTypes.getChildListType().getTypeParameters().get(0);
+                return StandardTypes.getChildListKlass().getTypeParameters().get(0);
             var arrayListType = TranspileUtil.createClassType(ArrayList.class);
             var linkedListType = TranspileUtil.createClassType(LinkedList.class);
             if (arrayListType.isAssignableFrom(ownerType) || linkedListType.isAssignableFrom(ownerType))
-                return StandardTypes.getReadWriteListType().getTypeParameters().get(0);
+                return StandardTypes.getReadWriteListKlass().getTypeParameters().get(0);
             var listType = TranspileUtil.createClassType(List.class);
             if (listType.isAssignableFrom(ownerType))
-                return StandardTypes.getListType().getTypeParameters().get(0);
+                return StandardTypes.getListKlass().getTypeParameters().get(0);
             var setType = TranspileUtil.createClassType(Set.class);
             if (setType.isAssignableFrom(ownerType))
-                return StandardTypes.getSetType().getTypeParameters().get(0);
+                return StandardTypes.getSetKlass().getTypeParameters().get(0);
             var mapType = TranspileUtil.createClassType(Map.class);
             if (mapType.isAssignableFrom(ownerType)) {
                 int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
                         .getTypeParameterIndex(typeParameter);
-                return StandardTypes.getMapType().getTypeParameters().get(index);
+                return StandardTypes.getMapKlass().getTypeParameters().get(index);
             }
             var enumType = TranspileUtil.createClassType(Enum.class);
             if (ownerType.equals(enumType))
-                return StandardTypes.getEnumType().getTypeParameters().get(0);
+                return StandardTypes.getEnumKlass().getTypeParameters().get(0);
         }
         return null;
     }
@@ -436,7 +424,7 @@ public class TypeResolverImpl implements TypeResolver {
     private void processClassType(Klass metaClass, final ResolutionStage stage) {
         var template = metaClass.getEffectiveTemplate();
         if (template != metaClass && template.getStage().isAfterOrAt(stage))
-            context.getGenericContext().getParameterizedType(template, metaClass.getTypeArguments(), stage);
+            template.getParameterized(metaClass.getTypeArguments(), stage);
         else if (template.tryGetId() == null) {
             var psiClass = NncUtils.requireNonNull(psiClassMap.get(template));
             processClassType(template, psiClass, stage);
@@ -453,11 +441,9 @@ public class TypeResolverImpl implements TypeResolver {
             metaClass.forEachSuper(superType -> processClassType(superType, stage));
             if (stage.isAfterOrAt(DECLARATION) && metaClass.getStage().isBefore(DECLARATION)) {
                 codeGenerator.generateDecl(psiClass, this);
-                context.getGenericContext().generateDeclarations(metaClass);
             }
             if (stage.isAfterOrAt(DEFINITION) && metaClass.getStage().isBefore(DEFINITION) && !metaClass.isInterface()) {
                 codeGenerator.generateCode(psiClass, this);
-                context.getGenericContext().generateCode(metaClass);
             }
         }
 //        metaClass.setStage(stage);
@@ -466,16 +452,6 @@ public class TypeResolverImpl implements TypeResolver {
     private class MyTypeFactory extends TypeFactory {
 
         private final Set<Type> types = new HashSet<>();
-
-        @Override
-        public boolean isAddTypeSupported() {
-            return true;
-        }
-
-        @Override
-        public void addType(Type type) {
-            types.add(type);
-        }
 
         public Set<Type> getGeneratedTypes() {
             return Collections.unmodifiableSet(types);

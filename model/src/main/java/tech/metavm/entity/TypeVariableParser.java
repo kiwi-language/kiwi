@@ -45,7 +45,7 @@ public class TypeVariableParser extends DefParser<Object, ClassInstance, TypeVar
 
     @Override
     public void generateSignature() {
-        type.setBounds(NncUtils.map(javaTypeVariable.getBounds(), b -> defMap.getType(b, INIT)));
+        type.setBounds(NncUtils.map(javaTypeVariable.getBounds(), b -> defMap.getType(b)));
     }
 
     @Override

@@ -18,8 +18,10 @@ import tech.metavm.object.instance.query.InstanceNode;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeParser;
+import tech.metavm.object.type.ValueFormatter;
 import tech.metavm.system.RegionConstants;
 import tech.metavm.util.*;
 
@@ -55,7 +57,7 @@ public class InstanceManager extends EntityContextFactoryBean {
         try (var entityContext = newContext()) {
             var context = entityContext.getInstanceContext();
             var klass = ((ClassType) TypeParser.parse(request.type(), context.getTypeDefProvider())).resolve();
-            var dataPage = instanceQueryService.query(InstanceQueryBuilder.newBuilder(klass.getType())
+            var dataPage = instanceQueryService.query(InstanceQueryBuilder.newBuilder(klass)
                     .expression(request.condition())
                     .page(request.page())
                     .pageSize(request.pageSize())
@@ -65,7 +67,7 @@ public class InstanceManager extends EntityContextFactoryBean {
             List<Expression> selects = NncUtils.map(request.selects(), sel -> ExpressionParser.parse(klass, sel, entityContext));
             GraphQueryExecutor graphQueryExecutor = new GraphQueryExecutor();
             return new Page<>(
-                    graphQueryExecutor.execute(klass, roots, selects, context.parameterizedFlowProvider()),
+                    graphQueryExecutor.execute(klass, roots, selects),
                     dataPage.total()
             );
         }
@@ -102,7 +104,7 @@ public class InstanceManager extends EntityContextFactoryBean {
                 if (instanceId instanceof PhysicalId/* && !classInstance.getType().isStruct()*/) {
                     var defaultMapping = classInstance.getType().resolve().getDefaultMapping();
                     if (defaultMapping != null) {
-                        var viewId = new DefaultViewId(false, defaultMapping.getId(), instanceId);
+                        var viewId = new DefaultViewId(false, defaultMapping.toKey(), instanceId);
                         var view = context.get(viewId);
                         return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(view, 1));
                     }
@@ -144,11 +146,11 @@ public class InstanceManager extends EntityContextFactoryBean {
     }
 
 
-    public void save(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeRepository parameterizedTypeRepository) {
+    public void save(InstanceDTO instanceDTO, IInstanceContext context) {
         if (!instanceDTO.isNew()) {
             update(instanceDTO, context);
         } else {
-            create(instanceDTO, context, parameterizedTypeRepository);
+            create(instanceDTO, context);
         }
     }
 
@@ -159,13 +161,13 @@ public class InstanceManager extends EntityContextFactoryBean {
     @Transactional
     public String create(InstanceDTO instanceDTO) {
         try (var context = newContext()) {
-            Instance instance = create(instanceDTO, context.getInstanceContext(), context.getGenericContext());
+            Instance instance = create(instanceDTO, context.getInstanceContext());
             context.finish();
             return Objects.requireNonNull(instance.tryGetId()).toString();
         }
     }
 
-    public Instance create(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeRepository parameterizedTypeRepository) {
+    public Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
         return InstanceFactory.create(instanceDTO, context);
     }
 
@@ -244,8 +246,8 @@ public class InstanceManager extends EntityContextFactoryBean {
             var context = entityContext.getInstanceContext();
             var mappingProvider = context.getMappingProvider();
             Type type = TypeParser.parse(query.type(), context.getTypeDefProvider());
-            if (type instanceof ClassType) {
-                var internalQuery = InstanceQueryBuilder.newBuilder(type)
+            if (type instanceof ClassType classType) {
+                var internalQuery = InstanceQueryBuilder.newBuilder(classType.resolve())
                         .searchText(query.searchText())
                         .newlyCreated(NncUtils.map(query.createdIds(), Id::parse))
                         .fields(NncUtils.map(query.fields(), f -> InstanceQueryField.create(f, entityContext)))
