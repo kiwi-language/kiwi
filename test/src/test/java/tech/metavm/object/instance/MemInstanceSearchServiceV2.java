@@ -85,7 +85,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     @Override
     public void bulk(long appId, List<ClassInstance> toIndex, List<Id> toDelete) {
         for (ClassInstance instance : toIndex) {
-            NncUtils.requireNonNull(instance.tryGetPhysicalId());
+            NncUtils.requireNonNull(instance.tryGetTreeId());
             sourceMap.put(
                     appId,
                     instance.tryGetId(),

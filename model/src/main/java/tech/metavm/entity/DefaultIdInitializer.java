@@ -53,7 +53,7 @@ public class DefaultIdInitializer implements IdInitializer {
                 nodeId = 0;
             } else {
                 var root = inst.getRoot();
-                treeId = root.getPhysicalId();
+                treeId = root.getTreeId();
                 nodeId = root.nextNodeId();
             }
             if (tag != null)
@@ -88,7 +88,7 @@ public class DefaultIdInitializer implements IdInitializer {
             if(typeInst != null && typeInst != instance)
                 visit(typeInst, result, visited, visiting, typeDef2instance, path);
         });
-        if(!instance.isRoot() && instance.getRoot().tryGetPhysicalId() == null)
+        if(!instance.isRoot() && instance.getRoot().tryGetTreeId() == null)
             visit(instance.getRoot(), result, visited, visiting, typeDef2instance, path);
         visiting.remove(instance);
         visited.add(instance);

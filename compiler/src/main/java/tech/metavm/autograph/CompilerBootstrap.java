@@ -10,7 +10,6 @@ import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import static tech.metavm.util.Constants.ROOT_APP_ID;
-import static tech.metavm.util.Constants.getRootAppId;
 
 public class CompilerBootstrap {
 
@@ -49,7 +48,7 @@ public class CompilerBootstrap {
                     defContext.getDef(entityClass);
             }
             defContext.flushAndWriteInstances();
-            var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.tryGetPhysicalId() == null);
+            var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.tryGetTreeId() == null);
             if (!idNullInstances.isEmpty()) {
                 LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
                 var inst = idNullInstances.get(0);

@@ -216,7 +216,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private List<DurableInstance> getByTypeFromBuffer(Type type, @Nullable DurableInstance startExclusive, int limit, Set<Long> persistedIds) {
         var typeInstances = NncUtils.filter(
                 this,
-                i -> type == i.getType() && !persistedIds.contains(i.tryGetPhysicalId())
+                i -> type == i.getType() && !persistedIds.contains(i.tryGetTreeId())
         );
         if (startExclusive == null)
             return typeInstances.subList(0, Math.min(typeInstances.size(), limit));
@@ -382,9 +382,9 @@ public class InstanceContext extends BufferingInstanceContext {
             if (NncUtils.isEmpty(entityChange.deletes()))
                 return;
             var idsToRemove = NncUtils.mapUnique(entityChange.deletes(), VersionRT::id);
-            var idsToUpdate = NncUtils.mapUnique(entityChange.updates(), v -> v.id().getPhysicalId());
+            var idsToUpdate = NncUtils.mapUnique(entityChange.updates(), v -> v.id().getTreeId());
             var ref = instanceStore.getFirstReference(
-                    appId, idsToRemove, mergeSets(NncUtils.mapUnique(idsToRemove, Id::getPhysicalId), idsToUpdate)
+                    appId, idsToRemove, mergeSets(NncUtils.mapUnique(idsToRemove, Id::getTreeId), idsToUpdate)
             );
             if (ref != null)
                 throw BusinessException.strongReferencesPreventRemoval(getRoot(ref.getSourceTreeId()),
@@ -405,7 +405,7 @@ public class InstanceContext extends BufferingInstanceContext {
                         && !instance.isRemoved() && !instance.isEphemeral()
                         && !instance.isLoadedFromCache()) {
                     var tree = new Tree(
-                            instance.getPhysicalId(),
+                            instance.getTreeId(),
                             instance.getVersion(),
                             instance.getNextNodeId(),
                             InstanceOutput.toMessage(instance)

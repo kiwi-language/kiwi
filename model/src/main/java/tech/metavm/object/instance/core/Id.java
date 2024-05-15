@@ -18,7 +18,7 @@ public abstract class Id implements Comparable<Id> {
     public abstract void write(InstanceOutput output);
 
     public static boolean isPersistedId(@Nullable String id) {
-        return id != null && Id.parse(id).tryGetPhysicalId() != null;
+        return id != null && Id.parse(id).tryGetTreeId() != null;
     }
 
     public byte[] toBytes() {
@@ -67,10 +67,10 @@ public abstract class Id implements Comparable<Id> {
         this.isArray = isArray;
     }
 
-    public abstract Long tryGetPhysicalId();
+    public abstract Long tryGetTreeId();
 
-    public long getPhysicalId() {
-        return Objects.requireNonNull(tryGetPhysicalId());
+    public long getTreeId() {
+        return Objects.requireNonNull(tryGetTreeId());
     }
 
     public abstract boolean isTemporary();

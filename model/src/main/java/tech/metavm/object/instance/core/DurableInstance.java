@@ -80,7 +80,7 @@ public abstract class DurableInstance extends Instance {
         this.ephemeral = ephemeral;
         if (id != null) {
             initId(id);
-            _new = id.tryGetPhysicalId() == null;
+            _new = id.tryGetTreeId() == null;
         }
         else
             _new = true;
@@ -131,10 +131,6 @@ public abstract class DurableInstance extends Instance {
     @NoProxy
     public @Nullable Id tryGetId() {
         return id;
-    }
-
-    public long getTreeId() {
-        return getRoot().getPhysicalId();
     }
 
     public Id getId() {
@@ -267,7 +263,7 @@ public abstract class DurableInstance extends Instance {
     @NoProxy
     void setLoaded(boolean fromCache) {
         if (loaded)
-            throw new InternalException(String.format("Instance %d is already loaded", getPhysicalId()));
+            throw new InternalException(String.format("Instance %d is already loaded", getTreeId()));
         loaded = true;
         _new = false;
         setLoadedFromCache(fromCache);
@@ -295,22 +291,22 @@ public abstract class DurableInstance extends Instance {
 
     @NoProxy
     @Nullable
-    public Long tryGetPhysicalId() {
-        return id != null ? id.tryGetPhysicalId() : null;
+    public Long tryGetTreeId() {
+        return id != null ? id.tryGetTreeId() : null;
     }
 
     @NoProxy
-    public long getPhysicalId() {
-        var physicalId = tryGetPhysicalId();
-        if (physicalId != null)
-            return physicalId;
+    public long getTreeId() {
+        var treeId = tryGetTreeId();
+        if (treeId != null)
+            return treeId;
         else
             throw new InternalException("Instance id not initialized yet");
     }
 
     @NoProxy
     public boolean idEquals(long id) {
-        return Objects.equals(this.tryGetPhysicalId(), id);
+        return Objects.equals(this.tryGetTreeId(), id);
     }
 
     @NoProxy
@@ -382,7 +378,7 @@ public abstract class DurableInstance extends Instance {
 
     public Tree toTree(boolean withChildren) {
         NncUtils.requireTrue(isRoot());
-        return new Tree(getPhysicalId(), getVersion(), nextNodeId, InstanceOutput.toByteArray(this, withChildren, true));
+        return new Tree(getTreeId(), getVersion(), nextNodeId, InstanceOutput.toByteArray(this, withChildren, true));
     }
 
     public abstract void readFrom(InstanceInput input);
@@ -478,7 +474,7 @@ public abstract class DurableInstance extends Instance {
 
     @NoProxy
     public Object toSearchConditionValue() {
-        return id.getPhysicalId();
+        return id.getTreeId();
     }
 
 

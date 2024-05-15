@@ -29,7 +29,7 @@ public abstract class BaseIdService implements EntityIdProvider {
     }
 
     public BlockRT getBydId(Id id) {
-        return cache.getById(id.getPhysicalId());
+        return cache.getById(id.getTreeId());
     }
 
 

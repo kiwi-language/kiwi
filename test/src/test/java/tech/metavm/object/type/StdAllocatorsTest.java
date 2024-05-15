@@ -55,16 +55,16 @@ public class StdAllocatorsTest extends TestCase {
 
         var typeClassId = allocators.getId(Klass.class);
         var fieldClassId = allocators.getId(Field.class);
-        Assert.assertEquals(typeClassId.getPhysicalId(), allocators.getTypeId(fieldClassId).id());
+        Assert.assertEquals(typeClassId.getTreeId(), allocators.getTypeId(fieldClassId).id());
 
         var typeNameFieldId = allocators.getId(klassNameReflectField);
-        Assert.assertEquals(fieldClassId.getPhysicalId(), allocators.getTypeId(typeNameFieldId).id());
+        Assert.assertEquals(fieldClassId.getTreeId(), allocators.getTypeId(typeNameFieldId).id());
 
         var typeCategoryClassId = allocators.getId(TypeCategory.class);
-        Assert.assertEquals(typeClassId.getPhysicalId(), allocators.getTypeId(typeCategoryClassId).id());
+        Assert.assertEquals(typeClassId.getTreeId(), allocators.getTypeId(typeCategoryClassId).id());
 
         var enumConstantId = allocators.getId(TypeCategory.CLASS);
-        Assert.assertEquals(typeCategoryClassId.getPhysicalId(), allocators.getTypeId(enumConstantId).id());
+        Assert.assertEquals(typeCategoryClassId.getTreeId(), allocators.getTypeId(enumConstantId).id());
 
         allocators.save();
     }

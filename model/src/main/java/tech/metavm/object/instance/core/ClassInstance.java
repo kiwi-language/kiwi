@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.entity.SerializeContext;
@@ -146,7 +145,7 @@ public class ClassInstance extends DurableInstance {
     public String getTitle() {
         ensureLoaded();
         Field titleField = klass.getTitleField();
-        return titleField != null ? field(titleField).getDisplayValue() : tryGetPhysicalId() + "";
+        return titleField != null ? field(titleField).getDisplayValue() : tryGetTreeId() + "";
     }
 
     public Object getField(List<Id> fieldPath) {

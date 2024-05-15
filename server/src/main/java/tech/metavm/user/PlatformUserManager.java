@@ -179,8 +179,8 @@ public class PlatformUserManager extends EntityContextFactoryBean {
             }
         }
         if (TransactionSynchronizationManager.isSynchronizationActive()
-                && app.getId().getPhysicalId() != Constants.PLATFORM_APP_ID
-                && app.getId().getPhysicalId() != Constants.ROOT_APP_ID) {
+                && app.getId().getTreeId() != Constants.PLATFORM_APP_ID
+                && app.getId().getTreeId() != Constants.ROOT_APP_ID) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {

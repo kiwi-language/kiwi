@@ -45,7 +45,7 @@ public class PersistenceUtils {
         classInstance.ensureAllFieldsInitialized();
         return new InstancePO(
                 appId,
-                classInstance.getId().getPhysicalId(),
+                classInstance.getTreeId(),
                 InstanceOutput.toByteArray(classInstance),
                 classInstance.getVersion(),
                 classInstance.getSyncVersion(),
@@ -56,7 +56,7 @@ public class PersistenceUtils {
     private static InstancePO toInstancePO(ArrayInstance arrayInstance, long appId) {
         return new InstancePO(
                 appId,
-                arrayInstance.getId().getPhysicalId(),
+                arrayInstance.getTreeId(),
                 InstanceOutput.toByteArray(arrayInstance),
                 arrayInstance.getVersion(),
                 arrayInstance.getSyncVersion(),
@@ -131,7 +131,7 @@ public class PersistenceUtils {
                 var targetId = readId();
                 refs.add(new ReferencePO(
                         appId,
-                        sourceId.getPhysicalId(),
+                        sourceId.getTreeId(),
                         targetId.toBytes(),
                         NncUtils.getOrElse(fieldId, Id::toBytes, Constants.EMPTY_BYTES),
                         ReferenceKind.STRONG.code()

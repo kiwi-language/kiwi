@@ -59,7 +59,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
             }
             defContext.flushAndWriteInstances();
             ModelDefRegistry.setDefContext(defContext);
-            var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && inst.tryGetPhysicalId() == null);
+            var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && inst.tryGetTreeId() == null);
             if (!idNullInstances.isEmpty()) {
                 logger.warn(idNullInstances.size() + " instances have null ids. Save is required");
                 if(DebugEnv.bootstrapVerbose) {
@@ -116,7 +116,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
     private void ensureIdInitialized() {
         var defContext = ModelDefRegistry.getDefContext();
         for (var instance : defContext.instances()) {
-            if (instance.isDurable() && instance.tryGetPhysicalId() == null)
+            if (instance.isDurable() && instance.tryGetTreeId() == null)
                 throw new InternalException("Detected a durable instance with uninitialized id. instance: " + instance);
         }
     }

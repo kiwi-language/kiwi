@@ -45,7 +45,7 @@ public class StdAllocator {
             if(!propertyName.startsWith(SYSTEM_PROP_PREFIX)) {
                 var id = Id.parse(properties.getProperty(propertyName));
                 putId(propertyName, id);
-                var physicalId = id.getPhysicalId();
+                var physicalId = id.getTreeId();
                 if(physicalId >= nextId) {
                     nextId = physicalId + 1;
                 }

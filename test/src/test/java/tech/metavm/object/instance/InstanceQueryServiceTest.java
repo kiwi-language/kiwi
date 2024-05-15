@@ -61,7 +61,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 typeRepository
         );
         Assert.assertEquals(1, page.total());
-        Assert.assertEquals(foo.tryGetPhysicalId(), page.data().get(0).tryGetPhysicalId());
+        Assert.assertEquals(foo.tryGetTreeId(), page.data().get(0).tryGetTreeId());
     }
 
     private ClassInstance addInstance(ClassInstance instance) {
@@ -84,7 +84,7 @@ public class InstanceQueryServiceTest extends TestCase {
         var page2 = instanceQueryService.query(query2,
                 instanceRepository, typeRepository);
         Assert.assertEquals(1, page2.total());
-        Assert.assertEquals(foo.tryGetPhysicalId(), page2.data().get(0).tryGetPhysicalId());
+        Assert.assertEquals(foo.tryGetTreeId(), page2.data().get(0).tryGetTreeId());
     }
 
     public void testCreatedIds() {
@@ -108,7 +108,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 typeRepository
         );
         Assert.assertEquals(1, page.total());
-        Assert.assertEquals(foo.tryGetPhysicalId(), page.data().get(0).tryGetPhysicalId());
+        Assert.assertEquals(foo.tryGetTreeId(), page.data().get(0).tryGetTreeId());
     }
 
 }

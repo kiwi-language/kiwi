@@ -21,11 +21,12 @@ public class InstanceOutput extends OutputStream {
         return toByteArray(instance, true, true);
     }
 
-    public static byte[] toByteArray(DurableInstance instance, boolean includeChild, boolean withVersion) {
+    public static byte[] toByteArray(DurableInstance instance, boolean includeChild, boolean withHeader) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout, includeChild);
-        if (withVersion) {
+        if (withHeader) {
             output.writeLong(instance.getVersion());
+            output.writeLong(instance.getTreeId());
             output.writeInt(instance.getNextNodeId());
         }
         output.writeValue(instance);
@@ -62,10 +63,11 @@ public class InstanceOutput extends OutputStream {
             else*/
             if (isReference) {
                 write(WireTypes.REFERENCE);
-                writeId(requireNonNull(d.tryGetId()));
+                writeId(d.getId());
             } else {
                 write(WireTypes.RECORD);
-                writeId(requireNonNull(d.tryGetId()));
+                var id = (PhysicalId) d.getId();
+                id.writeWithoutTreeId(this);
                 d.writeTo(this, includeChildren);
             }
         } else

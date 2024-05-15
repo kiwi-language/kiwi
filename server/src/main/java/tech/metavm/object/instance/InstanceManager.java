@@ -211,7 +211,7 @@ public class InstanceManager extends EntityContextFactoryBean {
             Set<Long> visited = new HashSet<>();
             Map<Id, ReferenceTree> trees = new HashMap<>();
             trees.put(id, root);
-            visited.add(id.getPhysicalId());
+            visited.add(id.getTreeId());
             Set<Id> ids = new HashSet<>();
             ids.add(id);
             while (!ids.isEmpty()) {

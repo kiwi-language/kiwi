@@ -17,7 +17,7 @@ public interface Mapper<T, I extends DurableInstance> {
         T model = allocateEntity();
         if(model instanceof IdInitializing idInitializing) {
             var d = (DurableInstance) instance;
-            if(d.tryGetPhysicalId() != null)
+            if(d.tryGetTreeId() != null)
                 idInitializing.initId(d.tryGetId());
         }
         initEntity(model, instance, objectInstanceMap);

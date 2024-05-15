@@ -13,7 +13,6 @@ import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.generic.*;
 import tech.metavm.util.*;
 import tech.metavm.util.profile.Profiler;
 
@@ -102,7 +101,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public void onInstanceIdInit(DurableInstance instance) {
         Object model = instance.getMappedEntity();
         if (model != null && model2instance.containsKey(model)) {
-            entityMap.put(instance.getPhysicalId(), model);
+            entityMap.put(instance.getTreeId(), model);
             if (model instanceof IdInitializing idInitializing) {
                 NncUtils.requireNull(idInitializing.tryGetPhysicalId());
                 idInitializing.initId(instance.tryGetId());
@@ -167,7 +166,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     public boolean containsKey(EntityKey entityKey) {
-        return entityMap.containsKey(entityKey.id().getPhysicalId());
+        return entityMap.containsKey(entityKey.id().getTreeId());
     }
 
     @Override
@@ -252,7 +251,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     public void initIdManually(Object model, Id id) {
         var instance = getInstance(model);
-        if (instance.tryGetPhysicalId() != null) {
+        if (instance.tryGetTreeId() != null) {
             throw new InternalException("Model " + model + " already its id initialized");
         }
         NncUtils.requireNonNull(instanceContext).initIdManually(instance, id);
@@ -323,7 +322,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 //        if (id.isEmpty())
 //            return null;
 //        var id = id.toId();
-        if (id.tryGetPhysicalId() == null && !instanceContext.contains(id))
+        if (id.tryGetTreeId() == null && !instanceContext.contains(id))
             return null;
         var instance = instanceContext.get(id);
         return getEntity(entityType, instance);
@@ -684,8 +683,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         instance.setMappedEntity(model);
         if (model instanceof Entity entity && entity.getTmpId() != null)
             instance.initId(TmpId.of(entity.getTmpId()));
-        if (instance.tryGetPhysicalId() != null)
-            entityMap.put(instance.getPhysicalId(), model);
+        if (instance.tryGetTreeId() != null)
+            entityMap.put(instance.getTreeId(), model);
         if (!manualInstanceWriting()) {
             if (!instanceContext.containsInstance(instance))
                 instanceContext.bind(instance);

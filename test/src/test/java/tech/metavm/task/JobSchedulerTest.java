@@ -46,12 +46,12 @@ public class JobSchedulerTest extends TestCase {
                 context.finish();
             }
         });
-        Assert.assertNotNull(instanceStore.get(TestConstants.APP_ID, ref.testJob.getId().getPhysicalId()));
+        Assert.assertNotNull(instanceStore.get(TestConstants.APP_ID, ref.testJob.getId().getTreeId()));
         TestUtils.doInTransactionWithoutResult(() -> jobScheduler.sendHeartbeat());
         jobScheduler.pollSignals();
         jobScheduler.schedule();
         jobScheduler.waitForJobDone(ref.testJob, 20);
-        Assert.assertNull(instanceStore.get(TestConstants.APP_ID, ref.testJob.getId().getPhysicalId()));
+        Assert.assertNull(instanceStore.get(TestConstants.APP_ID, ref.testJob.getId().getTreeId()));
     }
 
     private IEntityContext newContext() {

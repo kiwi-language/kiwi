@@ -28,6 +28,7 @@ public class InstanceInput implements Closeable {
 
     private final InputStream inputStream;
     private final Function<Id, DurableInstance> getInstance;
+    private long treeId;
     @Nullable
     private DurableInstance parent;
     @Nullable
@@ -46,6 +47,7 @@ public class InstanceInput implements Closeable {
 
     public DurableInstance readMessage() {
         var version = readLong();
+        readTreeId();
         var nextNodeId = readInt();
         var instance = (DurableInstance) readInstance();
         instance.setVersion(version);
@@ -76,9 +78,10 @@ public class InstanceInput implements Closeable {
     private final StreamVisitor skipper = new StreamVisitor(this);
 
     private Instance readRecord() {
-        var instance = resolveInstance(readId());
+        var id = readRecordId();
+        var instance = resolveInstance(id);
         if (instance.isInitialized())
-            skipper.visitRecordBody(instance.tryGetId());
+            skipper.visitRecordBody(id);
         else {
             instance.setParentInternal(parent, parentField);
             instance.readFrom(this);
@@ -151,6 +154,14 @@ public class InstanceInput implements Closeable {
 
     public Id readId() {
         return Id.readId(this);
+    }
+
+    public long readTreeId() {
+        return treeId = readLong();
+    }
+
+    public Id readRecordId() {
+        return PhysicalId.read(this, treeId);
     }
 
     public boolean isLoadedFromCache() {

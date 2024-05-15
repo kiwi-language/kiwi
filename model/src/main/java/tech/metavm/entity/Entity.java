@@ -3,7 +3,6 @@ package tech.metavm.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.flow.Method;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.util.*;
@@ -259,7 +258,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     @NoProxy
     public final boolean isPhysicalIdNull() {
-        return id == null || id.tryGetPhysicalId() == null;
+        return id == null || id.tryGetTreeId() == null;
     }
 
     @Override

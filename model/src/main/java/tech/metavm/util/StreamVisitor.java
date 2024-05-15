@@ -1,7 +1,6 @@
 package tech.metavm.util;
 
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.system.RegionConstants;
 
@@ -40,6 +39,7 @@ public class StreamVisitor {
 
     public void visitMessage() {
         input.readLong();
+        readTreeId();
         input.readInt();
         visit();
     }
@@ -54,7 +54,7 @@ public class StreamVisitor {
     }
 
     public void visitRecord() {
-        visitRecordBody(readId());
+        visitRecordBody(readRecordId());
     }
 
     public Id readId() {
@@ -131,4 +131,13 @@ public class StreamVisitor {
 
     public void visitNull() {
     }
+
+    public Id readRecordId() {
+        return input.readRecordId();
+    }
+
+    public long readTreeId() {
+        return input.readTreeId();
+    }
+
 }

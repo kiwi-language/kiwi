@@ -118,7 +118,7 @@ public class InstanceInputTest extends TestCase {
         quxNameField.initId(DefaultPhysicalId.ofObject(20005L, 0L, TestUtils.mockClassTypeKey()));
 
         var barInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30002L, 0L, TestUtils.mockClassTypeKey()),
+                DefaultPhysicalId.ofObject(30001L, 1L, TestUtils.mockClassTypeKey()),
                 Map.of(
                         barCodeField,
                         new StringInstance(barCode, StandardTypes.getStringType())
@@ -127,7 +127,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var quxInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30003L, 0L, TestUtils.mockClassTypeKey()),
+                DefaultPhysicalId.ofObject(30002L, 0L, TestUtils.mockClassTypeKey()),
                 Map.of(
                         quxNameField,
                         new StringInstance("qux001", StandardTypes.getStringType())

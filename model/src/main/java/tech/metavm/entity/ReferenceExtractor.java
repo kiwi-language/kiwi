@@ -37,9 +37,9 @@ public class ReferenceExtractor extends StreamVisitor {
     }
 
     private void addReference(Id targetId) {
-        if(sourceId.getPhysicalId() != targetId.getPhysicalId()) {
+        if(sourceId.getTreeId() != targetId.getTreeId()) {
             add.accept(new ReferencePO(this.appId,
-                    sourceId.getPhysicalId(),
+                    sourceId.getTreeId(),
                     targetId.toBytes(),
                     NncUtils.getOrElse(fieldId, Id::toBytes, Constants.EMPTY_BYTES),
                     ReferenceKind.STRONG.code()));

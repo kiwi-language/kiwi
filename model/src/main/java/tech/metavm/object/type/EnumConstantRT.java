@@ -77,7 +77,7 @@ public class EnumConstantRT {
     }
 
     public Long getId() {
-        return instance.tryGetPhysicalId();
+        return instance.tryGetTreeId();
     }
 
     public String getInstanceIdString() {

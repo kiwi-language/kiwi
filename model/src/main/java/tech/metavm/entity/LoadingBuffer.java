@@ -2,12 +2,10 @@ package tech.metavm.entity;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.TreeNotFoundException;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.StreamVisitor;
 
@@ -70,7 +68,7 @@ public class LoadingBuffer {
         var tree = invertedIndex.get(id);
         if (tree != null)
             return tree;
-        buffer(id.getPhysicalId());
+        buffer(id.getTreeId());
         flush();
         tree = invertedIndex.get(id);
         return tree;

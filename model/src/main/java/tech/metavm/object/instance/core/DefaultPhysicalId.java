@@ -41,6 +41,13 @@ public class DefaultPhysicalId extends PhysicalId {
     }
 
     @Override
+    public void writeWithoutTreeId(InstanceOutput output) {
+        output.writeIdTag(IdTag.OBJECT_PHYSICAL, isArray());
+        output.writeLong(getNodeId());
+        typeKey.write(output);
+    }
+
+    @Override
     public boolean equals(Object entity) {
         if (this == entity) return true;
         if (!(entity instanceof DefaultPhysicalId that)) return false;

@@ -38,8 +38,8 @@ public class DefaultViewId extends ViewId {
 
 
     @Override
-    public Long tryGetPhysicalId() {
-        return sourceId.tryGetPhysicalId();
+    public Long tryGetTreeId() {
+        return sourceId.tryGetTreeId();
     }
 
     @Override

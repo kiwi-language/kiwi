@@ -94,7 +94,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 for (String removedInstanceId : removedInstanceIds) {
                     var id = Id.parse(removedInstanceId);
                     if (id instanceof PhysicalId physicalId && physicalId.getNodeId() == 0L)
-                        removedIds.add(id.getPhysicalId());
+                        removedIds.add(id.getTreeId());
                 }
                 version = patch.version();
             }

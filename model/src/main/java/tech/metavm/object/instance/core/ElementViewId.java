@@ -29,7 +29,7 @@ public class ElementViewId extends PathViewId {
     }
 
     @Override
-    public Long tryGetPhysicalId() {
+    public Long tryGetTreeId() {
         return null;
     }
 

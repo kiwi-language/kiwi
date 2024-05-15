@@ -16,7 +16,7 @@ public class NullId extends Id {
     }
 
     @Override
-    public Long tryGetPhysicalId() {
+    public Long tryGetTreeId() {
         return null;
     }
 

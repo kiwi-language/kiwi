@@ -96,7 +96,7 @@ public class FunctionMethods {
 
     public static LongInstance GET_ID(Instance instance) {
         if(instance instanceof DurableInstance d)
-            return Instances.longInstance(NncUtils.orElse(d.tryGetPhysicalId(), 0L));
+            return Instances.longInstance(NncUtils.orElse(d.tryGetTreeId(), 0L));
         else
             return Instances.longInstance(0L);
     }

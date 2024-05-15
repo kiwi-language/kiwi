@@ -40,7 +40,7 @@ public class SubtreeExtractor extends StreamVisitor {
 
             @Override
             public void visitRecord() {
-                var id = readId();
+                var id = readRecordId();
                 write(WireTypes.REFERENCE);
                 writeId(id);
                 SubtreeExtractor.this.visitRecordBody(id);

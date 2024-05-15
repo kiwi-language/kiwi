@@ -28,7 +28,7 @@ public class CloseAllSessionsTask extends Task {
                         session.close();
                 }
             }
-            cursor = context.getInstance(objects.get(objects.size() - 1)).getPhysicalId();
+            cursor = context.getInstance(objects.get(objects.size() - 1)).getTreeId();
             context.finish();
             return false;
         }

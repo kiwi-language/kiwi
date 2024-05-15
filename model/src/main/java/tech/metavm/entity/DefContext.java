@@ -567,7 +567,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     private void addToContext(Object model, DurableInstance instance) {
-        if (instance.tryGetPhysicalId() == null)
+        if (instance.tryGetTreeId() == null)
             // onBind will get invoked
             addBinding(model, instance);
         else

@@ -105,7 +105,7 @@ public class ValueFormatter {
         Instance value = InstanceFactory.resolveValue(
                 rawValue, type, parentRef, context
         );
-        if (value instanceof DurableInstance d && d.tryGetPhysicalId() == null) {
+        if (value instanceof DurableInstance d && d.tryGetTreeId() == null) {
             context.bind(d);
         }
         return value;
@@ -125,8 +125,8 @@ public class ValueFormatter {
             var d = (DurableInstance) value;
             if (value.getType().isValue()) {
                 return value.toDTO();
-            } else if (d.tryGetPhysicalId() != null) {
-                return new ReferenceDTO(d.getPhysicalId());
+            } else if (d.tryGetTreeId() != null) {
+                return new ReferenceDTO(d.getTreeId());
             } else {
                 return null;
             }

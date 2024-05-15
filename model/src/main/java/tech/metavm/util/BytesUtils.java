@@ -152,6 +152,8 @@ public class BytesUtils {
         Map<String, Object> result = new HashMap<>();
         if (withVersion) {
             result.put("version", input.readLong());
+            result.put("treeId", input.readTreeId());
+            result.put("nextNodeId", input.readInt());
         }
         result.put("data", input.readValue());
         return result;
@@ -178,7 +180,7 @@ public class BytesUtils {
         }
 
         private Object readRecord() {
-            var id = readId();
+            var id = readRecordId();
             Map<String, Object> map = new HashMap<>();
             map.put("id", id.toString());
             if (RegionConstants.isArrayId(id)) {

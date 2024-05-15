@@ -36,7 +36,7 @@ public class MockId extends Id {
     }
 
     @Override
-    public Long tryGetPhysicalId() {
+    public Long tryGetTreeId() {
         return null;
     }
 

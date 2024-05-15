@@ -258,6 +258,6 @@ public class ClassType extends Type implements ISubstitutor {
 
     @Override
     public TypeId getTypeId() {
-        return new TypeId(TypeTag.fromCategory(getCategory()), resolve().getId().getPhysicalId());
+        return new TypeId(TypeTag.fromCategory(getCategory()), resolve().getId().getTreeId());
     }
 }

@@ -3,6 +3,7 @@ package tech.metavm.util;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.PersistenceUtils;
 
@@ -23,16 +24,16 @@ public class InstanceMatcher extends BaseMatcher<Instance> {
     @Override
     public boolean matches(Object actual) {
         if(actual instanceof DurableInstance that) {
-            Map<Long, DurableInstance> instanceMap = NncUtils.toMap(
+            Map<Id, DurableInstance> instanceMap = NncUtils.toMap(
                     Instances.getAllNonValueInstances(instance),
-                    DurableInstance::tryGetPhysicalId
+                    DurableInstance::getId
             );
             var thatInstances = Instances.getAllNonValueInstances(that);
             if(instanceMap.size() != thatInstances.size()) {
                 return false;
             }
             for (var thatInst : thatInstances) {
-                var inst = instanceMap.get(thatInst.tryGetPhysicalId());
+                var inst = instanceMap.get(thatInst.getId());
                 if(inst == null) {
                     return false;
                 }

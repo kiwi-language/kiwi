@@ -278,7 +278,7 @@ public class FlowManager extends EntityContextFactoryBean {
     }
 
     private NodeRT saveNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
-        if (nodeDTO.id() == null || Id.parse(nodeDTO.id()).tryGetPhysicalId() == null) {
+        if (nodeDTO.id() == null || Id.parse(nodeDTO.id()).tryGetTreeId() == null) {
             return createNode(nodeDTO, scope, context);
         } else {
             return updateNode(nodeDTO, context);

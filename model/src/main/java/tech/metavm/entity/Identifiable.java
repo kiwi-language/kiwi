@@ -19,12 +19,12 @@ public interface Identifiable {
 
     @NoProxy
     default long getPhysicalId() {
-        return getId().getPhysicalId();
+        return getId().getTreeId();
     }
 
     @NoProxy
     default Long tryGetPhysicalId() {
-        return NncUtils.get(tryGetId(), Id::tryGetPhysicalId);
+        return NncUtils.get(tryGetId(), Id::tryGetTreeId);
     }
 
 }

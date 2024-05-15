@@ -77,10 +77,9 @@ public class DiskTreeStore implements TreeSource {
                     input.read(bytes);
                     var subInput = new InstanceInput(new ByteArrayInputStream(bytes));
                     var version = subInput.readLong();
+                    var treeId = subInput.readTreeId();
                     var nextNodeId = subInput.readInt();
-                    subInput.read(); // wire type
-                    var id = subInput.readId().getPhysicalId();
-                    trees.put(id, new Tree(id, version, nextNodeId, bytes));
+                    trees.put(treeId, new Tree(treeId, version, nextNodeId, bytes));
                 }
                 this.trees = trees;
             } catch (IOException e) {

@@ -153,7 +153,7 @@ public class Compiler {
             }
             var typeDefDTOs = new ArrayList<TypeDefDTO>();
             serContext.forEachType(
-                    (t -> (t.isIdNull() || !RegionConstants.isSystemId(t.getId().getPhysicalId()))),
+                    (t -> (t.isIdNull() || !RegionConstants.isSystemId(t.getId().getTreeId()))),
                     t -> {
                         if(t instanceof Klass k && k.isParameterized())
                             return;

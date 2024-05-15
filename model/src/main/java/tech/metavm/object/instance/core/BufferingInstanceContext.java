@@ -43,8 +43,8 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         if (parent != null && parent.contains(id))
             parent.buffer(id);
         else {
-            if(id.tryGetPhysicalId() != null)
-                loadingBuffer.buffer(id.getPhysicalId());
+            if(id.tryGetTreeId() != null)
+                loadingBuffer.buffer(id.getTreeId());
         }
     }
 

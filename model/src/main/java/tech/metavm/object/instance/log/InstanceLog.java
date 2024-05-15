@@ -44,7 +44,7 @@ public class InstanceLog {
     }
 
     public VersionPO getVersion() {
-        return new VersionPO(appId, id.getPhysicalId(), version);
+        return new VersionPO(appId, id.getTreeId(), version);
     }
 
     public boolean isInsert() {

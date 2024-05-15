@@ -92,9 +92,9 @@ public class StdAllocators {
         for (StdAllocator allocator : allocatorMap.values()) {
             if (allocator.contains(id)) {
                 if (isMetaArray(allocator.getJavaType())) {
-                    return TypeId.ofArray(arrayTypeAllocator.getId(allocator.getJavaType().getTypeName()).getPhysicalId());
+                    return TypeId.ofArray(arrayTypeAllocator.getId(allocator.getJavaType().getTypeName()).getTreeId());
                 } else {
-                    return TypeId.ofClass(classTypeAllocator.getId(allocator.getJavaType().getTypeName()).getPhysicalId());
+                    return TypeId.ofClass(classTypeAllocator.getId(allocator.getJavaType().getTypeName()).getTreeId());
                 }
             }
         }

@@ -53,7 +53,7 @@ public class IndexSourceBuilder {
         } else if (value instanceof PrimitiveInstance primitiveInstance) {
             return primitiveInstance.getValue();
         } else {
-            return ((DurableInstance) value).tryGetPhysicalId();
+            return ((DurableInstance) value).tryGetTreeId();
         }
     }
 

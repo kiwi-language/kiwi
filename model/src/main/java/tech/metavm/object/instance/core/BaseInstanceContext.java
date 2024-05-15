@@ -657,7 +657,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public void batchBind(Collection<DurableInstance> instances) {
         instances.forEach(this::checkForBind);
         for (var inst : doCraw(instances)) {
-            if (inst.tryGetPhysicalId() == null)
+            if (inst.tryGetTreeId() == null)
                 add(inst);
         }
     }
@@ -665,7 +665,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private void checkForBind(DurableInstance instance) {
         //        NncUtils.requireFalse(instance.isEphemeral(), "Can not bind an ephemeral instance");
         NncUtils.requireFalse(instance.isValue(), "Can not bind a value instance");
-        NncUtils.requireNull(instance.tryGetPhysicalId(), "Can not bind a persisted instance");
+        NncUtils.requireNull(instance.tryGetTreeId(), "Can not bind a persisted instance");
         NncUtils.requireFalse(instance.isRemoved(),
                 () -> new InternalException("Can not bind instance " + instance + " because it's already removed. " +
                         "See issue 0001"));
@@ -676,7 +676,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             var added = doCraw(this);
             entry.addMessage("numNewInstances", added.size());
             for (var inst : added) {
-                if (inst.tryGetPhysicalId() == null && !containsInstance(inst))
+                if (inst.tryGetTreeId() == null && !containsInstance(inst))
                     add(inst);
             }
         }
@@ -709,7 +709,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private void add(DurableInstance instance) {
         NncUtils.requireFalse(instance.isRemoved(),
-                () -> new InternalException(String.format("Can not add a removed instance: %d", instance.tryGetPhysicalId())));
+                () -> new InternalException(String.format("Can not add a removed instance: %d", instance.tryGetTreeId())));
         NncUtils.requireTrue(instance.getContext() == null
                 && instance.getNext() == null && instance.getPrev() == null);
         if (tail == null)

@@ -34,7 +34,7 @@ public abstract class ScanTask extends Task {
         }
         process(batch, context);
         if(batch.size() >= BATCH_SIZE) {
-            cursor = batch.get(batch.size() - 1).getPhysicalId();
+            cursor = batch.get(batch.size() - 1).getTreeId();
             return false;
         }
         else {

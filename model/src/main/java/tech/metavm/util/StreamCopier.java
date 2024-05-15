@@ -23,6 +23,7 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitMessage() {
         output.writeLong(readLong());
+        output.writeLong(readTreeId());
         output.writeInt(readInt());
         visit();
     }
@@ -36,7 +37,7 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitRecord() {
         output.write(WireTypes.RECORD);
-        var id = readId();
+        var id = readRecordId();
         output.writeId(id);
         visitRecordBody(id);
     }
@@ -116,4 +117,5 @@ public class StreamCopier extends StreamVisitor {
     public void visitNull() {
         output.write(WireTypes.NULL);
     }
+
 }

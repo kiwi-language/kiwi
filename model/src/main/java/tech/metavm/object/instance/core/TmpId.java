@@ -37,7 +37,7 @@ public final class TmpId extends Id {
     }
 
     @Override
-    public Long tryGetPhysicalId() {
+    public Long tryGetTreeId() {
         return null;
     }
 

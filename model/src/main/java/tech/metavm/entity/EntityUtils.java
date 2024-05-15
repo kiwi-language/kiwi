@@ -438,7 +438,7 @@ public class EntityUtils {
     }
 
     public static Long tryGetPhysicalId(Object entity) {
-        return NncUtils.get(tryGetId(entity), Id::tryGetPhysicalId);
+        return NncUtils.get(tryGetId(entity), Id::tryGetTreeId);
     }
 
     @SuppressWarnings("unused")

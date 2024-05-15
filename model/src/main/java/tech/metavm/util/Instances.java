@@ -79,9 +79,9 @@ public class Instances {
 
     public static <T extends DurableInstance> List<T> sort(List<T> instances, boolean desc) {
         if (desc)
-            instances.sort((i1, i2) -> NncUtils.compareId(i2.tryGetPhysicalId(), i1.tryGetPhysicalId()));
+            instances.sort((i1, i2) -> NncUtils.compareId(i2.tryGetTreeId(), i1.tryGetTreeId()));
         else
-            instances.sort((i1, i2) -> NncUtils.compareId(i1.tryGetPhysicalId(), i2.tryGetPhysicalId()));
+            instances.sort((i1, i2) -> NncUtils.compareId(i1.tryGetTreeId(), i2.tryGetTreeId()));
         return instances;
     }
 

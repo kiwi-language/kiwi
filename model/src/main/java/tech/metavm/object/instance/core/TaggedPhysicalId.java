@@ -43,6 +43,12 @@ public class TaggedPhysicalId extends PhysicalId {
     }
 
     @Override
+    public void writeWithoutTreeId(InstanceOutput output) {
+        output.writeIdTag(tag, false);
+        output.writeLong(getNodeId());
+    }
+
+    @Override
     public void write(InstanceOutput output) {
         output.writeIdTag(tag, false);
         output.writeLong(getTreeId());

@@ -136,11 +136,7 @@ public class ClassInstanceTest extends TestCase {
             }
         });
 
-        var bout = new ByteArrayOutputStream();
-        var output = new InstanceOutput(bout);
-        output.writeValue(flow);
-
-        var bin = new ByteArrayInputStream(bout.toByteArray());
+        var bin = new ByteArrayInputStream(InstanceOutput.toMessage(flow));
         var input = new InstanceInput(bin, id -> {
             var inst = id2instance.get(id);
             if(inst instanceof ClassInstance classInst)
@@ -148,7 +144,7 @@ public class ClassInstanceTest extends TestCase {
             else
                 throw new RuntimeException("Unexpected instance: " + inst);
         });
-        var loadedFlow = (ClassInstance) input.readInstance();
+        var loadedFlow = (ClassInstance) input.readMessage();
         Assert.assertTrue(loadedFlow.getField(rootScopeField).isNull());
     }
 

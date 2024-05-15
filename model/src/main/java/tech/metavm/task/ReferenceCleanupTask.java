@@ -5,9 +5,6 @@ import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.util.NncUtils;
-
-import javax.annotation.Nullable;
 
 @EntityType("引用清理任务")
 public class ReferenceCleanupTask extends Task {
@@ -36,7 +33,7 @@ public class ReferenceCleanupTask extends Task {
         if(instances.size() < BATCH_SIZE) {
             return true;
         }
-        nextTreeId = instances.get(instances.size() - 1).getPhysicalId();
+        nextTreeId = instances.get(instances.size() - 1).getTreeId();
         return false;
     }
     
