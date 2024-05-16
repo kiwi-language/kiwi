@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.util.*;
 
@@ -257,8 +258,8 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     @NoProxy
-    public final boolean isPhysicalIdNull() {
-        return id == null || id.tryGetTreeId() == null;
+    public final boolean hasPhysicalId() {
+        return id instanceof PhysicalId;
     }
 
     @Override

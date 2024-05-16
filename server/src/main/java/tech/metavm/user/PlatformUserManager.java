@@ -136,7 +136,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
             var user = platformCtx.getEntity(PlatformUser.class, ContextUtil.getUserId());
             if (user.hasJoinedApplication(app)) {
                 ContextUtil.enterApp(id, null);
-                try (var ctx = newContext(app.getPhysicalId())) {
+                try (var ctx = newContext(app.getTreeId())) {
                     var appUser = ctx.selectFirstByKey(User.IDX_PLATFORM_USER_ID, user.getStringId());
                     var token = loginService.directLogin(id, appUser, ctx);
                     ctx.finish();
@@ -159,11 +159,11 @@ public class PlatformUserManager extends EntityContextFactoryBean {
 
     public void joinApplication(PlatformUser platformUser, Application app, IEntityContext platformContext) {
         platformUser.joinApplication(app);
-        if (app.getPhysicalId() != platformContext.getAppId()) {
+        if (app.getTreeId() != platformContext.getAppId()) {
             if (app.isIdNull())
                 platformContext.initIds();
-            ContextUtil.enterApp(app.getPhysicalId(), null);
-            try (var context = newContext(app.getPhysicalId())) {
+            ContextUtil.enterApp(app.getTreeId(), null);
+            try (var context = newContext(app.getTreeId())) {
                 var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, platformUser.getStringId());
                 if (user == null) {
                     user = new User(generateLoginName(platformUser.getLoginName(), context),

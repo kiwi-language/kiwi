@@ -139,6 +139,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private transient volatile List<Field> sortedFields;
 
+    private transient volatile List<List<Field>> sortedKlassAndFields;
+
     private transient Closure closure;
 
     private transient ClassType type;
@@ -337,9 +339,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public @Nullable ObjectMapping findMapping(Predicate<ObjectMapping> predicate) {
         var found = NncUtils.find(mappings, predicate);
-        if(found != null)
+        if (found != null)
             return found;
-        if(superType != null && (found = superType.resolve().findMapping(predicate)) != null)
+        if (superType != null && (found = superType.resolve().findMapping(predicate)) != null)
             return found;
         return null;
     }
@@ -428,12 +430,53 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                         if (f.isTagNotNull())
                             sf.add(f);
                     });
-                    sf.sort(Comparator.comparing(Field::getTag));
+                    sf.sort((f1, f2) -> {
+                        if (f1.getDeclaringType() == f2.getDeclaringType())
+                            return f1.getDeclaringType().getId().compareTo(f2.getDeclaringType().getId());
+                        else
+                            return Long.compare(f1.getId().getNodeId(), f2.getId().getNodeId());
+                    });
                     sortedFields = sf;
                 }
             }
         }
         return sortedFields;
+    }
+
+    public List<List<Field>> getSortedKlassAndFields() {
+        if (sortedKlassAndFields == null) {
+            synchronized (this) {
+                if (sortedKlassAndFields == null) {
+                    var fields = new ArrayList<Field>();
+                    Klass k = this;
+                    while (true) {
+                        fields.addAll(k.readyFields());
+                        if (k.getSuperType() != null)
+                            k = k.getSuperType().resolve();
+                        else
+                            break;
+                    }
+                    fields.sort(Comparator.comparingLong(Field::getRecordGroupTag).thenComparingLong(Field::getRecordTag));
+                    var sf = new ArrayList<List<Field>>();
+                    var lastGroupTag = -1L;
+                    List<Field> group = null;
+                    for (Field field : fields) {
+                        var groupTag = field.getRecordGroupTag();
+                        if (lastGroupTag != groupTag) {
+                            lastGroupTag = groupTag;
+                            group = new ArrayList<>();
+                            group.add(field);
+                            sf.add(group);
+                        } else {
+                            assert group != null;
+                            group.add(field);
+                        }
+                    }
+                    sortedKlassAndFields = sf;
+                }
+            }
+        }
+        return sortedKlassAndFields;
     }
 
     void resetFieldsMemoryDataStructures() {
@@ -550,9 +593,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Method getMethod(Predicate<Method> predicate) {
         var found = findMethod(predicate);
-        if(found != null)
+        if (found != null)
             return found;
-        if(DebugEnv.resolveVerbose) {
+        if (DebugEnv.resolveVerbose) {
             logger.info("Fail to resolve method with predicate in klass " + getTypeDesc());
             forEachMethod(m -> logger.info(m.getQualifiedName()));
         }
@@ -561,12 +604,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public @Nullable Method findMethod(Predicate<Method> predicate) {
         var found = NncUtils.find(methods, predicate);
-        if(found != null)
+        if (found != null)
             return found;
-        if(superType != null && (found = superType.resolve().findMethod(predicate)) != null)
+        if (superType != null && (found = superType.resolve().findMethod(predicate)) != null)
             return found;
         for (ClassType it : interfaces) {
-            if((found = it.resolve().findMethod(predicate)) != null)
+            if ((found = it.resolve().findMethod(predicate)) != null)
                 return found;
         }
         return null;
@@ -742,9 +785,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Field getField(Predicate<Field> predicate) {
         var found = findField(predicate);
-        if(found != null)
+        if (found != null)
             return found;
-        if(DebugEnv.resolveVerbose)
+        if (DebugEnv.resolveVerbose)
             forEachField(f -> logger.info(f.getQualifiedName()));
         throw new NullPointerException("Fail to find field satisfying the specified criteria in klass: " + this);
     }
@@ -760,9 +803,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Field getStaticField(Predicate<Field> predicate) {
         var found = findStaticField(predicate);
-        if(found != null)
+        if (found != null)
             return found;
-        if(DebugEnv.resolveVerbose) {
+        if (DebugEnv.resolveVerbose) {
             forEachStaticField(field -> logger.info("field: {}, id: {}", field.getQualifiedName(), field.getStringId()));
         }
         throw new NullPointerException("Fail to find static field satisfying the specified criteria in klass: " + this);
@@ -770,11 +813,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void forEachStaticField(Consumer<Field> action) {
         staticFields.forEach(action);
-        if(superType != null)
+        if (superType != null)
             superType.resolve().forEachStaticField(action);
     }
 
-    private List<Field> readyFields() {
+    public List<Field> readyFields() {
         return fields.filter(Field::isReady, true);
     }
 
@@ -1072,7 +1115,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     private ParameterizedElementMap<List<? extends Type>, Klass> parameterizedClasses() {
-        if(parameterizedClasses == null)
+        if (parameterizedClasses == null)
             parameterizedClasses = new ParameterizedElementMap<>();
         return parameterizedClasses;
     }
@@ -1083,13 +1126,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Klass getParameterized(List<? extends Type> typeArguments, ResolutionStage stage) {
         if (!isTemplate) {
-            if(typeArguments.isEmpty())
+            if (typeArguments.isEmpty())
                 return this;
             else
                 throw new InternalException(this + " is not a template class");
         }
         var pClass = getExistingParameterized(typeArguments);
-        if(pClass == this)
+        if (pClass == this)
             return this;
         if (pClass != null && pClass.getStage().isAfterOrAt(stage))
             return pClass;
@@ -1308,16 +1351,16 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void forEachMethod(Consumer<Method> action) {
         methods.forEach(action);
-        if(superType != null)
+        if (superType != null)
             superType.resolve().forEachMethod(action);
         interfaces.forEach(it -> it.resolve().forEachMethod(action));
     }
 
     public Method resolveMethod(String code, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly) {
         var found = tryResolveMethod(code, argumentTypes, typeArguments, staticOnly);
-        if(found != null)
+        if (found != null)
             return found;
-        if(DebugEnv.resolveVerbose) {
+        if (DebugEnv.resolveVerbose) {
             logger.info("method resolution failed");
             forEachMethod(m -> logger.info(m.getSignatureString()));
         }
@@ -1399,6 +1442,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         NncUtils.requireNull(this.template);
         isParameterized = template != null;
         this.template = copySource = (Klass) template;
+    }
+
+    public long getRecordTag() {
+        return getEffectiveTemplate().getId().getTreeId();
     }
 
     public Klass getEffectiveTemplate() {
@@ -1551,8 +1598,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (superType != null) {
             this.superType = addChild(superType.copy(), "superType");
             superType.resolve().addSubType(this);
-        }
-        else
+        } else
             this.superType = null;
         onSuperTypesChanged();
         supers = null;

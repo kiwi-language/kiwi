@@ -30,7 +30,7 @@ public class IdService extends BaseIdService implements EntityIdProvider {
 
     private Map<TypeId, BlockRT> getActiveBlockMap(long appId, Collection<Type> types) {
         try (var ignored = ContextUtil.getProfiler().enter("IdService.getActiveBlockMap")) {
-            List<BlockRT> blocks = blockSource.getActive(NncUtils.map(types, t -> ((ClassType) t).resolve().getPhysicalId()));
+            List<BlockRT> blocks = blockSource.getActive(NncUtils.map(types, t -> ((ClassType) t).resolve().getTreeId()));
             Map<TypeId, BlockRT> result = NncUtils.toMap(blocks, BlockRT::getTypeId);
             List<Type> residualTypes = NncUtils.exclude(types, t -> result.containsKey(t.getTypeId()));
             if (!residualTypes.isEmpty()) {

@@ -31,6 +31,14 @@ public class InstanceField {
         return field;
     }
 
+    public long getRecordGroupTag() {
+        return field.getRecordGroupTag();
+    }
+
+    public long getRecordTag() {
+        return field.getRecordTag();
+    }
+
     public Id getTag() {
         return field.getTag();
     }

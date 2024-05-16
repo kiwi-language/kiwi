@@ -207,56 +207,88 @@ public class ClassInstance extends DurableInstance {
 
     @Override
     public void writeTo(InstanceOutput output, boolean includeChildren) {
-//        try( var ignored = ContextUtil.getProfiler().enter("ClassInstance.writeTo")) {
         ensureLoaded();
         var fields = this.fields;
-        int numFields = 0;
-        for (InstanceField field : fields) {
-            if (!field.shouldSkipWrite())
-                numFields++;
-        }
-        fields.sort(Comparator.comparing(InstanceField::getTag));
-        output.writeInt(numFields);
+        fields.sort(Comparator.comparingLong(InstanceField::getRecordGroupTag).thenComparing(InstanceField::getRecordTag));
+        var sortedInstanceFields = new ArrayList<List<InstanceField>>();
+        var currentFields = new ArrayList<InstanceField>();
         for (InstanceField field : fields) {
             if (field.shouldSkipWrite())
                 continue;
-            output.writeId(field.getTag());
-            if (includeChildren && field.getField().isChild() && !field.getField().isLazy())
-                output.writeValue(field.getValue());
-            else
-                output.writeInstance(field.getValue());
+            if (currentFields.isEmpty() || currentFields.get(0).getField().getDeclaringType() == field.getField().getDeclaringType())
+                currentFields.add(field);
+            else {
+                sortedInstanceFields.add(currentFields);
+                currentFields = new ArrayList<>();
+                currentFields.add(field);
+            }
         }
-//        }
+        if (!currentFields.isEmpty())
+            sortedInstanceFields.add(currentFields);
+        output.writeInt(sortedInstanceFields.size());
+        for (List<InstanceField> instanceFields : sortedInstanceFields) {
+            output.writeLong(instanceFields.get(0).getField().getRecordGroupTag());
+            output.writeInt(instanceFields.size());
+            for (InstanceField field : instanceFields) {
+                output.writeLong(field.getField().getRecordTag());
+                if (includeChildren && field.getField().isChild() && !field.getField().isLazy())
+                    output.writeValue(field.getValue());
+                else
+                    output.writeInstance(field.getValue());
+            }
+        }
     }
 
     @Override
     @NoProxy
     public void readFrom(InstanceInput input) {
-//        try( var ignored = ContextUtil.getProfiler().enter("ClassInstance.readFrom")) {
         setLoaded(input.isLoadedFromCache());
-        List<Field> fields = klass.getSortedFields();
+        List<List<Field>> sortedFields = klass.getSortedKlassAndFields();
         var instFields = this.fields;
-        int numFields = input.readInt();
         int j = 0;
-        for (int i = 0; i < numFields; i++) {
-            var fieldTag = input.readId();
-            while (j < fields.size() && fields.get(j).getTag().compareTo(fieldTag) < 0) {
-                instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
+        int numKlasses = input.readInt();
+        for (int i = 0; i < numKlasses; i++) {
+            var groupTag = input.readLong();
+            int cmp = 1;
+            while (j < sortedFields.size() && (cmp = Long.compare(sortedFields.get(j).get(0).getRecordGroupTag(), groupTag)) < 0) {
+                for (var field : sortedFields.get(j))
+                    instFields.add(new InstanceField(this, field, Instances.nullInstance(), false));
                 j++;
             }
-            Field field;
-            if (j < fields.size() && (field = fields.get(j)).getTag().equals(fieldTag)) {
-                input.setParent(this, field);
-                var value = input.readInstance();
-                instFields.add(new InstanceField(this, field, value, false));
-                j++;
-            } else // the field corresponding to the fieldId has been removed
-                input.skipInstance();
+            if (cmp == 0) {
+                var fields = sortedFields.get(j++);
+                int m = 0;
+                int numFields = input.readInt();
+                for (int l = 0; l < numFields; l++) {
+                    var fieldTag = input.readLong();
+                    while (m < fields.size() && fields.get(m).getRecordTag() < fieldTag) {
+                        instFields.add(new InstanceField(this, fields.get(m), Instances.nullInstance(), false));
+                        m++;
+                    }
+                    Field field;
+                    if (m < fields.size() && (field = fields.get(m)).getRecordTag() == fieldTag) {
+                        input.setParent(this, field);
+                        var value = input.readInstance();
+                        instFields.add(new InstanceField(this, field, value, false));
+                        m++;
+                    } else // the field corresponding to the fieldId has been removed
+                        input.skipInstance();
+                }
+                input.setParent(getParent(), getParentField());
+                for (; m < fields.size(); m++)
+                    instFields.add(new InstanceField(this, fields.get(m), Instances.nullInstance(), false));
+            } else {
+                int numFields = input.readInt();
+                for (int k = 0; k < numFields; k++) {
+                    input.readLong();
+                    input.skipInstance();
+                }
+            }
         }
-        input.setParent(getParent(), getParentField());
-        for (; j < fields.size(); j++)
-            instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
-//        }
+        for (; j < sortedFields.size(); j++) {
+            for (Field field : sortedFields.get(j))
+                instFields.add(new InstanceField(this, field, Instances.nullInstance(), false));
+        }
     }
 
     public ClassInstance getClassInstance(Field field) {
@@ -393,7 +425,7 @@ public class ClassInstance extends DurableInstance {
             addField(instanceField);
             return instanceField;
         }
-        if(DebugEnv.resolveVerbose) {
+        if (DebugEnv.resolveVerbose) {
             logger.info("initialized: {}, persisted: {}", isInitialized(), isPersisted());
             logger.info("fields");
             klass.forEachField(f -> logger.info("field: {}", f.getQualifiedName()));
@@ -463,7 +495,7 @@ public class ClassInstance extends DurableInstance {
         for (InstanceField field : fields) {
             treeWriter.writeLine(field.getName() + ":");
             treeWriter.indent();
-            if(field.getField().isChild())
+            if (field.getField().isChild())
                 field.getValue().writeTree(treeWriter);
             else
                 treeWriter.writeLine(field.getValue().getTitle());
@@ -481,7 +513,7 @@ public class ClassInstance extends DurableInstance {
                     toDTO()
             );
         } else {
-            try(var serContext = SerializeContext.enter()) {
+            try (var serContext = SerializeContext.enter()) {
                 return new ReferenceFieldValue(
                         getTitle(),
                         Objects.requireNonNull(getInstanceIdString(), "Id required")

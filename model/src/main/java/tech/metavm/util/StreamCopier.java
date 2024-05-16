@@ -30,7 +30,7 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitField() {
-        output.writeId(readId());
+        output.writeLong(readLong());
         visit();
     }
 
@@ -51,10 +51,15 @@ public class StreamCopier extends StreamVisitor {
                 visit();
             }
         } else {
-            int numFields = readInt();
-            output.writeInt(numFields);
-            for (int i = 0; i < numFields; i++) {
-                visitField();
+            int numKlasses = readInt();
+            output.writeInt(numKlasses);
+            for (int i = 0; i < numKlasses; i++) {
+                output.writeLong(readLong());
+                int numFields = readInt();
+                output.writeInt(numFields);
+                for (int j = 0; j < numFields; j++) {
+                    visitField();
+                }
             }
         }
     }

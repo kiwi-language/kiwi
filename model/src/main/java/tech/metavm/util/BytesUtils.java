@@ -190,11 +190,19 @@ public class BytesUtils {
                 for (int i = 0; i < len; i++)
                     elements.add(readValue());
             } else {
-                int numFields = readInt();
-                var fields = new ArrayList<>(numFields);
-                map.put("fields", fields);
-                for (int i = 0; i < numFields; i++)
-                    fields.add(Map.of("id", readId().toString(), "value", NncUtils.orElse(readValue(), "null")));
+                int numKlasses = readInt();
+                var klasses = new ArrayList<>(numKlasses);
+                map.put("klasses", klasses);
+                for (int i = 0; i < numKlasses; i++) {
+                    var klass = new HashMap<>();
+                    klasses.add(klass);
+                    klass.put("tag", readLong());
+                    int numFields = readInt();
+                    var fields = new ArrayList<>(numFields);
+                    klass.put("fields", fields);
+                    for (int j = 0; j < numFields; j++)
+                        fields.add(Map.of("tag", readLong(), "value", NncUtils.orElse(readValue(), "null")));
+                }
             }
             return map;
         }

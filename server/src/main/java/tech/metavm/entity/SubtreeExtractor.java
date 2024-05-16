@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 public class SubtreeExtractor extends StreamVisitor {
 
     private Id parentId;
-    private Id parentFieldId;
+    private long parentFieldTag = -1L;
     private final Consumer<Subtree> add;
 
     public SubtreeExtractor(InputStream in, Consumer<Subtree> add) {
@@ -28,13 +28,13 @@ public class SubtreeExtractor extends StreamVisitor {
         output.write(WireTypes.RECORD);
         output.writeId(id);
         var oldParentId = parentId;
-        var oldParentFieldId = parentFieldId;
+        var oldParentFieldTag = parentFieldTag;
         parentId = id;
-        parentFieldId = null;
+        parentFieldTag = -1;
         new StreamCopier(getInput(), output) {
             @Override
             public void visitField() {
-                writeId(parentFieldId = readId());
+                writeLong(parentFieldTag = readLong());
                 visit();
             }
 
@@ -47,11 +47,11 @@ public class SubtreeExtractor extends StreamVisitor {
             }
         }.visitRecordBody(id);
         parentId = oldParentId;
-        parentFieldId = oldParentFieldId;
+        parentFieldTag = oldParentFieldTag;
         add.accept(new Subtree(
                 id,
                 parentId,
-                parentFieldId,
+                parentFieldTag,
                 bout.toByteArray()
         ));
     }

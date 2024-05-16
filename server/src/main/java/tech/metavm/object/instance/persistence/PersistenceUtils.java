@@ -97,48 +97,4 @@ public class PersistenceUtils {
         };
     }
 
-    private static Set<ReferencePO> extractReferences(final Klass classType, InstancePO instancePO) {
-        var appId = instancePO.getAppId();
-        Set<ReferencePO> refs = new HashSet<>();
-        new StreamVisitor(new ByteArrayInputStream(instancePO.getData())) {
-
-            private Id sourceId;
-            private Id fieldId;
-
-            @Override
-            public void visitRecordBody(Id id) {
-                var oldSourceId = sourceId;
-                var oldFieldId = fieldId;
-                sourceId = id;
-                if (RegionConstants.isArrayId(id)) {
-                    fieldId = null;
-                    int len = readInt();
-                    for (int i = 0; i < len; i++)
-                        visit();
-                } else {
-                    int numFields = readInt();
-                    for (int i = 0; i < numFields; i++) {
-                        fieldId = readId();
-                        visit();
-                    }
-                }
-                sourceId = oldSourceId;
-                fieldId = oldFieldId;
-            }
-
-            @Override
-            public void visitReference() {
-                var targetId = readId();
-                refs.add(new ReferencePO(
-                        appId,
-                        sourceId.getTreeId(),
-                        targetId.toBytes(),
-                        NncUtils.getOrElse(fieldId, Id::toBytes, Constants.EMPTY_BYTES),
-                        ReferenceKind.STRONG.code()
-                ));
-            }
-        }.visit();
-        return refs;
-    }
-
 }

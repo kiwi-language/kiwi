@@ -7,7 +7,6 @@
         <result property="appId" jdbcType="BIGINT" column="app_id"/>
         <result property="sourceTreeId" jdbcType="BIGINT" column="source_tree_id"/>
         <result property="targetId" jdbcType="BINARY" column="target_id"/>
-        <result property="fieldId" jdbcType="BINARY" column="field_id"/>
         <result property="kind" jdbcType="INTEGER" column="kind"/>
     </resultMap>
 
@@ -16,7 +15,6 @@
         app_id,
         source_tree_id,
         target_id,
-        field_id,
         kind
     </sql>
 
@@ -24,18 +22,18 @@
         <!--@mbg.generated-->
         delete
         from reference
-        where (app_id, source_tree_id, target_id, field_id) in
+        where (app_id, source_tree_id, target_id) in
         <foreach collection="collection" item="item" open="(" close=")" separator=",">
-            (#{item.appId}, #{item.sourceTreeId}, #{item.targetId}, #{item.fieldId})
+            (#{item.appId}, #{item.sourceTreeId}, #{item.targetId})
         </foreach>
     </delete>
 
     <insert id="batchInsert">
         <!--@mbg.generated-->
-        insert into reference (app_id, source_tree_id, target_id, field_id, kind)
+        insert into reference (app_id, source_tree_id, target_id, kind)
         values
         <foreach collection="collection" item="item" separator=",">
-            (#{item.appId}, #{item.sourceTreeId}, #{item.targetId}, #{item.fieldId}, #{item.kind})
+            (#{item.appId}, #{item.sourceTreeId}, #{item.targetId}, #{item.kind})
         </foreach>
     </insert>
 
@@ -72,9 +70,9 @@
         <include refid="Base_Column_List"/>
         from reference
         where
-            (app_id, target_id, field_id) in
+            (app_id, target_id) in
         <foreach collection="collection" item="item" open="(" close=")" separator=",">
-            (#{item.appId}, #{item.targetId}, #{item.fieldId})
+            (#{item.appId}, #{item.targetId})
         </foreach>
     </select>
 

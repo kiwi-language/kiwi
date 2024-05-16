@@ -18,7 +18,7 @@ public class IndexSourceBuilder {
         Klass type = instance.getKlass();
         Map<String, Object> source = new HashMap<>();
         source.put(APPLICATION_ID, appId);
-        source.put(TYPE, type.getPhysicalId());
+        source.put(TYPE, type.getTreeId());
         source.put(ID, instance.getStringId());
 
         List<Klass> hierarchy = type.getAncestorClasses();

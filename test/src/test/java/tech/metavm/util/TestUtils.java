@@ -19,6 +19,7 @@ import tech.metavm.flow.rest.MethodRefDTO;
 import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.cache.MockCache;
+import tech.metavm.object.instance.core.StructuralVisitor;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
@@ -75,9 +76,9 @@ public class TestUtils {
     }
 
     public static FieldValue getListElement(FieldValue value, int index) {
-        if(value instanceof ListFieldValue listFieldValue)
+        if (value instanceof ListFieldValue listFieldValue)
             return listFieldValue.getElements().get(index);
-        else if(value instanceof InstanceFieldValue instanceFieldValue)
+        else if (value instanceof InstanceFieldValue instanceFieldValue)
             return ((ListInstanceParam) instanceFieldValue.getInstance().param()).elements().get(index);
         else
             throw new InternalException("Invalid value: " + value);
@@ -241,26 +242,36 @@ public class TestUtils {
         }
     }
 
-    public static void initEntityIds(Object root) {
-        var ref = new Object() {
-            long nextId = 10000L;
+    public static void initEntityIds(Object entry) {
+        var nextTreeIdRef = new Object() {
+            long value = 10000L;
         };
-
-        EntityUtils.visitGraph(List.of(root), o -> {
-            if (o instanceof Entity entity && entity.isPhysicalIdNull()) {
-                var typeKey =
-                        ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(entity).toTypeKey() : new AnyTypeKey();
-                entity.initId(DefaultPhysicalId.ofObject(ref.nextId++, 0L, typeKey));
-            }
+        var roots = new IdentitySet<Entity>();
+        EntityUtils.visitGraph(List.of(entry), o -> {
+            if (o instanceof Entity entity)
+                roots.add(entity.getRootEntity());
         });
-    }
-
-    public static void initEntityIds(Object root, EntityIdProvider idProvider) {
-        EntityUtils.visitGraph(List.of(root), o -> {
-            if (o instanceof Entity entity && entity.isPhysicalIdNull()) {
-                var type = ModelDefRegistry.getDefContext().getType(EntityUtils.getRealType(entity.getClass()));
-                entity.initId(DefaultPhysicalId.ofObject(idProvider.allocateOne(TestConstants.APP_ID, type), 0L, type));
+        roots.forEach(r -> {
+            long treeId;
+            var nextNodeIdRef = new Object() {
+                long value;
+            };
+            if (r.hasPhysicalId()) {
+                treeId = r.getTreeId();
+                r.forEachDescendant(e -> {
+                    if (e.hasPhysicalId())
+                        nextNodeIdRef.value = Math.max(nextNodeIdRef.value, e.getId().getNodeId() + 1);
+                });
             }
+            else
+                treeId = nextTreeIdRef.value++;
+            r.forEachDescendant(e -> {
+                if(!e.hasPhysicalId()) {
+                    var typeKey =
+                            ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(e).toTypeKey() : new AnyTypeKey();
+                    e.initId(DefaultPhysicalId.ofObject(treeId, nextNodeIdRef.value++, typeKey));
+                }
+            });
         });
     }
 
@@ -273,17 +284,31 @@ public class TestUtils {
     }
 
     public static void initInstanceIds(List<DurableInstance> instances, EntityIdProvider idProvider) {
+        var roots = new IdentitySet<DurableInstance>();
         var visitor = new GraphVisitor() {
             @Override
             public Void visitDurableInstance(DurableInstance instance) {
-                if (!instance.isIdInitialized()) {
-                    var id = idProvider.allocateOne(TestConstants.APP_ID, instance.getType());
-                    instance.initId(new DefaultPhysicalId(instance instanceof ArrayInstance, id, 0L, instance.getType().toTypeKey()));
-                }
+                var root = instance.getRoot();
+                if (!root.isIdInitialized())
+                    roots.add(root);
                 return super.visitDurableInstance(instance);
             }
         };
         instances.forEach(visitor::visit);
+        roots.forEach(r -> {
+            var id = idProvider.allocateOne(TestConstants.APP_ID, r.getType());
+            var nodeIdRef = new Object() {
+                long nextNodeId;
+            };
+            r.accept(new StructuralVisitor() {
+
+                @Override
+                public Void visitDurableInstance(DurableInstance instance) {
+                    instance.initId(new DefaultPhysicalId(instance instanceof ArrayInstance, id, nodeIdRef.nextNodeId++, instance.getType().toTypeKey()));
+                    return super.visitDurableInstance(instance);
+                }
+            });
+        });
     }
 
     public static Set<String> extractDescendantIds(InstanceDTO instanceDTO) {
@@ -312,8 +337,7 @@ public class TestUtils {
                 if (element instanceof InstanceFieldValue instanceFieldValue)
                     extractDescendantIds(instanceFieldValue.getInstance(), ids);
             }
-        }
-        else if(instanceDTO.param() instanceof ListInstanceParam listInstanceParam) {
+        } else if (instanceDTO.param() instanceof ListInstanceParam listInstanceParam) {
             for (FieldValue element : listInstanceParam.elements()) {
                 if (element instanceof InstanceFieldValue instanceFieldValue)
                     extractDescendantIds(instanceFieldValue.getInstance(), ids);
@@ -383,7 +407,7 @@ public class TestUtils {
         return createMethodRef(typeDTO.id(), method.id());
     }
 
-    public static String getStaticMethod(TypeDTO typeDTO, String code, String...parameterTypes) {
+    public static String getStaticMethod(TypeDTO typeDTO, String code, String... parameterTypes) {
         var paramTypeList = List.of(parameterTypes);
         return NncUtils.findRequired(typeDTO.getClassParam().flows(),
                 f -> code.equals(f.code()) &&
@@ -393,7 +417,7 @@ public class TestUtils {
         ).id();
     }
 
-    public static MethodRefDTO getStaticMethodRef(TypeDTO typeDTO, String code, String...parameterTypes) {
+    public static MethodRefDTO getStaticMethodRef(TypeDTO typeDTO, String code, String... parameterTypes) {
         return new MethodRefDTO(TypeExpressions.getClassType(typeDTO.id()), getStaticMethod(typeDTO, code, parameterTypes), List.of());
     }
 
@@ -406,7 +430,7 @@ public class TestUtils {
         ).id();
     }
 
-    public static MethodRefDTO getMethodRef(TypeDTO typeDTO, String code, String...parameterTypeIds) {
+    public static MethodRefDTO getMethodRef(TypeDTO typeDTO, String code, String... parameterTypeIds) {
         return new MethodRefDTO(TypeExpressions.getClassType(typeDTO.id()), getMethodId(typeDTO, code, parameterTypeIds), List.of());
     }
 

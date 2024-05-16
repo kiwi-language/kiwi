@@ -9,6 +9,7 @@ import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
+import tech.metavm.util.DebugEnv;
 import tech.metavm.util.Instances;
 import tech.metavm.util.MultiApplicationMap;
 import tech.metavm.util.NncUtils;

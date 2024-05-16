@@ -135,7 +135,6 @@ public class ClassInstanceTest extends TestCase {
                 return super.visitDurableInstance(instance);
             }
         });
-
         var bin = new ByteArrayInputStream(InstanceOutput.toMessage(flow));
         var input = new InstanceInput(bin, id -> {
             var inst = id2instance.get(id);

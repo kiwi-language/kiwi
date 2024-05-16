@@ -49,7 +49,7 @@ public class StreamVisitor {
     }
 
     public void visitField() {
-        input.readId();
+        input.readLong();
         visit();
     }
 
@@ -95,9 +95,13 @@ public class StreamVisitor {
             for (int i = 0; i < len; i++)
                 visit();
         } else {
-            int numFields = input.readInt();
-            for (int i = 0; i < numFields; i++)
-                visitField();
+            int numKlasses = input.readInt();
+            for (int i = 0; i < numKlasses; i++) {
+                input.readLong();
+                int numFields = input.readInt();
+                for (int j = 0; j < numFields; j++)
+                    visitField();
+            }
         }
     }
 

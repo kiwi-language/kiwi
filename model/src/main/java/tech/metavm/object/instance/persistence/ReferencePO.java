@@ -11,18 +11,15 @@ public class ReferencePO {
     private long appId;
     private long sourceTreeId;
     private byte[] targetId;
-    private byte[] fieldId;
     private int kind;
 
     public ReferencePO(long appId,
                        long sourceTreeId,
                        byte[] targetId,
-                       byte[] fieldId,
                        int kind) {
         this.appId = appId;
         this.sourceTreeId = sourceTreeId;
         this.targetId = targetId;
-        this.fieldId = fieldId;
         this.kind = kind;
     }
 
@@ -57,14 +54,6 @@ public class ReferencePO {
         return Id.fromBytes(targetId);
     }
 
-    public byte[] getFieldId() {
-        return fieldId;
-    }
-
-    public void setFieldId(byte[] fieldId) {
-        this.fieldId = fieldId;
-    }
-
     public int getKind() {
         return kind;
     }
@@ -80,13 +69,12 @@ public class ReferencePO {
         ReferencePO that = (ReferencePO) o;
         return appId == that.appId
                 && sourceTreeId == that.sourceTreeId
-                && Arrays.equals(targetId, that.targetId)
-                && Arrays.equals(fieldId, that.fieldId);
+                && Arrays.equals(targetId, that.targetId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(appId, sourceTreeId, Arrays.hashCode(targetId), Arrays.hashCode(fieldId));
+        return Objects.hash(appId, sourceTreeId, Arrays.hashCode(targetId));
     }
 
     @Override
@@ -95,7 +83,6 @@ public class ReferencePO {
                 "appId=" + appId +
                 ", sourceId=" + sourceTreeId +
                 ", targetId=" + EncodingUtils.bytesToHex(targetId) +
-                ", fieldId=" + (fieldId != null ? EncodingUtils.bytesToHex(fieldId) : "null") +
                 ", kind=" + kind +
                 '}';
     }
@@ -107,10 +94,7 @@ public class ReferencePO {
 
     @JsonIgnore
     public String targetKeyWithField() {
-        if (fieldId != null)
-            return appId + "-" + EncodingUtils.bytesToHex(targetId) + "-" + EncodingUtils.bytesToHex(fieldId);
-        else
-            return appId + "-" + EncodingUtils.bytesToHex(targetId);
+        return appId + "-" + EncodingUtils.bytesToHex(targetId);
     }
 
 }

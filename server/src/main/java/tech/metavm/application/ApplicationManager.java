@@ -1,6 +1,5 @@
 package tech.metavm.application;
 
-import org.apache.tomcat.util.bcel.Const;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.application.rest.dto.*;
@@ -120,7 +119,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
                 app.setName(appDTO.name());
             }
             platformCtx.finish();
-            return app.getPhysicalId();
+            return app.getTreeId();
         }
     }
 

@@ -102,20 +102,20 @@ public class InstanceInputTest extends TestCase {
 
         Field nameField = FieldBuilder
                 .newBuilder("name", "name", fooType, StandardTypes.getStringType()).build();
-        nameField.initId(DefaultPhysicalId.ofObject(20001L, 0L, TestUtils.mockClassTypeKey()));
+        nameField.initId(DefaultPhysicalId.ofObject(10001L, 1L, TestUtils.mockClassTypeKey()));
         Field barField = FieldBuilder
                 .newBuilder("bar", "bar", fooType, barType.getType()).isChild(true).build();
-        barField.initId(DefaultPhysicalId.ofObject(20002L, 0L, TestUtils.mockClassTypeKey()));
+        barField.initId(DefaultPhysicalId.ofObject(10001L, 2L, TestUtils.mockClassTypeKey()));
         Field quxField = FieldBuilder.newBuilder("qux", "qux", fooType, quxType.getType()).build();
-        quxField.initId(DefaultPhysicalId.ofObject(20003L, 0L, TestUtils.mockClassTypeKey()));
+        quxField.initId(DefaultPhysicalId.ofObject(10001L, 3L, TestUtils.mockClassTypeKey()));
 
         Field barCodeField = FieldBuilder
                 .newBuilder("code", "code", barType, StandardTypes.getStringType()).build();
-        barCodeField.initId(DefaultPhysicalId.ofObject(20004L, 0L, TestUtils.mockClassTypeKey()));
+        barCodeField.initId(DefaultPhysicalId.ofObject(10002L, 1L, TestUtils.mockClassTypeKey()));
 
         Field quxNameField = FieldBuilder
                 .newBuilder("name", "name", quxType, StandardTypes.getStringType()).build();
-        quxNameField.initId(DefaultPhysicalId.ofObject(20005L, 0L, TestUtils.mockClassTypeKey()));
+        quxNameField.initId(DefaultPhysicalId.ofObject(10003L, 1L, TestUtils.mockClassTypeKey()));
 
         var barInst = new ClassInstance(
                 DefaultPhysicalId.ofObject(30001L, 1L, TestUtils.mockClassTypeKey()),

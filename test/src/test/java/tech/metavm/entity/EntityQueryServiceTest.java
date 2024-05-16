@@ -70,6 +70,7 @@ public class EntityQueryServiceTest extends TestCase {
     }
 
     public void testSearchText() {
+        DebugEnv.flag = true;
         Foo foo = addEntity(MockUtils.getFoo());
         try (var context = newContext()) {
             foo = context.getEntity(Foo.class, foo.getId());

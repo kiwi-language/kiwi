@@ -73,6 +73,10 @@ public abstract class Id implements Comparable<Id> {
         return Objects.requireNonNull(tryGetTreeId());
     }
 
+    public long getNodeId() {
+        throw new UnsupportedOperationException();
+    }
+
     public abstract boolean isTemporary();
 
     public boolean isArray() {

@@ -5,10 +5,11 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.MockStandardTypesInitializer;
-import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.PersistenceUtils;
 import tech.metavm.object.type.Field;
-import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.FooTypes;
 import tech.metavm.util.MockUtils;
@@ -43,9 +44,7 @@ public class InstanceTest extends TestCase {
     private ClassInstance getBarInstance(FooTypes fooTypes) {
         Map<Field, Instance> barData = new HashMap<>();
         barData.put(fooTypes.barCodeField(), stringInstance(CONST_BAR_CODE));
-        ClassInstance bar = ClassInstance.create(barData, fooTypes.barType().getType());
-        bar.initId(DefaultPhysicalId.ofObject(2L, 0L, TestUtils.mockClassTypeKey()));
-        return bar;
+        return ClassInstance.create(barData, fooTypes.barType().getType());
     }
 
     private ClassInstance getFooInstance(FooTypes fooTypes) {
@@ -58,9 +57,7 @@ public class InstanceTest extends TestCase {
                 )
         );
         fooData.put(fooTypes.fooBazListField(), new ArrayInstance(fooTypes.bazArrayType()));
-        ClassInstance foo = ClassInstance.create(fooData, fooTypes.fooType().getType());
-        foo.initId(DefaultPhysicalId.ofObject(1L, 0L, TestUtils.mockClassTypeKey()));
-        return foo;
+        return ClassInstance.create(fooData, fooTypes.fooType().getType());
     }
 
     public void testToPO() {

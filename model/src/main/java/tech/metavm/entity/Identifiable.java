@@ -18,7 +18,7 @@ public interface Identifiable {
     }
 
     @NoProxy
-    default long getPhysicalId() {
+    default long getTreeId() {
         return getId().getTreeId();
     }
 
