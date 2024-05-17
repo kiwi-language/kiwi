@@ -258,6 +258,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
                 .template(NncUtils.get(templateDef, PojoDef::getKlass))
                 .superClass(NncUtils.get(superDef, PojoDef::getType))
                 .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getType))
+                .tag(defContext.getTypeTag(javaClass))
                 .build();
     }
 

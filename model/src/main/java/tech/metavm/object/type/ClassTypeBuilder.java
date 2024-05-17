@@ -35,6 +35,7 @@ public class ClassTypeBuilder {
     private Klass template;
     private List<Klass> dependencies;
     private List<TypeVariable> typeParameters = List.of();
+    private int tag = TypeTags.DEFAULT;
 
     private ClassTypeBuilder(String name, @Nullable String code) {
         this.name = name;
@@ -139,6 +140,11 @@ public class ClassTypeBuilder {
         return this;
     }
 
+    public ClassTypeBuilder tag(int tag) {
+        this.tag = tag;
+        return this;
+    }
+
     public ClassTypeBuilder existing(Klass existing) {
         this.existing = existing;
         return this;
@@ -176,7 +182,8 @@ public class ClassTypeBuilder {
                     isAbstract,
                     isTemplate,
                     typeParameters,
-                    typeArguments);
+                    typeArguments,
+                    tag);
         } else {
             classType = existing;
             existing.setName(effectiveName);

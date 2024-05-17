@@ -3,7 +3,9 @@ package tech.metavm.object.instance.core;
 import com.google.common.primitives.UnsignedBytes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.object.view.MappingProvider;
 import tech.metavm.object.view.rest.dto.MappingKey;
 import tech.metavm.util.EncodingUtils;
 import tech.metavm.util.InstanceInput;
@@ -45,9 +47,7 @@ public abstract class Id implements Comparable<Id> {
         var isArray = (maskedTagCode & 0x80) != 0;
         return switch (tag) {
             case NULL -> new NullId();
-            case OBJECT_PHYSICAL -> new DefaultPhysicalId(isArray, input.readLong(), input.readLong(), TypeKey.read(input));
-            case CLASS_TYPE_PHYSICAL, ARRAY_TYPE_PHYSICAL, FIELD_PHYSICAL, KLASS_PHYSICAL ->
-                    new TaggedPhysicalId(tag, input.readLong(), input.readLong());
+            case OBJECT_PHYSICAL -> new DefaultPhysicalId(input.readInt(), input.readLong(), input.readLong());
             case TMP -> new TmpId(input.readLong());
             case DEFAULT_VIEW -> new DefaultViewId(isArray, MappingKey.read(input), readId(input));
             case CHILD_VIEW -> new ChildViewId(isArray, MappingKey.read(input), readId(input), (ViewId) readId(input));
@@ -82,6 +82,8 @@ public abstract class Id implements Comparable<Id> {
     public boolean isArray() {
         return isArray;
     }
+
+    public abstract int getTypeTag(MappingProvider mappingProvider, TypeDefProvider typeDefProvider);
 
     @Override
     public int compareTo(@NotNull Id o) {

@@ -6,6 +6,7 @@ import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.instance.cache.MockCache;
 import tech.metavm.object.type.DirectoryAllocatorStore;
 import tech.metavm.object.type.MemColumnStore;
+import tech.metavm.object.type.MemTypeTagStore;
 import tech.metavm.object.type.StdAllocators;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockTransactionUtils;
@@ -27,7 +28,7 @@ public class Rebooter {
         instanceContextFactory.setIdService(idProvider);
         instanceContextFactory.setCache(new MockCache());
         entityContextFactory.setInstanceLogService(new MockInstanceLogService());
-        var bootstrap = new Bootstrap(entityContextFactory, stdAllocators, new MemColumnStore(), new MemoryStdIdStore());
+        var bootstrap = new Bootstrap(entityContextFactory, stdAllocators, new MemColumnStore(), new MemTypeTagStore(), new MemoryStdIdStore());
         MockTransactionUtils.doInTransactionWithoutResult(bootstrap::bootAndSave);
     }
 

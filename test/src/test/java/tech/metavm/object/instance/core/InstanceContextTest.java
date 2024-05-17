@@ -11,8 +11,6 @@ import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.cache.MockCache;
 import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.object.type.mocks.TypeProviders;
-import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -59,10 +57,10 @@ public class InstanceContextTest extends TestCase {
 
     public void test() {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        fooType.initId(DefaultPhysicalId.ofObject(101L, 0L, TestUtils.mockClassTypeKey()));
+        fooType.initId(DefaultPhysicalId.ofObject(101L, 0L, TestUtils.mockClassType()));
         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
                 .build();
-        fooNameField.initId(DefaultPhysicalId.ofObject(111L, 0L, TestUtils.mockClassTypeKey()));
+        fooNameField.initId(DefaultPhysicalId.ofObject(111L, 0L, TestUtils.mockClassType()));
 
         entityRepository.bind(fooType);
         var tmpId = TmpId.of(10001L);

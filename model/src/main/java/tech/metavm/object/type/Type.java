@@ -306,6 +306,10 @@ public abstract class Type extends ValueElement {
 
     public abstract void write0(InstanceOutput output);
 
+    public int getTypeTag() {
+        return TypeTags.DEFAULT;
+    }
+
     public static Type readType(InstanceInput input, TypeDefProvider typeDefProvider) {
         var category = TypeCategory.fromCode(input.read());
         return switch (category) {

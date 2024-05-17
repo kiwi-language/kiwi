@@ -260,4 +260,9 @@ public class ClassType extends Type implements ISubstitutor {
     public TypeId getTypeId() {
         return new TypeId(TypeTag.fromCategory(getCategory()), resolve().getId().getTreeId());
     }
+
+    public int getTypeTag() {
+        return klass.getTag();
+    }
+
 }

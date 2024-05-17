@@ -53,7 +53,7 @@ public interface Mapper<T, I extends DurableInstance> {
     }
 
     default I createInstance(T model, ObjectInstanceMap instanceMap, Id id) {
-        I instance = InstanceFactory.allocate(getInstanceClass(), getType(), id, EntityUtils.isEphemeral(model));
+        I instance = InstanceFactory.allocate(getInstanceClass(), id, EntityUtils.isEphemeral(model));
         initInstance(instance, model, instanceMap);
         return instance;
     }
@@ -64,11 +64,7 @@ public interface Mapper<T, I extends DurableInstance> {
 
     Class<T> getEntityClass();
 
-    java.lang.reflect.Type getEntityType();
-
     Class<I> getInstanceClass();
-
-    Type getType();
 
     boolean isProxySupported();
 

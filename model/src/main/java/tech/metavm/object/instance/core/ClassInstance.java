@@ -25,13 +25,19 @@ public class ClassInstance extends DurableInstance {
 
     public static final Logger logger = LoggerFactory.getLogger(ClassInstance.class);
 
+    public static final Klass uninitializedKlass = ClassTypeBuilder.newBuilder("Uninitialized", "Uninitialized").build();
+
     private final ReadWriteArray<InstanceField> fields = new ReadWriteArray<>(InstanceField.class);
     private final ReadWriteArray<UnknownField> unknownFields = new ReadWriteArray<>(UnknownField.class);
-    private final Klass klass;
+    private Klass klass;
     private transient Map<Flow, FlowInstance> functions;
 
     public static ClassInstance create(Map<Field, Instance> data, ClassType type) {
         return ClassInstanceBuilder.newBuilder(type).data(data).build();
+    }
+
+    public static ClassInstance allocate() {
+        return allocate(uninitializedKlass.getType());
     }
 
     public static ClassInstance allocate(ClassType type) {
@@ -160,8 +166,8 @@ public class ClassInstance extends DurableInstance {
         }
     }
 
-    @NoProxy
     public ClassType getType() {
+        ensureLoaded();
         return (ClassType) super.getType();
     }
 
@@ -240,9 +246,20 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
+    protected void setType(Type type) {
+        if(type instanceof ClassType classType) {
+            klass = classType.resolve();
+            super.setType(type);
+        }
+        else
+            throw new IllegalArgumentException(type + " is not a class type");
+    }
+
+    @Override
     @NoProxy
-    public void readFrom(InstanceInput input) {
+    public void readFrom(InstanceInput input, TypeDefProvider typeDefProvider) {
         setLoaded(input.isLoadedFromCache());
+        setType(Type.readType(input, typeDefProvider));
         List<List<Field>> sortedFields = klass.getSortedKlassAndFields();
         var instFields = this.fields;
         int j = 0;

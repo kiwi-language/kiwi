@@ -9,11 +9,9 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.util.*;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +41,7 @@ public class ClassInstanceTest extends TestCase {
                         new ArrayInstance(fooType.bazArrayType())
                 ))
                 .build();
-        foo.initId(DefaultPhysicalId.ofObject(100000L, 0L, TestUtils.mockClassTypeKey()));
+        foo.initId(DefaultPhysicalId.ofObject(100000L, 0L, TestUtils.mockClassType()));
         FieldValue fieldValueDTO = foo.toFieldValueDTO();
         Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
         Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
@@ -95,7 +93,7 @@ public class ClassInstanceTest extends TestCase {
                 ),
                 type.getType()
         );
-        instance.initId(DefaultPhysicalId.ofObject(10001L, 0L, TestUtils.mockClassTypeKey()));
+        instance.initId(DefaultPhysicalId.ofObject(10001L, 0L, TestUtils.mockClassType()));
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 
@@ -142,6 +140,12 @@ public class ClassInstanceTest extends TestCase {
                 return new ClassInstance(id, classInst.getType(), classInst.isEphemeral(), null);
             else
                 throw new RuntimeException("Unexpected instance: " + inst);
+        }, id -> {
+            if(flowType.idEquals(id))
+                return flowType;
+            if(scopeType.idEquals(id))
+                return scopeType;
+            throw new NullPointerException("Can not find type def for id: " + id);
         });
         var loadedFlow = (ClassInstance) input.readMessage();
         Assert.assertTrue(loadedFlow.getField(rootScopeField).isNull());

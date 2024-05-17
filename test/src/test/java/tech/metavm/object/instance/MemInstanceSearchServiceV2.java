@@ -5,11 +5,9 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.common.Page;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
-import tech.metavm.util.DebugEnv;
 import tech.metavm.util.Instances;
 import tech.metavm.util.MultiApplicationMap;
 import tech.metavm.util.NncUtils;
@@ -62,7 +60,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
     private boolean match(Source source, SearchQuery query) {
-        if (!query.types().contains(((PhysicalId) source.id()).getTypeKey().toTypeExpression()))
+        if (!query.types().contains(source.typeKey().toTypeExpression()))
             return false;
         return query.condition() == null || Instances.isTrue(
                 query.condition().evaluate(new SourceEvaluationContext(source))
@@ -107,6 +105,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
         });
         return new Source(
                 instance.getId(),
+                instance.getType().toTypeKey(),
                 fields
         );
     }

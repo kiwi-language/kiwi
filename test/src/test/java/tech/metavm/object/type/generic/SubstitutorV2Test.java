@@ -13,7 +13,6 @@ import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.DefaultPhysicalId;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.mocks.TypeProviders;
-import tech.metavm.object.type.rest.dto.ClassTypeKey;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.Null;
 import tech.metavm.util.TestUtils;
@@ -95,7 +94,7 @@ public class SubstitutorV2Test extends TestCase {
             throw new InternalException("Type not found: " + t.getTypeName());
         });
 
-        stringType.initId(DefaultPhysicalId.ofObject(1L, 0L, TestUtils.mockClassTypeKey()));
+        stringType.initId(DefaultPhysicalId.ofObject(1L, 0L, TestUtils.mockClassType()));
 
         var typeProviders = new TypeProviders();
 

@@ -23,4 +23,9 @@ public class StdAllocatorsConfig {
         return new FileColumnStore(cpRoot);
     }
 
+    @Bean
+    public TypeTagStore typeTagStore() {
+        return new FileTypeTagStore(cpRoot);
+    }
+
 }

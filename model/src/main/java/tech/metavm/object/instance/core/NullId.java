@@ -1,5 +1,7 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.object.type.TypeDefProvider;
+import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceOutput;
 
 public class NullId extends Id {
@@ -23,5 +25,10 @@ public class NullId extends Id {
     @Override
     public boolean isTemporary() {
         return true;
+    }
+
+    @Override
+    public int getTypeTag(MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
+        throw new UnsupportedOperationException();
     }
 }

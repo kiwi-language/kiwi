@@ -24,8 +24,7 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.TypeExpressions;
-import tech.metavm.object.type.TypeManager;
+import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 
@@ -267,9 +266,9 @@ public class TestUtils {
                 treeId = nextTreeIdRef.value++;
             r.forEachDescendant(e -> {
                 if(!e.hasPhysicalId()) {
-                    var typeKey =
-                            ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(e).toTypeKey() : new AnyTypeKey();
-                    e.initId(DefaultPhysicalId.ofObject(treeId, nextNodeIdRef.value++, typeKey));
+                    var type =
+                            ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(e) : new AnyType();
+                    e.initId(DefaultPhysicalId.ofObject(treeId, nextNodeIdRef.value++, type));
                 }
             });
         });
@@ -304,7 +303,7 @@ public class TestUtils {
 
                 @Override
                 public Void visitDurableInstance(DurableInstance instance) {
-                    instance.initId(new DefaultPhysicalId(instance instanceof ArrayInstance, id, nodeIdRef.nextNodeId++, instance.getType().toTypeKey()));
+                    instance.initId(new DefaultPhysicalId(instance.getType().getTypeTag(), id, nodeIdRef.nextNodeId++));
                     return super.visitDurableInstance(instance);
                 }
             });
@@ -442,8 +441,10 @@ public class TestUtils {
         return NncUtils.findRequired(typeDTO.getClassParam().enumConstants(), f -> name.equals(f.title()));
     }
 
-    public static ClassTypeKey mockClassTypeKey() {
-        return new ClassTypeKey(TaggedPhysicalId.ofClass(1L, 0L).toString());
+    private static final Klass mockKlass = ClassTypeBuilder.newBuilder("TestUtilsMock", "TestUtilsMock").build();
+
+    public static ClassType mockClassType() {
+        return mockKlass.getType();
     }
 
     public static void printIdClassName(String id) {

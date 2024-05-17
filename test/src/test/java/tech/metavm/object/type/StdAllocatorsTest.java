@@ -31,8 +31,8 @@ public class StdAllocatorsTest extends TestCase {
         java.lang.reflect.Field klassNameField = ReflectionUtils.getField(Klass.class, "name");
         var class2ids = allocators.allocate(Map.of(Klass.class, 1, Field.class, 1));
 
-        allocators.putId(Field.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(0), 0L, TestUtils.mockClassTypeKey()));
-        allocators.putId(klassNameField, DefaultPhysicalId.ofObject(class2ids.get(Field.class).get(0), 0L, TestUtils.mockClassTypeKey()));
+        allocators.putId(Field.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(0), 0L, TestUtils.mockClassType()));
+        allocators.putId(klassNameField, DefaultPhysicalId.ofObject(class2ids.get(Field.class).get(0), 0L, TestUtils.mockClassType()));
 
         var fieldClassId = allocators.getId(Field.class);
         LOGGER.info("Field id: " + fieldClassId);
@@ -47,11 +47,11 @@ public class StdAllocatorsTest extends TestCase {
         var class2ids = allocators.allocate(
                 Map.of(Klass.class, 3, Field.class, 1, TypeCategory.class, 1)
         );
-        allocators.putId(Klass.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(0), 0L, TestUtils.mockClassTypeKey()));
-        allocators.putId(Field.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(1), 0L, TestUtils.mockClassTypeKey()));
-        allocators.putId(TypeCategory.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(2), 0L, TestUtils.mockClassTypeKey()));
-        allocators.putId(klassNameReflectField, DefaultPhysicalId.ofObject(class2ids.get(Field.class).get(0), 0L, TestUtils.mockClassTypeKey()));
-        allocators.putId(TypeCategory.CLASS, DefaultPhysicalId.ofObject(class2ids.get(TypeCategory.class).get(0), 0L, TestUtils.mockClassTypeKey()));
+        allocators.putId(Klass.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(0), 0L, TestUtils.mockClassType()));
+        allocators.putId(Field.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(1), 0L, TestUtils.mockClassType()));
+        allocators.putId(TypeCategory.class, DefaultPhysicalId.ofObject(class2ids.get(Klass.class).get(2), 0L, TestUtils.mockClassType()));
+        allocators.putId(klassNameReflectField, DefaultPhysicalId.ofObject(class2ids.get(Field.class).get(0), 0L, TestUtils.mockClassType()));
+        allocators.putId(TypeCategory.CLASS, DefaultPhysicalId.ofObject(class2ids.get(TypeCategory.class).get(0), 0L, TestUtils.mockClassType()));
 
         var typeClassId = allocators.getId(Klass.class);
         var fieldClassId = allocators.getId(Field.class);

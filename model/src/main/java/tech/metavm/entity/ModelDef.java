@@ -57,7 +57,7 @@ public abstract class ModelDef<T, I extends DurableInstance> implements Mapper<T
     public abstract void initInstance(I instance, T model, ObjectInstanceMap instanceMap);
 
     public I createInstance(T model, ObjectInstanceMap instanceMap, Id id) {
-        I instance = InstanceFactory.allocate(instanceType, getTypeDef().getType(), id, EntityUtils.isEphemeral(model));
+        I instance = InstanceFactory.allocate(instanceType, id, EntityUtils.isEphemeral(model));
         initInstance(instance, model, instanceMap);
         return instance;
     }

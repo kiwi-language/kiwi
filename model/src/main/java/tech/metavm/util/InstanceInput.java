@@ -3,6 +3,7 @@ package tech.metavm.util;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.TypeDefProvider;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -18,16 +19,21 @@ public class InstanceInput implements Closeable {
         throw new UnsupportedOperationException();
     };
 
+    public static final TypeDefProvider UNSUPPORTED_TYPE_DEF_PROVIDER = id -> {
+        throw new UnsupportedOperationException();
+    };
+
     public static InstanceInput create(byte[] bytes, IInstanceContext context) {
         var bout = new ByteArrayInputStream(bytes);
         if (context == null)
             return new InstanceInput(bout);
         else
-            return new InstanceInput(bout, context::internalGet);
+            return new InstanceInput(bout, context::internalGet, context.getTypeDefProvider());
     }
 
     private final InputStream inputStream;
     private final Function<Id, DurableInstance> getInstance;
+    private final TypeDefProvider typeDefProvider;
     private long treeId;
     @Nullable
     private DurableInstance parent;
@@ -36,13 +42,15 @@ public class InstanceInput implements Closeable {
     private boolean loadedFromCache;
 
     public InstanceInput(InputStream inputStream) {
-        this(inputStream, UNSUPPORTED_RESOLVER);
+        this(inputStream, UNSUPPORTED_RESOLVER, UNSUPPORTED_TYPE_DEF_PROVIDER);
     }
 
     public InstanceInput(InputStream inputStream,
-                         Function<Id, DurableInstance> getInstance) {
+                         Function<Id, DurableInstance> getInstance,
+                         TypeDefProvider typeDefProvider) {
         this.inputStream = inputStream;
         this.getInstance = getInstance;
+        this.typeDefProvider = typeDefProvider;
     }
 
     public DurableInstance readMessage() {
@@ -84,7 +92,7 @@ public class InstanceInput implements Closeable {
             skipper.visitRecordBody(id);
         else {
             instance.setParentInternal(parent, parentField);
-            instance.readFrom(this);
+            instance.readFrom(this, typeDefProvider);
         }
         return instance;
     }

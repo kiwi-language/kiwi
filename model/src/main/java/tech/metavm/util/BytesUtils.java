@@ -4,6 +4,7 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParam;
 import tech.metavm.object.type.AnyType;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.system.RegionConstants;
 
 import java.io.ByteArrayInputStream;
@@ -67,7 +68,7 @@ public class BytesUtils {
         }
 
         @Override
-        public void readFrom(InstanceInput input) {
+        public void readFrom(InstanceInput input, TypeDefProvider typeDefProvider) {
 
         }
 

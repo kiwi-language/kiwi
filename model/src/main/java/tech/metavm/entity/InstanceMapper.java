@@ -27,12 +27,10 @@ public class InstanceMapper<I extends DurableInstance> implements Mapper<I, I> {
         return instanceClass;
     }
 
-    @Override
     public java.lang.reflect.Type getEntityType() {
         return instanceClass;
     }
 
-    @Override
     public Type getType() {
         return type;
     }

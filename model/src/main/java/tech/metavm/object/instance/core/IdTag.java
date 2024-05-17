@@ -6,10 +6,6 @@ public enum IdTag {
 
     NULL(0),
     OBJECT_PHYSICAL(1),
-    CLASS_TYPE_PHYSICAL(3),
-    ARRAY_TYPE_PHYSICAL(4),
-    FIELD_PHYSICAL(5),
-    KLASS_PHYSICAL(6),
     TMP(19),
     DEFAULT_VIEW(11),
     CHILD_VIEW(13),

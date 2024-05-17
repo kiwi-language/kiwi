@@ -62,7 +62,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             return entityClass.cast(found);
         NncUtils.requireNonNull(instance.getContext());
         if (mapper == null) {
-            var resolvedMapper = getDefContext().tryGetMapper(instance.getType());
+            var resolvedMapper = getDefContext().tryGetMapper(instance.getId().getTypeTag(this, this));
             if (resolvedMapper == null || resolvedMapper instanceof DirectDef<?>)
                 return entityClass.cast(instance);
             mapper = resolvedMapper.as(entityClass);
@@ -509,6 +509,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 },
                 null,
                 table -> table.initialize(
+                        ParameterizedTypeImpl.create(table.getRawClass(), Object.class),
                         NncUtils.map(
                                 instances,
                                 inst -> getEntity(javaType, inst)
@@ -655,7 +656,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private DurableInstance newInstance(Object object) {
         Mapper<?, ?> mapper = getDefContext().getMapperByEntity(object);
         if (mapper.isProxySupported()) {
-            var instance = InstanceFactory.allocate(mapper.getInstanceClass(), mapper.getType(), tryGetId(object),
+            var instance = InstanceFactory.allocate(mapper.getInstanceClass(), tryGetId(object),
                     EntityUtils.isEphemeral(object));
             addBinding(object, instance);
             mapper.initInstanceHelper(instance, object, objectInstanceMap);

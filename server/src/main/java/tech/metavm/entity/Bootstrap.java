@@ -11,6 +11,7 @@ import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.type.BootIdProvider;
 import tech.metavm.object.type.ColumnStore;
 import tech.metavm.object.type.StdAllocators;
+import tech.metavm.object.type.TypeTagStore;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
@@ -26,14 +27,16 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
 
     private final StdAllocators stdAllocators;
     private final ColumnStore columnStore;
+    private final TypeTagStore typeTagStore;
     private final StdIdStore stdIdStore;
     private final Set<Field> fieldBlacklist = new HashSet<>();
 
-    public Bootstrap(EntityContextFactory entityContextFactory, StdAllocators stdAllocators, ColumnStore columnStore, StdIdStore stdIdStore) {
+    public Bootstrap(EntityContextFactory entityContextFactory, StdAllocators stdAllocators, ColumnStore columnStore, TypeTagStore typeTagStore, StdIdStore stdIdStore) {
         super(entityContextFactory);
         this.stdAllocators = stdAllocators;
         this.columnStore = columnStore;
         this.stdIdStore = stdIdStore;
+        this.typeTagStore = typeTagStore;
     }
 
     public BootstrapResult boot() {
@@ -48,7 +51,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
                     idInitializer, bridge);
             var defContext = new DefContext(
                     new StdIdProvider(stdIdStore),
-                    standardInstanceContext, columnStore, identityContext);
+                    standardInstanceContext, columnStore, typeTagStore, identityContext);
             defContext.setFieldBlacklist(fieldBlacklist);
             bridge.setEntityContext(defContext);
             ModelDefRegistry.setDefContext(defContext);

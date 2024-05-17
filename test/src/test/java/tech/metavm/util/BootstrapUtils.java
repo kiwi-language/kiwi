@@ -5,13 +5,14 @@ import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.event.MockEventQueue;
 import tech.metavm.flow.Function;
 import tech.metavm.object.instance.MemInstanceSearchServiceV2;
-import tech.metavm.object.instance.core.BooleanInstance;
-import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.log.TaskHandler;
 import tech.metavm.object.instance.log.VersionHandler;
 import tech.metavm.object.instance.search.InstanceSearchService;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.MemAllocatorStore;
+import tech.metavm.object.type.MemColumnStore;
+import tech.metavm.object.type.MemTypeTagStore;
+import tech.metavm.object.type.StdAllocators;
 import tech.metavm.system.IdService;
 import tech.metavm.system.RegionManager;
 import tech.metavm.system.persistence.MemBlockMapper;
@@ -139,11 +140,13 @@ public class BootstrapUtils {
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             var allocatorStore = new MemAllocatorStore();
             var columnStore = new MemColumnStore();
+            var typeTagStore = new MemTypeTagStore();
             var stdIdStore = new MemoryStdIdStore();
             var bootstrap = new Bootstrap(
                     entityContextFactory,
                     new StdAllocators(allocatorStore),
                     columnStore,
+                    typeTagStore,
                     stdIdStore
             );
             bootstrap.boot();
@@ -156,6 +159,7 @@ public class BootstrapUtils {
                     regionMapper.copy(),
                     blockMapper.copy(),
                     columnStore.copy(),
+                    typeTagStore.copy(),
                     stdIdStore.copy(),
                     allocatorStore.copy(),
                     instanceSearchService.copy()

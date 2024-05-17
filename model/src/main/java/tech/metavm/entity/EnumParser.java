@@ -39,6 +39,7 @@ public class EnumParser<T extends Enum<?>> extends DefParser<T, ClassInstance, E
                         .kind(ClassKind.ENUM)
                         .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getType))
                         .source(ClassSource.BUILTIN)
+                        .tag(defContext.getTypeTag(javaClass))
                         .build(),
                 defContext
         );

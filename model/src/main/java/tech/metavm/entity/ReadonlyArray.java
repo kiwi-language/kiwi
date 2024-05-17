@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.util.*;
 import tech.metavm.util.LinkedList;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.*;
@@ -25,8 +26,8 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         );
     }
 
-    private final Type genericType;
-    private final Type elementType;
+    private Type genericType;
+    private Type elementType;
     private ModelIdentity identifier;
 
     public ReadonlyArray(Class<T> klass, Collection<T> data) {
@@ -88,7 +89,9 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
     }
 
     @NoProxy
-    public void initialize(Collection<? extends T> data) {
+    public void initialize(ParameterizedType type, Collection<? extends T> data) {
+        this.genericType = type;
+        this.elementType = type.getActualTypeArguments()[0];
         table.clear();
         table.addAll(data);
     }

@@ -4,10 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.entity.ContextAttributeKey;
-import tech.metavm.entity.EntityUtils;
-import tech.metavm.entity.InstanceIndexQuery;
-import tech.metavm.entity.LockMode;
+import tech.metavm.entity.*;
 import tech.metavm.entity.natives.CallContext;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
@@ -305,14 +302,14 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         });
     }
 
-    private Type getTypeByInstanceId(Id id) {
-        TypeKey typeKey = switch (id) {
-            case PhysicalId physicalId -> physicalId.getTypeKey();
-            case ViewId viewId -> viewId.getViewTypeKey(mappingProvider, typeDefProvider);
-            default -> throw new IllegalStateException("Unexpected value: " + id);
-        };
-        return typeKey.toType(typeDefProvider);
-    }
+//    private Type getTypeByInstanceId(Id id) {
+//        TypeKey typeKey = switch (id) {
+//            case PhysicalId physicalId -> physicalId.getTypeKey();
+//            case ViewId viewId -> viewId.getViewTypeKey(mappingProvider, typeDefProvider);
+//            default -> throw new IllegalStateException("Unexpected value: " + id);
+//        };
+//        return typeKey.toType(typeDefProvider);
+//    }
 
 //    protected abstract long getTypeId(long id);
 
@@ -332,18 +329,17 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected DurableInstance allocateInstance(Id id) {
-        Type type = getTypeByInstanceId(id);
-        if (type instanceof ArrayType arrayType) {
+        if (id.isArray()) {
             return switch (id) {
                 case PhysicalId physicalId ->
-                        new ArrayInstance(physicalId, arrayType, false, this::initializeInstance);
+                        new ArrayInstance(physicalId, StandardTypes.getAnyArrayType(), false, this::initializeInstance);
                 case ViewId viewId -> allocateView(viewId);
                 default -> throw new IllegalStateException("Unexpected value: " + id);
             };
         } else {
             return switch (id) {
                 case PhysicalId physicalId ->
-                        new ClassInstance(physicalId, ((ClassType) type), false, this::initializeInstance);
+                        new ClassInstance(physicalId, ClassInstance.uninitializedKlass.getType(), false, this::initializeInstance);
                 case ViewId viewId -> allocateView(viewId);
                 default -> throw new IllegalStateException("Unexpected value: " + id);
             };

@@ -55,7 +55,6 @@ public class InstanceArrayMapper<E extends Instance, C extends ReadWriteArray<E>
         return entityClass;
     }
 
-    @Override
     public ParameterizedType getEntityType() {
         return entityType;
     }
@@ -65,7 +64,6 @@ public class InstanceArrayMapper<E extends Instance, C extends ReadWriteArray<E>
         return ArrayInstance.class;
     }
 
-    @Override
     public ArrayType getType() {
         return type;
     }

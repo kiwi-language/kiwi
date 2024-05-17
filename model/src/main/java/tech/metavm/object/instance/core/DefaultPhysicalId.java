@@ -1,35 +1,25 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeDefProvider;
+import tech.metavm.object.type.TypeTags;
 import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceOutput;
 
 import java.util.Objects;
 
 public class DefaultPhysicalId extends PhysicalId {
 
-    public static PhysicalId ofObject(long id, long nodeId, TypeKey typeKey) {
-        return new DefaultPhysicalId(false, id, nodeId, typeKey);
-    }
-
     public static PhysicalId ofObject(long id, long nodeId, Type type) {
-        return new DefaultPhysicalId(false, id, nodeId, type.toTypeKey());
+        return new DefaultPhysicalId(type.getTypeTag(), id, nodeId);
     }
 
-    public static PhysicalId ofArray(long id, long nodeId, Type type) {
-        return new DefaultPhysicalId(true, id, nodeId, type.toTypeKey());
-    }
+    private final int typeTag;
 
-    private final TypeKey typeKey;
-
-    public DefaultPhysicalId(boolean isArray, long treeId, long nodeId, TypeKey typeKey) {
-        super(isArray, treeId, nodeId);
-        this.typeKey = typeKey;
-    }
-
-    @Override
-    public TypeKey getTypeKey() {
-        return typeKey;
+    public DefaultPhysicalId(int typeTag, long treeId, long nodeId) {
+        super(false, treeId, nodeId);
+        this.typeTag = typeTag;
     }
 
     @Override
@@ -37,14 +27,19 @@ public class DefaultPhysicalId extends PhysicalId {
         output.writeIdTag(IdTag.OBJECT_PHYSICAL, isArray());
         output.writeLong(getTreeId());
         output.writeLong(getNodeId());
-        typeKey.write(output);
+        output.writeInt(typeTag);
     }
 
     @Override
     public void writeWithoutTreeId(InstanceOutput output) {
         output.writeIdTag(IdTag.OBJECT_PHYSICAL, isArray());
         output.writeLong(getNodeId());
-        typeKey.write(output);
+        output.writeInt(typeTag);
+    }
+
+    @Override
+    public int getTypeTag(MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
+        return typeTag;
     }
 
     @Override
@@ -52,11 +47,11 @@ public class DefaultPhysicalId extends PhysicalId {
         if (this == entity) return true;
         if (!(entity instanceof DefaultPhysicalId that)) return false;
         if (!super.equals(entity)) return false;
-        return Objects.equals(typeKey, that.typeKey);
+        return typeTag == that.typeTag;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), typeKey);
+        return Objects.hash(super.hashCode(), typeTag);
     }
 }

@@ -19,6 +19,7 @@ public class BootstrapTest extends TestCase {
     public static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(BootstrapTest.class);
 
     private ColumnStore columnStore;
+    private TypeTagStore typeTagStore;
     private StdIdStore stdIdStore;
     private MemAllocatorStore allocatorStore;
     private InstanceStore instanceStore;
@@ -28,6 +29,7 @@ public class BootstrapTest extends TestCase {
     protected void setUp() throws Exception {
         allocatorStore = new MemAllocatorStore();
         columnStore = new MemColumnStore();
+        typeTagStore = new MemTypeTagStore();
         stdIdStore = new MemoryStdIdStore();
         instanceStore = new MemInstanceStore();
         idProvider = new MockIdProvider();
@@ -37,6 +39,7 @@ public class BootstrapTest extends TestCase {
     protected void tearDown() {
         ContextUtil.clearContextInfo();
         columnStore = null;
+        typeTagStore = null;
         stdIdStore = null;
         allocatorStore = null;
         instanceStore = null;
@@ -53,7 +56,7 @@ public class BootstrapTest extends TestCase {
         instanceContextFactory.setIdService(idProvider);
         instanceContextFactory.setCache(new MockCache());
         entityContextFactory.setInstanceLogService(new MockInstanceLogService());
-        return new Bootstrap(entityContextFactory, stdAllocators, columnStore, stdIdStore);
+        return new Bootstrap(entityContextFactory, stdAllocators, columnStore, typeTagStore, stdIdStore);
     }
 
     public void test() {

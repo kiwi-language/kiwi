@@ -32,6 +32,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     private final Map<Type, ModelDef<?, ?>> javaType2Def = new HashMap<>();
     private final Map<TypeDef, ModelDef<?, ?>> typeDef2Def = new IdentityHashMap<>();
+    private final Map<Integer, ModelDef<?, ?>> typeTag2Def = new HashMap<>();
     private final IdentitySet<ModelDef<?, ?>> processedDefSet = new IdentitySet<>();
     private final IdentitySet<Klass> initializedClassTypes = new IdentitySet<>();
     private final ValueDef<Enum<?>> enumDef;
@@ -42,6 +43,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     //    private final Map<Object, DurableInstance> instanceMapping = new IdentityHashMap<>();
     private final IdentityContext identityContext;
     private final ColumnStore columnStore;
+    private final TypeTagStore typeTagStore;
     private final Map<Type, DefParser<?, ?, ?>> parsers = new HashMap<>();
     private final EntityMemoryIndex memoryIndex = new EntityMemoryIndex();
     private final Map<Id, Object> entityMap = new HashMap<>();
@@ -49,6 +51,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final Set<ClassType> typeDefTypes = new HashSet<>();
     private final Set<ClassType> mappingTypes = new HashSet<>();
     private final Set<ClassType> functionTypes = new HashSet<>();
+    private int nextTypeTag = 4;
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
             Map.entry(Byte.class, Long.class),
@@ -57,11 +60,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             Map.entry(Float.class, Double.class)
     );
 
-    public DefContext(StdIdProvider getId, ColumnStore columnStore) {
-        this(getId, null, columnStore, new IdentityContext());
+    public DefContext(StdIdProvider getId, ColumnStore columnStore, TypeTagStore typeTagStore) {
+        this(getId, null, columnStore, typeTagStore, new IdentityContext());
     }
 
-    public DefContext(StdIdProvider stdIdProvider, IInstanceContext instanceContext, ColumnStore columnStore, IdentityContext identityContext) {
+    public DefContext(StdIdProvider stdIdProvider, IInstanceContext instanceContext, ColumnStore columnStore, TypeTagStore typeTagStore, IdentityContext identityContext) {
         super(instanceContext, null);
         this.stdIdProvider = stdIdProvider;
         this.identityContext = identityContext;
@@ -69,6 +72,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         stdBuilder.initRootTypes();
         enumDef = stdBuilder.getEnumDef();
         this.columnStore = columnStore;
+        this.typeTagStore = typeTagStore;
         ColumnKind.columns().forEach(this::writeEntity);
     }
 
@@ -92,7 +96,14 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             return type;
         if (BiUnion.isNullable(javaType))
             return StandardTypes.getNullableType(getType(BiUnion.getUnderlyingType(javaType)));
-        return getMapper(javaType).getType();
+        if (javaType instanceof ParameterizedType pType) {
+            var rawClass = (Class<?>) pType.getRawType();
+            if (ReadonlyArray.class.isAssignableFrom(rawClass))
+                return new ArrayType(getType(pType.getActualTypeArguments()[0]), ArrayKind.fromEntityClass(rawClass));
+            else
+                return new ClassType(((ClassType) getDef(rawClass).getType()).getKlass(), NncUtils.map(pType.getActualTypeArguments(), this::getType));
+        } else
+            return getDef(javaType).getType();
     }
 
     public void ensureStage(tech.metavm.object.type.Type type, ResolutionStage stage) {
@@ -130,6 +141,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     public void setFieldBlacklist(Set<java.lang.reflect.Field> fieldBlacklist) {
         this.fieldBlacklist.addAll(fieldBlacklist);
+    }
+
+    public int getTypeTag(Class<?> javaClass) {
+        return typeTagStore.getTypeTag(javaClass);
     }
 
 //    @Override
@@ -240,7 +255,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                 return new InstanceArrayMapper(arrayClass, pType, Instance.class, arrayType);
             else
                 //noinspection rawtypes,unchecked
-                return new ArrayMapper(arrayClass, pType, Object.class, arrayType, this);
+                return new ArrayMapper(arrayClass, this);
         } else if (javaType instanceof Class<?> klass && DurableInstance.class.isAssignableFrom(klass))
             //noinspection rawtypes,unchecked
             return new InstanceMapper(DurableInstance.class.asSubclass(klass));
@@ -281,13 +296,31 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                 case READ_WRITE -> ReadWriteArray.class;
                 case READ_ONLY -> ReadonlyArray.class;
             };
-            var arrayJavaType = ParameterizedTypeImpl.create(javaClass, getJavaType(arrayType.getElementType()));
             //noinspection rawtypes,unchecked
-            return new ArrayMapper<>(javaClass, arrayJavaType, Object.class, arrayType, this);
+            return new ArrayMapper<>(javaClass, this);
         } else if (type instanceof ClassType classType)
             return tryGetDef(classType.resolve());
         else
             throw new InternalException("Can not get entity mapper for type: " + type.getTypeDesc());
+    }
+
+    public Mapper<?, ?> getMapper(int typeTag) {
+        return Objects.requireNonNull(tryGetMapper(typeTag), () -> "Can not get mapper for type tag " + typeTag);
+    }
+
+    public @Nullable Mapper<?, ?> tryGetMapper(int typeTag) {
+        if (typeTag == TypeTags.DEFAULT)
+            throw new IllegalArgumentException("Can not get mapper for default type tag");
+        if (typeTag <= TypeTags.CHILD_ARRAY) {
+            var javaClass = switch (typeTag) {
+                case TypeTags.READONLY_ARRAY -> ReadonlyArray.class;
+                case TypeTags.READ_WRITE_ARRAY -> ReadWriteArray.class;
+                case TypeTags.CHILD_ARRAY -> ChildArray.class;
+                default -> throw new IllegalStateException("Should not reach here");
+            };
+            return new ArrayMapper<>(javaClass, this);
+        } else
+            return typeTag2Def.get(typeTag);
     }
 
     public @Nullable ModelDef<?, ?> tryGetDef(TypeDef typeDef) {
@@ -396,6 +429,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         if (existing != null && existing != def)
             throw new InternalException("Def for type " + def.getTypeDef() + " already exists. Def: " + existing);
         typeDef2Def.put(def.getTypeDef(), def);
+        typeTag2Def.put(def.getType().getTypeTag(), def);
         tryInitDefEntityIds(def);
     }
 
@@ -478,7 +512,12 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             return javaType;
         if (type.isBinaryNullable())
             return BiUnion.createNullableType(getJavaType(type.getUnderlyingType())); // TODO maybe we should not use BiUnion here
-        return getMapper(type).getEntityType();
+        if (type instanceof ArrayType arrayType)
+            return ParameterizedTypeImpl.create(arrayType.getKind().getEntityClass(), getJavaType(arrayType.getElementType()));
+        else if (type instanceof ClassType classType)
+            return getDef(classType.resolve()).getEntityType();
+        else
+            throw new IllegalArgumentException("Can not get java type for type " + type);
     }
 
     public boolean isClassTypeInitialized(Klass classType) {
@@ -551,7 +590,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         var id = getEntityId(model);
         if (id == null) {
             if (mapper.isProxySupported()) {
-                var instance = InstanceFactory.allocate(mapper.getInstanceClass(), mapper.getType(), id,
+                var instance = InstanceFactory.allocate(mapper.getInstanceClass(), id,
                         EntityUtils.isEphemeral(model));
                 addToContext(model, instance);
                 mapper.initInstanceHelper(instance, model, getObjectInstanceMap());

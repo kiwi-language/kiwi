@@ -120,6 +120,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @EntityField("状态")
     private ClassTypeState state = ClassTypeState.INIT;
 
+    private final int tag;
+
     @SuppressWarnings("unused")
     private boolean templateFlag = false;
 
@@ -168,7 +170,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             boolean isAbstract,
             boolean isTemplate,
             List<TypeVariable> typeParameters,
-            List<Type> typeArguments) {
+            List<Type> typeArguments,
+            int tag) {
         this.name = name;
         this.code = code;
         this.kind = kind;
@@ -182,6 +185,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.template = copySource = template;
         this.source = source;
         this.desc = desc;
+        this.tag = tag;
         setTypeParameters(typeParameters);
         setTypeArguments(typeArguments);
         getMethodTable().rebuild();
@@ -267,6 +271,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (superType != null && !superType.resolve().allFieldsMatch(predicate))
             return false;
         return this.fields.stream().filter(Field::isReady).allMatch(predicate);
+    }
+
+    public int getTag() {
+        return tag;
     }
 
     public void setTitleField(@Nullable Field titleField) {

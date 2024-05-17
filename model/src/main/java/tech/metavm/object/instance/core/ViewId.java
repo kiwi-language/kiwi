@@ -31,6 +31,11 @@ public abstract class ViewId extends Id {
         return Objects.requireNonNull(mappingKey).toMapping(mappingProvider, typeDefProvider).getTargetType().toTypeKey();
     }
 
+    @Override
+    public int getTypeTag(MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
+        return Objects.requireNonNull(mappingKey).toMapping(mappingProvider, typeDefProvider).getTargetType().getTypeTag();
+    }
+
     public void writeMappingKey(InstanceOutput output) {
         if(mappingKey != null) {
             output.writeBoolean(true);

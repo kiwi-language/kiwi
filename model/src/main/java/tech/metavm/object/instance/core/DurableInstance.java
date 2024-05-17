@@ -7,6 +7,7 @@ import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.Tree;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.object.view.rest.dto.MappingKey;
 import tech.metavm.system.RegionConstants;
@@ -381,7 +382,7 @@ public abstract class DurableInstance extends Instance {
         return new Tree(getTreeId(), getVersion(), nextNodeId, InstanceOutput.toByteArray(this, withChildren, true));
     }
 
-    public abstract void readFrom(InstanceInput input);
+    public abstract void readFrom(InstanceInput input, TypeDefProvider typeDefProvider);
 
 
     @NoProxy

@@ -180,6 +180,11 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
+    public int getTypeTag() {
+        return kind.typeTag();
+    }
+
+    @Override
     protected boolean equals0(Object obj) {
         return obj instanceof ArrayType that && kind == that.kind && elementType.equals(that.elementType);
     }

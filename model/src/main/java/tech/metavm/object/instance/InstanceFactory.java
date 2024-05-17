@@ -25,17 +25,16 @@ public class InstanceFactory {
     public static final Map<Class<? extends Instance>, Method> ALLOCATE_METHOD_MAP = new ConcurrentHashMap<>();
     public static final String ALLOCATE_METHOD_NAME = "allocate";
 
-    public static <T extends Instance> T allocate(Class<T> instanceType, Type type, boolean ephemeral) {
-        return allocate(instanceType, type, null, ephemeral);
+    public static <T extends Instance> T allocate(Class<T> instanceType, boolean ephemeral) {
+        return allocate(instanceType, null, ephemeral);
     }
 
-    public static <T extends Instance> T allocate(Class<T> instanceType, Type type, Id id, boolean ephemeral) {
+    public static <T extends Instance> T allocate(Class<T> instanceType, Id id, boolean ephemeral) {
         T instance;
-        if (type instanceof ArrayType arrayType)
-            instance = instanceType.cast(new ArrayInstance(id, arrayType, ephemeral, null));
-        else {
-            instance = instanceType.cast(new ClassInstance(id, (ClassType) type, ephemeral, null));
-        }
+        if (instanceType == ArrayInstance.class)
+            instance = instanceType.cast(new ArrayInstance(id, StandardTypes.getAnyArrayType(), ephemeral, null));
+        else
+            instance = instanceType.cast(new ClassInstance(id, ClassInstance.uninitializedKlass.getType(), ephemeral, null));
 //        Method allocateMethod = getAllocateMethod(instanceType, type.getClass());
 //        T instance = instanceType.cast(ReflectUtils.invoke(null, allocateMethod, type));
         return instance;

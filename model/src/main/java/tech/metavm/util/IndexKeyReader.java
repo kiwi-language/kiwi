@@ -9,7 +9,7 @@ import java.util.function.Function;
 
 public class IndexKeyReader extends InstanceInput {
     public IndexKeyReader(InputStream inputStream, Function<Id, DurableInstance> getInstance) {
-        super(inputStream, getInstance);
+        super(inputStream, getInstance, id -> {throw new UnsupportedOperationException();});
     }
 
     @Override

@@ -18,6 +18,7 @@ public class CompilerBootstrap {
     private final CompilerInstanceContextFactory contextFactory;
     private final StdAllocators stdAllocators;// = new StdAllocators(new DirectoryAllocatorStore("/not_exist"));
     private final ColumnStore columnStore = new FileColumnStore("/not_exist");
+    private final TypeTagStore typeTagStore = new FileTypeTagStore("/not_exist");
     private volatile boolean boot;
 
     CompilerBootstrap(CompilerInstanceContextFactory contextFactory, AllocatorStore allocatorStore) {
@@ -39,7 +40,7 @@ public class CompilerBootstrap {
             contextFactory.setStdContext(standardInstanceContext);
             var defContext = new DefContext(
                     new StdIdProvider(new AllocatorStdIdStore(stdAllocators)),
-                    standardInstanceContext, columnStore, identityContext);
+                    standardInstanceContext, columnStore, typeTagStore, identityContext);
             bridge.setEntityContext(defContext);
             ModelDefRegistry.setDefContext(defContext);
             contextFactory.setDefContext(defContext);

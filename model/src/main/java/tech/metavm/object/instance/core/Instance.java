@@ -20,7 +20,7 @@ import java.util.Objects;
 
 public abstract class Instance {
 
-    private final Type type;
+    private Type type;
 
     public static final Map<Instance, Exception> STACKS = new IdentityHashMap<>();
 
@@ -31,6 +31,10 @@ public abstract class Instance {
     @NoProxy
     public Type getType() {
         return type;
+    }
+
+    protected void setType(Type type) {
+        this.type = type;
     }
 
     @NoProxy
