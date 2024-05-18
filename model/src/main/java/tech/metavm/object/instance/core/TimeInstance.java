@@ -21,7 +21,8 @@ public class TimeInstance extends PrimitiveInstance /*implements Comparable<Time
     }
 
     @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
+    public void write(InstanceOutput output) {
+        output.write(WireTypes.TIME);
         output.writeLong(value);
     }
 
@@ -44,11 +45,6 @@ public class TimeInstance extends PrimitiveInstance /*implements Comparable<Time
     @Override
     public Long getValue() {
         return value;
-    }
-
-    @Override
-    public int getWireType() {
-        return WireTypes.TIME;
     }
 
     @Override

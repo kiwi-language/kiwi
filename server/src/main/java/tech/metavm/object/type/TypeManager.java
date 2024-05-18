@@ -110,7 +110,7 @@ public class TypeManager extends EntityContextFactoryBean {
 
     private TreeDTO getTypeTree(Object entity, IEntityContext context) {
         var typeInstance = context.getInstance(entity);
-        return typeInstance.toTree(true).toDTO();
+        return typeInstance.toTree().toDTO();
     }
 
     public Page<TypeDTO> query(TypeQuery request) {

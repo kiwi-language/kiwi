@@ -4,7 +4,6 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParam;
 import tech.metavm.object.type.AnyType;
-import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.system.RegionConstants;
 
@@ -69,7 +68,7 @@ public class BytesUtils {
         }
 
         @Override
-        public void readFrom(InstanceInput input, TypeDefProvider typeDefProvider) {
+        public void readFrom(InstanceInput input) {
 
         }
 
@@ -94,7 +93,7 @@ public class BytesUtils {
         }
 
         @Override
-        public void writeTo(InstanceOutput output, boolean includeChildren) {
+        public void writeBody(InstanceOutput output) {
 
         }
 
@@ -143,9 +142,9 @@ public class BytesUtils {
 
     public static byte[] toBytes(DurableInstance instance) {
         var bout = new ByteArrayOutputStream();
-        var output = new InstanceOutput(bout, true);
+        var output = new InstanceOutput(bout);
         output.writeLong(instance.getVersion());
-        output.writeValue(instance);
+        output.writeRecord(instance);
         return bout.toByteArray();
     }
 

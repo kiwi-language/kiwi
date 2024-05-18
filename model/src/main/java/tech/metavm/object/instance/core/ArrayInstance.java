@@ -9,7 +9,6 @@ import tech.metavm.object.instance.rest.InstanceFieldValue;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
@@ -95,9 +94,8 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     }
 
     @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
+    protected void writeBody(InstanceOutput output) {
         ensureLoaded();
-        getType().write(output);
         var elements = this.elements;
         int size = 0;
         for (Instance element : elements) {
@@ -105,10 +103,10 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
                 size++;
         }
         output.writeInt(size);
-        if (isChildArray() && includeChildren) {
+        if (isChildArray()) {
             for (Instance element : elements) {
                 if (!element.shouldSkipWrite())
-                    output.writeValue(element);
+                    output.writeRecord(element);
             }
         } else {
             for (Instance element : elements) {
@@ -120,9 +118,8 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
 
     @Override
     @NoProxy
-    public void readFrom(InstanceInput input, TypeDefProvider typeDefProvider) {
+    public void readFrom(InstanceInput input) {
         setLoaded(input.isLoadedFromCache());
-        setType(Type.readType(input, typeDefProvider));
         var parent = getParent();
         var parentField = getParentField();
         var elements = this.elements;

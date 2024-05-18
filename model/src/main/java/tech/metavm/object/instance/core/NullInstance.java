@@ -18,8 +18,8 @@ public class NullInstance extends PrimitiveInstance {
     }
 
     @Override
-    public int getWireType() {
-        return WireTypes.NULL;
+    public void write(InstanceOutput output) {
+        output.write(WireTypes.NULL);
     }
 
     @Override
@@ -30,10 +30,6 @@ public class NullInstance extends PrimitiveInstance {
     @Override
     public <R> R accept(InstanceVisitor<R> visitor) {
         return visitor.visitNullInstance(this);
-    }
-
-    @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
     }
 
     @Override

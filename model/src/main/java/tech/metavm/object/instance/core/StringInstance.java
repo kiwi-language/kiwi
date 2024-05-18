@@ -21,8 +21,9 @@ public class StringInstance extends PrimitiveInstance {
     }
 
     @Override
-    public int getWireType() {
-        return WireTypes.STRING;
+    public void write(InstanceOutput output) {
+        output.write(WireTypes.STRING);
+        output.writeString(value);
     }
 
     public BooleanInstance contains(StringInstance that) {
@@ -44,11 +45,6 @@ public class StringInstance extends PrimitiveInstance {
     @Override
     public StringInstance toStringInstance() {
         return this;
-    }
-
-    @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
-        output.writeString(value);
     }
 
     @Override

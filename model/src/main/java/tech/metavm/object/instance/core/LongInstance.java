@@ -1,6 +1,5 @@
 package tech.metavm.object.instance.core;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.object.type.PrimitiveType;
@@ -20,11 +19,6 @@ public class LongInstance extends NumberInstance {
 
     public Long getValue() {
         return value;
-    }
-
-    @Override
-    public int getWireType() {
-        return WireTypes.LONG;
     }
 
     @Override
@@ -101,13 +95,14 @@ public class LongInstance extends NumberInstance {
     }
 
     @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
-        output.writeLong(value);
+    public String getTitle() {
+        return Long.toString(value);
     }
 
     @Override
-    public String getTitle() {
-        return Long.toString(value);
+    public void write(InstanceOutput output) {
+        output.write(WireTypes.LONG);
+        output.writeLong(value);
     }
 
     @Override

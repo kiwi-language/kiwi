@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.DefaultPhysicalId;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.type.*;
 import tech.metavm.util.DebugEnv;
@@ -43,7 +43,7 @@ public class DefaultIdInitializer implements IdInitializer {
                 treeId = root.getTreeId();
                 nodeId = root.nextNodeId();
             }
-            inst.initId(new DefaultPhysicalId(treeId, nodeId, type.getTypeTag()));
+            inst.initId(new PhysicalId(treeId, nodeId, type.getTypeTag()));
         }
     }
 

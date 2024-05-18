@@ -3,7 +3,7 @@ package tech.metavm.entity;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.core.DefaultPhysicalId;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.*;
 import tech.metavm.system.IdService;
 import tech.metavm.system.RegionManager;
@@ -25,9 +25,9 @@ public class EntityIdProviderTest extends TestCase {
         Klass typeType = ClassTypeBuilder.newBuilder("Type", null).build();
         Klass fooType = ClassTypeBuilder.newBuilder("Foo", null).build();
         ArrayType fooArrayType = new ArrayType(fooType.getType(), ArrayKind.READ_WRITE);
-        typeType.initId(DefaultPhysicalId.ofObject(1L, 0L, TestUtils.mockClassType()));
-        fooType.initId(DefaultPhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
-        fooArrayType.initId(DefaultPhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
+        typeType.initId(PhysicalId.ofObject(1L, 0L, TestUtils.mockClassType()));
+        fooType.initId(PhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
+        fooArrayType.initId(PhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
 
         int numIdsForClass = 10;
         Map<Type, Integer> type2count = Map.of(

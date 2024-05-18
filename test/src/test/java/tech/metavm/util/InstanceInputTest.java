@@ -96,29 +96,29 @@ public class InstanceInputTest extends TestCase {
         Klass barType = ClassTypeBuilder.newBuilder("Bar", "Bar").build();
         Klass quxType = ClassTypeBuilder.newBuilder("Qux", "Qux").build();
 
-        fooType.initId(DefaultPhysicalId.ofObject(10001L, 0L, TestUtils.mockClassType()));
-        barType.initId(DefaultPhysicalId.ofObject(10002L, 0L, TestUtils.mockClassType()));
-        quxType.initId(DefaultPhysicalId.ofObject(10003L, 0L, TestUtils.mockClassType()));
+        fooType.initId(PhysicalId.ofObject(10001L, 0L, TestUtils.mockClassType()));
+        barType.initId(PhysicalId.ofObject(10002L, 0L, TestUtils.mockClassType()));
+        quxType.initId(PhysicalId.ofObject(10003L, 0L, TestUtils.mockClassType()));
 
         Field nameField = FieldBuilder
                 .newBuilder("name", "name", fooType, StandardTypes.getStringType()).build();
-        nameField.initId(DefaultPhysicalId.ofObject(10001L, 1L, TestUtils.mockClassType()));
+        nameField.initId(PhysicalId.ofObject(10001L, 1L, TestUtils.mockClassType()));
         Field barField = FieldBuilder
                 .newBuilder("bar", "bar", fooType, barType.getType()).isChild(true).build();
-        barField.initId(DefaultPhysicalId.ofObject(10001L, 2L, TestUtils.mockClassType()));
+        barField.initId(PhysicalId.ofObject(10001L, 2L, TestUtils.mockClassType()));
         Field quxField = FieldBuilder.newBuilder("qux", "qux", fooType, quxType.getType()).build();
-        quxField.initId(DefaultPhysicalId.ofObject(10001L, 3L, TestUtils.mockClassType()));
+        quxField.initId(PhysicalId.ofObject(10001L, 3L, TestUtils.mockClassType()));
 
         Field barCodeField = FieldBuilder
                 .newBuilder("code", "code", barType, StandardTypes.getStringType()).build();
-        barCodeField.initId(DefaultPhysicalId.ofObject(10002L, 1L, TestUtils.mockClassType()));
+        barCodeField.initId(PhysicalId.ofObject(10002L, 1L, TestUtils.mockClassType()));
 
         Field quxNameField = FieldBuilder
                 .newBuilder("name", "name", quxType, StandardTypes.getStringType()).build();
-        quxNameField.initId(DefaultPhysicalId.ofObject(10003L, 1L, TestUtils.mockClassType()));
+        quxNameField.initId(PhysicalId.ofObject(10003L, 1L, TestUtils.mockClassType()));
 
         var barInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30001L, 1L, TestUtils.mockClassType()),
+                PhysicalId.ofObject(30001L, 1L, TestUtils.mockClassType()),
                 Map.of(
                         barCodeField,
                         new StringInstance(barCode, StandardTypes.getStringType())
@@ -127,7 +127,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var quxInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30002L, 0L, TestUtils.mockClassType()),
+                PhysicalId.ofObject(30002L, 0L, TestUtils.mockClassType()),
                 Map.of(
                         quxNameField,
                         new StringInstance("qux001", StandardTypes.getStringType())
@@ -136,7 +136,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var fooInst = new ClassInstance(
-                DefaultPhysicalId.ofObject(30001L, 0L, TestUtils.mockClassType()),
+                PhysicalId.ofObject(30001L, 0L, TestUtils.mockClassType()),
                 Map.of(
                         nameField, new StringInstance(fooName, StandardTypes.getStringType()),
                         barField, barInst,
@@ -165,7 +165,7 @@ public class InstanceInputTest extends TestCase {
                 return quxType;
             throw new NullPointerException("Can not find type def for id: " + id);
         };
-        var bytes = InstanceOutput.toMessage(fooInst);
+        var bytes = InstanceOutput.toBytes(fooInst);
         var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, typeDefProvider);
         var recoveredFooInst = input.readMessage();
         MatcherAssert.assertThat(recoveredFooInst, InstanceMatcher.of(fooInst));

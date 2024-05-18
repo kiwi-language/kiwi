@@ -20,8 +20,9 @@ public class BooleanInstance extends PrimitiveInstance {
     }
 
     @Override
-    public int getWireType() {
-        return WireTypes.BOOLEAN;
+    public void write(InstanceOutput output) {
+        output.write(WireTypes.BOOLEAN);
+        output.writeBoolean(value);
     }
 
     public boolean isTrue() {
@@ -47,11 +48,6 @@ public class BooleanInstance extends PrimitiveInstance {
     @Override
     public String getTitle() {
         return value ? "是" : "否";
-    }
-
-    @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
-        output.writeBoolean(value);
     }
 
     @Override

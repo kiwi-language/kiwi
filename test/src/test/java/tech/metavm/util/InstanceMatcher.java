@@ -3,11 +3,9 @@ package tech.metavm.util;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.persistence.PersistenceUtils;
 
-import java.util.Map;
+import java.util.Arrays;
 
 public class InstanceMatcher extends BaseMatcher<Instance> {
 
@@ -24,28 +22,7 @@ public class InstanceMatcher extends BaseMatcher<Instance> {
     @Override
     public boolean matches(Object actual) {
         if(actual instanceof DurableInstance that) {
-            Map<Id, DurableInstance> instanceMap = NncUtils.toMap(
-                    Instances.getAllNonValueInstances(instance),
-                    DurableInstance::getId
-            );
-            var thatInstances = Instances.getAllNonValueInstances(that);
-            if(instanceMap.size() != thatInstances.size()) {
-                return false;
-            }
-            for (var thatInst : thatInstances) {
-                var inst = instanceMap.get(thatInst.getId());
-                if(inst == null) {
-                    return false;
-                }
-                boolean different = DiffUtils.isPojoDifferent(
-                        PersistenceUtils.toInstancePO(inst, TestContext.getAppId()),
-                        PersistenceUtils.toInstancePO(thatInst, TestContext.getAppId())
-                );
-                if(different) {
-                    return false;
-                }
-            }
-            return true;
+            return Arrays.equals(InstanceOutput.toBytes(instance), InstanceOutput.toBytes(that));
         }
         else {
             return false;

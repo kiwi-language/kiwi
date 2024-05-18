@@ -21,12 +21,8 @@ public class PasswordInstance extends PrimitiveInstance {
     }
 
     @Override
-    public int getWireType() {
-        return WireTypes.PASSWORD;
-    }
-
-    @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
+    public void write(InstanceOutput output) {
+        output.write(WireTypes.PASSWORD);
         output.writeString(value);
     }
 

@@ -2,6 +2,7 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.entity.natives.CallContext;
 import tech.metavm.flow.*;
+import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -32,6 +33,16 @@ public class FlowInstance extends FunctionInstance {
 //        return flow.isNative() ? new NativeFrame(flow, self, arguments) :
 //                new MetaFrame(flow, self, actualArgs, stack);
 //    }
+
+    @Override
+    public void writeRecord(InstanceOutput output) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void write(InstanceOutput output) {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public <R> R accept(InstanceVisitor<R> visitor) {

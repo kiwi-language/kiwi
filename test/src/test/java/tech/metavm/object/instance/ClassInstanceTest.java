@@ -41,7 +41,7 @@ public class ClassInstanceTest extends TestCase {
                         new ArrayInstance(fooType.bazArrayType())
                 ))
                 .build();
-        foo.initId(DefaultPhysicalId.ofObject(100000L, 0L, TestUtils.mockClassType()));
+        foo.initId(PhysicalId.ofObject(100000L, 0L, TestUtils.mockClassType()));
         FieldValue fieldValueDTO = foo.toFieldValueDTO();
         Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
         Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
@@ -93,7 +93,7 @@ public class ClassInstanceTest extends TestCase {
                 ),
                 type.getType()
         );
-        instance.initId(DefaultPhysicalId.ofObject(10001L, 0L, TestUtils.mockClassType()));
+        instance.initId(PhysicalId.ofObject(10001L, 0L, TestUtils.mockClassType()));
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 
@@ -133,7 +133,7 @@ public class ClassInstanceTest extends TestCase {
                 return super.visitDurableInstance(instance);
             }
         });
-        var bin = new ByteArrayInputStream(InstanceOutput.toMessage(flow));
+        var bin = new ByteArrayInputStream(InstanceOutput.toBytes(flow));
         var input = new InstanceInput(bin, id -> {
             var inst = id2instance.get(id);
             if(inst instanceof ClassInstance classInst)

@@ -5,7 +5,6 @@ import tech.metavm.flow.FlowExecResult;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParam;
 import tech.metavm.object.type.FunctionType;
-import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -56,11 +55,6 @@ public abstract class FunctionInstance extends Instance {
     @Override
     protected InstanceParam getParam() {
         return null;
-    }
-
-    @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

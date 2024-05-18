@@ -212,9 +212,8 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
+    protected void writeBody(InstanceOutput output) {
         ensureLoaded();
-        getType().write(output);
         var fields = this.fields;
         fields.sort(Comparator.comparingLong(InstanceField::getRecordGroupTag).thenComparing(InstanceField::getRecordTag));
         var sortedInstanceFields = new ArrayList<List<InstanceField>>();
@@ -238,8 +237,8 @@ public class ClassInstance extends DurableInstance {
             output.writeInt(instanceFields.size());
             for (InstanceField field : instanceFields) {
                 output.writeLong(field.getField().getRecordTag());
-                if (includeChildren && field.getField().isChild() && !field.getField().isLazy())
-                    output.writeValue(field.getValue());
+                if (field.getField().isChild() && !field.getField().isLazy())
+                    output.writeRecord(field.getValue());
                 else
                     output.writeInstance(field.getValue());
             }
@@ -259,9 +258,8 @@ public class ClassInstance extends DurableInstance {
 
     @Override
     @NoProxy
-    public void readFrom(InstanceInput input, TypeDefProvider typeDefProvider) {
+    public void readFrom(InstanceInput input) {
         setLoaded(input.isLoadedFromCache());
-        setType(Type.readType(input, typeDefProvider));
         List<List<Field>> sortedFields = klass.getSortedKlassAndFields();
         var instFields = this.fields;
         int j = 0;

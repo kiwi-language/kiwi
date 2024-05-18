@@ -3,6 +3,7 @@ package tech.metavm.util;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeDefProvider;
 
 import javax.annotation.Nullable;
@@ -87,12 +88,14 @@ public class InstanceInput implements Closeable {
 
     private Instance readRecord() {
         var id = readRecordId();
+        var type = Type.readType(this, typeDefProvider);
         var instance = resolveInstance(id);
         if (instance.isInitialized())
             skipper.visitRecordBody(id);
         else {
+            instance.setType(type);
             instance.setParentInternal(parent, parentField);
-            instance.readFrom(this, typeDefProvider);
+            instance.readFrom(this);
         }
         return instance;
     }
@@ -184,4 +187,5 @@ public class InstanceInput implements Closeable {
     public void close() throws IOException {
         inputStream.close();
     }
+
 }

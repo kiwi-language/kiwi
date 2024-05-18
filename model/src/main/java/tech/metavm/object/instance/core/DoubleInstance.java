@@ -1,6 +1,5 @@
 package tech.metavm.object.instance.core;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.Instances;
@@ -25,8 +24,9 @@ public class DoubleInstance extends NumberInstance {
     }
 
     @Override
-    public int getWireType() {
-        return WireTypes.DOUBLE;
+    public void write(InstanceOutput output) {
+        output.write(WireTypes.DOUBLE);
+        output.writeDouble(value);
     }
 
     public DoubleInstance inc(int inc) {
@@ -71,11 +71,6 @@ public class DoubleInstance extends NumberInstance {
 
     public DoubleInstance mod(DoubleInstance that) {
         return new DoubleInstance(value % that.value, getType());
-    }
-
-    @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
-        output.writeDouble(value);
     }
 
     @Override

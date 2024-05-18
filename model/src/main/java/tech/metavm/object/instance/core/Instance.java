@@ -124,7 +124,9 @@ public abstract class Instance {
         return super.equals(obj);
     }
 
-    public abstract void writeTo(InstanceOutput output, boolean includeChildren);
+    public abstract void writeRecord(InstanceOutput output) ;
+
+    public abstract void write(InstanceOutput output);
 
     public abstract Object toSearchConditionValue();
 

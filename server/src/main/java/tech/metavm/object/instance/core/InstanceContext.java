@@ -408,7 +408,7 @@ public class InstanceContext extends BufferingInstanceContext {
                             instance.getTreeId(),
                             instance.getVersion(),
                             instance.getNextNodeId(),
-                            InstanceOutput.toMessage(instance)
+                            InstanceOutput.toBytes(instance)
                     );
                     trees.add(tree);
                 }

@@ -1,13 +1,10 @@
 package tech.metavm.object.instance.persistence;
 
 import tech.metavm.entity.InstanceIndexQuery;
-import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
-import tech.metavm.system.RegionConstants;
 import tech.metavm.util.*;
 
-import java.io.ByteArrayInputStream;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -30,38 +27,6 @@ public class PersistenceUtils {
                     if(key.getIndex().isUnique() && !containsNull(key.getIndex(), entryPO.getKey()))
                         actionForUnique.accept(entryPO);
                 });
-    }
-
-    public static InstancePO toInstancePO(DurableInstance instance, long appId) {
-        instance.ensureLoaded();
-        return switch (instance) {
-            case ClassInstance classInstance -> toInstancePO(classInstance, appId);
-            case ArrayInstance arrayInstance -> toInstancePO(arrayInstance, appId);
-            default -> throw new IllegalStateException("Unexpected value: " + instance);
-        };
-    }
-
-    private static InstancePO toInstancePO(ClassInstance classInstance, long appId) {
-        classInstance.ensureAllFieldsInitialized();
-        return new InstancePO(
-                appId,
-                classInstance.getTreeId(),
-                InstanceOutput.toByteArray(classInstance),
-                classInstance.getVersion(),
-                classInstance.getSyncVersion(),
-                classInstance.getNextNodeId()
-        );
-    }
-
-    private static InstancePO toInstancePO(ArrayInstance arrayInstance, long appId) {
-        return new InstancePO(
-                appId,
-                arrayInstance.getTreeId(),
-                InstanceOutput.toByteArray(arrayInstance),
-                arrayInstance.getVersion(),
-                arrayInstance.getSyncVersion(),
-                arrayInstance.getNextNodeId()
-        );
     }
 
     public static boolean containsNull(Index index, IndexKeyPO key) {

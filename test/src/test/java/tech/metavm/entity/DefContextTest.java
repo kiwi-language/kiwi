@@ -98,13 +98,13 @@ public class DefContextTest extends TestCase {
     public void test_field_with_instance_type() {
         PojoDef<ConstantExpression> def = defContext.getPojoDef(ConstantExpression.class);
         var quxType = defContext.getClassType(Qux.class).resolve();
-        quxType.initId(DefaultPhysicalId.ofObject(1000000L, 0L, TestUtils.mockClassType()));
+        quxType.initId(PhysicalId.ofObject(1000000L, 0L, TestUtils.mockClassType()));
         Field quxAmountField = defContext.getField(Qux.class, "amount");
         var qux = ClassInstance.create(
                 Map.of(quxAmountField, Instances.longInstance(100L)),
                 quxType.getType()
         );
-        qux.initId(DefaultPhysicalId.ofObject(idProvider.allocateOne(TestConstants.APP_ID, quxType.getType()), 0L, quxType.getType()));
+        qux.initId(PhysicalId.ofObject(idProvider.allocateOne(TestConstants.APP_ID, quxType.getType()), 0L, quxType.getType()));
         ConstantExpression model = new ConstantExpression(qux);
         Instance instance = def.createInstance(model, objectInstanceMap, null);
         ConstantExpression recoveredModel = def.createEntityHelper(instance, objectInstanceMap);

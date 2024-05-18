@@ -7,7 +7,6 @@ import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.Tree;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.object.view.rest.dto.MappingKey;
 import tech.metavm.system.RegionConstants;
@@ -377,13 +376,28 @@ public abstract class DurableInstance extends Instance {
                 ref -> ref.target() == target && ref.field() == field);
     }
 
-    public Tree toTree(boolean withChildren) {
+    public Tree toTree() {
         NncUtils.requireTrue(isRoot());
-        return new Tree(getTreeId(), getVersion(), nextNodeId, InstanceOutput.toByteArray(this, withChildren, true));
+        return new Tree(getTreeId(), getVersion(), nextNodeId, InstanceOutput.toBytes(this));
     }
 
-    public abstract void readFrom(InstanceInput input, TypeDefProvider typeDefProvider);
+    @Override
+    public void writeRecord(InstanceOutput output) {
+        output.write(WireTypes.RECORD);
+        getId().writeCompact(output);
+        getType().write(output);
+        writeBody(output);
+    }
 
+    protected abstract void writeBody(InstanceOutput output);
+
+    @Override
+    public void write(InstanceOutput output) {
+        output.write(WireTypes.REFERENCE);
+        output.writeId(getId());
+    }
+
+    public abstract void readFrom(InstanceInput input);
 
     @NoProxy
     boolean isModified() {

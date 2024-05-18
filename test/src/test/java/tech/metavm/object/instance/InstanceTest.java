@@ -60,13 +60,6 @@ public class InstanceTest extends TestCase {
         return ClassInstance.create(fooData, fooTypes.fooType().getType());
     }
 
-    public void testToPO() {
-        var fooTypes = MockUtils.createFooTypes(true);
-        var foo = getFooInstance(fooTypes);
-        TestUtils.initInstanceIds(foo);
-        TestUtils.logJSON(LOGGER, PersistenceUtils.toInstancePO(foo, APP_ID));
-    }
-
     public void testFoo() {
         var fooTypes = MockUtils.createFooTypes(false);
         var foo = getFooInstance(fooTypes);

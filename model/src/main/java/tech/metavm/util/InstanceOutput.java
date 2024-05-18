@@ -1,77 +1,44 @@
 package tech.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.IdTag;
+import tech.metavm.object.instance.core.Instance;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
-import static java.util.Objects.requireNonNull;
-
 public class InstanceOutput extends OutputStream {
 
-    public static byte[] toByteArray(DurableInstance instance) {
-        return toByteArray(instance, false, false);
-    }
-
-    public static byte[] toMessage(DurableInstance instance) {
-        NncUtils.requireTrue(instance.isRoot());
-        return toByteArray(instance, true, true);
-    }
-
-    public static byte[] toByteArray(DurableInstance instance, boolean includeChild, boolean withHeader) {
+    public static byte[] toBytes(DurableInstance instance) {
         var bout = new ByteArrayOutputStream();
-        var output = new InstanceOutput(bout, includeChild);
-        if (withHeader) {
-            output.writeLong(instance.getVersion());
-            output.writeLong(instance.getTreeId());
-            output.writeInt(instance.getNextNodeId());
-        }
-        output.writeValue(instance);
+        var output = new InstanceOutput(bout);
+        output.writeMessage(instance);
         return bout.toByteArray();
     }
 
     private final OutputStream outputStream;
-    private final boolean includeChildren;
 
     public InstanceOutput(OutputStream outputStream) {
-        this(outputStream, false);
-    }
-
-    public InstanceOutput(OutputStream outputStream, boolean includeChildren) {
         this.outputStream = outputStream;
-        this.includeChildren = includeChildren;
     }
 
-    public void writeValue(Instance instance) {
-        writeInstance0(instance, false);
+    public void writeMessage(DurableInstance instance) {
+        writeLong(instance.getVersion());
+        writeLong(instance.getTreeId());
+        writeInt(instance.getNextNodeId());
+        writeRecord(instance);
+    }
+
+    public void writeRecord(Instance instance) {
+        instance.writeRecord(this);
     }
 
     public void writeInstance(Instance instance) {
-        writeInstance0(instance, true);
-    }
-
-    private void writeInstance0(Instance instance, boolean isReference) {
-        if (instance instanceof PrimitiveInstance primitiveInstance) {
-            write(primitiveInstance.getWireType());
-            primitiveInstance.writeTo(this, includeChildren);
-        } else if (instance instanceof DurableInstance d) {
-            /*if (d.isEphemeral())
-                write(WireTypes.NULL);
-            else*/
-            if (isReference) {
-                write(WireTypes.REFERENCE);
-                writeId(d.getId());
-            } else {
-                write(WireTypes.RECORD);
-                var id = (PhysicalId) d.getId();
-                id.writeWithoutTreeId(this);
-                d.writeTo(this, includeChildren);
-            }
-        } else
-            throw new InternalException("Invalid instance: " + instance);
+        instance.write(this);
     }
 
     public void writeString(String string) {

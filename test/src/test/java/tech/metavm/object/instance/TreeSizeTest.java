@@ -55,7 +55,7 @@ public class TreeSizeTest extends TestCase {
     }
 
     private static void logTreeSize(String title, DurableInstance instance) {
-        logger.info("{} tree size: {}", title, InstanceOutput.toMessage(instance).length);
+        logger.info("{} tree size: {}", title, InstanceOutput.toBytes(instance).length);
     }
 
 }

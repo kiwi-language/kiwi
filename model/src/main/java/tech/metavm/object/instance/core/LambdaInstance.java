@@ -6,6 +6,7 @@ import tech.metavm.flow.Flows;
 import tech.metavm.flow.LambdaNode;
 import tech.metavm.flow.MetaFrame;
 import tech.metavm.object.instance.LambdaFrame;
+import tech.metavm.util.InstanceOutput;
 
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +28,16 @@ public class LambdaInstance extends FunctionInstance {
                 Flows.getDeclaringType(lambdaNode.getFlow()),
                 arguments, instanceRepository, containingFrame
         );
+    }
+
+    @Override
+    public void writeRecord(InstanceOutput output) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void write(InstanceOutput output) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

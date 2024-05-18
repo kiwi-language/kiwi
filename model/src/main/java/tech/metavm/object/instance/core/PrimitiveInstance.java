@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveInstanceParam;
 import tech.metavm.object.type.PrimitiveType;
+import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -25,8 +26,6 @@ public abstract class PrimitiveInstance extends Instance implements Comparable<P
     public boolean isPrimitive() {
         return true;
     }
-
-    public abstract int getWireType();
 
     @Override
     protected PrimitiveInstanceParam getParam() {
@@ -80,6 +79,11 @@ public abstract class PrimitiveInstance extends Instance implements Comparable<P
                 getType().getKind().code(),
                 getValue()
         );
+    }
+
+    @Override
+    public void writeRecord(InstanceOutput output) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

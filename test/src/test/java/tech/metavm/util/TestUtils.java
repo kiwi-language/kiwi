@@ -268,7 +268,7 @@ public class TestUtils {
                 if(!e.hasPhysicalId()) {
                     var type =
                             ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(e) : new AnyType();
-                    e.initId(DefaultPhysicalId.ofObject(treeId, nextNodeIdRef.value++, type));
+                    e.initId(PhysicalId.ofObject(treeId, nextNodeIdRef.value++, type));
                 }
             });
         });
@@ -303,7 +303,7 @@ public class TestUtils {
 
                 @Override
                 public Void visitDurableInstance(DurableInstance instance) {
-                    instance.initId(new DefaultPhysicalId(id, nodeIdRef.nextNodeId++, instance.getType().getTypeTag()));
+                    instance.initId(new PhysicalId(id, nodeIdRef.nextNodeId++, instance.getType().getTypeTag()));
                     return super.visitDurableInstance(instance);
                 }
             });
