@@ -2,7 +2,6 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
-import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.Objects;
@@ -54,7 +53,7 @@ public abstract class PhysicalId extends Id {
         var maskedTagCode = input.read();
         var tag = IdTag.fromCode(maskedTagCode & 0x7F);
         NncUtils.requireTrue(tag == IdTag.OBJECT_PHYSICAL);
-        return new DefaultPhysicalId(input.readInt(), treeId, input.readLong());
+        return new DefaultPhysicalId(treeId, input.readLong(), input.readInt());
     }
 
 }

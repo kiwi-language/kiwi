@@ -92,7 +92,8 @@ public class VariableType extends Type implements IVariableType {
     }
 
     @Override
-    public void write0(InstanceOutput output) {
+    public void write(InstanceOutput output) {
+        output.write(TypeKeyCodes.VARIABLE);
         output.writeId(variable.getId());
     }
 

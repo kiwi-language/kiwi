@@ -214,6 +214,7 @@ public class ClassInstance extends DurableInstance {
     @Override
     public void writeTo(InstanceOutput output, boolean includeChildren) {
         ensureLoaded();
+        getType().write(output);
         var fields = this.fields;
         fields.sort(Comparator.comparingLong(InstanceField::getRecordGroupTag).thenComparing(InstanceField::getRecordTag));
         var sortedInstanceFields = new ArrayList<List<InstanceField>>();
@@ -246,7 +247,8 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
-    protected void setType(Type type) {
+    @NoProxy
+    public void setType(Type type) {
         if(type instanceof ClassType classType) {
             klass = classType.resolve();
             super.setType(type);
@@ -589,8 +591,8 @@ public class ClassInstance extends DurableInstance {
         }
     }
 
-    @NoProxy
     public Klass getKlass() {
+        ensureLoaded();
         return klass;
     }
 }

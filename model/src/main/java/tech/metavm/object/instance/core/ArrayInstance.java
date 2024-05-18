@@ -51,6 +51,15 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     }
 
     @NoProxy
+    @Override
+    public void setType(Type type) {
+        if(type instanceof ArrayType)
+            super.setType(type);
+        else
+            throw new IllegalArgumentException(type + " is not an array type");
+    }
+
+    @NoProxy
     public void reset(List<Instance> elements) {
         clearInternal();
         for (Instance element : elements)

@@ -81,7 +81,8 @@ public class NeverType extends Type {
     }
 
     @Override
-    public void write0(InstanceOutput output) {
+    public void write(InstanceOutput output) {
+        output.write(TypeKeyCodes.NEVER);
     }
 
     @Override

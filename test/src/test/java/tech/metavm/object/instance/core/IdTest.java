@@ -3,9 +3,9 @@ package tech.metavm.object.instance.core;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.rest.dto.AnyTypeKey;
 import tech.metavm.object.view.rest.dto.DirectMappingKey;
-import tech.metavm.util.TestUtils;
 
 public class IdTest extends TestCase {
 
@@ -53,8 +53,9 @@ public class IdTest extends TestCase {
     }
 
     private ClassType mockClassTypeKey(long treeId, long nodeId) {
-//        return new ClassTypeKey(TaggedPhysicalId.ofClass(treeId, nodeId).toString());
-        return TestUtils.mockClassType();
+        var klass = ClassTypeBuilder.newBuilder("Mock", "Mock").build();
+        klass.initId(new DefaultPhysicalId(treeId, nodeId, 4));
+        return klass.getType();
     }
 
 }

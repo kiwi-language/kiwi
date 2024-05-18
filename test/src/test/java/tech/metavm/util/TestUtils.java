@@ -303,7 +303,7 @@ public class TestUtils {
 
                 @Override
                 public Void visitDurableInstance(DurableInstance instance) {
-                    instance.initId(new DefaultPhysicalId(instance.getType().getTypeTag(), id, nodeIdRef.nextNodeId++));
+                    instance.initId(new DefaultPhysicalId(id, nodeIdRef.nextNodeId++, instance.getType().getTypeTag()));
                     return super.visitDurableInstance(instance);
                 }
             });

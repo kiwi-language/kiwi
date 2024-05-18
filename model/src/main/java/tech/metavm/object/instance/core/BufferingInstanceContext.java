@@ -62,7 +62,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
             readInstance(input);
         }
         catch (TreeNotFoundException e) {
-            throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getType().getName() + "-" + instance.getId());
+            throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getId());
         }
     }
 

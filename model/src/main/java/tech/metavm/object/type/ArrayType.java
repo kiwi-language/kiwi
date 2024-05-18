@@ -118,7 +118,8 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public void write0(InstanceOutput output) {
+    public void write(InstanceOutput output) {
+        output.write(ArrayTypeKey.getTypeKeyCode(kind.code()));
         elementType.write(output);
     }
 

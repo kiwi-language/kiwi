@@ -15,6 +15,8 @@ public interface ObjectInstanceMap {
 
     <T> T getEntity(Class<T> klass, Instance instance, @Nullable Mapper<T, ?> mapper);
 
+    Type getType(java.lang.reflect.Type javaType);
+
     default Klass getClassType(DurableInstance instance) {
         return getEntity(Klass.class, instance);
     }

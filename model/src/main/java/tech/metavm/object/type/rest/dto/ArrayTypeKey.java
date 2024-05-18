@@ -7,7 +7,7 @@ import tech.metavm.util.InstanceOutput;
 
 public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey {
 
-    public static final int[] typeKeyCodes = new int[4];
+    private static final int[] typeKeyCodes = new int[4];
 
     static {
         typeKeyCodes[ArrayKind.READ_ONLY.code()] = TypeKeyCodes.READ_ONLY_ARRAY;

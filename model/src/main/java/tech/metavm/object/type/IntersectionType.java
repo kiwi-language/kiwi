@@ -129,14 +129,16 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
-    public void write0(InstanceOutput output) {
+    public void write(InstanceOutput output) {
+        output.write(TypeKeyCodes.INTERSECTION);
         output.writeInt(types.size());
         types.forEach(t -> t.write(output));
     }
 
     public static IntersectionType read(InstanceInput input, TypeDefProvider typeDefProvider) {
-        var types = new HashSet<Type>();
-        for (int i = 0; i < input.readInt(); i++)
+        var numTypes = input.readInt();
+        var types = new HashSet<Type>(numTypes);
+        for (int i = 0; i < numTypes; i++)
             types.add(Type.readType(input, typeDefProvider));
         return new IntersectionType(types);
     }

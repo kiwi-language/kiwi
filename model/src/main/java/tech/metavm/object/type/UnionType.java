@@ -218,14 +218,16 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public void write0(InstanceOutput output) {
+    public void write(InstanceOutput output) {
+        output.write(TypeKeyCodes.UNION);
         output.writeInt(members.size());
         members.forEach(t -> t.write(output));
     }
 
     public static UnionType read(InstanceInput input, TypeDefProvider typeDefProvider) {
-        var members = new HashSet<Type>();
-        for (int i = 0; i < input.readInt(); i++)
+        var numMembers = input.readInt();
+        var members = new HashSet<Type>(numMembers);
+        for (int i = 0; i < numMembers; i++)
             members.add(Type.readType(input, typeDefProvider));
         return new UnionType(members);
     }

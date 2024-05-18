@@ -5,6 +5,7 @@ import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParam;
 import tech.metavm.object.type.AnyType;
 import tech.metavm.object.type.TypeDefProvider;
+import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.system.RegionConstants;
 
 import java.io.ByteArrayInputStream;
@@ -184,6 +185,7 @@ public class BytesUtils {
             var id = readRecordId();
             Map<String, Object> map = new HashMap<>();
             map.put("id", id.toString());
+            map.put("type", TypeKey.read(this).toTypeExpression());
             if (RegionConstants.isArrayId(id)) {
                 int len = readInt();
                 var elements = new ArrayList<>(len);

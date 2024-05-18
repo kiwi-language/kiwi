@@ -554,4 +554,9 @@ public abstract class DurableInstance extends Instance {
         afterContextInitIdsNotified = true;
         return true;
     }
+
+    public void setType(Type type) {
+        super.setType(type);
+    }
+
 }

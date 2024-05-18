@@ -152,12 +152,8 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public void write0(InstanceOutput output) {
-        output.write(kind.code());
-    }
-
-    public static PrimitiveType read(InstanceInput input) {
-        return new PrimitiveType(PrimitiveKind.fromCode(input.readInt()));
+    public void write(InstanceOutput output) {
+        output.write(PrimitiveTypeKey.getTypeKeyCode(kind.code()));
     }
 
 }

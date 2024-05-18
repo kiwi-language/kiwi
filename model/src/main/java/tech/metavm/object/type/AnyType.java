@@ -81,8 +81,8 @@ public class AnyType extends Type {
     }
 
     @Override
-    public void write0(InstanceOutput output) {
-
+    public void write(InstanceOutput output) {
+        output.write(TypeKeyCodes.ANY);
     }
 
     @Override

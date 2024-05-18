@@ -167,6 +167,15 @@ public class DiskFormatter {
         }
     }
 
+    private static void clearTypeTagsFile() {
+        String columnFile = Constants.RESOURCE_CP_ROOT + "/typeTags/typeTags.properties";
+        try {
+            new PrintWriter(columnFile).close();
+        } catch (IOException e) {
+            throw new RuntimeException("Fail to clear type tags file", e);
+        }
+    }
+
     public static void main(String[] args) {
         clearEs();
         clearRedis();
@@ -174,6 +183,7 @@ public class DiskFormatter {
         if (shouldDeleteIdFiles()) {
             deleteIdFiles();
             clearColumnFile();
+            clearTypeTagsFile();
         }
         if (shouldReboot()) {
             System.out.println("Rebooting...");

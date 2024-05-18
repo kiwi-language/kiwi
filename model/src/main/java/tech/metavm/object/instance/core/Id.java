@@ -47,7 +47,7 @@ public abstract class Id implements Comparable<Id> {
         var isArray = (maskedTagCode & 0x80) != 0;
         return switch (tag) {
             case NULL -> new NullId();
-            case OBJECT_PHYSICAL -> new DefaultPhysicalId(input.readInt(), input.readLong(), input.readLong());
+            case OBJECT_PHYSICAL -> new DefaultPhysicalId(input.readLong(), input.readLong(), input.readInt());
             case TMP -> new TmpId(input.readLong());
             case DEFAULT_VIEW -> new DefaultViewId(isArray, MappingKey.read(input), readId(input));
             case CHILD_VIEW -> new ChildViewId(isArray, MappingKey.read(input), readId(input), (ViewId) readId(input));

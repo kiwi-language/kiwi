@@ -6,6 +6,7 @@ import tech.metavm.entity.Mapper;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PrimitiveInstance;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.ReflectionUtils;
@@ -40,6 +41,11 @@ public class DefaultObjectInstanceMap implements ObjectInstanceMap {
             return entityContext.getEntity(klass, d, mapper);
         else
             throw new InternalException("Invalid instance: " + instance);
+    }
+
+    @Override
+    public Type getType(java.lang.reflect.Type javaType) {
+        return entityContext.getDefContext().getType(javaType);
     }
 
 }

@@ -37,7 +37,7 @@ public class UncertainType extends CompositeType {
 
 
     private static @Nullable String getCode(Type lowerBound, Type upperBound) {
-        if(lowerBound.getCode() != null && upperBound.getCode() != null)
+        if (lowerBound.getCode() != null && upperBound.getCode() != null)
             return "[" + lowerBound.getCode() + "," + upperBound.getCode() + "]";
         else
             return null;
@@ -93,7 +93,7 @@ public class UncertainType extends CompositeType {
 
     @Override
     protected UncertainTypeParam getParamInternal() {
-        try(var serContext = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter()) {
             return new UncertainTypeParam(
                     serContext.getId(lowerBound),
                     serContext.getId(upperBound)
@@ -119,7 +119,7 @@ public class UncertainType extends CompositeType {
     @Nullable
     @Override
     public String getCode() {
-        if(lowerBound.getCode() == null || upperBound.getCode() == null)
+        if (lowerBound.getCode() == null || upperBound.getCode() == null)
             return null;
         return "[" + lowerBound.getCode() + "," + upperBound.getCode() + "]";
     }
@@ -159,9 +159,10 @@ public class UncertainType extends CompositeType {
     }
 
     @Override
-    public void write0(InstanceOutput output) {
-       lowerBound.write(output);
-       upperBound.write(output);
+    public void write(InstanceOutput output) {
+        output.write(TypeKeyCodes.UNCERTAIN);
+        lowerBound.write(output);
+        upperBound.write(output);
     }
 
     public static UncertainType read(InstanceInput input, TypeDefProvider typeDefProvider) {

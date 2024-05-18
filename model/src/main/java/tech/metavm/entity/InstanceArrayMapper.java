@@ -101,6 +101,7 @@ public class InstanceArrayMapper<E extends Instance, C extends ReadWriteArray<E>
 
     @Override
     public void initInstance(ArrayInstance instance, C model, ObjectInstanceMap instanceMap) {
+        instance.setType(instanceMap.getType(EntityUtils.getRuntimeType(model)));
         instance.addAll(model);
     }
 

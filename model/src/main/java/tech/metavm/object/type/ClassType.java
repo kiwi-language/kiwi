@@ -137,8 +137,7 @@ public class ClassType extends Type implements ISubstitutor {
         if (typeArguments.isEmpty()) {
             resolved = klass;
             return klass;
-        }
-        else {
+        } else {
             return resolved = klass.getParameterized(typeArguments.toList());
         }
     }
@@ -212,18 +211,28 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     @Override
-    public void write0(InstanceOutput output) {
-        output.writeId(klass.getId());
-        if (!typeArguments.isEmpty()) {
+    public void write(InstanceOutput output) {
+        if(typeArguments.isEmpty()) {
+            output.write(TypeKeyCodes.CLASS);
+            output.writeId(klass.getId());
+        }
+        else {
+            output.write(TypeKeyCodes.PARAMETERIZED);
+            output.writeId(klass.getId());
             output.writeInt(typeArguments.size());
             typeArguments.forEach(t -> t.write(output));
         }
     }
 
     public static ClassType read(InstanceInput input, TypeDefProvider typeDefProvider) {
+        return new ClassType(typeDefProvider.getKlass(input.readId()), List.of());
+    }
+
+    public static ClassType readParameterized(InstanceInput input, TypeDefProvider typeDefProvider) {
         var klass = typeDefProvider.getKlass(input.readId());
-        var typeArgs = new ArrayList<Type>();
-        for (int i = 0; i < input.readInt(); i++)
+        int numTypeArgs = input.readInt();
+        var typeArgs = new ArrayList<Type>(numTypeArgs);
+        for (int i = 0; i < numTypeArgs; i++)
             typeArgs.add(Type.readType(input, typeDefProvider));
         return new ClassType(klass, typeArgs);
     }

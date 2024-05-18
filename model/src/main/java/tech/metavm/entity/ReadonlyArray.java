@@ -50,6 +50,10 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         this(elementType, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
+    public ReadonlyArray() {
+        table = new ArrayList<>();
+    }
+
     private ReadonlyArray(Type elementType, Collection<T> data, int buildIndexThreshold) {
         this.elementType = elementType;
         this.genericType = new ParameterizedTypeImpl(

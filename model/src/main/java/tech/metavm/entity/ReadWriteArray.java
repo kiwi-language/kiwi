@@ -33,6 +33,8 @@ public class ReadWriteArray<T> extends ReadonlyArray<T> implements List<T> {
         super(type);
     }
 
+    public ReadWriteArray() {}
+
     @Override
     protected Class<?> getRawClass() {
         return ReadWriteArray.class;

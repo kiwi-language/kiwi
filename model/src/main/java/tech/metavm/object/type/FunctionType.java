@@ -159,15 +159,17 @@ public class FunctionType extends CompositeType {
     }
 
     @Override
-    public void write0(InstanceOutput output) {
+    public void write(InstanceOutput output) {
+        output.write(TypeKeyCodes.FUNCTION);
         output.writeInt(parameterTypes.size());
         parameterTypes.forEach(t -> t.write(output));
         returnType.write(output);
     }
 
     public static FunctionType read(InstanceInput input, TypeDefProvider typeDefProvider) {
-        var paramTypes = new ArrayList<Type>();
-        for (int i = 0; i < input.readInt(); i++)
+        var numParamTypes = input.readInt();
+        var paramTypes = new ArrayList<Type>(numParamTypes);
+        for (int i = 0; i < numParamTypes; i++)
             paramTypes.add(Type.readType(input, typeDefProvider));
         return new FunctionType(paramTypes, Type.readType(input, typeDefProvider));
     }

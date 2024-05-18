@@ -43,7 +43,7 @@ public class DefaultIdInitializer implements IdInitializer {
                 treeId = root.getTreeId();
                 nodeId = root.nextNodeId();
             }
-            inst.initId(new DefaultPhysicalId(type.getTypeTag(), treeId, nodeId));
+            inst.initId(new DefaultPhysicalId(treeId, nodeId, type.getTypeTag()));
         }
     }
 

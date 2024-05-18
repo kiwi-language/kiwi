@@ -2,6 +2,7 @@ package tech.metavm.util;
 
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TypeTag;
+import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.system.RegionConstants;
 
 import java.io.InputStream;
@@ -90,6 +91,7 @@ public class StreamVisitor {
     }
 
     public void visitRecordBody(Id id) {
+        TypeKey.read(input);
         if (RegionConstants.isArrayId(id)) {
             int len = input.readInt();
             for (int i = 0; i < len; i++)
@@ -103,6 +105,10 @@ public class StreamVisitor {
                     visitField();
             }
         }
+    }
+
+    public TypeKey readTypeKey() {
+        return TypeKey.read(input);
     }
 
     public void visitReference() {

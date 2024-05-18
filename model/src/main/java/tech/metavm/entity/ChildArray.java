@@ -30,6 +30,8 @@ public class ChildArray<T extends Entity> extends ReadonlyArray<T> {
         super(type);
     }
 
+    public ChildArray() {}
+
     @Override
     protected Class<?> getRawClass() {
         return ChildArray.class;

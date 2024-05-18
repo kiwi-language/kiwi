@@ -24,10 +24,9 @@ public class FileTypeTagStore extends MemTypeTagStore {
         } catch (IOException e) {
             throw new InternalException("Fail to load type tags file '" + FILE + "'", e);
         }
-        if(properties.containsKey(NEXT_TYPE_TAG))
-            nextTypeTag = Integer.parseInt(properties.getProperty(NEXT_TYPE_TAG));
+        nextTypeTag = Integer.parseInt(properties.getProperty(NEXT_TYPE_TAG, "4"));
         for (String propName : properties.stringPropertyNames()) {
-            if(!propName.startsWith(SYSTEM_PROP_PREFIX))
+            if (!propName.startsWith(SYSTEM_PROP_PREFIX))
                 map.put(propName, Integer.parseInt(properties.getProperty(propName)));
         }
     }

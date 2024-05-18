@@ -8,6 +8,7 @@ import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.object.type.rest.dto.TypeKeyCodes;
 import tech.metavm.object.type.rest.dto.TypeParam;
 import tech.metavm.util.*;
 
@@ -39,12 +40,13 @@ public abstract class Type extends ValueElement {
     public abstract boolean isEphemeral();
 
     public TypeKey toTypeKey() {
-       return toTypeKey(TypeDef::getStringId);
+        return toTypeKey(TypeDef::getStringId);
     }
 
     public abstract TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId);
 
-    public void forEachTypeDef(Consumer<TypeDef> action) {}
+    public void forEachTypeDef(Consumer<TypeDef> action) {
+    }
 
     @SuppressWarnings("unused")
     public boolean isDurable() {
@@ -97,7 +99,7 @@ public abstract class Type extends ValueElement {
 
     protected abstract boolean isAssignableFrom0(Type that);
 
-    public abstract  <R, S> R accept(TypeVisitor<R, S> visitor, S s);
+    public abstract <R, S> R accept(TypeVisitor<R, S> visitor, S s);
 
     public <S> void acceptComponents(TypeVisitor<?, S> visitor, S s) {
     }
@@ -279,8 +281,8 @@ public abstract class Type extends ValueElement {
 
     public abstract Type copy();
 
-    public String toExpression () {
-        try(var serContext = SerializeContext.enter()) {
+    public String toExpression() {
+        try (var serContext = SerializeContext.enter()) {
             return toExpression(serContext, null);
         }
     }
@@ -290,42 +292,46 @@ public abstract class Type extends ValueElement {
     }
 
     public String toExpression(@Nullable Function<TypeDef, String> getTypeDefExpr) {
-        try(var serCtx = SerializeContext.enter()) {
+        try (var serCtx = SerializeContext.enter()) {
             return toExpression(serCtx, getTypeDefExpr);
         }
     }
 
     public abstract String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr);
 
-    public  void write(InstanceOutput output) {
-        output.write(getCategory().code());
-        write0(output);
-    }
-
     public abstract int getTypeKeyCode();
 
-    public abstract void write0(InstanceOutput output);
+    public abstract void write(InstanceOutput output);
 
     public int getTypeTag() {
         return TypeTags.DEFAULT;
     }
 
     public static Type readType(InstanceInput input, TypeDefProvider typeDefProvider) {
-        var category = TypeCategory.fromCode(input.read());
-        return switch (category) {
-            case CLASS, INTERFACE, ENUM, VALUE -> ClassType.read(input, typeDefProvider);
-            case VARIABLE -> VariableType.read(input, typeDefProvider);
-            case CAPTURED -> CapturedType.read(input, typeDefProvider);
-            case LONG, DOUBLE, NULL, VOID, TIME, PASSWORD, STRING, BOOLEAN -> PrimitiveType.read(input);
-            case FUNCTION -> FunctionType.read(input, typeDefProvider);
-            case UNCERTAIN -> UncertainType.read(input, typeDefProvider);
-            case UNION ->  UnionType.read(input, typeDefProvider);
-            case INTERSECTION -> IntersectionType.read(input, typeDefProvider);
-            case READ_ONLY_ARRAY -> ArrayType.read(input, ArrayKind.READ_ONLY, typeDefProvider);
-            case READ_WRITE_ARRAY -> ArrayType.read(input, ArrayKind.READ_WRITE, typeDefProvider);
-            case CHILD_ARRAY -> ArrayType.read(input, ArrayKind.CHILD, typeDefProvider);
-            case NEVER -> new NeverType();
-            case ANY -> new AnyType();
+        var code = input.read();
+        return switch (code) {
+            case TypeKeyCodes.CLASS -> ClassType.read(input, typeDefProvider);
+            case TypeKeyCodes.PARAMETERIZED -> ClassType.readParameterized(input, typeDefProvider);
+            case TypeKeyCodes.VARIABLE -> VariableType.read(input, typeDefProvider);
+            case TypeKeyCodes.CAPTURED -> CapturedType.read(input, typeDefProvider);
+            case TypeKeyCodes.LONG -> new PrimitiveType(PrimitiveKind.LONG);
+            case TypeKeyCodes.DOUBLE -> new PrimitiveType(PrimitiveKind.DOUBLE);
+            case TypeKeyCodes.NULL -> new PrimitiveType(PrimitiveKind.NULL);
+            case TypeKeyCodes.VOID -> new PrimitiveType(PrimitiveKind.VOID);
+            case TypeKeyCodes.TIME -> new PrimitiveType(PrimitiveKind.TIME);
+            case TypeKeyCodes.PASSWORD -> new PrimitiveType(PrimitiveKind.PASSWORD);
+            case TypeKeyCodes.STRING -> new PrimitiveType(PrimitiveKind.STRING);
+            case TypeKeyCodes.BOOLEAN -> new PrimitiveType(PrimitiveKind.BOOLEAN);
+            case TypeKeyCodes.FUNCTION -> FunctionType.read(input, typeDefProvider);
+            case TypeKeyCodes.UNCERTAIN -> UncertainType.read(input, typeDefProvider);
+            case TypeKeyCodes.UNION -> UnionType.read(input, typeDefProvider);
+            case TypeKeyCodes.INTERSECTION -> IntersectionType.read(input, typeDefProvider);
+            case TypeKeyCodes.READ_ONLY_ARRAY -> ArrayType.read(input, ArrayKind.READ_ONLY, typeDefProvider);
+            case TypeKeyCodes.READ_WRITE_ARRAY -> ArrayType.read(input, ArrayKind.READ_WRITE, typeDefProvider);
+            case TypeKeyCodes.CHILD_ARRAY -> ArrayType.read(input, ArrayKind.CHILD, typeDefProvider);
+            case TypeKeyCodes.NEVER -> new NeverType();
+            case TypeKeyCodes.ANY -> new AnyType();
+            default -> throw new InternalException("Invalid type key code: " + code);
         };
     }
 

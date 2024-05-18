@@ -67,6 +67,7 @@ public class ArrayMapper<E, C extends ReadonlyArray<E>> implements Mapper<C, Arr
 
     @Override
     public void initInstance(ArrayInstance instance, C model, ObjectInstanceMap instanceMap) {
+        instance.setType(instanceMap.getType(EntityUtils.getRuntimeType(model)));
         resetInstance(instance, model, instanceMap);
     }
 

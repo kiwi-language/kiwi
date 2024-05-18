@@ -87,6 +87,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     @Override
     public void initInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
+        instance.setType(instanceMap.getType(EntityUtils.getRuntimeType(model)));
         resetInstance(instance, model, instanceMap);
     }
 
@@ -98,13 +99,14 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     private void resetInstance(ClassInstance instance, Object model, ObjectInstanceMap instanceMap) {
 //        try(var ignored = ContextUtil.getProfiler().enter("PojoDef.resetInstance")) {
-            Klass instanceType = instance.getType().resolve();
+            Klass instanceKlass = instance.getKlass();
             if (klass.isType(instance.getType())) {
                 if (model instanceof Entity entity)
                     Instances.reloadParent(entity, instance, instanceMap, defContext);
+                instance.setType(klass.getType());
                 instance.reset(getInstanceFields(model, instanceMap), instance.getVersion(), instance.getSyncVersion());
             } else {
-                getSubTypeDef(instanceType).resetInstance(instance, model, instanceMap);
+                getSubTypeDef(instanceKlass).resetInstance(instance, model, instanceMap);
             }
 //        }
     }

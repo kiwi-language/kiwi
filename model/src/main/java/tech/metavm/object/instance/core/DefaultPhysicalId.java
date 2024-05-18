@@ -2,8 +2,6 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeDefProvider;
-import tech.metavm.object.type.TypeTags;
-import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceOutput;
 
@@ -12,13 +10,13 @@ import java.util.Objects;
 public class DefaultPhysicalId extends PhysicalId {
 
     public static PhysicalId ofObject(long id, long nodeId, Type type) {
-        return new DefaultPhysicalId(type.getTypeTag(), id, nodeId);
+        return new DefaultPhysicalId(id, nodeId, type.getTypeTag());
     }
 
     private final int typeTag;
 
-    public DefaultPhysicalId(int typeTag, long treeId, long nodeId) {
-        super(false, treeId, nodeId);
+    public DefaultPhysicalId(long treeId, long nodeId, int typeTag) {
+        super(typeTag > 0 && typeTag < 4, treeId, nodeId);
         this.typeTag = typeTag;
     }
 
