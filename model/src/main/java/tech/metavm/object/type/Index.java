@@ -86,7 +86,7 @@ public class Index extends Constraint implements LocalKey {
         // When the last index item is an array, create an index key for each element.
         var lastField = fields.get(fields.size() - 1);
         if (lastField.getValue().getType().getUnderlyingType().isArray()) {
-            var lastValues = ((ArrayInstance) lastField.getValue().evaluate(evaluationContext)).getElements();
+            var lastValues = new HashSet<>(((ArrayInstance) lastField.getValue().evaluate(evaluationContext)).getElements());
             List<IndexKeyRT> keys = new ArrayList<>();
             for (Instance lastValue : lastValues) {
                 values.put(lastField, lastValue);

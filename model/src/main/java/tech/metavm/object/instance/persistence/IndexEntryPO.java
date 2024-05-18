@@ -16,6 +16,10 @@ public class IndexEntryPO implements Comparable<IndexEntryPO> {
     private transient int hash;
     private transient boolean hashIsZero;
 
+    public IndexEntryPO() {
+        key = new IndexKeyPO();
+    }
+
     public IndexEntryPO(long appId, IndexKeyPO key, byte[] instanceId) {
         this.appId = appId;
         this.key = key;
