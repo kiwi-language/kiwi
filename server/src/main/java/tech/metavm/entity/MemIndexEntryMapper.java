@@ -106,11 +106,12 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     }
 
     @Override
-    public void batchInsert(Collection<IndexEntryPO> items) {
-        for (IndexEntryPO item : items) {
-            getItems(new GlobalKey(item.getAppId(), item.getKey())).add(item);
-            getItemsByInstanceId(item.getId()).add(item);
-            this.entries.add(item);
+    public void batchInsert(Collection<IndexEntryPO> entries) {
+        for (IndexEntryPO entry : entries) {
+            getItems(new GlobalKey(entry.getAppId(), entry.getKey())).add(entry);
+            getItemsByInstanceId(entry.getId()).add(entry);
+            if(!this.entries.add(entry))
+                throw new InternalException("Duplicate index entry: " + entry);
         }
     }
 
