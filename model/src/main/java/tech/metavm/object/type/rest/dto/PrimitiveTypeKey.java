@@ -43,11 +43,6 @@ public record PrimitiveTypeKey(int kind) implements TypeKey {
     }
 
     @Override
-    public void acceptChildren(TypeKeyVisitor<?> visitor) {
-
-    }
-
-    @Override
     public int getCode() {
         return getTypeKeyCode(kind);
     }

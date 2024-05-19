@@ -75,7 +75,7 @@ public class MappingTest extends TestCase {
 
     private TypeDTO getTypeFromExpr(String expr) {
         var typeKey = (ClassTypeKey) TypeKey.fromExpression(expr);
-        return getType(typeKey.id());
+        return getType(typeKey.id().toString());
     }
 
     public void test() {

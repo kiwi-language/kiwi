@@ -43,4 +43,7 @@ public class TypeKeyCodes {
     public static final int CHILD_ARRAY = 22;
 
     public static final int CAPTURED = 23;
+
+    public static final int TAGGED_CLASS = 24;
+
 }

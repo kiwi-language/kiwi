@@ -146,7 +146,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     public int getTypeTag(Class<?> javaClass) {
-        return typeTagStore.getTypeTag(javaClass);
+        return typeTagStore.getTypeTag(javaClass.getName());
     }
 
 //    @Override

@@ -28,12 +28,6 @@ public record UncertainTypeKey(TypeKey lowerBoundKey, TypeKey upperBoundKey) imp
     }
 
     @Override
-    public void acceptChildren(TypeKeyVisitor<?> visitor) {
-        lowerBoundKey.accept(visitor);
-        upperBoundKey.accept(visitor);
-    }
-
-    @Override
     public int getCode() {
         return TypeKeyCodes.UNCERTAIN;
     }

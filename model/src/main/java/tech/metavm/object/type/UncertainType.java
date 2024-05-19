@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.TypeKeyCodes;
 import tech.metavm.object.type.rest.dto.UncertainTypeKey;
 import tech.metavm.object.type.rest.dto.UncertainTypeParam;
@@ -44,7 +45,7 @@ public class UncertainType extends CompositeType {
     }
 
     @Override
-    public UncertainTypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+    public UncertainTypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
         return new UncertainTypeKey(lowerBound.toTypeKey(getTypeDefId), upperBound.toTypeKey(getTypeDefId));
     }
 

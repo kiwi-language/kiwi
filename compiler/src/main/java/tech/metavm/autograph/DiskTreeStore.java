@@ -4,6 +4,8 @@ import tech.metavm.entity.Tree;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.type.TypeOrTypeKey;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.NncUtils;
@@ -26,10 +28,11 @@ public class DiskTreeStore implements TreeSource {
         var ids = new ArrayList<Id>();
         for (Tree tree : trees.values()) {
             new StreamVisitor(new ByteArrayInputStream(tree.data())) {
+
                 @Override
-                public void visitRecordBody(Id id) {
-                    ids.add(id);
-                    super.visitRecordBody(id);
+                public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
+                    ids.add(PhysicalId.of(getTreeId(), nodeId, typeOrTypeKey));
+                    super.visitRecordBody(nodeId, typeOrTypeKey);
                 }
             }.visitMessage();
         }

@@ -28,4 +28,6 @@ public interface TypeKeyVisitor<R> {
 
     R visitParameterizedTypeKey(ParameterizedTypeKey typeKey);
 
+    R visitTaggedClassTypeKey(TaggedClassTypeKey typeKey);
+
 }

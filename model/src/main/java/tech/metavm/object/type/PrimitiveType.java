@@ -4,9 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
-import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 
 import java.util.Objects;
@@ -44,7 +44,7 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
         return new PrimitiveTypeKey(kind.code());
     }
 

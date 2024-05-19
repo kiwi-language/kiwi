@@ -25,22 +25,22 @@ public class StdAllocatorTest extends TestCase {
 
     public void testSmoking() {
         var ids = allocator.allocate(3);
-        allocator.putId(Klass.class.getName(), PhysicalId.ofObject(ids.get(0), 0L, TestUtils.mockClassType()));
-        allocator.putId(Field.class.getName(), PhysicalId.ofObject(ids.get(1), 0L, TestUtils.mockClassType()));
-        allocator.putId(Index.class.getName(), PhysicalId.ofObject(ids.get(2), 0L, TestUtils.mockClassType()));
+        allocator.putId(Klass.class.getName(), PhysicalId.of(ids.get(0), 0L, TestUtils.mockClassType()));
+        allocator.putId(Field.class.getName(), PhysicalId.of(ids.get(1), 0L, TestUtils.mockClassType()));
+        allocator.putId(Index.class.getName(), PhysicalId.of(ids.get(2), 0L, TestUtils.mockClassType()));
         var typeId = allocator.getId(Klass.class.getName());
         var fieldId = allocator.getId(Field.class.getName());
         var uniqueConstraintId = allocator.getId(Index.class.getName());
-        Assert.assertEquals(PhysicalId.ofObject(ids.get(0), 0L, TestUtils.mockClassType()), typeId);
-        Assert.assertEquals(PhysicalId.ofObject(ids.get(1), 0L, TestUtils.mockClassType()), fieldId);
-        Assert.assertEquals(PhysicalId.ofObject(ids.get(2), 0L, TestUtils.mockClassType()), uniqueConstraintId);
+        Assert.assertEquals(PhysicalId.of(ids.get(0), 0L, TestUtils.mockClassType()), typeId);
+        Assert.assertEquals(PhysicalId.of(ids.get(1), 0L, TestUtils.mockClassType()), fieldId);
+        Assert.assertEquals(PhysicalId.of(ids.get(2), 0L, TestUtils.mockClassType()), uniqueConstraintId);
     }
 
     public void testIdContains() {
         var allocatedId = allocator.allocate(1).get(0);
-        allocator.putId(Field.class.getName(), PhysicalId.ofObject(allocatedId, 0L, TestUtils.mockClassType()));
+        allocator.putId(Field.class.getName(), PhysicalId.of(allocatedId, 0L, TestUtils.mockClassType()));
         var fieldId = allocator.getId(Field.class.getName());
-        Assert.assertEquals(PhysicalId.ofObject(allocatedId, 0L, TestUtils.mockClassType()), fieldId);
+        Assert.assertEquals(PhysicalId.of(allocatedId, 0L, TestUtils.mockClassType()), fieldId);
         Assert.assertTrue(allocator.contains(fieldId));
     }
 

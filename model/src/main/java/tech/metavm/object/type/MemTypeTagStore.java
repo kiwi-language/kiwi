@@ -8,8 +8,8 @@ public class MemTypeTagStore implements TypeTagStore {
     protected final Map<String, Integer> map = new HashMap<>();
     protected int nextTypeTag = 4;
 
-    public int getTypeTag(Class<?> javaClass) {
-        return map.computeIfAbsent(javaClass.getName(), k -> nextTypeTag++);
+    public int getTypeTag(String className) {
+        return map.computeIfAbsent(className, k -> nextTypeTag++);
     }
 
     @Override

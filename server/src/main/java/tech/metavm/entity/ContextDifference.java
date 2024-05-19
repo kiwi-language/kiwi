@@ -1,9 +1,11 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.persistence.VersionRT;
+import tech.metavm.object.type.TypeOrTypeKey;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -120,11 +122,13 @@ public class ContextDifference {
     private List<Id> getInstanceIds(Tree tree) {
         var ids = new ArrayList<Id>();
         new StreamVisitor(tree.openInput()) {
+
             @Override
-            public void visitRecordBody(Id id) {
-                ids.add(id);
-                super.visitRecordBody(id);
+            public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
+                ids.add(PhysicalId.of(getTreeId(), nodeId, typeOrTypeKey));
+                super.visitRecordBody(nodeId, typeOrTypeKey);
             }
+
         }.visitMessage();
         return ids;
     }

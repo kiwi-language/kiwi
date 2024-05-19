@@ -1,6 +1,7 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.StandardTypes;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -21,16 +22,16 @@ public class TypeExpressions {
     public static String substitute(String type, Map<String, String> variableMap) {
         var typeKey = TypeKey.fromExpression(type);
         var typeKeyMap = new HashMap<VariableTypeKey, TypeKey>();
-        variableMap.forEach((variableId, substType) -> typeKeyMap.put(new VariableTypeKey(variableId), TypeKey.fromExpression(substType)));
+        variableMap.forEach((variableId, substType) -> typeKeyMap.put(new VariableTypeKey(Id.parse(variableId)), TypeKey.fromExpression(substType)));
         return TypeKeys.substitute(typeKey, typeKeyMap).toTypeExpression();
     }
 
     public static String extractKlassId(String type) {
         var typeKey = TypeKey.fromExpression(type);
         if(typeKey instanceof ClassTypeKey classTypeKey)
-            return classTypeKey.id();
+            return classTypeKey.id().toString();
         if(typeKey instanceof ParameterizedTypeKey parameterizedTypeKey)
-            return parameterizedTypeKey.templateId();
+            return parameterizedTypeKey.templateId().toString();
         throw new InternalException("Can not extract klass id from type: " + type);
     }
 

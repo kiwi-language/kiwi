@@ -26,11 +26,6 @@ public record NeverTypeKey() implements TypeKey {
     }
 
     @Override
-    public void acceptChildren(TypeKeyVisitor<?> visitor) {
-
-    }
-
-    @Override
     public int getCode() {
         return TypeKeyCodes.NEVER;
     }

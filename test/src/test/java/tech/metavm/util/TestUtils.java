@@ -268,7 +268,7 @@ public class TestUtils {
                 if(!e.hasPhysicalId()) {
                     var type =
                             ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(e) : new AnyType();
-                    e.initId(PhysicalId.ofObject(treeId, nextNodeIdRef.value++, type));
+                    e.initId(PhysicalId.of(treeId, nextNodeIdRef.value++, type));
                 }
             });
         });
@@ -295,7 +295,7 @@ public class TestUtils {
         };
         instances.forEach(visitor::visit);
         roots.forEach(r -> {
-            var id = idProvider.allocateOne(TestConstants.APP_ID, r.getType());
+            var treeId = idProvider.allocateOne(TestConstants.APP_ID, r.getType());
             var nodeIdRef = new Object() {
                 long nextNodeId;
             };
@@ -303,7 +303,7 @@ public class TestUtils {
 
                 @Override
                 public Void visitDurableInstance(DurableInstance instance) {
-                    instance.initId(new PhysicalId(id, nodeIdRef.nextNodeId++, instance.getType().getTypeTag()));
+                    instance.initId(PhysicalId.of(treeId, nodeIdRef.nextNodeId++, instance.getType()));
                     return super.visitDurableInstance(instance);
                 }
             });

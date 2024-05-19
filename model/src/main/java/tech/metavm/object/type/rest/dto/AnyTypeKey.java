@@ -27,11 +27,6 @@ public record AnyTypeKey() implements TypeKey {
     }
 
     @Override
-    public void acceptChildren(TypeKeyVisitor<?> visitor) {
-
-    }
-
-    @Override
     public int getCode() {
         return TypeKeyCodes.ANY;
     }

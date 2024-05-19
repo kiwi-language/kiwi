@@ -32,12 +32,6 @@ public record FunctionTypeKey(List<TypeKey> parameterTypeKeys, TypeKey returnTyp
     }
 
     @Override
-    public void acceptChildren(TypeKeyVisitor<?> visitor) {
-        parameterTypeKeys.forEach(k -> k.accept(visitor));
-        returnTypeKey.accept(visitor);
-    }
-
-    @Override
     public int getCode() {
         return TypeKeyCodes.FUNCTION;
     }

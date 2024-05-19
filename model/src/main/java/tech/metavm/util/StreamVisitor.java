@@ -1,9 +1,10 @@
 package tech.metavm.util;
 
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.TypeTag;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeDefProvider;
+import tech.metavm.object.type.TypeOrTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
-import tech.metavm.system.RegionConstants;
 
 import java.io.InputStream;
 
@@ -55,15 +56,11 @@ public class StreamVisitor {
     }
 
     public void visitRecord() {
-        visitRecordBody(readRecordId());
+        visitRecordBody(readLong(), TypeKey.read(input));
     }
 
     public Id readId() {
         return input.readId();
-    }
-
-    public TypeTag readTypeTag() {
-        return TypeTag.fromCode(input.read());
     }
 
     public int readInt() {
@@ -78,6 +75,10 @@ public class StreamVisitor {
         return input.readLong();
     }
 
+    public Type readType(TypeDefProvider typeDefProvider) {
+        return Type.readType(input, typeDefProvider);
+    }
+
     public int read() {
         return input.read();
     }
@@ -90,9 +91,8 @@ public class StreamVisitor {
         return input.readBoolean();
     }
 
-    public void visitRecordBody(Id id) {
-        TypeKey.read(input);
-        if (RegionConstants.isArrayId(id)) {
+    public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
+        if (typeOrTypeKey.isArray()) {
             int len = input.readInt();
             for (int i = 0; i < len; i++)
                 visit();
@@ -142,12 +142,12 @@ public class StreamVisitor {
     public void visitNull() {
     }
 
-    public Id readRecordId() {
-        return input.readRecordId();
-    }
-
     public long readTreeId() {
         return input.readTreeId();
+    }
+
+    public long getTreeId() {
+        return input.getTreeId();
     }
 
 }

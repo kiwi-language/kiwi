@@ -25,9 +25,9 @@ public class EntityIdProviderTest extends TestCase {
         Klass typeType = ClassTypeBuilder.newBuilder("Type", null).build();
         Klass fooType = ClassTypeBuilder.newBuilder("Foo", null).build();
         ArrayType fooArrayType = new ArrayType(fooType.getType(), ArrayKind.READ_WRITE);
-        typeType.initId(PhysicalId.ofObject(1L, 0L, TestUtils.mockClassType()));
-        fooType.initId(PhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
-        fooArrayType.initId(PhysicalId.ofObject(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
+        typeType.initId(PhysicalId.of(1L, 0L, TestUtils.mockClassType()));
+        fooType.initId(PhysicalId.of(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
+        fooArrayType.initId(PhysicalId.of(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));
 
         int numIdsForClass = 10;
         Map<Type, Integer> type2count = Map.of(

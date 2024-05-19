@@ -384,7 +384,7 @@ public abstract class DurableInstance extends Instance {
     @Override
     public void writeRecord(InstanceOutput output) {
         output.write(WireTypes.RECORD);
-        getId().writeCompact(output);
+        output.writeLong(getId().getNodeId());
         getType().write(output);
         writeBody(output);
     }

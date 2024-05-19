@@ -1,6 +1,8 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.type.TypeOrTypeKey;
 import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.StreamCopier;
 import tech.metavm.util.StreamVisitor;
@@ -22,13 +24,15 @@ public class SubtreeExtractor extends StreamVisitor {
     }
 
     @Override
-    public void visitRecordBody(Id id) {
+    public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.write(WireTypes.RECORD);
-        output.writeId(id);
+        output.writeLong(nodeId);
+        typeOrTypeKey.write(output);
         var oldParentId = parentId;
         var oldParentFieldTag = parentFieldTag;
+        var id = PhysicalId.of(getTreeId(), nodeId, typeOrTypeKey);
         parentId = id;
         parentFieldTag = -1;
         new StreamCopier(getInput(), output) {
@@ -40,12 +44,13 @@ public class SubtreeExtractor extends StreamVisitor {
 
             @Override
             public void visitRecord() {
-                var id = readRecordId();
+                var nodeId = readLong();
+                var typeKey = readTypeKey();
                 write(WireTypes.REFERENCE);
-                writeId(id);
-                SubtreeExtractor.this.visitRecordBody(id);
+                writeId(PhysicalId.of(getTreeId(), nodeId, typeKey));
+                SubtreeExtractor.this.visitRecordBody(nodeId, typeKey);
             }
-        }.visitRecordBody(id);
+        }.visitRecordBody(nodeId, typeOrTypeKey);
         parentId = oldParentId;
         parentFieldTag = oldParentFieldTag;
         add.accept(new Subtree(

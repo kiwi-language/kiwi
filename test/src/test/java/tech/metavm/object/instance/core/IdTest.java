@@ -10,17 +10,17 @@ import tech.metavm.object.view.rest.dto.DirectMappingKey;
 public class IdTest extends TestCase {
 
     public void test() {
-        Id id = PhysicalId.ofObject(1L, 0L, mockClassTypeKey(2, 3));
+        Id id = PhysicalId.of(1L, 0L, mockClassTypeKey(2, 3));
         assertEquals(id, Id.parse(id.toString()));
         id = new TmpId(1L);
         assertEquals(id, Id.parse(id.toString()));
-        id = new DefaultViewId(false, new DirectMappingKey(PhysicalId.ofObject(4L, 1L, mockClassTypeKey(4, 0)).toString()), id);
+        id = new DefaultViewId(false, new DirectMappingKey(PhysicalId.of(4L, 1L, mockClassTypeKey(4, 0)).toString()), id);
         assertEquals(id, Id.parse(id.toString()));
     }
 
     public void testChildViewId() {
-        Id rootId = PhysicalId.ofObject(1L, 0L, mockClassTypeKey(2, 3));
-        var mappingKey = new DirectMappingKey(PhysicalId.ofObject(4L, 1L, mockClassTypeKey(4, 0)).toString());
+        Id rootId = PhysicalId.of(1L, 0L, mockClassTypeKey(2, 3));
+        var mappingKey = new DirectMappingKey(PhysicalId.of(4L, 1L, mockClassTypeKey(4, 0)).toString());
         ViewId rootViewId = new DefaultViewId(false, mappingKey, rootId);
 
         ChildViewId childId = new ChildViewId(false, mappingKey, rootId, rootViewId);
@@ -30,23 +30,23 @@ public class IdTest extends TestCase {
     }
 
     public void testFieldViewId() {
-        var sourceId = PhysicalId.ofObject(1L, 0L, mockClassTypeKey(2, 3));
-        var mappingKey = new DirectMappingKey(PhysicalId.ofObject(4L, 1L, mockClassTypeKey(4, 0)).toString());
+        var sourceId = PhysicalId.of(1L, 0L, mockClassTypeKey(2, 3));
+        var mappingKey = new DirectMappingKey(PhysicalId.of(4L, 1L, mockClassTypeKey(4, 0)).toString());
         var parentId = new DefaultViewId(false, mappingKey, sourceId);
 
-        var mappingId2 = new DirectMappingKey(PhysicalId.ofObject(5L, 1L, mockClassTypeKey(4, 0)).toString());
-        var fieldId = PhysicalId.ofObject(6L, 1L, mockClassTypeKey(4, 0));
+        var mappingId2 = new DirectMappingKey(PhysicalId.of(5L, 1L, mockClassTypeKey(4, 0)).toString());
+        var fieldId = PhysicalId.of(6L, 1L, mockClassTypeKey(4, 0));
         Id id = new FieldViewId(false, parentId, mappingId2, fieldId, null, new AnyTypeKey());
         Assert.assertEquals(id, Id.parse(id.toString()));
     }
 
     public void testElementViewId() {
-        var sourceId = PhysicalId.ofObject(1L, 0L, mockClassTypeKey(2, 3));
-        var mappingKey = new DirectMappingKey(PhysicalId.ofObject(4L, 1L, mockClassTypeKey(4, 0)).toString());
+        var sourceId = PhysicalId.of(1L, 0L, mockClassTypeKey(2, 3));
+        var mappingKey = new DirectMappingKey(PhysicalId.of(4L, 1L, mockClassTypeKey(4, 0)).toString());
         var parentId = new DefaultViewId(false, mappingKey, sourceId);
         var type = mockClassTypeKey(10, 0);
 
-        var mappingId2 = new DirectMappingKey(PhysicalId.ofObject(5L, 1L, mockClassTypeKey(4, 0)).toString());
+        var mappingId2 = new DirectMappingKey(PhysicalId.of(5L, 1L, mockClassTypeKey(4, 0)).toString());
         Id id = new ElementViewId(false, parentId, mappingId2, 2, null, type.toTypeKey());
         var recovered = Id.parse(id.toString());
         Assert.assertEquals(id, recovered);
@@ -54,7 +54,7 @@ public class IdTest extends TestCase {
 
     private ClassType mockClassTypeKey(long treeId, long nodeId) {
         var klass = ClassTypeBuilder.newBuilder("Mock", "Mock").build();
-        klass.initId(new PhysicalId(treeId, nodeId, 4));
+        klass.initId(new PhysicalId(false, treeId, nodeId));
         return klass.getType();
     }
 

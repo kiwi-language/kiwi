@@ -579,7 +579,7 @@ public class FlowManager extends EntityContextFactoryBean {
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder(
                         node != null ? node.getType().getName() : "输入类型" + NncUtils.randomNonNegative()
                 )
-                .id(outputTypeKey.id())
+                .id(outputTypeKey.id().toString())
                 .anonymous(true)
                 .ephemeral(true)
                 .fields(fields)

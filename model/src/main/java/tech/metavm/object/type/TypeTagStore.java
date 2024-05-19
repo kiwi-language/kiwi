@@ -2,9 +2,8 @@ package tech.metavm.object.type;
 
 public interface TypeTagStore {
 
-    int getTypeTag(Class<?> javaClass);
+    int getTypeTag(String className);
 
     void save();
-
 
 }

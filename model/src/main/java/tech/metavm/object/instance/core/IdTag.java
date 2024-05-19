@@ -5,7 +5,8 @@ import tech.metavm.util.NncUtils;
 public enum IdTag {
 
     NULL(0),
-    OBJECT_PHYSICAL(1),
+    PHYSICAL(1),
+    TAGGED_PHYSICAL(2),
     TMP(19),
     DEFAULT_VIEW(11),
     CHILD_VIEW(13),

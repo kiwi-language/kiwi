@@ -12,7 +12,6 @@ public class ReferenceExtractor extends StreamVisitor {
 
     private final long appId;
     private final Consumer<ReferencePO> add;
-    private Id sourceId;
 
     public ReferenceExtractor(InputStream in, long appId, Consumer<ReferencePO> add) {
         super(in);
@@ -20,20 +19,11 @@ public class ReferenceExtractor extends StreamVisitor {
         this.add = add;
     }
 
-    @Override
-    public void visitRecordBody(Id id) {
-        if (sourceId != null)
-            addReference(id);
-        var oldSourceId = sourceId;
-        sourceId = id;
-        super.visitRecordBody(id);
-        sourceId = oldSourceId;
-    }
-
     private void addReference(Id targetId) {
-        if(sourceId.getTreeId() != targetId.getTreeId()) {
+        var treeId = getTreeId();
+        if(treeId != targetId.getTreeId()) {
             add.accept(new ReferencePO(this.appId,
-                    sourceId.getTreeId(),
+                    treeId,
                     targetId.toBytes(),
                     ReferenceKind.STRONG.code()));
         }

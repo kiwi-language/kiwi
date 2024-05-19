@@ -120,7 +120,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @EntityField("状态")
     private ClassTypeState state = ClassTypeState.INIT;
 
-    private final int tag;
+    private final transient int tag;
 
     @SuppressWarnings("unused")
     private boolean templateFlag = false;
@@ -273,6 +273,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return this.fields.stream().filter(Field::isReady).allMatch(predicate);
     }
 
+    @NoProxy
     public int getTag() {
         return tag;
     }

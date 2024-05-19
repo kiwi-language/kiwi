@@ -31,11 +31,6 @@ public record IntersectionTypeKey(Set<TypeKey> typeKeys) implements TypeKey {
     }
 
     @Override
-    public void acceptChildren(TypeKeyVisitor<?> visitor) {
-        typeKeys.forEach(k -> k.accept(visitor));
-    }
-
-    @Override
     public int getCode() {
         return TypeKeyCodes.INTERSECTION;
     }

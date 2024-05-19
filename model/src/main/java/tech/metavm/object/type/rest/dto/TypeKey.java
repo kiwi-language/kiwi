@@ -1,11 +1,10 @@
 package tech.metavm.object.type.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import tech.metavm.object.type.ArrayKind;
-import tech.metavm.object.type.PrimitiveKind;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeDefProvider;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.type.*;
 import tech.metavm.object.type.antlr.TypeLexer;
 import tech.metavm.object.type.antlr.TypeParser;
 import tech.metavm.util.*;
@@ -15,7 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public interface TypeKey {
+public interface TypeKey extends TypeOrTypeKey {
 
     void write(InstanceOutput output);
 
@@ -25,9 +24,19 @@ public interface TypeKey {
 
     <R> R accept(TypeKeyVisitor<R> visitor);
 
-    void acceptChildren(TypeKeyVisitor<?> visitor);
-
     int getCode();
+
+    @Override
+    @JsonIgnore
+    default int getTypeTag() {
+        return 0;
+    }
+
+    @Override
+    @JsonIgnore
+    default boolean isArray() {
+        return false;
+    }
 
     static TypeKey fromExpression(String expression) {
         var parser = new TypeParser(new CommonTokenStream(new TypeLexer(CharStreams.fromString(expression))));
@@ -57,14 +66,16 @@ public interface TypeKey {
         }
         if (ctx.classType() != null) {
             var classType = ctx.classType();
-            var id = classType.qualifiedName().getText().substring(Constants.CONSTANT_ID_PREFIX.length());
+            var id = Id.parse(classType.qualifiedName().getText().substring(Constants.CONSTANT_ID_PREFIX.length()));
             if(classType.typeArguments() != null)
                 return new ParameterizedTypeKey(id, NncUtils.map(classType.typeArguments().typeList().type(), TypeKey::fromTypeContext));
+            else if(classType.DECIMAL_LITERAL() != null)
+                return new TaggedClassTypeKey(id, Integer.parseInt(classType.DECIMAL_LITERAL().getText()));
             else
                 return new ClassTypeKey(id);
         }
         if(ctx.variableType() != null)
-            return new VariableTypeKey(ctx.variableType().IDENTIFIER().getText().substring(Constants.CONSTANT_ID_PREFIX.length()));
+            return new VariableTypeKey(Id.parse(ctx.variableType().IDENTIFIER().getText().substring(Constants.CONSTANT_ID_PREFIX.length())));
         if (ctx.elementType != null) {
             var kind = ctx.arrayKind();
             return new ArrayTypeKey(
@@ -108,15 +119,16 @@ public interface TypeKey {
             case TypeKeyCodes.CHILD_ARRAY -> new ArrayTypeKey(ArrayKind.CHILD.code(), read(input));
             case TypeKeyCodes.READ_ONLY_ARRAY -> new ArrayTypeKey(ArrayKind.READ_ONLY.code(), read(input));
             case TypeKeyCodes.READ_WRITE_ARRAY -> new ArrayTypeKey(ArrayKind.READ_WRITE.code(), read(input));
-            case TypeKeyCodes.CLASS -> new ClassTypeKey(input.readId().toString());
+            case TypeKeyCodes.CLASS -> new ClassTypeKey(input.readId());
+            case TypeKeyCodes.TAGGED_CLASS -> new TaggedClassTypeKey(input.readId(), input.readInt());
             case TypeKeyCodes.PARAMETERIZED ->
-                    new ParameterizedTypeKey(input.readId().toString(), readTypeKeyList(input));
+                    new ParameterizedTypeKey(input.readId(), readTypeKeyList(input));
             case TypeKeyCodes.UNION -> new UnionTypeKey(readTypeKeySet(input));
             case TypeKeyCodes.INTERSECTION -> new IntersectionTypeKey(readTypeKeySet(input));
             case TypeKeyCodes.FUNCTION -> new FunctionTypeKey(readTypeKeyList(input), read(input));
             case TypeKeyCodes.UNCERTAIN -> new UncertainTypeKey(read(input), read(input));
-            case TypeKeyCodes.VARIABLE -> new VariableTypeKey(input.readId().toString());
-            case TypeKeyCodes.CAPTURED -> new CapturedTypeKey(input.readId().toString());
+            case TypeKeyCodes.VARIABLE -> new VariableTypeKey(input.readId());
+            case TypeKeyCodes.CAPTURED -> new CapturedTypeKey(input.readId());
             default -> throw new InternalException("Invalid type key code: " + code);
         };
     }

@@ -31,11 +31,6 @@ public record UnionTypeKey(Set<TypeKey> memberKeys) implements TypeKey {
     }
 
     @Override
-    public void acceptChildren(TypeKeyVisitor<?> visitor) {
-        memberKeys.forEach(k -> k.accept(visitor));
-    }
-
-    @Override
     public int getCode() {
         return TypeKeyCodes.UNION;
     }

@@ -25,6 +25,7 @@ RBRACK:             ']';
 COMMA:              ',';
 DOT:                '.';
 NUM:                '#';
+COLON:              ':';
 
 // Operators
 
@@ -46,6 +47,9 @@ WS:                 [ \t\r\n\u000C]+ -> channel(HIDDEN);
 // Identifiers
 
 IDENTIFIER:         Letter LetterOrDigit*;
+
+// Literal
+DECIMAL_LITERAL:    ('0' | [1-9] (Digits? | '_'+ Digits)) [lL]?;
 
 // Fragment rules
 

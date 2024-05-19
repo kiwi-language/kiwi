@@ -18,7 +18,7 @@ type
 
 arrayKind: R | C;
 
-classType: qualifiedName typeArguments?;
+classType: qualifiedName typeArguments? (':' DECIMAL_LITERAL)?;
 
 variableType: '?' IDENTIFIER;
 

@@ -6,6 +6,7 @@ import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.CapturedTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKeyCodes;
 import tech.metavm.util.Constants;
@@ -38,7 +39,7 @@ public class CapturedType extends Type {
     }
 
     @Override
-    public CapturedTypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+    public CapturedTypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
         return new CapturedTypeKey(getTypeDefId.apply(variable));
     }
 

@@ -13,15 +13,22 @@ public class StdIdProvider {
 
     private final StdIdStore stdIdStore;
     private final Map<String, Id> ids;
+    private final Map<Id, String> qualifiedNames;
 
     public StdIdProvider(StdIdStore stdIdStore) {
         this.stdIdStore = stdIdStore;
         ids = stdIdStore.load();
+        qualifiedNames = new HashMap<>();
+        ids.forEach((qualName, id) -> qualifiedNames.put(id, qualName));
         LOGGER.info("loaded {} ids", ids.size());
     }
 
     public Id getId(ModelIdentity modelIdentity) {
         return ids.get(modelIdentity.qualifiedName());
+    }
+
+    public String getName(Id id) {
+        return qualifiedNames.get(id).split("/")[1];
     }
 
     public void save(Map<ModelIdentity, Id> ids) {
@@ -30,7 +37,9 @@ public class StdIdProvider {
             qualName2Id.put(entry.getKey().qualifiedName(), entry.getValue());
         }
         this.ids.clear();
+        this.qualifiedNames.clear();
         this.ids.putAll(qualName2Id);
+        this.ids.forEach((qualName, id) -> qualifiedNames.put(id, qualName));
         stdIdStore.save(qualName2Id);
     }
 

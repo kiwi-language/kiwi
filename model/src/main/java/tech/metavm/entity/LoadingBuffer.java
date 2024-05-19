@@ -6,6 +6,8 @@ import tech.metavm.object.instance.TreeNotFoundException;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.type.TypeOrTypeKey;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.StreamVisitor;
 
@@ -115,10 +117,11 @@ public class LoadingBuffer {
         new StreamVisitor(new ByteArrayInputStream(tree.data())) {
 
             @Override
-            public void visitRecordBody(Id id) {
+            public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
+                var id = PhysicalId.of(getTreeId(), nodeId, typeOrTypeKey);
                 invertedIndex.put(id, tree);
                 ids.add(id);
-                super.visitRecordBody(id);
+                super.visitRecordBody(nodeId, typeOrTypeKey);
             }
 
         }.visitMessage();

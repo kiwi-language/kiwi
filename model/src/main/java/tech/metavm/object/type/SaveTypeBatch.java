@@ -163,9 +163,9 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     private String getKlassId(String typeExpression) {
         var typeKey = TypeKey.fromExpression(typeExpression);
         if(typeKey instanceof ClassTypeKey ctKey)
-            return ctKey.id();
+            return ctKey.id().toString();
         else if(typeKey instanceof ParameterizedTypeKey ptKey)
-            return ptKey.templateId();
+            return ptKey.templateId().toString();
         else
             throw new InternalException("Can not get klass id from type: " + typeExpression);
     }

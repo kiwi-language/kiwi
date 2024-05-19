@@ -3,6 +3,7 @@ package tech.metavm.object.type;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.ArrayTypeKey;
 import tech.metavm.object.type.rest.dto.ArrayTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
@@ -49,7 +50,7 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
         return new ArrayTypeKey(kind.code(), elementType.toTypeKey(getTypeDefId));
     }
 

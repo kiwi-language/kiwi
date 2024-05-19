@@ -1,7 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.system.RegionConstants;
+import tech.metavm.object.type.TypeOrTypeKey;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,15 +36,16 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitRecord() {
         output.write(WireTypes.RECORD);
-        var id = readRecordId();
-        output.writeId(id);
-        visitRecordBody(id);
+        var nodeId = readLong();
+        output.writeLong(nodeId);
+        var typeKey = readTypeKey();
+        typeKey.write(output);
+        visitRecordBody(nodeId, typeKey);
     }
 
     @Override
-    public void visitRecordBody(Id id) {
-        readTypeKey().write(output);
-        if (RegionConstants.isArrayId(id)) {
+    public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
+        if (typeOrTypeKey.isArray()) {
             int len = readInt();
             output.writeInt(len);
             for (int i = 0; i < len; i++) {

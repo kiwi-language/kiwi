@@ -3,6 +3,7 @@ package tech.metavm.object.type;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.FunctionTypeKey;
 import tech.metavm.object.type.rest.dto.FunctionTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
@@ -49,7 +50,7 @@ public class FunctionType extends CompositeType {
 
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
         return new FunctionTypeKey(NncUtils.map(parameterTypes, type -> type.toTypeKey(getTypeDefId)), returnType.toTypeKey(getTypeDefId));
     }
 

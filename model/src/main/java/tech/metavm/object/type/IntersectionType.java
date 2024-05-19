@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.IntersectionTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeKeyCodes;
@@ -41,7 +42,7 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
         return new IntersectionTypeKey(new HashSet<>(NncUtils.map(types, type -> type.toTypeKey(getTypeDefId))));
     }
 

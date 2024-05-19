@@ -10,16 +10,16 @@ import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
-public record ParameterizedTypeKey(String templateId, List<TypeKey> typeArgumentKeys) implements TypeKey{
+public record ParameterizedTypeKey(Id templateId, List<TypeKey> typeArgumentKeys) implements TypeKey{
 
     public static ParameterizedTypeKey create(Klass template, List<Type> typeArguments) {
-        return new ParameterizedTypeKey(template.getStringId(), NncUtils.map(typeArguments, Type::toTypeKey));
+        return new ParameterizedTypeKey(template.getId(), NncUtils.map(typeArguments, Type::toTypeKey));
     }
 
     @Override
     public void write(InstanceOutput output) {
         output.write(TypeKeyCodes.PARAMETERIZED);
-        output.writeId(Id.parse(templateId));
+        output.writeId(templateId);
         output.writeInt(typeArgumentKeys.size());
         typeArgumentKeys.forEach(k -> k.write(output));
     }
@@ -40,12 +40,8 @@ public record ParameterizedTypeKey(String templateId, List<TypeKey> typeArgument
     }
 
     @Override
-    public void acceptChildren(TypeKeyVisitor<?> visitor) {
-        typeArgumentKeys.forEach(k -> k.accept(visitor));
-    }
-
-    @Override
     public int getCode() {
         return TypeKeyCodes.PARAMETERIZED;
     }
+
 }

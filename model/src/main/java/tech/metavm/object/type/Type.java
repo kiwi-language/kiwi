@@ -3,6 +3,7 @@ package tech.metavm.object.type;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.object.instance.core.TypeTag;
@@ -20,7 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 @EntityType("类型")
-public abstract class Type extends ValueElement {
+public abstract class Type extends ValueElement implements TypeOrTypeKey {
 
     public boolean isViewType(Type type) {
         return this.equals(type);
@@ -40,10 +41,10 @@ public abstract class Type extends ValueElement {
     public abstract boolean isEphemeral();
 
     public TypeKey toTypeKey() {
-        return toTypeKey(TypeDef::getStringId);
+        return toTypeKey(TypeDef::getId);
     }
 
-    public abstract TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId);
+    public abstract TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId);
 
     public void forEachTypeDef(Consumer<TypeDef> action) {
     }
@@ -311,6 +312,7 @@ public abstract class Type extends ValueElement {
         var code = input.read();
         return switch (code) {
             case TypeKeyCodes.CLASS -> ClassType.read(input, typeDefProvider);
+            case TypeKeyCodes.TAGGED_CLASS -> ClassType.readTagged(input, typeDefProvider);
             case TypeKeyCodes.PARAMETERIZED -> ClassType.readParameterized(input, typeDefProvider);
             case TypeKeyCodes.VARIABLE -> VariableType.read(input, typeDefProvider);
             case TypeKeyCodes.CAPTURED -> CapturedType.read(input, typeDefProvider);

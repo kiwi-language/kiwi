@@ -5,6 +5,7 @@ import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeKeyCodes;
 import tech.metavm.object.type.rest.dto.VariableTypeKey;
@@ -40,7 +41,7 @@ public class VariableType extends Type implements IVariableType {
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
         return new VariableTypeKey(getTypeDefId.apply(variable));
     }
 

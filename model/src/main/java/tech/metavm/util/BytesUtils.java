@@ -181,11 +181,11 @@ public class BytesUtils {
         }
 
         private Object readRecord() {
-            var id = readRecordId();
             Map<String, Object> map = new HashMap<>();
-            map.put("id", id.toString());
-            map.put("type", TypeKey.read(this).toTypeExpression());
-            if (RegionConstants.isArrayId(id)) {
+            map.put("nodeId", readLong());
+            var typeKey = TypeKey.read(this);
+            map.put("type", typeKey.toTypeExpression());
+            if (typeKey.isArray()) {
                 int len = readInt();
                 var elements = new ArrayList<>(len);
                 map.put("elements", elements);

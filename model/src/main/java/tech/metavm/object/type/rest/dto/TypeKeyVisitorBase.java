@@ -8,6 +8,11 @@ public abstract class TypeKeyVisitorBase<R> implements TypeKeyVisitor<R> {
     }
 
     @Override
+    public R visitTaggedClassTypeKey(TaggedClassTypeKey typeKey) {
+        return visitTypeKey(typeKey);
+    }
+
+    @Override
     public R visitIntersectionTypeKey(IntersectionTypeKey typeKey) {
         return visitTypeKey(typeKey);
     }

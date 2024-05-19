@@ -4,13 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.object.type.generic.TypeSubstitutor;
-import tech.metavm.object.type.rest.dto.ClassTypeKey;
-import tech.metavm.object.type.rest.dto.ParameterizedTypeKey;
-import tech.metavm.object.type.rest.dto.TypeKey;
-import tech.metavm.object.type.rest.dto.TypeKeyCodes;
+import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.util.Constants;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
@@ -49,10 +47,13 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, String> getTypeDefId) {
+    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
         return typeArguments.isEmpty() ?
-                new ClassTypeKey(getTypeDefId.apply(klass)) :
-                new ParameterizedTypeKey(klass.getStringId(), NncUtils.map(typeArguments, type -> type.toTypeKey(getTypeDefId)));
+                (klass.getTag() > 0 ?
+                        new TaggedClassTypeKey(getTypeDefId.apply(klass), klass.getTag()) :
+                        new ClassTypeKey(getTypeDefId.apply(klass))
+                ) :
+                new ParameterizedTypeKey(klass.getId(), NncUtils.map(typeArguments, type -> type.toTypeKey(getTypeDefId)));
     }
 
     public Klass getKlass() {
@@ -202,21 +203,29 @@ public class ClassType extends Type implements ISubstitutor {
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
         var id = getTypeDefExpr == null ? Constants.CONSTANT_ID_PREFIX + serializeContext.getId(klass) : getTypeDefExpr.apply(klass);
-        return typeArguments.isEmpty() ? id : id + "<" + NncUtils.join(typeArguments, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ">";
+        var tag = klass.getTag();
+        return typeArguments.isEmpty() ? (tag == 0 ? id : id + ":" + tag)
+                : id + "<" + NncUtils.join(typeArguments, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ">";
     }
 
     @Override
     public int getTypeKeyCode() {
-        return typeArguments.isEmpty() ? TypeKeyCodes.CLASS : TypeKeyCodes.PARAMETERIZED;
+        return typeArguments.isEmpty() ? (klass.getTag() == 0 ? TypeKeyCodes.CLASS : TypeKeyCodes.TAGGED_CLASS) : TypeKeyCodes.PARAMETERIZED;
     }
 
     @Override
     public void write(InstanceOutput output) {
-        if(typeArguments.isEmpty()) {
-            output.write(TypeKeyCodes.CLASS);
-            output.writeId(klass.getId());
-        }
-        else {
+        if (typeArguments.isEmpty()) {
+            var tag = klass.getTag();
+            if (tag == 0) {
+                output.write(TypeKeyCodes.CLASS);
+                output.writeId(klass.getId());
+            } else {
+                output.write(TypeKeyCodes.TAGGED_CLASS);
+                output.writeId(klass.getId());
+                output.writeInt(tag);
+            }
+        } else {
             output.write(TypeKeyCodes.PARAMETERIZED);
             output.writeId(klass.getId());
             output.writeInt(typeArguments.size());
@@ -226,6 +235,12 @@ public class ClassType extends Type implements ISubstitutor {
 
     public static ClassType read(InstanceInput input, TypeDefProvider typeDefProvider) {
         return new ClassType(typeDefProvider.getKlass(input.readId()), List.of());
+    }
+
+    public static ClassType readTagged(InstanceInput input, TypeDefProvider typeDefProvider) {
+        var type = new ClassType(typeDefProvider.getKlass(input.readId()), List.of());
+        input.readInt();
+        return type;
     }
 
     public static ClassType readParameterized(InstanceInput input, TypeDefProvider typeDefProvider) {

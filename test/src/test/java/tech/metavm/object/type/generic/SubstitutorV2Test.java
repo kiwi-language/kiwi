@@ -94,7 +94,7 @@ public class SubstitutorV2Test extends TestCase {
             throw new InternalException("Type not found: " + t.getTypeName());
         });
 
-        stringType.initId(PhysicalId.ofObject(1L, 0L, TestUtils.mockClassType()));
+        stringType.initId(PhysicalId.of(1L, 0L, TestUtils.mockClassType()));
 
         var typeProviders = new TypeProviders();
 

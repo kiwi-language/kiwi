@@ -7,10 +7,10 @@ import tech.metavm.object.type.CapturedTypeVariable;
 import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.util.InstanceOutput;
 
-public record CapturedTypeKey(@NotNull String variableId) implements TypeKey {
+public record CapturedTypeKey(@NotNull Id variableId) implements TypeKey {
     @Override
     public void write(InstanceOutput output) {
-        output.writeId(Id.parse(variableId));
+        output.writeId(variableId);
     }
 
     @Override
@@ -20,17 +20,12 @@ public record CapturedTypeKey(@NotNull String variableId) implements TypeKey {
 
     @Override
     public CapturedType toType(TypeDefProvider typeDefProvider) {
-        return new CapturedType((CapturedTypeVariable) typeDefProvider.getTypeDef(Id.parse(variableId)));
+        return new CapturedType((CapturedTypeVariable) typeDefProvider.getTypeDef(variableId));
     }
 
     @Override
     public <R> R accept(TypeKeyVisitor<R> visitor) {
         return visitor.visitCapturedTypeKey(this);
-    }
-
-    @Override
-    public void acceptChildren(TypeKeyVisitor<?> visitor) {
-
     }
 
     @Override
