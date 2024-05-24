@@ -145,10 +145,10 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
 
     public TypeVariableDTO toDTO(SerializeContext serializeContext) {
         return new TypeVariableDTO(
-                serializeContext.getId(this),
+                serializeContext.getStringId(this),
                 name,
                 code,
-                serializeContext.getId(genericDeclaration),
+                serializeContext.getStringId(genericDeclaration),
                 genericDeclaration.getTypeParameterIndex(this),
                 NncUtils.map(bounds, type1 -> type1.toExpression(serializeContext, null))
         );

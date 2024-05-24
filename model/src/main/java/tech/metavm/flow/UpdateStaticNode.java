@@ -58,7 +58,7 @@ public class UpdateStaticNode extends NodeRT {
     protected UpdateStaticNodeParam getParam(SerializeContext serializeContext) {
         try (var serContext = SerializeContext.enter()) {
             return new UpdateStaticNodeParam(
-                    serContext.getId(klass),
+                    serContext.getStringId(klass),
                     NncUtils.map(fields, UpdateField::toDTO)
             );
         }

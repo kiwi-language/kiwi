@@ -47,7 +47,7 @@ public class IndexSelectFirstNode extends NodeRT {
     @Override
     protected IndexSelectFirstNodeParam getParam(SerializeContext serializeContext) {
         return new IndexSelectFirstNodeParam(
-                serializeContext.getId(index),
+                serializeContext.getStringId(index),
                 key.toDTO(serializeContext)
         );
     }

@@ -35,7 +35,7 @@ public class LambdaNodeRef extends CallableRef  {
 
     @Override
     public LambdaNodeRefDTO toDTO(SerializeContext serializeContext) {
-        return new LambdaNodeRefDTO(serializeContext.getId(lambdaNode));
+        return new LambdaNodeRefDTO(serializeContext.getStringId(lambdaNode));
     }
 
     @Override

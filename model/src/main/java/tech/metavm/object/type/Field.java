@@ -308,7 +308,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     public FieldDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new FieldDTO(
-                    serContext.getId(this),
+                    serContext.getStringId(this),
                     getName(),
                     getCode(),
                     getAccess().code(),
@@ -390,8 +390,8 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
         return new GenericElementDTO(
-                serializeContext.getId(Objects.requireNonNull(getCopySource())),
-                serializeContext.getId(this)
+                serializeContext.getStringId(Objects.requireNonNull(getCopySource())),
+                serializeContext.getStringId(this)
         );
     }
 

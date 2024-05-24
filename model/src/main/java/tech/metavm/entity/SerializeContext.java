@@ -72,7 +72,7 @@ public class SerializeContext implements Closeable {
         return tmpIdMap.computeIfAbsent(model, k -> ContextUtil.nextTmpId());
     }
 
-    public String getId(Object model) {
+    public String getStringId(Object model) {
         if (model instanceof Entity entity && entity.getStringId() != null) {
             return entity.getStringId();
         } else {
@@ -80,7 +80,7 @@ public class SerializeContext implements Closeable {
         }
     }
 
-    public Id getEntityId(Object obj) {
+    public Id getId(Object obj) {
         Id id;
         if (obj instanceof Entity entity && (id = entity.tryGetId()) != null)
             return id;
@@ -244,7 +244,7 @@ public class SerializeContext implements Closeable {
     public List<TypeDTO> getTypesExclude(Klass klass) {
         var result = new ArrayList<TypeDTO>();
         types.values().forEach(t -> {
-            if (t instanceof TypeDTO typeDTO && !Objects.equals(typeDTO.id(), getId(klass)))
+            if (t instanceof TypeDTO typeDTO && !Objects.equals(typeDTO.id(), getStringId(klass)))
                 result.add(typeDTO);
         });
         return result;
@@ -253,7 +253,7 @@ public class SerializeContext implements Closeable {
     public List<TypeDTO> getTypesExclude(Type type) {
         var result = new ArrayList<TypeDTO>();
         types.values().forEach(t -> {
-            if (t instanceof TypeDTO typeDTO && !Objects.equals(typeDTO.id(), getId(type)))
+            if (t instanceof TypeDTO typeDTO && !Objects.equals(typeDTO.id(), getStringId(type)))
                 result.add(typeDTO);
         });
         return result;

@@ -48,7 +48,7 @@ public class FunctionRef extends FlowRef {
 
     public FunctionRefDTO toDTO(SerializeContext serializeContext) {
         return new FunctionRefDTO(
-                serializeContext.getId(getRawFlow()),
+                serializeContext.getStringId(getRawFlow()),
                 NncUtils.map(getTypeArguments(), t -> t.toExpression(serializeContext))
         );
     }

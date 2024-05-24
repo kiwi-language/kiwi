@@ -37,7 +37,7 @@ public class Error extends Entity {
         try(var serContext = SerializeContext.enter()) {
             return new ErrorDTO(
                     ElementKind.getByElementClass(element.getClass()).code(),
-                    serContext.getId(element),
+                    serContext.getStringId(element),
                     message
             );
         }

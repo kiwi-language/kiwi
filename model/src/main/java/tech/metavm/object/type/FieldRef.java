@@ -69,7 +69,7 @@ public class FieldRef extends ValueElement implements PropertyRef {
     }
 
     public FieldRefDTO toDTO(SerializeContext serializeContext) {
-        return new FieldRefDTO(declaringType.toExpression(serializeContext), serializeContext.getId(rawField));
+        return new FieldRefDTO(declaringType.toExpression(serializeContext), serializeContext.getStringId(rawField));
     }
 
     @Override

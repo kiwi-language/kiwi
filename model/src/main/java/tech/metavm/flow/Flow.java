@@ -176,7 +176,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
             getTypeParameters().forEach(serContext::writeTypeDef);
         capturedTypeVariables.forEach(serContext::writeTypeDef);
         return new FlowDTO(
-                serContext.getId(this),
+                serContext.getStringId(this),
                 getName(),
                 getCode(),
                 isNative,
@@ -184,10 +184,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                 returnType.toExpression(serContext),
                 NncUtils.map(parameters, Parameter::toDTO),
                 type.toExpression(serContext),
-                NncUtils.map(typeParameters, serContext::getId),
-                NncUtils.get(horizontalTemplate, serContext::getId),
+                NncUtils.map(typeParameters, serContext::getStringId),
+                NncUtils.get(horizontalTemplate, serContext::getStringId),
                 NncUtils.map(typeArguments, t -> t.toExpression(serContext)),
-                NncUtils.map(capturedTypeVariables, serContext::getId),
+                NncUtils.map(capturedTypeVariables, serContext::getStringId),
                 List.of(),
                 List.of(),
                 isTemplate(),

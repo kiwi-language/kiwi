@@ -73,6 +73,6 @@ public class ObjectMappingRef extends ValueElement implements Reference {
     }
 
     public ObjectMappingRefDTO toDTO(SerializeContext serializeContext) {
-        return new ObjectMappingRefDTO(declaringType.toExpression(serializeContext), serializeContext.getId(rawMapping));
+        return new ObjectMappingRefDTO(declaringType.toExpression(serializeContext), serializeContext.getStringId(rawMapping));
     }
 }

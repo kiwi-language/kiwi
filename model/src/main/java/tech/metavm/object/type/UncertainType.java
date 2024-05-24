@@ -92,8 +92,8 @@ public class UncertainType extends CompositeType {
     protected UncertainTypeParam getParamInternal() {
         try (var serContext = SerializeContext.enter()) {
             return new UncertainTypeParam(
-                    serContext.getId(lowerBound),
-                    serContext.getId(upperBound)
+                    serContext.getStringId(lowerBound),
+                    serContext.getStringId(upperBound)
             );
         }
     }

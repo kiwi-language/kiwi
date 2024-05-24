@@ -38,7 +38,7 @@ public class IndexQueryKey extends Entity {
 
     public IndexQueryKeyDTO toDTO(SerializeContext serializeContext) {
         return new IndexQueryKeyDTO(
-                serializeContext.getId(index),
+                serializeContext.getStringId(index),
                 NncUtils.map(items, indexQueryKeyItem -> indexQueryKeyItem.toDTO(serializeContext)));
     }
 

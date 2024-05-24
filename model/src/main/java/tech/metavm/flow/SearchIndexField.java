@@ -59,7 +59,7 @@ public class SearchIndexField extends Entity {
     public SearchIndexFieldDTO toDTO(IEntityContext context) {
         try(var serContext = SerializeContext.enter()) {
             return new SearchIndexFieldDTO(
-                    serContext.getId(field), operator.code(),
+                    serContext.getStringId(field), operator.code(),
                     value.toDTO()
             );
         }

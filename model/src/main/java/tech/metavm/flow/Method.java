@@ -162,8 +162,8 @@ public class Method extends Flow implements Property, GenericElement {
         }
         return new MethodParam(
                 isConstructor, isAbstract, _static,
-                NncUtils.get(verticalTemplate, serContext::getId),
-                serContext.getId(declaringType),
+                NncUtils.get(verticalTemplate, serContext::getStringId),
+                serContext.getStringId(declaringType),
                 NncUtils.get(staticType, t -> t.toExpression(serContext)),
                 NncUtils.map(overridden, m -> m.toDTO(serContext)),
                 access.code()
@@ -324,9 +324,9 @@ public class Method extends Flow implements Property, GenericElement {
     public FlowSummaryDTO toSummaryDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new FlowSummaryDTO(
-                    serContext.getId(this),
+                    serContext.getStringId(this),
                     getName(),
-                    serContext.getId(getDeclaringType()),
+                    serContext.getStringId(getDeclaringType()),
                     NncUtils.map(getParameters(), Parameter::toDTO),
                     getReturnType().toExpression(serContext),
                     !getParameterTypes().isEmpty(),

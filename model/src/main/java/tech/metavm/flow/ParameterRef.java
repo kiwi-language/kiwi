@@ -46,7 +46,7 @@ public class ParameterRef  extends ValueElement implements Reference {
     public ParameterRefDTO toDTO(SerializeContext serializeContext) {
         return new ParameterRefDTO(
                 callableRef.toDTO(serializeContext),
-                serializeContext.getId(rawParameter)
+                serializeContext.getStringId(rawParameter)
         );
     }
 

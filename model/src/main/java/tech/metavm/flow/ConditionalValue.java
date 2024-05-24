@@ -30,7 +30,7 @@ public class ConditionalValue extends Entity {
     public ConditionalValueDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new ConditionalValueDTO(
-                    serContext.getId(branch),
+                    serContext.getStringId(branch),
                     value.toDTO()
             );
         }

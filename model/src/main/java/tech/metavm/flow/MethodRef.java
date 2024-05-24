@@ -84,7 +84,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
     public MethodRefDTO toDTO(SerializeContext serializeContext) {
         return new MethodRefDTO(
                 declaringType.toExpression(serializeContext),
-                serializeContext.getId(getRawFlow()),
+                serializeContext.getStringId(getRawFlow()),
                 NncUtils.map(getTypeArguments(), t -> t.toExpression(serializeContext))
         );
     }

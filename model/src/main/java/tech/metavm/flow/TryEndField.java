@@ -59,7 +59,7 @@ public class TryEndField extends Entity implements LocalKey {
         try (var serContext = SerializeContext.enter()) {
             return new TryEndFieldDTO(
                     field.getName(),
-                    serContext.getId(field),
+                    serContext.getStringId(field),
                     field.getType().toExpression(serContext),
                     NncUtils.map(values, TryEndValue::toDTO),
                     defaultValue.toDTO()

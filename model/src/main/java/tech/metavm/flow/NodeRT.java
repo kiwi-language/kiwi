@@ -196,12 +196,12 @@ public abstract class NodeRT extends Element implements LocalKey {
 
     public NodeDTO toDTO(SerializeContext serContext) {
         return new NodeDTO(
-                serContext.getId(this),
+                serContext.getStringId(this),
                 getFlow().getStringId(),
                 name,
                 code,
                 kind.code(),
-                NncUtils.get(predecessor, serContext::getId),
+                NncUtils.get(predecessor, serContext::getStringId),
                 NncUtils.get(getType(), t -> t.toExpression(serContext)),
                 getParam(serContext),
                 getOutputKlassDTO(serContext),

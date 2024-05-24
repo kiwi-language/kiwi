@@ -42,7 +42,7 @@ public class CheckNode extends NodeRT {
     @Override
     protected CheckNodeParam getParam(SerializeContext serializeContext) {
         try (var serContext = SerializeContext.enter()) {
-            return new CheckNodeParam(condition.toDTO(), serContext.getId(exit));
+            return new CheckNodeParam(condition.toDTO(), serContext.getStringId(exit));
         }
     }
 

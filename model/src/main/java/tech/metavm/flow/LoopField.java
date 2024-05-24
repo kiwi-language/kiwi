@@ -54,7 +54,7 @@ public class LoopField extends Entity implements LocalKey {
     public LoopFieldDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new LoopFieldDTO(
-                    serContext.getId(field),
+                    serContext.getStringId(field),
                     field.getName(),
                     field.getType().toExpression(serContext),
                     initialValue.toDTO(),

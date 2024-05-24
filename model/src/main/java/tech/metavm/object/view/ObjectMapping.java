@@ -186,7 +186,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
 
     public ObjectMappingDTO toDTO(SerializeContext serializeContext) {
         return new ObjectMappingDTO(
-                serializeContext.getId(this),
+                serializeContext.getStringId(this),
                 getName(),
                 getCode(),
                 getSourceType().toExpression(serializeContext, null),
@@ -219,9 +219,9 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     public MappingKey toKey() {
         try (var serContext = SerializeContext.enter()) {
             if(sourceKlass.isParameterized())
-                return new ParameterizedMappingKey((ParameterizedTypeKey) sourceType.toTypeKey(), serContext.getId(getEffectiveTemplate()));
+                return new ParameterizedMappingKey((ParameterizedTypeKey) sourceType.toTypeKey(), serContext.getStringId(getEffectiveTemplate()));
             else
-                return new DirectMappingKey(serContext.getEntityId(this));
+                return new DirectMappingKey(serContext.getId(this));
         }
     }
 

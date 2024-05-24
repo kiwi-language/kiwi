@@ -51,7 +51,7 @@ public class IndexScanNode extends NodeRT {
     @Override
     protected IndexScanNodeParam getParam(SerializeContext serializeContext) {
         return new IndexScanNodeParam(
-                serializeContext.getId(index),
+                serializeContext.getStringId(index),
                 from.toDTO(serializeContext),
                 to.toDTO(serializeContext)
         );

@@ -254,7 +254,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
     protected TypeDTO toDTO(TypeParam param) {
         try (var ser = SerializeContext.enter()) {
             return new TypeDTO(
-                    ser.getId(this),
+                    ser.getStringId(this),
                     getName(),
                     getCode(),
                     getCategory().code(),

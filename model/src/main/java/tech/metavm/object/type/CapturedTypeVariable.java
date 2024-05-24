@@ -89,9 +89,9 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Loa
     @Override
     public TypeDefDTO toDTO(SerializeContext serContext) {
         return new CapturedTypeVariableDTO(
-                serContext.getId(this),
+                serContext.getStringId(this),
                 uncertainType.toExpression(serContext, null),
-                serContext.getId(scope),
+                serContext.getStringId(scope),
                 scope.getCapturedTypeVariableIndex(this)
         );
     }
