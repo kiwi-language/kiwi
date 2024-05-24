@@ -29,7 +29,7 @@ public class InstanceOutput extends OutputStream {
     public void writeMessage(DurableInstance instance) {
         writeLong(instance.getVersion());
         writeLong(instance.getTreeId());
-        writeInt(instance.getNextNodeId());
+        writeLong(instance.getNextNodeId());
         writeRecord(instance);
     }
 

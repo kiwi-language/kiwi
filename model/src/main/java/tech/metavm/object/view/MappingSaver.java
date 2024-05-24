@@ -110,7 +110,7 @@ public class MappingSaver {
     private FieldMapping saveFieldMapping(FieldMappingDTO fieldMappingDTO, FieldsObjectMapping containingMapping) {
         var nestedMapping = NncUtils.get(fieldMappingDTO.nestedMappingId(), id -> mappingProvider.getObjectMapping(Id.parse(id)));
         var codeGenerator = nestedMapping != null ? new ObjectNestedMapping(nestedMapping.getRef()) :
-                new IdentityNestedMapping(entityRepository.getEntity(Field.class, Id.parse(fieldMappingDTO.targetFieldId())).getType());
+                new IdentityNestedMapping(FieldRef.create(fieldMappingDTO.targetFieldRef(), entityRepository).resolve().getType());
         var fieldMapping = containingMapping.findFieldMapping(Id.parse(fieldMappingDTO.id()));
         var sourceType = containingMapping.getSourceKlass();
         if (fieldMapping == null) {

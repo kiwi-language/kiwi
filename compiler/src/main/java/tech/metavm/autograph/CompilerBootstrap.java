@@ -16,14 +16,16 @@ public class CompilerBootstrap {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompilerBootstrap.class);
 
     private final CompilerInstanceContextFactory contextFactory;
-    private final StdAllocators stdAllocators;// = new StdAllocators(new DirectoryAllocatorStore("/not_exist"));
-    private final ColumnStore columnStore = new FileColumnStore("/not_exist");
-    private final TypeTagStore typeTagStore = new FileTypeTagStore("/not_exist");
+    private final StdAllocators stdAllocators;
+    private final ColumnStore columnStore;
+    private final TypeTagStore typeTagStore;
     private volatile boolean boot;
 
-    CompilerBootstrap(CompilerInstanceContextFactory contextFactory, AllocatorStore allocatorStore) {
+    CompilerBootstrap(CompilerInstanceContextFactory contextFactory, AllocatorStore allocatorStore, ColumnStore columnStore, TypeTagStore typeTagStore) {
         this.contextFactory = contextFactory;
         stdAllocators = new StdAllocators(allocatorStore);
+        this.columnStore = columnStore;
+        this.typeTagStore = typeTagStore;
     }
 
     public synchronized void boot() {

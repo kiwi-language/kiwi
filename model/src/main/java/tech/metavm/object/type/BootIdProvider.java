@@ -5,6 +5,7 @@ import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,10 @@ public class BootIdProvider implements EntityIdProvider {
 
     public Id getId(Object model) {
         return allocators.getId(model);
+    }
+
+    public @Nullable Long getNextNodeId(Object model) {
+        return allocators.getNextNodeId(model);
     }
 
 }

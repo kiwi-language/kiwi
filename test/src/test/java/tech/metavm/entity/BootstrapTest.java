@@ -7,6 +7,9 @@ import tech.metavm.event.MockEventQueue;
 import tech.metavm.object.instance.InstanceStore;
 import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.instance.cache.MockCache;
+import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.StructuralVisitor;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -123,6 +126,35 @@ public class BootstrapTest extends TestCase {
             var bootstrap = newBootstrap();
             bootstrap.boot();
             LOGGER.info(profiler.finish().toString());
+        }
+    }
+
+    public void testBootWithExistingIdFiles() {
+        var bootstrap1 = newBootstrap();
+        bootstrap1.boot();
+        TestUtils.doInTransactionWithoutResult(() -> bootstrap1.save(true));
+        instanceStore = new MemInstanceStore();
+        idProvider = new MockIdProvider();
+        stdIdStore = new MemoryStdIdStore();
+        var bootstrap2 = newBootstrap();
+        bootstrap2.boot();
+        TestUtils.doInTransactionWithoutResult(() -> bootstrap2.save(true));
+        for (var instance : ModelDefRegistry.getDefContext().getInstanceContext()) {
+            if (!instance.isEphemeral() && instance.isRoot()) {
+                var ref = new Object() {
+                    long maxNodeId;
+                };
+                instance.accept(new StructuralVisitor() {
+
+                    @Override
+                    public Void visitDurableInstance(DurableInstance instance) {
+                        if (instance.tryGetId() instanceof PhysicalId id)
+                            ref.maxNodeId = Math.max(id.getNodeId(), ref.maxNodeId);
+                        return super.visitDurableInstance(instance);
+                    }
+                });
+                Assert.assertEquals(instance.getNextNodeId(), ref.maxNodeId + 1L);
+            }
         }
     }
 

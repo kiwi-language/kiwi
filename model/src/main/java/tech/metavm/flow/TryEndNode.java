@@ -42,9 +42,9 @@ public class TryEndNode extends ChildTypeNode {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var fields = new ArrayList<TryEndField>();
         Map<NodeRT, ParsingContext> raiseParsingContexts = new HashMap<>();
-        for (TryEndFieldDTO mergeFieldDTO : mergeFieldDTOs) {
+        for (TryEndFieldDTO fieldDTO : mergeFieldDTOs) {
             List<TryEndValue> values = new ArrayList<>();
-            for (TryEndValueDTO valueDTO : mergeFieldDTO.values()) {
+            for (TryEndValueDTO valueDTO : fieldDTO.values()) {
                 var raiseNode = context.getNode(Id.parse(valueDTO.raiseNodeId()));
                 var raiseParsingContext = raiseParsingContexts.computeIfAbsent(raiseNode, k ->
                         FlowParsingContext.create(raiseNode.getScope(), raiseNode, context));
@@ -53,9 +53,9 @@ public class TryEndNode extends ChildTypeNode {
                 );
             }
             fields.add(new TryEndField(
-                    context.getField(Id.parse(mergeFieldDTO.fieldId())),
+                    context.getField(Id.parse(fieldDTO.fieldId())),
                     values,
-                    ValueFactory.create(mergeFieldDTO.defaultValue(), parsingContext),
+                    ValueFactory.create(fieldDTO.defaultValue(), parsingContext),
                     node
             ));
         }

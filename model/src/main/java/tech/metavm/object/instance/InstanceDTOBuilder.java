@@ -44,7 +44,7 @@ public class InstanceDTOBuilder {
             } else {
                 var array = new ListNative(instance).toArray();
                 InstanceDTO instanceDTO = new InstanceDTO(
-                        instance.getInstanceIdString(),
+                        instance.getStringIdForDTO(),
                         instance.getType().toExpression(serContext),
                         instance.getType().getName(),
                         instance.getTitle(),
@@ -68,7 +68,7 @@ public class InstanceDTOBuilder {
                 return instance.toFieldValueDTO();
             } else {
                 InstanceDTO instanceDTO = new InstanceDTO(
-                        instance.getInstanceIdString(),
+                        instance.getStringIdForDTO(),
                         instance.getType().toExpression(serContext),
                         instance.getType().getName(),
                         instance.getTitle(),
@@ -97,7 +97,7 @@ public class InstanceDTOBuilder {
         } else {
             try (var serContext = SerializeContext.enter()) {
                 InstanceDTO instanceDTO = new InstanceDTO(
-                        array.getInstanceIdString(),
+                        array.getStringIdForDTO(),
                         array.getType().toExpression(serContext),
                         array.getType().getName(),
                         array.getTitle(),

@@ -138,8 +138,7 @@ public class Compiler {
              var ignored = ContextUtil.getProfiler().enter("deploy")) {
             serContext.includingCode(true)
                     .includeNodeOutputType(false)
-                    .includingValueType(false)
-                    .writeParameterizedTypeAsPTypeDTO(true);
+                    .includingValueType(false);
             for (var typeDef : generatedTypeDefs) {
                 if(typeDef instanceof Klass klass) {
                     typeResolver.ensureCodeGenerated(klass);

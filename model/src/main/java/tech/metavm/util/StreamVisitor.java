@@ -42,7 +42,7 @@ public class StreamVisitor {
     public void visitMessage() {
         input.readLong();
         readTreeId();
-        input.readInt();
+        input.readLong();
         visit();
     }
 

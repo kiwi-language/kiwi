@@ -1,5 +1,7 @@
 package tech.metavm.object.instance;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.EntityChange;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
@@ -21,6 +23,8 @@ import static tech.metavm.entity.DifferenceAttributeKey.NEW_INDEX_ITEMS;
 import static tech.metavm.entity.DifferenceAttributeKey.OLD_INDEX_ITEMS;
 
 public class IndexConstraintPlugin implements ContextPlugin {
+
+    public static final Logger logger = LoggerFactory.getLogger(IndexConstraintPlugin.class);
 
     public static final int BATCH_SIZE = 2000;
 

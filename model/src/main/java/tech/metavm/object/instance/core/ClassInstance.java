@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.ReadWriteArray;
-import tech.metavm.entity.SerializeContext;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.Method;
@@ -248,11 +247,10 @@ public class ClassInstance extends DurableInstance {
     @Override
     @NoProxy
     public void setType(Type type) {
-        if(type instanceof ClassType classType) {
+        if (type instanceof ClassType classType) {
             klass = classType.resolve();
             super.setType(type);
-        }
-        else
+        } else
             throw new IllegalArgumentException(type + " is not a class type");
     }
 
@@ -530,12 +528,10 @@ public class ClassInstance extends DurableInstance {
                     toDTO()
             );
         } else {
-            try (var serContext = SerializeContext.enter()) {
-                return new ReferenceFieldValue(
-                        getTitle(),
-                        Objects.requireNonNull(getInstanceIdString(), "Id required")
-                );
-            }
+            return new ReferenceFieldValue(
+                    getTitle(),
+                    Objects.requireNonNull(this.getStringIdForDTO(), "Id required")
+            );
         }
     }
 

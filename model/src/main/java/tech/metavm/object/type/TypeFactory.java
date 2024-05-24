@@ -97,7 +97,7 @@ public abstract class TypeFactory {
                     type.setSuperType(NncUtils.get(param.superType(), t -> (ClassType) TypeParser.parse(t, batch)));
                 type.setInterfaces(NncUtils.map(param.interfaces(), t -> (ClassType) TypeParser.parse(t, batch)));
                 if (!type.isTemplate())
-                    type.setTypeArguments(NncUtils.map(param.typeArgumentIds(), id -> context.getType(Id.parse(id))));
+                    type.setTypeArguments(NncUtils.map(param.typeArguments(), t -> TypeParser.parse(t, batch)));
                 if (param.dependencyIds() != null)
                     type.setDependencies(NncUtils.map(param.dependencyIds(), id -> context.getKlass(Id.parse(id))));
                 type.setStage(ResolutionStage.SIGNATURE);

@@ -4,11 +4,13 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.core.StringInstance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Constants;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -36,13 +38,14 @@ public class ConstantExpression extends Expression {
         else if(value instanceof PrimitiveInstance primitiveInstance) {
             return primitiveInstance.getValue() + "";
         }
-        else {
+        else if(value instanceof DurableInstance d){
             if(relaxedCheck)
-                return Constants.CONSTANT_ID_PREFIX + NncUtils.orElse(value.getInstanceIdString(), "<uninitializedId>");
+                return Constants.CONSTANT_ID_PREFIX + NncUtils.orElse(d.getStringId(), "<uninitializedId>");
             else
-                return Constants.CONSTANT_ID_PREFIX + NncUtils.requireNonNull(value.getInstanceIdString());
-
+                return Constants.CONSTANT_ID_PREFIX + NncUtils.requireNonNull(d.getStringId());
         }
+        else
+            throw new InternalException("Invalid instance " + value);
     }
 
     @Override

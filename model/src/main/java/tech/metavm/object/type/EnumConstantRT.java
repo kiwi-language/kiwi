@@ -81,7 +81,7 @@ public class EnumConstantRT {
     }
 
     public String getInstanceIdString() {
-        return instance.getInstanceIdString();
+        return instance.getStringId();
     }
 
     public FieldValue toFieldValue(IInstanceContext context) {

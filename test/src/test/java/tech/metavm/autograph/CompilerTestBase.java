@@ -14,9 +14,7 @@ import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.type.AllocatorStore;
-import tech.metavm.object.type.ClassKind;
-import tech.metavm.object.type.TypeManager;
+import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeQuery;
 import tech.metavm.object.version.VersionManager;
@@ -46,6 +44,8 @@ public abstract class CompilerTestBase extends TestCase  {
     protected TypeManager typeManager;
     protected InstanceManager instanceManager;
     protected AllocatorStore allocatorStore;
+    protected ColumnStore columnStore;
+    protected TypeTagStore typeTagStore;
     protected FlowExecutionService flowExecutionService;
     protected FlowManager flowManager;
     protected ApplicationManager applicationManager;
@@ -65,6 +65,8 @@ public abstract class CompilerTestBase extends TestCase  {
             return BootstrapUtils.bootstrap();
         });
         allocatorStore = bootResult.allocatorStore();
+        columnStore = bootResult.columnStore();
+        typeTagStore = bootResult.typeTagStore();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         typeManager = new TypeManager(
                 bootResult.entityContextFactory(),
@@ -104,6 +106,8 @@ public abstract class CompilerTestBase extends TestCase  {
         typeManager = null;
         instanceManager = null;
         allocatorStore = null;
+        columnStore = null;
+        typeTagStore = null;
         flowExecutionService = null;
         flowManager = null;
         applicationManager = null;
@@ -176,7 +180,7 @@ public abstract class CompilerTestBase extends TestCase  {
 
     protected List<String> compile(String sourceRoot) {
         ContextUtil.resetProfiler();
-        return new Main(HOME, sourceRoot, AUTH_CONFIG, typeClient, allocatorStore).run();
+        return new Main(HOME, sourceRoot, AUTH_CONFIG, typeClient, allocatorStore, columnStore, typeTagStore).run();
     }
 
 

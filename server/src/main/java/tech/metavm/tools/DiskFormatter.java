@@ -159,22 +159,23 @@ public class DiskFormatter {
     }
 
     private static void clearColumnFile() {
-        String columnFile = Constants.RESOURCE_CP_ROOT + "/column/columns.properties";
+        String file = Constants.RESOURCE_CP_ROOT + "/column/columns.properties";
         try {
-            new PrintWriter(columnFile).close();
+            new PrintWriter(file).close();
         } catch (IOException e) {
             throw new RuntimeException("Fail to clear column file", e);
         }
     }
 
     private static void clearTypeTagsFile() {
-        String columnFile = Constants.RESOURCE_CP_ROOT + "/typeTags/typeTags.properties";
+        String file = Constants.RESOURCE_CP_ROOT + "/typeTags/typeTags.properties";
         try {
-            new PrintWriter(columnFile).close();
+            new PrintWriter(file).close();
         } catch (IOException e) {
             throw new RuntimeException("Fail to clear type tags file", e);
         }
     }
+
 
     public static void main(String[] args) {
         clearEs();

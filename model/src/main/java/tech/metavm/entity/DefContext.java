@@ -7,10 +7,7 @@ import tech.metavm.flow.Function;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.InstanceFactory;
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.*;
 import tech.metavm.object.view.Mapping;
@@ -413,7 +410,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         for (Object entity : entities) {
             var instance = getInstance(entity);
             var id = instance.tryGetId();
-            if (id != null) {
+            if (id instanceof PhysicalId) {
                 var modeId = identityContext.getModelId(entity);
                 stdIds.put(modeId.qualifiedName(), id);
             }

@@ -56,7 +56,7 @@ public class DatabaseStdIdStore implements StdIdStore {
         output.writeInt(ids.size());
         for (var entry : ids.entrySet()) {
             output.writeString(entry.getKey());
-            output.writeId((PhysicalId) entry.getValue());
+            output.writeId(entry.getValue());
         }
         return new FilePO(FILE_NAME, bout.toByteArray());
     }

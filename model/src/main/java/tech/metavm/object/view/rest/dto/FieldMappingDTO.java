@@ -1,6 +1,7 @@
 package tech.metavm.object.view.rest.dto;
 
 import tech.metavm.common.BaseDTO;
+import tech.metavm.object.type.rest.dto.FieldRefDTO;
 
 import javax.annotation.Nullable;
 
@@ -8,11 +9,11 @@ public record FieldMappingDTO(
         String id,
         String name,
         @Nullable String code,
-        String typeId,
+        String type,
         boolean isChild,
         boolean readonly,
         @Nullable String sourceFieldId,
-        String targetFieldId,
+        FieldRefDTO targetFieldRef,
         @Nullable String nestedMappingId,
         FieldMappingParam param
 ) implements BaseDTO {

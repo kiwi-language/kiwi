@@ -37,9 +37,9 @@ public class SearchBuilder {
                 "(" + APPLICATION_ID + ":" + appIdStr + " OR " + APPLICATION_ID + ":\\-1)" :
                 "(" + APPLICATION_ID + ":" + appIdStr + ")";
         if (!query.types().isEmpty()) {
-            String typeIdCondition = "(" +
-                    NncUtils.join(query.types(), id -> TYPE + ":" + id, " OR ") + ")";
-            queryString += " AND " + typeIdCondition;
+            String typeCond = "(" +
+                    NncUtils.join(query.types(), t -> TYPE + ":\"" + t + "\"", " OR ") + ")";
+            queryString += " AND " + typeCond;
         }
         if (query.condition() != null && !Expressions.isConstantTrue(query.condition())) {
             queryString += " AND " + parse(ExpressionSimplifier.simplify(query.condition()));

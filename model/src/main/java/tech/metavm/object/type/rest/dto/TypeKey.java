@@ -92,9 +92,9 @@ public interface TypeKey extends TypeOrTypeKey {
                     fromTypeContext(ctx.type(0))
             );
         }
-        if(ctx.BITAND() != null)
+        if(!ctx.BITAND().isEmpty())
             return new IntersectionTypeKey(NncUtils.mapUnique(ctx.type(), TypeKey::fromTypeContext));
-        if(ctx.BITOR() != null)
+        if(!ctx.BITOR().isEmpty())
             return new UnionTypeKey(NncUtils.mapUnique(ctx.type(), TypeKey::fromTypeContext));
         if(ctx.NEVER() != null)
             return new NeverTypeKey();

@@ -18,8 +18,6 @@ import java.util.function.Function;
 @EntityType("数组类型")
 public class ArrayType extends CompositeType {
 
-    public static final IndexDef<ArrayType> ELEMENT_TYPE_IDX = IndexDef.create(ArrayType.class, "elementType");
-
     @ChildEntity("元素类型")
     private final Type elementType;
 

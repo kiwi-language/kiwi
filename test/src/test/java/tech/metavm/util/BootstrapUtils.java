@@ -126,7 +126,9 @@ public class BootstrapUtils {
                     state.regionMapper(),
                     instanceStore,
                     instanceSearchService,
-                    state.allocatorStore()
+                    state.allocatorStore(),
+                    state.columnStore(),
+                    state.typeTagStore()
             );
         } else {
             NativeFunctions.setEmailSender(MockEmailSender.INSTANCE);
@@ -178,7 +180,9 @@ public class BootstrapUtils {
                     regionMapper,
                     instanceStore,
                     instanceSearchService,
-                    allocatorStore
+                    allocatorStore,
+                    columnStore,
+                    typeTagStore
             );
         }
     }

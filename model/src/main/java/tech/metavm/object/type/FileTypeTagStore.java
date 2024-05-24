@@ -34,8 +34,8 @@ public class FileTypeTagStore extends MemTypeTagStore {
     @Override
     public void save() {
         var properties = new Properties();
-        properties.put(NEXT_TYPE_TAG, nextTypeTag);
-        properties.putAll(map);
+        properties.put(NEXT_TYPE_TAG, Integer.toString(nextTypeTag));
+        map.forEach((name, tag) -> properties.put(name, tag.toString()));
         String filePath = cpRoot + FILE;
         try {
             properties.store(new FileOutputStream(filePath), null);

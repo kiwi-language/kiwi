@@ -1,6 +1,7 @@
 package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.entity.ReadonlyArray;
@@ -10,10 +11,7 @@ import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeParser;
 
 import java.lang.reflect.Type;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 public class StdAllocator {
 
@@ -26,6 +24,7 @@ public class StdAllocator {
     private long nextId;
     private final Map<String, Id> code2id = new LinkedHashMap<>();
     private final Map<Id, String> id2code = new LinkedHashMap<>();
+    private final Map<String, Long> code2nextNodeId = new HashMap<>();
     private final Type javaType;
 
     public StdAllocator(AllocatorStore store, String fileName, Type javaType, long base) {
@@ -41,20 +40,34 @@ public class StdAllocator {
         nextId = Long.parseLong(properties.getProperty(ID_BASE_PROP_KEY));
         javaType = TypeParser.parse(properties.getProperty(TYPE_CODE_PROP_KEY));
         this.fileName = fileName;
-        for (String propertyName : properties.stringPropertyNames()) {
-            if(!propertyName.startsWith(SYSTEM_PROP_PREFIX)) {
-                var id = Id.parse(properties.getProperty(propertyName));
-                putId(propertyName, id);
-                var physicalId = id.getTreeId();
-                if(physicalId >= nextId) {
-                    nextId = physicalId + 1;
+        for (String code : properties.stringPropertyNames()) {
+            if(!code.startsWith(SYSTEM_PROP_PREFIX)) {
+                var idStr = properties.getProperty(code);
+                var idx = idStr.indexOf(':');
+                Id id;
+                Long nextNodeId;
+                if(idx == -1) {
+                    id = Id.parse(idStr);
+                    nextNodeId = null;
                 }
+                else {
+                    id = Id.parse(idStr.substring(0, idx));
+                    nextNodeId = Long.parseLong(idStr.substring(idx + 1));
+                }
+                putId(code, id, nextNodeId);
+                var physicalId = id.getTreeId();
+                if(physicalId >= nextId)
+                    nextId = physicalId + 1;
             }
         }
     }
 
     public Id getId(String code) {
         return code2id.get(code);
+    }
+
+    public @Nullable Long getNextNodeId(String code) {
+        return code2nextNodeId.get(code);
     }
 
     public void buildIdMap(Map<String, Id> ids) {
@@ -77,7 +90,11 @@ public class StdAllocator {
         Properties properties = new Properties();
         properties.put(ID_BASE_PROP_KEY, Long.toString(nextId));
         properties.put(TYPE_CODE_PROP_KEY, javaType.getTypeName());
-        code2id.forEach((code, id) -> properties.put(code, id.toString()));
+        code2id.forEach((code, id) -> {
+            var nextNodeId = code2nextNodeId.get(code);
+            var idStr = nextNodeId == null ? id.toString() : id.toString() + ":" + nextNodeId;
+            properties.put(code, idStr);
+        });
         store.save(fileName, properties);
     }
 
@@ -91,9 +108,11 @@ public class StdAllocator {
         return fileName;
     }
 
-    public void putId(@NotNull String code, @NotNull Id id) {
+    public void putId(@NotNull String code, @NotNull Id id, @Nullable Long nextNodeId) {
         code2id.put(code, id);
         id2code.put(id, code);
+        if(nextNodeId != null)
+            code2nextNodeId.put(code, nextNodeId);
     }
 
     public boolean isReadWriteArray() {

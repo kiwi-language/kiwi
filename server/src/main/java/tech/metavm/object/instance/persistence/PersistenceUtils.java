@@ -12,6 +12,22 @@ import static java.util.Objects.requireNonNull;
 
 public class PersistenceUtils {
 
+    // Used for debug. DO NOT REMOVE!!!
+    @SuppressWarnings("unused")
+    public static List<IndexEntryPO> getIndexEntries(ClassInstance instance, long appId) {
+        var result = new ArrayList<IndexEntryPO>();
+        forEachIndexEntries(instance, appId, result::add, e -> {});
+        return result;
+    }
+
+    // Used for debug. DO NOT REMOVE!!!
+    @SuppressWarnings("unused")
+    public static List<IndexEntryPO> getIndexEntries(Index index, ClassInstance instance, long appId) {
+        var result = new ArrayList<IndexEntryPO>();
+        forEachIndexEntries(index, instance, appId, result::add, e -> {});
+        return result;
+    }
+
     public static void forEachIndexEntries(ClassInstance instance, long appId, Consumer<IndexEntryPO> action,
                                            Consumer<IndexEntryPO> actionForUnique) {
         instance.ensureLoaded();

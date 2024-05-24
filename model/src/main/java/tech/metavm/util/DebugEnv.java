@@ -2,6 +2,7 @@ package tech.metavm.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.object.instance.core.DurableInstance;
 
 public class DebugEnv {
 
@@ -22,6 +23,8 @@ public class DebugEnv {
     public static volatile boolean flag = false;
 
     public static volatile boolean saveCompileResult = false;
+
+    public static volatile DurableInstance instance;
 
     public static boolean gettingBufferedTrees;
 

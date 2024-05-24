@@ -6,7 +6,7 @@ import tech.metavm.object.instance.rest.TreeDTO;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-public record Tree(long id, long version, int nextNodeId, byte[] data) implements Comparable<Tree> {
+public record Tree(long id, long version, long nextNodeId, byte[] data) implements Comparable<Tree> {
 
     public static Tree fromDTO(TreeDTO treeDTO) {
         return new Tree(treeDTO.id(), treeDTO.version(), treeDTO.nextNodeId(), treeDTO.bytes());

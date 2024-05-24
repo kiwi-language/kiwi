@@ -97,7 +97,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 var materialViewType = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(materialDefaultMapping.targetType()), false)).type();
                 // load material view object
                 var materialView = instanceManager.get(
-                        new DefaultViewId(false, new DirectMappingKey(materialDefaultMapping.id()), Id.parse(materialId)).toString(),
+                        new DefaultViewId(false, new DirectMappingKey(Id.parse(materialDefaultMapping.id())), Id.parse(materialId)).toString(),
                         1
                 ).instance();
                 // save material view

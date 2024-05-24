@@ -6,6 +6,7 @@ import tech.metavm.flow.rest.CopyNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.InstanceCopier;
+import tech.metavm.object.type.FieldRef;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -21,7 +22,7 @@ public class CopyNode extends NodeRT {
         if (param.parentRef() != null) {
             parentRef = new ParentRef(
                     ValueFactory.create(param.parentRef().parent(), parsingContext),
-                    NncUtils.get(param.parentRef().fieldId(), id -> context.getField(Id.parse(id)))
+                    NncUtils.get(param.parentRef().fieldRef(), ref -> FieldRef.create(ref, context))
             );
         } else
             parentRef = null;

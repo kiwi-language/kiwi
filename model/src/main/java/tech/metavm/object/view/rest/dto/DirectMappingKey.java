@@ -7,7 +7,7 @@ import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.InstanceOutput;
 
 public record DirectMappingKey(
-        String mappingId
+        Id mappingId
 ) implements MappingKey {
 
     @Override
@@ -17,12 +17,12 @@ public record DirectMappingKey(
 
     @Override
     public ObjectMapping toMapping(MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
-        return mappingProvider.getObjectMapping(Id.parse(mappingId));
+        return mappingProvider.getObjectMapping(mappingId);
     }
 
     @Override
     public void write(InstanceOutput output) {
         output.write(1);
-        output.writeId(Id.parse(mappingId));
+        output.writeId(mappingId);
     }
 }

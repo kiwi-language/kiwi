@@ -35,11 +35,12 @@ public class TypeManagerTest extends TestCase {
     @SuppressWarnings("FieldCanBeLocal")
     private MemInstanceStore instanceStore;
     private InstanceManager instanceManager;
+    private EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
-        EntityContextFactory entityContextFactory = bootResult.entityContextFactory();
+        entityContextFactory = bootResult.entityContextFactory();
         instanceStore = bootResult.instanceStore();
         instanceSearchService = bootResult.instanceSearchService();
         var transactionOperations = new MockTransactionOperations();
@@ -67,6 +68,7 @@ public class TypeManagerTest extends TestCase {
         instanceSearchService = null;
         instanceStore = null;
         instanceManager = null;
+        entityContextFactory = null;
     }
 
     public void test() {

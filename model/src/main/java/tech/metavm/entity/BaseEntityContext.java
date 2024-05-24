@@ -65,7 +65,14 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             var resolvedMapper = getDefContext().tryGetMapper(instance.getId().getTypeTag(this, this));
             if (resolvedMapper == null || resolvedMapper instanceof DirectDef<?>)
                 return entityClass.cast(instance);
-            mapper = resolvedMapper.as(entityClass);
+            try {
+                mapper = resolvedMapper.as(entityClass);
+            }
+            catch (ClassCastException e) {
+                logger.info("{}", instance.getId().getTypeTag(this, this));
+                logger.info(instance.getText());
+                throw e;
+            }
         }
         if (instance.getContext() == instanceContext)
             return createEntity(instance, mapper);

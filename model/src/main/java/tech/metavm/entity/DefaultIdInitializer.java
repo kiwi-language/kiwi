@@ -1,8 +1,12 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.PhysicalId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.type.*;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.StructuralVisitor;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.TypeDef;
 import tech.metavm.util.DebugEnv;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.Instances;
@@ -17,12 +21,32 @@ public class DefaultIdInitializer implements IdInitializer {
 
     private final EntityIdProvider idProvider;
 
+    public static final Logger logger = LoggerFactory.getLogger(DefaultIdInitializer.class);
+
     public DefaultIdInitializer(EntityIdProvider idProvider) {
         this.idProvider = idProvider;
     }
 
     @Override
     public void initializeIds(long appId, Collection<? extends DurableInstance> instancesToInitId) {
+        if (DebugEnv.instance != null) {
+            logger.info("treeId: {}, next nodeId: {}",
+                    DebugEnv.instance.isIdInitialized() ? DebugEnv.instance.getId().getTreeId() : null,
+                    DebugEnv.instance.getRoot().getNextNodeId());
+            DebugEnv.instance.accept(new StructuralVisitor() {
+                @Override
+                public Void visitDurableInstance(DurableInstance instance) {
+                    if (instance.isIdInitialized()) {
+                        logger.info("child instance: {}, id: {}, treeId: {}, nodeId: {}",
+                                Instances.getInstancePath(instance),
+                                instance.getId(),
+                                instance.getId().getTreeId(),
+                                instance.getId().getNodeId());
+                    }
+                    return super.visitDurableInstance(instance);
+                }
+            });
+        }
         var classTypeType = ModelDefRegistry.getType(ClassType.class);
         var countMap = Map.of(classTypeType, (int) NncUtils.count(instancesToInitId, DurableInstance::isRoot));
         var ids = new LinkedList<>(idProvider.allocate(appId, countMap).get(classTypeType));

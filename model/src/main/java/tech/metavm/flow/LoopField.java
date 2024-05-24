@@ -56,7 +56,7 @@ public class LoopField extends Entity implements LocalKey {
             return new LoopFieldDTO(
                     serContext.getId(field),
                     field.getName(),
-                    serContext.getId(field.getType()),
+                    field.getType().toExpression(serContext),
                     initialValue.toDTO(),
                     updatedValue.toDTO()
             );

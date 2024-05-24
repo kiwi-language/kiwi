@@ -4,7 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.FieldRef;
+import tech.metavm.object.type.Type;
 import tech.metavm.object.view.rest.dto.FieldMappingDTO;
 import tech.metavm.object.view.rest.dto.FieldMappingParam;
 import tech.metavm.util.NncUtils;
@@ -74,11 +76,11 @@ public abstract class FieldMapping extends Element {
                 serializeContext.getId(this),
                 getName(),
                 getCode(),
-                serializeContext.getId(getType()),
+                getType().toExpression(),
                 isChild(),
                 isReadonly(),
                 NncUtils.get(getSourceField(), serializeContext::getId),
-                serializeContext.getId(targetFieldRef),
+                targetFieldRef.toDTO(serializeContext),
                 nestedMapping instanceof ObjectNestedMapping classCodeGenerator ? classCodeGenerator.getMapping().getStringId() : null,
                 getParam(serializeContext)
         );
@@ -132,7 +134,7 @@ public abstract class FieldMapping extends Element {
     }
 
     public void setNestedMapping(@Nullable NestedMapping nestedMapping) {
-        if(Objects.equals(nestedMapping, this.nestedMapping))
+        if (Objects.equals(nestedMapping, this.nestedMapping))
             return;
         this.nestedMapping = NncUtils.get(nestedMapping, c -> addChild(c, "nestedMapping"));
         resetTargetFieldType();

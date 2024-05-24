@@ -8,10 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.object.instance.MetaVersionPlugin;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.instance.core.InstanceContext;
-import tech.metavm.object.type.BootIdProvider;
-import tech.metavm.object.type.ColumnStore;
-import tech.metavm.object.type.StdAllocators;
-import tech.metavm.object.type.TypeTagStore;
+import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
@@ -94,6 +91,8 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
             if (defContext.isFinished())
                 return;
             try (var tempContext = newContext(ROOT_APP_ID)) {
+//                var klass = defContext.getKlass(Constraint.class);
+//                DebugEnv.instance = defContext.getInstance(klass.getDefaultMapping());
                 var stdInstanceContext = (InstanceContext) defContext.getInstanceContext();
                 var metaVersionPlugin = stdInstanceContext.getPlugin(MetaVersionPlugin.class);
                 var bridge = new EntityInstanceContextBridge();
@@ -102,12 +101,18 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
                 NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
                 defContext.finish();
                 defContext.getIdentityMap().forEach((object, javaConstruct) -> {
-                    if (EntityUtils.isDurable(object))
-                        stdAllocators.putId(javaConstruct, defContext.getInstance(object).getId());
+                    if (EntityUtils.isDurable(object)) {
+                        var instance = defContext.getInstance(object);
+                        if(instance.isRoot())
+                            stdAllocators.putId(javaConstruct, instance.getId(), instance.getNextNodeId());
+                        else
+                            stdAllocators.putId(javaConstruct, instance.getId());
+                    }
                 });
                 if (saveIds) {
                     stdAllocators.save();
                     columnStore.save();
+                    typeTagStore.save();
                 }
                 stdIdStore.save(defContext.getStdIdMap());
                 ensureIdInitialized();

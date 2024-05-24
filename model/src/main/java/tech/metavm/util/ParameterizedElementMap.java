@@ -1,7 +1,5 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.EntityUtils;
-
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;

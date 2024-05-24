@@ -1,6 +1,7 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.FieldRefDTO;
 
 import java.util.Objects;
@@ -8,10 +9,10 @@ import java.util.Objects;
 @EntityType("FieldRef")
 public class FieldRef extends ValueElement implements PropertyRef {
 
-    public static FieldRef create(FieldRefDTO fieldRefDTO, IEntityContext context) {
+    public static FieldRef create(FieldRefDTO fieldRefDTO, EntityProvider entityProvider) {
         return new FieldRef(
-                (ClassType) TypeParser.parse(fieldRefDTO.declaringType(), context),
-                context.getField(fieldRefDTO.rawFieldId())
+                (ClassType) TypeParser.parse(fieldRefDTO.declaringType(), entityProvider),
+                entityProvider.getEntity(Field.class, Id.parse(fieldRefDTO.rawFieldId()))
         );
     }
 

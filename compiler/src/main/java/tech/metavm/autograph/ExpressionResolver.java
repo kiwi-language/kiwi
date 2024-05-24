@@ -755,7 +755,7 @@ public class ExpressionResolver {
         NncUtils.requireTrue(assignment instanceof NodeExpression);
         var node = ((NodeExpression) assignment).getNode();
         if (node instanceof NewNode newNode) {
-            newNode.setParentRef(new ParentRef(Values.expression(self), field));
+            newNode.setParentRef(new ParentRef(Values.expression(self), NncUtils.get(field, Field::getRef)));
         } else {
             throw new InternalException(
                     String.format("Only new objects are allowed to be assigned to a child. field: %s",

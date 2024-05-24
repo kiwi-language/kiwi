@@ -7,7 +7,6 @@ import tech.metavm.flow.rest.IndexSelectFirstNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Index;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;

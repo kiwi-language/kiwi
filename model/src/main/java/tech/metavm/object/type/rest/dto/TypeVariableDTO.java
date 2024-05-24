@@ -11,4 +11,8 @@ public record TypeVariableDTO(
         List<String> bounds
 ) implements TypeDefDTO {
 
+    @Override
+    public int getDefKind() {
+        return 2;
+    }
 }

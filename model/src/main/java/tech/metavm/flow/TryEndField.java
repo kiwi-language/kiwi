@@ -60,7 +60,7 @@ public class TryEndField extends Entity implements LocalKey {
             return new TryEndFieldDTO(
                     field.getName(),
                     serContext.getId(field),
-                    serContext.getId(field.getType()),
+                    field.getType().toExpression(serContext),
                     NncUtils.map(values, TryEndValue::toDTO),
                     defaultValue.toDTO()
             );

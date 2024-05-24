@@ -7,7 +7,7 @@ public record FlowSummaryDTO(
     String name,
     String typeId,
     List<ParameterDTO> parameters,
-    String returnTypeId,
+    String returnType,
     boolean inputRequired,
     boolean isConstructor,
     int state

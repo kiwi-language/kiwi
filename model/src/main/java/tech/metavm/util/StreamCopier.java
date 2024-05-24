@@ -23,7 +23,7 @@ public class StreamCopier extends StreamVisitor {
     public void visitMessage() {
         output.writeLong(readLong());
         output.writeLong(readTreeId());
-        output.writeInt(readInt());
+        output.writeLong(readLong());
         visit();
     }
 

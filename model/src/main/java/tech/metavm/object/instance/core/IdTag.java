@@ -7,6 +7,7 @@ public enum IdTag {
     NULL(0),
     PHYSICAL(1),
     TAGGED_PHYSICAL(2),
+    TYPED_PHYSICAL(3),
     TMP(19),
     DEFAULT_VIEW(11),
     CHILD_VIEW(13),

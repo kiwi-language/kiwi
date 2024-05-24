@@ -205,7 +205,7 @@ public class IndexEntryPO implements Comparable<IndexEntryPO> {
 
     @Override
     public String toString() {
-        return "{\"appId\": " + appId + ", \"instanceId\": \"" + Id.fromBytes(instanceId) + "\", \"key\": " + key + "}";
+        return "{\"appId\": " + appId + ", \"instanceId\": \"" + EncodingUtils.bytesToHex(instanceId) + "\", \"key\": " + key + "}";
     }
 
     public IndexEntryPO copy() {

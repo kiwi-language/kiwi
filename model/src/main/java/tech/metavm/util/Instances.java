@@ -4,6 +4,7 @@ import tech.metavm.entity.*;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.core.StructuralVisitor;
 import tech.metavm.object.type.*;
 import tech.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 
@@ -165,6 +166,19 @@ public class Instances {
             return EntityUtils.getEntityDesc(d.getMappedEntity());
         else
             return instance.toString();
+    }
+
+    public static List<Instance> filterInTree(Instance instance, Predicate<Instance> predicate) {
+        List<Instance> result = new ArrayList<>();
+        instance.accept(new StructuralVisitor() {
+            @Override
+            public Void visitInstance(Instance instance) {
+                if(predicate.test(instance))
+                    result.add(instance);
+                return super.visitInstance(instance);
+            }
+        });
+        return result;
     }
 
     public static String getInstancePath(Instance instance) {

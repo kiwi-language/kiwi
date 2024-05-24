@@ -12,6 +12,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
@@ -63,11 +64,15 @@ public class StdAllocators {
     }
 
     public void putId(Object object, Id id) {
+        putId(object, id, null);
+    }
+
+    public void putId(Object object, Id id, @Nullable Long nextNodeId) {
         switch (object) {
-            case java.lang.reflect.Field field -> putId0(Field.class, getFieldQualifiedName(field), id);
-            case Type type -> putId0(Klass.class, getTypeCode(type), id);
-            case Enum<?> enumConstant -> putId0(ReflectionUtils.getEnumClass(enumConstant), enumConstant.name(), id);
-            case ModelIdentity modelIdentity -> putId0(modelIdentity.type(), modelIdentity.name(), id);
+            case java.lang.reflect.Field field -> putId0(Field.class, getFieldQualifiedName(field), id, nextNodeId);
+            case Type type -> putId0(Klass.class, getTypeCode(type), id, nextNodeId);
+            case Enum<?> enumConstant -> putId0(ReflectionUtils.getEnumClass(enumConstant), enumConstant.name(), id, nextNodeId);
+            case ModelIdentity modelIdentity -> putId0(modelIdentity.type(), modelIdentity.name(), id, nextNodeId);
             case null, default ->
                     throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
         }
@@ -78,12 +83,11 @@ public class StdAllocators {
     }
 
     private Id getId0(Type javaType, String entityCode) {
-        StdAllocator allocator = getAllocator(javaType);
-        return allocator.getId(entityCode);
+        return getAllocator(javaType).getId(entityCode);
     }
 
-    private void putId0(Type javaType, String entityCode, Id id) {
-        allocatorMap.get(javaType).putId(entityCode, id);
+    private void putId0(Type javaType, String entityCode, Id id, @Nullable Long nextNodeId) {
+        allocatorMap.get(javaType).putId(entityCode, id, nextNodeId);
     }
 
     public TypeId getTypeId(Id id) {
@@ -190,4 +194,10 @@ public class StdAllocators {
         return ids;
     }
 
+    public @Nullable Long getNextNodeId(Object entity) {
+        if(entity instanceof ModelIdentity modelIdentity)
+            return getAllocator(modelIdentity.type()).getNextNodeId(modelIdentity.name());
+        else
+            throw new IllegalArgumentException("Invalid entity: " + entity);
+    }
 }

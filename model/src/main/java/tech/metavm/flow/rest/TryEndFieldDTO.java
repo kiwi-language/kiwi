@@ -9,7 +9,7 @@ import java.util.List;
 public record TryEndFieldDTO(
         String name,
         String fieldId,
-        String typeId,
+        String type,
         List<TryEndValueDTO> values,
         ValueDTO defaultValue
 ) implements FieldReferringDTO<TryEndFieldDTO> {
@@ -19,14 +19,14 @@ public record TryEndFieldDTO(
         return new TryEndFieldDTO(
                 name,
                 fieldId,
-                typeId,
+                type,
                 new ArrayList<>(values),
                 defaultValue
         );
     }
 
     public FieldDTO toFieldDTO() {
-        return FieldDTOBuilder.newBuilder(name, typeId)
+        return FieldDTOBuilder.newBuilder(name, type)
                 .id(fieldId)
                 .readonly(true)
                 .build();

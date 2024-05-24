@@ -25,9 +25,13 @@ public class BootIdInitializer implements IdInitializer {
         for (DurableInstance instance : instances) {
             var entity = instance.getMappedEntity();
             if(entity != null) {
-                var id = bootIdProvider.getId(identityContext.getModelId(entity));
+                var modelId = identityContext.getModelId(entity);
+                var id = bootIdProvider.getId(modelId);
                 if(id != null) {
                     instance.initId(id);
+                    var nextNodeId = bootIdProvider.getNextNodeId(modelId);
+                    if(nextNodeId != null)
+                        instance.setNextNodeId(nextNodeId);
                     continue;
                 }
             }

@@ -49,6 +49,7 @@ public abstract class Id implements Comparable<Id> {
             case NULL -> new NullId();
             case PHYSICAL -> new PhysicalId(isArray, input.readLong(), input.readLong());
             case TAGGED_PHYSICAL -> new TaggedPhysicalId(input.readLong(), input.readLong(), input.readInt());
+            case TYPED_PHYSICAL -> new TypedPhysicalId(isArray, input.readLong(), input.readLong(), TypeKey.read(input));
             case TMP -> new TmpId(input.readLong());
             case DEFAULT_VIEW -> new DefaultViewId(isArray, MappingKey.read(input), readId(input));
             case CHILD_VIEW -> new ChildViewId(isArray, MappingKey.read(input), readId(input), (ViewId) readId(input));

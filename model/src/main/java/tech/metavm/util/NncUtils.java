@@ -12,13 +12,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import org.checkerframework.checker.units.qual.K;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.io.*;
 import java.lang.invoke.SerializedLambda;
-import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.*;
@@ -123,7 +121,7 @@ public class NncUtils {
     }
 
     public static void writeJsonToFileWithIndent(String filePath, Object object) {
-        writeFile(filePath, toJSONStringWithIndent(object));
+        writeFile(filePath, toPrettyJsonString(object));
     }
 
     public static void writeFile(String filePath, byte[] bytes) {
@@ -342,7 +340,7 @@ public class NncUtils {
         }
     }
 
-    public static String toJSONStringWithIndent(Object object) {
+    public static String toPrettyJsonString(Object object) {
         try {
             return INDENT_OBJECT_MAPPER.writeValueAsString(object);
         } catch (JsonProcessingException e) {

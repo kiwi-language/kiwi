@@ -42,4 +42,8 @@ public record TypeDTO(
         return (IntersectionTypeParam) param;
     }
 
+    @Override
+    public int getDefKind() {
+        return 1;
+    }
 }

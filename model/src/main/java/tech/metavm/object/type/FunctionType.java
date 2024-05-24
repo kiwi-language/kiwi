@@ -21,10 +21,6 @@ import java.util.function.Function;
 @EntityType("函数类型")
 public class FunctionType extends CompositeType {
 
-    public static final IndexDef<FunctionType> PARAMETER_TYPE_KEY = IndexDef.create(FunctionType.class, "parameterTypes");
-
-    public static final IndexDef<FunctionType> RETURN_TYPE_KEY = IndexDef.create(FunctionType.class, "returnType");
-
     @ChildEntity("返回类型")
     private Type returnType;
 

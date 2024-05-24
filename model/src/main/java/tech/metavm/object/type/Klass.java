@@ -1088,7 +1088,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (template != null) {
             var s = that.findAncestor(template);
             if (s != null)
-                return NncUtils.biAllMatch(typeArguments, s.typeArguments, (type, that1) -> type.contains(that1));
+                return NncUtils.biAllMatch(typeArguments, s.typeArguments, Type::contains);
             else
                 return false;
         } else {
@@ -1237,7 +1237,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.map(typeParameters, serContext::getId),
                 NncUtils.map(typeParameters, tv -> tv.toDTO(serContext)),
                 NncUtils.get(template, serContext::getId),
-                NncUtils.map(typeArguments, serContext::getId),
+                NncUtils.map(typeArguments, t -> t.toExpression(serContext)),
                 NncUtils.map(dependencies, serContext::getId),
                 !subTypes.isEmpty(),
                 struct,

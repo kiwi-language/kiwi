@@ -221,7 +221,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
             if(sourceKlass.isParameterized())
                 return new ParameterizedMappingKey((ParameterizedTypeKey) sourceType.toTypeKey(), serContext.getId(getEffectiveTemplate()));
             else
-                return new DirectMappingKey(serContext.getId(this));
+                return new DirectMappingKey(serContext.getEntityId(this));
         }
     }
 

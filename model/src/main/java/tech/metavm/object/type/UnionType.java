@@ -23,8 +23,6 @@ public class UnionType extends CompositeType {
         return new UnionType(Set.of(types));
     }
 
-    public static final IndexDef<UnionType> MEMBER_IDX = IndexDef.create(UnionType.class, "members");
-
     @ChildEntity("成员集合")
     private final ChildArray<Type> members = addChild(new ChildArray<>(Type.class), "members");
 

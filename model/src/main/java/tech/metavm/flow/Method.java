@@ -328,7 +328,7 @@ public class Method extends Flow implements Property, GenericElement {
                     getName(),
                     serContext.getId(getDeclaringType()),
                     NncUtils.map(getParameters(), Parameter::toDTO),
-                    serContext.getId(getReturnType()),
+                    getReturnType().toExpression(serContext),
                     !getParameterTypes().isEmpty(),
                     isConstructor,
                     getState().code()
@@ -343,7 +343,7 @@ public class Method extends Flow implements Property, GenericElement {
                 var methodName = getDeclaringType().getName() + "." + getNameWithTypeArguments();
                 debugLogger.info("Method.execute: {}", methodName);
                 debugLogger.info("Arguments: ");
-                arguments.forEach(arg -> debugLogger.info(arg.getTree()));
+                arguments.forEach(arg -> debugLogger.info(arg.getText()));
                 debugLogger.info(getText());
             }
             if (_static)

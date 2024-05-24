@@ -97,13 +97,24 @@ public abstract class Instance {
 
     public abstract @Nullable Id tryGetId();
 
-    public @Nullable String getInstanceIdString() {
-        var id = tryGetId();
-        return id != null ? id.toString() : null;
+    public Id getId() {
+        return Objects.requireNonNull(tryGetId());
+    }
+
+    public @Nullable String getStringId() {
+        return NncUtils.get(tryGetId(), Id::toString);
+    }
+
+    public @Nullable String getStringIdForDTO() {
+//        var id = tryGetId();
+//        if(id instanceof PhysicalId physicalId)
+//            return new TypedPhysicalId(physicalId.isArray(), physicalId.getTreeId(), physicalId.getNodeId(), getType().toTypeKey()).toString();
+//        else
+//            return NncUtils.get(id, Id::toString);
+        return getStringId();
     }
 
     public abstract FieldValue toFieldValueDTO();
-
 
     public abstract String getTitle();
 
@@ -137,7 +148,7 @@ public abstract class Instance {
     protected InstanceDTO toDTO(InstanceParam param) {
         try (var serContext = SerializeContext.enter()) {
             return new InstanceDTO(
-                    NncUtils.get(tryGetId(), Objects::toString),
+                    getStringIdForDTO(),
                     getType().toExpression(serContext),
                     getType().getName(),
                     getTitle(),
@@ -156,7 +167,7 @@ public abstract class Instance {
 
     public abstract <R> void acceptChildren(InstanceVisitor<R> visitor);
 
-    public String getTree() {
+    public String getText() {
         var treeWriter = new TreeWriter();
         writeTree(treeWriter);
         return treeWriter.toString();

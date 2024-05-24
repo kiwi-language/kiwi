@@ -19,12 +19,12 @@ public class SerializeContext implements Closeable {
 
     public static final ThreadLocal<SerializeContext> THREAD_LOCAL = new ThreadLocal<>();
 
-    public static List<TypeDTO> forceWriteTypeDefs(List<TypeDef> typeDefs) {
+    public static List<TypeDefDTO> forceWriteTypeDefs(List<TypeDef> typeDefs) {
         try (var serContext = SerializeContext.enter()) {
             for (var typeDef : typeDefs) {
                 serContext.writeTypeDef(typeDef);
             }
-            return serContext.getTypes();
+            return serContext.getTypeDefs();
         }
     }
 
@@ -35,7 +35,6 @@ public class SerializeContext implements Closeable {
     private boolean includeNodeOutputType;
     private boolean includeExpressionType;
     private boolean includeCode;
-    private boolean writeParameterizedTypeAsPTypeDTO;
     private final Set<TypeDef> writtenTypes = new IdentitySet<>();
     private final Map<TypeDef, TypeDefDTO> types = new HashMap<>();
     private final Map<Id, TypeDefDTO> typeMap = new HashMap<>();
@@ -62,11 +61,6 @@ public class SerializeContext implements Closeable {
         return this.writingCodeTypes.contains(type);
     }
 
-    public SerializeContext writeParameterizedTypeAsPTypeDTO(boolean writeParameterizedTypeAsPTypeDTO) {
-        this.writeParameterizedTypeAsPTypeDTO = writeParameterizedTypeAsPTypeDTO;
-        return this;
-    }
-
     public Long getTmpId(Object model) {
         NncUtils.requireNonNull(model);
         if (model instanceof Entity entity) {
@@ -84,6 +78,14 @@ public class SerializeContext implements Closeable {
         } else {
             return TmpId.of(getTmpId(model)).toString();
         }
+    }
+
+    public Id getEntityId(Object obj) {
+        Id id;
+        if (obj instanceof Entity entity && (id = entity.tryGetId()) != null)
+            return id;
+        else
+            return TmpId.of(getTmpId(obj));
     }
 
     public boolean isIncludeExpressionType() {
@@ -225,6 +227,14 @@ public class SerializeContext implements Closeable {
 
     public List<TypeDTO> getTypes(Predicate<Klass> filter) {
         return NncUtils.filterAndMap(types.entrySet(), e -> e.getKey() instanceof Klass klass && filter.test(klass), e -> (TypeDTO) e.getValue());
+    }
+
+    public List<TypeDefDTO> getTypeDefs() {
+        return new ArrayList<>(types.values());
+    }
+
+    public List<TypeDefDTO> getTypeDefs(Predicate<TypeDef> predicate) {
+        return NncUtils.filterAndMap(types.entrySet(), e -> predicate.test(e.getKey()), Map.Entry::getValue);
     }
 
     public void forEachType(Predicate<TypeDef> filter, Consumer<TypeDef> action) {

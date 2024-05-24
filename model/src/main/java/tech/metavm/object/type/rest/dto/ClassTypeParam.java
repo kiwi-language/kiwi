@@ -29,7 +29,7 @@ public record ClassTypeParam(
         List<String> typeParameterIds,
         @Nullable List<TypeVariableDTO> typeParameters,
         String templateId,
-        List<String> typeArgumentIds,
+        List<String> typeArguments,
         List<String> dependencyIds,
         boolean hasSubTypes,
         boolean struct,

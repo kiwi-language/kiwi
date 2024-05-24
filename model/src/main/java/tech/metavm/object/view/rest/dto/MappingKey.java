@@ -28,7 +28,7 @@ public interface MappingKey {
     static MappingKey read(InstanceInput input) {
         var kind = input.read();
         return switch (kind) {
-            case 1 -> new DirectMappingKey(input.readId().toString());
+            case 1 -> new DirectMappingKey(input.readId());
             case 2 -> new ParameterizedMappingKey(
                     (ParameterizedTypeKey) TypeKey.read(input),
                     input.readId().toString()

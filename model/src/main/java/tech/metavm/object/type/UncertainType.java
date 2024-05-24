@@ -17,10 +17,6 @@ import java.util.function.Function;
 @EntityType("不确定类型")
 public class UncertainType extends CompositeType {
 
-    public static final IndexDef<UncertainType> LOWER_BOUND_IDX = IndexDef.create(UncertainType.class, "lowerBound");
-
-    public static final IndexDef<UncertainType> UPPER_BOUND_IDX = IndexDef.create(UncertainType.class, "upperBound");
-
     @ChildEntity("上限")
     private Type upperBound;
     @ChildEntity("下限")

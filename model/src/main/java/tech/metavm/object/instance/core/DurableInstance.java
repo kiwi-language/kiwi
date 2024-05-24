@@ -66,7 +66,7 @@ public abstract class DurableInstance extends Instance {
 
     private int seq;
 
-    private int nextNodeId = 1;
+    private long nextNodeId = 1;
 
     public DurableInstance(Type type) {
         this(null, type, 0L, 0L, false, null);
@@ -127,7 +127,7 @@ public abstract class DurableInstance extends Instance {
             throw new InternalException("Not a view instance");
     }
 
-    @Override
+//    @Override
     @NoProxy
     public @Nullable Id tryGetId() {
         return id;
@@ -316,6 +316,8 @@ public abstract class DurableInstance extends Instance {
 
     @NoProxy
     public void initId(Id id) {
+        if(this == DebugEnv.instance)
+            System.out.println("Caught");
         if (isIdInitialized())
             throw new InternalException("id already initialized");
         if (isArray()) {
@@ -520,15 +522,15 @@ public abstract class DurableInstance extends Instance {
         this.seq = seq;
     }
 
-    public int nextNodeId() {
+    public long nextNodeId() {
         return nextNodeId++;
     }
 
-    public int getNextNodeId() {
+    public long getNextNodeId() {
         return nextNodeId;
     }
 
-    public void setNextNodeId(int nextNodeId) {
+    public void setNextNodeId(long nextNodeId) {
         this.nextNodeId = nextNodeId;
     }
 

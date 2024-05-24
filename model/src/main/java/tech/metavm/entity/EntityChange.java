@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.ChangeList;
 
 import java.util.*;

@@ -9,7 +9,7 @@ public class InstancePO {
     private byte[] data;
     private long version;
     private long syncVersion;
-    private int nextNodeId;
+    private long nextNodeId;
 
     public InstancePO() {
     }
@@ -19,7 +19,7 @@ public class InstancePO {
                       byte[] data,
                       long version,
                       long syncVersion,
-                      int nextNodeId) {
+                      long nextNodeId) {
         this.appId = appId;
         this.id = id;
         this.data = data;
@@ -64,11 +64,11 @@ public class InstancePO {
         this.syncVersion = syncVersion;
     }
 
-    public int getNextNodeId() {
+    public long getNextNodeId() {
         return nextNodeId;
     }
 
-    public void setNextNodeId(int nextNodeId) {
+    public void setNextNodeId(long nextNodeId) {
         this.nextNodeId = nextNodeId;
     }
 
