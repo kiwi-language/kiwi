@@ -20,7 +20,7 @@ public class FieldData extends Entity {
 
     public static FieldData fromFieldDTO(FieldDTO fieldDTO, IEntityContext context) {
         var declaringType = context.getKlass(fieldDTO.declaringTypeId());
-        var fieldType = TypeParser.parse(fieldDTO.type(), context);
+        var fieldType = TypeParser.parseType(fieldDTO.type(), context);
         var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
         var column = declaringType.allocateColumn(fieldType, null);
         return new FieldData(

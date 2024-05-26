@@ -17,9 +17,9 @@ public class MethodRef extends FlowRef implements PropertyRef {
 
     public static MethodRef create(MethodRefDTO methodRefDTO, IEntityContext context) {
         return new MethodRef(
-                (ClassType) TypeParser.parse(methodRefDTO.declaringType(), context),
+                (ClassType) TypeParser.parseType(methodRefDTO.declaringType(), context),
                 context.getMethod(methodRefDTO.rawFlowId()),
-                NncUtils.map(methodRefDTO.typeArguments(), t -> TypeParser.parse(t, context))
+                NncUtils.map(methodRefDTO.typeArguments(), t -> TypeParser.parseType(t, context))
         );
     }
 

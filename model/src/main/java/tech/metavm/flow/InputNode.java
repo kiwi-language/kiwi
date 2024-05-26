@@ -28,7 +28,7 @@ public class InputNode extends ChildTypeNode {
     public static InputNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var node = (InputNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
-            var klass = ((ClassType) TypeParser.parse(nodeDTO.outputType(), context)).resolve();
+            var klass = ((ClassType) TypeParser.parseType(nodeDTO.outputType(), context)).resolve();
             node = new InputNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), klass, prev, scope);
         }
         return node;

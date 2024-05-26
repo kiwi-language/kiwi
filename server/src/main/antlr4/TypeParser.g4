@@ -6,7 +6,7 @@ type
     : classType
     | variableType
     | primitiveType
-    | '(' typeList ')' '->' type
+    | '(' typeList? ')' '->' type
     | type ('|' type)+
     | type ('&' type)+
     | '[' type ',' type ']'
@@ -15,6 +15,8 @@ type
     | ANY
     | '#' qualifiedName
     ;
+
+methodRef: classType '.' IDENTIFIER typeArguments?;
 
 arrayKind: R | C;
 

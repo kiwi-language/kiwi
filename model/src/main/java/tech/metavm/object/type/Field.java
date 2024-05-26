@@ -472,6 +472,10 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return getEffectiveTemplate().getId();
     }
 
+    public String getStringTag() {
+        return getTag().toString();
+    }
+
     public long getRecordGroupTag() {
         return getEffectiveTemplate().getId().getTreeId();
     }

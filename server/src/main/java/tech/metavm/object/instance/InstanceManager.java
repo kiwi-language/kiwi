@@ -56,7 +56,7 @@ public class InstanceManager extends EntityContextFactoryBean {
     public Page<InstanceDTO[]> select(SelectRequest request) {
         try (var entityContext = newContext()) {
             var context = entityContext.getInstanceContext();
-            var klass = ((ClassType) TypeParser.parse(request.type(), context.getTypeDefProvider())).resolve();
+            var klass = ((ClassType) TypeParser.parseType(request.type(), context.getTypeDefProvider())).resolve();
             var dataPage = instanceQueryService.query(InstanceQueryBuilder.newBuilder(klass)
                     .expression(request.condition())
                     .page(request.page())
@@ -245,7 +245,7 @@ public class InstanceManager extends EntityContextFactoryBean {
         try (var entityContext = newContext()) {
             var context = entityContext.getInstanceContext();
             var mappingProvider = context.getMappingProvider();
-            Type type = TypeParser.parse(query.type(), context.getTypeDefProvider());
+            Type type = TypeParser.parseType(query.type(), context.getTypeDefProvider());
             if (type instanceof ClassType classType) {
                 var internalQuery = InstanceQueryBuilder.newBuilder(classType.resolve())
                         .searchText(query.searchText())

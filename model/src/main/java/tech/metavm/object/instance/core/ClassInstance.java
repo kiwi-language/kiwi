@@ -530,8 +530,8 @@ public class ClassInstance extends DurableInstance {
         } else {
             return new ReferenceFieldValue(
                     getTitle(),
-                    Objects.requireNonNull(this.getStringIdForDTO(), "Id required")
-            );
+                    Objects.requireNonNull(this.getStringIdForDTO(), "Id required"),
+                    getType().toExpression());
         }
     }
 

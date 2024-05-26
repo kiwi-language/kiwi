@@ -4,7 +4,7 @@ public record LambdaNodeRefDTO(
         String lambdaNodeId
 ) implements CallableRefDTO {
     @Override
-    public int kind() {
+    public int getKind() {
         return 3;
     }
 }

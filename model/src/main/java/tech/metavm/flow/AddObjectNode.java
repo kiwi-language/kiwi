@@ -23,7 +23,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
 
     public static AddObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         AddObjectNodeParam param = nodeDTO.getParam();
-        var klass = ((ClassType) TypeParser.parse(param.getType(), context)).resolve();
+        var klass = ((ClassType) TypeParser.parseType(param.getType(), context)).resolve();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         AddObjectNode node = (AddObjectNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
@@ -77,15 +77,13 @@ public class AddObjectNode extends ScopeNode implements NewNode {
 
     @Override
     protected AddObjectNodeParam getParam(SerializeContext serializeContext) {
-        try (var serContext = SerializeContext.enter()) {
-            return new AddObjectNodeParam(
-                    serContext.getStringId(getType()),
-                    initializeArrayChildren,
-                    ephemeral, NncUtils.map(fields, FieldParam::toDTO),
-                    NncUtils.get(parentRef, ParentRef::toDTO),
-                    bodyScope.toDTO(true, serializeContext)
-            );
-        }
+        return new AddObjectNodeParam(
+                getType().toExpression(serializeContext),
+                initializeArrayChildren,
+                ephemeral, NncUtils.map(fields, FieldParam::toDTO),
+                NncUtils.get(parentRef, ParentRef::toDTO),
+                bodyScope.toDTO(true, serializeContext)
+        );
     }
 
     @Override
@@ -127,7 +125,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
     }
 
     public void setKlass(Klass klass) {
-        if(klass != null) {
+        if (klass != null) {
             this.fields.clear();
             super.setOutputType(klass.getType());
         }

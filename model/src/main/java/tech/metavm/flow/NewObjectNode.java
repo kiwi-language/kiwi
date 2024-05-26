@@ -31,7 +31,7 @@ public class NewObjectNode extends CallNode implements NewNode {
     public static NewObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         NewObjectNodeParam param = nodeDTO.getParam();
         if (param.isResolved()) {
-            var declaringType = (ClassType) TypeParser.parse(Objects.requireNonNull(param.getType()), context);
+            var declaringType = (ClassType) TypeParser.parseType(Objects.requireNonNull(param.getType()), context);
             var methodRef = MethodRef.create(Objects.requireNonNull(param.getFlowRef()), context);
             var parsingContext = FlowParsingContext.create(scope, prev, context);
             List<Argument> arguments = NncUtils.biMap(
@@ -44,11 +44,11 @@ public class NewObjectNode extends CallNode implements NewNode {
                     p -> ParentRef.create(p, parsingContext, context, declaringType));
             //noinspection DuplicatedCode
             var node = saveNode0(nodeDTO, methodRef, parentRef, arguments, prev, scope, context);
-            node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypes(), t -> TypeParser.parse(t, context)));
+            node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypes(), t -> TypeParser.parseType(t, context)));
             node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
             return node;
         } else {
-            var declaringType = ((ClassType) TypeParser.parse(Objects.requireNonNull(param.getType()), context)).resolve();
+            var declaringType = ((ClassType) TypeParser.parseType(Objects.requireNonNull(param.getType()), context)).resolve();
             var parsingContext = FlowParsingContext.create(scope, prev, context);
             var argumentValues = NncUtils.map(param.getArgumentValues(), arg -> ValueFactory.create(arg, parsingContext));
             var constructor = declaringType.resolveMethod(param.getFlowCode(),

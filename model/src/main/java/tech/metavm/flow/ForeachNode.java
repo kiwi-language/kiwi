@@ -22,7 +22,7 @@ import java.util.Map;
 public class ForeachNode extends LoopNode {
 
     public static ForeachNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var outputType = ((ClassType) TypeParser.parse(nodeDTO.outputType(), context)).resolve();
+        var outputType = ((ClassType) TypeParser.parseType(nodeDTO.outputType(), context)).resolve();
         ParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
         ForeachNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.getArray(), parsingContext);

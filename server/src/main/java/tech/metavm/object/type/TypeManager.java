@@ -566,21 +566,21 @@ public class TypeManager extends EntityContextFactoryBean {
     public String saveEnumConstant(InstanceDTO instanceDTO) {
         try (var context = newContext()) {
             var instanceContext = Objects.requireNonNull(context.getInstanceContext());
-            var type = context.getKlass(Id.parse(instanceDTO.type()));
+            var klass = TypeParser.parseClassType(instanceDTO.type(), context).resolve();
             ClassInstance instance;
             if (instanceDTO.isNew()) {
-                instanceDTO = setOrdinal(instanceDTO, type.getEnumConstants().size(), type);
+                instanceDTO = setOrdinal(instanceDTO, klass.getEnumConstants().size(), klass);
                 instance = (ClassInstance) instanceManager.create(instanceDTO, instanceContext);
-                FieldBuilder.newBuilder(instance.getTitle(), null, type, type.getType())
+                FieldBuilder.newBuilder(instance.getTitle(), null, klass, klass.getType())
                         .isStatic(true)
                         .staticValue(instance)
                         .build();
             } else {
                 instance = (ClassInstance) instanceContext.get(instanceDTO.parseId());
-                var ordinalField = type.findFieldByCode("ordinal");
+                var ordinalField = klass.findFieldByCode("ordinal");
                 int ordinal = instance.getLongField(ordinalField).getValue().intValue();
-                instanceDTO = setOrdinal(instanceDTO, ordinal, type);
-                var field = type.getStaticFieldByName(instance.getTitle());
+                instanceDTO = setOrdinal(instanceDTO, ordinal, klass);
+                var field = klass.getStaticFieldByName(instance.getTitle());
                 instanceManager.update(instanceDTO, instanceContext);
                 field.setName(instance.getTitle());
             }
@@ -589,13 +589,13 @@ public class TypeManager extends EntityContextFactoryBean {
         }
     }
 
-    private InstanceDTO setOrdinal(InstanceDTO instanceDTO, int ordinal, Klass type) {
-        var ordinalField = type.getFieldByCode("ordinal");
+    private InstanceDTO setOrdinal(InstanceDTO instanceDTO, int ordinal, Klass klass) {
+        var ordinalField = klass.getFieldByCode("ordinal");
         var param = (ClassInstanceParam) instanceDTO.param();
         return instanceDTO.copyWithParam(
                 param.copyWithNewField(
                         new InstanceFieldDTO(
-                                ordinalField.getStringId(),
+                                ordinalField.getTag().toString(),
                                 ordinalField.getName(),
                                 TypeCategory.LONG.code(),
                                 false,
@@ -712,7 +712,7 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     private Field createField(FieldDTO fieldDTO, Klass declaringType, IEntityContext context) {
-        var type = TypeParser.parse(fieldDTO.type(), context);
+        var type = TypeParser.parseType(fieldDTO.type(), context);
         var field = Types.createFieldAndBind(
                 declaringType,
                 fieldDTO,

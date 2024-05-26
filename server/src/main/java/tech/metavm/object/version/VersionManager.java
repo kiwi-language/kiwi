@@ -54,7 +54,7 @@ public class VersionManager extends EntityContextFactoryBean {
                 for (var type : types) {
                     serContext.writeTypeDef(type);
                 }
-                var typeDTOs = serContext.getTypes();
+                var typeDefDTOs = serContext.getTypeDefs();
                 var mappingDTOs = NncUtils.map(
                         internalPatch.changedMappingIds(),
                         id -> context.getMapping(id).toDTO(serContext)
@@ -66,7 +66,7 @@ public class VersionManager extends EntityContextFactoryBean {
                 return new MetaPatch(
                         baseVersion,
                         internalPatch.version(),
-                        typeDTOs,
+                        typeDefDTOs,
                         internalPatch.removedTypeDefIds(),
                         mappingDTOs,
                         internalPatch.removedMappingIds(),

@@ -12,7 +12,7 @@ public class ObjectMappingRef extends ValueElement implements Reference {
 
     public static ObjectMappingRef create(ObjectMappingRefDTO sourceMappingRefDTO, IEntityContext context) {
         return new ObjectMappingRef(
-                (ClassType) TypeParser.parse(sourceMappingRefDTO.declaringType(), context),
+                (ClassType) TypeParser.parseType(sourceMappingRefDTO.declaringType(), context),
                 context.getObjectMapping(sourceMappingRefDTO.rawMappingId())
         );
     }

@@ -74,7 +74,7 @@ public class InstanceFactory {
             IInstanceContext context) {
         NncUtils.requireTrue(instanceDTO.isNew(),
                 "Id of new instance must be null or zero");
-        Type type = TypeParser.parse(instanceDTO.type(), context.getTypeDefProvider()) ;
+        Type type = TypeParser.parseType(instanceDTO.type(), context.getTypeDefProvider()) ;
         DurableInstance instance;
         var param = instanceDTO.param();
         if (param instanceof ClassInstanceParam classInstanceParam) {
@@ -124,7 +124,7 @@ public class InstanceFactory {
         if (instanceDTO.sourceMappingRef() != null) {
             var mappingRefDTO = instanceDTO.sourceMappingRef();
             var sourceMapping = new ObjectMappingRef(
-                    (ClassType) TypeParser.parse(mappingRefDTO.declaringType(), context.getTypeDefProvider()),
+                    (ClassType) TypeParser.parseType(mappingRefDTO.declaringType(), context.getTypeDefProvider()),
                     context.getMappingProvider().getObjectMapping(Id.parse(mappingRefDTO.rawMappingId()))
             ).resolve();
             var source = sourceMapping.unmap(instance, context);

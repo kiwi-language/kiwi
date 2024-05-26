@@ -48,7 +48,6 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final Set<ClassType> typeDefTypes = new HashSet<>();
     private final Set<ClassType> mappingTypes = new HashSet<>();
     private final Set<ClassType> functionTypes = new HashSet<>();
-    private int nextTypeTag = 4;
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
             Map.entry(Byte.class, Long.class),
@@ -695,16 +694,16 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         typeDefTypes.clear();
         mappingTypes.clear();
         functionTypes.clear();
-        var typeDefType = getKlass(TypeDef.class);
-        var mappingType = getKlass(Mapping.class);
-        var functionType = getKlass(Function.class);
+        var typeDefKlass = getKlass(TypeDef.class);
+        var mappingKlass = getKlass(Mapping.class);
+        var functionKlass = getKlass(Function.class);
         typeDef2Def.keySet().forEach(typeDef -> {
             if (typeDef instanceof Klass klass) {
-                if (typeDefType.isAssignableFrom(klass))
+                if (typeDefKlass.isAssignableFrom(klass))
                     typeDefTypes.add(klass.getType());
-                else if (mappingType.isAssignableFrom(klass))
+                else if (mappingKlass.isAssignableFrom(klass))
                     mappingTypes.add(klass.getType());
-                else if (functionType.isAssignableFrom(klass))
+                else if (functionKlass.isAssignableFrom(klass))
                     functionTypes.add(klass.getType());
             }
         });

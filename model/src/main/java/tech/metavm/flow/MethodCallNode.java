@@ -32,7 +32,7 @@ public class MethodCallNode extends CallNode {
             );
             //noinspection DuplicatedCode
             var node = saveNode0(nodeDTO, self, methodRef, arguments, prev, scope, context);
-            node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypes(), t -> TypeParser.parse(t, context)));
+            node.setCapturedExpressionTypes(NncUtils.map(param.getCapturedExpressionTypes(), t -> TypeParser.parseType(t, context)));
             node.setCapturedExpressions(NncUtils.map(param.getCapturedExpressions(), e -> ExpressionParser.parse(e, parsingContext)));
             return node;
         } else {
@@ -43,7 +43,7 @@ public class MethodCallNode extends CallNode {
                 var exprTypes = prev != null ? prev.getExpressionTypes() : scope.getExpressionTypes();
                 declaringType = (ClassType) exprTypes.getType(self.getExpression());
             } else
-                declaringType = (ClassType) TypeParser.parse(Objects.requireNonNull(param.getType()), context);
+                declaringType = (ClassType) TypeParser.parseType(Objects.requireNonNull(param.getType()), context);
             var argumentValues = NncUtils.map(
                     param.getArgumentValues(),
                     arg -> ValueFactory.create(arg, parsingContext)

@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import tech.metavm.common.BaseDTO;
 import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.util.Constants;
 import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
@@ -21,7 +23,7 @@ public record NodeDTO(
         Object param,
         TypeDTO outputKlass,
         String scopeId,
-        @Nullable  String error
+        @Nullable String error
 ) implements BaseDTO {
 
     public static NodeDTO create(String name, int kind) {
@@ -63,7 +65,7 @@ public record NodeDTO(
                 code,
                 kind,
                 prevId,
-                type.id(),
+                NncUtils.get(type.id(), id -> Constants.CONSTANT_ID_PREFIX + id),
                 param,
                 type,
                 scopeId,
@@ -79,7 +81,7 @@ public record NodeDTO(
                 code,
                 kind,
                 prevId,
-                type.id(),
+                NncUtils.get(type.id(), id -> Constants.CONSTANT_ID_PREFIX + id),
                 param,
                 type,
                 scopeId,
@@ -104,7 +106,7 @@ public record NodeDTO(
     }
 
     public void ensureIdSet() {
-        if(id == null) {
+        if (id == null) {
             throw new InternalException("objectId is required");
         }
     }

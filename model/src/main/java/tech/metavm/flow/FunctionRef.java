@@ -17,7 +17,7 @@ public class FunctionRef extends FlowRef {
     public static FunctionRef create(FunctionRefDTO functionRefDTO, IEntityContext context) {
         return new FunctionRef(
                 context.getFunction(functionRefDTO.rawFlowId()),
-                NncUtils.map(functionRefDTO.typeArguments(), t -> TypeParser.parse(t, context))
+                NncUtils.map(functionRefDTO.typeArguments(), t -> TypeParser.parseType(t, context))
         );
     }
 

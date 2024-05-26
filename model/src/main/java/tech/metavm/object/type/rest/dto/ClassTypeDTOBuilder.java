@@ -71,11 +71,6 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder category(int category) {
-        this.kind = category;
-        return this;
-    }
-
     public ClassTypeDTOBuilder code(String code) {
         this.code = code;
         return this;

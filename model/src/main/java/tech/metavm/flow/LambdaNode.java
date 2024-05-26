@@ -22,10 +22,10 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
         var parameters = NncUtils.map(
                 param.getParameters(),
                 paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
-                        TypeParser.parse(paramDTO.type(), context))
+                        TypeParser.parseType(paramDTO.type(), context))
         );
-        var returnType = TypeParser.parse(param.getReturnType(), context);
-        var funcInterface = (ClassType) NncUtils.get(param.getFunctionalInterface(), t -> TypeParser.parse(t, new ContextTypeDefRepository(context)));
+        var returnType = TypeParser.parseType(param.getReturnType(), context);
+        var funcInterface = (ClassType) NncUtils.get(param.getFunctionalInterface(), t -> TypeParser.parseType(t, new ContextTypeDefRepository(context)));
         var node = (LambdaNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new LambdaNode(

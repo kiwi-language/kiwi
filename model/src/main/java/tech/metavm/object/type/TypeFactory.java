@@ -35,7 +35,7 @@ public abstract class TypeFactory {
             }
             var curStage = type.setStage(stage);
             if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION))
-                type.setBounds(NncUtils.map(typeVariableDTO.bounds(), bound -> TypeParser.parse(bound, batch.getContext())));
+                type.setBounds(NncUtils.map(typeVariableDTO.bounds(), bound -> TypeParser.parseType(bound, batch.getContext())));
             return type;
         }
     }
@@ -55,7 +55,7 @@ public abstract class TypeFactory {
             }
             var curStage = type.setStage(stage);
             if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION))
-                type.setUncertainType((UncertainType) TypeParser.parse(capturedTypeVariableDTO.uncertainType(), context));
+                type.setUncertainType((UncertainType) TypeParser.parseType(capturedTypeVariableDTO.uncertainType(), context));
             return type;
         }
     }
@@ -94,10 +94,10 @@ public abstract class TypeFactory {
                     var enumSuperClass = StandardTypes.getEnumKlass().getParameterized(List.of(type.getType()));
                     type.setSuperType(enumSuperClass.getType());
                 } else
-                    type.setSuperType(NncUtils.get(param.superType(), t -> (ClassType) TypeParser.parse(t, batch)));
-                type.setInterfaces(NncUtils.map(param.interfaces(), t -> (ClassType) TypeParser.parse(t, batch)));
+                    type.setSuperType(NncUtils.get(param.superType(), t -> (ClassType) TypeParser.parseType(t, batch)));
+                type.setInterfaces(NncUtils.map(param.interfaces(), t -> (ClassType) TypeParser.parseType(t, batch)));
                 if (!type.isTemplate())
-                    type.setTypeArguments(NncUtils.map(param.typeArguments(), t -> TypeParser.parse(t, batch)));
+                    type.setTypeArguments(NncUtils.map(param.typeArguments(), t -> TypeParser.parseType(t, batch)));
                 if (param.dependencyIds() != null)
                     type.setDependencies(NncUtils.map(param.dependencyIds(), id -> context.getKlass(Id.parse(id))));
                 type.setStage(ResolutionStage.SIGNATURE);
@@ -137,7 +137,7 @@ public abstract class TypeFactory {
 
     public Field saveField(Klass declaringType, FieldDTO fieldDTO, IEntityContext context) {
         Field field = context.getField(fieldDTO.id());
-        Type fieldType = TypeParser.parse(fieldDTO.type(), context);
+        Type fieldType = TypeParser.parseType(fieldDTO.type(), context);
         var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
         var access = Access.getByCode(fieldDTO.access());
         if (field == null) {
@@ -184,7 +184,7 @@ public abstract class TypeFactory {
         method.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
         method.setCapturedTypeVariables(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedTypeVariable));
         method.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)));
-        method.setReturnType(TypeParser.parse(flowDTO.returnType(), context));
+        method.setReturnType(TypeParser.parseType(flowDTO.returnType(), context));
         method.setOverridden(NncUtils.map(param.overriddenRefs(), r -> MethodRef.create(r, context).resolve()));
         method.setAbstract(param.isAbstract());
         return method;
@@ -207,7 +207,7 @@ public abstract class TypeFactory {
         function.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
         function.setCapturedTypeVariables(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedTypeVariable));
         function.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)));
-        function.setReturnType(TypeParser.parse(flowDTO.returnType(), context));
+        function.setReturnType(TypeParser.parseType(flowDTO.returnType(), context));
         return function;
     }
 
@@ -219,7 +219,7 @@ public abstract class TypeFactory {
                     parameterDTO.tmpId(),
                     parameterDTO.name(),
                     parameterDTO.code(),
-                    TypeParser.parse(parameterDTO.type(), context)
+                    TypeParser.parseType(parameterDTO.type(), context)
             );
         } else {
             param.setName(parameterDTO.name());

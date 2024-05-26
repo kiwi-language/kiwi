@@ -11,7 +11,7 @@ public class FieldRef extends ValueElement implements PropertyRef {
 
     public static FieldRef create(FieldRefDTO fieldRefDTO, EntityProvider entityProvider) {
         return new FieldRef(
-                (ClassType) TypeParser.parse(fieldRefDTO.declaringType(), entityProvider),
+                (ClassType) TypeParser.parseType(fieldRefDTO.declaringType(), entityProvider),
                 entityProvider.getEntity(Field.class, Id.parse(fieldRefDTO.rawFieldId()))
         );
     }

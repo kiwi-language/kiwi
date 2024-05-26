@@ -25,7 +25,7 @@ import java.util.*;
 public class MergeNode extends ChildTypeNode {
 
     public static MergeNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        var outputKlass = ((ClassType) TypeParser.parse(nodeDTO.outputType(), context)).resolve();
+        var outputKlass = ((ClassType) TypeParser.parseType(nodeDTO.outputType(), context)).resolve();
         var branchNode = (BranchNode) Objects.requireNonNull(prev);
         var node = (MergeNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)

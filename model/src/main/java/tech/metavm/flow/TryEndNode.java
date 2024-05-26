@@ -32,7 +32,7 @@ public class TryEndNode extends ChildTypeNode {
     public static TryEndNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var node = (TryEndNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
-            var outputKlass = ((ClassType) TypeParser.parse(nodeDTO.outputType(), context)).resolve();
+            var outputKlass = ((ClassType) TypeParser.parseType(nodeDTO.outputType(), context)).resolve();
             node = new TryEndNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputKlass, (TryNode) prev, scope);
         }
         var param = (TryEndNodeParam) nodeDTO.getParam();

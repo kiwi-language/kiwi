@@ -16,7 +16,10 @@ import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.type.TypeParser;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.rest.dto.*;
+import tech.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
+import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -93,7 +96,7 @@ public class FlowManager extends EntityContextFactoryBean {
         if (flowDTO.isConstructor())
             return declaringType.getType();
         else
-            return TypeParser.parse(Objects.requireNonNull(flowDTO.returnType()), context);
+            return TypeParser.parseType(Objects.requireNonNull(flowDTO.returnType()), context);
     }
 
     @Transactional
@@ -162,6 +165,7 @@ public class FlowManager extends EntityContextFactoryBean {
             method.setAbstract(declaringType.isInterface() || methodParam.isAbstract());
             method.setParameters(parameters);
             method.setReturnType(returnType);
+            method.setOverridden(NncUtils.map(methodParam.overriddenRefs(), r -> MethodRef.create(r, context).resolve()));
             if (method.isAbstract()) {
                 if (creating) {
                     createOverridingFlows(method, context);
@@ -178,7 +182,7 @@ public class FlowManager extends EntityContextFactoryBean {
                         .build();
                 context.bind(function);
             }
-            var returnType = TypeParser.parse(flowDTO.returnType(), context);
+            var returnType = TypeParser.parseType(flowDTO.returnType(), context);
             function.setParameters(parameters);
             function.setReturnType(returnType);
             function.setNative(flowDTO.isNative());
@@ -205,14 +209,14 @@ public class FlowManager extends EntityContextFactoryBean {
         if (parameter != null) {
             parameter.setName(parameterDTO.name());
             parameter.setCode(parameterDTO.code());
-            parameter.setType(TypeParser.parse(parameterDTO.type(), context));
+            parameter.setType(TypeParser.parseType(parameterDTO.type(), context));
             return parameter;
         } else {
             return new Parameter(
                     parameterDTO.tmpId(),
                     parameterDTO.name(),
                     parameterDTO.code(),
-                    TypeParser.parse(parameterDTO.type(), context)
+                    TypeParser.parseType(parameterDTO.type(), context)
             );
         }
     }
@@ -527,9 +531,9 @@ public class FlowManager extends EntityContextFactoryBean {
         if (nodeDTO.kind() == NodeKind.BRANCH.code())
             return preprocessBranchNode(nodeDTO, node);
         if (nodeDTO.kind() == NodeKind.WHILE.code())
-            return preprocessWhileNode(nodeDTO, node);
+            return preprocessWhileNode(nodeDTO, (WhileNode) node);
         if (nodeDTO.kind() == NodeKind.MERGE.code())
-            return preprocessMergeNode(nodeDTO, node);
+            return preprocessMergeNode(nodeDTO, (MergeNode) node);
         if (nodeDTO.kind() == NodeKind.TRY_END.code())
             return preprocessTryEndNode(nodeDTO, (TryEndNode) node);
         return nodeDTO;
@@ -573,13 +577,12 @@ public class FlowManager extends EntityContextFactoryBean {
     private NodeDTO preprocessInputNode(NodeDTO nodeDTO, @Nullable InputNode node) {
         InputNodeParam inputParam = nodeDTO.getParam();
         var inputFields = initializeFieldRefs(inputParam.fields());
-        List<FieldDTO> fields = NncUtils.map(inputFields,
-                inputField -> inputField.toFieldDTO(NncUtils.get(node, n -> n.getType().getStringId())));
-        var outputTypeKey = (ClassTypeKey) TypeKey.fromExpression(nodeDTO.outputType());
+        var currentKlassId = NncUtils.get(node, n -> n.getKlass().getStringId());
+        List<FieldDTO> fields = NncUtils.map(inputFields, inputField -> inputField.toFieldDTO(currentKlassId));
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder(
-                        node != null ? node.getType().getName() : "输入类型" + NncUtils.randomNonNegative()
+                        NncUtils.getOrElse(node, n -> n.getKlass().getName(), "输入类型" + NncUtils.randomNonNegative())
                 )
-                .id(outputTypeKey.id().toString())
+                .id(currentKlassId)
                 .anonymous(true)
                 .ephemeral(true)
                 .fields(fields)
@@ -589,12 +592,12 @@ public class FlowManager extends EntityContextFactoryBean {
                 typeDTO);
     }
 
-    private NodeDTO preprocessMergeNode(NodeDTO nodeDTO, NodeRT node) {
+    private NodeDTO preprocessMergeNode(NodeDTO nodeDTO, MergeNode node) {
         MergeNodeParam param = nodeDTO.getParam();
         var mergeFields = initializeFieldRefs(param.fields());
         List<FieldDTO> fields = NncUtils.map(mergeFields, MergeFieldDTO::toFieldDTO);
         var outputType = createNodeTypeDTO("MergeOutput",
-                NncUtils.get(node, NodeRT::getType), fields);
+                NncUtils.get(node, MergeNode::getKlass), fields);
         return nodeDTO.copyWithParamAndType(new MergeNodeParam(mergeFields), outputType);
     }
 
@@ -615,16 +618,16 @@ public class FlowManager extends EntityContextFactoryBean {
         }
         fieldDTOs = NncUtils.prepend(excetpionFieldDTO, fieldDTOs);
         var outputTypeDTO = createNodeTypeDTO("TryEndOutput",
-                NncUtils.get(node, NodeRT::getType), fieldDTOs);
+                NncUtils.get(node, TryEndNode::getKlass), fieldDTOs);
         return nodeDTO.copyWithParamAndType(new TryEndNodeParam(tryEndFields), outputTypeDTO);
     }
 
-    private NodeDTO preprocessWhileNode(NodeDTO nodeDTO, NodeRT node) {
+    private NodeDTO preprocessWhileNode(NodeDTO nodeDTO, WhileNode node) {
         WhileNodeParam param = nodeDTO.getParam();
         var loopFields = initializeFieldRefs(param.getFields());
         List<FieldDTO> fields = new ArrayList<>(NncUtils.map(loopFields, LoopFieldDTO::toFieldDTO));
         var outputType = createNodeTypeDTO("WhileOutput",
-                NncUtils.get(node, NodeRT::getType), fields);
+                NncUtils.get(node, WhileNode::getKlass), fields);
         return nodeDTO.copyWithParamAndType(
                 new WhileNodeParam(param.getCondition(), param.getBodyScope(), loopFields),
                 outputType);
@@ -641,11 +644,11 @@ public class FlowManager extends EntityContextFactoryBean {
         );
     }
 
-    private TypeDTO createNodeTypeDTO(String namePrefix, @Nullable Type currentType, List<FieldDTO> fields) {
-        var id = NncUtils.get(currentType, Type::getStringId);
-        String name = NncUtils.get(currentType, Type::getName);
+    private TypeDTO createNodeTypeDTO(String namePrefix, @Nullable Klass currentType, List<FieldDTO> fields) {
+        var id = NncUtils.get(currentType, Klass::getStringId);
+        String name = NncUtils.get(currentType, Klass::getName);
 //        String code = NncUtils.get(currentType, Type::getCode);
-        Long tmpId = NncUtils.get(currentType, Type::getTmpId);
+        Long tmpId = NncUtils.get(currentType, Klass::getTmpId);
         if (name == null)
             name = namePrefix + "_" + NncUtils.randomNonNegative();
         if (tmpId == null)
@@ -653,7 +656,7 @@ public class FlowManager extends EntityContextFactoryBean {
         return ClassTypeDTOBuilder.newBuilder(name)
                 .id(id)
                 .tmpId(tmpId)
-                .category(TypeCategory.CLASS.code())
+                .kind(ClassKind.CLASS.code())
                 .ephemeral(true)
                 .anonymous(true)
                 .fields(fields)
@@ -702,7 +705,7 @@ public class FlowManager extends EntityContextFactoryBean {
                             .build()
             );
         }
-        TypeDTO type = createNodeTypeDTO("ForeachOutput", currentType, fields);
+        TypeDTO type = createNodeTypeDTO("ForeachOutput", currentKlass, fields);
         ScopeDTO loopScope;
         if (param.getBodyScope() == null) {
             var elementType = ((ArrayType) context.getType(arrayValue.getType().getId())).getElementType();

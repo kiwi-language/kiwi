@@ -99,7 +99,7 @@ public class TableManager extends EntityContextFactoryBean {
             if (fieldDTO == null || !isVisible(fieldDTO, context)) {
                 return null;
             }
-            return convertToColumnDTO(fieldDTO, TypeParser.parse(fieldDTO.type(), context));
+            return convertToColumnDTO(fieldDTO, TypeParser.parseType(fieldDTO.type(), context));
         }
     }
 
@@ -129,7 +129,7 @@ public class TableManager extends EntityContextFactoryBean {
                     )
                     : NncUtils.first(enumEditContext.getDefaultOptions(), enumConstantRT1 -> enumConstantRT1.toFieldValue(context.getInstanceContext()));
         } else {
-            type = getType(column, NncUtils.get(column.targetId(), id -> TypeParser.parse(id, context)), context);
+            type = getType(column, NncUtils.get(column.targetId(), id -> TypeParser.parseType(id, context)), context);
             defaultValue = column.defaultValue();
         }
         return typeManager.saveField(
@@ -310,7 +310,7 @@ public class TableManager extends EntityContextFactoryBean {
                 NncUtils.filterAndMap(
                         param.fields(),
                         f -> isVisible(f, context),
-                        f -> convertToColumnDTO(f, TypeParser.parse(f.type(), context))
+                        f -> convertToColumnDTO(f, TypeParser.parseType(f.type(), context))
                 )
         );
     }
@@ -319,7 +319,7 @@ public class TableManager extends EntityContextFactoryBean {
 
     private boolean isVisible(FieldDTO fieldDTO, IEntityContext context) {
         NncUtils.requireNonNull(fieldDTO.type(), "字段'" + fieldDTO.name() + "'的typeId为空");
-        Type fieldType = TypeParser.parse(fieldDTO.type(), context);
+        Type fieldType = TypeParser.parseType(fieldDTO.type(), context);
         if (fieldType instanceof ClassType classType) {
             var klass = classType.resolve();
             if(ModelDefRegistry.containsDef(klass)) {
@@ -331,7 +331,7 @@ public class TableManager extends EntityContextFactoryBean {
     }
 
     private TitleFieldDTO convertToTitleField(FieldDTO fieldDTO, IEntityContext context) {
-        Type fieldType = TypeParser.parse(fieldDTO.type(), context);
+        Type fieldType = TypeParser.parseType(fieldDTO.type(), context);
         return new TitleFieldDTO(
                 null,
                 fieldDTO.name(),

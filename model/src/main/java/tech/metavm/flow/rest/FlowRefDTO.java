@@ -18,6 +18,6 @@ public interface FlowRefDTO extends CallableRefDTO {
 
     List<String> typeArguments();
 
-    int kind();
+    int getKind();
 
 }

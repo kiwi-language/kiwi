@@ -23,7 +23,7 @@ public class CastNode extends NodeRT {
         var node = (CastNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var object = ValueFactory.create(param.object(), parsingContext);
-        var type = TypeParser.parse(nodeDTO.outputType(), context);
+        var type = TypeParser.parseType(nodeDTO.outputType(), context);
         if (node == null)
             node = new CastNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), type, prev, scope, object);
         else {

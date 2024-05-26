@@ -1,5 +1,7 @@
 package tech.metavm.object.type;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.core.*;
@@ -16,6 +18,8 @@ import java.util.*;
 
 public class ValueFormatter {
 
+    private static final Logger logger = LoggerFactory.getLogger(ValueFormatter.class);
+
     public static final DateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public static Instance parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
@@ -23,7 +27,7 @@ public class ValueFormatter {
         if (!instanceDTO.isNew())
             actualType = context.get(instanceDTO.parseId()).getType();
         else
-            actualType = TypeParser.parse(instanceDTO.type(), context.getTypeDefProvider());
+            actualType = TypeParser.parseType(instanceDTO.type(), context.getTypeDefProvider());
         if (actualType instanceof ClassType classType) {
             if (classType.isList()) {
                 var param = (ListInstanceParam) instanceDTO.param();
@@ -51,6 +55,7 @@ public class ValueFormatter {
                         param.fields(),
                         InstanceFieldDTO::fieldId
                 );
+                fieldDTOMap.forEach((tag, v) -> logger.info("{}: {}", tag, v.toString()));
                 ClassInstance instance;
                 var klass = classType.resolve();
                 if (!instanceDTO.isNew()) {
@@ -59,10 +64,11 @@ public class ValueFormatter {
                     instance = ClassInstance.allocate(classType);
                 }
                 for (Field field : klass.getAllFields()) {
-                    FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getStringId()), InstanceFieldDTO::value);
+                    FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getStringTag()), InstanceFieldDTO::value);
                     Instance fieldValue = rawValue != null ?
                             parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context)
                             : Instances.nullInstance();
+                    logger.info("resolved {}: {}", field.getStringTag(), fieldValue);
                     fieldValueMap.put(field, fieldValue);
                 }
                 if (!instanceDTO.isNew()) {

@@ -7,7 +7,7 @@ public record FunctionRefDTO(
     List<String> typeArguments
 ) implements FlowRefDTO {
     @Override
-    public int kind() {
+    public int getKind() {
         return 2;
     }
 }
