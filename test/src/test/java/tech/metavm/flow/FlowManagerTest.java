@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.EntityQueryService;
-import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.core.TmpId;
@@ -36,7 +35,7 @@ public class FlowManagerTest extends TestCase {
                 new EntityQueryService(new InstanceQueryService(instanceSearchService));
         var jobManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
         typeManager =
-                new TypeManager(entityContextFactory, entityQueryService, jobManager, null);
+                new TypeManager(entityContextFactory, entityQueryService, jobManager);
         flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         FlowSavingContext.initConfig();

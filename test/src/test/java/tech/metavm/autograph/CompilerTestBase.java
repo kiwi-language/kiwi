@@ -71,8 +71,7 @@ public abstract class CompilerTestBase extends TestCase  {
         typeManager = new TypeManager(
                 bootResult.entityContextFactory(),
                 new EntityQueryService(instanceQueryService),
-                new TaskManager(bootResult.entityContextFactory(), new MockTransactionOperations()),
-                new MockTransactionOperations()
+                new TaskManager(bootResult.entityContextFactory(), new MockTransactionOperations())
         );
         instanceManager = new InstanceManager(bootResult.entityContextFactory(),
                 bootResult.instanceStore(), instanceQueryService);

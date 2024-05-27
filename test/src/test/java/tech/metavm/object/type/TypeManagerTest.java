@@ -47,8 +47,8 @@ public class TypeManagerTest extends TestCase {
         var entityQueryService = new EntityQueryService(new InstanceQueryService(instanceSearchService));
         typeManager = new TypeManager(
                 entityContextFactory, entityQueryService,
-                new TaskManager(entityContextFactory, transactionOperations),
-                transactionOperations);
+                new TaskManager(entityContextFactory, transactionOperations)
+        );
         instanceManager = new InstanceManager(
                 entityContextFactory, instanceStore, new InstanceQueryService(instanceSearchService)
         );

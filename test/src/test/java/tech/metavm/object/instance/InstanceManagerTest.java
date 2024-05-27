@@ -52,8 +52,7 @@ public class InstanceManagerTest extends TestCase {
         typeManager = new TypeManager(
                 bootResult.entityContextFactory(),
                 entityQueryService,
-                new TaskManager(entityContextFactory, transactionOperations),
-                transactionOperations
+                new TaskManager(entityContextFactory, transactionOperations)
         );
         flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);

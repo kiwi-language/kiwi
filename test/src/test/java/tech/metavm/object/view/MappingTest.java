@@ -46,8 +46,8 @@ public class MappingTest extends TestCase {
         EntityQueryService entityQueryService = new EntityQueryService(instanceQueryService);
         typeManager = new TypeManager(
                 bootResult.entityContextFactory(), entityQueryService,
-                new TaskManager(bootResult.entityContextFactory(), transactionOperations),
-                transactionOperations);
+                new TaskManager(bootResult.entityContextFactory(), transactionOperations)
+        );
         instanceManager = new InstanceManager(
                 bootResult.entityContextFactory(), bootResult.instanceStore(), instanceQueryService
         );

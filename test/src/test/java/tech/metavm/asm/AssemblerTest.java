@@ -75,8 +75,7 @@ public class AssemblerTest extends TestCase {
         var typeManager = new TypeManager(
                 bootResult.entityContextFactory(),
                 new EntityQueryService(instanceQueryService),
-                new TaskManager(bootResult.entityContextFactory(), new MockTransactionOperations()),
-                new MockTransactionOperations()
+                new TaskManager(bootResult.entityContextFactory(), new MockTransactionOperations())
         );
         var instanceManager = new InstanceManager(bootResult.entityContextFactory(),
                 bootResult.instanceStore(), instanceQueryService);

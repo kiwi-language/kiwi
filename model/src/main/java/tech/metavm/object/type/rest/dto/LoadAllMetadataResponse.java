@@ -7,7 +7,7 @@ import java.util.List;
 
 public record LoadAllMetadataResponse(
     long metaVersion,
-    List<TypeDefDTO> types,
+    List<TypeDefDTO> typeDefs,
     List<MappingDTO> mappings,
     List<FlowDTO> functions
 ) {

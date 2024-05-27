@@ -7,6 +7,7 @@ import tech.metavm.common.Result;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.*;
+import tech.metavm.object.version.VersionManager;
 
 import java.util.List;
 import java.util.Map;
@@ -17,8 +18,11 @@ public class TypeController {
 
     private final TypeManager typeManager;
 
-    public TypeController(TypeManager typeManager) {
+    private final VersionManager versionManager;
+
+    public TypeController(TypeManager typeManager, VersionManager versionManager) {
         this.typeManager = typeManager;
+        this.versionManager = versionManager;
     }
 
     @PostMapping("/query")
@@ -38,7 +42,7 @@ public class TypeController {
 
     @GetMapping("/load-all-metadata")
     public Result<LoadAllMetadataResponse> loadAllMetadata() {
-        return Result.success(typeManager.loadAllMetadata());
+        return Result.success(versionManager.loadAllMetadata());
     }
 
     @GetMapping("/{id}/descendants")

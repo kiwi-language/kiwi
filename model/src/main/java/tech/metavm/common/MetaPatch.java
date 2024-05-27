@@ -9,6 +9,7 @@ import java.util.List;
 public record MetaPatch(
         long baseVersion,
         long version,
+        boolean reset,
         List<TypeDefDTO> changedTypeDefs,
         List<String> removedTypeDefIds,
         List<MappingDTO> changedMappings,
