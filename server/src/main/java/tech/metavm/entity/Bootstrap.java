@@ -9,10 +9,13 @@ import tech.metavm.object.instance.MetaVersionPlugin;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.type.*;
+import tech.metavm.object.view.FieldsObjectMapping;
+import tech.metavm.object.view.FlowFieldMapping;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static tech.metavm.util.Constants.ROOT_APP_ID;
@@ -53,16 +56,19 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
             bridge.setEntityContext(defContext);
             ModelDefRegistry.setDefContext(defContext);
             entityContextFactory.setDefContext(defContext);
-            for (Class<?> entityClass : EntityUtils.getModelClasses()) {
-                if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
-                    defContext.getDef(entityClass);
+            var entityClasses = EntityUtils.getModelClasses();
+            for (ResolutionStage stage : ResolutionStage.values()) {
+                for (Class<?> entityClass : entityClasses) {
+                    if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
+                        defContext.getDef(entityClass, stage);
+                }
             }
             defContext.flushAndWriteInstances();
             ModelDefRegistry.setDefContext(defContext);
             var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && inst.tryGetTreeId() == null);
             if (!idNullInstances.isEmpty()) {
                 logger.warn(idNullInstances.size() + " instances have null ids. Save is required");
-                if(DebugEnv.bootstrapVerbose) {
+                if (DebugEnv.bootstrapVerbose) {
                     for (int i = 0; i < 10; i++) {
                         var inst = idNullInstances.get(i);
                         logger.warn("instance with null id: {}, identity: {}", Instances.getInstancePath(inst),
@@ -72,8 +78,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
             }
             ContextUtil.clearContextInfo();
             return new BootstrapResult(idNullInstances.size());
-        }
-        finally {
+        } finally {
             ThreadConfigs.sharedParameterizedElements(false);
         }
     }
@@ -103,7 +108,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
                 defContext.getIdentityMap().forEach((object, javaConstruct) -> {
                     if (EntityUtils.isDurable(object)) {
                         var instance = defContext.getInstance(object);
-                        if(instance.isRoot())
+                        if (instance.isRoot())
                             stdAllocators.putId(javaConstruct, instance.getId(), instance.getNextNodeId());
                         else
                             stdAllocators.putId(javaConstruct, instance.getId());

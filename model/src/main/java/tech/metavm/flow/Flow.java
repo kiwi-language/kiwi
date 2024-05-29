@@ -180,6 +180,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                 getName(),
                 getCode(),
                 isNative,
+                isSynthetic,
                 includeCode && isRootScopePresent() ? getRootScope().toDTO(true, serContext) : null,
                 returnType.toExpression(serContext),
                 NncUtils.map(parameters, Parameter::toDTO),

@@ -13,6 +13,7 @@ public record FlowDTO(
         String name,
         String code,
         boolean isNative,
+        boolean synthetic,
         @Nullable ScopeDTO rootScope,
         String returnType,
         List<ParameterDTO> parameters,

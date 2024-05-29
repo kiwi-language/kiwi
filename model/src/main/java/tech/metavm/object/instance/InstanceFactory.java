@@ -48,11 +48,11 @@ public class InstanceFactory {
         );
     }
 
-    public static Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
+    public static DurableInstance create(InstanceDTO instanceDTO, IInstanceContext context) {
         return create(instanceDTO, null, context);
     }
 
-    public static Instance save(InstanceDTO instanceDTO,
+    public static DurableInstance save(InstanceDTO instanceDTO,
                                 @Nullable InstanceParentRef parentRef,
                                 IInstanceContext context) {
         if (!instanceDTO.isNew()) {
@@ -68,7 +68,7 @@ public class InstanceFactory {
         }
     }
 
-    public static Instance create(
+    public static DurableInstance create(
             InstanceDTO instanceDTO,
             @Nullable InstanceParentRef parentRef,
             IInstanceContext context) {

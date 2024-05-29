@@ -96,7 +96,7 @@ public class Declarator extends CodeGenVisitor {
         var removedFields = NncUtils.exclude(metaClass.getFields(), visitedFields::contains);
         removedFields.forEach(metaClass::removeField);
         var removedMethods = NncUtils.filter(metaClass.getMethods(),
-                m -> !visitedMethods.contains(m) && !m.isSynthetic());
+                m -> !visitedMethods.contains(m));
         var fieldIndices = new HashMap<String, Integer>();
         for (int i = 0; i < psiClass.getFields().length; i++) {
             fieldIndices.put(psiClass.getFields()[i].getName(), i);
@@ -108,7 +108,7 @@ public class Declarator extends CodeGenVisitor {
             if(method != null)
                 methodIndices.put(method, i);
         }
-        metaClass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, m.isSynthetic() ? Integer.MAX_VALUE : -1)));
+        metaClass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
         removedMethods.forEach(metaClass::removeMethod);
 //        metaClass.setStage(ResolutionStage.DECLARATION);
     }

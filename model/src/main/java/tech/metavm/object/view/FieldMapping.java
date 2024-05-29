@@ -152,11 +152,7 @@ public abstract class FieldMapping extends Element {
     }
 
     @Nullable
-    public ObjectMapping getNestedMapping() {
-        return nestedMapping instanceof ObjectNestedMapping classCodeGenerator ? classCodeGenerator.getMapping() : null;
-    }
-
-    public NestedMapping nestedMapping() {
+    public NestedMapping getNestedMapping() {
         return nestedMapping;
     }
 

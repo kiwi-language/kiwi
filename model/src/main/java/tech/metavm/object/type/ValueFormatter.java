@@ -22,7 +22,7 @@ public class ValueFormatter {
 
     public static final DateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public static Instance parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
+    public static DurableInstance parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
         Type actualType;
         if (!instanceDTO.isNew())
             actualType = context.get(instanceDTO.parseId()).getType();
@@ -55,7 +55,6 @@ public class ValueFormatter {
                         param.fields(),
                         InstanceFieldDTO::fieldId
                 );
-                fieldDTOMap.forEach((tag, v) -> logger.info("{}: {}", tag, v.toString()));
                 ClassInstance instance;
                 var klass = classType.resolve();
                 if (!instanceDTO.isNew()) {
@@ -68,7 +67,6 @@ public class ValueFormatter {
                     Instance fieldValue = rawValue != null ?
                             parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context)
                             : Instances.nullInstance();
-                    logger.info("resolved {}: {}", field.getStringTag(), fieldValue);
                     fieldValueMap.put(field, fieldValue);
                 }
                 if (!instanceDTO.isNew()) {

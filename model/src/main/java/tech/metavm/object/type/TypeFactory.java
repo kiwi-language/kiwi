@@ -1,5 +1,6 @@
 package tech.metavm.object.type;
 
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.DummyGenericDeclaration;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
@@ -14,6 +15,7 @@ import tech.metavm.object.type.rest.dto.CapturedTypeVariableDTO;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeVariableDTO;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
@@ -110,8 +112,14 @@ public abstract class TypeFactory {
                     type.setStaticFields(NncUtils.map(param.staticFields(), f -> saveField(declaringType, f, context)));
                 if (param.constraints() != null)
                     type.setConstraints(NncUtils.map(param.constraints(), c -> ConstraintFactory.save(c, context)));
-                if (param.flows() != null)
-                    type.setMethods(NncUtils.map(param.flows(), f -> saveMethod(f, stage, batch)));
+                if (param.flows() != null) {
+                    var methods = NncUtils.filterAndMap(param.flows(), f -> !f.synthetic(), f -> saveMethod(f, stage, batch));
+                    type.getMethods().forEach(m -> {
+                        if(m.isSynthetic())
+                            methods.add(m);
+                    });
+                    type.setMethods(methods);
+                }
                 if (param.titleFieldId() != null)
                     type.setTitleField(NncUtils.find(type.getFields(), f -> f.getStringId().equals(param.titleFieldId())));
                 type.setStage(ResolutionStage.DECLARATION);
@@ -175,6 +183,8 @@ public abstract class TypeFactory {
                     .build();
             context.bind(method);
         } else {
+            if(method.isSynthetic())
+                throw new BusinessException(ErrorCode.MODIFYING_SYNTHETIC_FLOW, method.getQualifiedName());
             method.setName(flowDTO.name());
             method.setCode(flowDTO.code());
         }

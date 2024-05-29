@@ -181,7 +181,7 @@ public class TypeManager extends EntityContextFactoryBean {
         }
     }
 
-    public GetTypesResponse batchGetTypes(GetTypesRequest request) {
+    public GetKlassesResponse batchGetTypes(GetTypesRequest request) {
         try (var context = newContext()) {
             var idSet = new HashSet<>(request.ids());
             try (var serContext = SerializeContext.enter()) {
@@ -189,7 +189,7 @@ public class TypeManager extends EntityContextFactoryBean {
                     serContext.forceWriteKlass(context.getKlass(id));
                 }
                 serContext.writeDependencies(context);
-                return new GetTypesResponse(
+                return new GetKlassesResponse(
                         NncUtils.map(request.ids(), id -> serContext.getType(Id.parse(id))),
                         NncUtils.filter(serContext.getTypes(), t -> !idSet.contains(t.id()))
                 );
@@ -326,7 +326,7 @@ public class TypeManager extends EntityContextFactoryBean {
 
     public GetTypesResponse getDescendants(String id) {
         return getByRange(new GetByRangeRequest(
-                StandardTypes.getNeverType().getStringId(),
+                "never",
                 id,
                 false,
                 false,
@@ -336,8 +336,8 @@ public class TypeManager extends EntityContextFactoryBean {
 
     public GetTypesResponse getByRange(GetByRangeRequest request) {
         try (var context = newContext()) {
-            var lowerBound = context.getType(request.lowerBoundId());
-            var upperBound = context.getType(request.upperBoundId());
+            var lowerBound = TypeParser.parseType(request.lowerBoundId(), context);
+            var upperBound = TypeParser.parseType(request.upperBoundId(), context);
 
             List<Klass> types;
             if (lowerBound.equals(StandardTypes.getNeverType()) && upperBound.equals(StandardTypes.getAnyType())) {
@@ -396,13 +396,8 @@ public class TypeManager extends EntityContextFactoryBean {
                     }
                 }
             }
-            var typeIds = NncUtils.mapUnique(types, Entity::getId);
             try (var serContext = SerializeContext.enter()) {
-                types.forEach(serContext::forceWriteKlass);
-                return new GetTypesResponse(
-                        NncUtils.map(types, t -> serContext.getType(t.getId())),
-                        serContext.getTypes(t -> !typeIds.contains(t.getId()))
-                );
+                return new GetTypesResponse(NncUtils.map(types, t -> t.getType().toExpression(serContext)));
             }
         }
     }

@@ -101,7 +101,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             else
                 return new ClassType(((ClassType) getDef(rawClass).getType()).getKlass(), NncUtils.map(pType.getActualTypeArguments(), this::getType));
         } else
-            return getDef(javaType).getType();
+            return getDef(javaType, INIT).getType();
     }
 
     public void ensureStage(tech.metavm.object.type.Type type, ResolutionStage stage) {

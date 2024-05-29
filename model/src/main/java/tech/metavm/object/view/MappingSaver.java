@@ -234,8 +234,9 @@ public class MappingSaver {
                     Function.identity()
             );
             var fieldMappings = new ArrayList<FieldMapping>();
-            for (var field : getVisibleFields(type))
+            for (var field : getVisibleFields(type)) {
                 fieldMappings.add(saveBuiltinDirectFieldMapping(field, mapping, directFieldMappings));
+            }
             var propertyFieldMappings = NncUtils.toMap(
                     NncUtils.filterByType(mapping.getFieldMappings(), FlowFieldMapping.class),
                     FlowFieldMapping::getGetter,
@@ -275,7 +276,7 @@ public class MappingSaver {
 
             var fieldValues = new HashMap<String, Supplier<Value>>();
             for (FieldMapping fieldMapping : mapping.getFieldMappings()) {
-                var nestedMapping = fieldMapping.nestedMapping();
+                var nestedMapping = fieldMapping.getNestedMapping();
                 if (nestedMapping == null)
                     fieldValues.put(fieldMapping.getTargetField().getCode(), () -> Values.nodeProperty(view, fieldMapping.getTargetField()));
                 else {
@@ -448,8 +449,6 @@ public class MappingSaver {
                 if (classType.isList()) {
                     if (underlyingType instanceof ClassType underlyingClassType && underlyingClassType.isList()) {
                         var underlyingElementType = underlyingClassType.getListElementType();
-//                        logger.info("Getting ListNestedMapping. type: {}, underlyingClassType: {}, isChildList: {}, underlyingElementType: {}",
-//                                type.getTypeDesc(), underlyingClassType.getTypeDesc(), underlyingClassType.isChildList(), underlyingElementType.getTypeDesc());
                         var elementNestedMapping = underlyingClassType.isChildList() ?
                                 getNestedMapping(underlyingClassType.getListElementType(), underlyingElementType) :
                                 new IdentityNestedMapping(classType.getListElementType());
@@ -462,7 +461,6 @@ public class MappingSaver {
                     yield new IdentityNestedMapping(type);
                 } else {
                     var nestedMapping = classType.resolve().getBuiltinMapping();
-//                    logger.info("Getting pojo mapping. classType: " + classType + ", builtinMapping: " + nestedMapping);
                     yield nestedMapping != null ? new ObjectNestedMapping(nestedMapping.getRef()) : new IdentityNestedMapping(type);
                 }
             }

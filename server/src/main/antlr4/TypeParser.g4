@@ -3,17 +3,17 @@ parser grammar TypeParser;
 options {tokenVocab = TypeLexer;}
 
 type
-    : classType
-    | variableType
+    : NEVER
+    | ANY
     | primitiveType
-    | '(' typeList? ')' '->' type
+    | variableType
+    | '#' qualifiedName
+    | classType
+    | elementType=type '[' arrayKind? ']'
     | type ('|' type)+
     | type ('&' type)+
     | '[' type ',' type ']'
-    | elementType=type '[' arrayKind? ']'
-    | NEVER
-    | ANY
-    | '#' qualifiedName
+    | '(' typeList? ')' '->' type
     ;
 
 methodRef: classType '.' IDENTIFIER typeArguments?;

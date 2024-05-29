@@ -2,7 +2,10 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeKey;
@@ -14,6 +17,10 @@ import java.util.function.Function;
 
 @EntityType("基础类型")
 public class PrimitiveType extends Type {
+
+    public static PrimitiveType createNull() {
+        return new PrimitiveType(PrimitiveKind.NULL);
+    }
 
     @EntityField("分类")
     private final PrimitiveKind kind;

@@ -20,6 +20,7 @@ public class MethodDTOBuilder {
     private String code;
     private boolean isConstructor;
     private boolean isAbstract;
+    private boolean synthetic;
     private boolean isNative;
     private boolean isStatic;
     private List<MethodRefDTO> overriddenRefs = new ArrayList<>();
@@ -59,6 +60,11 @@ public class MethodDTOBuilder {
 
     public MethodDTOBuilder isNative(boolean isNative) {
         this.isNative = isNative;
+        return this;
+    }
+
+    public MethodDTOBuilder synthetic(boolean synthetic) {
+        this.synthetic = synthetic;
         return this;
     }
 
@@ -170,6 +176,7 @@ public class MethodDTOBuilder {
                 name,
                 code,
                 isNative,
+                synthetic,
                 skipRootScope ? null : new ScopeDTO(
                         rootScopeId,
                         nodes

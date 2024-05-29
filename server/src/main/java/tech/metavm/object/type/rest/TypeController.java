@@ -65,7 +65,7 @@ public class TypeController {
     }
 
     @PostMapping("/batch-get")
-    public Result<GetTypesResponse> batchGet(@RequestBody GetTypesRequest request) {
+    public Result<GetKlassesResponse> batchGet(@RequestBody GetTypesRequest request) {
         return Result.success(
                 typeManager.batchGetTypes(request)
         );

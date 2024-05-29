@@ -6,6 +6,9 @@ import tech.metavm.flow.MethodBuilder;
 import tech.metavm.util.Constants;
 import tech.metavm.util.TestUtils;
 
+import java.util.List;
+import java.util.Set;
+
 public class TypeParserImplTest extends TestCase {
 
     public void testFunctionType() {
@@ -25,13 +28,20 @@ public class TypeParserImplTest extends TestCase {
         var methodRef = TypeParser.parseMethodRef(
                 String.format("%s.%s", fooKlass.getType().toExpression(), Constants.CONSTANT_ID_PREFIX + testMethod.getStringId()),
                 id -> {
-                    if(fooKlass.idEquals(id))
+                    if (fooKlass.idEquals(id))
                         return fooKlass;
                     else
                         throw new RuntimeException();
                 }
         );
         Assert.assertSame(testMethod, methodRef.resolve());
+    }
+
+    public void testPrecedence() {
+        var type = TypeParser.parseType("()->any|null", id -> {
+            throw new UnsupportedOperationException();
+        });
+        Assert.assertEquals(new FunctionType(List.of(), new UnionType(Set.of(PrimitiveType.createNull(), new AnyType()))), type);
     }
 
 }

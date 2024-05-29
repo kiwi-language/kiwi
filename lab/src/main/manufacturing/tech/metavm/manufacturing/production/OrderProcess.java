@@ -17,7 +17,7 @@ public class OrderProcess {
 
     private long issuedQuantity;
 
-    private WorkCenter workCenter;
+    private @Nullable WorkCenter workCenter;
 
     private final ProductionOrder order;
 
@@ -31,7 +31,7 @@ public class OrderProcess {
 
     private @Nullable OrderSuccession nextSuccession;
 
-    public OrderProcess(String code, Process process, long planedQuantity, WorkCenter workCenter, ProductionOrder order) {
+    public OrderProcess(String code, Process process, long planedQuantity, @Nullable WorkCenter workCenter, ProductionOrder order) {
         this.code = code;
         this.process = process;
         this.planedQuantity = planedQuantity;
@@ -76,11 +76,11 @@ public class OrderProcess {
         this.issuedQuantity = issuedQuantity;
     }
 
-    public WorkCenter getWorkCenter() {
+    public @Nullable WorkCenter getWorkCenter() {
         return workCenter;
     }
 
-    public void setWorkCenter(WorkCenter workCenter) {
+    public void setWorkCenter(@Nullable WorkCenter workCenter) {
         this.workCenter = workCenter;
     }
 

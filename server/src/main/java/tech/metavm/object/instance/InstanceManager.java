@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @Component
 public class InstanceManager extends EntityContextFactoryBean {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(InstanceManager.class);
 
     private final InstanceStore instanceStore;
 
@@ -161,13 +161,16 @@ public class InstanceManager extends EntityContextFactoryBean {
     @Transactional
     public String create(InstanceDTO instanceDTO) {
         try (var context = newContext()) {
-            Instance instance = create(instanceDTO, context.getInstanceContext());
+            var instance = create(instanceDTO, context.getInstanceContext());
             context.finish();
+            if (instance.tryGetSource() != null) {
+                logger.info("source id: {}", instance.getSource().tryGetId());
+            }
             return Objects.requireNonNull(instance.tryGetId()).toString();
         }
     }
 
-    public Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
+    public DurableInstance create(InstanceDTO instanceDTO, IInstanceContext context) {
         return InstanceFactory.create(instanceDTO, context);
     }
 

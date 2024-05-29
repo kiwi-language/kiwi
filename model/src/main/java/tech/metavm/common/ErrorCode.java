@@ -96,6 +96,7 @@ public enum ErrorCode {
     STATIC_FLOW_CAN_NOT_BE_ABSTRACT(436, "静态流程不能设置为为抽象"),
     VIEW_NODE_SOURCE_TYPE_MISMATCH(437, "视图节点源头类型不匹配"),
     INSTANCE_METHOD_MISSING_STATIC_TYPE(438, "实例方法缺少静态类型"),
+    MODIFYING_SYNTHETIC_FLOW(439, "{}为synthetic流程，无法修改"),
 
     // 表达式相关错误
     EXPRESSION_INVALID(501, "表达式错误，原因: {}"),

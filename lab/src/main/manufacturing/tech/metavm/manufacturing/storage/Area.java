@@ -19,7 +19,7 @@ public class Area {
     private String name;
     @EntityField("上级库区")
     private final @Nullable Area parent;
-    @EntityField("下级库区")
+    @ChildEntity("下级库区")
     private final ChildList<Area> children = new ChildList<>();
     @ChildEntity("库位")
     private final ChildList<Position> positions = new ChildList<>();

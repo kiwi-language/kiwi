@@ -30,7 +30,7 @@ public enum IdTag {
     }
 
     public static IdTag fromCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
+        return NncUtils.findRequired(values(), v -> v.code == code, () -> "Can not find IdTag for code: " + code);
     }
 
 }

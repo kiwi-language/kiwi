@@ -10,6 +10,7 @@ import tech.metavm.object.view.rest.dto.MappingKey;
 import tech.metavm.util.EncodingUtils;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
+import tech.metavm.util.InternalException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -34,7 +35,12 @@ public abstract class Id implements Comparable<Id> {
     }
 
     public static Id parse(String str) {
-        return readId(new InstanceInput(new ByteArrayInputStream(EncodingUtils.hexToBytes(str))));
+        try {
+            return readId(new InstanceInput(new ByteArrayInputStream(EncodingUtils.hexToBytes(str))));
+        }
+        catch (Exception e) {
+            throw new InternalException("Failed to parse id: " + str, e);
+        }
     }
 
     public static Id fromBytes(byte[] bytes) {
