@@ -245,7 +245,6 @@ public class MainTest extends CompilerTestBase {
 
                 // get PlatformApplication
                 var platformApplicationType = queryClassType("PlatformApplication");
-                DebugEnv.flag = true;
                 var platformApplication = doInTransaction(() -> flowExecutionService.execute(
                         new FlowExecutionRequest(
                                 TestUtils.getMethodRefByCode(platformApplicationType, "getInstance"),

@@ -55,16 +55,6 @@ public class SubstitutorV2 extends CopyVisitor {
         }
         this.typeSubstitutor = new TypeSubstitutor(NncUtils.map(typeParameters, TypeVariable::getType), typeArguments);
         this.stage = stage;
-//        NncUtils.biForEach(typeParameters, typeArguments, this::addCopy);
-        /*var rootDTO = switch (root) {
-            case Klass classType ->
-                    dtoProvider.getPTypeDTO(classType.getStringId(), NncUtils.map(typeArguments, Entity::getStringId));
-            case Flow flow ->
-                    dtoProvider.getParameterizedFlowDTO(flow.getStringId(), NncUtils.map(typeArguments, Entity::getStringId));
-            default -> throw new IllegalStateException("Unexpected root: " + root);
-        };
-        if (rootDTO != null)
-            rootDTO.forEachDescendant(this::addCopyTmpId); */
         Object existingRoot = switch (root) {
             case Flow flow -> flow.getEffectiveHorizontalTemplate().getExistingParameterized(
                     NncUtils.map(NncUtils.map(flow.getTypeParameters(), TypeVariable::getType), this::substituteType));
@@ -94,19 +84,6 @@ public class SubstitutorV2 extends CopyVisitor {
                 }
             }, true);
         }
-        /*if (!existingCopies.isEmpty()) {
-            logger.info("existing copies");
-            existingCopies.forEach((source, copy) -> {
-                logger.info("source: {}, copy: {}", EntityUtils.getEntityPath(source), EntityUtils.getEntityPath(copy));
-            });
-        }*/
-//        if(root instanceof Flow flow && flow.getName().equals("findRequired")) {
-//            debugLogger.info("Substituting {}, with type arguments: {}", EntityUtils.getEntityDesc(root),
-//                    NncUtils.join(typeArguments, EntityUtils::getEntityDesc));
-//            existingCopies.forEach((s, t) -> {
-//                debugLogger.info("source: {}, target: {}", EntityUtils.getEntityDesc(s), EntityUtils.getEntityDesc(t));
-//            });
-//        }
     }
 
 
@@ -377,7 +354,7 @@ public class SubstitutorV2 extends CopyVisitor {
     public Type visitType(Type type) {
         var mapped = typeSubstitutor.getVariableMap().get(type);
         if (mapped != null)
-            return mapped.copy();
+            return mapped;
         return (Type) super.visitType(type);
     }
 

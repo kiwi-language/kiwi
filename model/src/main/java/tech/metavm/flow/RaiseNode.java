@@ -4,15 +4,14 @@ import tech.metavm.entity.*;
 import tech.metavm.entity.natives.ExceptionNative;
 import tech.metavm.entity.natives.NativeMethods;
 import tech.metavm.expression.FlowParsingContext;
-import tech.metavm.flow.rest.RaiseNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.flow.rest.RaiseNodeParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 @EntityType("抛出节点")
 public class RaiseNode extends NodeRT {
@@ -32,13 +31,10 @@ public class RaiseNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("错误信息")
-    @Nullable
-    private Value message;
+    @EntityField("错误信息")
+    private @Nullable Value message;
 
-    @ChildEntity("异常")
-    @Nullable
-    private Value exception;
+    private @Nullable Value exception;
 
     @EntityField("参数类型")
     private RaiseParameterKind parameterKind;
@@ -48,24 +44,24 @@ public class RaiseNode extends NodeRT {
         super(tmpId, name, code, null, prev, scope);
         this.parameterKind = parameterKind;
         if(parameterKind == RaiseParameterKind.THROWABLE) {
-            this.exception = addChild(Objects.requireNonNull(exception), "exception");
+            this.exception = exception;
             this.message = null;
         }
         else {
             this.exception = null;
-            this.message = addChild(Objects.requireNonNull(message), "message");
+            this.message = message;
         }
     }
 
     public void update(RaiseParameterKind parameterKind, @Nullable Value exception, @Nullable Value message) {
         this.parameterKind = parameterKind;
         if(parameterKind == RaiseParameterKind.THROWABLE) {
-            this.exception = addChild(Objects.requireNonNull(exception), "exception");
+            this.exception = exception;
             this.message = null;
         }
         else {
             this.exception = null;
-            this.message = addChild(Objects.requireNonNull(message), "message");
+            this.message = message;
         }
     }
 

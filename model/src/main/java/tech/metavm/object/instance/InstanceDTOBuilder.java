@@ -2,7 +2,10 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.entity.natives.ListNative;
-import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;

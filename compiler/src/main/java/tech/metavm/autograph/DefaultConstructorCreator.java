@@ -2,12 +2,10 @@ package tech.metavm.autograph;
 
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiTypeParameter;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
-import java.util.Objects;
 
 public class DefaultConstructorCreator extends VisitorBase {
 

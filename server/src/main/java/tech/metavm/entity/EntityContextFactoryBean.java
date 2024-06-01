@@ -1,6 +1,5 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.Constants;
 
 public class EntityContextFactoryBean {

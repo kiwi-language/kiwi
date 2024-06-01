@@ -1,6 +1,5 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
@@ -13,18 +12,14 @@ import java.util.Objects;
 
 @EntityType("游标表达式")
 public class CursorExpression extends Expression{
-    
-    @EntityField("AllMatch表达式")
-    private final AllMatchExpression allMatchExpression;
-    @Nullable
+
     @EntityField("别名")
-    private final String alias;
-    @ChildEntity("类型")
+    private final @Nullable String alias;
+    @EntityField("类型")
     private final Type type;
 
-    public CursorExpression(AllMatchExpression allMatchExpression, Type type, @Nullable String alias) {
-        this.allMatchExpression = allMatchExpression;
-        this.type = addChild(type.copy(), "type");
+    public CursorExpression(Type type, @Nullable String alias) {
+        this.type = type;
         this.alias = alias;
     }
 
@@ -45,10 +40,6 @@ public class CursorExpression extends Expression{
     @Override
     public Type getType() {
         return type;
-    }
-
-    public AllMatchExpression getAllMatchExpression() {
-        return allMatchExpression;
     }
 
     @Override

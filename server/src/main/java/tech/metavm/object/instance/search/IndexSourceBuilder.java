@@ -1,9 +1,9 @@
 package tech.metavm.object.instance.search;
 
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;

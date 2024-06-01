@@ -18,7 +18,6 @@ import tech.metavm.flow.Parameter;
 import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.TypeVariable;
 import tech.metavm.object.type.UncertainType;
-import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 

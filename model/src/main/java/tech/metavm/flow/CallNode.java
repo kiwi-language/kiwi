@@ -3,7 +3,10 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.VarType;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -30,20 +33,20 @@ public abstract class CallNode extends NodeRT {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    @ChildEntity("flowRef")
+    @EntityField("flowRef")
     private FlowRef flowRef;
     @ChildEntity("参数列表")
-    protected final ChildArray<Argument> arguments = addChild(new ChildArray<>(Argument.class), "arguments");
+    protected final ReadWriteArray<Argument> arguments = addChild(new ReadWriteArray<>(Argument.class), "arguments");
     @ChildEntity("捕获类型列表")
-    protected final ChildArray<Type> capturedExpressionTypes = addChild(new ChildArray<>(Type.class), "capturedExpressionTypes");
+    protected final ReadWriteArray<Type> capturedExpressionTypes = addChild(new ReadWriteArray<>(Type.class), "capturedExpressionTypes");
     @ChildEntity("捕获类型表达式列表")
-    protected final ChildArray<Expression> capturedExpressions = addChild(new ChildArray<>(Expression.class), "capturedExpressions");
+    protected final ReadWriteArray<Expression> capturedExpressions = addChild(new ReadWriteArray<>(Expression.class), "capturedExpressions");
 
     public CallNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, @NotNull FlowRef flowRef,
                     @NotNull List<Argument> arguments) {
         super(tmpId, name, code, null, prev, scope);
-        this.flowRef = addChild(flowRef.copy(), "flowRef");
-        this.arguments.addChildren(arguments);
+        this.flowRef = flowRef;
+        this.arguments.addAll(arguments);
     }
 
     public FlowRef getFlowRef() {
@@ -51,11 +54,11 @@ public abstract class CallNode extends NodeRT {
     }
 
     public void setFlowRef(FlowRef flowRef) {
-        this.flowRef = addChild(flowRef.copy(), "flowRef");
+        this.flowRef = flowRef;
     }
 
     public void setArguments(List<Argument> arguments) {
-        this.arguments.resetChildren(arguments);
+        this.arguments.reset(arguments);
     }
 
     public List<Argument> getArguments() {
@@ -63,11 +66,11 @@ public abstract class CallNode extends NodeRT {
     }
 
     public void setCapturedExpressionTypes(List<Type> capturedExpressionTypes) {
-        this.capturedExpressionTypes.resetChildren(NncUtils.map(capturedExpressionTypes, Type::copy));
+        this.capturedExpressionTypes.reset(capturedExpressionTypes);
     }
 
     public void setCapturedExpressions(List<Expression> capturedExpressions) {
-        this.capturedExpressions.resetChildren(capturedExpressions);
+        this.capturedExpressions.reset(capturedExpressions);
     }
 
     protected abstract @Nullable ClassInstance getSelf(MetaFrame frame);

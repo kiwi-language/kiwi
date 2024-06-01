@@ -9,17 +9,17 @@ import tech.metavm.object.instance.core.Instance;
 import java.util.Objects;
 
 @EntityType("实参")
-public class Argument extends Element implements LocalKey {
+public class Argument extends Element implements LocalKey, tech.metavm.entity.Value {
 
-    @ChildEntity("形参引用")
+    @EntityField("形参引用")
     private final ParameterRef parameterRef;
-    @ChildEntity("值")
-    private Value value;
+    @EntityField("值")
+    private final Value value;
 
     public Argument(Long tmpId, ParameterRef parameterRef, Value value) {
         super(tmpId);
-        this.parameterRef = addChild(parameterRef.copy(), "parameterRef");
-        this.value = addChild(value, "value");
+        this.parameterRef = parameterRef;
+        this.value = value;
     }
 
     public Parameter getParameter() {
@@ -28,10 +28,6 @@ public class Argument extends Element implements LocalKey {
 
     public Value getValue() {
         return value;
-    }
-
-    public void setValue(Value value) {
-        this.value = addChild(value, "value");
     }
 
     public Instance evaluate(EvaluationContext evaluationContext) {

@@ -3,7 +3,6 @@ package tech.metavm.entity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import tech.metavm.application.Application;
 import tech.metavm.object.instance.ChangeLogPlugin;
 import tech.metavm.object.instance.CheckConstraintPlugin;
 import tech.metavm.object.instance.IndexConstraintPlugin;
@@ -12,7 +11,6 @@ import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
-import tech.metavm.object.type.IdConstants;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 

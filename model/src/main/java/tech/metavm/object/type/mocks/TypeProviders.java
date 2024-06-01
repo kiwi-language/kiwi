@@ -3,7 +3,10 @@ package tech.metavm.object.type.mocks;
 import tech.metavm.entity.EntityRepository;
 import tech.metavm.entity.MemTypeRegistry;
 import tech.metavm.entity.mocks.MockEntityRepository;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ResolutionStage;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeDef;
+import tech.metavm.object.type.TypeVariable;
 import tech.metavm.object.type.generic.SubstitutorV2;
 
 import java.util.List;

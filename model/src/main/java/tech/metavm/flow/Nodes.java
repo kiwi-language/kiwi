@@ -66,7 +66,7 @@ public class Nodes {
         node.setCondition(Values.expression(
                 Expressions.lt(
                         Expressions.nodeProperty(node, indexField),
-                        Expressions.arrayLength(getArray.get().getExpression().copy())
+                        Expressions.arrayLength(getArray.get().getExpression())
                 )
         ));
         var bodyScope = node.getBodyScope();
@@ -91,13 +91,15 @@ public class Nodes {
                 .build();
         var list = getArray.get();
         var listClass = ((ClassType) list.getType()).resolve();
+        var methodRef = listClass.getMethodByCodeAndParamTypes("size", List.of()).getRef();
         var size = new MethodCallNode(
                 null,
                 "列表大小_" + seq,
                 null,
                 scope.getLastNode(),
-                scope, list,
-                listClass.getMethodByCodeAndParamTypes("size", List.of()).getRef(),
+                scope,
+                list,
+                methodRef,
                 List.of()
         );
         var node = new WhileNode(
@@ -191,7 +193,7 @@ public class Nodes {
     }
 
     public static InputNode input(Flow flow) {
-       return input(flow, "Input", "Input");
+        return input(flow, "Input", "Input");
     }
 
     public static InputNode input(Flow flow, String name, String code) {

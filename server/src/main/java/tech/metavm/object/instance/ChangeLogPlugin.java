@@ -9,7 +9,6 @@ import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.VersionRT;
-import tech.metavm.util.DebugEnv;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;

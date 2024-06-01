@@ -31,6 +31,7 @@ public class StreamVisitor {
             case WireTypes.PASSWORD -> visitPassword();
             case WireTypes.REFERENCE -> visitReference();
             case WireTypes.RECORD -> visitRecord();
+            case WireTypes.VALUE -> visitValue();
             default -> throw new InternalException("Invalid wire type: " + wireType);
         }
     }
@@ -57,6 +58,10 @@ public class StreamVisitor {
 
     public void visitRecord() {
         visitRecordBody(readLong(), TypeKey.read(input));
+    }
+
+    public void visitValue() {
+        visitBody(TypeKey.read(input));
     }
 
     public Id readId() {
@@ -92,6 +97,10 @@ public class StreamVisitor {
     }
 
     public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
+        visitBody(typeOrTypeKey);
+    }
+
+    public void visitBody(TypeOrTypeKey typeOrTypeKey) {
         if (typeOrTypeKey.isArray()) {
             int len = input.readInt();
             for (int i = 0; i < len; i++)

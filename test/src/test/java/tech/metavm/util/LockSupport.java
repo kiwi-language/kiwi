@@ -1,7 +1,7 @@
 package tech.metavm.util;
 
-import java.util.*;
 import java.util.LinkedList;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;

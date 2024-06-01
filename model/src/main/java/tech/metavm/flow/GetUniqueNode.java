@@ -36,12 +36,12 @@ public class GetUniqueNode extends NodeRT {
     @EntityField("索引")
     private Index index;
     @ChildEntity("值列表")
-    private final ChildArray<Value> values = addChild(new ChildArray<>(Value.class), "values");
+    private final ReadWriteArray<Value> values = addChild(new ReadWriteArray<>(Value.class), "values");
 
     public GetUniqueNode(Long tmpId, String name, @Nullable String code, UnionType type, Index index, NodeRT previous, ScopeRT scope, List<Value> values) {
         super(tmpId, name, code, type, previous, scope);
         this.index = index;
-        this.values.addChildren(values);
+        this.values.addAll(values);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class GetUniqueNode extends NodeRT {
     }
 
     public void setValues(List<Value> values) {
-        this.values.resetChildren(values);
+        this.values.reset(values);
     }
 
     public void setIndex(Index index) {

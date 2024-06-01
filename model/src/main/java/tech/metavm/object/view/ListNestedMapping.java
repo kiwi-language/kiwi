@@ -19,16 +19,14 @@ import java.util.function.Supplier;
 @EntityType("数组嵌套映射")
 public class ListNestedMapping extends NestedMapping {
 
-    @ChildEntity("来源类型")
     private final ClassType sourceType;
-    @ChildEntity("目标类型")
     private final ClassType targetType;
     @ChildEntity("元素嵌套映射")
     private final NestedMapping elementNestedMapping;
 
     public ListNestedMapping(ClassType sourceType, ClassType targetType, NestedMapping elementNestedMapping) {
-        this.sourceType = addChild(sourceType.copy(), "sourceType");
-        this.targetType = addChild(targetType.copy(), "targetType");
+        this.sourceType = sourceType;
+        this.targetType = targetType;
         this.elementNestedMapping = addChild(elementNestedMapping, "elementNestedMapping");
     }
 

@@ -3,7 +3,9 @@ package tech.metavm.util;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.LongInstance;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeCategory;
+import tech.metavm.object.type.Types;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
@@ -160,7 +162,7 @@ public class ValueUtil {
     }
 
     public static boolean isValueType(Class<?> klass) {
-        return klass.isAnnotationPresent(ValueType.class);
+        return Value.class.isAssignableFrom(klass);
     }
 
     public static boolean isEnumType(Class<?> klass) {
@@ -192,60 +194,48 @@ public class ValueUtil {
 
     public static TypeCategory getTypeCategory(java.lang.reflect.Type type) {
         if (type instanceof Class<?> klass) {
-            if (BiUnion.class.isAssignableFrom(klass)) {
+            if (BiUnion.class.isAssignableFrom(klass))
                 return TypeCategory.UNION;
-            }
-            if (klass.isInterface()) {
+            if (klass.isInterface())
                 return TypeCategory.INTERFACE;
-            }
-            if (isLong(klass) || isInteger(klass)) {
+            if (isLong(klass) || isInteger(klass))
                 return TypeCategory.LONG;
-            }
-            if (isDouble(klass)) {
+            if (isDouble(klass))
                 return TypeCategory.DOUBLE;
-            }
-            if (isTime(klass)) {
+            if (isTime(klass))
                 return TypeCategory.TIME;
-            }
-            if (isBoolean(klass)) {
+            if (isBoolean(klass))
                 return TypeCategory.BOOLEAN;
-            }
-            if (isString(klass)) {
+            if (isString(klass))
                 return TypeCategory.STRING;
-            }
-            if (isPassword(klass)) {
+            if (isPassword(klass))
                 return TypeCategory.PASSWORD;
-            }
-            if (Date.class.equals(klass)) {
+            if (Date.class.equals(klass))
                 return TypeCategory.TIME;
-            }
-            if (Password.class.equals(klass)) {
+            if (Password.class.equals(klass))
                 return TypeCategory.PASSWORD;
-            }
-            if (Null.class.equals(klass)) {
+            if (Null.class.equals(klass))
                 return TypeCategory.NULL;
-            }
-            if (Object.class.equals(klass) || Record.class.isAssignableFrom(klass) || isValueType(klass)) {
+            if (Object.class.equals(klass) || Record.class.isAssignableFrom(klass) || isValueType(klass))
                 return TypeCategory.VALUE;
-            }
             if (isArrayType(klass)) {
-                if (isChildArrayType(klass)) {
+                if (isChildArrayType(klass))
                     return TypeCategory.CHILD_ARRAY;
-                } else if (ReadWriteArray.class.isAssignableFrom(klass)) {
+                else if (ReadWriteArray.class.isAssignableFrom(klass))
                     return TypeCategory.READ_WRITE_ARRAY;
-                } else {
+                else if(ValueArray.class.isAssignableFrom(klass))
+                    return TypeCategory.VALUE_ARRAY;
+                else if(ReadonlyArray.class.isAssignableFrom(klass))
                     return TypeCategory.READ_ONLY_ARRAY;
-                }
+                else
+                    throw new InternalException("Unrecognized array class: " + klass.getName());
             }
-            if (isEnumType(klass)) {
+            if (isEnumType(klass))
                 return TypeCategory.ENUM;
-            }
-            if (isEntityType(klass)) {
+            if (isEntityType(klass))
                 return TypeCategory.CLASS;
-            }
-            if (Class.class == klass) {
+            if (Class.class == klass)
                 return TypeCategory.CLASS;
-            }
         }
         if (type instanceof ParameterizedType parameterizedType) {
             if (parameterizedType.getRawType() instanceof Class<?> rawClass) {
@@ -253,6 +243,8 @@ public class ValueUtil {
                     return TypeCategory.CHILD_ARRAY;
                 else if (ReadWriteArray.class.isAssignableFrom(rawClass))
                     return TypeCategory.READ_WRITE_ARRAY;
+                else if(ValueArray.class.isAssignableFrom(rawClass))
+                    return TypeCategory.VALUE_ARRAY;
                 else if (ReadonlyArray.class.isAssignableFrom(rawClass))
                     return TypeCategory.READ_ONLY_ARRAY;
                 else

@@ -29,12 +29,12 @@ public class ValueNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("值")
+    @EntityField("值")
     private Value value;
 
     public ValueNode(Long tmpId, String name, @Nullable String code, Type outputType, NodeRT previous, ScopeRT scope, Value value) {
         super(tmpId, name, code, outputType, previous, scope);
-        this.value = addChild(value, "value");
+        this.value = value;
     }
 
     @Override
@@ -47,7 +47,7 @@ public class ValueNode extends NodeRT {
     }
 
     public void setValue(Value value) {
-        this.value = addChild(value, "value");
+        this.value = value;
     }
 
     @Override

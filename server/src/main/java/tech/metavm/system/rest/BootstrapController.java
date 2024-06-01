@@ -4,13 +4,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import tech.metavm.application.ApplicationManager;
 import tech.metavm.common.Result;
 import tech.metavm.entity.Bootstrap;
 import tech.metavm.system.RegionManager;
 import tech.metavm.task.IndexRebuildGlobalTask;
-import tech.metavm.task.TaskManager;
 import tech.metavm.task.Scheduler;
-import tech.metavm.application.ApplicationManager;
+import tech.metavm.task.TaskManager;
 
 @RestController
 @RequestMapping("/bootstrap")

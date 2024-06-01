@@ -87,7 +87,6 @@ public class NewObjectNode extends CallNode implements NewNode {
         return node;
     }
 
-    @ChildEntity("父引用")
     @Nullable
     private ParentRef parentRef;
 

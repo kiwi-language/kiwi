@@ -9,7 +9,6 @@ import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.flow.rest.MethodRefDTO;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.TypeExpressions;
-import tech.metavm.util.Constants;
 import tech.metavm.util.TestUtils;
 
 import java.util.List;

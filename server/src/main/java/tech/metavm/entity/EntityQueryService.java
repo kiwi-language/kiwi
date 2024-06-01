@@ -6,7 +6,8 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ContextTypeDefRepository;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
 import java.util.Collection;

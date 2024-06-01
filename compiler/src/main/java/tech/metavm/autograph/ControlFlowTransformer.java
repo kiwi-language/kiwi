@@ -1,7 +1,10 @@
 package tech.metavm.autograph;
 
 
-import com.intellij.psi.*;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiBlockStatement;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiIfStatement;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;

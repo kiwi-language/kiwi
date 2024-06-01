@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.log.InstanceLog;
-import tech.metavm.util.NncUtils;
 import tech.metavm.util.TypeReference;
 
 import java.util.ArrayList;

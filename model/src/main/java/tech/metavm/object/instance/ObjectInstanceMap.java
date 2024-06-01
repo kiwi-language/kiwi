@@ -3,8 +3,8 @@ package tech.metavm.object.instance;
 import tech.metavm.entity.Mapper;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Type;
 
 import javax.annotation.Nullable;

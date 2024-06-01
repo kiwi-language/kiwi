@@ -3,8 +3,6 @@ package tech.metavm.event.rest.dto;
 import tech.metavm.event.UserEventKind;
 import tech.metavm.message.rest.dto.MessageDTO;
 
-import java.util.Objects;
-
 public class ReceiveMessageEvent extends UserEvent {
 
     private final MessageDTO message;

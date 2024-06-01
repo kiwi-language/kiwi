@@ -3,7 +3,6 @@ package tech.metavm.message;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.EntityType;
-import tech.metavm.user.LabPlatformUser;
 import tech.metavm.user.LabUser;
 import tech.metavm.utils.LabBusinessException;
 import tech.metavm.utils.LabErrorCode;

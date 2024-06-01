@@ -17,13 +17,12 @@ public class ObjectMappingRef extends ValueElement implements Reference {
         );
     }
 
-    @ChildEntity("declaringType")
     private final ClassType declaringType;
     private final ObjectMapping rawMapping;
     private transient ObjectMapping resolved;
 
     public ObjectMappingRef(ClassType declaringType, ObjectMapping rawMapping) {
-        this.declaringType = addChild(declaringType.copy(), "declaringType");
+        this.declaringType = declaringType;
         this.rawMapping = rawMapping;
     }
 
@@ -57,13 +56,6 @@ public class ObjectMappingRef extends ValueElement implements Reference {
 
     public ObjectMapping getRawMapping() {
         return rawMapping;
-    }
-
-    @Override
-    public ObjectMappingRef copy() {
-        var copy = new ObjectMappingRef(declaringType, rawMapping);
-        copy.resolved = resolved;
-        return copy;
     }
 
     public ObjectMappingRefDTO toDTO() {

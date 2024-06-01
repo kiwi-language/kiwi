@@ -8,12 +8,10 @@ import javax.annotation.Nullable;
 public class SubEvaluationContext implements EvaluationContext {
 
     private final EvaluationContext parent;
-    private final AllMatchExpression allMatchExpression;
     private final Instance instance;
 
-    public SubEvaluationContext(EvaluationContext parent, AllMatchExpression allMatchExpression, Instance instance) {
+    public SubEvaluationContext(EvaluationContext parent, Instance instance) {
         this.parent = parent;
-        this.allMatchExpression = allMatchExpression;
         this.instance = instance;
     }
 
@@ -29,8 +27,7 @@ public class SubEvaluationContext implements EvaluationContext {
     }
 
     private boolean isSelfContextExpression(Expression expression) {
-        return expression instanceof CursorExpression cursor
-                && cursor.getAllMatchExpression() == allMatchExpression;
+        return expression instanceof CursorExpression;
     }
 
     @Override

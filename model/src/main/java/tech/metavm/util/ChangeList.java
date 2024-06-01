@@ -1,7 +1,5 @@
 package tech.metavm.util;
 
-import org.checkerframework.checker.units.qual.K;
-
 import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;

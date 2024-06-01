@@ -7,8 +7,8 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateStaticNodeParam;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 

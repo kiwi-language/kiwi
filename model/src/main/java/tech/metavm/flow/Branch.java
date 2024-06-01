@@ -40,7 +40,7 @@ public class Branch extends Element implements LocalKey {
     private final BranchNode owner;
     @ChildEntity("范围")
     private final ScopeRT scope;
-    @ChildEntity("条件")
+    @EntityField("条件")
     private Value condition;
     @EntityField("是否默认")
     private final boolean preselected;
@@ -52,7 +52,7 @@ public class Branch extends Element implements LocalKey {
         this.owner = owner;
         this.scope = addChild(new ScopeRT(owner.getFlow(), owner), "scope");
         this.preselected = preselected;
-        this.condition = addChild(condition, "condition");
+        this.condition = condition;
         if (isExit) {
             NncUtils.requireTrue(preselected, "Only default branch can be an exit");
         }
@@ -107,7 +107,7 @@ public class Branch extends Element implements LocalKey {
     }
 
     public void setCondition(Value condition) {
-        this.condition = addChild(condition, "condition");
+        this.condition = condition;
     }
 
     public boolean checkCondition(MetaFrame frame) {

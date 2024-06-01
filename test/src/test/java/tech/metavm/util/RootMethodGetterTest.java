@@ -5,7 +5,6 @@ import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public class RootMethodGetterTest extends TestCase {
 

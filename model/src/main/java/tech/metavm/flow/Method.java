@@ -34,7 +34,7 @@ public class Method extends Flow implements Property, GenericElement {
     @EntityField("可见范围")
     private Access access;
     @ChildEntity("被复写流程")
-    private final ChildArray<MethodRef> overridden = addChild(new ChildArray<>(MethodRef.class), "overridden");
+    private final ReadWriteArray<MethodRef> overridden = addChild(new ReadWriteArray<>(MethodRef.class), "overridden");
     @EntityField("是否构造函数")
     private boolean isConstructor;
     @EntityField("是否抽象")
@@ -53,7 +53,6 @@ public class Method extends Flow implements Property, GenericElement {
     @CopyIgnore
     @Nullable
     private Method verticalTemplate;
-    @ChildEntity("静态类型")
     @Nullable
     private FunctionType staticType;
 
@@ -88,13 +87,13 @@ public class Method extends Flow implements Property, GenericElement {
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
         if (!isStatic) {
-            this.staticType = addChild(new FunctionType(
+            this.staticType = new FunctionType(
                     NncUtils.prepend(declaringType.getType(), NncUtils.map(parameters, Parameter::getType)),
                     returnType
-            ), "staticType");
+            );
         }
         this.access = access;
-        this.overridden.addChildren(NncUtils.map(overridden, MethodRef::copy));
+        this.overridden.addAll(overridden);
         parameterized = horizontalTemplate != null;
         this.hidden = hidden;
         if (horizontalTemplate == null)
@@ -237,9 +236,9 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     public void setOverridden(List<Method> overridden) {
-        var overriddenRefs = NncUtils.map(overridden, m -> m.getRef().copy());
+        var overriddenRefs = NncUtils.map(overridden, Method::getRef);
         checkTypes(overriddenRefs, getParameters(), getReturnType());
-        this.overridden.resetChildren(overriddenRefs);
+        this.overridden.reset(overriddenRefs);
         declaringType.rebuildMethodTable();
     }
 
@@ -251,14 +250,14 @@ public class Method extends Flow implements Property, GenericElement {
     public void addOverridden(Method overridden) {
         var overriddenRef = overridden.getRef();
         checkTypes(List.of(overriddenRef), getParameters(), getReturnType());
-        this.overridden.addChild(overriddenRef);
+        this.overridden.add(overriddenRef);
         declaringType.rebuildMethodTable();
     }
 
     public void addOverridden(List<Method> overridden) {
-        var overriddenRefs = NncUtils.map(overridden, m -> m.getRef().copy());
+        var overriddenRefs = NncUtils.map(overridden, Method::getRef);
         checkTypes(overriddenRefs, getParameters(), getReturnType());
-        this.overridden.addChildren(overriddenRefs);
+        this.overridden.addAll(overriddenRefs);
         declaringType.rebuildMethodTable();
     }
 
@@ -310,10 +309,10 @@ public class Method extends Flow implements Property, GenericElement {
     protected void resetType() {
         super.resetType();
         if (!isStatic()) {
-            staticType = addChild(new FunctionType(
+            staticType = new FunctionType(
                     NncUtils.prepend(declaringType.getType(), getParameterTypes()),
                     getReturnType()
-            ), "staticType");
+            );
         }
     }
 

@@ -6,6 +6,4 @@ public interface PropertyRef extends Reference {
 
     Property resolve();
 
-    PropertyRef copy();
-
 }

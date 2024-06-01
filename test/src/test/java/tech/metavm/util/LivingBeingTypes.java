@@ -1,8 +1,8 @@
 package tech.metavm.util;
 
 import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
 
 public record LivingBeingTypes(
         Klass livingBeingType,

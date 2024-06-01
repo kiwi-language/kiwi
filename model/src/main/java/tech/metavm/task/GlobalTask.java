@@ -1,8 +1,8 @@
 package tech.metavm.task;
 
+import tech.metavm.application.Application;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.application.Application;
 
 import java.util.List;
 

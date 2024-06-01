@@ -1,12 +1,12 @@
 package tech.metavm.application.rest;
 
 import org.springframework.web.bind.annotation.*;
+import tech.metavm.application.ApplicationManager;
 import tech.metavm.application.rest.dto.*;
 import tech.metavm.common.Page;
 import tech.metavm.common.Result;
-import tech.metavm.application.ApplicationManager;
-import tech.metavm.user.rest.dto.AppMemberDTO;
 import tech.metavm.user.rest.dto.AppEvictRequest;
+import tech.metavm.user.rest.dto.AppMemberDTO;
 
 @RestController
 @RequestMapping("/app")

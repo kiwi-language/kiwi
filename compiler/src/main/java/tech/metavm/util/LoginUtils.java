@@ -1,7 +1,6 @@
 package tech.metavm.util;
 
 import tech.metavm.autograph.TypeClient;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.user.rest.dto.LoginInfo;
 import tech.metavm.user.rest.dto.LoginRequest;
 

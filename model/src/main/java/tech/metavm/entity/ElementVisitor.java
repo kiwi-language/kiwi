@@ -1,11 +1,10 @@
 package tech.metavm.entity;
 
 import tech.metavm.expression.*;
-import tech.metavm.flow.Function;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.*;
 import tech.metavm.object.type.Index;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.*;
 
 public abstract class ElementVisitor<R> {

@@ -33,13 +33,13 @@ public class CastNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("值")
+    @EntityField("值")
     private @NotNull Value object;
 
     public CastNode(Long tmpId, String name, @Nullable String code, @NotNull Type outputType,
                     NodeRT previous, ScopeRT scope, @NotNull Value object) {
         super(tmpId, name, code, outputType, previous, scope);
-        this.object = addChild(object, "object");
+        this.object = object;
     }
 
     @Override
@@ -57,7 +57,7 @@ public class CastNode extends NodeRT {
     }
 
     public void setValue(@NotNull Value object) {
-        this.object = addChild(object, "object");
+        this.object = object;
     }
 
     @Override

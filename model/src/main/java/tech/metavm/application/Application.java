@@ -1,8 +1,8 @@
 package tech.metavm.application;
 
+import tech.metavm.application.rest.dto.ApplicationDTO;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
-import tech.metavm.application.rest.dto.ApplicationDTO;
 import tech.metavm.user.PlatformUser;
 import tech.metavm.util.BusinessException;
 

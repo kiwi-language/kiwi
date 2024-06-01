@@ -2,8 +2,8 @@ package tech.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.rest.dto.FieldRefDTO;
 
 import javax.annotation.Nullable;

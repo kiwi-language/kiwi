@@ -1,6 +1,8 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
@@ -13,15 +15,15 @@ import java.util.Objects;
 public class BinaryExpression extends Expression {
     @EntityField("运算符")
     private final BinaryOperator operator;
-    @ChildEntity("左表达式")
+    @EntityField("左表达式")
     private final Expression left;
-    @ChildEntity("右表达式")
+    @EntityField("右表达式")
     private final Expression right;
 
     public BinaryExpression(BinaryOperator operator, Expression left, Expression right) {
         this.operator = operator;
-        this.left = addChild(left.copy(), "left");
-        this.right = addChild(right.copy(), "right");
+        this.left = left;
+        this.right = right;
     }
 
     public BinaryOperator getOperator() {

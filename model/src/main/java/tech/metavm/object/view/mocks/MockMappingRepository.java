@@ -1,6 +1,5 @@
 package tech.metavm.object.view.mocks;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingRepository;

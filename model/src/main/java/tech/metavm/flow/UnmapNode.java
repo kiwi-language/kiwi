@@ -29,16 +29,16 @@ public class UnmapNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("视图")
+    @EntityField("视图")
     private Value view;
-    @ChildEntity("映射")
+    @EntityField("映射")
     private ObjectMappingRef mappingRef;
 
     public UnmapNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope,
                      Value view, ObjectMappingRef mappingRef) {
         super(tmpId, name, code, null, previous, scope);
-        this.view = addChild(view, "view");
-        this.mappingRef = addChild(mappingRef.copy(), "mappingRef");
+        this.view = view;
+        this.mappingRef = mappingRef;
     }
 
     @Override
@@ -54,8 +54,8 @@ public class UnmapNode extends NodeRT {
     public void update(Value view, ObjectMappingRef mappingRef) {
         AssertUtils.assertTrue(mappingRef.resolve().getTargetType().isAssignableFrom(view.getType()),
                 ErrorCode.INCORRECT_MAPPING);
-        this.view = addChild(view, "view");
-        this.mappingRef = addChild(mappingRef.copy(), "mappingRef");
+        this.view = view;
+        this.mappingRef = mappingRef;
     }
 
     @NotNull

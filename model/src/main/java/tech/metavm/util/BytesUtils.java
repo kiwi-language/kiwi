@@ -5,7 +5,6 @@ import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParam;
 import tech.metavm.object.type.AnyType;
 import tech.metavm.object.type.rest.dto.TypeKey;
-import tech.metavm.system.RegionConstants;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -156,7 +155,7 @@ public class BytesUtils {
             result.put("treeId", input.readTreeId());
             result.put("nextNodeId", input.readInt());
         }
-        result.put("data", input.readValue());
+        result.put("data", input.readJson());
         return result;
     }
 
@@ -166,10 +165,11 @@ public class BytesUtils {
             super(inputStream);
         }
 
-        public Object readValue() {
+        public Object readJson() {
             var wireType = read();
             return switch (wireType) {
                 case WireTypes.RECORD -> readRecord();
+                case WireTypes.VALUE -> readValue();
                 case WireTypes.NULL -> null;
                 case WireTypes.BOOLEAN -> readBoolean();
                 case WireTypes.REFERENCE -> readId().toString();
@@ -183,14 +183,24 @@ public class BytesUtils {
         private Object readRecord() {
             Map<String, Object> map = new HashMap<>();
             map.put("nodeId", readLong());
-            var typeKey = TypeKey.read(this);
+            readBody(TypeKey.read(this), map);
+            return map;
+        }
+
+        private Object readValue() {
+            Map<String, Object> map = new HashMap<>();
+            readBody(TypeKey.read(this), map);
+            return map;
+        }
+
+        private void readBody(TypeKey typeKey, Map<String, Object> map) {
             map.put("type", typeKey.toTypeExpression());
             if (typeKey.isArray()) {
                 int len = readInt();
                 var elements = new ArrayList<>(len);
                 map.put("elements", elements);
                 for (int i = 0; i < len; i++)
-                    elements.add(readValue());
+                    elements.add(readJson());
             } else {
                 int numKlasses = readInt();
                 var klasses = new ArrayList<>(numKlasses);
@@ -203,10 +213,9 @@ public class BytesUtils {
                     var fields = new ArrayList<>(numFields);
                     klass.put("fields", fields);
                     for (int j = 0; j < numFields; j++)
-                        fields.add(Map.of("tag", readLong(), "value", NncUtils.orElse(readValue(), "null")));
+                        fields.add(Map.of("tag", readLong(), "value", NncUtils.orElse(readJson(), "null")));
                 }
             }
-            return map;
         }
 
     }

@@ -1,8 +1,8 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;

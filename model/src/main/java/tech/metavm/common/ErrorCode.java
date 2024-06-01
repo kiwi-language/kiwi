@@ -70,7 +70,7 @@ public enum ErrorCode {
     BRANCH_OUTPUT_VALUE_MUST_AGREE_WITH_BRANCHES(418, "分支节点输出字段必须为每个分支设置输出值"),
     MISSING_MERGE_NODE_FIELD_VALUE(418, "合并节点存在未设置的字段"),
     NOT_AN_ARRAY_VALUE(419, "传入的数组值不合法， 数据类型不是数组"),
-    INCORRECT_ELEMENT_TYPE(419, "元素值不合法， 数据类型与数组元素类型不相符"),
+    INCORRECT_ELEMENT_TYPE(419, "数组类型'{}'与数组元素类型'{}'不相符"),
     INCORRECT_INDEX_VALUE(419, "索引必须是整数类型"),
     INDEX_OUT_OF_BOUND(420, "索引超出边界"),
     INTERFACE_FLOW_NOT_IMPLEMENTED(421, "'{}'未实现接口'{}'定义的'{}'流程"),

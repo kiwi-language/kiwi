@@ -1,8 +1,8 @@
 package tech.metavm.task;
 
 import tech.metavm.entity.*;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.MetadataState;
 import tech.metavm.util.NncUtils;
 

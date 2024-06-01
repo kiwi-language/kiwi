@@ -1,6 +1,5 @@
 package tech.metavm.entity;
 
-import tech.metavm.entity.*;
 import tech.metavm.util.LinkedList;
 
 import javax.annotation.Nullable;

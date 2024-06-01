@@ -1,6 +1,8 @@
 package tech.metavm.autograph;
 
-import com.intellij.psi.*;
+import com.intellij.psi.PsiBlockStatement;
+import com.intellij.psi.PsiForeachStatement;
+import com.intellij.psi.PsiWhileStatement;
 
 import java.util.List;
 import java.util.Objects;

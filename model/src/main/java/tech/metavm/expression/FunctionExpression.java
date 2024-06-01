@@ -1,6 +1,9 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.ValueArray;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
@@ -12,30 +15,26 @@ import java.util.Objects;
 public class FunctionExpression extends Expression {
     @EntityField("函数")
     private final Func function;
-    @ChildEntity("参数表达式列表")
-    private final ChildArray<Expression> arguments = addChild(new ChildArray<>(Expression.class), "arguments");
+    private final ValueArray<Expression> arguments;
 
     public FunctionExpression(Func function, List<Expression> arguments) {
         this.function = function;
-        this.arguments.addChildren(NncUtils.map(arguments, Expression::copy));
+        this.arguments = new ValueArray<>(Expression.class, arguments);
     }
 
     public FunctionExpression(Func function, Expression argument) {
         this.function = function;
-        if(argument instanceof ArrayExpression arrayExpression) {
-            arguments.addChildren(NncUtils.map(arrayExpression.getExpressions(), Expression::copy));
-        }
-        else {
-            arguments.addChild(argument);
-        }
+        List<Expression> expressions = argument instanceof ArrayExpression arrayExpression ?
+                arrayExpression.getExpressions() : List.of(argument);
+        arguments = new ValueArray<>(Expression.class, expressions);
     }
 
     public Func getFunction() {
         return function;
     }
 
-    public ChildArray<Expression> getArguments() {
-        return arguments;
+    public List<Expression> getArguments() {
+        return arguments.toList();
     }
 
     @Override

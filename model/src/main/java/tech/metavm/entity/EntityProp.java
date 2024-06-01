@@ -11,10 +11,16 @@ public class EntityProp {
 
     private final Field field;
     private final boolean accessible;
+    private final boolean _transient;
+    private final boolean childEntity;
+    private final boolean copyIgnore;
 
     public EntityProp(Field field) {
         this.field = field;
         accessible = field.trySetAccessible();
+        _transient = Modifier.isTransient(field.getModifiers());
+        childEntity = field.isAnnotationPresent(ChildEntity.class);
+        copyIgnore = field.isAnnotationPresent(CopyIgnore.class);
     }
 
     public String getName() {
@@ -42,7 +48,11 @@ public class EntityProp {
     }
 
     public boolean isTransient() {
-        return Modifier.isTransient(field.getModifiers());
+        return _transient;
+    }
+
+    public boolean isCopyIgnore() {
+        return copyIgnore;
     }
 
     public boolean isEntityList(Object entity) {
@@ -70,10 +80,7 @@ public class EntityProp {
     }
 
     public boolean isChildEntity() {
-//        if(!isEntity() && !isEntityList()) {
-//            return false;
-//        }
-        return field.isAnnotationPresent(ChildEntity.class);
+        return childEntity;
     }
 
     public Entity getEntity(Object object) {

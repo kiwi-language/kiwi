@@ -58,7 +58,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         try {
             var tree = loadingBuffer.getTree(instance.tryGetId());
             onTreeLoaded(tree);
-            var input = new InstanceInput(new ByteArrayInputStream(tree.data()), this::internalGet, getTypeDefProvider());
+            var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
             readInstance(input);
         }
         catch (TreeNotFoundException e) {

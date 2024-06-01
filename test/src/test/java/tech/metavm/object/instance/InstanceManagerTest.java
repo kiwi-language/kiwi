@@ -8,7 +8,10 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
-import tech.metavm.flow.rest.*;
+import tech.metavm.flow.rest.FlowExecutionRequest;
+import tech.metavm.flow.rest.MethodParam;
+import tech.metavm.flow.rest.MethodRefDTO;
+import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
@@ -17,6 +20,8 @@ import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
@@ -310,7 +315,7 @@ public class InstanceManagerTest extends TestCase {
         ));
         var nullableChildType = TypeExpressions.getNullableType(TypeExpressions.getClassType(childType.id()));
         var typeTmpId = TmpId.random().toString();
-        var typeExpr  = TypeExpressions.getClassType(typeTmpId);
+        var typeExpr = TypeExpressions.getClassType(typeTmpId);
         var childFieldTmpId = TmpId.random().toString();
         var childRefFieldTmpId = TmpId.random().toString();
         var parentType = TestUtils.doInTransaction(() -> typeManager.saveType(
@@ -414,8 +419,7 @@ public class InstanceManagerTest extends TestCase {
                     )
             ));
             Assert.fail("Should not be able to delete child in use");
-        }
-        catch (BusinessException e) {
+        } catch (BusinessException e) {
             Assert.assertEquals(String.format("对象被其他对象关联，无法删除: %s-%s", childType.name(), child.title()), e.getMessage());
         }
     }
@@ -446,8 +450,7 @@ public class InstanceManagerTest extends TestCase {
                     List.of()
             )));
             Assert.fail("Should not be able to delete non-persisted child when it's referenced");
-        }
-        catch (BusinessException e) {
+        } catch (BusinessException e) {
             Assert.assertSame(e.getErrorCode(), ErrorCode.STRONG_REFS_PREVENT_REMOVAL);
         }
     }
@@ -466,6 +469,41 @@ public class InstanceManagerTest extends TestCase {
 //        var parentMapping = instanceManager.get(viewId.toString(), 2);
 //        DebugEnv.DEBUG_ON = true;
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(viewId.toString()));
+    }
+
+    public void testValueInstance() {
+        var ref = new Object() {
+            Id id;
+        };
+        var classType = new ClassType(StandardTypes.getChildListKlass(), List.of(StandardTypes.getStringType()));
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = newContext()) {
+                var klass = ClassTypeBuilder.newBuilder("Foo", null).build();
+                var method = MethodBuilder.newBuilder(klass, "test", null).build();
+                var methodCallNode = new MethodCallNode(
+                        null,
+                        "call",
+                        null,
+                        null,
+                        method.getRootScope(),
+                        null,
+                        new MethodRef(
+                                classType,
+                                StandardTypes.getChildListKlass().getMethodByCodeAndParamTypes("size", List.of()),
+                                List.of()
+                        ),
+                        List.of()
+                );
+
+                context.bind(klass);
+                context.finish();
+                ref.id = methodCallNode.getId();
+            }
+        });
+        try (var context = newContext()) {
+            var node = context.getEntity(MethodCallNode.class, ref.id);
+            Assert.assertEquals(classType, node.getFlowRef().getDeclaringType());
+        }
     }
 
 }

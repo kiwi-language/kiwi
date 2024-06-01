@@ -1,6 +1,9 @@
 package tech.metavm.object.type;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.ValueArray;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.IntersectionTypeKey;
@@ -18,8 +21,7 @@ import java.util.function.Function;
 @EntityType("类型交集")
 public class IntersectionType extends CompositeType {
 
-    @ChildEntity("类型列表")
-    private final ChildArray<Type> types = addChild(new ChildArray<>(Type.class), "types");
+    private final ValueArray<Type> types;
 
     private transient Set<Type> typeSet;
 
@@ -27,7 +29,7 @@ public class IntersectionType extends CompositeType {
         super(getName(types), getCode(types), false, false, TypeCategory.INTERSECTION);
         if(types.isEmpty())
             throw new IllegalArgumentException("types can not be empty");
-        this.types.addChildren(NncUtils.map(types, Type::copy));
+        this.types = new ValueArray<>(Type.class, types);
     }
 
     private static String getName(Iterable<Type> types) {
@@ -112,11 +114,6 @@ public class IntersectionType extends CompositeType {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitIntersectionType(this);
-    }
-
-    @Override
-    public IntersectionType copy() {
-        return new IntersectionType(NncUtils.mapUnique(types, Type::copy));
     }
 
     @Override

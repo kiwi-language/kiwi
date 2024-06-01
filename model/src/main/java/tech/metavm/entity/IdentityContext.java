@@ -3,9 +3,7 @@ package tech.metavm.entity;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ResolutionStage;
-import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.ReflectionUtils;
 

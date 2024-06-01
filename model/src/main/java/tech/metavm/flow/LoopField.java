@@ -13,15 +13,15 @@ public class LoopField extends Entity implements LocalKey {
 
     @EntityField("字段")
     private final Field field;
-    @ChildEntity("初始值")
+    @EntityField("初始值")
     private Value initialValue;
-    @ChildEntity("更新值")
+    @EntityField("更新值")
     private Value updatedValue;
 
     public LoopField(Field field, Value initialValue, Value updatedValue) {
         this.field = field;
-        this.initialValue = addChild(initialValue, "initialValue");
-        this.updatedValue = addChild(updatedValue, "updatedValue");
+        this.initialValue = initialValue;
+        this.updatedValue = updatedValue;
     }
 
     public Field getField() {
@@ -37,11 +37,11 @@ public class LoopField extends Entity implements LocalKey {
     }
 
     public void setInitialValue(Value initialValue) {
-        this.initialValue = addChild(initialValue, "initialValue");
+        this.initialValue = initialValue;
     }
 
     public void setUpdatedValue(Value updatedValue) {
-        this.updatedValue = addChild(updatedValue, "updatedValue");
+        this.updatedValue = updatedValue;
     }
 
     public void update(LoopFieldDTO loopFieldDTO, ParsingContext parsingContext) {

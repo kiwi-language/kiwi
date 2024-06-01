@@ -199,11 +199,6 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     @Override
-    public boolean isProxySupported() {
-        return true;
-    }
-
-    @Override
     public T createModelProxy(Class<? extends T> proxyClass) {
         return ReflectionUtils.allocateInstance(proxyClass);
     }

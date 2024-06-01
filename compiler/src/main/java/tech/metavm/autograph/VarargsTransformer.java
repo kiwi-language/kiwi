@@ -1,7 +1,6 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.*;
-import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 

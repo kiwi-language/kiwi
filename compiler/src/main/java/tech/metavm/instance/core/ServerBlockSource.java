@@ -1,7 +1,6 @@
 package tech.metavm.instance.core;
 
 import tech.metavm.autograph.TypeClient;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.system.BlockRT;

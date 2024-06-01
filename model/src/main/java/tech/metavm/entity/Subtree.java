@@ -3,7 +3,6 @@ package tech.metavm.entity;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.core.Id;
 
-import java.net.Inet4Address;
 import java.util.Arrays;
 import java.util.Objects;
 

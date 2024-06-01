@@ -67,11 +67,6 @@ public class NeverType extends Type {
     }
 
     @Override
-    public NeverType copy() {
-        return new NeverType();
-    }
-
-    @Override
     public String toExpression(SerializeContext serializeContext, @javax.annotation.Nullable Function<TypeDef, String> getTypeDefExpr) {
         return "never";
     }

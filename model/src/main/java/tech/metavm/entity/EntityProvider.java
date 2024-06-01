@@ -1,7 +1,10 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.Klass;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeDef;
+import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.NncUtils;

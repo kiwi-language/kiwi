@@ -6,7 +6,8 @@ import tech.metavm.flow.rest.IndexScanNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ArrayKind;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Index;
 
 import javax.annotation.Nullable;
@@ -35,17 +36,17 @@ public class IndexScanNode extends NodeRT {
 
     @EntityField("索引")
     private Index index;
-    @ChildEntity("最小值")
+    @EntityField("最小值")
     private IndexQueryKey from;
-    @ChildEntity("最大值")
+    @EntityField("最大值")
     private IndexQueryKey to;
 
     public IndexScanNode(Long tmpId, String name, @Nullable String code, ArrayType type, NodeRT previous, ScopeRT scope, Index index,
                          IndexQueryKey from, IndexQueryKey to) {
         super(tmpId, name, code, type, previous, scope);
         this.index = index;
-        this.from = addChild(from, "from");
-        this.to = addChild(to, "to");
+        this.from = from;
+        this.to = to;
     }
 
     @Override
@@ -63,11 +64,11 @@ public class IndexScanNode extends NodeRT {
     }
 
     public void setFrom(IndexQueryKey from) {
-        this.from = addChild(from, "from");
+        this.from = from;
     }
 
     public void setTo(IndexQueryKey to) {
-        this.to = addChild(to, "to");
+        this.to = to;
     }
 
     public void setIndex(Index index) {

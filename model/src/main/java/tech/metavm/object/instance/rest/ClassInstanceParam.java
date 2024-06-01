@@ -4,7 +4,10 @@ import tech.metavm.object.instance.InstanceKind;
 import tech.metavm.util.NncUtils;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 public record ClassInstanceParam(
         List<InstanceFieldDTO> fields

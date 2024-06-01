@@ -1,7 +1,10 @@
 package tech.metavm.task;
 
 import tech.metavm.application.Application;
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityIndexKey;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.user.PlatformUser;
 import tech.metavm.user.PlatformUsers;
 

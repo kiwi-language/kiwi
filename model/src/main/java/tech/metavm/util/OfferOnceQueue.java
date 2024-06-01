@@ -2,8 +2,8 @@ package tech.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
 import java.util.LinkedList;
+import java.util.*;
 
 public class OfferOnceQueue<T> implements Queue<T> {
 

@@ -24,39 +24,34 @@ public class IdentityContextTest extends TestCase {
 
     public void test() {
         IdentityContext identityContext = new IdentityContext();
-        var fooType = ClassTypeBuilder.newBuilder("Foo", "tech.metavm.Foo")
+        var fooKlass = ClassTypeBuilder.newBuilder("Foo", "tech.metavm.Foo")
                 .source(ClassSource.BUILTIN)
                 .build();
 
-        var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
+        var fooNameField = FieldBuilder.newBuilder("name", "name", fooKlass, StandardTypes.getStringType())
                 .build();
 
         var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
-        var method = MethodBuilder.newBuilder(fooType, "bar", "bar")
+        var method = MethodBuilder.newBuilder(fooKlass, "bar", "bar")
                 .returnType(StandardTypes.getVoidType())
                 .typeParameters(List.of(typeVar))
                 .parameters(new Parameter(null, "t", "t", typeVar.getType()))
                 .type(new FunctionType(List.of(typeVar.getType()), StandardTypes.getVoidType()))
-                .staticType(new FunctionType(List.of(fooType.getType(), typeVar.getType()), StandardTypes.getVoidType()))
+                .staticType(new FunctionType(List.of(fooKlass.getType(), typeVar.getType()), StandardTypes.getVoidType()))
                 .build();
 
         var identities = new IdentityHashMap<Object, ModelIdentity>();
-        EntityUtils.visitGraph(List.of(fooType),
+        EntityUtils.visitGraph(List.of(fooKlass),
                 entity -> {
-                    if (!(entity instanceof Instance))
+                    if (!(entity instanceof Instance) && !(entity instanceof Value))
                         identities.put(entity, identityContext.getModelId(entity));
                 }
         );
-        Assert.assertTrue(identities.containsKey(fooType));
+        Assert.assertTrue(identities.containsKey(fooKlass));
         Assert.assertTrue(identities.containsKey(fooNameField));
-        Assert.assertTrue(identities.containsKey(fooNameField.getType()));
         Assert.assertTrue(identities.containsKey(method));
         Assert.assertTrue(identities.containsKey(method.getParameters().get(0)));
-        Assert.assertTrue(identities.containsKey(method.getParameters().get(0).getType()));
-        Assert.assertTrue(identities.containsKey(method.getType()));
         Assert.assertTrue(identities.containsKey(method.getRootScope()));
-        Assert.assertTrue(identities.containsKey(method.getStaticType()));
-        Assert.assertTrue(identities.containsKey(method.getReturnType()));
     }
 
 }

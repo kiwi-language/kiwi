@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.flow.MethodBuilder;
 import tech.metavm.object.type.ClassTypeBuilder;
-import tech.metavm.object.type.mocks.TypeProviders;
 
 public class ExpressionResolverTest extends TestCase {
 

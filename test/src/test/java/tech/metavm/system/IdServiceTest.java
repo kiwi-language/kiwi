@@ -3,8 +3,8 @@ package tech.metavm.system;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.IdConstants;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.BootstrapUtils;
 import tech.metavm.util.TestConstants;
 

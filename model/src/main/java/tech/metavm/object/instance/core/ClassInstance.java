@@ -236,10 +236,11 @@ public class ClassInstance extends DurableInstance {
             output.writeInt(instanceFields.size());
             for (InstanceField field : instanceFields) {
                 output.writeLong(field.getField().getRecordTag());
-                if (field.getField().isChild() && !field.getField().isLazy())
-                    output.writeRecord(field.getValue());
+                var fieldValue = field.getValue();
+                if (fieldValue.isValue() || field.getField().isChild() && !field.getField().isLazy())
+                    output.writeRecord(fieldValue);
                 else
-                    output.writeInstance(field.getValue());
+                    output.writeInstance(fieldValue);
             }
         }
     }

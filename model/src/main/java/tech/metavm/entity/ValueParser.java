@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ColumnStore;
+import tech.metavm.object.type.TypeCategory;
 
 import java.lang.reflect.Type;
 

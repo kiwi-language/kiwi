@@ -7,6 +7,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class EntityDesc {
 
@@ -46,6 +47,13 @@ public class EntityDesc {
 
     public List<EntityProp> getNonTransientProps() {
         return NncUtils.exclude(props, EntityProp::isTransient);
+    }
+
+    public void forEachNonTransientProp(Consumer<EntityProp> action) {
+        for (EntityProp prop : props) {
+            if(!prop.isTransient())
+                action.accept(prop);
+        }
     }
 
     public List<EntityProp> getPropsWithAnnotation(Class<? extends Annotation> annotationClass) {

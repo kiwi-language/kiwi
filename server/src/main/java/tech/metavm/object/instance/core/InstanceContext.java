@@ -401,7 +401,8 @@ public class InstanceContext extends BufferingInstanceContext {
         try (var ignored = getProfiler().enter("getBufferedTrees")) {
             var trees = new ArrayList<Tree>();
             for (var instance : this) {
-                if (instance.isInitialized() && instance.isRoot()
+                if (instance.isInitialized()
+                        && instance.isRoot()
                         && !instance.isRemoved() && !instance.isEphemeral()
                         && !instance.isLoadedFromCache()) {
                     var tree = new Tree(

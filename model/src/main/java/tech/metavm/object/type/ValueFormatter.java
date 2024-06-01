@@ -109,9 +109,8 @@ public class ValueFormatter {
         Instance value = InstanceFactory.resolveValue(
                 rawValue, type, parentRef, context
         );
-        if (value instanceof DurableInstance d && d.tryGetTreeId() == null) {
+        if (value instanceof DurableInstance d && d.tryGetId() == null && !context.containsInstance(d))
             context.bind(d);
-        }
         return value;
     }
 

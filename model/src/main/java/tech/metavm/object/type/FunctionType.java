@@ -21,16 +21,14 @@ import java.util.function.Function;
 @EntityType("函数类型")
 public class FunctionType extends CompositeType {
 
-    @ChildEntity("返回类型")
+    @EntityField("返回类型")
     private Type returnType;
-
-    @ChildEntity("参数类型列表")
-    private final ChildArray<Type> parameterTypes = addChild(new ChildArray<>(Type.class), "parameterTypes");
+    private final ValueArray<Type> parameterTypes;
 
     public FunctionType(List<Type> parameterTypes, @NotNull Type returnType) {
         super(getName(parameterTypes, returnType), getCode(parameterTypes, returnType), false, true, TypeCategory.FUNCTION);
-        this.parameterTypes.addChildren(NncUtils.map(parameterTypes, Type::copy));
-        this.returnType = addChild(returnType.copy(), "returnType");
+        this.parameterTypes = new ValueArray<>(Type.class, parameterTypes);
+        this.returnType = returnType;
     }
 
     private static String getName(List<Type> parameterTypes, Type returnType) {
@@ -71,11 +69,7 @@ public class FunctionType extends CompositeType {
     }
 
     public void setReturnType(Type returnType) {
-        this.returnType = addChild(returnType, "returnType");
-    }
-
-    public void setParameterTypes(List<Type> parameterTypes) {
-        this.parameterTypes.resetChildren(NncUtils.map(parameterTypes, Type::copy));
+        this.returnType = returnType;
     }
 
     public Type getReturnType() {
@@ -138,11 +132,6 @@ public class FunctionType extends CompositeType {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitFunctionType(this);
-    }
-
-    @Override
-    public FunctionType copy() {
-        return new FunctionType(NncUtils.map(parameterTypes, Type::copy), returnType.copy());
     }
 
     @Override

@@ -1,8 +1,8 @@
 package tech.metavm.instance.core;
 
 import tech.metavm.autograph.TypeClient;
-import tech.metavm.system.BaseIdService;
 import tech.metavm.object.type.Type;
+import tech.metavm.system.BaseIdService;
 
 import java.util.List;
 import java.util.Map;

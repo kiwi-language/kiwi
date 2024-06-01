@@ -1,8 +1,8 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.Instance;
@@ -23,23 +23,23 @@ public class ConditionalExpression extends Expression {
                 Set.of(trueValue.getType(), falseValue.getType())));
     }
 
-    @ChildEntity("条件")
+    @EntityField("条件")
     private final Expression condition;
-    @ChildEntity("true表达式")
+    @EntityField("true表达式")
     private final Expression trueValue;
-    @ChildEntity("false表达式")
+    @EntityField("false表达式")
     private final Expression falseValue;
-    @ChildEntity("类型")
+    @EntityField("类型")
     private final Type type;
 
     public ConditionalExpression(@NotNull Expression condition,
                                  @NotNull Expression trueValue,
                                  @NotNull Expression falseValue,
-                                 Type type) {
-        this.condition = addChild(condition.copy(), "condition");
-        this.trueValue = addChild(trueValue.copy(), "trueValue");
-        this.falseValue = addChild(falseValue.copy(), "falseValue");
-        this.type = addChild(type.copy(), "type");
+                                 @NotNull Type type) {
+        this.condition = condition;
+        this.trueValue = trueValue;
+        this.falseValue = falseValue;
+        this.type = type;
     }
 
     @Override

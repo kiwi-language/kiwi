@@ -122,7 +122,7 @@ public class DefContextTest extends TestCase {
         for (ModelAndPath modelAndPath : models) {
             Object model = modelAndPath.model();
             String path = modelAndPath.path();
-            if ((model instanceof Identifiable identifiable) && !EntityUtils.isEphemeral(model)) {
+            if (!(model instanceof Value) && model instanceof Identifiable identifiable && !EntityUtils.isEphemeral(model)) {
                 ModelIdentity identity = identityMap.get(identifiable);
                 Assert.assertNotNull(
                         "Can not find identity for model '" + model + "' at path '" + path + "'",

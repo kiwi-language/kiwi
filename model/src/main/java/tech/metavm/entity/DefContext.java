@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.flow.Flow;
@@ -220,7 +221,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     private Id getEntityId(Object entity) {
-        if (EntityUtils.isEphemeral(entity))
+        if (entity instanceof Value || EntityUtils.isEphemeral(entity))
             return null;
         //        var type = getType(EntityUtils.getRealType(entity.getClass()));
         return stdIdProvider.getId(identityContext.getModelId(entity));
@@ -266,17 +267,24 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             var rawClass = (Class<?>) pType.getRawType();
             if (ReadonlyArray.class.isAssignableFrom(rawClass)) {
                 var elementType = getType(pType.getActualTypeArguments()[0]);
-                ArrayKind arrayKind;
-                if (rawClass == ReadWriteArray.class)
-                    arrayKind = ArrayKind.READ_WRITE;
-                else if (rawClass == ChildArray.class)
-                    arrayKind = ArrayKind.CHILD;
-                else
-                    arrayKind = ArrayKind.READ_ONLY;
+                ArrayKind arrayKind = getArrayKind(rawClass);
                 return new ArrayType(elementType, arrayKind);
             }
         }
         return null;
+    }
+
+    @NotNull
+    private static ArrayKind getArrayKind(Class<?> rawClass) {
+        if (rawClass == ReadWriteArray.class)
+            return ArrayKind.READ_WRITE;
+        if (rawClass == ChildArray.class)
+            return ArrayKind.CHILD;
+        if(rawClass == ValueArray.class)
+            return ArrayKind.VALUE;
+        if(rawClass == ReadonlyArray.class)
+            return ArrayKind.READ_ONLY;
+        throw new InternalException("Unrecognized array class " + rawClass.getName());
     }
 
     private Class<?> getArrayClass(ArrayKind arrayKind) {
@@ -284,6 +292,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             case CHILD -> ChildArray.class;
             case READ_WRITE -> ReadWriteArray.class;
             case READ_ONLY -> ReadonlyArray.class;
+            case VALUE -> ValueArray.class;
         };
     }
 
@@ -293,6 +302,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                 case CHILD -> ChildArray.class;
                 case READ_WRITE -> ReadWriteArray.class;
                 case READ_ONLY -> ReadonlyArray.class;
+                case VALUE -> ValueArray.class;
             };
             //noinspection rawtypes,unchecked
             return new ArrayMapper<>(javaClass, this);
@@ -488,9 +498,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     void writeEntity(Object entity) {
         if (entities.add(entity)) {
-            tryInitEntityId(entity);
             pendingModels.add(entity);
-            memoryIndex.save(entity);
+            if(!(entity instanceof Value)) {
+                tryInitEntityId(entity);
+                memoryIndex.save(entity);
+            }
         } else
             throw new InternalException("Entity " + entity + " is already written to the context");
     }
@@ -588,12 +600,12 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         var id = getEntityId(model);
         if (id == null) {
             if (mapper.isProxySupported()) {
-                var instance = InstanceFactory.allocate(mapper.getInstanceClass(), id,
+                var instance = InstanceFactory.allocate(mapper.getInstanceClass(), null,
                         EntityUtils.isEphemeral(model));
                 addToContext(model, instance);
                 mapper.initInstanceHelper(instance, model, getObjectInstanceMap());
             } else {
-                var instance = mapper.createInstanceHelper(model, getObjectInstanceMap(), id);
+                var instance = mapper.createInstanceHelper(model, getObjectInstanceMap(), null);
                 addToContext(model, instance);
             }
         } else {
@@ -715,12 +727,6 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             List<Object> newEntities = new ArrayList<>();
             EntityUtils.visitGraph(entities, e -> {
                 if (!(e instanceof Instance) && !entities.contains(e)/* TODO handle instance */) {
-                    if (e instanceof Value && e instanceof Entity et && et.getParentEntity() == null) {
-                        logger.info("New orphaned value {}, path: {}", e, EntityUtils.currentPath());
-                    }
-                    if (e instanceof ReadonlyArray<?> array && array.getRootEntity() instanceof Value) {
-                        logger.info("New orphaned array {}, path: {}", e, EntityUtils.currentPath());
-                    }
                     newEntities.add(e);
                 }
             });

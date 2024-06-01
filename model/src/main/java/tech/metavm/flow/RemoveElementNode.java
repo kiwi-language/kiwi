@@ -32,16 +32,16 @@ public class RemoveElementNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("数组")
+    @EntityField("数组")
     private Value array;
-    @ChildEntity("元素")
+    @EntityField("元素")
     private Value element;
 
     public RemoveElementNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Value array, Value element) {
         super(tmpId, name, code, StandardTypes.getBooleanType(), previous, scope);
         check(array, element);
-        this.array = addChild(array, "array");
-        this.element = addChild(element, "element");
+        this.array = array;
+        this.element = element;
     }
 
     private void check(Value array, Value element) {
@@ -51,7 +51,7 @@ public class RemoveElementNode extends NodeRT {
             AssertUtils.assertTrue(arrayType.getKind() != ArrayKind.READ_ONLY,
                     ErrorCode.MODIFYING_READ_ONLY_ARRAY);
             AssertUtils.assertTrue(arrayType.getElementType().isAssignableFrom(element.getType()),
-                    ErrorCode.INCORRECT_ELEMENT_TYPE);
+                    ErrorCode.INCORRECT_ELEMENT_TYPE, arrayType.getElementType().getTypeDesc(), element.getType().getTypeDesc());
         } else {
             throw new BusinessException(ErrorCode.NOT_AN_ARRAY_VALUE);
         }
@@ -64,8 +64,8 @@ public class RemoveElementNode extends NodeRT {
 
     public void update(Value array, Value element) {
         check(array, element);
-        this.array = addChild(array, "array");
-        this.element = addChild(element, "element");
+        this.array = array;
+        this.element = element;
     }
 
     public Value getArray() {

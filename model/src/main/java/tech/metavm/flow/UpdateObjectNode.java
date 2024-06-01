@@ -9,8 +9,8 @@ import tech.metavm.flow.rest.UpdateObjectNodeParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -57,7 +57,7 @@ public class UpdateObjectNode extends NodeRT {
         }
     }
 
-    @ChildEntity("对象")
+    @EntityField("对象")
     private Value object;
 
     @ChildEntity("字段列表")
@@ -65,7 +65,7 @@ public class UpdateObjectNode extends NodeRT {
 
     public UpdateObjectNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, Value object, List<UpdateField> fields) {
         super(tmpId, name, code, null, prev, scope);
-        this.object = addChild(object, "object");
+        this.object = object;
         setFields(fields);
     }
 
@@ -78,7 +78,7 @@ public class UpdateObjectNode extends NodeRT {
     }
 
     public void setObject(Value object) {
-        this.object = addChild(object, "object");
+        this.object = object;
     }
 
     public void setUpdateField(Field field, UpdateOp op, Value value) {

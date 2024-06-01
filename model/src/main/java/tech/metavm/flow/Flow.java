@@ -17,7 +17,10 @@ import tech.metavm.object.type.generic.SubstitutorV2;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 @EntityType("流程")
@@ -42,7 +45,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     private final boolean isSynthetic;
     @ChildEntity("参数列表")
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
-    @ChildEntity("返回类型")
+    @EntityField("返回类型")
     private @NotNull Type returnType;
     @ChildEntity("根流程范围")
     private @Nullable ScopeRT rootScope;
@@ -58,10 +61,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @Nullable
     private final Flow horizontalTemplate;
     @ChildEntity("类型实参列表")
-    private final ChildArray<Type> typeArguments = addChild(new ChildArray<>(Type.class), "typeArguments");
+    private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
     @EntityField("状态")
     private @NotNull MetadataState state;
-    @ChildEntity("类型")
+    @EntityField("类型")
     private @NotNull FunctionType type;
     @EntityField("参数化键")
     @Nullable
@@ -99,8 +102,8 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         this.code = NamingUtils.ensureValidFlowCode(code);
         this.isNative = isNative;
         this.isSynthetic = isSynthetic;
-        this.returnType = addChild(returnType.copy(), "returnType");
-        this.type = addChild(new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType), "type");
+        this.returnType = returnType;
+        this.type = new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
         rootScope = !noCode && codeSource == null && !isNative ? addChild(new ScopeRT(this), "rootScope") : null;
         setTypeParameters(typeParameters);
         setTypeArguments(typeArguments);
@@ -383,14 +386,14 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     protected void resetType() {
-        type = addChild(new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType), "type");
+        type = new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
     }
 
     @Override
     public void addTypeParameter(TypeVariable typeParameter) {
         isTemplate = true;
         typeParameters.addChild(typeParameter);
-        typeArguments.addChild(typeParameter.getType().copy());
+        typeArguments.add(typeParameter.getType());
     }
 
     public List<Parameter> getParameters() {
@@ -412,7 +415,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public void setReturnType(Type returnType) {
-        this.returnType = addChild(returnType.copy(), "returnType");
+        this.returnType = returnType;
         resetType();
     }
 
@@ -439,7 +442,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     public void setTypeArguments(List<? extends Type> typeArguments) {
         if (isTemplate() && !NncUtils.iterableEquals(NncUtils.map(this.typeParameters, TypeVariable::getType), typeArguments))
             throw new InternalException("Type arguments must equal to type parameters for a template flow. Actual type arguments: " + typeArguments);
-        this.typeArguments.resetChildren(NncUtils.map(typeArguments, Type::copy));
+        this.typeArguments.reset(typeArguments);
         this.parameterizedKey = null;
     }
 
@@ -609,7 +612,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public void addParameterized(Flow parameterized) {
         NncUtils.requireTrue(parameterized.getTemplate() == this);
-        NncUtils.requireNull(parameterizedFlows().put(parameterized.typeArguments.getTable(), parameterized),
+        NncUtils.requireNull(parameterizedFlows().put(parameterized.typeArguments.secretlyGetTable(), parameterized),
                 () -> new InternalException("Parameterized flow " + parameterized.getTypeDesc() + " already exists"));
     }
 

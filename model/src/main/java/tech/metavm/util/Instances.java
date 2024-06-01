@@ -3,8 +3,8 @@ package tech.metavm.util;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.object.instance.ObjectInstanceMap;
-import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.core.StructuralVisitor;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 

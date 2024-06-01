@@ -45,7 +45,6 @@ public class AddObjectNode extends ScopeNode implements NewNode {
         return node;
     }
 
-    @ChildEntity("父引用")
     @Nullable
     private ParentRef parentRef;
 

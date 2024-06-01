@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.ObjectInstanceMap;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.type.TypeDef;
 import tech.metavm.object.type.TypeVariable;
 

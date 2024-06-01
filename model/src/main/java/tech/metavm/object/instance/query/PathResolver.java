@@ -1,7 +1,6 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.expression.*;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.LinkedList;
 

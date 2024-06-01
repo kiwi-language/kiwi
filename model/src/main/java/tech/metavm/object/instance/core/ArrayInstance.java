@@ -110,8 +110,12 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
             }
         } else {
             for (Instance element : elements) {
-                if (!element.shouldSkipWrite())
-                    output.writeInstance(element);
+                if (!element.shouldSkipWrite()) {
+                    if(element.isValue())
+                        output.writeRecord(element);
+                    else
+                        output.writeInstance(element);
+                }
             }
         }
     }

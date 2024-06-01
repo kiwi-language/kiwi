@@ -2,9 +2,9 @@ package tech.metavm.object.instance.log;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.message.Message;
-import tech.metavm.event.rest.dto.ReceiveMessageEvent;
 import tech.metavm.event.EventQueue;
+import tech.metavm.event.rest.dto.ReceiveMessageEvent;
+import tech.metavm.message.Message;
 
 import javax.annotation.Nullable;
 import java.util.List;

@@ -1,11 +1,5 @@
 package tech.metavm.autograph;
 
-import tech.metavm.flow.rest.FlowExecutionRequest;
-import tech.metavm.util.DebugEnv;
-import tech.metavm.util.TestUtils;
-
-import java.util.List;
-
 public class LabCompilingTest extends CompilerTestBase {
 
     public static final String LAB_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab";

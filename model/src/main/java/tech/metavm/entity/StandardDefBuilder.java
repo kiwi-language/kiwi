@@ -6,7 +6,6 @@ import tech.metavm.flow.Method;
 import tech.metavm.flow.MethodBuilder;
 import tech.metavm.flow.Parameter;
 import tech.metavm.object.instance.ColumnKind;
-import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;

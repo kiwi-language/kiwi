@@ -16,9 +16,8 @@ import java.util.function.Supplier;
 @EntityType("计算视图字段映射")
 public class ComputedFieldMapping extends FieldMapping {
 
-    @ChildEntity("值")
+    @EntityField("值")
     private Value value;
-
     @EntityField("模板")
     @Nullable
     @CopyIgnore

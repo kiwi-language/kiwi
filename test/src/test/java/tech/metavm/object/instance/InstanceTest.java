@@ -8,12 +8,10 @@ import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.persistence.PersistenceUtils;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.FooTypes;
 import tech.metavm.util.MockUtils;
-import tech.metavm.util.TestUtils;
 
 import java.util.HashMap;
 import java.util.List;

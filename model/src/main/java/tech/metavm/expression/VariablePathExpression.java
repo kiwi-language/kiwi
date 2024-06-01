@@ -19,7 +19,7 @@ public class VariablePathExpression extends Expression {
     private final VariableExpression field;
 
     public VariablePathExpression(@NotNull Expression qualifier, @NotNull VariableExpression field) {
-        this.qualifier = addChild(qualifier.copy(), "qualifier");
+        this.qualifier = qualifier;
         this.field = field;
     }
 

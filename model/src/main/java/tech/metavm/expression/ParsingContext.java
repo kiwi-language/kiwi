@@ -3,7 +3,8 @@ package tech.metavm.expression;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceProvider;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.IndexedTypeDefProvider;
+import tech.metavm.object.type.Type;
 
 public interface ParsingContext {
 

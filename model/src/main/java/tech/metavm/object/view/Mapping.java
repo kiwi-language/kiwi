@@ -1,7 +1,5 @@
 package tech.metavm.object.view;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.CallContext;
@@ -22,23 +20,16 @@ import static java.util.Objects.requireNonNull;
 
 public abstract class Mapping extends Element implements CodeSource, StagedEntity, LoadAware, GenericElement {
 
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
-
-    public static final IndexDef<Mapping> IDX_SOURCE_TYPE_TARGET_TYPE
-            = IndexDef.createUnique(Mapping.class, "sourceType", "targetType");
     @EntityField("模板")
     @Nullable
     @CopyIgnore
     protected Mapping copySource;
-
     @EntityField("名称")
     private String name;
     @EntityField("编号")
     @Nullable
     private String code;
-    @ChildEntity("源头类型")
     protected final Type sourceType;
-    @ChildEntity("目标类型")
     protected final Type targetType;
     @EntityField("映射函数")
     protected @Nullable Method mapper;
@@ -52,8 +43,8 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         super(tmpId);
         this.name = NamingUtils.ensureValidName(name);
         this.code = NamingUtils.ensureValidCode(code);
-        this.sourceType = addChild(sourceType, "sourceType");
-        this.targetType = addChild(targetType, "targetType");
+        this.sourceType = sourceType;
+        this.targetType = targetType;
     }
 
     public DurableInstance mapRoot(DurableInstance instance, CallContext callContext) {
@@ -103,7 +94,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
 
     public DurableInstance unmap(DurableInstance view, CallContext callContext) {
         if(DebugEnv.debugging) {
-            debugLogger.info("unmap {}/{}, idClass: {}, source: {}", Instances.getInstanceDesc(view), view.getStringId(),
+            DebugEnv.logger.info("unmap {}/{}, idClass: {}, source: {}", Instances.getInstanceDesc(view), view.getStringId(),
                     view.tryGetId() != null ? view.getId().getClass().getName() : null, NncUtils.get(view.tryGetSource(), Instances::getInstanceDesc));
         }
         var result = getUnmapper().execute(null, List.of(view), callContext);

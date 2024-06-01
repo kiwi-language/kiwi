@@ -10,7 +10,7 @@ import tech.metavm.object.type.IndexField;
 import static java.util.Objects.requireNonNull;
 
 @EntityType("索引查询键项目")
-public class IndexQueryKeyItem extends Entity {
+public class IndexQueryKeyItem extends Entity implements tech.metavm.entity.Value {
 
     public static IndexQueryKeyItem create(IndexQueryKeyItemDTO itemDTO, IEntityContext context, ParsingContext parsingContext) {
         return new IndexQueryKeyItem(
@@ -21,12 +21,12 @@ public class IndexQueryKeyItem extends Entity {
 
     @EntityField("索引字段")
     private final IndexField indexField;
-    @ChildEntity("值")
+    @EntityField("值")
     private final Value value;
 
     public IndexQueryKeyItem(@NotNull IndexField indexField, @NotNull Value value) {
         this.indexField = indexField;
-        this.value = addChild(value, "value");
+        this.value = value;
     }
 
     public IndexField getIndexField() {

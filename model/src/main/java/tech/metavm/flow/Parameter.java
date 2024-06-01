@@ -16,9 +16,9 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     @EntityField(value = "编号", asKey = true)
     @Nullable
     private String code;
-    @ChildEntity("类型")
+    @EntityField("类型")
     private Type type;
-    @ChildEntity("条件")
+    @EntityField("条件")
     @Nullable
     private Value condition;
     @EntityField("可调用")
@@ -40,7 +40,7 @@ public class Parameter extends Element implements GenericElement, LocalKey {
         this.callable = callable;
         this.name = name;
         this.code = code;
-        this.type = addChild(type.copy(), "type");
+        this.type = type;
         this.copySource = copySource;
         setCondition(condition);
     }
@@ -66,7 +66,7 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     }
 
     public void setType(Type type) {
-        this.type = addChild(type.copy(), "type");
+        this.type = type;
     }
 
     public String getName() {
@@ -138,7 +138,7 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     }
 
     public void setCondition(@Nullable Value condition) {
-        this.condition = NncUtils.get(condition, c -> addChild(c, "condition"));
+        this.condition = condition;
     }
 
     @Override

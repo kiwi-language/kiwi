@@ -33,17 +33,17 @@ public class IndexCountNode extends NodeRT {
 
     @EntityField("索引")
     private Index index;
-    @ChildEntity("最小值")
+    @EntityField("最小值")
     private IndexQueryKey from;
-    @ChildEntity("最大值")
+    @EntityField("最大值")
     private IndexQueryKey to;
 
     public IndexCountNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Index index,
                           IndexQueryKey from, IndexQueryKey to) {
         super(tmpId, name, code, StandardTypes.getLongType(), previous, scope);
         this.index = index;
-        this.from = addChild(from, "from");
-        this.to = addChild(to, "to");
+        this.from = from;
+        this.to = to;
     }
 
     @Override
@@ -56,11 +56,11 @@ public class IndexCountNode extends NodeRT {
     }
 
     public void setFrom(IndexQueryKey from) {
-        this.from = addChild(from, "from");
+        this.from = from;
     }
 
     public void setTo(IndexQueryKey to) {
-        this.to = addChild(to, "to");
+        this.to = to;
     }
 
     public void setIndex(Index index) {

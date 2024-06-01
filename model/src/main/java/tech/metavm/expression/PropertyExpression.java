@@ -1,7 +1,9 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Property;
@@ -16,15 +18,15 @@ import static tech.metavm.util.NncUtils.requireNonNull;
 @EntityType("属性表达式")
 public class PropertyExpression extends Expression {
 
-    @ChildEntity("对象")
+    @EntityField("对象")
     private final Expression instance;
 
-    @ChildEntity("属性")
+    @EntityField("属性")
     private final PropertyRef propertyRef;
 
     public PropertyExpression(@NotNull Expression instance, @NotNull PropertyRef propertyRef) {
-        this.instance = addChild(instance.copy(), "instance");
-        this.propertyRef = addChild((Entity & PropertyRef) propertyRef.copy(), "propertyRef");
+        this.instance = instance;
+        this.propertyRef = propertyRef;
     }
 
     public Property getProperty() {

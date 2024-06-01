@@ -21,4 +21,9 @@ public class EntityDef<T extends Entity> extends PojoDef<T> {
     protected Id getId(T model) {
         return model.tryGetId();
     }
+
+    @Override
+    public boolean isProxySupported() {
+        return true;
+    }
 }

@@ -46,4 +46,6 @@ public class TypeKeyCodes {
 
     public static final int TAGGED_CLASS = 24;
 
+    public static final int VALUE_ARRAY = 25;
+
 }

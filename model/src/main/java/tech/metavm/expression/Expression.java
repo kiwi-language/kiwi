@@ -1,6 +1,5 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.CopyVisitor;
 import tech.metavm.entity.Element;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.Value;
@@ -99,10 +98,6 @@ public abstract class Expression extends Element implements Value {
 
     protected <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
         return List.of();
-    }
-
-    public Expression copy() {
-        return (Expression) accept(new CopyVisitor(this, isStrictEphemeral()));
     }
 
 }

@@ -2,7 +2,6 @@ package tech.metavm.entity;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.system.persistence.FileMapper;
 import tech.metavm.system.persistence.FilePO;
 import tech.metavm.util.InstanceInput;

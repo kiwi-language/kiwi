@@ -34,14 +34,14 @@ public class IndexSelectFirstNode extends NodeRT {
 
     @EntityField("索引")
     private Index index;
-    @ChildEntity("键")
+    @EntityField("键")
     private IndexQueryKey key;
 
     public IndexSelectFirstNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope,
                                 Index index, IndexQueryKey key) {
         super(tmpId, name, code, index.getDeclaringType().getType(), previous, scope);
         this.index = index;
-        this.key = addChild(key, "key");
+        this.key = key;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class IndexSelectFirstNode extends NodeRT {
     }
 
     public void setKey(IndexQueryKey key) {
-        this.key = addChild(key, "key");
+        this.key = key;
     }
 
     public void setIndex(Index index) {

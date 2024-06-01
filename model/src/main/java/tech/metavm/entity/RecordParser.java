@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ColumnStore;
+import tech.metavm.object.type.TypeCategory;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 

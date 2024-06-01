@@ -2,9 +2,9 @@ package tech.metavm.system;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import tech.metavm.object.type.TypeCategory;
 import tech.metavm.system.persistence.RegionMapper;
 import tech.metavm.system.persistence.RegionPO;
-import tech.metavm.object.type.TypeCategory;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static tech.metavm.object.type.IdConstants.*;
+import static tech.metavm.object.type.IdConstants.SYSTEM_RESERVE_PER_REGION;
 
 @Component
 public class RegionManager {

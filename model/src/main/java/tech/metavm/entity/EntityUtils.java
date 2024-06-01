@@ -10,8 +10,8 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.EnumConstantRT;
 import tech.metavm.object.type.Klass;
 import tech.metavm.util.LinkedList;
-import tech.metavm.util.*;
 import tech.metavm.util.Reference;
+import tech.metavm.util.*;
 
 import java.lang.reflect.*;
 import java.math.BigDecimal;
@@ -347,9 +347,8 @@ public class EntityUtils {
                 new Reflections(new ConfigurationBuilder().forPackages("tech.metavm"));
         Set<Class<? extends Entity>> entitySubTypes = reflections.getSubTypesOf(Entity.class);
         Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(EntityType.class);
-        Set<Class<?>> valueTypes = reflections.getTypesAnnotatedWith(ValueType.class);
         return NncUtils.filterUnique(
-                NncUtils.mergeSets(entitySubTypes, entityTypes, valueTypes),
+                NncUtils.mergeSets(entitySubTypes, entityTypes),
                 klass -> !isCompiled(klass)
         );
     }

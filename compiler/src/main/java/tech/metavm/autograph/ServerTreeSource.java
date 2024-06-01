@@ -3,7 +3,6 @@ package tech.metavm.autograph;
 import tech.metavm.entity.Tree;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.GetTreesRequest;
 import tech.metavm.util.NncUtils;
 

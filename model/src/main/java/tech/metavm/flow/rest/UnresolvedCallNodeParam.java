@@ -1,8 +1,5 @@
 package tech.metavm.flow.rest;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 import javax.annotation.Nullable;
 import java.util.List;
 

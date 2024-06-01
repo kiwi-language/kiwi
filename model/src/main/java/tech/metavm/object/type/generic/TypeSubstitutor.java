@@ -39,7 +39,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
     @Override
     public Type visitType(Type type) {
         var subst = substitute(type);
-        return subst != null ? subst : type.copy();
+        return subst != null ? subst : type;
     }
 
     @Override
@@ -95,7 +95,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
     }
 
     private @Nullable Type substitute(Type type) {
-        return NncUtils.get(variableMap.get(type), Type::copy);
+        return variableMap.get(type);
     }
 
     Map<Type, Type> getVariableMap() {

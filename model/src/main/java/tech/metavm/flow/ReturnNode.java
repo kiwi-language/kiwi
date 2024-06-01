@@ -28,17 +28,16 @@ public class ReturnNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("结果")
-    @Nullable
-    private Value value;
+    @EntityField("结果")
+    private @Nullable Value value;
 
     public ReturnNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, @Nullable Value value) {
         super(tmpId, name, code, null, prev, scope);
-        this.value = NncUtils.get(value, v -> addChild(v, "value"));
+        this.value = value;
     }
 
     public void setValue(@Nullable Value value) {
-        this.value = NncUtils.get(value, v -> addChild(v, "value"));
+        this.value = value;
     }
 
     @Nullable

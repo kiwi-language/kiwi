@@ -12,7 +12,6 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Index;
 
 import javax.annotation.Nullable;
-
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -37,14 +36,14 @@ public class IndexSelectNode extends NodeRT {
 
     @EntityField("索引")
     private Index index;
-    @ChildEntity("键")
+    @EntityField("键")
     private IndexQueryKey key;
 
     public IndexSelectNode(Long tmpId, String name, @Nullable String code, ClassType type, NodeRT previous, ScopeRT scope,
                            Index index, IndexQueryKey key) {
         super(tmpId, name, code, type, previous, scope);
         this.index = index;
-        this.key = addChild(key, "key");
+        this.key = key;
     }
 
     @Override
@@ -56,7 +55,7 @@ public class IndexSelectNode extends NodeRT {
     }
 
     public void setKey(IndexQueryKey key) {
-        this.key = addChild(key, "key");
+        this.key = key;
     }
 
     public void setIndex(Index index) {

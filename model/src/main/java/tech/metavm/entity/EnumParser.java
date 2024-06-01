@@ -2,7 +2,10 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ClassKind;
+import tech.metavm.object.type.ClassSource;
+import tech.metavm.object.type.ClassTypeBuilder;
+import tech.metavm.object.type.ResolutionStage;
 import tech.metavm.util.NncUtils;
 
 import java.util.Arrays;

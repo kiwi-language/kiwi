@@ -1,7 +1,10 @@
 package tech.metavm.object.type;
 
 import tech.metavm.object.instance.core.*;
-import tech.metavm.util.*;
+import tech.metavm.util.NamingUtils;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.Null;
+import tech.metavm.util.Password;
 
 import java.util.Date;
 

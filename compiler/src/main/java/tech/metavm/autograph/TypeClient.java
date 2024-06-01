@@ -2,12 +2,11 @@ package tech.metavm.autograph;
 
 import tech.metavm.object.instance.core.TreeVersion;
 import tech.metavm.object.instance.rest.GetTreesRequest;
-import tech.metavm.object.instance.rest.InstanceVersionDTO;
 import tech.metavm.object.instance.rest.InstanceVersionsRequest;
 import tech.metavm.object.instance.rest.TreeDTO;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
-import tech.metavm.object.type.rest.dto.TypeTreeQuery;
 import tech.metavm.object.type.rest.dto.TreeResponse;
+import tech.metavm.object.type.rest.dto.TypeTreeQuery;
 import tech.metavm.system.rest.dto.BlockDTO;
 
 import java.util.List;

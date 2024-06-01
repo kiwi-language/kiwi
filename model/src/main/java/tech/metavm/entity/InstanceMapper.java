@@ -1,8 +1,8 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.type.AnyType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.ReflectionUtils;

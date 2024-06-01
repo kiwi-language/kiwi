@@ -1,8 +1,9 @@
 package tech.metavm.object.instance.cache;
 
 import org.springframework.stereotype.Component;
-import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.util.*;
+import tech.metavm.util.KeyValue;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.RedisRepository;
 
 import java.util.Collection;
 import java.util.List;

@@ -2,11 +2,13 @@ package tech.metavm.object.view;
 
 import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.expression.InstanceOfExpression;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.FieldBuilder;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.UnionType;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -15,17 +17,15 @@ import java.util.function.Supplier;
 @EntityType("联合嵌套映射")
 public class UnionNestedMapping extends NestedMapping {
 
-    @ChildEntity("来源类型")
     private final UnionType sourceType;
-    @ChildEntity("目标类型")
     private final UnionType targetType;
     @ChildEntity("成员嵌套映射列表")
     private final ChildArray<NestedMapping> memberNestedMappings =
             addChild(new ChildArray<>(NestedMapping.class), "memberNestedMappings");
 
     public UnionNestedMapping(UnionType sourceType, UnionType targetType, List<NestedMapping> nestedMappings) {
-        this.sourceType = addChild(sourceType.copy(), "sourceType");
-        this.targetType = addChild(targetType.copy(), "targetType");
+        this.sourceType = sourceType;
+        this.targetType = targetType;
         this.memberNestedMappings.resetChildren(nestedMappings);
     }
 

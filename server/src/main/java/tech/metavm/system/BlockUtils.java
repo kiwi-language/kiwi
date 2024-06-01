@@ -3,7 +3,6 @@ package tech.metavm.system;
 import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.object.instance.core.TypeTag;
 import tech.metavm.system.persistence.BlockPO;
-import tech.metavm.util.Constants;
 
 import java.util.Objects;
 

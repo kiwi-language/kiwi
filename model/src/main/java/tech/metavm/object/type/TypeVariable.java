@@ -20,7 +20,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     private String name;
     private @Nullable String code;
     @ChildEntity("类型上界")
-    private final ChildArray<Type> bounds = addChild(new ChildArray<>(Type.class), "bounds");
+    private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");
     @EntityField("范型声明")
     private @NotNull GenericDeclaration genericDeclaration;
     @EntityField("模板")
@@ -77,7 +77,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     }
 
     public void setBounds(List<Type> bounds) {
-        this.bounds.resetChildren(NncUtils.map(bounds, Type::copy));
+        this.bounds.reset(bounds);
     }
 
     @Override
@@ -124,8 +124,6 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     public String getInternalName(@Nullable Flow current) {
         return genericDeclaration.getInternalName(current) + "." + getCodeRequired();
     }
-
-
 
     public TypeVariable copy() {
         var copy = new TypeVariable(null, name, null, DummyGenericDeclaration.INSTANCE);

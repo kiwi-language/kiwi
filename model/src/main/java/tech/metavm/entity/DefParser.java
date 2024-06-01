@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ResolutionStage;
 
 public abstract class DefParser<T,I extends DurableInstance,D extends ModelDef<T,I>> {

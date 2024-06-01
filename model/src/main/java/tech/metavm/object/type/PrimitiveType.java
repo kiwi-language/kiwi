@@ -139,11 +139,6 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public PrimitiveType copy() {
-        return new PrimitiveType(kind);
-    }
-
-    @Override
     public String toExpression(SerializeContext serializeContext, @javax.annotation.Nullable Function<TypeDef, String> getTypeDefExpr) {
         return kind.name().toLowerCase();
     }

@@ -1,9 +1,14 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.ValueArray;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ArrayKind;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.Types;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -19,21 +24,20 @@ public class ArrayExpression extends Expression {
         return new ArrayExpression(expressions, type);
     }
 
-    @ChildEntity("表达式列表")
-    private final ChildArray<Expression> expressions = addChild(new ChildArray<>(Expression.class), "expressions");
-    @ChildEntity("类型")
+    private final ValueArray<Expression> expressions;
+    @EntityField("类型")
     private final ArrayType type;
 
     public ArrayExpression(Collection<Expression> expressions, ArrayType type) {
-        this.expressions.addChildren(NncUtils.map(expressions, Expression::copy));
-        this.type = addChild(type.copy(), "type");
+        this.expressions = new ValueArray<>(Expression.class, expressions);
+        this.type = type;
     }
 
     public static ArrayExpression merge(Expression first, Expression second) {
         if (first instanceof ArrayExpression listExpression) {
             var rest = listExpression.expressions;
             List<Expression> expressions = new ArrayList<>(rest.size() + 1);
-            rest.forEach(expressions::add);
+            expressions.addAll(rest.toList());
             expressions.add(second);
             return create(expressions);
         } else {
@@ -41,8 +45,8 @@ public class ArrayExpression extends Expression {
         }
     }
 
-    public ChildArray<Expression> getExpressions() {
-        return expressions;
+    public List<Expression> getExpressions() {
+        return expressions.toList();
     }
 
     @Override

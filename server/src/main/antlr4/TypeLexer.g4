@@ -14,6 +14,7 @@ ANY:                'any';
 NEVER:              'never';
 R:                  'r';
 C:                  'c';
+V:                  'v';
 
 
 // Separators

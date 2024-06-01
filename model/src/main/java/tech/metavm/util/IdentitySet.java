@@ -2,7 +2,10 @@ package tech.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.Set;
 
 public class IdentitySet<T> implements Set<T> {
 

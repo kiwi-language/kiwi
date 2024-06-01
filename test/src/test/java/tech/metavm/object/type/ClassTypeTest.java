@@ -7,7 +7,6 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.MethodBuilder;
 import tech.metavm.flow.Parameter;
 import tech.metavm.object.instance.ColumnKind;
-import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.util.MockUtils;
 
 import java.util.List;

@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
@@ -12,11 +12,11 @@ import java.util.Objects;
 @EntityType("当前对象表达式")
 public class ThisExpression extends Expression {
 
-    @ChildEntity("类型")
+    @EntityField("类型")
     private final ClassType type;
 
     public ThisExpression(ClassType type) {
-        this.type = addChild(type.copy(), "type");
+        this.type = type;
     }
 
     @Override

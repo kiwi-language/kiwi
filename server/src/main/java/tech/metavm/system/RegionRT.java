@@ -1,7 +1,7 @@
 package tech.metavm.system;
 
-import tech.metavm.system.persistence.RegionPO;
 import tech.metavm.object.type.TypeCategory;
+import tech.metavm.system.persistence.RegionPO;
 
 public class RegionRT {
 

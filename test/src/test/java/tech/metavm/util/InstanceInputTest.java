@@ -9,7 +9,9 @@ import tech.metavm.object.type.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.*;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
 import java.util.function.Function;
 
 public class InstanceInputTest extends TestCase {
@@ -166,7 +168,7 @@ public class InstanceInputTest extends TestCase {
             throw new NullPointerException("Can not find type def for id: " + id);
         };
         var bytes = InstanceOutput.toBytes(fooInst);
-        var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, typeDefProvider);
+        var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, InstanceInput.UNSUPPORTED_ADD_VALUE, typeDefProvider);
         var recoveredFooInst = input.readMessage();
         MatcherAssert.assertThat(recoveredFooInst, InstanceMatcher.of(fooInst));
         new StreamVisitor(new ByteArrayInputStream(bytes)) {

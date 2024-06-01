@@ -4,7 +4,9 @@ import tech.metavm.event.EventQueue;
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
-import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.core.EntityInstanceContextBridge;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.view.MappingProvider;
 

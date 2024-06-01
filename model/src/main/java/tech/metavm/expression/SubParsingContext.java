@@ -3,15 +3,20 @@ package tech.metavm.expression;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceProvider;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.IndexedTypeDefProvider;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InternalException;
+
+import javax.annotation.Nullable;
 
 public class SubParsingContext implements ParsingContext {
     private final ParsingContext parent;
-    private final AllMatchExpression allMatchExpression;
+    private final Type elementType;
+    private final @Nullable String alias;
 
-    public SubParsingContext(AllMatchExpression allMatchExpression, ParsingContext parent) {
-        this.allMatchExpression = allMatchExpression;
+    public SubParsingContext(@Nullable String alias, Type elementType, ParsingContext parent) {
+        this.alias = alias;
+        this.elementType = elementType;
         this.parent = parent;
     }
 
@@ -21,8 +26,7 @@ public class SubParsingContext implements ParsingContext {
     }
 
     private boolean isSelfVar(Var var) {
-        return allMatchExpression.getCursorAlias() != null && var.isName()
-                && allMatchExpression.getCursorAlias().equals(var.getName());
+        return alias != null && var.isName() && alias.equals(var.getName());
     }
 
     @Override
@@ -33,7 +37,7 @@ public class SubParsingContext implements ParsingContext {
     @Override
     public Expression resolveVar(Var var) {
         if (isSelfVar(var)) {
-            return allMatchExpression.createCursor();
+            return new CursorExpression(elementType, alias);
         }
         else if(parent != null && parent.isContextVar(var)) {
             return parent.resolveVar(var);
@@ -43,7 +47,7 @@ public class SubParsingContext implements ParsingContext {
 
     @Override
     public Expression getDefaultExpr() {
-        return allMatchExpression.createCursor();
+        return new CursorExpression(elementType, alias);
     }
 
     @Override

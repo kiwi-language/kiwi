@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.Klass;
 
 public interface StandardTypesHolder {
     

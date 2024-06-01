@@ -9,11 +9,13 @@ import tech.metavm.event.EventQueue;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.view.MappingProvider;
+import tech.metavm.util.InstanceInput;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -138,4 +140,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     void invalidateCache(DurableInstance instance);
 
     @Nullable EventQueue getEventQueue();
+
+    InstanceInput createInstanceInput(InputStream stream);
+
 }

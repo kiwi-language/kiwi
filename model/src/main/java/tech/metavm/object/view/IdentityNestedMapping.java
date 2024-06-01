@@ -1,6 +1,5 @@
 package tech.metavm.object.view;
 
-import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.flow.Value;
@@ -12,11 +11,10 @@ import java.util.function.Supplier;
 @EntityType("自身嵌套映射")
 public class IdentityNestedMapping extends NestedMapping {
 
-    @ChildEntity("类型")
     private final Type type;
 
     public IdentityNestedMapping(Type type) {
-        this.type = addChild(type.copy(), "type");
+        this.type = type;
     }
 
     @Override

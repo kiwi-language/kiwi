@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.ObjectInstanceMap;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.type.Klass;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
@@ -40,8 +40,4 @@ public class RecordDef<T extends Record> extends PojoDef<T> {
 
     }
 
-    @Override
-    public boolean isProxySupported() {
-        return false;
-    }
 }

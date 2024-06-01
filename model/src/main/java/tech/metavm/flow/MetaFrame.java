@@ -7,8 +7,14 @@ import tech.metavm.entity.natives.CallContext;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.NodeExpression;
-import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.InstanceRepository;
+import tech.metavm.object.type.Access;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.*;
 

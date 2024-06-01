@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.Value;
 import tech.metavm.entity.*;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.ParsingContext;
@@ -12,7 +13,7 @@ import tech.metavm.util.NncUtils;
 import java.util.List;
 
 @EntityType("索引查询键")
-public class IndexQueryKey extends Entity {
+public class IndexQueryKey extends Entity implements Value {
 
     public static IndexQueryKey create(IndexQueryKeyDTO indexQueryKeyDTO, IEntityContext context, ParsingContext parsingContext) {
         return new IndexQueryKey(
@@ -24,12 +25,11 @@ public class IndexQueryKey extends Entity {
     @EntityField("索引")
     private final Index index;
 
-    @ChildEntity("项目列表")
-    private final ChildArray<IndexQueryKeyItem> items = addChild(new ChildArray<>(IndexQueryKeyItem.class), "items");
+    private final ValueArray<IndexQueryKeyItem> items;
 
     public IndexQueryKey(Index index, List<IndexQueryKeyItem> items) {
         this.index = index;
-        this.items.resetChildren(items);
+        this.items = new ValueArray<>(IndexQueryKeyItem.class, items);
     }
 
     public List<IndexQueryKeyItem> getItems() {

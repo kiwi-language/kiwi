@@ -1,6 +1,5 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.IndexKeyRT;
 
 import javax.annotation.Nullable;

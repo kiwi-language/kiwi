@@ -9,6 +9,7 @@ import tech.metavm.object.type.antlr.TypeLexer;
 import tech.metavm.object.type.antlr.TypeParser;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -78,11 +79,7 @@ public interface TypeKey extends TypeOrTypeKey {
             return new VariableTypeKey(Id.parse(ctx.variableType().IDENTIFIER().getText().substring(Constants.CONSTANT_ID_PREFIX.length())));
         if (ctx.elementType != null) {
             var kind = ctx.arrayKind();
-            return new ArrayTypeKey(
-                    kind == null ? ArrayKind.READ_WRITE.code() :
-                            (kind.R() != null ? ArrayKind.READ_ONLY.code() : ArrayKind.CHILD.code()),
-                    fromTypeContext(ctx.elementType)
-            );
+            return new ArrayTypeKey(parseArrayKind(kind).code(), fromTypeContext(ctx.elementType));
         }
         if(ctx.LBRACK() != null)
             return new UncertainTypeKey(fromTypeContext(ctx.type(0)), fromTypeContext(ctx.type(1)));
@@ -119,6 +116,7 @@ public interface TypeKey extends TypeOrTypeKey {
             case TypeKeyCodes.CHILD_ARRAY -> new ArrayTypeKey(ArrayKind.CHILD.code(), read(input));
             case TypeKeyCodes.READ_ONLY_ARRAY -> new ArrayTypeKey(ArrayKind.READ_ONLY.code(), read(input));
             case TypeKeyCodes.READ_WRITE_ARRAY -> new ArrayTypeKey(ArrayKind.READ_WRITE.code(), read(input));
+            case TypeKeyCodes.VALUE_ARRAY -> new ArrayTypeKey(ArrayKind.VALUE.code(), read(input));
             case TypeKeyCodes.CLASS -> new ClassTypeKey(input.readId());
             case TypeKeyCodes.TAGGED_CLASS -> new TaggedClassTypeKey(input.readId(), input.readInt());
             case TypeKeyCodes.PARAMETERIZED ->
@@ -147,6 +145,18 @@ public interface TypeKey extends TypeOrTypeKey {
         for (int i = 0; i < num; i++)
             typeKeys.add(read(input));
         return typeKeys;
+    }
+
+    private static ArrayKind parseArrayKind(@Nullable TypeParser.ArrayKindContext ctx) {
+        if(ctx == null)
+            return ArrayKind.READ_WRITE;
+        if(ctx.R() != null)
+            return ArrayKind.READ_ONLY;
+        if(ctx.C() != null)
+            return ArrayKind.CHILD;
+        if(ctx.V() != null)
+            return ArrayKind.VALUE;
+        throw new InternalException("Unrecognized array kind: " + ctx.getText());
     }
 
 }

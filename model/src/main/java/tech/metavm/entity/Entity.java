@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.flow.Value;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.core.TmpId;
@@ -46,6 +47,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public Entity(Long tmpId, @Nullable EntityParentRef parentRef, boolean ephemeral) {
         this.id = tmpId != null ? TmpId.of(tmpId) : null;
         this.ephemeralEntity = ephemeral;
+        assert !ephemeral || !(this instanceof Value) : "Can not set a value object to ephemeral";
         if (parentRef != null) {
             if (parentRef.parent() instanceof ReadonlyArray<?> array) {
                 NncUtils.requireNull(parentRef.field());
@@ -84,6 +86,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     public void setEphemeralEntity(boolean ephemeralEntity) {
+        assert !ephemeralEntity || !(this instanceof Value) : "can not set a value object to ephemeral";
         this.ephemeralEntity = ephemeralEntity;
         if (ephemeralEntity) {
             EntityUtils.forEachDescendant(this, e -> {
@@ -98,6 +101,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     public void setStrictEphemeral(boolean strictEphemeral) {
+        assert !strictEphemeral || !(this instanceof Value) : "can not set a value object to ephemeral";
         this.strictEphemeral = strictEphemeral;
         if(strictEphemeral) {
             this.ephemeralEntity = true;
@@ -222,27 +226,27 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public void forEachDescendant(Consumer<Entity> action, boolean skipCopyIgnore) {
         action.accept(this);
         var desc = DescStore.get(EntityUtils.getRealType(this));
-        for (var prop : desc.getNonTransientProps()) {
-            if (prop.getField().isAnnotationPresent(ChildEntity.class)) {
-                if(skipCopyIgnore && prop.getField().isAnnotationPresent(CopyIgnore.class))
-                    continue;
+        desc.forEachNonTransientProp(prop -> {
+            if (prop.isChildEntity()) {
+                if(skipCopyIgnore && prop.isCopyIgnore())
+                    return;
                 var child = (Entity) prop.get(this);
                 if (child != null)
                     child.forEachDescendant(action, skipCopyIgnore);
             }
-        }
+        });
     }
 
     public Map<Field, Object> getChildMap() {
         var desc = DescStore.get(EntityUtils.getRealType(this));
         Map<Field, Object> childMap = new HashMap<>();
-        for (EntityProp prop : desc.getNonTransientProps()) {
-            if (prop.getField().isAnnotationPresent(ChildEntity.class)) {
+        desc.forEachNonTransientProp(prop -> {
+            if (prop.isChildEntity()) {
                 var child = (Entity) prop.get(this);
                 if (child != null)
                     childMap.put(prop.getField(), child);
             }
-        }
+        });
         return childMap;
     }
 

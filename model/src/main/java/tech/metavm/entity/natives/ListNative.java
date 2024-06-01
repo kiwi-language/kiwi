@@ -1,11 +1,11 @@
 package tech.metavm.entity.natives;
 
 import tech.metavm.common.ErrorCode;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
-import tech.metavm.entity.StandardTypes;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.Instances;
@@ -100,9 +100,6 @@ public class ListNative extends IterableNative {
     }
 
     public void clear() {
-        if(array == null) {
-            System.out.println("Caught");
-        }
         array.clear();
     }
 

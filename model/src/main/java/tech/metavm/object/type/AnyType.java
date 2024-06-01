@@ -67,11 +67,6 @@ public class AnyType extends Type {
     }
 
     @Override
-    public AnyType copy() {
-        return new AnyType();
-    }
-
-    @Override
     public String toExpression(SerializeContext serializeContext, @javax.annotation.Nullable Function<TypeDef, String> getTypeDefExpr) {
         return "any";
     }

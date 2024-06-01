@@ -35,12 +35,6 @@ public class FunctionRef extends FlowRef {
         return (Function) super.resolve();
     }
 
-    public FunctionRef copy() {
-        var copy = new FunctionRef(getRawFlow(), getTypeArguments());
-        copy.resolved = resolved;
-        return copy;
-    }
-
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitFunctionRef(this);

@@ -2,7 +2,10 @@ package tech.metavm.object.instance.core.mocks;
 
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.instance.IndexKeyRT;
-import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.InstanceRepository;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 

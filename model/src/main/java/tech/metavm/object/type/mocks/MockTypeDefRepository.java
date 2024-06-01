@@ -2,7 +2,9 @@ package tech.metavm.object.type.mocks;
 
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.Klass;
+import tech.metavm.object.type.TypeDef;
+import tech.metavm.object.type.TypeDefRepository;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;

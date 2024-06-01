@@ -13,10 +13,12 @@ public class ArrayMapper<E, C extends ReadonlyArray<E>> implements Mapper<C, Arr
 
     private final Class<C> entityClass;
     private final DefContext defContext;
+    private final boolean valueArray;
 
     public ArrayMapper(Class<C> entityClass, DefContext defContext) {
         this.entityClass = entityClass;
         this.defContext = defContext;
+        valueArray = Value.class.isAssignableFrom(entityClass);
     }
 
     @Override
@@ -62,7 +64,7 @@ public class ArrayMapper<E, C extends ReadonlyArray<E>> implements Mapper<C, Arr
 
     @Override
     public boolean isProxySupported() {
-        return true;
+        return !valueArray;
     }
 
     @Override

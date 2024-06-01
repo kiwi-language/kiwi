@@ -1,7 +1,9 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.entity.natives.CallContext;
-import tech.metavm.flow.*;
+import tech.metavm.flow.Flow;
+import tech.metavm.flow.FlowExecResult;
+import tech.metavm.flow.Flows;
 import tech.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;

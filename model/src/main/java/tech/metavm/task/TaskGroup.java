@@ -1,8 +1,6 @@
 package tech.metavm.task;
 
 import tech.metavm.entity.*;
-import tech.metavm.task.Task;
-import tech.metavm.entity.ChildArray;
 
 import java.util.List;
 

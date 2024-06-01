@@ -2,7 +2,10 @@ package tech.metavm.object.type;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.ValueArray;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TypeId;
@@ -27,8 +30,7 @@ public class ClassType extends Type implements ISubstitutor {
     public static final Logger logger = LoggerFactory.getLogger(ClassType.class);
 
     private final Klass klass;
-    @ChildEntity("typeArguments")
-    private final ChildArray<Type> typeArguments = addChild(new ChildArray<>(Type.class), "typeArguments");
+    private final ValueArray<Type> typeArguments;
     private transient TypeSubstitutor substitutor;
     private transient Klass resolved;
 
@@ -38,7 +40,7 @@ public class ClassType extends Type implements ISubstitutor {
 //        if(typeArguments.equals(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType)))
 //            throw new InternalException("Trying to create an raw class type using type arguments for klass: " + klass.getTypeDesc());
         this.klass = klass;
-        this.typeArguments.addChildren(NncUtils.map(typeArguments, Type::copy));
+        this.typeArguments = new ValueArray<>(Type.class, typeArguments);
     }
 
     @Override
@@ -194,12 +196,6 @@ public class ClassType extends Type implements ISubstitutor {
         return NncUtils.anyMatch(typeArguments, Type::isCaptured);
     }
 
-    public ClassType copy() {
-        var copy = new ClassType(klass, NncUtils.map(typeArguments, Type::copy));
-        copy.resolved = resolved;
-        return copy;
-    }
-
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
         var id = getTypeDefExpr == null ? Constants.CONSTANT_ID_PREFIX + serializeContext.getStringId(klass) : getTypeDefExpr.apply(klass);
@@ -289,4 +285,8 @@ public class ClassType extends Type implements ISubstitutor {
         return klass.getTag();
     }
 
+    @Override
+    public boolean isValue() {
+        return klass.getKind() == ClassKind.VALUE;
+    }
 }

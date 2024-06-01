@@ -10,4 +10,6 @@ public class TypeTags {
 
     public static final int CHILD_ARRAY = 3;
 
+    public static final int VALUE_ARRAY = 4;
+
 }

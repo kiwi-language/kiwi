@@ -48,7 +48,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private boolean readonly;
     @EntityField("状态")
     private MetadataState state;
-    @ChildEntity("类型")
+    @EntityField("类型")
     private Type type;
 
     public Field(
@@ -77,7 +77,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this._static = isStatic;
         this.access = access;
         this.state = state;
-        this.type = addChild(type.copy(), "type");
+        this.type = type;
         this.readonly = readonly;
         if (column != null) {
             NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
@@ -437,7 +437,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     public void setType(Type type) {
-        this.type = addChild(type.copy(), "type");
+        this.type = type;
     }
 
     @Override

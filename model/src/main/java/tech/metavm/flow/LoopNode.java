@@ -12,8 +12,8 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.NncUtils;
 
@@ -28,7 +28,7 @@ public abstract class LoopNode extends ScopeNode {
 
     @ChildEntity("字段列表")
     private final ChildArray<LoopField> fields = addChild(new ChildArray<>(LoopField.class), "fields");
-    @ChildEntity("条件")
+    @EntityField("条件")
     private Value condition;
     @ChildEntity("klass")
     private final Klass klass;
@@ -37,7 +37,7 @@ public abstract class LoopNode extends ScopeNode {
                        @NotNull ScopeRT scope, @NotNull Value condition) {
         super(tmpId, name, code, null, previous, scope, true);
         this.klass = addChild(klass, "klass");
-        this.condition = addChild(condition, "condition");
+        this.condition = condition;
     }
 
     public void setLoopParam(LoopParamDTO param, IEntityContext context) {
@@ -135,7 +135,7 @@ public abstract class LoopNode extends ScopeNode {
     }
 
     public void setCondition(@Nullable Value condition) {
-        this.condition = condition != null ? addChild(condition, "condition") : null;
+        this.condition = condition;
     }
 
     @Override

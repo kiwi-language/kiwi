@@ -1,5 +1,7 @@
 package tech.metavm.flow;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.ExpressionTypeMap;
 import tech.metavm.flow.rest.NodeDTO;
@@ -12,6 +14,8 @@ import java.lang.reflect.Method;
 import static tech.metavm.util.ReflectionUtils.tryGetStaticMethod;
 
 public class NodeFactory {
+
+    public static final Logger logger = LoggerFactory.getLogger(NodeFactory.class);
 
     public static NodeRT save(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
         try (var ignored = context.getProfiler().enter("NodeFactory.save")) {
@@ -33,9 +37,8 @@ public class NodeFactory {
                 if (isCreate)
                     context.bind(node);
                 return node;
-            }
-            catch (RuntimeException e) {
-                if(DebugEnv.debugging)
+            } catch (RuntimeException e) {
+                if (DebugEnv.debugging)
                     DebugEnv.logger.info("fail to save node {}", NncUtils.toJSONString(nodeDTO));
                 throw e;
             }

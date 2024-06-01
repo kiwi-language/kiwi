@@ -1,12 +1,13 @@
 package tech.metavm.util;
 
+import org.apache.ibatis.annotations.Mapper;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.InstanceContext;
-import org.springframework.stereotype.Component;
-import org.apache.ibatis.annotations.Mapper;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;

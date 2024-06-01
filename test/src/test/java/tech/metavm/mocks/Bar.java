@@ -3,7 +3,6 @@ package tech.metavm.mocks;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.ValueType;
 
 @EntityType("巴")
 public class Bar extends Entity {

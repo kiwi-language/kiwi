@@ -1,12 +1,14 @@
 package tech.metavm.object.view;
 
 import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.Expressions;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.FieldBuilder;
+import tech.metavm.object.type.Type;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,16 +19,14 @@ import java.util.function.Supplier;
 @EntityType("数组嵌套映射")
 public class ArrayNestedMapping extends NestedMapping {
 
-    @ChildEntity("来源类型")
     private final ArrayType sourceType;
-    @ChildEntity("目标类型")
     private final ArrayType targetType;
     @ChildEntity("元素嵌套映射")
     private final NestedMapping elementNestedMapping;
 
     public ArrayNestedMapping(ArrayType sourceType, ArrayType targetType, NestedMapping elementNestedMapping) {
-        this.sourceType = addChild(sourceType.copy(), "sourceType");
-        this.targetType = addChild(targetType.copy(), "targetType");
+        this.sourceType = sourceType;
+        this.targetType = targetType;
         this.elementNestedMapping = addChild(elementNestedMapping, "elementNestedMapping");
     }
 

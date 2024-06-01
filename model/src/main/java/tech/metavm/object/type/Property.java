@@ -6,7 +6,6 @@ import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 

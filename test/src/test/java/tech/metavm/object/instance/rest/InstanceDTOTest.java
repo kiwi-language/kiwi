@@ -5,7 +5,10 @@ import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.MockStandardTypesInitializer;
-import tech.metavm.util.*;
+import tech.metavm.util.MockUtils;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.PojoMatcher;
+import tech.metavm.util.TestUtils;
 
 public class InstanceDTOTest extends TestCase {
 

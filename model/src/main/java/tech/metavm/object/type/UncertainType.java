@@ -1,6 +1,9 @@
 package tech.metavm.object.type;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.rest.dto.TypeKeyCodes;
@@ -17,15 +20,15 @@ import java.util.function.Function;
 @EntityType("不确定类型")
 public class UncertainType extends CompositeType {
 
-    @ChildEntity("上限")
+    @EntityField("上限")
     private Type upperBound;
-    @ChildEntity("下限")
+    @EntityField("下限")
     private Type lowerBound;
 
     public UncertainType(Type lowerBound, Type upperBound) {
         super(getName(lowerBound, upperBound), getCode(lowerBound, upperBound), true, true, TypeCategory.UNCERTAIN);
-        this.lowerBound = addChild(lowerBound.copy(), "lowerBound");
-        this.upperBound = addChild(upperBound.copy(), "upperBound");
+        this.lowerBound = lowerBound;
+        this.upperBound = upperBound;
     }
 
     private static String getName(Type lowerBound, Type upperBound) {
@@ -139,10 +142,6 @@ public class UncertainType extends CompositeType {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitUncertainType(this);
-    }
-
-    public UncertainType copy() {
-        return new UncertainType(lowerBound.copy(), upperBound.copy());
     }
 
     @Override

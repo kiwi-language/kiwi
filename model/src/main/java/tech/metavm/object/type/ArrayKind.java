@@ -2,7 +2,7 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
-import tech.metavm.util.*;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -43,7 +43,17 @@ public enum ArrayKind {
             return ChildList.class.getName() + "<" + elementType.getInternalName(current) + ">";
         }
     },
+    VALUE(4, TypeCategory.VALUE_ARRAY, TypeTags.VALUE_ARRAY, ValueArray.class, "[V]") {
+        @Override
+        public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
+            return that == VALUE && assignedElementType.contains(assignmentElementType);
+        }
 
+        @Override
+        public String getInternalName(Type elementType, @Nullable Flow current) {
+            return ValueList.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        }
+    },
     ;
 
     private final int code;

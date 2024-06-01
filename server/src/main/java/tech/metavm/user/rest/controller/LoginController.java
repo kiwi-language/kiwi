@@ -11,7 +11,6 @@ import tech.metavm.user.Tokens;
 import tech.metavm.user.rest.dto.LoginInfo;
 import tech.metavm.user.rest.dto.LoginRequest;
 import tech.metavm.util.*;
-import tech.metavm.util.Headers;
 
 @RestController
 @RequestMapping("/")

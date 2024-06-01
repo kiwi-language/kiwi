@@ -1,7 +1,9 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 
@@ -12,12 +14,12 @@ import java.util.Objects;
 public class UnaryExpression extends Expression {
     @EntityField("运算符")
     private final UnaryOperator operator;
-    @ChildEntity("运算数")
+    @EntityField("运算数")
     private final Expression operand;
 
     public UnaryExpression(@NotNull UnaryOperator operator, @NotNull Expression operand) {
         this.operator = operator;
-        this.operand = addChild(operand.copy(), "operand");
+        this.operand = operand;
     }
 
     public UnaryOperator getOperator() {

@@ -25,9 +25,9 @@ public class FieldParam extends Entity implements LocalKey {
         );
     }
 
-    @ChildEntity("字段引用")
+    @EntityField("字段引用")
     private final FieldRef fieldRef;
-    @ChildEntity("值")
+    @EntityField("值")
     private Value value;
 
     public FieldParam(FieldRef fieldRef, ValueDTO valueDTO, ParsingContext parsingContext) {
@@ -35,8 +35,8 @@ public class FieldParam extends Entity implements LocalKey {
     }
 
     public FieldParam(FieldRef fieldRef, Value value) {
-        this.fieldRef = addChild(fieldRef.copy(), "fieldRef");
-        setValue(value);
+        this.fieldRef = fieldRef;
+        this.value = value;
     }
 
     public Field getField() {
@@ -48,11 +48,11 @@ public class FieldParam extends Entity implements LocalKey {
     }
 
     public void setValue(Value value) {
-        this.value = addChild(value, "value");
+        this.value = value;
     }
 
     public FieldParamDTO toDTO() {
-        try(var serContext = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter()) {
             return new FieldParamDTO(
                     serContext.getStringId(this),
                     fieldRef.toDTO(serContext), NncUtils.get(value, Value::toDTO));
@@ -60,7 +60,7 @@ public class FieldParam extends Entity implements LocalKey {
     }
 
     public void update(FieldParamDTO fieldParamDTO, ParsingContext parsingContext) {
-        if(fieldParamDTO.value() != null) {
+        if (fieldParamDTO.value() != null) {
             var value = ValueFactory.create(fieldParamDTO.value(), parsingContext);
             AssertUtils.assertTrue(getField().getType().isAssignableFrom(value.getType()),
                     ErrorCode.INCORRECT_FIELD_VALUE, getField().getName());

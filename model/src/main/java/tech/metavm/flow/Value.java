@@ -12,12 +12,12 @@ import tech.metavm.object.type.Type;
 import javax.annotation.Nullable;
 
 @EntityType("流程值")
-public abstract class Value extends Element {
+public abstract class Value extends Element implements tech.metavm.entity.Value {
 
     @EntityField("类别")
     protected final ValueKind kind;
 
-    @ChildEntity("表达式")
+    @EntityField("表达式")
     protected final Expression expression;
 
     public Value(ValueKind kind, Expression expression) {
@@ -26,7 +26,7 @@ public abstract class Value extends Element {
 
     public Value(ValueKind kind, Expression expression, @Nullable EntityParentRef parentRef) {
         super(null, parentRef);
-        this.expression = addChild(expression.copy(), "expression");
+        this.expression = expression;
         this.kind = kind;
     }
 
@@ -53,8 +53,6 @@ public abstract class Value extends Element {
     public Expression getExpression() {
         return expression;
     }
-
-    public abstract Value copy();
 
     public String getText() {
         return expression.build(VarType.NAME,  true);

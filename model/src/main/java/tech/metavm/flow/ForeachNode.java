@@ -44,13 +44,13 @@ public class ForeachNode extends LoopNode {
         return node;
     }
 
-    @ChildEntity("数组")
+    @EntityField("数组")
     private Value array;
 
     public ForeachNode(Long tmpId, String name, @javax.annotation.Nullable String code, @NotNull Klass outputType, NodeRT previous, ScopeRT scope,
                        Value array, Value condition) {
         super(tmpId, name, code, outputType, previous, scope, condition);
-        setArray(array);
+        this.array = array;
     }
 
     @Override
@@ -64,7 +64,7 @@ public class ForeachNode extends LoopNode {
     }
 
     public void setArray(Value array) {
-        this.array = addChild(array, "array");
+        this.array = array;
     }
 
     @Override

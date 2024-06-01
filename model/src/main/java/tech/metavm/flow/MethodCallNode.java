@@ -83,7 +83,7 @@ public class MethodCallNode extends CallNode {
         return node;
     }
 
-    @ChildEntity("自身")
+    @EntityField("自身")
     @Nullable
     private Value self;
 
@@ -92,11 +92,11 @@ public class MethodCallNode extends CallNode {
                           @Nullable String code,
                           NodeRT prev,
                           ScopeRT scope,
-                          Value self,
+                          @Nullable Value self,
                           MethodRef methodRef,
                           List<Argument> arguments) {
         super(tmpId, name, code, prev, scope, methodRef, arguments);
-        this.self = NncUtils.get(self, s -> addChild(s, "self"));
+        this.self = self;
     }
 
     @Override
@@ -135,8 +135,8 @@ public class MethodCallNode extends CallNode {
         return self;
     }
 
-    public void setSelf(Value self) {
-        this.self = NncUtils.get(self, s -> addChild(s, "self"));
+    public void setSelf(@Nullable Value self) {
+        this.self = self;
     }
 
     protected ClassInstance getSelf(MetaFrame frame) {

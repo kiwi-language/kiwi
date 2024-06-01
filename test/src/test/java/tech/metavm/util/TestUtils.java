@@ -25,7 +25,9 @@ import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.rest.dto.*;
+import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.GetTypeRequest;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 
 import javax.sql.DataSource;

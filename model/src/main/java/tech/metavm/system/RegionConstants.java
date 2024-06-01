@@ -1,6 +1,5 @@
 package tech.metavm.system;
 
-import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.TypeCategory;
 import tech.metavm.util.InternalException;

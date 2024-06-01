@@ -1,8 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.ObjectInstanceMap;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.type.Klass;
 
 import javax.annotation.Nullable;
@@ -40,6 +39,11 @@ public class InterfaceDef<T> extends PojoDef<T>  {
     @Override
     public void updateInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isProxySupported() {
+        return true;
     }
 
 }

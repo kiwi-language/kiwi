@@ -1,7 +1,10 @@
 package tech.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.*;
+import tech.metavm.entity.BuildKeyContext;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.GlobalKey;
 import tech.metavm.object.instance.ColumnKind;
 
 import java.util.Map;
@@ -9,7 +12,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-@ValueType("列")
+@EntityType("列")
 public record Column(
         @EntityField("列类型") ColumnKind kind,
         @EntityField(value = "列名", asTitle = true) String name,

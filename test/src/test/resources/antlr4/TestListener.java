@@ -1,5 +1,6 @@
 // Generated from Test.g4 by ANTLR 4.12.0
 import org.antlr.v4.runtime.tree.ParseTreeListener;
+import tech.metavm.antlr4.TestParser;
 
 /**
  * This interface defines a complete listener for a parse tree produced by

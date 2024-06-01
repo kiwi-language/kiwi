@@ -1,7 +1,10 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.*;
-import tech.metavm.expression.*;
+import tech.metavm.expression.BinaryExpression;
+import tech.metavm.expression.InstanceEvaluationContext;
+import tech.metavm.expression.PropertyExpression;
+import tech.metavm.expression.UnaryExpression;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.ValueFactory;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -12,14 +15,14 @@ import javax.annotation.Nullable;
 @EntityType("校验约束")
 public class CheckConstraint extends Constraint {
 
-    @ChildEntity("条件")
+    @EntityField("条件")
     private Value condition;
 
     private transient ConstraintDef<?> constraintDef;
 
     public CheckConstraint(Klass type, String name, @Nullable String code, String message, Value condition) {
         super(ConstraintKind.CHECK, type, name, code, message);
-        setCondition(condition);
+        this.condition = condition;
     }
 
     @Override
@@ -62,7 +65,7 @@ public class CheckConstraint extends Constraint {
     }
 
     public void setCondition(Value condition) {
-        this.condition = addChild(condition, "condition");
+        this.condition = condition;
     }
 
     public Value getCondition() {

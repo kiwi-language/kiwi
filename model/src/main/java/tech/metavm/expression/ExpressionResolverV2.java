@@ -48,8 +48,7 @@ public class ExpressionResolverV2 extends CopyVisitor {
                 var klass = qualifierType.resolve();
                 var property = klass.getPropertyByVar(Var.parse(expr.getVariable()));
                 return new PropertyExpression(qualifier, property.getRef());
-            }
-            catch (InternalException e) {
+            } catch (InternalException e) {
                 throw new InternalException("Fail to resolve variable: " + expr.getVariable());
             }
         }
@@ -114,7 +113,7 @@ public class ExpressionResolverV2 extends CopyVisitor {
             var qualifierType = (ClassType) context.getExpressionType(qualifier);
             var klass = qualifierType.resolve();
             var property = klass.getPropertyByVar(Var.parse(expression.getField().getVariable()));
-            if(property == null)
+            if (property == null)
                 throw new InternalException("Property not found: " + expression.getField().getVariable() + " in type " + qualifierType);
             return new PropertyExpression(qualifier, property.getRef());
         } finally {
@@ -133,15 +132,12 @@ public class ExpressionResolverV2 extends CopyVisitor {
     public Element visitAllMatchExpression(AllMatchExpression expression) {
         try {
             assignedTypeStack.push(null);
-            Expression resolvedArray = (Expression) copy(expression.getArray());
-            var allMatchExpr = new AllMatchExpression(resolvedArray, new ExpressionPlaceholder());
-            SubParsingContext subContext = new SubParsingContext(allMatchExpr, context);
-            allMatchExpr.setCondition(
-                    ExpressionResolverV2.resolve(
-                            expression.getCondition(), StandardTypes.getBooleanType(), subContext
-                    )
-            );
-            return allMatchExpr;
+            var resolvedArray = (Expression) copy(expression.getArray());
+            var alias = resolvedArray instanceof AsExpression asExpression ? asExpression.getAlias() : null;
+            var elementType = ((ArrayType) resolvedArray.getType()).getElementType();
+            var subContext = new SubParsingContext(alias, elementType, context);
+            var condition = ExpressionResolverV2.resolve(expression.getCondition(), StandardTypes.getBooleanType(), subContext);
+            return new AllMatchExpression(resolvedArray, condition);
         } finally {
             assignedTypeStack.pop();
         }

@@ -1,8 +1,11 @@
 package tech.metavm.manufacturing.storage;
 
-import tech.metavm.entity.EntityStruct;
 import tech.metavm.entity.EntityField;
-import tech.metavm.manufacturing.material.*;
+import tech.metavm.entity.EntityStruct;
+import tech.metavm.manufacturing.material.Batch;
+import tech.metavm.manufacturing.material.Client;
+import tech.metavm.manufacturing.material.Material;
+import tech.metavm.manufacturing.material.Supplier;
 
 import javax.annotation.Nullable;
 import java.util.Date;

@@ -29,17 +29,17 @@ public class FunctionNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("函数")
+    @EntityField("函数")
     private Value func;
     @ChildEntity("参数列表")
-    private final ChildArray<Value> arguments = addChild(new ChildArray<>(Value.class), "arguments");
+    private final ReadWriteArray<Value> arguments = addChild(new ReadWriteArray<>(Value.class), "arguments");
 
     public FunctionNode(Long tmpId, String name, @Nullable String code,  NodeRT previous, ScopeRT scope, Value func, List<Value> arguments) {
         super(tmpId, name, code,
                 ((FunctionType) Flows.getExpressionType(func.getExpression(), previous, scope)).getReturnType(), previous, scope);
         check(func, arguments);
-        this.func = addChild(func, "func");
-        this.arguments.addChildren(arguments);
+        this.func = func;
+        this.arguments.addAll(arguments);
     }
 
     @Override
@@ -52,8 +52,8 @@ public class FunctionNode extends NodeRT {
 
     public void update(Value func, List<Value> arguments) {
         check(func, arguments);
-        this.func = addChild(func, "func");
-        this.arguments.resetChildren(arguments);
+        this.func = func;
+        this.arguments.reset(arguments);
     }
 
     private void check(Value func, List<Value> arguments) throws BusinessException {

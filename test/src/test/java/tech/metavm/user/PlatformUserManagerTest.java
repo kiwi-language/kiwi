@@ -11,7 +11,6 @@ import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.BootstrapUtils;
 import tech.metavm.util.Constants;
 import tech.metavm.util.ContextUtil;
-import tech.metavm.util.TestConstants;
 
 import java.util.List;
 

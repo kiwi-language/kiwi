@@ -10,8 +10,6 @@ import tech.metavm.object.type.Types;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static tech.metavm.object.type.Types.*;
-
 public class DefaultValueUtil {
 
     public static final Pattern INTEGER_PATTERN = Pattern.compile("-?[0-9]+");

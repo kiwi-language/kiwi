@@ -11,6 +11,4 @@ public abstract class CallableRef extends ValueElement implements Reference {
 
     public abstract Callable resolve();
 
-    public abstract CallableRef copy();
-
 }

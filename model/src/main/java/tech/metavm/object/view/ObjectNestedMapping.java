@@ -1,7 +1,7 @@
 package tech.metavm.object.view;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Nodes;
 import tech.metavm.flow.ScopeRT;
@@ -16,11 +16,11 @@ import java.util.function.Supplier;
 @EntityType("对象嵌套映射")
 public class ObjectNestedMapping extends NestedMapping {
 
-    @ChildEntity("映射")
+    @EntityField("映射")
     private final @NotNull ObjectMappingRef mappingRef;
 
     public ObjectNestedMapping(@NotNull ObjectMappingRef mappingRef) {
-        this.mappingRef = addChild(mappingRef.copy(), "mappingRef");
+        this.mappingRef = mappingRef;
     }
 
     @Override

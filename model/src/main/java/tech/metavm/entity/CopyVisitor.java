@@ -86,11 +86,16 @@ public class CopyVisitor extends ElementVisitor<Element> {
         return map.get(original);
     }
 
-    protected Object getValue(Object value, Consumer<Object> setter) {
-        if (descendants.contains(value))
-            return Objects.requireNonNullElseGet(map.get(value), () -> addDummy(value, setter));
-        else
-            return substituteReference(value);
+    protected Object getValue(Object object, Consumer<Object> setter) {
+        if(object instanceof Value) {
+            if(object instanceof Element element)
+                return element.accept(this);
+            else
+                return defaultCopy(object, null);
+        }
+        if (descendants.contains(object))
+            return Objects.requireNonNullElseGet(map.get(object), () -> addDummy(object, setter));
+        return substituteReference(object);
     }
 
     private Object addDummy(Object value, Consumer<Object> setter) {
@@ -116,11 +121,10 @@ public class CopyVisitor extends ElementVisitor<Element> {
 
     protected Object allocateCopy(Object entity) {
         var copy = ReflectionUtils.allocateInstance(EntityUtils.getRealType(entity.getClass()));
-        if (copy instanceof Entity e)
+        if (copy instanceof Entity e && !(copy instanceof Value))
             e.setStrictEphemeral(strictEphemeral);
         return copy;
     }
-
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     protected final Object defaultCopy(Object entity, @Nullable Object existing) {
@@ -161,6 +165,15 @@ public class CopyVisitor extends ElementVisitor<Element> {
                     }
                     yield copy;
                 }
+                case ValueArray valueArray -> {
+                    var copy = new ValueArray<>(valueArray.getElementType(), List.of());
+                    var table = copy.secretlyGetTable();
+                    for (int i = 0; i < valueArray.size(); i++) {
+                        final int _i = i;
+                        table.add(getValue(valueArray.get(i), v -> table.set(_i, v)));
+                    }
+                    yield copy;
+                }
                 case ReadonlyArray<?> objects -> throw new InternalException("Readonly array copy not supported yet");
                 default -> {
                     var entityType = EntityUtils.getRealType(entity.getClass());
@@ -171,9 +184,9 @@ public class CopyVisitor extends ElementVisitor<Element> {
                     }
                     addCopy(entity, copy);
                     var desc = DescStore.get(entityType);
-                    for (EntityProp prop : desc.getNonTransientProps()) {
-                        if (prop.getField().isAnnotationPresent(CopyIgnore.class))
-                            continue;
+                    desc.forEachNonTransientProp(prop -> {
+                        if (prop.isCopyIgnore())
+                            return;
                         var fieldValue = prop.get(entity);
                         Object fieldValueCopy;
                         if (fieldValue == null)
@@ -190,7 +203,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
                                     EntityUtils.getEntityDesc(fieldValue), EntityUtils.getEntityDesc(fieldValueCopy));
                             throw e;
                         }
-                    }
+                    });
                     yield copy;
                 }
             };

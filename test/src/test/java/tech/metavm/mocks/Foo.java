@@ -1,7 +1,6 @@
 package tech.metavm.mocks;
 
 import tech.metavm.entity.*;
-import tech.metavm.entity.ReadWriteArray;
 
 import javax.annotation.Nullable;
 import java.util.List;

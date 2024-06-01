@@ -1,7 +1,6 @@
 package tech.metavm.object.type.rest.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.common.BaseDTO;
 import tech.metavm.flow.rest.GenericDeclarationDTO;
 import tech.metavm.util.InternalException;
 

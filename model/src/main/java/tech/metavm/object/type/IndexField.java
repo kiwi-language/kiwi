@@ -35,14 +35,14 @@ public class IndexField extends Entity implements LocalKey {
     @EntityField(value = "编号", asKey = true)
     @Nullable
     private String code;
-    @ChildEntity("值")
+    @EntityField("值")
     private Value value;
 
     public IndexField(Index index, String name, @Nullable String code, Value value) {
         setName(name);
         setCode(code);
         this.index = index;
-        setValue(value);// ;ValueFactory.getValue(valueDTO, new TypeParsingContext(constraint.getDeclaringType())));
+        this.value = value;
         index.addField(this);
     }
 
@@ -64,7 +64,7 @@ public class IndexField extends Entity implements LocalKey {
     }
 
     public void setValue(Value value) {
-        this.value = addChild(value, "value");
+        this.value = value;
     }
 
     public void setCode(@Nullable String code) {

@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.core.StructuralVisitor;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.TypeDef;
 import tech.metavm.util.DebugEnv;
 import tech.metavm.util.IdentitySet;
@@ -47,9 +47,9 @@ public class DefaultIdInitializer implements IdInitializer {
                 }
             });
         }
-        var classTypeType = ModelDefRegistry.getType(ClassType.class);
-        var countMap = Map.of(classTypeType, (int) NncUtils.count(instancesToInitId, DurableInstance::isRoot));
-        var ids = new LinkedList<>(idProvider.allocate(appId, countMap).get(classTypeType));
+        var klassType = ModelDefRegistry.getType(Klass.class);
+        var countMap = Map.of(klassType, (int) NncUtils.count(instancesToInitId, DurableInstance::isRoot));
+        var ids = new LinkedList<>(idProvider.allocate(appId, countMap).get(klassType));
         var typeDefInstance = new HashMap<TypeDef, DurableInstance>();
         for (DurableInstance instance : instancesToInitId) {
             if (instance.getMappedEntity() instanceof TypeDef typeDef)

@@ -1,6 +1,5 @@
 package tech.metavm.autograph;
 
-import javassist.bytecode.stackmap.TypeTag;
 import tech.metavm.object.type.*;
 import tech.metavm.util.AuthConfig;
 import tech.metavm.util.LoginUtils;

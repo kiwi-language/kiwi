@@ -1,7 +1,10 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Method;
 import tech.metavm.object.instance.core.FlowInstance;
 import tech.metavm.object.instance.core.Instance;
@@ -16,11 +19,11 @@ import java.util.Objects;
 @EntityType("静态属性表达式")
 public class StaticPropertyExpression extends Expression {
 
-    @ChildEntity("属性")
+    @EntityField("属性")
     private final PropertyRef propertyRef;
 
     public StaticPropertyExpression(@NotNull PropertyRef propertyRef) {
-        this.propertyRef = addChild((Entity & PropertyRef) propertyRef.copy(), "propertyRef");
+        this.propertyRef = propertyRef;
     }
 
     @Override

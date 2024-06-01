@@ -280,8 +280,6 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
         throw new UnsupportedOperationException();
     }
 
-    public abstract Type copy();
-
     public String toExpression() {
         try (var serContext = SerializeContext.enter()) {
             return toExpression(serContext, null);
@@ -331,6 +329,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
             case TypeKeyCodes.READ_ONLY_ARRAY -> ArrayType.read(input, ArrayKind.READ_ONLY, typeDefProvider);
             case TypeKeyCodes.READ_WRITE_ARRAY -> ArrayType.read(input, ArrayKind.READ_WRITE, typeDefProvider);
             case TypeKeyCodes.CHILD_ARRAY -> ArrayType.read(input, ArrayKind.CHILD, typeDefProvider);
+            case TypeKeyCodes.VALUE_ARRAY -> ArrayType.read(input, ArrayKind.VALUE, typeDefProvider);
             case TypeKeyCodes.NEVER -> new NeverType();
             case TypeKeyCodes.ANY -> new AnyType();
             default -> throw new InternalException("Invalid type key code: " + code);

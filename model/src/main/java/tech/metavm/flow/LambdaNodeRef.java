@@ -43,8 +43,4 @@ public class LambdaNodeRef extends CallableRef  {
         return lambdaNode;
     }
 
-    @Override
-    public LambdaNodeRef copy() {
-        return new LambdaNodeRef(lambdaNode);
-    }
 }

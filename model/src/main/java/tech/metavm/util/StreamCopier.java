@@ -43,8 +43,17 @@ public class StreamCopier extends StreamVisitor {
         visitRecordBody(nodeId, typeKey);
     }
 
+
     @Override
-    public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitValue() {
+        output.write(WireTypes.VALUE);
+        var typeKey = readTypeKey();
+        typeKey.write(output);
+        visitBody(typeKey);
+    }
+
+    @Override
+    public void visitBody(TypeOrTypeKey typeOrTypeKey) {
         if (typeOrTypeKey.isArray()) {
             int len = readInt();
             output.writeInt(len);

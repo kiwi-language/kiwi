@@ -6,7 +6,7 @@ import java.util.Map;
 public class MemTypeTagStore implements TypeTagStore {
 
     protected final Map<String, Integer> map = new HashMap<>();
-    protected int nextTypeTag = 4;
+    protected int nextTypeTag = 5;
 
     public int getTypeTag(String className) {
         return map.computeIfAbsent(className, k -> nextTypeTag++);

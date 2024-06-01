@@ -27,7 +27,7 @@ public class CheckNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("条件")
+    @EntityField("条件")
     private Value condition;
 
     @EntityField("退出分支")
@@ -35,7 +35,7 @@ public class CheckNode extends NodeRT {
 
     public CheckNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Value condition, BranchNode exit) {
         super(tmpId, name, code, null, previous, scope);
-        this.condition = addChild(condition, "condition");
+        this.condition = condition;
         this.exit = exit;
     }
 
@@ -51,7 +51,7 @@ public class CheckNode extends NodeRT {
     }
 
     private void setCondition(Value condition) {
-        this.condition = addChild(condition, "condition");
+        this.condition = condition;
     }
 
     public Value getCondition() {

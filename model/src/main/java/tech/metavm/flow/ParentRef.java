@@ -14,7 +14,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 
 @EntityType("父引用")
-public class ParentRef extends Element {
+public class ParentRef extends Element implements tech.metavm.entity.Value {
 
     public static ParentRef create(ParentRefDTO parentRefDTO, ParsingContext parsingContext, IEntityContext entityContext, @Nullable Type childType) {
         var master = ValueFactory.create(parentRefDTO.parent(), parsingContext);
@@ -26,16 +26,15 @@ public class ParentRef extends Element {
         return masterRef;
     }
 
-    @ChildEntity("父对象")
+    @EntityField("父对象")
     private final Value parent;
     @EntityField("父字段")
-    @Nullable
-    private final FieldRef fieldRef;
+    private final @Nullable FieldRef fieldRef;
 
     public ParentRef(Value parent, @Nullable FieldRef parentField) {
         check(parent, parentField);
-        this.parent = addChild(parent, "parent");
-        this.fieldRef = NncUtils.get(parentField, f -> addChild(parentField, "fieldRef"));
+        this.parent = parent;
+        this.fieldRef = parentField;
     }
 
     public InstanceParentRef evaluate(EvaluationContext context) {

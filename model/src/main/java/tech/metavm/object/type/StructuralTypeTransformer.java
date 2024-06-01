@@ -5,11 +5,6 @@ import tech.metavm.util.NncUtils;
 public class StructuralTypeTransformer<S> extends TypeTransformer<S> {
 
     @Override
-    public Type visitType(Type type, S s) {
-        return type.copy();
-    }
-
-    @Override
     public Type visitClassType(ClassType type, S s) {
         return new ClassType(type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> t.accept(this, s)));
     }

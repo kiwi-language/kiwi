@@ -760,7 +760,7 @@ public class FlowManager extends EntityContextFactoryBean {
                 (Callable) inputNode.getScope().getOwner();
         List<Parameter> parameters = new ArrayList<>();
         for (var field : inputNode.getType().resolve().getReadyFields()) {
-            var cond = NncUtils.get(inputNode.getFieldCondition(field), Value::copy);
+            var cond = inputNode.getFieldCondition(field);
             var parameter = callable.getParameterByName(field.getName());
             if (parameter == null) {
                 parameters.add(

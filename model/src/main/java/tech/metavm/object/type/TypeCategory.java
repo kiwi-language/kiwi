@@ -3,10 +3,10 @@ package tech.metavm.object.type;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EnumConstant;
 import tech.metavm.entity.natives.ArrayNative;
-import tech.metavm.system.RegionConstants;
-import tech.metavm.system.RegionInfo;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.*;
+import tech.metavm.system.RegionConstants;
+import tech.metavm.system.RegionInfo;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -31,6 +31,8 @@ public enum TypeCategory {
     READ_ONLY_ARRAY(TypeCategoryCodes.READ_ONLY_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
     @EnumConstant("子对象数组")
     CHILD_ARRAY(TypeCategoryCodes.CHILD_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
+    @EnumConstant("值数值")
+    VALUE_ARRAY(TypeCategoryCodes.VALUE_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
     @EnumConstant("并集")
     UNION(TypeCategoryCodes.UNION, ColumnKind.UNSPECIFIED, UnionTypeParam.class, 5),
     @EnumConstant("空")

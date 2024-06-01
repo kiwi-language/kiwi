@@ -24,7 +24,7 @@ public class DeleteObjectNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("对象")
+    @EntityField("对象")
     private Value object;
 
     public DeleteObjectNode(Long tmpId, String name, @Nullable String code,  NodeRT prev, ScopeRT scope, Value object) {
@@ -42,7 +42,7 @@ public class DeleteObjectNode extends NodeRT {
     }
 
     public void setObject(Value object) {
-        this.object = addChild(object, "object");
+        this.object = object;
     }
 
     @Override

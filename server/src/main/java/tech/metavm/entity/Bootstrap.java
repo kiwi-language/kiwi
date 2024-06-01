@@ -9,13 +9,10 @@ import tech.metavm.object.instance.MetaVersionPlugin;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.type.*;
-import tech.metavm.object.view.FieldsObjectMapping;
-import tech.metavm.object.view.FlowFieldMapping;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 import static tech.metavm.util.Constants.ROOT_APP_ID;
@@ -65,7 +62,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
             }
             defContext.flushAndWriteInstances();
             ModelDefRegistry.setDefContext(defContext);
-            var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && inst.tryGetTreeId() == null);
+            var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && !inst.isValue() && inst.tryGetTreeId() == null);
             if (!idNullInstances.isEmpty()) {
                 logger.warn(idNullInstances.size() + " instances have null ids. Save is required");
                 if (DebugEnv.bootstrapVerbose) {
@@ -129,7 +126,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
     private void ensureIdInitialized() {
         var defContext = ModelDefRegistry.getDefContext();
         for (var instance : defContext.instances()) {
-            if (instance.isDurable() && instance.tryGetTreeId() == null)
+            if (instance.isDurable() && !instance.isValue() && instance.tryGetTreeId() == null)
                 throw new InternalException("Detected a durable instance with uninitialized id. instance: " + instance);
         }
     }

@@ -6,7 +6,10 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceProvider;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.IndexedTypeDefProvider;
+import tech.metavm.object.type.Klass;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeDef;
 
 import javax.annotation.Nullable;
 

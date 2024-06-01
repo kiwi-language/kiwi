@@ -1,10 +1,9 @@
 package tech.metavm.view;
 
 import tech.metavm.entity.*;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Klass;
 import tech.metavm.util.NncUtils;
-import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.view.rest.dto.ListViewDTO;
 
 import java.util.Collection;

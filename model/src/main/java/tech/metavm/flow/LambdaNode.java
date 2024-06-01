@@ -39,16 +39,12 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
     @ChildEntity("参数列表")
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
-
-    @ChildEntity("返回类型")
+    @EntityField("返回类型")
     private Type returnType;
-
-    @ChildEntity("functionType")
+    @EntityField("functionType")
     private FunctionType functionType;
-
-    @Nullable
-    @ChildEntity("函数接口")
-    private ClassType functionalInterface;
+    @EntityField("函数接口")
+    private @Nullable ClassType functionalInterface;
 
     private transient ClassType functionInterfaceImpl;
 
@@ -56,10 +52,10 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
                       List<Parameter> parameters,
                       @NotNull Type returnType, @Nullable ClassType functionalInterface) {
         super(tmpId, name, code, functionalInterface != null ? functionalInterface : Types.getFunctionType(parameters, returnType), previous, scope, false);
-        this.returnType = addChild(returnType.copy(), "returnType");
+        this.returnType = returnType;
         setParameters(parameters, false);
-        this.functionalInterface = NncUtils.get(functionalInterface, t -> addChild(t.copy(), "functionalInterface"));
-        this.functionType = addChild(Types.getFunctionType(parameters, returnType), "functionType");
+        this.functionalInterface = functionalInterface;
+        this.functionType = Types.getFunctionType(parameters, returnType);
     }
 
     @Override
@@ -106,8 +102,8 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
     public void update(List<Parameter> parameters, Type returnType, @Nullable ClassType functionalInterface) {
         setParameters(parameters, false);
-        this.returnType = addChild(returnType.copy(), "returnType");
-        this.functionalInterface = NncUtils.get(functionalInterface, t -> addChild(t.copy(), "functionalInterface"));
+        this.returnType = returnType;
+        this.functionalInterface = functionalInterface;
         resetType();
     }
 
@@ -128,7 +124,7 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
     }
 
     private void resetType() {
-        functionType = addChild(new FunctionType(getParameterTypes(), returnType), "functionType");
+        functionType = new FunctionType(getParameterTypes(), returnType);
         setOutputType(functionalInterface != null ? functionalInterface : functionType);
     }
 

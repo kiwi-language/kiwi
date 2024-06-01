@@ -1,7 +1,10 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.object.type.PrimitiveType;
@@ -14,13 +17,13 @@ import java.util.Objects;
 @EntityType("类型检查表达式")
 public class InstanceOfExpression extends Expression {
 
-    @ChildEntity("值")
+    @EntityField("值")
     private final Expression operand;
     @EntityField("目标类型")
     private final Type targetType;
 
     public InstanceOfExpression(@NotNull Expression operand, @NotNull Type targetType) {
-        this.operand = addChild(operand.copy(), "operand");
+        this.operand = operand;
         this.targetType = targetType;
     }
 

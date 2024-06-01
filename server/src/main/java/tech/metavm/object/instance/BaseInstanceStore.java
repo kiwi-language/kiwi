@@ -3,7 +3,6 @@ package tech.metavm.object.instance;
 import tech.metavm.entity.StoreLoadRequest;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.Version;
 
 import java.util.List;
 

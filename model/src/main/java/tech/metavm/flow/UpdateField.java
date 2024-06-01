@@ -18,17 +18,17 @@ import java.util.Objects;
 
 @EntityType("更新字段")
 public class UpdateField extends Entity implements LocalKey {
-    @ChildEntity("字段引用")
+    @EntityField("字段引用")
     private final FieldRef fieldRef;
     @EntityField("操作")
     private UpdateOp op;
-    @ChildEntity("值")
+    @EntityField("值")
     private Value value;
 
     public UpdateField(FieldRef fieldRef, UpdateOp op, Value value) {
-        this.fieldRef = addChild(fieldRef.copy(), "fieldRef");
+        this.fieldRef = fieldRef;
         this.op = op;
-        this.value = addChild(value, "value");
+        this.value = value;
     }
 
     public void execute(@Nullable ClassInstance instance, EvaluationContext context, boolean inConstructor) {
@@ -80,7 +80,7 @@ public class UpdateField extends Entity implements LocalKey {
     }
 
     public void setValue(Value value) {
-        this.value = addChild(value, "value");
+        this.value = value;
     }
 
     public void setOp(UpdateOp op) {

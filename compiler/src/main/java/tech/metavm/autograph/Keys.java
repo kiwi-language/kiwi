@@ -2,9 +2,9 @@ package tech.metavm.autograph;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.util.Key;
-import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Index;
+import tech.metavm.object.type.Klass;
 import tech.metavm.object.type.TypeVariable;
 
 import java.util.HashSet;

@@ -17,7 +17,6 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Loa
     @EntityField("范围")
     private CapturedTypeScope scope;
 
-    @ChildEntity("不确定类型")
     private UncertainType uncertainType;
 
     @CopyIgnore
@@ -29,7 +28,7 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Loa
     public CapturedTypeVariable(@NotNull UncertainType uncertainType,
                         @NotNull CapturedTypeScope scope) {
         this.scope = scope;
-        this.uncertainType = uncertainType.copy();
+        this.uncertainType = uncertainType;
         scope.addCapturedTypeVariable(this);
     }
 
@@ -47,7 +46,7 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Loa
     }
 
     public void setUncertainType(UncertainType uncertainType) {
-        this.uncertainType = addChild(uncertainType.copy(), "uncertainType");
+        this.uncertainType = uncertainType;
     }
 
     public void setScope(CapturedTypeScope scope) {

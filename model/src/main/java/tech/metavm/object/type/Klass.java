@@ -43,8 +43,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public static final IndexDef<Klass> TEMPLATE_IDX = IndexDef.create(Klass.class, "template");
 
-    public static final IndexDef<Klass> TYPE_ARGUMENTS_IDX = IndexDef.create(Klass.class, "typeArguments");
-
     @EntityField(value = "name", asTitle = true)
     private String name;
     @Nullable
@@ -52,11 +50,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private final ClassKind kind;
     private boolean anonymous;
     private boolean ephemeral;
-    @ChildEntity("超类")
     @Nullable
     private ClassType superType;
     @ChildEntity("接口")
-    private final ChildArray<ClassType> interfaces = addChild(new ChildArray<>(ClassType.class), "interfaces");
+    private final ReadWriteArray<ClassType> interfaces = addChild(new ReadWriteArray<>(ClassType.class), "interfaces");
     @EntityField("来源")
     private ClassSource source;
     @ChildEntity("子类列表")
@@ -94,7 +91,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @ChildEntity("类型参数")
     private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
     @ChildEntity("类型实参")
-    private final ChildArray<Type> typeArguments = addChild(new ChildArray<>(Type.class), "typeArguments");
+    private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
 
     // TODO (Important!) not scalable, must be optimized before going to production
     @ChildEntity("依赖")
@@ -737,7 +734,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     @JsonIgnore
     public boolean isValue() {
-        return false;
+        return this.kind == ClassKind.VALUE;
     }
 
     @JsonIgnore
@@ -1113,7 +1110,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void addParameterized(Klass parameterized) {
         NncUtils.requireTrue(parameterized.getTemplate() == this);
-        NncUtils.requireNull(parameterizedClasses().put(parameterized.typeArguments.getTable(), parameterized),
+        NncUtils.requireNull(parameterizedClasses().put(parameterized.typeArguments.secretlyGetTable(), parameterized),
                 () -> new InternalException("Parameterized klass " + parameterized.getTypeDesc() + " already exists"));
     }
 
@@ -1473,7 +1470,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void addTypeParameter(TypeVariable typeParameter) {
         isTemplate = true;
         typeParameters.addChild(typeParameter);
-        typeArguments.addChild(typeParameter.getType().copy());
+        typeArguments.add(typeParameter.getType());
     }
 
     @Override
@@ -1552,7 +1549,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void setTypeArguments(List<? extends Type> typeArguments) {
         if (isTemplate() && !NncUtils.iterableEquals(NncUtils.map(typeParameters, TypeVariable::getType), typeArguments))
             throw new InternalException("Type arguments must equal to type parameters for a template type. Actual type arguments: " + typeArguments);
-        this.typeArguments.resetChildren(NncUtils.map(typeArguments, Type::copy));
+        this.typeArguments.reset(typeArguments);
         parameterizedTypeKey = null;
     }
 
@@ -1605,7 +1602,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (this.superType != null)
             this.superType.resolve().removeSubType(this);
         if (superType != null) {
-            this.superType = addChild(superType.copy(), "superType");
+            this.superType = superType;
             superType.resolve().addSubType(this);
         } else
             this.superType = null;
@@ -1619,7 +1616,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         }
         this.interfaces.clear();
         for (var anInterface : interfaces) {
-            this.interfaces.addChild(anInterface.copy());
+            this.interfaces.add(anInterface);
             anInterface.resolve().addSubType(this);
         }
         onSuperTypesChanged();

@@ -60,9 +60,13 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         var found = instance.getMappedEntity();
         if (found != null)
             return entityClass.cast(found);
-        NncUtils.requireNonNull(instance.getContext());
+        Objects.requireNonNull(instance.getContext(),
+                () -> "Instance " + Instances.getInstancePath(instance) + " is not contained in the context");
         if (mapper == null) {
-            var resolvedMapper = getDefContext().tryGetMapper(instance.getId().getTypeTag(this, this));
+            var id = instance.tryGetId();
+            var resolvedMapper =
+                    id != null ? getDefContext().tryGetMapper(instance.getId().getTypeTag(this, this))
+                            : getDefContext().tryGetMapper(instance.getType());
             if (resolvedMapper == null || resolvedMapper instanceof DirectDef<?>)
                 return entityClass.cast(instance);
             try {

@@ -11,6 +11,7 @@ public class WireTypes {
 
     public static final int REFERENCE = 10;
     public static final int RECORD = 11;
+    public static final int VALUE = 12;
 
 //    LONG(1),
 //    DOUBLE(2),

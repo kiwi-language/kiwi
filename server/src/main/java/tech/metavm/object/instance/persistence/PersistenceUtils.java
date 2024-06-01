@@ -1,11 +1,15 @@
 package tech.metavm.object.instance.persistence;
 
 import tech.metavm.entity.InstanceIndexQuery;
-import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.InstanceIndexKey;
 import tech.metavm.object.type.*;
-import tech.metavm.util.*;
+import tech.metavm.util.NncUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;

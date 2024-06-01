@@ -33,11 +33,11 @@ public class NewArrayNode extends NodeRT implements NewNode {
         return node;
     }
 
-    @ChildEntity("值")
+    @EntityField("值")
     @Nullable
     private Value value;
 
-    @ChildEntity("父引用")
+    @EntityField("父引用")
     @Nullable
     private ParentRef parentRef;
 
@@ -49,8 +49,8 @@ public class NewArrayNode extends NodeRT implements NewNode {
                         NodeRT previous,
                         ScopeRT scope) {
         super(tmpId, name, code, type, previous, scope);
-        setParentRef(parentRef);
-        this.value = value != null ? addChild(check(value), "value") : null;
+        this.parentRef = parentRef;
+        this.value = value;
     }
 
     @Override
@@ -62,7 +62,7 @@ public class NewArrayNode extends NodeRT implements NewNode {
     }
 
     public void setValue(@Nullable Value value) {
-        this.value = value != null ? addChild(value, "value") : null;
+        this.value = value;
     }
 
     private Value check(Value value) {
@@ -110,7 +110,7 @@ public class NewArrayNode extends NodeRT implements NewNode {
 
     @Override
     public void setParentRef(@Nullable ParentRef parentRef) {
-        this.parentRef = NncUtils.get(parentRef, p -> addChild(p, "parentRef"));
+        this.parentRef = parentRef;
     }
 
     public @Nullable ParentRef getParentRef() {

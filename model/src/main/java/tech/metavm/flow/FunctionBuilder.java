@@ -2,7 +2,9 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.StandardTypes;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.MetadataState;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeVariable;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;

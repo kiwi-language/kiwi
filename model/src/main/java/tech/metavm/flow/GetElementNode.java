@@ -32,16 +32,16 @@ public class GetElementNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("数组")
+    @EntityField("数组")
     private Value array;
-    @ChildEntity("索引")
+    @EntityField("索引")
     private Value index;
 
     public GetElementNode(Long tmpId, String name, @javax.annotation.Nullable String code, NodeRT previous, ScopeRT scope, Value array, Value index) {
         super(tmpId, name, code, ((ArrayType) array.getType()).getElementType(), previous, scope);
         check(array, index);
-        this.array = addChild(array, "array");
-        this.index = addChild(index, "index");
+        this.array = array;
+        this.index = index;
     }
 
     private static void check(Value array, Value index) {
@@ -58,12 +58,12 @@ public class GetElementNode extends NodeRT {
 
     public void setIndex(@NotNull Value index) {
         AssertUtils.assertTrue(index.getType().isLong(), ErrorCode.INCORRECT_INDEX_VALUE);
-        this.index = addChild(index, "index");
+        this.index = index;
     }
 
     public void setArray(@NotNull Value array) {
         AssertUtils.assertTrue(array.getType().isArray(), ErrorCode.NOT_AN_ARRAY_VALUE);
-        this.array = addChild(array, "array");
+        this.array = array;
         setOutputType(((ArrayType) array.getType()).getElementType());
     }
 

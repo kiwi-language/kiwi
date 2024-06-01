@@ -39,7 +39,7 @@ public abstract class Instance {
 
     @NoProxy
     public boolean isValue() {
-        return type.isValue();
+        return false;
     }
 
     @NoProxy

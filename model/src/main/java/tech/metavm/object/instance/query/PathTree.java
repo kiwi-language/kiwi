@@ -2,7 +2,10 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.util.NncUtils;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class PathTree {
 

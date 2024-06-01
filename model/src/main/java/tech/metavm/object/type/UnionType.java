@@ -23,8 +23,7 @@ public class UnionType extends CompositeType {
         return new UnionType(Set.of(types));
     }
 
-    @ChildEntity("成员集合")
-    private final ChildArray<Type> members = addChild(new ChildArray<>(Type.class), "members");
+    private final ValueArray<Type> members;
 
     private transient Set<Type> memberSet;
 
@@ -34,10 +33,10 @@ public class UnionType extends CompositeType {
             throw new IllegalArgumentException("members can not be empty");
         // maintain a relatively deterministic order so that the ModelIdentities of the members are not changed between reboots
         // the order is not fully deterministic but it's sufficient for bootstrap because only binary-nullable union types are involved.
-        var sortedMembers = members.stream().map(Type::copy)
+        var sortedMembers = members.stream()
                 .sorted(Comparator.comparingInt(Type::getTypeKeyCode))
                 .toList();
-        this.members.addChildren(sortedMembers);
+        this.members = new ValueArray<>(Type.class, sortedMembers);
     }
 
     private static String getName(Set<Type> members) {
@@ -68,7 +67,7 @@ public class UnionType extends CompositeType {
         return this;
     }
 
-    public ChildArray<Type> getDeclaredMembers() {
+    public ReadonlyArray<Type> getDeclaredMembers() {
         return members;
     }
 
@@ -199,11 +198,6 @@ public class UnionType extends CompositeType {
     @Override
     public String getName() {
         return NncUtils.join(members, Type::getName, "|");
-    }
-
-    @Override
-    public UnionType copy() {
-        return new UnionType(NncUtils.mapUnique(members, Type::copy));
     }
 
     @Override

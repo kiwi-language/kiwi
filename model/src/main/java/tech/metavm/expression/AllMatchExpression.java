@@ -1,7 +1,9 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
@@ -19,14 +21,14 @@ import java.util.Objects;
 @EntityType("AllMatch表达式")
 public class AllMatchExpression extends Expression {
 
-    @ChildEntity("数组")
+    @EntityField("数组")
     private final Expression array;
-    @ChildEntity("条件")
-    private Expression condition;
+    @EntityField("条件")
+    private final Expression condition;
 
     public AllMatchExpression(@NotNull Expression array, @NotNull Expression condition) {
-        this.array = addChild(array.copy(), "array");
-        this.condition = addChild(condition.copy(), "condition");
+        this.array = array;
+        this.condition = condition;
     }
 
     public Expression getArray() {
@@ -45,10 +47,6 @@ public class AllMatchExpression extends Expression {
                 + ")";
     }
 
-    public void setCondition(Expression condition) {
-        this.condition = condition;
-    }
-
     public ArrayType getArrayType() {
         return (ArrayType) getArray().getType();
     }
@@ -64,7 +62,7 @@ public class AllMatchExpression extends Expression {
     }
 
     public @Nullable CursorExpression createCursor() {
-        return new CursorExpression(this, getArrayType().getElementType(), getCursorAlias());
+        return new CursorExpression(getArrayType().getElementType(), getCursorAlias());
     }
 
     @Nullable
@@ -88,7 +86,7 @@ public class AllMatchExpression extends Expression {
         }
         for (Instance element : arrayInst.getElements()) {
             if (element instanceof ClassInstance classInstance) {
-                EvaluationContext subContext = new SubEvaluationContext(context, this, classInstance);
+                EvaluationContext subContext = new SubEvaluationContext(context, classInstance);
                 if (!Instances.isTrue(condition.evaluate(subContext))) {
                     return Instances.falseInstance();
                 }

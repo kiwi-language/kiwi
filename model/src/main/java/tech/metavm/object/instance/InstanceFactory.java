@@ -130,7 +130,8 @@ public class InstanceFactory {
             var source = sourceMapping.unmap(instance, context);
             instance.setSourceRef(new SourceRef(source, sourceMapping));
             context.bind(instance);
-            context.bind(source);
+            if(!context.containsInstance(source))
+                context.bind(source);
         } else
             context.bind(instance);
         return instance;

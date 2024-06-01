@@ -1,8 +1,8 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Method;
 import tech.metavm.flow.MethodRef;
@@ -17,15 +17,15 @@ import java.util.List;
 @EntityType("方法表达式")
 public class MethodExpression extends Expression {
 
-    @ChildEntity("实例")
+    @EntityField("实例")
     private final Expression self;
 
-    @ChildEntity("方法")
+    @EntityField("方法")
     private final MethodRef methodRef;
 
     public MethodExpression(@NotNull Expression self, @NotNull MethodRef methodRef) {
-        this.self = addChild(self.copy(), "self");
-        this.methodRef = addChild(methodRef.copy(), "methodRef");
+        this.self = self;
+        this.methodRef = methodRef;
     }
 
     public Expression getSelf() {

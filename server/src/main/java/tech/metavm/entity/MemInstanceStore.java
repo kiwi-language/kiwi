@@ -2,8 +2,8 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.InstanceStore;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.mappers.*;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapper;
+import tech.metavm.object.instance.persistence.mappers.*;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;

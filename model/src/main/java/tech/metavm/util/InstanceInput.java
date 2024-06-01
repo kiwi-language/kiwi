@@ -2,9 +2,7 @@ package tech.metavm.util;
 
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.Field;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeDefProvider;
+import tech.metavm.object.type.*;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -12,6 +10,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class InstanceInput implements Closeable {
@@ -20,20 +19,25 @@ public class InstanceInput implements Closeable {
         throw new UnsupportedOperationException();
     };
 
+    public static final Consumer<DurableInstance> UNSUPPORTED_ADD_VALUE = inst -> {
+        throw new UnsupportedOperationException();
+    };
+
     public static final TypeDefProvider UNSUPPORTED_TYPE_DEF_PROVIDER = id -> {
         throw new UnsupportedOperationException();
     };
 
     public static InstanceInput create(byte[] bytes, IInstanceContext context) {
-        var bout = new ByteArrayInputStream(bytes);
+        var bin = new ByteArrayInputStream(bytes);
         if (context == null)
-            return new InstanceInput(bout);
+            return new InstanceInput(bin);
         else
-            return new InstanceInput(bout, context::internalGet, context.getTypeDefProvider());
+            return context.createInstanceInput(bin);
     }
 
     private final InputStream inputStream;
     private final Function<Id, DurableInstance> getInstance;
+    private final Consumer<DurableInstance> addValue;
     private final TypeDefProvider typeDefProvider;
     private long treeId;
     @Nullable
@@ -43,14 +47,16 @@ public class InstanceInput implements Closeable {
     private boolean loadedFromCache;
 
     public InstanceInput(InputStream inputStream) {
-        this(inputStream, UNSUPPORTED_RESOLVER, UNSUPPORTED_TYPE_DEF_PROVIDER);
+        this(inputStream, UNSUPPORTED_RESOLVER, UNSUPPORTED_ADD_VALUE, UNSUPPORTED_TYPE_DEF_PROVIDER);
     }
 
     public InstanceInput(InputStream inputStream,
                          Function<Id, DurableInstance> getInstance,
+                         Consumer<DurableInstance> addValue,
                          TypeDefProvider typeDefProvider) {
         this.inputStream = inputStream;
         this.getInstance = getInstance;
+        this.addValue = addValue;
         this.typeDefProvider = typeDefProvider;
     }
 
@@ -76,6 +82,7 @@ public class InstanceInput implements Closeable {
             case WireTypes.PASSWORD -> new PasswordInstance(readString(), StandardTypes.getPasswordType());
             case WireTypes.REFERENCE -> resolveInstance(readId());
             case WireTypes.RECORD -> readRecord();
+            case WireTypes.VALUE -> readValue();
             default -> throw new IllegalStateException("Invalid wire type: " + wireType);
         };
     }
@@ -98,6 +105,16 @@ public class InstanceInput implements Closeable {
             instance.setParentInternal(parent, parentField);
             instance.readFrom(this);
         }
+        return instance;
+    }
+
+
+    private Instance readValue() {
+        var type = Type.readType(this, typeDefProvider);
+        var instance = type instanceof ArrayType arrayType ?
+                new ArrayInstance(arrayType) : ClassInstance.allocate((ClassType) type);
+        instance.readFrom(this);
+        addValue.accept(instance);
         return instance;
     }
 

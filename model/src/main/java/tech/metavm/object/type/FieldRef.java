@@ -16,13 +16,12 @@ public class FieldRef extends ValueElement implements PropertyRef {
         );
     }
 
-    @ChildEntity("declaringType")
     private final ClassType declaringType;
     private final Field rawField;
     private transient Field resolved;
 
     public FieldRef(ClassType declaringType, Field rawField) {
-        this.declaringType = addChild(declaringType.copy(), "declaringType");
+        this.declaringType = declaringType;
         this.rawField = rawField;
     }
 
@@ -59,13 +58,6 @@ public class FieldRef extends ValueElement implements PropertyRef {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitFieldRef(this);
-    }
-
-    @Override
-    public FieldRef copy() {
-        var copy = new FieldRef(declaringType, rawField);
-        copy.resolved = resolved;
-        return copy;
     }
 
     public FieldRefDTO toDTO(SerializeContext serializeContext) {

@@ -1,7 +1,7 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityType;
 import tech.metavm.expression.*;
-import tech.metavm.expression.Func;
 import tech.metavm.object.instance.core.LongInstance;
 import tech.metavm.object.instance.core.TimeInstance;
 import tech.metavm.object.instance.rest.ArrayFieldValue;
@@ -12,14 +12,10 @@ import tech.metavm.util.NncUtils;
 
 import java.util.Date;
 
+@EntityType("常量值")
 public class ConstantValue extends Value {
     public ConstantValue(ValueKind kind, Expression expression) {
         super(kind, expression);
-    }
-
-    @Override
-    public Value copy() {
-        return new ConstantValue(getKind(), getExpression().copy());
     }
 
     @Override

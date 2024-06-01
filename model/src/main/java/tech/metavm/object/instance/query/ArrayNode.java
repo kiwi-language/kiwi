@@ -1,8 +1,8 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;

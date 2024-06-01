@@ -1,10 +1,7 @@
 package tech.metavm.entity;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Type;
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
-import java.util.Map;
 
 public class BuildKeyContext {
 

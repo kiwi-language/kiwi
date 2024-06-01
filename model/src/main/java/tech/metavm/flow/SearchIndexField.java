@@ -22,13 +22,13 @@ public class SearchIndexField extends Entity {
 
     private final IndexOperator operator;
 
-    @ChildEntity("值")
+    @EntityField("值")
     private Value value;
 
     public SearchIndexField(IndexField field, IndexOperator operator, Value value) {
         this.field = field;
         this.operator = operator;
-        this.value = addChild(value, "value");
+        this.value = value;
     }
 
 
@@ -45,7 +45,7 @@ public class SearchIndexField extends Entity {
     }
 
     public void setValue(Value value) {
-        this.value = addChild(value, "value");
+        this.value = value;
     }
 
     public InstanceIndexQueryItem buildQueryItem(EvaluationContext evaluationContext) {

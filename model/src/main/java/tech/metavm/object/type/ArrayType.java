@@ -1,6 +1,9 @@
 package tech.metavm.object.type;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.core.Id;
@@ -18,7 +21,7 @@ import java.util.function.Function;
 @EntityType("数组类型")
 public class ArrayType extends CompositeType {
 
-    @ChildEntity("元素类型")
+    @EntityField("元素类型")
     private final Type elementType;
 
     @EntityField("数组类别")
@@ -28,7 +31,7 @@ public class ArrayType extends CompositeType {
         super(getArrayTypeName(elementType, kind), getArrayTypeCode(elementType, kind),
                 false, false, kind.category());
         this.kind = kind;
-        this.elementType = addChild(elementType.copy(), "elementType");
+        this.elementType = elementType;
     }
 
     private static String getArrayTypeName(Type elementType, ArrayKind kind) {
@@ -99,11 +102,6 @@ public class ArrayType extends CompositeType {
     @Override
     public String getInternalName(@Nullable Flow current) {
         return kind.getInternalName(elementType, current);
-    }
-
-    @Override
-    public ArrayType copy() {
-        return new ArrayType(elementType.copy(), kind);
     }
 
     @Override
@@ -182,6 +180,11 @@ public class ArrayType extends CompositeType {
     @Override
     public int getTypeTag() {
         return kind.typeTag();
+    }
+
+    @Override
+    public boolean isValue() {
+        return kind == ArrayKind.VALUE;
     }
 
     @Override

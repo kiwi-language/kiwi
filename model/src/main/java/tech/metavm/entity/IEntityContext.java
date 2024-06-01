@@ -7,7 +7,6 @@ import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.generic.*;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.object.view.ObjectMapping;
@@ -17,9 +16,7 @@ import tech.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, MappingProvider, TypeDefProvider {
 

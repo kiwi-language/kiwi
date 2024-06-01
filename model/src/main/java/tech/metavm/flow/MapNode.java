@@ -29,16 +29,16 @@ public class MapNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("来源")
+    @EntityField("来源")
     private Value source;
-    @ChildEntity("映射")
+    @EntityField("映射")
     private ObjectMappingRef mappingRef;
 
     public MapNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope,
                    Value source, ObjectMappingRef mappingRef) {
         super(tmpId, name, code, null, previous, scope);
-        this.source = addChild(source, "source");
-        this.mappingRef = addChild(mappingRef.copy(), "mappingRef");
+        this.source = source;
+        this.mappingRef = mappingRef;
     }
 
     @Override
@@ -54,8 +54,8 @@ public class MapNode extends NodeRT {
     public void update(Value source, ObjectMappingRef mappingRef) {
         AssertUtils.assertTrue(mappingRef.resolve().getSourceType().isAssignableFrom(source.getType()),
                 ErrorCode.INCORRECT_MAPPING);
-        this.source = addChild(source, "source");
-        this.mappingRef = addChild(mappingRef.copy(), "mappingRef");
+        this.source = source;
+        this.mappingRef = mappingRef;
     }
 
     @NotNull

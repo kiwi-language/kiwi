@@ -2,11 +2,9 @@ package tech.metavm.system;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.object.instance.cache.RedisCache;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapper;
 
 import javax.annotation.Nullable;
-
 import java.util.Map;
 
 import static tech.metavm.util.BytesUtils.convertToJSON;

@@ -1,7 +1,6 @@
 package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.flow.Method;
 import tech.metavm.flow.MethodRef;
 import tech.metavm.util.InternalException;
 

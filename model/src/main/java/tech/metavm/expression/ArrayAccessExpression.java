@@ -1,8 +1,8 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Instance;
@@ -16,15 +16,15 @@ import java.util.Objects;
 @EntityType("数组访问表达式")
 public class ArrayAccessExpression extends Expression {
 
-    @ChildEntity("数组")
+    @EntityField("数组")
     private final Expression array;
-    @ChildEntity("索引")
+    @EntityField("索引")
     private final Expression index;
 
     public ArrayAccessExpression(@NotNull Expression array, @NotNull Expression index) {
 //        NncUtils.requireTrue(array.getType() instanceof ArrayType);
-        this.array = addChild(array.copy(), "array");
-        this.index = addChild(index.copy(), "index");
+        this.array = array;
+        this.index = index;
     }
 
     @Override

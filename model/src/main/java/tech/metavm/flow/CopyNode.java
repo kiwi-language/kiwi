@@ -36,9 +36,9 @@ public class CopyNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("复制源")
+    @EntityField("复制源")
     private Value source;
-    @ChildEntity("父引用")
+    @EntityField("父引用")
     @Nullable
     private ParentRef parentRef;
 

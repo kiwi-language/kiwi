@@ -157,6 +157,8 @@ public class TypeParserImpl implements TypeParser {
             return ArrayKind.READ_ONLY;
         if (ctx.C() != null)
             return ArrayKind.CHILD;
+        if(ctx.V() != null)
+            return ArrayKind.VALUE;
         throw new IllegalArgumentException("Unknown array kind: " + ctx.getText());
     }
 

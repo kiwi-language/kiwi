@@ -7,7 +7,10 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.instance.rest.ClassInstanceParam;
+import tech.metavm.object.instance.rest.FieldValue;
+import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.instance.rest.ReferenceFieldValue;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -51,7 +54,7 @@ public class ClassInstanceTest extends TestCase {
 
     public void testToDTO() {
         var fooType = MockUtils.createFooTypes(true);
-        var foo = MockUtils.createFoo(fooType,true);
+        var foo = MockUtils.createFoo(fooType, true);
         InstanceDTO instanceDTO = foo.toDTO();
         Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
         ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
@@ -136,17 +139,19 @@ public class ClassInstanceTest extends TestCase {
         var bin = new ByteArrayInputStream(InstanceOutput.toBytes(flow));
         var input = new InstanceInput(bin, id -> {
             var inst = id2instance.get(id);
-            if(inst instanceof ClassInstance classInst)
+            if (inst instanceof ClassInstance classInst)
                 return new ClassInstance(id, classInst.getType(), classInst.isEphemeral(), null);
             else
                 throw new RuntimeException("Unexpected instance: " + inst);
-        }, id -> {
-            if(flowType.idEquals(id))
-                return flowType;
-            if(scopeType.idEquals(id))
-                return scopeType;
-            throw new NullPointerException("Can not find type def for id: " + id);
-        });
+        },
+                InstanceInput.UNSUPPORTED_ADD_VALUE,
+                id -> {
+                    if (flowType.idEquals(id))
+                        return flowType;
+                    if (scopeType.idEquals(id))
+                        return scopeType;
+                    throw new NullPointerException("Can not find type def for id: " + id);
+                });
         var loadedFlow = (ClassInstance) input.readMessage();
         Assert.assertTrue(loadedFlow.getField(rootScopeField).isNull());
     }

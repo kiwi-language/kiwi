@@ -4,7 +4,10 @@ import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
 import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.instance.cache.MockCache;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.DirectoryAllocatorStore;
+import tech.metavm.object.type.FileColumnStore;
+import tech.metavm.object.type.FileTypeTagStore;
+import tech.metavm.object.type.StdAllocators;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockTransactionUtils;
 

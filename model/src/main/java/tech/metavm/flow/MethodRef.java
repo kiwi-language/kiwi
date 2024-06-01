@@ -23,12 +23,12 @@ public class MethodRef extends FlowRef implements PropertyRef {
         );
     }
 
-    @ChildEntity("declaringType")
+    @EntityField("declaringType")
     private final ClassType declaringType;
 
     public MethodRef(ClassType declaringType, Method rawFlow, List<Type> typeArguments) {
         super(rawFlow, typeArguments);
-        this.declaringType = addChild(declaringType.copy(), "declaringType");
+        this.declaringType = declaringType;
     }
 
     public ClassType getDeclaringType() {
@@ -68,12 +68,6 @@ public class MethodRef extends FlowRef implements PropertyRef {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), declaringType);
-    }
-
-    public MethodRef copy() {
-        var copy = new MethodRef(declaringType, getRawFlow(), getTypeArguments());
-        copy.resolved = resolved;
-        return copy;
     }
 
     @Override

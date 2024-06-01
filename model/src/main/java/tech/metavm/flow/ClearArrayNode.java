@@ -27,13 +27,13 @@ public class ClearArrayNode extends NodeRT {
         return node;
     }
 
-    @ChildEntity("数组")
+    @EntityField("数组")
     private @NotNull Value array;
 
     public ClearArrayNode(Long tmpId, String name, @Nullable String code,
                           NodeRT previous, ScopeRT scope, @NotNull Value array) {
         super(tmpId, name, code, null, previous, scope);
-        this.array = addChild(check(array), "array");
+        this.array = array;
     }
 
     @Override
@@ -42,7 +42,7 @@ public class ClearArrayNode extends NodeRT {
     }
 
     public void setArray(@NotNull Value array) {
-        this.array = addChild(check(array), "array");
+        this.array = array;
     }
 
     private Value check(@NotNull Value array) {

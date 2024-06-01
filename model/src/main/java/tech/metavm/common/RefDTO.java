@@ -1,12 +1,7 @@
 package tech.metavm.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
-import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.util.CommonConstants;
-
-import java.util.Objects;
 
 public record RefDTO(Long id, Long tmpId, long typeId) {
 

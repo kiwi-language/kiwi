@@ -2,8 +2,8 @@ package tech.metavm.util;
 
 import tech.metavm.application.Application;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 
 public class Constants {
 

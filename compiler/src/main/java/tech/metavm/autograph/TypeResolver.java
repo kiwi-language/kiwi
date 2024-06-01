@@ -1,9 +1,10 @@
 package tech.metavm.autograph;
 
-import com.intellij.psi.*;
+import com.intellij.psi.PsiCapturedWildcardType;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiTypeParameter;
 import tech.metavm.object.type.*;
-
-import java.util.Set;
 
 public interface TypeResolver {
 

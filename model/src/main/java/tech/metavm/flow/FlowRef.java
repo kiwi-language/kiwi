@@ -1,6 +1,9 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.ValueArray;
 import tech.metavm.flow.rest.FlowRefDTO;
 import tech.metavm.flow.rest.FunctionRefDTO;
 import tech.metavm.flow.rest.MethodRefDTO;
@@ -22,13 +25,12 @@ public abstract class FlowRef extends CallableRef {
     }
 
     private final Flow rawFlow;
-    @ChildEntity("typeArguments")
-    private final ChildArray<Type> typeArguments = addChild(new ChildArray<>(Type.class), "typeArguments");
+    private final ValueArray<Type> typeArguments;
     protected transient Flow resolved;
 
     public FlowRef(Flow rawFlow, List<Type> typeArguments) {
         this.rawFlow = rawFlow;
-        typeArguments.forEach(t -> this.typeArguments.addChild(t.copy()));
+        this.typeArguments = new ValueArray<>(Type.class, typeArguments);
     }
 
     public Flow getRawFlow() {
@@ -59,7 +61,5 @@ public abstract class FlowRef extends CallableRef {
     }
 
     public abstract FlowRefDTO toDTO(SerializeContext serializeContext);
-
-    public abstract FlowRef copy();
 
 }

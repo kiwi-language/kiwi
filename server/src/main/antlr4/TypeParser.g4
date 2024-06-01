@@ -18,7 +18,7 @@ type
 
 methodRef: classType '.' IDENTIFIER typeArguments?;
 
-arrayKind: R | C;
+arrayKind: R | C | V;
 
 classType: qualifiedName typeArguments? (':' DECIMAL_LITERAL)?;
 

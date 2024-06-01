@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 import tech.metavm.system.persistence.BlockMapper;
 import tech.metavm.system.persistence.BlockPO;
 import tech.metavm.system.rest.dto.BlockDTO;
-import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;

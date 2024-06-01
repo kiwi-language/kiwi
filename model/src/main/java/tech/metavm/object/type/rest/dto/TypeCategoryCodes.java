@@ -16,6 +16,8 @@ public class TypeCategoryCodes {
 
     public static final int CHILD_ARRAY = 8;
 
+    public static final int VALUE_ARRAY = 31;
+
     public static final int UNION = 9;
 
     public static final int NULL = 10;

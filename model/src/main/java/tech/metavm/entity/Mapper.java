@@ -5,7 +5,6 @@ import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.Type;
 
 public interface Mapper<T, I extends DurableInstance> {
 

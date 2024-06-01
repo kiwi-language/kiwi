@@ -8,8 +8,6 @@ import tech.metavm.expression.FunctionExpression;
 import java.util.List;
 import java.util.Objects;
 
-import static tech.metavm.autograph.TranspileUtil.createType;
-
 public class ObjectsToStringResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =

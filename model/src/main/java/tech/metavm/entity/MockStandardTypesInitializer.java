@@ -1,6 +1,9 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ClassSource;
+import tech.metavm.object.type.ClassTypeBuilder;
+import tech.metavm.object.type.FieldBuilder;
+import tech.metavm.object.type.TypeVariable;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;

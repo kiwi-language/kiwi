@@ -2,15 +2,13 @@ package tech.metavm.flow;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.EntityUtils;
-import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.Expression;
-import tech.metavm.object.type.*;
-import tech.metavm.util.DebugEnv;
+import tech.metavm.object.type.FunctionType;
+import tech.metavm.object.type.Klass;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 public class Flows {
 

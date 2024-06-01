@@ -81,8 +81,7 @@ public abstract class DurableInstance extends Instance {
         if (id != null) {
             initId(id);
             _new = id.tryGetTreeId() == null;
-        }
-        else
+        } else
             _new = true;
     }
 
@@ -127,7 +126,7 @@ public abstract class DurableInstance extends Instance {
             throw new InternalException("Not a view instance");
     }
 
-//    @Override
+    //    @Override
     @NoProxy
     public @Nullable Id tryGetId() {
         return id;
@@ -301,7 +300,7 @@ public abstract class DurableInstance extends Instance {
         if (treeId != null)
             return treeId;
         else
-            throw new InternalException("Instance id not initialized yet");
+            throw new NullPointerException("Instance id not initialized yet");
     }
 
     @NoProxy
@@ -316,8 +315,6 @@ public abstract class DurableInstance extends Instance {
 
     @NoProxy
     public void initId(Id id) {
-        if(this == DebugEnv.instance)
-            System.out.println("Caught");
         if (isIdInitialized())
             throw new InternalException("id already initialized");
         if (isArray()) {
@@ -385,8 +382,12 @@ public abstract class DurableInstance extends Instance {
 
     @Override
     public void writeRecord(InstanceOutput output) {
-        output.write(WireTypes.RECORD);
-        output.writeLong(getId().getNodeId());
+        if (isValue())
+            output.write(WireTypes.VALUE);
+        else {
+            output.write(WireTypes.RECORD);
+            output.writeLong(getId().getNodeId());
+        }
         getType().write(output);
         writeBody(output);
     }
@@ -551,21 +552,21 @@ public abstract class DurableInstance extends Instance {
     }
 
     public boolean setChangeNotified() {
-        if(changeNotified)
+        if (changeNotified)
             return false;
         changeNotified = true;
         return true;
     }
 
     public boolean setRemovalNotified() {
-        if(removalNotified)
+        if (removalNotified)
             return false;
         removalNotified = true;
         return true;
     }
 
     public boolean setAfterContextInitIdsNotified() {
-        if(afterContextInitIdsNotified)
+        if (afterContextInitIdsNotified)
             return false;
         afterContextInitIdsNotified = true;
         return true;
@@ -575,4 +576,9 @@ public abstract class DurableInstance extends Instance {
         super.setType(type);
     }
 
+    @Override
+    public boolean isValue() {
+        // to-be-initialized instance can not be value
+        return isInitialized() && getType().isValue();
+    }
 }

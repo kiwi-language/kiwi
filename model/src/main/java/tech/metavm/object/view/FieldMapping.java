@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 @EntityType("字段映射")
 public abstract class FieldMapping extends Element {
 
-    @ChildEntity("目标字段引用")
+    @EntityField("目标字段引用")
     private final FieldRef targetFieldRef;
 
     @EntityField("所属映射")
@@ -32,7 +32,7 @@ public abstract class FieldMapping extends Element {
     public FieldMapping(Long tmpId, FieldRef targetFieldRef, FieldsObjectMapping containingMapping, @Nullable NestedMapping nestedMapping) {
         super(tmpId);
         this.containingMapping = containingMapping;
-        this.targetFieldRef = addChild(targetFieldRef.copy(), "targetFieldRef");
+        this.targetFieldRef = targetFieldRef;
         this.nestedMapping = NncUtils.get(nestedMapping, c -> addChild(c, "nestedMapping"));
         containingMapping.addField(this);
     }

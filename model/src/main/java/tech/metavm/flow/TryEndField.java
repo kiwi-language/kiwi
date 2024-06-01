@@ -18,13 +18,13 @@ public class TryEndField extends Entity implements LocalKey {
     @ChildEntity("值列表")
     private final ChildArray<TryEndValue> values = addChild(new ChildArray<>(TryEndValue.class), "values");
 
-    @ChildEntity("默认值")
+    @EntityField("默认值")
     private Value defaultValue;
 
     public TryEndField(Field field, List<TryEndValue> values, Value defaultValue, TryEndNode tryEndNode) {
         this.field = field;
         this.values.addChildren(values);
-        this.defaultValue = addChild(defaultValue, "defaultValue");
+        this.defaultValue = defaultValue;
         tryEndNode.addField(this);
     }
 
@@ -37,7 +37,7 @@ public class TryEndField extends Entity implements LocalKey {
     }
 
     public void setDefaultValue(Value defaultValue) {
-        this.defaultValue = addChild(defaultValue, "defaultValue");
+        this.defaultValue = defaultValue;
     }
 
     public Field getField() {

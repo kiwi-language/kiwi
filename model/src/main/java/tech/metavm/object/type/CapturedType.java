@@ -102,11 +102,6 @@ public class CapturedType extends Type {
     }
 
     @Override
-    public Type copy() {
-        return new CapturedType(variable);
-    }
-
-    @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
         return getTypeDefExpr == null ? "#" + Constants.CONSTANT_ID_PREFIX + serializeContext.getStringId(variable)
                 : getTypeDefExpr.apply(variable);

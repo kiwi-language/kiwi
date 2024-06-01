@@ -2,7 +2,6 @@ package tech.metavm.system;
 
 import com.sun.jdi.InternalException;
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.system.rest.dto.BlockDTO;
 import tech.metavm.util.NncUtils;

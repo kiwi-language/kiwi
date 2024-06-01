@@ -9,13 +9,12 @@ import java.util.Objects;
 @EntityType("ParameterRef")
 public class ParameterRef  extends ValueElement implements Reference {
 
-    @ChildEntity("callableRef")
     private final CallableRef callableRef;
     private final Parameter rawParameter;
     private transient Parameter resolved;
 
     public ParameterRef(CallableRef callableRef, Parameter rawParameter) {
-        this.callableRef = addChild(callableRef.copy(), "callableRef");
+        this.callableRef = callableRef;
         this.rawParameter = rawParameter;
     }
 
@@ -28,7 +27,9 @@ public class ParameterRef  extends ValueElement implements Reference {
     }
 
     public Parameter resolve() {
-        return NncUtils.find(callableRef.resolve().getParameters(), p -> p.getUltimateTemplate() == rawParameter);
+        if(resolved != null)
+            return resolved;
+        return resolved = NncUtils.findRequired(callableRef.resolve().getParameters(), p -> p.getUltimateTemplate() == rawParameter);
     }
 
     @Override
@@ -55,10 +56,4 @@ public class ParameterRef  extends ValueElement implements Reference {
         return visitor.visitParameterRef(this);
     }
 
-    @Override
-    public ParameterRef copy() {
-        var copy = new ParameterRef(callableRef, rawParameter);
-        copy.resolved = resolved;
-        return copy;
-    }
 }

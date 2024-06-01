@@ -2,7 +2,6 @@ package tech.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.util.*;
-import tech.metavm.util.LinkedList;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -237,8 +236,8 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         return Collections.unmodifiableList(table);
     }
 
-    // Should only be used as WeakHashMap keys
-    public List<T> getTable() {
+    // Should only be used as WeakHashMap keys and CopyVisitor
+    public List<T> secretlyGetTable() {
         return table;
     }
 
@@ -258,4 +257,5 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         else
             return false;
     }
+
 }
