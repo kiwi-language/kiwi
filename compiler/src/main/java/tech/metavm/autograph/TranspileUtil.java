@@ -732,6 +732,8 @@ public class TranspileUtil {
         var value = getAnnotationAttr(psiClass, EntityType.class, attributeName);
         if (value != null)
             return value;
+        if((value = getAnnotationAttr(psiClass, ValueType.class, attributeName)) != null)
+            return value;
         return getAnnotationAttr(psiClass, EntityStruct.class, attributeName);
     }
 

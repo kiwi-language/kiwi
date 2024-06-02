@@ -137,8 +137,18 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
+    public void setValueListKlass(Klass klass) {
+        TL.get().setValueListKlass(klass);
+    }
+
+    @Override
     public Klass getChildListKlass() {
         return TL.get().getChildListKlass();
+    }
+
+    @Override
+    public Klass getValueListKlass() {
+        return TL.get().getValueListKlass();
     }
 
     @Override

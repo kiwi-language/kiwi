@@ -8,6 +8,7 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.flow.rest.MethodRefDTO;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.ClassKind;
 import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.util.TestUtils;
 
@@ -21,11 +22,11 @@ public class BasicCompileTest extends CompilerTestBase {
 
     public void test() {
         compile(SOURCE_ROOT);
-//        DebugEnv.debugLogger_ON = true;
         compile(SOURCE_ROOT);
         submit(() -> {
             processCapturedType();
             processGenericOverride();
+            processValueTypes();
         });
     }
 
@@ -153,6 +154,47 @@ public class BasicCompileTest extends CompilerTestBase {
                 )
         )));
         Assert.assertEquals("是", result.title());
+    }
+
+    private void processValueTypes() {
+        var currencyKlass = getClassTypeByCode("valuetypes.Currency");
+        Assert.assertEquals(ClassKind.VALUE.code(), currencyKlass.kind());
+        var productKlass = getClassTypeByCode("valuetypes.Product");
+        var currencyKindKlass = getClassTypeByCode("valuetypes.CurrencyKind");
+        var currencyKindYuan = TestUtils.getEnumConstantByName(currencyKindKlass, "YUAN");
+
+        var productId = TestUtils.doInTransaction(() -> instanceManager.create(InstanceDTO.createClassInstance(
+                TypeExpressions.getClassType(productKlass),
+                List.of(
+                        InstanceFieldDTO.create(
+                                TestUtils.getFieldIdByCode(productKlass, "name"),
+                                PrimitiveFieldValue.createString("shoes")
+                        ),
+                        InstanceFieldDTO.create(
+                                TestUtils.getFieldIdByCode(productKlass, "price"),
+                                InstanceFieldValue.of(
+                                        InstanceDTO.createClassInstance(
+                                                TypeExpressions.getClassType(currencyKlass),
+                                                List.of(
+                                                        InstanceFieldDTO.create(
+                                                               TestUtils.getFieldIdByCode(currencyKlass, "quantity"),
+                                                               PrimitiveFieldValue.createDouble(100.0)
+                                                        ),
+                                                        InstanceFieldDTO.create(
+                                                                TestUtils.getFieldIdByCode(currencyKlass, "kind"),
+                                                                ReferenceFieldValue.create(currencyKindYuan)
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+        )));
+        var product = instanceManager.get(productId, 2).instance();
+        var currency = product.getInstance("price");
+        Assert.assertNull(currency.id());
+        Assert.assertEquals(100.0, currency.getPrimitiveValue("quantity"));
+        Assert.assertEquals(currencyKindYuan.id(), currency.getReferenceId("kind"));
     }
 
 }

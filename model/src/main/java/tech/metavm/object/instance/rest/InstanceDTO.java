@@ -97,6 +97,27 @@ public record InstanceDTO(
     }
 
     @JsonIgnore
+    public FieldValue getFieldValueByName(String fieldName) {
+        var param = (ClassInstanceParam) param();
+        return NncUtils.findRequired(param.fields(), f -> Objects.equals(f.fieldName(), fieldName)).value();
+    }
+
+    @JsonIgnore
+    public String getReferenceId(String fieldName) {
+        return ((ReferenceFieldValue) getFieldValueByName(fieldName)).getId();
+    }
+
+    @JsonIgnore
+    public Object getPrimitiveValue(String fieldName) {
+        return ((PrimitiveFieldValue) getFieldValueByName(fieldName)).getValue();
+    }
+
+    @JsonIgnore
+    public InstanceDTO getInstance(String fieldName) {
+        return ((InstanceFieldValue) getFieldValueByName(fieldName)).getInstance();
+    }
+
+    @JsonIgnore
     public FieldValue getElement(int index) {
         if(param() instanceof ArrayInstanceParam arrayInstanceParam)
             return arrayInstanceParam.elements().get(index);

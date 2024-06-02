@@ -57,6 +57,7 @@ public class BootstrapUtils {
             StandardTypes.setListKlass(defContext.getClassType(MetaList.class).resolve());
             StandardTypes.setReadWriteListKlass(defContext.getClassType(ReadWriteMetaList.class).resolve());
             StandardTypes.setChildListKlass(defContext.getClassType(ChildMetaList.class).resolve());
+            StandardTypes.setValueListKlass(defContext.getClassType(ValueMetaList.class).resolve());
             StandardTypes.setSetKlass(defContext.getClassType(MetaSet.class).resolve());
             StandardTypes.setMapKlass(defContext.getClassType(MetaMap.class).resolve());
             StandardTypes.setIteratorImplKlass(defContext.getClassType(IteratorImpl.class).resolve());

@@ -179,6 +179,10 @@ public class StandardTypes {
         return Objects.requireNonNull(holder.getChildListKlass());
     }
 
+    public static Klass getValueListKlass() {
+        return Objects.requireNonNull(holder.getValueListKlass());
+    }
+
     public static Klass getSetKlass() {
         return Objects.requireNonNull(holder.getSetKlass());
     }
@@ -310,6 +314,10 @@ public class StandardTypes {
 
     public static void setChildListKlass(Klass childListKlass) {
         holder.setChildListKlass(childListKlass);
+    }
+
+    public static void setValueListKlass(Klass childListKlass) {
+        holder.setValueListKlass(childListKlass);
     }
 
     public static void setMapKlass(Klass mapKlass) {

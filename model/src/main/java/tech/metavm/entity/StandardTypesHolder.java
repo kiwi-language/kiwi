@@ -28,53 +28,57 @@ public interface StandardTypesHolder {
 
     Klass getIteratorImplKlass();
 
-    void setEnumKlass(Klass type);
+    void setEnumKlass(Klass klass);
 
-    void setThrowableKlass(Klass type);
+    void setThrowableKlass(Klass klass);
 
-    void setExceptionKlass(Klass type);
+    void setExceptionKlass(Klass klass);
 
-    void setRuntimeExceptionKlass(Klass type);
+    void setRuntimeExceptionKlass(Klass klass);
 
-    void setEntityKlass(Klass type);
+    void setEntityKlass(Klass klass);
 
-    void setRecordKlass(Klass type);
+    void setRecordKlass(Klass klass);
 
-    void setCollectionKlass(Klass type);
+    void setCollectionKlass(Klass klass);
 
-    void setSetKlass(Klass type);
+    void setSetKlass(Klass klass);
 
-    void setListKlass(Klass type);
+    void setListKlass(Klass klass);
 
-    void setMapKlass(Klass type);
+    void setMapKlass(Klass klass);
 
-    void setIteratorKlass(Klass type);
+    void setIteratorKlass(Klass klass);
 
-    void setIteratorImplKlass(Klass type);
+    void setIteratorImplKlass(Klass klass);
 
-    void setReadWriteListKlass(Klass type);
+    void setReadWriteListKlass(Klass klass);
 
-    void setChildListKlass(Klass type);
+    void setChildListKlass(Klass klass);
+
+    void setValueListKlass(Klass klass);
 
     Klass getChildListKlass();
+
+    Klass getValueListKlass();
 
     Klass getReadWriteListKlass();
 
     Klass getIterableKlass();
 
-    void setIterableKlass(Klass iterableType);
+    void setIterableKlass(Klass klass);
 
     Klass getConsumerKlass();
 
-    void setConsumerKlass(Klass consumerType);
+    void setConsumerKlass(Klass klass);
 
     Klass getPredicateKlass();
 
-    void setPredicateKlass(Klass type);
+    void setPredicateKlass(Klass klass);
 
-    void setIllegalArgumentExceptionKlass(Klass illegalArgumentExceptionType);
+    void setIllegalArgumentExceptionKlass(Klass klass);
 
-    void setIllegalStateExceptionKlass(Klass illegalStateExceptionType);
+    void setIllegalStateExceptionKlass(Klass klass);
 
     Klass getIllegalArgumentExceptionKlass();
 
@@ -82,6 +86,6 @@ public interface StandardTypesHolder {
 
     Klass getNullPointerExceptionKlass();
 
-    void setNullPointerExceptionKlass(Klass nullPointerExceptionType);
+    void setNullPointerExceptionKlass(Klass klass);
 
 }

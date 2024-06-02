@@ -17,6 +17,7 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private Klass iteratorType;
     private Klass iteratorImplType;
     private Klass childListType;
+    private Klass valueListKlass;
     private Klass readWriteListType;
     private Klass iterableType;
     private Klass consumerType;
@@ -151,6 +152,11 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
+    public void setValueListKlass(Klass klass) {
+        valueListKlass = klass;
+    }
+
+    @Override
     public void setReadWriteListKlass(Klass type) {
         readWriteListType = type;
     }
@@ -158,6 +164,11 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public Klass getChildListKlass() {
         return childListType;
+    }
+
+    @Override
+    public Klass getValueListKlass() {
+        return valueListKlass;
     }
 
     @Override

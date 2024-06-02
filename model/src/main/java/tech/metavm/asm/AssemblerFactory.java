@@ -15,6 +15,7 @@ public class AssemblerFactory {
         return List.of(
                 StandardTypes.getChildListKlass(),
                 StandardTypes.getReadWriteListKlass(),
+                StandardTypes.getValueListKlass(),
                 StandardTypes.getListKlass(),
                 StandardTypes.getEnumKlass(),
                 StandardTypes.getRuntimeExceptionKlass(),

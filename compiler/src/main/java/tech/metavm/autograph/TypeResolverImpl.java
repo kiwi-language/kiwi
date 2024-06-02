@@ -337,7 +337,7 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private Klass createMetaClass(PsiClass psiClass) {
-        try (var entry = ContextUtil.getProfiler().enter("createMetaClass")) {
+        try (var ignored = ContextUtil.getProfiler().enter("createMetaClass")) {
             var name = TranspileUtil.getBizClassName(psiClass);
             var kind = getClassKind(psiClass);
             boolean isTemplate = psiClass.getTypeParameterList() != null
@@ -390,8 +390,13 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private ClassKind getClassKind(PsiClass psiClass) {
-        return psiClass.isEnum() ? ClassKind.ENUM
-                : (psiClass.isInterface() ? ClassKind.INTERFACE : ClassKind.CLASS);
+        if(psiClass.isEnum())
+            return ClassKind.ENUM;
+        if(psiClass.isInterface())
+            return ClassKind.INTERFACE;
+        if(psiClass.hasAnnotation(ValueType.class.getName()))
+            return ClassKind.VALUE;
+        return ClassKind.CLASS;
     }
 
     private Klass resolvePojoClass(PsiClass psiClass, final ResolutionStage stage) {

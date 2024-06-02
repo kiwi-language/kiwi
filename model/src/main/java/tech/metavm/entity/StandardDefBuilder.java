@@ -54,17 +54,18 @@ public class StandardDefBuilder {
     public void initRootTypes() {
         initBuiltinFlows();
 
-        StandardTypes.setConsumerKlass(createConsumerType());
-        StandardTypes.setPredicateKlass(createPredicateType());
-        StandardTypes.setIteratorKlass(createIteratorType());
-        StandardTypes.setIterableKlass(createIterableType());
+        StandardTypes.setConsumerKlass(createConsumerKlass());
+        StandardTypes.setPredicateKlass(createPredicateKlass());
+        StandardTypes.setIteratorKlass(createIteratorKlass());
+        StandardTypes.setIterableKlass(createIterableKlass());
         StandardTypes.setCollectionKlass(createCollectionType());
-        StandardTypes.setIteratorImplKlass(createIteratorImplType());
-        StandardTypes.setSetKlass(createSetType());
-        StandardTypes.setListKlass(createListType());
-        StandardTypes.setReadWriteListKlass(createReadWriteListType());
-        StandardTypes.setChildListKlass(createChildListType());
-        StandardTypes.setMapKlass(createMapType());
+        StandardTypes.setIteratorImplKlass(createIteratorImplKlass());
+        StandardTypes.setSetKlass(createSetKlass());
+        StandardTypes.setListKlass(createListKlass());
+        StandardTypes.setReadWriteListKlass(createReadWriteListKlass());
+        StandardTypes.setChildListKlass(createChildListKlass());
+        StandardTypes.setValueListKlass(createValueListKlass());
+        StandardTypes.setMapKlass(createMapKlass());
 
         ValueDef<Record> recordDef = createValueDef(
                 Record.class,
@@ -201,7 +202,7 @@ public class StandardDefBuilder {
                 NullPointerException.class, StandardTypes.getNullPointerExceptionKlass(), NullPointerException.class));
     }
 
-    private Klass createConsumerType() {
+    private Klass createConsumerKlass() {
         var elementType = new TypeVariable(null, "元素", "T",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
@@ -219,7 +220,7 @@ public class StandardDefBuilder {
         return consumerType;
     }
 
-    private Klass createPredicateType() {
+    private Klass createPredicateKlass() {
         var elementType = new TypeVariable(null, "元素", "T",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
@@ -422,7 +423,7 @@ public class StandardDefBuilder {
         return enumOrdinalDef.getField();
     }
 
-    public Klass createIteratorType() {
+    public Klass createIteratorKlass() {
         String name = getParameterizedName("迭代器");
         String code = getParameterizedCode("Iterator");
         var elementType = new TypeVariable(null, "迭代器元素", "IteratorElement",
@@ -456,7 +457,7 @@ public class StandardDefBuilder {
         iteratorType.setStage(ResolutionStage.DEFINITION);
     }
 
-    public Klass createIterableType() {
+    public Klass createIterableKlass() {
         var elementType = new TypeVariable(null, "元素", "T",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
@@ -562,7 +563,7 @@ public class StandardDefBuilder {
         collectionType.setStage(ResolutionStage.DEFINITION);
     }
 
-    public Klass createSetType() {
+    public Klass createSetKlass() {
         String name = getParameterizedName("集合");
         String code = getParameterizedCode("Set");
         var elementType = new TypeVariable(null, "集合元素", "SetElement",
@@ -600,7 +601,7 @@ public class StandardDefBuilder {
         setType.setStage(ResolutionStage.DEFINITION);
     }
 
-    public Klass createListType() {
+    public Klass createListKlass() {
         var elementType = new TypeVariable(null, "列表元素",
                 "ListElement",
                 DummyGenericDeclaration.INSTANCE);
@@ -663,15 +664,19 @@ public class StandardDefBuilder {
         return listType;
     }
 
-    public Klass createReadWriteListType() {
-        return createListImplType("读写列表", "ReadWriteList", ReadWriteMetaList.class, ArrayKind.READ_WRITE);
+    public Klass createReadWriteListKlass() {
+        return createListImplKlass("读写列表", "ReadWriteList", ReadWriteMetaList.class, ArrayKind.READ_WRITE);
     }
 
-    public Klass createChildListType() {
-        return createListImplType("子对象列表", "ChildList", ChildMetaList.class, ArrayKind.CHILD);
+    public Klass createChildListKlass() {
+        return createListImplKlass("子对象列表", "ChildList", ChildMetaList.class, ArrayKind.CHILD);
     }
 
-    public Klass createListImplType(String name, String code, Class<?> javaClass, ArrayKind arrayKind) {
+    public Klass createValueListKlass() {
+        return createListImplKlass("值列表", "ValueList", ValueMetaList.class, ArrayKind.VALUE);
+    }
+
+    public Klass createListImplKlass(String name, String code, Class<?> javaClass, ArrayKind arrayKind) {
         var elementType = new TypeVariable(null, name + "元素", code + "Element",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
@@ -755,7 +760,7 @@ public class StandardDefBuilder {
         listType.setStage(ResolutionStage.DEFINITION);
     }
 
-    public Klass createIteratorImplType() {
+    public Klass createIteratorImplKlass() {
         String name = getParameterizedName("迭代器实现");
         String code = getParameterizedCode("IteratorImpl");
         var elementType = new TypeVariable(null, "迭代器实现元素", "IteratorImplElement",
@@ -794,7 +799,7 @@ public class StandardDefBuilder {
         }
     }
 
-    public Klass createMapType() {
+    public Klass createMapKlass() {
         String name = getParameterizedName("词典");
         String code = getParameterizedName("Map");
         var keyType = new TypeVariable(null, "词典键", "MapKey",

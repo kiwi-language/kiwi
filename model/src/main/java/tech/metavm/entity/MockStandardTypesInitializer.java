@@ -32,6 +32,13 @@ public class MockStandardTypesInitializer {
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "子对象列表元素", "ChildListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
+        StandardTypes.setValueListKlass(
+                ClassTypeBuilder.newBuilder("值列表", "ValueList")
+                        .source(ClassSource.BUILTIN)
+                        .tmpId(NncUtils.randomNonNegative())
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "值列表元素", "ValueListElement", DummyGenericDeclaration.INSTANCE))
+                        .build()
+        );
         var enumTypeParam = new TypeVariable(NncUtils.randomNonNegative(), "枚举类型", "EnumType",
                 DummyGenericDeclaration.INSTANCE);
         var enumType = ClassTypeBuilder.newBuilder("枚举", Enum.class.getSimpleName())
