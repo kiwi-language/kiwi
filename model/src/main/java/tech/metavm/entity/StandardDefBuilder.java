@@ -665,18 +665,18 @@ public class StandardDefBuilder {
     }
 
     public Klass createReadWriteListKlass() {
-        return createListImplKlass("读写列表", "ReadWriteList", ReadWriteMetaList.class, ArrayKind.READ_WRITE);
+        return createListImplKlass("读写列表", "ReadWriteList", ReadWriteMetaList.class, ClassKind.CLASS, ArrayKind.READ_WRITE);
     }
 
     public Klass createChildListKlass() {
-        return createListImplKlass("子对象列表", "ChildList", ChildMetaList.class, ArrayKind.CHILD);
+        return createListImplKlass("子对象列表", "ChildList", ChildMetaList.class, ClassKind.CLASS, ArrayKind.CHILD);
     }
 
     public Klass createValueListKlass() {
-        return createListImplKlass("值列表", "ValueList", ValueMetaList.class, ArrayKind.VALUE);
+        return createListImplKlass("值列表", "ValueList", ValueMetaList.class, ClassKind.VALUE, ArrayKind.VALUE);
     }
 
-    public Klass createListImplKlass(String name, String code, Class<?> javaClass, ArrayKind arrayKind) {
+    public Klass createListImplKlass(String name, String code, Class<?> javaClass, ClassKind kind, ArrayKind arrayKind) {
         var elementType = new TypeVariable(null, name + "元素", code + "Element",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
@@ -686,6 +686,7 @@ public class StandardDefBuilder {
         var pListType = StandardTypes.getListKlass().getParameterized(List.of(elementType.getType()));
         var pIteratorImplType = StandardTypes.getIteratorImplKlass().getParameterized(List.of(elementType.getType()));
         var listImplType = ClassTypeBuilder.newBuilder(name, code)
+                .kind(kind)
                 .interfaces(pListType.getType())
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)

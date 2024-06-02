@@ -78,6 +78,7 @@ public class TypeResolverImpl implements TypeResolver {
             Map.entry(TranspileUtil.createClassType(LinkedList.class), StandardTypes::getReadWriteListKlass),
             Map.entry(TranspileUtil.createClassType(tech.metavm.util.LinkedList.class), StandardTypes::getReadWriteListKlass),
             Map.entry(TranspileUtil.createClassType(ChildList.class), StandardTypes::getChildListKlass),
+            Map.entry(TranspileUtil.createClassType(ValueList.class), StandardTypes::getValueListKlass),
             Map.entry(TranspileUtil.createClassType(Set.class), StandardTypes::getSetKlass),
             Map.entry(TranspileUtil.createClassType(Collection.class), StandardTypes::getCollectionKlass),
             Map.entry(TranspileUtil.createClassType(Consumer.class), StandardTypes::getConsumerKlass),

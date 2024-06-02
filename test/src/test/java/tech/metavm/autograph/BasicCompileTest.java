@@ -160,6 +160,8 @@ public class BasicCompileTest extends CompilerTestBase {
         var currencyKlass = getClassTypeByCode("valuetypes.Currency");
         Assert.assertEquals(ClassKind.VALUE.code(), currencyKlass.kind());
         var productKlass = getClassTypeByCode("valuetypes.Product");
+        var pricesKlass = getClassTypeByCode("valuetypes.Price");
+        var channelPriceKlass = getClassTypeByCode("valuetypes.ChannelPrice");
         var currencyKindKlass = getClassTypeByCode("valuetypes.CurrencyKind");
         var currencyKindYuan = TestUtils.getEnumConstantByName(currencyKindKlass, "YUAN");
 
@@ -174,15 +176,31 @@ public class BasicCompileTest extends CompilerTestBase {
                                 TestUtils.getFieldIdByCode(productKlass, "price"),
                                 InstanceFieldValue.of(
                                         InstanceDTO.createClassInstance(
-                                                TypeExpressions.getClassType(currencyKlass),
+                                                TypeExpressions.getClassType(pricesKlass),
                                                 List.of(
                                                         InstanceFieldDTO.create(
-                                                               TestUtils.getFieldIdByCode(currencyKlass, "quantity"),
-                                                               PrimitiveFieldValue.createDouble(100.0)
+                                                                TestUtils.getFieldIdByCode(pricesKlass, "defaultPrice"),
+                                                                InstanceFieldValue.of(
+                                                                        InstanceDTO.createClassInstance(
+                                                                                TypeExpressions.getClassType(currencyKlass),
+                                                                                List.of(
+                                                                                        InstanceFieldDTO.create(
+                                                                                                TestUtils.getFieldIdByCode(currencyKlass, "quantity"),
+                                                                                                PrimitiveFieldValue.createDouble(100.0)
+                                                                                        ),
+                                                                                        InstanceFieldDTO.create(
+                                                                                                TestUtils.getFieldIdByCode(currencyKlass, "kind"),
+                                                                                                ReferenceFieldValue.create(currencyKindYuan)
+                                                                                        )
+                                                                                )
+                                                                        )
+                                                                )
                                                         ),
                                                         InstanceFieldDTO.create(
-                                                                TestUtils.getFieldIdByCode(currencyKlass, "kind"),
-                                                                ReferenceFieldValue.create(currencyKindYuan)
+                                                                TestUtils.getFieldIdByCode(pricesKlass, "channelPrices"),
+                                                                new ListFieldValue(
+                                                                        null, false, List.of()
+                                                                )
                                                         )
                                                 )
                                         )
@@ -191,10 +209,10 @@ public class BasicCompileTest extends CompilerTestBase {
                 )
         )));
         var product = instanceManager.get(productId, 2).instance();
-        var currency = product.getInstance("price");
-        Assert.assertNull(currency.id());
-        Assert.assertEquals(100.0, currency.getPrimitiveValue("quantity"));
-        Assert.assertEquals(currencyKindYuan.id(), currency.getReferenceId("kind"));
+        var defaultPrice = product.getInstance("price").getInstance("defaultPrice");
+        Assert.assertNull(defaultPrice.id());
+        Assert.assertEquals(100.0, defaultPrice.getPrimitiveValue("quantity"));
+        Assert.assertEquals(currencyKindYuan.id(), defaultPrice.getReferenceId("kind"));
     }
 
 }

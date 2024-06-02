@@ -3,9 +3,9 @@ package valuetypes;
 public class Product {
 
     private String name;
-    private Currency price;
+    private Price price;
 
-    public Product(String name, Currency price) {
+    public Product(String name, Price price) {
         this.name = name;
         this.price = price;
     }
@@ -18,11 +18,11 @@ public class Product {
         this.name = name;
     }
 
-    public Currency getPrice() {
+    public Price getPrice() {
         return price;
     }
 
-    public void setPrice(Currency price) {
+    public void setPrice(Price price) {
         this.price = price;
     }
 }

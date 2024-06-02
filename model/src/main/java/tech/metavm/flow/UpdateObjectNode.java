@@ -11,7 +11,6 @@ import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Klass;
-import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -103,7 +102,7 @@ public class UpdateObjectNode extends NodeRT {
     private void setFields(List<UpdateField> fields) {
         var selfType = object.getType();
         for (UpdateField field : fields) {
-            if(!field.getFieldRef().getDeclaringType().isAssignableFrom(selfType))
+            if (!field.getFieldRef().getDeclaringType().isAssignableFrom(selfType))
                 throw new InternalException("Field " + field.getFieldRef().resolve() + " is not defined in klass " + selfType);
         }
         this.fields.resetChildren(fields);
@@ -115,14 +114,12 @@ public class UpdateObjectNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        try(var ignored = ContextUtil.getProfiler().enter("UpdateObjectNode.execute")) {
-            ClassInstance instance = (ClassInstance) object.evaluate(frame);
-            for (UpdateField updateField : fields) {
-                var inConstructor = Flows.isConstructor(getFlow()) || Objects.equals(getFlow().getCode(), "<init>");
-                updateField.execute(instance, frame, inConstructor);
-            }
-            return next(null);
+        ClassInstance instance = (ClassInstance) object.evaluate(frame);
+        for (UpdateField updateField : fields) {
+            var inConstructor = Flows.isConstructor(getFlow()) || Objects.equals(getFlow().getCode(), "<init>");
+            updateField.execute(instance, frame, inConstructor);
         }
+        return next(null);
     }
 
     @Override

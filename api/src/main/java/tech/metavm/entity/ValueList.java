@@ -6,12 +6,13 @@ import java.util.function.Predicate;
 
 public class ValueList<T> extends ArrayList<T> {
 
-    public ValueList() {
+    public ValueList(Collection<? extends T> collection) {
+        super(collection);
     }
 
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        return super.addAll(c);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -26,17 +27,17 @@ public class ValueList<T> extends ArrayList<T> {
 
     @Override
     public T set(int index, T element) {
-        return super.set(index, element);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean remove(Object o) {
-        return super.remove(o);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public T remove(int index) {
-        return super.remove(index);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -51,16 +52,16 @@ public class ValueList<T> extends ArrayList<T> {
 
     @Override
     public boolean add(T t) {
-        return super.add(t);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void clear() {
-        super.clear();
+        throw new UnsupportedOperationException();
     }
 
     public boolean removeIf(Predicate<? super T> filter) {
-        return super.removeIf(filter);
+        throw new UnsupportedOperationException();
     }
 
 }
