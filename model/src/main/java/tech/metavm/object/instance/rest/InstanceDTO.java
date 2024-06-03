@@ -119,19 +119,24 @@ public record InstanceDTO(
 
     @JsonIgnore
     public FieldValue getElement(int index) {
-        if(param() instanceof ArrayInstanceParam arrayInstanceParam)
+        if (param() instanceof ArrayInstanceParam arrayInstanceParam)
             return arrayInstanceParam.elements().get(index);
-        else if(param() instanceof ListInstanceParam listInstanceParam)
+        else if (param() instanceof ListInstanceParam listInstanceParam)
             return listInstanceParam.elements().get(index);
         else
             throw new IllegalStateException("Not an array or list instance");
     }
 
     @JsonIgnore
+    public InstanceDTO getElementInstance(int index) {
+        return ((InstanceFieldValue) getElement(index)).getInstance();
+    }
+
+    @JsonIgnore
     public List<FieldValue> getElements() {
-        if(param() instanceof ArrayInstanceParam arrayInstanceParam)
+        if (param() instanceof ArrayInstanceParam arrayInstanceParam)
             return arrayInstanceParam.elements();
-        else if(param() instanceof ListInstanceParam listInstanceParam)
+        else if (param() instanceof ListInstanceParam listInstanceParam)
             return listInstanceParam.elements();
         else
             throw new IllegalStateException("Not an array or list instance");

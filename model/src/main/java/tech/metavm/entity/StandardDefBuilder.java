@@ -697,7 +697,7 @@ public class StandardDefBuilder {
                         new ArrayType(elementType.getType(), arrayKind))
                 .nullType(StandardTypes.getNullType())
                 .access(Access.PRIVATE)
-                .isChild(true)
+                .isChild(kind != ClassKind.VALUE)
                 .build();
         createOverridingFlows(listImplType, pIterableType);
         createOverridingFlows(listImplType, pCollectionType);

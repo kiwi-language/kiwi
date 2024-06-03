@@ -1858,7 +1858,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public boolean isList() {
         var t = getEffectiveTemplate();
-        return t == StandardTypes.getListKlass() || StandardTypes.getChildListKlass() == t || StandardTypes.getReadWriteListKlass() == t;
+        return t == StandardTypes.getListKlass() || StandardTypes.getChildListKlass() == t || StandardTypes.getReadWriteListKlass() == t || StandardTypes.getValueListKlass() == t;
     }
 
     public boolean isChildList() {

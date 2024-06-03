@@ -89,6 +89,7 @@ public class TypeResolverImpl implements TypeResolver {
             IteratorImpl.class,
             Iterator.class,
             ChildList.class,
+            ValueList.class,
             ArrayList.class,
             LinkedList.class,
             tech.metavm.util.LinkedList.class,
@@ -314,6 +315,9 @@ public class TypeResolverImpl implements TypeResolver {
             var childListType = TranspileUtil.createClassType(ChildList.class);
             if (childListType.isAssignableFrom(ownerType))
                 return StandardTypes.getChildListKlass().getTypeParameters().get(0);
+            var valueListType = TranspileUtil.createClassType(ValueList.class);
+            if(valueListType.isAssignableFrom(ownerType))
+                return StandardTypes.getValueListKlass().getTypeParameters().get(0);
             var arrayListType = TranspileUtil.createClassType(ArrayList.class);
             var linkedListType = TranspileUtil.createClassType(LinkedList.class);
             if (arrayListType.isAssignableFrom(ownerType) || linkedListType.isAssignableFrom(ownerType))

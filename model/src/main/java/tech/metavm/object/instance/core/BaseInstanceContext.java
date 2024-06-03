@@ -647,12 +647,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public void batchBind(Collection<DurableInstance> instances) {
-        try (var ignored = getProfiler().enter("BaseInstanceContext.batchBind")) {
-            instances.forEach(this::checkForBind);
-            for (var inst : instances) {
-                if (inst.tryGetTreeId() == null)
-                    add(inst);
-            }
+        instances.forEach(this::checkForBind);
+        for (var inst : instances) {
+            if (inst.tryGetTreeId() == null)
+                add(inst);
         }
     }
 
