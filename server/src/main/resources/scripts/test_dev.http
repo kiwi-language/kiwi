@@ -13,9 +13,8 @@ POST http://metavm.tech:9090/system/init-test
 POST http://metavm.tech:9090/bootstrap/init-root-application
 Accept: application/json
 
-
 ###
-POST http://metavm.tech:9090/login
+POST http://localhost:7004/login
 Content-Type: application/json
 Accept: application/json
 

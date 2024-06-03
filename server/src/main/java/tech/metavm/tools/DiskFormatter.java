@@ -43,14 +43,15 @@ public class DiskFormatter {
     private static final String CONFIG_REBOOT = "reboot";
 
     public static final Map<String, Object> DEV_CONFIG = Map.of(
-            CONFIG_HOST, "47.104.104.66",
-            CONFIG_ES_PORT, 9500,
+            CONFIG_HOST, "127.0.0.1",
+            CONFIG_ES_PORT, 7002,
+            CONFIG_REDIS_PORT, 7003,
             CONFIG_DELETE_ID_FILES, false,
-            CONFIG_CLEAR_DB, false,
-            CONFIG_DB_USER, "root",
+            CONFIG_CLEAR_DB, true,
+            CONFIG_DB_USER, "postgres",
             CONFIG_DB_PASSWORD, "85263670",
-            CONFIG_JDBC_URL, "jdbc:mysql://47.104.104.66:3306/object?allowMultiQueries=true",
-            CONFIG_DB_DRIVER, "com.mysql.cj.jdbc.Driver",
+            CONFIG_JDBC_URL, "jdbc:postgresql://127.0.0.1:7001/object",
+            CONFIG_DB_DRIVER, "org.postgresql.Driver",
             CONFIG_REBOOT, false
     );
 
