@@ -1,5 +1,7 @@
-POST http://metavm.tech:9090/bootstrap/save?saveIds=false
+POST http://metavm.tech:9090/bootstrap?saveIds=false
 
+###
+POST http://metavm.tech:9090/system/init-test
 
 ###
 POST http://metavm.tech:9090/bootstrap/init-root-application

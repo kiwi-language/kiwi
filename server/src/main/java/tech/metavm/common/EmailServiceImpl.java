@@ -40,11 +40,13 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void send(String recipient, String subject, String content) {
         Properties prop = new Properties();
-        prop.put("mail.smtp.auth", true);
+        prop.put("mail.smtp.auth", "true");
         prop.put("mail.smtp.starttls.enable", "true");
         prop.put("mail.smtp.host", host);
         prop.put("mail.smtp.port", Integer.toString(port));
         prop.put("mail.smtp.ssl.trust", host);
+        prop.put("mail.smtp.socketFactory.port", Integer.toString(port));
+        prop.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
 
         Session session = Session.getInstance(prop, new Authenticator() {
             @Override

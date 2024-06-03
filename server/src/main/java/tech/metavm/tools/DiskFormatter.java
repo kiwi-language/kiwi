@@ -67,7 +67,7 @@ public class DiskFormatter {
             CONFIG_REBOOT, true
     );
 
-    public static final Map<String, Object> CONFIG = LOCAL_CONFIG;
+    public static final Map<String, Object> CONFIG = DEV_CONFIG;
 
 //    public static final String HOST = "localhost";
 
