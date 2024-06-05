@@ -1,16 +1,16 @@
-POST https://metavm.tech/api/instance/trees
+POST http://localhost:7004/instance/trees
 Cookie: __token_2__=710ebaa5-8ab4-4c1e-aa94-31ba6db56d75; Max-Age=604800; Expires=Mon, 10 Jun 2024 14:01:12 GMT; Path=/
 AppId: 1000200006
 
 
 ###
-POST http://metavm.tech:9090/bootstrap?saveIds=false
+POST http://localhost:7004/bootstrap?saveIds=false
 
 ###
-POST http://metavm.tech:9090/system/init-test
+POST http://localhost:7004/system/init-test
 
 ###
-POST http://metavm.tech:9090/bootstrap/init-root-application
+POST http://localhost:7004/bootstrap/init-root-application
 Accept: application/json
 
 ###
@@ -28,16 +28,16 @@ Accept: application/json
 
 
 ###
-GET http://metavm.tech:9090/type/13054
+GET http://localhost:7004/type/13054
 
 ###
-POST http://metavm.tech:9090/bootstrap/init-root-application
+POST http://localhost:7004/bootstrap/init-root-application
 Accept: application/json
 
 ###
-POST http://metavm.tech:9090/application/repair/1000100003
+POST http://localhost:7004/application/repair/1000100003
 Accept: application/json
 
 ###
-POST http://metavm.tech:9090/bootstrap/rebuild-index
+POST http://localhost:7004/bootstrap/rebuild-index
 Accept: application/json

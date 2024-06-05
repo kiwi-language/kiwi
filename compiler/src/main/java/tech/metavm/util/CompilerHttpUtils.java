@@ -12,6 +12,7 @@ import java.net.http.HttpResponse;
 
 public class CompilerHttpUtils {
 
+    public static final String host = "https://metavm.tech/api";
     private final static HttpClient client;
     private static long appId;
 
@@ -25,7 +26,7 @@ public class CompilerHttpUtils {
 
     public static <R> R delete(String path, TypeReference<R> responseTypeRef) {
         try {
-            var uri = new URI("http://localhost:8080" + path);
+            var uri = new URI(host + path);
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(uri)
                     .header("Accept", "application/json")
@@ -42,7 +43,7 @@ public class CompilerHttpUtils {
 
     public static <R> R post(String path, @Nullable Object request, TypeReference<R> responseTypeRef) {
         try {
-            var uri = new URI("http://localhost:8080" + path);
+            var uri = new URI(host + path);
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(uri)
                     .header("Accept", "application/json")
@@ -63,7 +64,7 @@ public class CompilerHttpUtils {
 
     public static <R> R get(String path, TypeReference<R> responseTypeRef) {
         try {
-            var uri = new URI("http://localhost:8080" + path);
+            var uri = new URI(host + path);
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(uri)
                     .header("Accept", "application/json")
