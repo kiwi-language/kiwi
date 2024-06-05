@@ -144,10 +144,14 @@ public class Main {
 
     private static void usage() {
         System.out.println("Usage: ");
-        System.out.println("metavm deploy <source root>");
+        System.out.println("metavm deploy");
         System.out.println("metavm reset");
         System.out.println("metavm host <host>");
         System.out.println("metavm logout");
+    }
+
+    public static boolean isMavenProject() {
+        return new File("pom.xml").exists();
     }
 
     public static void main(String[] args) {
@@ -168,11 +172,12 @@ public class Main {
             }
             case "logout" -> logout();
             case "deploy" -> {
-                if (args.length < 2) {
-                    usage();
+                var sourceRoot = args.length > 1 ? args[1] : (isMavenProject() ? "src/main/java" : "src");
+                var f = new File(sourceRoot);
+                if(!f.exists() || !f.isDirectory()) {
+                    System.err.println("Source directory '" + sourceRoot + "' does not exist.");
                     return;
                 }
-                var sourceRoot = args[1];
                 ensureAuthorized();
                 CompilerHttpUtils.host = getHost();
                 logger.info("Host: " + CompilerHttpUtils.host);
