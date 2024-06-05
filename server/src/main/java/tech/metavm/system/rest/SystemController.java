@@ -30,6 +30,8 @@ public class SystemController {
 
     public static final String AUTH_FILE = DEFAULT_HOME + File.separator + "auth";
 
+    public static final String HOST_FILE = DEFAULT_HOME + File.separator + "host";
+
     public static final String RESULT_JSON_FILE = "/Users/leen/workspace/object/result.json";
 
     public static final String APP_ID_FILE = "/Users/leen/workspace/object/src/test/resources/appId";
@@ -79,6 +81,7 @@ public class SystemController {
         clearDirectory(METAVM_HOME_1);
         clearDirectory(METAVM_HOME_2);
         NncUtils.writeFile(AUTH_FILE, createAppResult.appId() + "\ndemo\n123456");
+        NncUtils.writeFile(HOST_FILE, "http://localhost:8080");
         ContextUtil.setUserId(Id.parse(createAppResult.ownerId()));
         var appToken = platformUserManager.enterApp(createAppResult.appId());
         Tokens.setToken(response, createAppResult.appId(), appToken.token());

@@ -12,7 +12,7 @@ import java.net.http.HttpResponse;
 
 public class CompilerHttpUtils {
 
-    public static final String host = "https://metavm.tech/api";
+    public static String host = "https://metavm.tech/api";
     private final static HttpClient client;
     private static long appId;
 

@@ -1,13 +1,13 @@
 package tech.metavm.autograph;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.object.type.*;
 import tech.metavm.util.AuthConfig;
+import tech.metavm.util.CompilerHttpUtils;
 import tech.metavm.util.LoginUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -18,9 +18,15 @@ import java.util.Scanner;
 
 public class Main {
 
+    public static final Logger logger = LoggerFactory.getLogger(Main.class);
+
     public static final String DEFAULT_HOME = System.getProperty("user.home") + File.separator + ".metavm";
 
     public static final String DEFAULT_AUTH_FILE = DEFAULT_HOME + File.separator + "auth";
+
+    public static final String HOST_FILE = DEFAULT_HOME + File.separator + "host";
+
+    public static final String DEFAULT_HOST = "https://metavm.tech/api";
 
     private final Compiler compiler;
     private final String sourceRoot;
@@ -66,11 +72,7 @@ public class Main {
         var name = scanner.nextLine();
         System.out.print("password: ");
         var password = scanner.nextLine();
-        try {
-            Files.createDirectories(Paths.get(DEFAULT_HOME));
-        } catch (IOException e) {
-            System.err.println("Fail to create home directory: " + DEFAULT_HOME);
-        }
+        ensureHomeCreated();
         try (var authWriter = new PrintWriter(new FileOutputStream(DEFAULT_AUTH_FILE))) {
             authWriter.println(appId);
             authWriter.println(name);
@@ -81,37 +83,105 @@ public class Main {
         }
     }
 
-    private static void clear() {
+    private static void ensureHomeCreated() {
+        try {
+            Files.createDirectories(Paths.get(DEFAULT_HOME));
+        } catch (IOException e) {
+            System.err.println("Fail to create home directory: " + DEFAULT_HOME);
+        }
+    }
+
+    private static void reset() {
         var homeDir = Path.of(DEFAULT_HOME);
         if (Files.exists(homeDir)) {
             try (var files = Files.walk(homeDir)) {
                 //noinspection ResultOfMethodCallIgnored
                 files.sorted(Comparator.reverseOrder())
-                         .forEach(f -> f.toFile().delete());
+                        .forEach(f -> f.toFile().delete());
             } catch (IOException e) {
                 System.err.println("fail to visit home directory");
                 System.exit(1);
             }
         }
-        System.out.println("clear successful");
+        System.out.println("Reset successfully");
+    }
+
+    private static void changeHost(String host) {
+        try (var hostWriter = new PrintWriter(new FileOutputStream(HOST_FILE))) {
+            hostWriter.println(host);
+            System.out.println("Host changed");
+        } catch (IOException e) {
+            System.err.println("Fail to write host file: " + HOST_FILE);
+            System.exit(1);
+        }
+    }
+
+    private static String getHost() {
+        var hostFile = new File(HOST_FILE);
+        if (hostFile.exists()) {
+            try (var reader = new BufferedReader(new InputStreamReader(new FileInputStream(hostFile)))) {
+                return reader.readLine();
+            } catch (IOException e) {
+                System.err.println("Fail to read host file: " + HOST_FILE);
+                System.exit(1);
+                throw new RuntimeException();
+            }
+        } else
+            return DEFAULT_HOST;
+    }
+
+    private static void logout() {
+        var authFile = new File(DEFAULT_AUTH_FILE);
+        if(authFile.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            authFile.delete();
+            System.out.println("Logged out successfully");
+        }
+        else {
+            System.out.println("Not logged in");
+        }
+    }
+
+    private static void usage() {
+        System.out.println("Usage: ");
+        System.out.println("metavm deploy <source root>");
+        System.out.println("metavm reset");
+        System.out.println("metavm host <host>");
+        System.out.println("metavm logout");
     }
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.out.println("Usage: ");
-            System.out.println("metavm <source root>");
-            System.out.println("metavm -clear");
-            System.exit(1);
-        }
-        String sourceRoot = args[0];
-        if(sourceRoot.equals("-clear")) {
-            clear();
+            usage();
             return;
         }
-        ensureAuthorized();
-        var main = new Main(DEFAULT_HOME, sourceRoot, AuthConfig.fromFile(DEFAULT_AUTH_FILE), new HttpTypeClient(),
-                new DirectoryAllocatorStore("/not_exist"), new FileColumnStore("/not_exist"), new FileTypeTagStore("/not_exist"));
-        main.run();
+        ensureHomeCreated();
+        String command = args[0];
+        switch (command) {
+            case "reset" -> reset();
+            case "host" -> {
+                if (args.length < 2) {
+                    System.out.println(getHost());
+                    return;
+                }
+                changeHost(args[1].trim());
+            }
+            case "logout" -> logout();
+            case "deploy" -> {
+                if (args.length < 2) {
+                    usage();
+                    return;
+                }
+                var sourceRoot = args[1];
+                ensureAuthorized();
+                CompilerHttpUtils.host = getHost();
+                logger.info("Host: " + CompilerHttpUtils.host);
+                var main = new Main(DEFAULT_HOME, sourceRoot, AuthConfig.fromFile(DEFAULT_AUTH_FILE), new HttpTypeClient(),
+                        new DirectoryAllocatorStore("/not_exist"), new FileColumnStore("/not_exist"), new FileTypeTagStore("/not_exist"));
+                main.run();
+            }
+            default -> usage();
+        }
     }
 
 }
