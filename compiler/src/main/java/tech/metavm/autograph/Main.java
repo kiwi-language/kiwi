@@ -104,6 +104,7 @@ public class Main {
 
     private static void changeHost(String host) {
         NncUtils.writeFile(HOST_FILE, host);
+        System.out.println("Host changed");
     }
 
     private static String getHost() {
