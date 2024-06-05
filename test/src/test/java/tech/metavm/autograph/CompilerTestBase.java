@@ -36,6 +36,7 @@ import java.util.concurrent.Executors;
 
 public abstract class CompilerTestBase extends TestCase  {
     protected AuthConfig AUTH_CONFIG;
+    protected long APP_ID = 100L;
 
     public static final String HOME = "/Users/leen/workspace/object/test/src/test/resources/home";
 
@@ -178,7 +179,7 @@ public abstract class CompilerTestBase extends TestCase  {
 
     protected List<String> compile(String sourceRoot) {
         ContextUtil.resetProfiler();
-        return new Main(HOME, sourceRoot, AUTH_CONFIG, typeClient, allocatorStore, columnStore, typeTagStore).run();
+        return new Main(HOME, sourceRoot, APP_ID, AUTH_CONFIG, typeClient, allocatorStore, columnStore, typeTagStore).run();
     }
 
 

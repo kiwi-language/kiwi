@@ -117,7 +117,8 @@ public class MainTest extends CompilerTestBase {
             LOGGER.info(sysLoginResult2.toString());
             var loginInfo = loginService.verify(requireNonNull(sysLoginResult2.token()));
             LOGGER.info(loginInfo.toString());
-            AUTH_CONFIG = new AuthConfig(sysApp.appId(), "admin", "123456");
+            APP_ID = sysApp.appId();
+            AUTH_CONFIG = new AuthConfig("admin", "123456");
         });
         compileTwice(USERS_SOURCE_ROOT);
 //        compile(USERS_SOURCE_ROOT);

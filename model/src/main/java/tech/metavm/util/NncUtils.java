@@ -18,6 +18,8 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -72,8 +74,11 @@ public class NncUtils {
         }
     }
 
-    public static void writeFile(String filePath, String content) {
-        File file = new File(filePath);
+    public static void writeFile(String path, String content) {
+        writeFile(new File(path), content);
+    }
+
+    public static void writeFile(File file, String content) {
         if (file.isDirectory())
             throw new InternalException("Can not write to directory");
         if (!file.exists()) {
@@ -82,13 +87,13 @@ public class NncUtils {
             try {
                 file.createNewFile();
             } catch (IOException e) {
-                throw new InternalException("Fail to create file '" + filePath + "'");
+                throw new InternalException("Failed to create file '" + file + "'");
             }
         }
         try (var fileWriter = new FileWriter(file)) {
             fileWriter.write(content);
         } catch (IOException e) {
-            throw new InternalException("Fail to write to file '" + filePath + "'", e);
+            throw new InternalException("Failed to write to file '" + file + "'", e);
         }
     }
 
@@ -128,14 +133,26 @@ public class NncUtils {
         try (var output = new FileOutputStream(filePath)) {
             output.write(bytes);
         } catch (IOException e) {
-            throw new InternalException(String.format("Fail to write file: %s", filePath));
+            throw new InternalException(String.format("Failed to write file: %s", filePath));
+        }
+    }
+
+    public static String readLine(String path) {
+        return readLine(path);
+    }
+
+    public static String readLine(File file) {
+        try (var scanner = new Scanner(new FileInputStream(file))) {
+            return scanner.nextLine();
+        } catch (IOException e) {
+            throw new InternalException("Failed to read file '" + file + "'");
         }
     }
 
     public static boolean bytesEquals(@Nullable byte[] bytes1, @Nullable byte[] bytes2) {
-        if(bytes1 == bytes2)
+        if (bytes1 == bytes2)
             return true;
-        if(bytes1 != null && bytes2 != null)
+        if (bytes1 != null && bytes2 != null)
             return Arrays.equals(bytes1, bytes2);
         return false;
     }
@@ -261,7 +278,7 @@ public class NncUtils {
         try (var scanner = new Scanner(new FileReader(file))) {
             return scanner.nextLong();
         } catch (IOException e) {
-            throw new InternalException(String.format("Fail to read file '%s'", file.getPath()), e);
+            throw new InternalException(String.format("Failed to read file '%s'", file.getPath()), e);
         }
     }
 
@@ -269,7 +286,21 @@ public class NncUtils {
         try (var writer = new FileWriter(path)) {
             writer.write(Long.toString(l));
         } catch (IOException e) {
-            throw new InternalException("Fail to write to file '" + path + "'");
+            throw new InternalException("Failed to write to file '" + path + "'");
+        }
+    }
+
+    public static void clearDirectory(String path) {
+        var p = Path.of(path);
+        if (Files.exists(p)) {
+            try (var files = Files.walk(p)) {
+                //noinspection ResultOfMethodCallIgnored
+                files.sorted(Comparator.reverseOrder())
+                        .forEach(f -> f.toFile().delete());
+            } catch (IOException e) {
+                System.err.println("Faileded to clear directory '" + path + "'");
+                System.exit(1);
+            }
         }
     }
 
@@ -277,7 +308,7 @@ public class NncUtils {
         try (var scanner = new Scanner(new FileReader(path))) {
             return scanner.next();
         } catch (IOException e) {
-            throw new InternalException(String.format("Fail to read file '%s'", path), e);
+            throw new InternalException(String.format("Faileded to read file '%s'", path), e);
         }
     }
 
@@ -285,7 +316,7 @@ public class NncUtils {
         try (var writer = new FileWriter(path)) {
             writer.write(token);
         } catch (IOException e) {
-            throw new InternalException("Fail to write to file '" + path + "'");
+            throw new InternalException("Failed to write to file '" + path + "'");
         }
     }
 
@@ -293,9 +324,9 @@ public class NncUtils {
         if (!file.exists()) {
             try {
                 if (!file.createNewFile())
-                    throw new InternalException("Fail to create file '" + file.getAbsolutePath() + "'");
+                    throw new InternalException("Failed to create file '" + file.getAbsolutePath() + "'");
             } catch (IOException e) {
-                throw new InternalException("Fail to create file '" + file.getAbsolutePath() + "'");
+                throw new InternalException("Failed to create file '" + file.getAbsolutePath() + "'");
             }
         }
     }
@@ -304,7 +335,7 @@ public class NncUtils {
         try (var reader = new FileReader(path)) {
             return OBJECT_MAPPER.readValue(reader, klass);
         } catch (IOException e) {
-            throw new InternalException(String.format("Fail to read file '%s'", path), e);
+            throw new InternalException(String.format("Failed to read file '%s'", path), e);
         }
     }
 
@@ -312,7 +343,7 @@ public class NncUtils {
         try (var reader = new FileReader(path)) {
             return OBJECT_MAPPER.readValue(reader, typeRef);
         } catch (IOException e) {
-            throw new InternalException(String.format("Fail to read file '%s'", path), e);
+            throw new InternalException(String.format("Failed to read file '%s'", path), e);
         }
     }
 
@@ -328,7 +359,7 @@ public class NncUtils {
         try {
             return OBJECT_MAPPER.writeValueAsString(object);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Fail to write JSON string, object: " + object, e);
+            throw new RuntimeException("Failed to write JSON string, object: " + object, e);
         }
     }
 
@@ -336,7 +367,7 @@ public class NncUtils {
         try {
             return OBJECT_MAPPER_IGNORE_NULL.writeValueAsString(object);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Fail to write JSON string, object: " + object, e);
+            throw new RuntimeException("Failed to write JSON string, object: " + object, e);
         }
     }
 
@@ -344,7 +375,7 @@ public class NncUtils {
         try {
             return INDENT_OBJECT_MAPPER.writeValueAsString(object);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Fail to write JSON string, object: " + object, e);
+            throw new RuntimeException("Failed to write JSON string, object: " + object, e);
         }
     }
 
@@ -389,7 +420,7 @@ public class NncUtils {
         try {
             return OBJECT_MAPPER.readValue(jsonStr, type);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Fail to read JSON string, JSON string: " + jsonStr, e);
+            throw new RuntimeException("Failed to read JSON string, JSON string: " + jsonStr, e);
         }
     }
 
@@ -398,7 +429,7 @@ public class NncUtils {
             var reader = OBJECT_MAPPER.reader().forType(type);
             return reader.readValue(jsonStr);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Fail to read JSON string, JSON string: " + jsonStr, e);
+            throw new RuntimeException("Failed to read JSON string, JSON string: " + jsonStr, e);
         }
     }
 
@@ -407,7 +438,7 @@ public class NncUtils {
             var reader = OBJECT_MAPPER.reader().forType(typeReference);
             return reader.readValue(jsonStr);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Fail to read JSON string, JSON string: " + jsonStr, e);
+            throw new RuntimeException("Failed to read JSON string, JSON string: " + jsonStr, e);
         }
     }
 
@@ -1641,15 +1672,15 @@ public class NncUtils {
         return streamOf(iterable).allMatch(predicate);
     }
 
-    public static <T> boolean equalsIgnoreOrder(Collection<? extends T> coll1, Collection<? extends T> coll2, BiPredicate<T,T> equals) {
-        if(coll1.size() != coll2.size())
+    public static <T> boolean equalsIgnoreOrder(Collection<? extends T> coll1, Collection<? extends T> coll2, BiPredicate<T, T> equals) {
+        if (coll1.size() != coll2.size())
             return false;
         var list = new LinkedList<>(coll2);
         out:
         for (T t : coll1) {
             var it = list.iterator();
-            while(it.hasNext()) {
-                if(equals.test(t, it.next())) {
+            while (it.hasNext()) {
+                if (equals.test(t, it.next())) {
                     it.remove();
                     continue out;
                 }

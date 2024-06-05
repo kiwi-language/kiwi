@@ -6,8 +6,8 @@ import tech.metavm.user.rest.dto.LoginRequest;
 
 public class LoginUtils {
 
-    public static void loginWithAuthFile(AuthConfig authConfig, TypeClient typeClient) {
-        typeClient.login(authConfig.appId(), authConfig.loginName(), authConfig.password());
+    public static void loginWithAuthFile(long appId, AuthConfig authConfig, TypeClient typeClient) {
+        typeClient.login(appId, authConfig.loginName(), authConfig.password());
     }
 
     public static void login(long appId, String loginName, String password) {
