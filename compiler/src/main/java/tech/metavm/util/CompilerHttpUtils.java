@@ -19,7 +19,7 @@ import java.util.List;
 
 public class CompilerHttpUtils {
 
-    public static String host = "https://metavm.tech/api";
+    private static String host = "https://metavm.tech/api";
     private final static HttpClient client;
     private static long appId;
 
@@ -130,6 +130,14 @@ public class CompilerHttpUtils {
         if (!result.isSuccessful())
             throw new InternalException(result.getMessage());
         return result.getData();
+    }
+
+    public static String getHost() {
+        return host;
+    }
+
+    public static void setHost(String host) {
+        CompilerHttpUtils.host = host;
     }
 
     public static void setAppId(long appId) {

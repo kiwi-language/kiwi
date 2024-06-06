@@ -21,6 +21,7 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -148,6 +149,19 @@ public class NncUtils {
         } catch (IOException e) {
             throw new InternalException("Failed to read file '" + file + "'");
         }
+    }
+
+    public static void createDirectories(String path) {
+        try {
+            Files.createDirectories(Paths.get(path));
+        }
+        catch (IOException e) {
+            throw new InternalException("Failed to create directories for path " + path);
+        }
+    }
+
+    public static boolean isDirectory(String path) {
+        return new File(path).isDirectory();
     }
 
     public static boolean bytesEquals(@Nullable byte[] bytes1, @Nullable byte[] bytes2) {

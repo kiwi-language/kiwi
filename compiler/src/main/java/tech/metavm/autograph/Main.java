@@ -16,19 +16,18 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class Main {
 
     public static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    public static final String LOCAL_HOME = ".metavm";
+    public static final String HOME = ".metavm";
 
-    public static final String TOKEN_FILE = LOCAL_HOME + File.separator + "token";
+    private static final String ENV_FILE = HOME + File.separator + ".env";
 
-    public static final String HOST_FILE = LOCAL_HOME + File.separator + "host";
-
-    public static final String APP_FILE = LOCAL_HOME + File.separator + "app";
+    private static String selectedEnv = getEnvPath("default");
 
     public static final String DEFAULT_HOST = "https://metavm.tech/api";
 
@@ -59,7 +58,7 @@ public class Main {
     }
 
     private static void ensureLoggedIn() {
-        if(!isLoggedIn())
+        if (!isLoggedIn())
             login();
     }
 
@@ -83,34 +82,93 @@ public class Main {
         CompilerHttpUtils.post("/platform-user/enter-app/" + appId, null, new TypeReference<LoginInfo>() {
         });
         CompilerHttpUtils.setAppId(appId);
-        NncUtils.writeFile(APP_FILE, Long.toString(appId));
-        NncUtils.writeFile(TOKEN_FILE, CompilerHttpUtils.getToken());
+        NncUtils.writeFile(getAppFile(), Long.toString(appId));
+        NncUtils.writeFile(getTokenFile(), CompilerHttpUtils.getToken());
+    }
+
+    private static String getAppFile() {
+        return selectedEnv + File.separator + "app";
+    }
+
+    private static String getTokenFile() {
+        return selectedEnv + File.separator + "token";
+    }
+
+    private static String getHostFile() {
+        return selectedEnv + File.separator + "host";
     }
 
     private static boolean isLoggedIn() {
-        return CompilerHttpUtils.get("/get-login-info", new TypeReference<LoginInfo>() {}).isSuccessful();
+        return CompilerHttpUtils.get("/get-login-info", new TypeReference<LoginInfo>() {
+        }).isSuccessful();
     }
 
     private static void ensureHomeCreated() {
-        try {
-            Files.createDirectories(Paths.get(LOCAL_HOME));
-        } catch (IOException e) {
-            System.err.println("Fail to create home directory: " + LOCAL_HOME);
+        NncUtils.createDirectories(HOME);
+        NncUtils.createDirectories(getEnvPath("default"));
+        if (!new File(ENV_FILE).exists())
+            NncUtils.writeFile(ENV_FILE, "default");
+    }
+
+    private static void createEnv(String name) {
+        var path = getEnvPath(name);
+        if (new File(path).exists()) {
+            System.err.println("Env " + name + " already exists");
+            System.exit(1);
+        }
+        NncUtils.createDirectories(path);
+    }
+
+    private static void deleteEnv(String name) {
+        var path = getEnvPath(name);
+        if (NncUtils.isDirectory(path)) {
+            NncUtils.clearDirectory(path);
+        } else {
+            System.err.println("Env " + name + " does not exist");
+            System.exit(1);
         }
     }
 
+    private static void changeEnv(String name) {
+        var path = getEnvPath(name);
+        if (NncUtils.isDirectory(path)) {
+            NncUtils.writeFile(ENV_FILE, name);
+            selectedEnv = path;
+        } else {
+            System.err.println("Env " + name + " does not exist");
+            System.exit(1);
+        }
+    }
+
+    private static void initSelectedEnv() {
+        var envFile = new File(ENV_FILE);
+        if (envFile.isFile()) {
+            var env = NncUtils.readLine(envFile);
+            var path = getEnvPath(env);
+            if (NncUtils.isDirectory(path)) {
+                selectedEnv = path;
+                return;
+            }
+        }
+        selectedEnv = getEnvPath("default");
+    }
+
+    private static String getEnvPath(String name) {
+        return HOME + File.separator + name;
+    }
+
     private static void clear() {
-        NncUtils.clearDirectory(LOCAL_HOME);
+        NncUtils.clearDirectory(HOME);
         System.out.println("Clear successfully");
     }
 
     private static void changeHost(String host) {
-        NncUtils.writeFile(HOST_FILE, host);
+        NncUtils.writeFile(getHostFile(), host);
         System.out.println("Host changed");
     }
 
     private static String getHost() {
-        var hostFile = new File(HOST_FILE);
+        var hostFile = new File(getHostFile());
         if (hostFile.exists())
             return NncUtils.readLine(hostFile);
         else
@@ -118,11 +176,7 @@ public class Main {
     }
 
     private static void logout() {
-//        var authFile = new File(TOKEN_FILE);
-//        var appFile = new File(APP_FILE);
         if (isLoggedIn()) {
-            //noinspection ResultOfMethodCallIgnored
-//            authFile.delete();
             doLogout();
             System.out.println("Logged out successfully");
         } else {
@@ -131,9 +185,10 @@ public class Main {
     }
 
     private static void initializeHttpClient() {
-        var tokenFile = new File(TOKEN_FILE);
-        var appFile = new File(APP_FILE);
-        if(tokenFile.exists() && appFile.exists()) {
+        CompilerHttpUtils.setHost(getHost());
+        var tokenFile = new File(getTokenFile());
+        var appFile = new File(getAppFile());
+        if (tokenFile.exists() && appFile.exists()) {
             var appId = NncUtils.readLong(appFile);
             CompilerHttpUtils.setAppId(appId);
             CompilerHttpUtils.setToken(appId, NncUtils.readLine(tokenFile));
@@ -141,8 +196,9 @@ public class Main {
     }
 
     private static void doLogout() {
-        if(isLoggedIn())
-            CompilerHttpUtils.post("/logout", null, new TypeReference<Void>() {});
+        if (isLoggedIn())
+            CompilerHttpUtils.post("/logout", null, new TypeReference<Void>() {
+            });
     }
 
     private static void usage() {
@@ -152,6 +208,10 @@ public class Main {
         System.out.println("metavm host <host>");
         System.out.println("metavm login");
         System.out.println("metavm logout");
+        System.out.println("metavm env");
+        System.out.println("metavm create-env <env>");
+        System.out.println("metavm change-env <env>");
+        System.out.println("metavm delete-env <env>");
     }
 
     public static boolean isMavenProject() {
@@ -164,6 +224,7 @@ public class Main {
             return;
         }
         ensureHomeCreated();
+        initSelectedEnv();
         initializeHttpClient();
         String command = args[0];
         switch (command) {
@@ -177,6 +238,35 @@ public class Main {
             }
             case "login" -> login();
             case "logout" -> logout();
+            case "env" -> {
+                var selected = NncUtils.readLine(ENV_FILE);
+                var home = new File(HOME);
+                for (File file : Objects.requireNonNull(home.listFiles())) {
+                    if (file.isDirectory())
+                        System.out.println(file.getName() + (file.getName().equals(selected) ? " *" : ""));
+                }
+            }
+            case "create-env" -> {
+                if (args.length < 2) {
+                    usage();
+                    return;
+                }
+                createEnv(args[1]);
+            }
+            case "change-env" -> {
+                if (args.length < 2) {
+                    usage();
+                    return;
+                }
+                changeEnv(args[1]);
+            }
+            case "delete-env" -> {
+                if (args.length < 2) {
+                    usage();
+                    return;
+                }
+                deleteEnv(args[1]);
+            }
             case "deploy" -> {
                 var sourceRoot = args.length > 1 ? args[1] : (isMavenProject() ? "src/main/java" : "src");
                 var f = new File(sourceRoot);
@@ -186,13 +276,12 @@ public class Main {
                 }
                 var typeClient = new HttpTypeClient();
                 ensureLoggedIn();
-                CompilerHttpUtils.host = getHost();
-                logger.info("Host: " + CompilerHttpUtils.host);
-                logger.info("Application ID: {}", NncUtils.readLong(APP_FILE));
-                var main = new Main(LOCAL_HOME,
+                logger.info("Host: " + CompilerHttpUtils.getHost());
+                logger.info("Application ID: {}", NncUtils.readLong(getAppFile()));
+                var main = new Main(selectedEnv,
                         sourceRoot,
-                        NncUtils.readLong(APP_FILE),
-                        NncUtils.readLine(TOKEN_FILE),
+                        NncUtils.readLong(getAppFile()),
+                        NncUtils.readLine(getTokenFile()),
                         typeClient,
                         new DirectoryAllocatorStore("/not_exist"),
                         new FileColumnStore("/not_exist"),
