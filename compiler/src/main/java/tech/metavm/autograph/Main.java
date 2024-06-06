@@ -129,7 +129,7 @@ public class Main {
         }
     }
 
-    private static void changeEnv(String name) {
+    private static void setEnv(String name) {
         var path = getEnvPath(name);
         if (NncUtils.isDirectory(path)) {
             NncUtils.writeFile(ENV_FILE, name);
@@ -210,7 +210,7 @@ public class Main {
         System.out.println("metavm logout");
         System.out.println("metavm env");
         System.out.println("metavm create-env <env>");
-        System.out.println("metavm change-env <env>");
+        System.out.println("metavm set-env <env>");
         System.out.println("metavm delete-env <env>");
     }
 
@@ -253,12 +253,12 @@ public class Main {
                 }
                 createEnv(args[1]);
             }
-            case "change-env" -> {
+            case "set-env" -> {
                 if (args.length < 2) {
                     usage();
                     return;
                 }
-                changeEnv(args[1]);
+                setEnv(args[1]);
             }
             case "delete-env" -> {
                 if (args.length < 2) {
