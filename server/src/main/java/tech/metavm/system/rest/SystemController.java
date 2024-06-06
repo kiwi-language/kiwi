@@ -80,8 +80,8 @@ public class SystemController {
         clearDirectory(METAVM_HOME);
         clearDirectory(METAVM_HOME_1);
         clearDirectory(METAVM_HOME_2);
-        NncUtils.writeFile(AUTH_FILE, "demo\n123456");
-        NncUtils.writeFile(HOST_FILE, "http://localhost:8080");
+//        NncUtils.writeFile(AUTH_FILE, "demo\n123456");
+//        NncUtils.writeFile(HOST_FILE, "http://localhost:8080");
         ContextUtil.setUserId(Id.parse(createAppResult.ownerId()));
         var appToken = platformUserManager.enterApp(createAppResult.appId());
         Tokens.setToken(response, createAppResult.appId(), appToken.token());

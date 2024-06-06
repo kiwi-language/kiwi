@@ -18,6 +18,7 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Type;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
@@ -138,7 +139,7 @@ public class NncUtils {
     }
 
     public static String readLine(String path) {
-        return readLine(path);
+        return readLine(new File(path));
     }
 
     public static String readLine(File file) {
@@ -1757,4 +1758,15 @@ public class NncUtils {
             return serializedLambda;
         }
     }
+
+    public static String getSchemaAndHost(String url) {
+        try {
+            var u = new URI(url);
+            return u.getScheme() + "://" + u.getHost();
+        }
+        catch (Exception e) {
+            throw new InternalException("Invalid URL: " + url);
+        }
+    }
+
 }

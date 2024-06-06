@@ -1,13 +1,14 @@
 package tech.metavm.util;
 
-import tech.metavm.autograph.TypeClient;
 import tech.metavm.user.rest.dto.LoginInfo;
 import tech.metavm.user.rest.dto.LoginRequest;
 
 public class LoginUtils {
 
-    public static void loginWithAuthFile(long appId, AuthConfig authConfig, TypeClient typeClient) {
-        typeClient.login(appId, authConfig.loginName(), authConfig.password());
+    public static void loginWithAuthFile(long appId, String token) {
+//        typeClient.login(appId, authConfig.loginName(), authConfig.password());
+        CompilerHttpUtils.setAppId(appId);
+        CompilerHttpUtils.setToken(appId, token);
     }
 
     public static void login(long appId, String loginName, String password) {

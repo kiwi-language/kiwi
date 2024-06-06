@@ -179,7 +179,7 @@ public abstract class CompilerTestBase extends TestCase  {
 
     protected List<String> compile(String sourceRoot) {
         ContextUtil.resetProfiler();
-        return new Main(HOME, sourceRoot, APP_ID, AUTH_CONFIG, typeClient, allocatorStore, columnStore, typeTagStore).run();
+        return new Main(HOME, sourceRoot, APP_ID, "__fake_token__", typeClient, allocatorStore, columnStore, typeTagStore).run();
     }
 
 

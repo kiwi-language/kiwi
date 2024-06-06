@@ -61,7 +61,7 @@ public class Tokens {
         setTokenCookie(servletResponse, getTokenCookieName(appId), token);
     }
 
-    private static String getTokenCookieName(long appId) {
+    public static String getTokenCookieName(long appId) {
         return String.format("__token_%d__", appId);
     }
 
