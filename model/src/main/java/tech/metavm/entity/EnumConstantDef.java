@@ -21,7 +21,7 @@ public class EnumConstantDef<T extends Enum<?>> {
         this.enumConstant = enumDef.createEnumConstant(value, enumField, getId);
         this.instance = enumConstant.getInstance();
         EnumConstant annotation = enumField.getAnnotation(EnumConstant.class);
-        this.name = annotation != null ? annotation.value() : value.name();
+        this.name = annotation != null && !annotation.value().isEmpty() ? annotation.value() : value.name();
         ordinal = value.ordinal();
         this.value = value;
         enumDef.addEnumConstantDef(this);

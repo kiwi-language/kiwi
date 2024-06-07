@@ -202,14 +202,14 @@ public class EntityUtils {
 
     public static String getMetaFieldName(Field javaField) {
         if (ENUM_NAME_FIELD.equals(javaField)) {
-            return "名称";
+            return "name";
         }
         if (ENUM_ORDINAL_FIELD.equals(javaField)) {
-            return "序号";
+            return "ordinal";
         }
         EntityField entityField = javaField.getAnnotation(EntityField.class);
         ChildEntity childEntity = javaField.getAnnotation(ChildEntity.class);
-        return NncUtils.firstNonNull(
+        return NncUtils.firstNonBlank(
                 NncUtils.get(entityField, EntityField::value),
                 NncUtils.get(childEntity, ChildEntity::value),
                 javaField.getName()

@@ -477,6 +477,15 @@ public class NncUtils {
         return t1 != null ? t1 : (t2 != null ? t2 : t3);
     }
 
+    public static String firstNonBlank(String s1, String s2, String s3) {
+        if(!isBlank(s1))
+            return s1;
+        if(!isBlank(s2))
+            return s2;
+        if(!isBlank(s3))
+            return s3;
+        throw new NullPointerException("All strings are either null or empty");
+    }
 
     public static <T> T firstNonNull(T t1, T t2, T t3, T t4) {
         if (t1 == null && t2 == null && t3 == null && t4 == null) {
@@ -494,6 +503,10 @@ public class NncUtils {
     @SuppressWarnings("unused")
     public static boolean isTrue(Boolean bool) {
         return Boolean.TRUE.equals(bool);
+    }
+
+    public static boolean isNotBlank(String s) {
+        return s != null && !s.isEmpty();
     }
 
     public static boolean isBlank(String str) {

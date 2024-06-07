@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface ChildEntity {
 
-    String value();
+    String value() default "";
 
     boolean lazy() default false;
 

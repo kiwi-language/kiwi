@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface EntityType {
 
-    String value();
+    String value() default "";
 
     boolean compiled() default false;
 

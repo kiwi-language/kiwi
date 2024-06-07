@@ -683,13 +683,11 @@ public class TranspileUtil {
 
     public static String getBizFieldName(PsiVariable psiField) {
         String bizName = tryGetNameFromAnnotation(psiField, EntityField.class);
-        if (bizName != null) {
+        if (bizName != null)
             return bizName;
-        }
         String childName = tryGetNameFromAnnotation(psiField, ChildEntity.class);
-        if (childName != null) {
+        if (childName != null)
             return childName;
-        }
         return psiField.getName();
     }
 
@@ -756,7 +754,7 @@ public class TranspileUtil {
 
     public static String getBizClassName(PsiClass klass) {
         String bizName = (String) getEntityAnnotationAttr(klass, "value");
-        return bizName != null ? bizName : klass.getName();
+        return NncUtils.isNotBlank(bizName) ? bizName : klass.getName();
     }
 
     public static boolean isStruct(PsiClass psiClass) {
@@ -797,7 +795,8 @@ public class TranspileUtil {
     }
 
     private static String tryGetNameFromAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
-        return (String) getAnnotationAttr(element, annotationClass, "value");
+        var value =  (String) getAnnotationAttr(element, annotationClass, "value");
+        return NncUtils.isNotBlank(value) ? value : null;
     }
 
 
