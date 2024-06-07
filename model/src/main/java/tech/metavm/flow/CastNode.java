@@ -15,7 +15,7 @@ import tech.metavm.util.Instances;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType("类型转换节点")
+@EntityType
 public class CastNode extends NodeRT {
 
     public static CastNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -33,7 +33,6 @@ public class CastNode extends NodeRT {
         return node;
     }
 
-    @EntityField("值")
     private @NotNull Value object;
 
     public CastNode(Long tmpId, String name, @Nullable String code, @NotNull Type outputType,

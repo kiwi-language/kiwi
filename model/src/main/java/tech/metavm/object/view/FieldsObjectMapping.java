@@ -19,19 +19,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("字段对象映射")
+@EntityType
 public class FieldsObjectMapping extends ObjectMapping {
 
-    @ChildEntity("字段列表")
+    @ChildEntity
     private final ChildArray<FieldMapping> fieldMappings = addChild(new ChildArray<>(FieldMapping.class), "fieldMappings");
-    @ChildEntity("内置目标类型")
+    @ChildEntity
     @Nullable
     @CopyIgnore
     private Klass builtinTargetType;
-    @EntityField("读取流程")
     @Nullable
     private Method readMethod;
-    @EntityField("写入流程")
     @Nullable
     private Method writeMethod;
 

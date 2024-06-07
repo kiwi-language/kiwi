@@ -13,17 +13,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("类型变量")
+@EntityType
 public class TypeVariable extends TypeDef implements LocalKey, GenericElement, GlobalKey, LoadAware {
 
-    @EntityField(value = "name", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
     private @Nullable String code;
-    @ChildEntity("类型上界")
+    @ChildEntity
     private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");
-    @EntityField("范型声明")
     private @NotNull GenericDeclaration genericDeclaration;
-    @EntityField("模板")
     @CopyIgnore
     @Nullable
     private TypeVariable copySource;

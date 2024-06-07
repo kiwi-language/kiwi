@@ -13,12 +13,10 @@ import tech.metavm.object.view.rest.dto.ComputedFieldMappingParam;
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
-@EntityType("计算视图字段映射")
+@EntityType
 public class ComputedFieldMapping extends FieldMapping {
 
-    @EntityField("值")
     private Value value;
-    @EntityField("模板")
     @Nullable
     @CopyIgnore
     private final ComputedFieldMapping template;

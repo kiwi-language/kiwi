@@ -7,7 +7,7 @@ import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
-@EntityType("元素类型")
+@EntityType
 public enum ElementKind {
 
     TYPE(1, Type.class),

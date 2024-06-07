@@ -7,30 +7,26 @@ import tech.metavm.flow.rest.ValueKindCodes;
 
 import java.util.Arrays;
 
-@EntityType("值类别")
+@EntityType
 public enum ValueKind {
-    @EnumConstant("空")
     NULL(ValueKindCodes.NULL) {
         @Override
         public Value createValue(Expression expression) {
             return Values.nullValue();
         }
     },
-    @EnumConstant("常量")
     CONSTANT(ValueKindCodes.CONSTANT) {
         @Override
         public Value createValue(Expression expression) {
             return Values.constant(expression);
         }
     },
-    @EnumConstant("引用")
     REFERENCE(ValueKindCodes.REFERENCE) {
         @Override
         public Value createValue(Expression expression) {
             return Values.reference(expression);
         }
     },
-    @EnumConstant("表达式")
     EXPRESSION(ValueKindCodes.EXPRESSION) {
         @Override
         public Value createValue(Expression expression) {

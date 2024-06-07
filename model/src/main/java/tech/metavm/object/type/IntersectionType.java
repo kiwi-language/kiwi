@@ -18,7 +18,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 
-@EntityType("类型交集")
+@EntityType
 public class IntersectionType extends CompositeType {
 
     private final ValueArray<Type> types;

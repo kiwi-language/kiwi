@@ -11,13 +11,10 @@ import tech.metavm.util.ValueUtil;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("二元表达式")
+@EntityType
 public class BinaryExpression extends Expression {
-    @EntityField("运算符")
     private final BinaryOperator operator;
-    @EntityField("左表达式")
     private final Expression left;
-    @EntityField("右表达式")
     private final Expression right;
 
     public BinaryExpression(BinaryOperator operator, Expression left, Expression right) {

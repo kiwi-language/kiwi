@@ -7,7 +7,7 @@ import tech.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 
 import java.util.Objects;
 
-@EntityType("ObjectMappingRef")
+@EntityType
 public class ObjectMappingRef extends ValueElement implements Reference {
 
     public static ObjectMappingRef create(ObjectMappingRefDTO sourceMappingRefDTO, IEntityContext context) {

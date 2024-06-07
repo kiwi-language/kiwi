@@ -16,13 +16,10 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType("更新字段")
+@EntityType
 public class UpdateField extends Entity implements LocalKey {
-    @EntityField("字段引用")
     private final FieldRef fieldRef;
-    @EntityField("操作")
     private UpdateOp op;
-    @EntityField("值")
     private Value value;
 
     public UpdateField(FieldRef fieldRef, UpdateOp op, Value value) {

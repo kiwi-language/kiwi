@@ -13,7 +13,7 @@ import tech.metavm.object.type.Type;
 import tech.metavm.object.view.ObjectMappingRef;
 import tech.metavm.util.AssertUtils;
 
-@EntityType("反映射节点")
+@EntityType
 public class UnmapNode extends NodeRT {
 
     public static UnmapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -29,9 +29,7 @@ public class UnmapNode extends NodeRT {
         return node;
     }
 
-    @EntityField("视图")
     private Value view;
-    @EntityField("映射")
     private ObjectMappingRef mappingRef;
 
     public UnmapNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope,

@@ -12,13 +12,13 @@ import tech.metavm.util.BusinessException;
 
 import java.util.List;
 
-@EntityType("平台用户")
+@EntityType
 public class PlatformUser extends User {
 
     public static final IndexDef<PlatformUser> IDX_APP =
             IndexDef.create(PlatformUser.class, "applications");
 
-    @ChildEntity("应用列表")
+    @ChildEntity
     private final ReadWriteArray<Application> applications =
             addChild(new ReadWriteArray<>(Application.class), "applications");
 

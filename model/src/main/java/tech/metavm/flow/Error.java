@@ -3,16 +3,13 @@ package tech.metavm.flow;
 import tech.metavm.common.ErrorDTO;
 import tech.metavm.entity.*;
 
-@EntityType("错误")
+@EntityType
 public class Error extends Entity {
 
-    @EntityField("元素")
     private final Element element;
 
-    @EntityField("级别")
     private final ErrorLevel level;
 
-    @EntityField("信息")
     private final String message;
 
     public Error(Element element, ErrorLevel level, String message) {

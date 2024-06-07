@@ -8,12 +8,10 @@ import tech.metavm.object.instance.core.Instance;
 
 import java.util.Objects;
 
-@EntityType("实参")
+@EntityType
 public class Argument extends Element implements LocalKey, tech.metavm.entity.Value {
 
-    @EntityField("形参引用")
     private final ParameterRef parameterRef;
-    @EntityField("值")
     private final Value value;
 
     public Argument(Long tmpId, ParameterRef parameterRef, Value value) {

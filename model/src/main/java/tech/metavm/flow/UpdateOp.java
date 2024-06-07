@@ -4,13 +4,10 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EnumConstant;
 import tech.metavm.util.NncUtils;
 
-@EntityType("更新操作")
+@EntityType
 public enum UpdateOp {
-    @EnumConstant("设为")
     SET(1, "="),
-    @EnumConstant("增加")
     INC(2, "+="),
-    @EnumConstant("减少")
     DEC(3, "-="),
 
     ;

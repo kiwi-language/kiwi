@@ -13,7 +13,7 @@ import tech.metavm.object.type.Type;
 import tech.metavm.object.view.ObjectMappingRef;
 import tech.metavm.util.AssertUtils;
 
-@EntityType("映射节点")
+@EntityType
 public class MapNode extends NodeRT {
 
     public static MapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -29,9 +29,7 @@ public class MapNode extends NodeRT {
         return node;
     }
 
-    @EntityField("来源")
     private Value source;
-    @EntityField("映射")
     private ObjectMappingRef mappingRef;
 
     public MapNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope,

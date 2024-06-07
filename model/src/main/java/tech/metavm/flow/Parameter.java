@@ -9,21 +9,17 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType("参数")
+@EntityType
 public class Parameter extends Element implements GenericElement, LocalKey {
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
-    @EntityField(value = "编号", asKey = true)
+    @EntityField(asKey = true)
     @Nullable
     private String code;
-    @EntityField("类型")
     private Type type;
-    @EntityField("条件")
     @Nullable
     private Value condition;
-    @EntityField("可调用")
     private Callable callable;
-    @EntityField("模板")
     @Nullable
     @CopyIgnore
     private Parameter copySource;

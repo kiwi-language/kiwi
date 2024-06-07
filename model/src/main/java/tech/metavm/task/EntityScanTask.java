@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@EntityType("实体扫描任务")
+@EntityType
 public abstract class EntityScanTask<T> extends ScanTask {
 
     private final Class<T> entityType;

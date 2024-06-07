@@ -24,7 +24,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-@EntityType("ClassType")
+@EntityType
 public class ClassType extends Type implements ISubstitutor {
 
     public static final Logger logger = LoggerFactory.getLogger(ClassType.class);

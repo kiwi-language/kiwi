@@ -15,55 +15,31 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-@EntityType("类型分类")
+@EntityType
 public enum TypeCategory {
-    @EnumConstant("类")
     CLASS(TypeCategoryCodes.CLASS, ColumnKind.REFERENCE, ClassTypeParam.class, 2),
-    @EnumConstant("枚举")
     ENUM(TypeCategoryCodes.ENUM, ColumnKind.REFERENCE, ClassTypeParam.class, 2),
-    @EnumConstant("接口")
     INTERFACE(TypeCategoryCodes.INTERFACE, ColumnKind.UNSPECIFIED, ClassTypeParam.class, 3),
-    @EnumConstant("值")
     VALUE(TypeCategoryCodes.VALUE, ColumnKind.UNSPECIFIED, ClassTypeParam.class,2 ),
-    @EnumConstant("读写数组")
     READ_WRITE_ARRAY(TypeCategoryCodes.READ_WRITE_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
-    @EnumConstant("只读数组")
     READ_ONLY_ARRAY(TypeCategoryCodes.READ_ONLY_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
-    @EnumConstant("子对象数组")
     CHILD_ARRAY(TypeCategoryCodes.CHILD_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
-    @EnumConstant("值数值")
     VALUE_ARRAY(TypeCategoryCodes.VALUE_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
-    @EnumConstant("并集")
     UNION(TypeCategoryCodes.UNION, ColumnKind.UNSPECIFIED, UnionTypeParam.class, 5),
-    @EnumConstant("空")
     NULL(TypeCategoryCodes.NULL, ColumnKind.UNSPECIFIED, PrimitiveTypeParam.class, 5),
-    @EnumConstant("字符串")
     STRING(TypeCategoryCodes.STRING, ColumnKind.STRING, PrimitiveTypeParam.class, 5),
-    @EnumConstant("浮点数")
     DOUBLE(TypeCategoryCodes.DOUBLE, ColumnKind.DOUBLE, PrimitiveTypeParam.class, 5),
-    @EnumConstant("整数")
     LONG(TypeCategoryCodes.LONG, ColumnKind.INT, PrimitiveTypeParam.class, 5),
-    @EnumConstant("布尔")
     BOOLEAN(TypeCategoryCodes.BOOLEAN, ColumnKind.BOOL, PrimitiveTypeParam.class, 5),
-    @EnumConstant("时间")
     TIME(TypeCategoryCodes.TIME, ColumnKind.INT, PrimitiveTypeParam.class, 5),
-    @EnumConstant("任意类型")
     ANY(TypeCategoryCodes.OBJECT, ColumnKind.UNSPECIFIED, 5),
-    @EnumConstant("密码")
     PASSWORD(TypeCategoryCodes.PASSWORD, ColumnKind.STRING, PrimitiveTypeParam.class, 5),
-    @EnumConstant("Void")
     VOID(TypeCategoryCodes.VOID, ColumnKind.UNSPECIFIED, PrimitiveTypeParam.class, 5),
-    @EnumConstant("类型变量")
     VARIABLE(TypeCategoryCodes.VARIABLE, ColumnKind.UNSPECIFIED, TypeVariable.class, 1),
-    @EnumConstant("类型交集")
     INTERSECTION(TypeCategoryCodes.INTERSECTION, ColumnKind.UNSPECIFIED, 4),
-    @EnumConstant("函数")
     FUNCTION(TypeCategoryCodes.FUNCTION, ColumnKind.UNSPECIFIED, FunctionTypeParam.class, 5),
-    @EnumConstant("不确定")
     UNCERTAIN(TypeCategoryCodes.UNCERTAIN, ColumnKind.UNSPECIFIED, UncertainTypeParam.class, 5),
-    @EnumConstant("不可能")
     NEVER(TypeCategoryCodes.NOTHING, ColumnKind.UNSPECIFIED, 5),
-    @EnumConstant("捕获")
     CAPTURED(TypeCategoryCodes.CAPTURED, ColumnKind.UNSPECIFIED, 5),
 
     ;

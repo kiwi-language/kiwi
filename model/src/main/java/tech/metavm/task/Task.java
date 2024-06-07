@@ -4,7 +4,7 @@ import tech.metavm.entity.*;
 
 import javax.annotation.Nullable;
 
-@EntityType("任务")
+@EntityType
 public abstract class Task extends Entity {
 
     public static final IndexDef<Task> IDX_STATE_LAST_RUN_AT = new IndexDef<>(
@@ -13,15 +13,10 @@ public abstract class Task extends Entity {
 
     protected static final int BATCH_SIZE = 1000;
 
-    @EntityField("标题")
     private final String title;
-    @EntityField("状态")
     private TaskState state = TaskState.RUNNABLE;
-    @EntityField("最近执行时间")
     private long lastRunAt;
-    @EntityField("执行次数")
     private long numRuns;
-    @EntityField("分组")
     @Nullable
     private TaskGroup group;
 

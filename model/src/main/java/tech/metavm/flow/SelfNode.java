@@ -12,7 +12,7 @@ import tech.metavm.util.ContextUtil;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType("自身节点")
+@EntityType
 public class SelfNode extends NodeRT {
 
     public static SelfNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {

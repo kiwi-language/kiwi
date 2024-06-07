@@ -4,15 +4,11 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EnumConstant;
 import tech.metavm.util.NncUtils;
 
-@EntityType("ClassKind")
+@EntityType
 public enum ClassKind {
-    @EnumConstant("CLASS")
     CLASS(1, TypeCategory.CLASS),
-    @EnumConstant("ENUM")
     ENUM(2, TypeCategory.ENUM),
-    @EnumConstant("INTERFACE")
     INTERFACE(3, TypeCategory.INTERFACE),
-    @EnumConstant("VALUE")
     VALUE(4, TypeCategory.VALUE)
     ;
 

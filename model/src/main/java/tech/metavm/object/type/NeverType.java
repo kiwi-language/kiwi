@@ -14,7 +14,7 @@ import tech.metavm.util.InstanceOutput;
 
 import java.util.function.Function;
 
-@EntityType("不可能类型")
+@EntityType
 public class NeverType extends Type {
 
     public NeverType() {

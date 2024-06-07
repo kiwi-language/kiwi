@@ -6,7 +6,7 @@ import tech.metavm.entity.IEntityContext;
 
 import java.util.List;
 
-@EntityType("全局任务")
+@EntityType
 public abstract class GlobalTask extends EntityScanTask<Application> {
 
     protected GlobalTask(String title) {

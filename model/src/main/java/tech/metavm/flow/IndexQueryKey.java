@@ -12,7 +12,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
-@EntityType("索引查询键")
+@EntityType
 public class IndexQueryKey extends Entity implements Value {
 
     public static IndexQueryKey create(IndexQueryKeyDTO indexQueryKeyDTO, IEntityContext context, ParsingContext parsingContext) {
@@ -22,7 +22,6 @@ public class IndexQueryKey extends Entity implements Value {
         );
     }
 
-    @EntityField("索引")
     private final Index index;
 
     private final ValueArray<IndexQueryKeyItem> items;

@@ -21,7 +21,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.*;
 
-@EntityType("合并节点")
+@EntityType
 public class MergeNode extends ChildTypeNode {
 
     public static MergeNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -75,10 +75,10 @@ public class MergeNode extends ChildTypeNode {
         return expressionTypes != null ? expressionTypes : ExpressionTypeMap.EMPTY;
     }
 
-    @ChildEntity("分支列表")
+    @ChildEntity
     private final ReadWriteArray<Branch> branches = addChild(new ReadWriteArray<>(Branch.class), "branches");
 
-    @ChildEntity("字段列表")
+    @ChildEntity
     private final ChildArray<MergeNodeField> fields = addChild(new ChildArray<>(MergeNodeField.class), "fields");
 
     public MergeNode(Long tmpId, String name, @Nullable String code, BranchNode branchNode, Klass outputType, ScopeRT scope) {

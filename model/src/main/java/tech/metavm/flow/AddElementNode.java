@@ -15,7 +15,7 @@ import tech.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
 
-@EntityType("添加数组元素节点")
+@EntityType
 public class AddElementNode extends NodeRT {
 
     public static AddElementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -31,9 +31,7 @@ public class AddElementNode extends NodeRT {
         return node;
     }
 
-    @EntityField("数组")
     private Value array;
-    @EntityField("元素")
     private Value element;
 
     public AddElementNode(Long tmpId, String name, @Nullable String code,  NodeRT previous, ScopeRT scope, Value array, Value element) {

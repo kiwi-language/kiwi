@@ -8,30 +8,26 @@ import tech.metavm.util.Password;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType("用户")
+@EntityType
 public class User extends Entity {
 
     public static final IndexDef<User> IDX_PLATFORM_USER_ID = IndexDef.createUnique(User.class, "platformUserId");
 
     public static final IndexDef<User> IDX_LOGIN_NAME = IndexDef.createUnique(User.class, "loginName");
 
-    @EntityField("账号")
     private final String loginName;
 
-    @EntityField("密码")
     private Password password;
 
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
 
-    @EntityField("状态")
     private UserState state = UserState.ACTIVE;
 
-    @EntityField("平台用户ID")
     @Nullable
     private String platformUserId;
 
-    @ChildEntity("角色列表")
+    @ChildEntity
     private final ReadWriteArray<Role> roles = addChild(new ReadWriteArray<>(Role.class), "roles");
 
 

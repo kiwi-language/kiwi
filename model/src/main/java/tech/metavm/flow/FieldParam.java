@@ -14,7 +14,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.Objects;
 
-@EntityType("字段值")
+@EntityType
 public class FieldParam extends Entity implements LocalKey {
 
     public static FieldParam create(FieldParamDTO fieldParamDTO,
@@ -25,9 +25,7 @@ public class FieldParam extends Entity implements LocalKey {
         );
     }
 
-    @EntityField("字段引用")
     private final FieldRef fieldRef;
-    @EntityField("值")
     private Value value;
 
     public FieldParam(FieldRef fieldRef, ValueDTO valueDTO, ParsingContext parsingContext) {

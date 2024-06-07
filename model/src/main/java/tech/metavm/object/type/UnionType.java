@@ -16,7 +16,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 
-@EntityType("联合类型")
+@EntityType
 public class UnionType extends CompositeType {
 
     public static UnionType create(Type...types) {

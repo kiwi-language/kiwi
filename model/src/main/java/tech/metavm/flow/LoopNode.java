@@ -23,14 +23,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@EntityType("循环节点")
+@EntityType
 public abstract class LoopNode extends ScopeNode {
 
-    @ChildEntity("字段列表")
+    @ChildEntity
     private final ChildArray<LoopField> fields = addChild(new ChildArray<>(LoopField.class), "fields");
-    @EntityField("条件")
     private Value condition;
-    @ChildEntity("klass")
+    @ChildEntity
     private final Klass klass;
 
     protected LoopNode(Long tmpId, String name, @Nullable String code, @NotNull Klass klass, NodeRT previous,

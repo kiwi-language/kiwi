@@ -6,7 +6,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 
-@EntityType("代码仓库")
+@EntityType
 public class CodeRepo extends Entity {
 
     public static CodeRepo create(CodeRepoDTO codeRepoDTO, IEntityContext context) {
@@ -15,7 +15,6 @@ public class CodeRepo extends Entity {
         return codeRepo;
     }
 
-    @EntityField("地址")
     private String url;
 
     public CodeRepo(String url) {

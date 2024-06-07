@@ -12,7 +12,7 @@ import tech.metavm.util.NncUtils;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("MethodRef")
+@EntityType
 public class MethodRef extends FlowRef implements PropertyRef {
 
     public static MethodRef create(MethodRefDTO methodRefDTO, IEntityContext context) {
@@ -23,7 +23,6 @@ public class MethodRef extends FlowRef implements PropertyRef {
         );
     }
 
-    @EntityField("declaringType")
     private final ClassType declaringType;
 
     public MethodRef(ClassType declaringType, Method rawFlow, List<Type> typeArguments) {

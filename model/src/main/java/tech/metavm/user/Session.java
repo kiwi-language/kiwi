@@ -9,26 +9,20 @@ import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.UUID;
 
-@EntityType("会话")
+@EntityType
 public class Session extends Entity {
 
     public static final IndexDef<Session> IDX_USER_STATE = IndexDef.create(Session.class, "user", "state");
     public static final IndexDef<Session> IDX_TOKEN = IndexDef.createUnique(Session.class, "token");
 
-    @EntityField("令牌")
     private final String token;
-    @EntityField("用户")
     private final User user;
-    @EntityField("创建时间")
     private final Date createdAt;
-    @EntityField("关闭时间")
     @Nullable
     private Date closedAt;
-    @EntityField("自动关闭时间")
     private Date autoCloseAt;
-    @EntityField("状态")
     private SessionState state = SessionState.ACTIVE;
-    @ChildEntity("会话条目")
+    @ChildEntity
     private final ReadWriteArray<SessionEntry> entries = addChild(new ReadWriteArray<>(SessionEntry.class), "entries");
 
     public Session(User user, Date autoCloseAt) {

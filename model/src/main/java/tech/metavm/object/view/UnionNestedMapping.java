@@ -14,12 +14,12 @@ import tech.metavm.util.NncUtils;
 import java.util.*;
 import java.util.function.Supplier;
 
-@EntityType("联合嵌套映射")
+@EntityType
 public class UnionNestedMapping extends NestedMapping {
 
     private final UnionType sourceType;
     private final UnionType targetType;
-    @ChildEntity("成员嵌套映射列表")
+    @ChildEntity
     private final ChildArray<NestedMapping> memberNestedMappings =
             addChild(new ChildArray<>(NestedMapping.class), "memberNestedMappings");
 

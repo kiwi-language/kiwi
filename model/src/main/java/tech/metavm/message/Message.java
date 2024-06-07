@@ -11,20 +11,16 @@ import tech.metavm.util.Instances;
 
 import javax.annotation.Nullable;
 
-@EntityType("站内信")
+@EntityType
 public class Message extends Entity {
 
     public static final IndexDef<Message> IDX_TARGET = IndexDef.create(Message.class, "target");
 
-    @EntityField("接受者")
     private final User receiver;
-    @EntityField(value = "标题", asTitle = true)
+    @EntityField(asTitle = true)
     private final String title;
-    @EntityField("类型")
     private final MessageKind kind;
-    @EntityField("已读")
     private boolean read;
-    @EntityField("目标")
     private Instance target;
 
     public Message(User receiver, String title, MessageKind kind, Instance target) {

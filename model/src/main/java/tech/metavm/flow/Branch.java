@@ -9,7 +9,7 @@ import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
-@EntityType("分支")
+@EntityType
 public class Branch extends Element implements LocalKey {
 
     private static final long PRESELECTED_BRANCH_ID = 10000;
@@ -34,17 +34,12 @@ public class Branch extends Element implements LocalKey {
         );
     }
 
-    @EntityField("ID")
     private final long index;
-    @EntityField("分支节点")
     private final BranchNode owner;
-    @ChildEntity("范围")
+    @ChildEntity
     private final ScopeRT scope;
-    @EntityField("条件")
     private Value condition;
-    @EntityField("是否默认")
     private final boolean preselected;
-    @EntityField("是否为出口")
     private final boolean isExit;
 
     public Branch(long index, Value condition, boolean preselected, boolean isExit, BranchNode owner) {

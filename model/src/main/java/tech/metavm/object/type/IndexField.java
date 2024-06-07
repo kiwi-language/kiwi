@@ -16,7 +16,7 @@ import tech.metavm.util.InternalException;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType("唯一约束项")
+@EntityType
 public class IndexField extends Entity implements LocalKey {
 
     public static IndexField createFieldItem(Index constraint, Field field) {
@@ -28,14 +28,11 @@ public class IndexField extends Entity implements LocalKey {
         );
     }
 
-    @EntityField("唯一约束")
     private final Index index;
-    @EntityField("名称")
     private String name;
-    @EntityField(value = "编号", asKey = true)
+    @EntityField(asKey = true)
     @Nullable
     private String code;
-    @EntityField("值")
     private Value value;
 
     public IndexField(Index index, String name, @Nullable String code, Value value) {

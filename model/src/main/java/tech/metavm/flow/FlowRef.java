@@ -12,7 +12,7 @@ import tech.metavm.object.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("FlowRef")
+@EntityType
 public abstract class FlowRef extends CallableRef {
 
     public static FlowRef create(FlowRefDTO flowRefDTO, IEntityContext context) {

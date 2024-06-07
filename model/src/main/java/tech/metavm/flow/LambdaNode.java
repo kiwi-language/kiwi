@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
-@EntityType("Lambda节点")
+@EntityType
 public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
     public static LambdaNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -37,13 +37,10 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
         return node;
     }
 
-    @ChildEntity("参数列表")
+    @ChildEntity
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
-    @EntityField("返回类型")
     private Type returnType;
-    @EntityField("functionType")
     private FunctionType functionType;
-    @EntityField("函数接口")
     private @Nullable ClassType functionalInterface;
 
     private transient ClassType functionInterfaceImpl;

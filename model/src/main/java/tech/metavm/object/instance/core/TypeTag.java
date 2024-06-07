@@ -3,7 +3,7 @@ package tech.metavm.object.instance.core;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.type.TypeCategory;
 
-@EntityType("类型标签")
+@EntityType
 public enum TypeTag {
     CLASS(1),
     ARRAY(2),

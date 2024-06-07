@@ -16,12 +16,11 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
-@EntityType("索引")
+@EntityType
 public class Index extends Constraint implements LocalKey {
 
-    @ChildEntity("索引字段列表")
+    @ChildEntity
     private final ChildArray<IndexField> fields = addChild(new ChildArray<>(IndexField.class), "fields");
-    @EntityField("是否唯一")
     private final boolean unique;
     private transient IndexDef<?> indexDef;
 

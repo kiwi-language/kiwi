@@ -7,7 +7,7 @@ import tech.metavm.flow.rest.LambdaNodeRefDTO;
 
 import java.util.Objects;
 
-@EntityType("LambdaNodeRef")
+@EntityType
 public class LambdaNodeRef extends CallableRef  {
 
     private final LambdaNode lambdaNode;

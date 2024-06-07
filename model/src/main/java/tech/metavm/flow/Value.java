@@ -11,13 +11,11 @@ import tech.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 
-@EntityType("流程值")
+@EntityType
 public abstract class Value extends Element implements tech.metavm.entity.Value {
 
-    @EntityField("类别")
     protected final ValueKind kind;
 
-    @EntityField("表达式")
     protected final Expression expression;
 
     public Value(ValueKind kind, Expression expression) {

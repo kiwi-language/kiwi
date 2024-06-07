@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.user.Session;
 
-@EntityType("关闭全部会话任务")
+@EntityType
 public class CloseAllSessionsTask extends Task {
 
     private final long appId;

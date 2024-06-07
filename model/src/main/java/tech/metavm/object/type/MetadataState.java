@@ -2,7 +2,7 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.EntityType;
 
-@EntityType("元数据状态")
+@EntityType
 public enum MetadataState {
     INITIALIZING(0),
     READY(1),

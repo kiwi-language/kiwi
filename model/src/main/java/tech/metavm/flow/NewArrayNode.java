@@ -14,7 +14,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType("创建数组节点")
+@EntityType
 public class NewArrayNode extends NodeRT implements NewNode {
 
     public static NewArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -33,11 +33,9 @@ public class NewArrayNode extends NodeRT implements NewNode {
         return node;
     }
 
-    @EntityField("值")
     @Nullable
     private Value value;
 
-    @EntityField("父引用")
     @Nullable
     private ParentRef parentRef;
 

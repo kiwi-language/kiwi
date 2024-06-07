@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-@EntityType("变量类型")
+@EntityType
 public class VariableType extends Type implements IVariableType {
 
     private final TypeVariable variable;

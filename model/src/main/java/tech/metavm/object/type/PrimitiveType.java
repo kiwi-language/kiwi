@@ -15,14 +15,13 @@ import tech.metavm.util.InstanceOutput;
 import java.util.Objects;
 import java.util.function.Function;
 
-@EntityType("基础类型")
+@EntityType
 public class PrimitiveType extends Type {
 
     public static PrimitiveType createNull() {
         return new PrimitiveType(PrimitiveKind.NULL);
     }
 
-    @EntityField("分类")
     private final PrimitiveKind kind;
 
     public PrimitiveType(PrimitiveKind kind) {

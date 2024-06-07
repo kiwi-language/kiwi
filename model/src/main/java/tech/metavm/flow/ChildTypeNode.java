@@ -10,10 +10,10 @@ import tech.metavm.object.type.rest.dto.TypeDTO;
 
 import javax.annotation.Nullable;
 
-@EntityType("子类型节点")
+@EntityType
 public abstract class ChildTypeNode extends NodeRT {
 
-    @ChildEntity("节点类型")
+    @ChildEntity
     private final Klass klass;
 
     protected ChildTypeNode(Long tmpId, String name, @Nullable String code, @NotNull Klass klass, NodeRT previous, ScopeRT scope) {

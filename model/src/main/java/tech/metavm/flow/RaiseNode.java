@@ -13,7 +13,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType("抛出节点")
+@EntityType
 public class RaiseNode extends NodeRT {
 
     public static RaiseNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
@@ -31,12 +31,10 @@ public class RaiseNode extends NodeRT {
         return node;
     }
 
-    @EntityField("错误信息")
     private @Nullable Value message;
 
     private @Nullable Value exception;
 
-    @EntityField("参数类型")
     private RaiseParameterKind parameterKind;
 
     public RaiseNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope,

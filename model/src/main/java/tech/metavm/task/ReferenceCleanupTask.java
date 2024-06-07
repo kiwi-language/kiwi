@@ -6,7 +6,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.Instance;
 
-@EntityType("引用清理任务")
+@EntityType
 public class ReferenceCleanupTask extends Task {
 
     public static final long BATCH_SIZE = 256;

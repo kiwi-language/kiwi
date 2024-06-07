@@ -18,13 +18,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-@EntityType("数组类型")
+@EntityType
 public class ArrayType extends CompositeType {
 
-    @EntityField("元素类型")
     private final Type elementType;
 
-    @EntityField("数组类别")
     private final ArrayKind kind;
 
     public ArrayType(Type elementType, ArrayKind kind) {

@@ -13,7 +13,7 @@ import tech.metavm.util.Instances;
 
 import javax.annotation.Nullable;
 
-@EntityType("字段信息")
+@EntityType
 public class FieldData extends Entity {
 
     public static final IndexDef<FieldData> IDX_DECLARING_TYPE = IndexDef.create(FieldData.class, "declaringType");

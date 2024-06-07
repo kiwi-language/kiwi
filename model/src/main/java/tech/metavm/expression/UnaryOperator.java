@@ -12,17 +12,15 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType("一元运算符")
+@EntityType
 public enum UnaryOperator {
 
-    @EnumConstant("非")
     NOT(1, "!", 1, true, Boolean.class) {
         @Override
         public Instance evaluate(Instance operand) {
             return ((BooleanInstance) operand).not();
         }
     },
-    @EnumConstant("正")
     POS(35, "+", 1, true, null) {
         @Override
         public Instance evaluate(Instance operand) {
@@ -34,7 +32,6 @@ public enum UnaryOperator {
             return NEG;
         }
     },
-    @EnumConstant("负")
     NEG(36, "-", 1, true, null) {
         @Override
         public Instance evaluate(Instance operand) {
@@ -46,7 +43,6 @@ public enum UnaryOperator {
             return POS;
         }
     },
-    @EnumConstant("为空")
     IS_NULL(16, "is null", 6, false, Boolean.class) {
         @Override
         public Instance evaluate(Instance operand) {
@@ -58,7 +54,6 @@ public enum UnaryOperator {
             return IS_NOT_NULL;
         }
     },
-    @EnumConstant("不为空")
     IS_NOT_NULL(17, "is not null", 6, false, Boolean.class) {
         @Override
         public Instance evaluate(Instance operand) {

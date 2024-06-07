@@ -6,7 +6,7 @@ import tech.metavm.object.type.TypeVariable;
 
 import java.util.List;
 
-@EntityType("DummyGenericDeclaration")
+@EntityType
 public enum DummyGenericDeclaration implements GenericDeclaration {
 
     INSTANCE

@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-@EntityType("输入节点")
+@EntityType
 public class InputNode extends ChildTypeNode {
 
     public static InputNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {

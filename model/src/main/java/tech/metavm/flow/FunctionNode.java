@@ -13,7 +13,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType("函数节点")
+@EntityType
 public class FunctionNode extends NodeRT {
 
     public static FunctionNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -29,9 +29,8 @@ public class FunctionNode extends NodeRT {
         return node;
     }
 
-    @EntityField("函数")
     private Value func;
-    @ChildEntity("参数列表")
+    @ChildEntity
     private final ReadWriteArray<Value> arguments = addChild(new ReadWriteArray<>(Value.class), "arguments");
 
     public FunctionNode(Long tmpId, String name, @Nullable String code,  NodeRT previous, ScopeRT scope, Value func, List<Value> arguments) {

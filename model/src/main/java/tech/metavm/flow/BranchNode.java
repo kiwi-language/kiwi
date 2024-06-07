@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("分支节点")
+@EntityType
 public class BranchNode extends NodeRT {
 
     public static BranchNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -73,9 +73,8 @@ public class BranchNode extends NodeRT {
         this.inclusive = inclusive;
     }
 
-    @EntityField("是否包含")
     private boolean inclusive;
-    @ChildEntity("分支列表")
+    @ChildEntity
     private final ChildArray<Branch> branches = addChild(new ChildArray<>(Branch.class), "branches");
 
     public BranchNode(Long tmpId, String name, @Nullable String code, boolean inclusive, NodeRT prev, ScopeRT scope) {

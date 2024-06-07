@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
-@EntityType("索引首记录查询节点")
+@EntityType
 public class IndexSelectFirstNode extends NodeRT {
 
     public static IndexSelectFirstNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -32,9 +32,7 @@ public class IndexSelectFirstNode extends NodeRT {
         return node;
     }
 
-    @EntityField("索引")
     private Index index;
-    @EntityField("键")
     private IndexQueryKey key;
 
     public IndexSelectFirstNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope,

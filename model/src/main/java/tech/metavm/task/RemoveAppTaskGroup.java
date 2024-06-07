@@ -7,10 +7,9 @@ import tech.metavm.entity.IEntityContext;
 
 import java.util.List;
 
-@EntityType("删除应用任务组")
+@EntityType
 public class RemoveAppTaskGroup extends TaskGroup {
 
-    @EntityField("应用ID")
     private final String appId;
 
     public RemoveAppTaskGroup(String appId) {

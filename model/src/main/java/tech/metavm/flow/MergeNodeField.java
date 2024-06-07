@@ -11,12 +11,11 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 
-@EntityType("合并节点字段")
+@EntityType
 public class MergeNodeField extends Entity implements LocalKey {
 
-    @EntityField("字段")
     private final Field field;
-    @ChildEntity("值")
+    @ChildEntity
     private final ChildArray<ConditionalValue> values = addChild(new ChildArray<>(ConditionalValue.class), "values");
 
     public MergeNodeField(Field field, MergeNode mergeNode) {

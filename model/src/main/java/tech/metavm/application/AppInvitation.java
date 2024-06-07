@@ -10,7 +10,7 @@ import tech.metavm.user.PlatformUser;
 import tech.metavm.user.User;
 import tech.metavm.util.BusinessException;
 
-@EntityType("加入应用邀请")
+@EntityType
 public class AppInvitation extends Entity {
 
     public static final IndexDef<AppInvitation> IDX_APP = IndexDef.create(AppInvitation.class, "application");

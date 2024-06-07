@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-@EntityType("列")
+@EntityType
 public record Column(
         @EntityField("列类型") ColumnKind kind,
         @EntityField(value = "列名", asTitle = true) String name,

@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("数组表达式")
+@EntityType
 public class ArrayExpression extends Expression {
 
     public static ArrayExpression create(List<Expression> expressions) {
@@ -25,7 +25,6 @@ public class ArrayExpression extends Expression {
     }
 
     private final ValueArray<Expression> expressions;
-    @EntityField("类型")
     private final ArrayType type;
 
     public ArrayExpression(Collection<Expression> expressions, ArrayType type) {

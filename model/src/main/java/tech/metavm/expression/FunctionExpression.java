@@ -11,9 +11,8 @@ import tech.metavm.util.NncUtils;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("函数表达式")
+@EntityType
 public class FunctionExpression extends Expression {
-    @EntityField("函数")
     private final Func function;
     private final ValueArray<Expression> arguments;
 

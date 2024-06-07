@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 
-@EntityType("DummyCapturedTypeScope")
+@EntityType
 public enum DummyCapturedTypeScope implements CapturedTypeScope {
 
     INSTANCE;

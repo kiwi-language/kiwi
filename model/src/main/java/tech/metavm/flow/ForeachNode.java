@@ -18,7 +18,7 @@ import tech.metavm.util.NncUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-@EntityType("Foreach循环节点")
+@EntityType
 public class ForeachNode extends LoopNode {
 
     public static ForeachNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -44,7 +44,6 @@ public class ForeachNode extends LoopNode {
         return node;
     }
 
-    @EntityField("数组")
     private Value array;
 
     public ForeachNode(Long tmpId, String name, @javax.annotation.Nullable String code, @NotNull Klass outputType, NodeRT previous, ScopeRT scope,

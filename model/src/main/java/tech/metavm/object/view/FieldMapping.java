@@ -16,16 +16,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-@EntityType("字段映射")
+@EntityType
 public abstract class FieldMapping extends Element {
 
-    @EntityField("目标字段引用")
     private final FieldRef targetFieldRef;
 
-    @EntityField("所属映射")
     protected final FieldsObjectMapping containingMapping;
 
-    @ChildEntity("嵌套映射")
+    @ChildEntity
     @Nullable
     protected NestedMapping nestedMapping;
 

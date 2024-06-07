@@ -3,10 +3,8 @@ package tech.metavm.flow;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EnumConstant;
 
-@EntityType("错误级别")
+@EntityType
 public enum ErrorLevel {
-    @EnumConstant("警告")
     WARNING,
-    @EnumConstant("错误")
     ERROR
 }

@@ -5,7 +5,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
 
-@EntityType("任务信号")
+@EntityType
 public class TaskSignal extends Entity {
 
     public static final IndexDef<TaskSignal> IDX_APP_ID = new IndexDef<>(
@@ -16,13 +16,9 @@ public class TaskSignal extends Entity {
             TaskSignal.class, false,"lastTaskCreatedAt"
     );
 
-    @EntityField("租户ID")
     private final long appId;
-    @EntityField("未完成任务数")
     private long unfinishedCount;
-    @EntityField("最近任务创建时间")
     private long lastTaskCreatedAt;
-    @EntityField("最近执行任务ID")
     private long lastRunTaskId;
 
     public TaskSignal(long appId) {

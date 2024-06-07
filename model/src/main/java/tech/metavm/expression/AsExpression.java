@@ -10,12 +10,10 @@ import tech.metavm.object.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("别名表达式")
+@EntityType
 public class AsExpression extends Expression {
 
-    @EntityField("表达式")
     private final Expression expression;
-    @EntityField("别名")
     private final String alias;
 
     public AsExpression(@NotNull Expression expression, @NotNull String alias) {

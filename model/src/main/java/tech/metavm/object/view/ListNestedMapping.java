@@ -16,12 +16,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-@EntityType("数组嵌套映射")
+@EntityType
 public class ListNestedMapping extends NestedMapping {
 
     private final ClassType sourceType;
     private final ClassType targetType;
-    @ChildEntity("元素嵌套映射")
+    @ChildEntity
     private final NestedMapping elementNestedMapping;
 
     public ListNestedMapping(ClassType sourceType, ClassType targetType, NestedMapping elementNestedMapping) {

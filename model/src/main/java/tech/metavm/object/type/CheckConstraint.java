@@ -12,10 +12,9 @@ import tech.metavm.util.Instances;
 
 import javax.annotation.Nullable;
 
-@EntityType("校验约束")
+@EntityType
 public class CheckConstraint extends Constraint {
 
-    @EntityField("条件")
     private Value condition;
 
     private transient ConstraintDef<?> constraintDef;

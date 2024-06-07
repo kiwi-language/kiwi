@@ -10,7 +10,7 @@ import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
 
-@EntityType("检查节点")
+@EntityType
 public class CheckNode extends NodeRT {
 
     public static CheckNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -27,10 +27,8 @@ public class CheckNode extends NodeRT {
         return node;
     }
 
-    @EntityField("条件")
     private Value condition;
 
-    @EntityField("退出分支")
     private BranchNode exit;
 
     public CheckNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Value condition, BranchNode exit) {

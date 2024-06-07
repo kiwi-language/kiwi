@@ -11,10 +11,9 @@ import tech.metavm.object.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("节点表达式")
+@EntityType
 public class NodeExpression extends Expression {
 
-    @EntityField("节点")
     private final NodeRT node;
 
     public NodeExpression(@NotNull NodeRT node) {

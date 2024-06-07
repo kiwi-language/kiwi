@@ -15,22 +15,18 @@ import tech.metavm.util.TypeReference;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType("流程范围")
+@EntityType
 public class ScopeRT extends Element {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    @EntityField("所属流程")
     private final Flow flow;
-    @EntityField("所属节点")
     @Nullable
     private final NodeRT owner;
-    @ChildEntity("节点列表")
+    @ChildEntity
     private final ChildArray<NodeRT> nodes = addChild(new ChildArray<>(new TypeReference<>() {
     }), "nodes");
-    @EntityField("是否未循环体")
     private final boolean withBackEdge;
-    @EntityField("所属分支")
     @Nullable
     private Branch branch;
 

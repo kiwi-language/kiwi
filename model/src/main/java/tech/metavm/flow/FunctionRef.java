@@ -11,7 +11,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
-@EntityType("FunctionRef")
+@EntityType
 public class FunctionRef extends FlowRef {
 
     public static FunctionRef create(FunctionRefDTO functionRefDTO, IEntityContext context) {

@@ -4,13 +4,12 @@ import tech.metavm.entity.*;
 
 import java.util.List;
 
-@EntityType("任务组")
+@EntityType
 public abstract class TaskGroup extends Entity {
 
-    @EntityField("已完成任务数")
     private long numDone;
 
-    @ChildEntity("任务列表")
+    @ChildEntity
     private final ChildArray<Task> tasks = addChild(new ChildArray<>(Task.class), "tasks");
 
     public TaskGroup() {

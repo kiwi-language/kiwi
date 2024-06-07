@@ -9,12 +9,11 @@ import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
-@EntityType("实例扫描任务")
+@EntityType
 public abstract class ScanTask extends Task {
 
     public static final long BATCH_SIZE = 256L;
 
-    @EntityField("游标")
     private long cursor;
 
     protected ScanTask(String title) {

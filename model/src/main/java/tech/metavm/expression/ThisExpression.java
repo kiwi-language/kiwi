@@ -9,10 +9,9 @@ import tech.metavm.object.type.ClassType;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("当前对象表达式")
+@EntityType
 public class ThisExpression extends Expression {
 
-    @EntityField("类型")
     private final ClassType type;
 
     public ThisExpression(ClassType type) {

@@ -14,7 +14,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType("While循环节点")
+@EntityType
 public class WhileNode extends LoopNode {
 
     public static WhileNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {

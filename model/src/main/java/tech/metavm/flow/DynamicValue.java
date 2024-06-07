@@ -6,7 +6,7 @@ import tech.metavm.expression.VarType;
 import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
 
-@EntityType("动态值")
+@EntityType
 public class DynamicValue extends Value {
 
     public DynamicValue(ValueKind kind, Expression expression) {

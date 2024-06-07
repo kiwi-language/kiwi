@@ -10,10 +10,9 @@ import tech.metavm.user.PlatformUsers;
 
 import java.util.List;
 
-@EntityType("清空用户任务")
+@EntityType
 public class ClearUsersTask extends Task {
 
-    @EntityField("应用ID")
     private final String appId;
 
     protected ClearUsersTask(String title, String appId) {

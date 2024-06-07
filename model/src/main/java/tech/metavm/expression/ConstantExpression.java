@@ -16,10 +16,9 @@ import tech.metavm.util.NncUtils;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("常量表达式")
+@EntityType
 public class ConstantExpression extends Expression {
 
-    @EntityField("常量值")
     private final Instance value;
 
     public ConstantExpression(@NotNull Instance value) {

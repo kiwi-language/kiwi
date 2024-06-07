@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.object.type.rest.dto.ClassSourceCodes;
 import tech.metavm.util.NncUtils;
 
-@EntityType("Class来源")
+@EntityType
 public enum ClassSource {
     BUILTIN(ClassSourceCodes.BUILTIN),
     COMPILATION(ClassSourceCodes.COMPILATION),

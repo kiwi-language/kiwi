@@ -12,7 +12,7 @@ import tech.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
 
-@EntityType("清空数组节点")
+@EntityType
 public class ClearArrayNode extends NodeRT {
 
     public static ClearArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -27,7 +27,6 @@ public class ClearArrayNode extends NodeRT {
         return node;
     }
 
-    @EntityField("数组")
     private @NotNull Value array;
 
     public ClearArrayNode(Long tmpId, String name, @Nullable String code,

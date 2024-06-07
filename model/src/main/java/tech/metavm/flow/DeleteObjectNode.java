@@ -9,7 +9,7 @@ import tech.metavm.object.instance.core.Id;
 
 import javax.annotation.Nullable;
 
-@EntityType("删除对象节点")
+@EntityType
 public class DeleteObjectNode extends NodeRT {
 
     public static DeleteObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -24,7 +24,6 @@ public class DeleteObjectNode extends NodeRT {
         return node;
     }
 
-    @EntityField("对象")
     private Value object;
 
     public DeleteObjectNode(Long tmpId, String name, @Nullable String code,  NodeRT prev, ScopeRT scope, Value object) {

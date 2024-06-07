@@ -15,7 +15,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType("获取数组元素节点")
+@EntityType
 public class GetElementNode extends NodeRT {
 
     public static GetElementNode save(NodeDTO nodeDTO, @Nullable NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -32,9 +32,7 @@ public class GetElementNode extends NodeRT {
         return node;
     }
 
-    @EntityField("数组")
     private Value array;
-    @EntityField("索引")
     private Value index;
 
     public GetElementNode(Long tmpId, String name, @javax.annotation.Nullable String code, NodeRT previous, ScopeRT scope, Value array, Value index) {

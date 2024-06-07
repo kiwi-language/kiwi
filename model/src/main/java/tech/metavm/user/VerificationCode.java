@@ -7,7 +7,7 @@ import tech.metavm.entity.IndexDef;
 
 import java.util.Date;
 
-@EntityType("验证码")
+@EntityType
 public class VerificationCode extends Entity {
 
     public static final IndexDef<VerificationCode> IDX =
@@ -22,19 +22,14 @@ public class VerificationCode extends Entity {
         return new VerificationCode(receiver, code, new Date(System.currentTimeMillis() + DEFAULT_EXPIRE_IN_MILLIS), clientIP);
     }
 
-    @EntityField("验证码")
     private final String code;
 
-    @EntityField("接收地址")
     private final String receiver;
 
-    @EntityField("失效时间")
     private final Date expiredAt;
 
-    @EntityField("客户端IP")
     private final String clientIP;
 
-    @EntityField("创建时间")
     private final Date createdAt = new Date();
 
     public VerificationCode(String receiver, String code, Date expiredAt, String clientIP) {

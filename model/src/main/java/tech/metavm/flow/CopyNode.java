@@ -11,7 +11,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType("复制节点")
+@EntityType
 public class CopyNode extends NodeRT {
 
     public static CopyNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -36,9 +36,7 @@ public class CopyNode extends NodeRT {
         return node;
     }
 
-    @EntityField("复制源")
     private Value source;
-    @EntityField("父引用")
     @Nullable
     private ParentRef parentRef;
 

@@ -6,7 +6,7 @@ import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.SearchIndexFieldDTO;
 import tech.metavm.object.type.IndexField;
 
-@EntityType("查询索引字段")
+@EntityType
 public class SearchIndexField extends Entity {
 
     public static SearchIndexField create(SearchIndexFieldDTO fieldDTO, ParsingContext parsingContext, IEntityContext entityContext) {
@@ -17,12 +17,10 @@ public class SearchIndexField extends Entity {
         );
     }
 
-    @EntityField("索引字段")
     private final IndexField field;
 
     private final IndexOperator operator;
 
-    @EntityField("值")
     private Value value;
 
     public SearchIndexField(IndexField field, IndexOperator operator, Value value) {

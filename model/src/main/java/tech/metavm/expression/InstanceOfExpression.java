@@ -14,12 +14,10 @@ import tech.metavm.util.Instances;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("类型检查表达式")
+@EntityType
 public class InstanceOfExpression extends Expression {
 
-    @EntityField("值")
     private final Expression operand;
-    @EntityField("目标类型")
     private final Type targetType;
 
     public InstanceOfExpression(@NotNull Expression operand, @NotNull Type targetType) {

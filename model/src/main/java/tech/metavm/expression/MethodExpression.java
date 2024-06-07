@@ -14,13 +14,11 @@ import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
-@EntityType("方法表达式")
+@EntityType
 public class MethodExpression extends Expression {
 
-    @EntityField("实例")
     private final Expression self;
 
-    @EntityField("方法")
     private final MethodRef methodRef;
 
     public MethodExpression(@NotNull Expression self, @NotNull MethodRef methodRef) {

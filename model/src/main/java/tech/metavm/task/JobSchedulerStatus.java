@@ -7,18 +7,15 @@ import tech.metavm.entity.IndexDef;
 
 import javax.annotation.Nullable;
 
-@EntityType("任务调度器状态")
+@EntityType
 public class JobSchedulerStatus extends Entity {
 
     public static final IndexDef<JobSchedulerStatus> IDX_ALL_FLAG = IndexDef.create(JobSchedulerStatus.class, "allFlag");
 
     public static final long HEARTBEAT_TIMEOUT = 20000000000L;
 
-    @EntityField("版本")
     private long version;
-    @EntityField("最近心跳时间戳")
     private long lastHeartbeat;
-    @EntityField("节点IP")
     @Nullable
     private String nodeIP;
     private boolean allFlag = true;

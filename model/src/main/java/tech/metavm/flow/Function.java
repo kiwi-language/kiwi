@@ -15,7 +15,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType("函数")
+@EntityType
 public class Function extends Flow implements GlobalKey {
 
     public static final IndexDef<Function> IDX_ALL_FLAG = IndexDef.create(Function.class, "allFlag");

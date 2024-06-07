@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-@EntityType("条件表达式")
+@EntityType
 public class ConditionalExpression extends Expression {
 
     public static ConditionalExpression create(@NotNull Expression condition,
@@ -23,13 +23,9 @@ public class ConditionalExpression extends Expression {
                 Set.of(trueValue.getType(), falseValue.getType())));
     }
 
-    @EntityField("条件")
     private final Expression condition;
-    @EntityField("true表达式")
     private final Expression trueValue;
-    @EntityField("false表达式")
     private final Expression falseValue;
-    @EntityField("类型")
     private final Type type;
 
     public ConditionalExpression(@NotNull Expression condition,

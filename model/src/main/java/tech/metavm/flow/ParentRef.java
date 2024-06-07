@@ -13,7 +13,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType("父引用")
+@EntityType
 public class ParentRef extends Element implements tech.metavm.entity.Value {
 
     public static ParentRef create(ParentRefDTO parentRefDTO, ParsingContext parsingContext, IEntityContext entityContext, @Nullable Type childType) {
@@ -26,9 +26,7 @@ public class ParentRef extends Element implements tech.metavm.entity.Value {
         return masterRef;
     }
 
-    @EntityField("父对象")
     private final Value parent;
-    @EntityField("父字段")
     private final @Nullable FieldRef fieldRef;
 
     public ParentRef(Value parent, @Nullable FieldRef parentField) {

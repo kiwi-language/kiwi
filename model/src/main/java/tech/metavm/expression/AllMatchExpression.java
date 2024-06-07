@@ -18,12 +18,10 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("AllMatch表达式")
+@EntityType
 public class AllMatchExpression extends Expression {
 
-    @EntityField("数组")
     private final Expression array;
-    @EntityField("条件")
     private final Expression condition;
 
     public AllMatchExpression(@NotNull Expression array, @NotNull Expression condition) {

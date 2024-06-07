@@ -11,19 +11,15 @@ import tech.metavm.util.NamingUtils;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType("约束")
+@EntityType
 public abstract class Constraint extends Element implements  ClassMember, LocalKey {
 
-    @EntityField("所属类型")
     private final Klass declaringType;
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
-    @EntityField(value = "编号")
     @Nullable
     private String code;
-    @EntityField("类别")
     private final ConstraintKind kind;
-    @EntityField("错误提示")
     @Nullable
     private String message;
 

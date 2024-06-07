@@ -16,10 +16,9 @@ import tech.metavm.object.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("静态属性表达式")
+@EntityType
 public class StaticPropertyExpression extends Expression {
 
-    @EntityField("属性")
     private final PropertyRef propertyRef;
 
     public StaticPropertyExpression(@NotNull PropertyRef propertyRef) {

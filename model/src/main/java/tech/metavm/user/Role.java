@@ -6,10 +6,10 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.user.rest.dto.RoleDTO;
 
-@EntityType("角色")
+@EntityType
 public class Role extends Entity {
 
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
 
     public Role() {

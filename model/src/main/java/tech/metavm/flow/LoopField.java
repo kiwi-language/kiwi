@@ -8,14 +8,11 @@ import tech.metavm.object.type.Field;
 
 import java.util.Objects;
 
-@EntityType("循环字段")
+@EntityType
 public class LoopField extends Entity implements LocalKey {
 
-    @EntityField("字段")
     private final Field field;
-    @EntityField("初始值")
     private Value initialValue;
-    @EntityField("更新值")
     private Value updatedValue;
 
     public LoopField(Field field, Value initialValue, Value updatedValue) {

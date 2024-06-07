@@ -18,27 +18,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("节点")
+@EntityType
 public abstract class NodeRT extends Element implements LocalKey {
 
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
-    @EntityField("编号")
     @Nullable
     private String code;
-    @EntityField("类别")
     private final NodeKind kind;
-    @EntityField("输出类型")
     private @Nullable Type outputType;
-    @EntityField("所属范围")
     private final @NotNull ScopeRT scope;
-    @EntityField("前驱")
     @Nullable
     private NodeRT predecessor;
-    @EntityField("后继")
     @Nullable
     private NodeRT successor;
-    @EntityField("错误")
     @Nullable
     private String error;
 

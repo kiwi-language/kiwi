@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-@EntityType("类型")
+@EntityType
 public abstract class Type extends ValueElement implements TypeOrTypeKey {
 
     public boolean isViewType(Type type) {

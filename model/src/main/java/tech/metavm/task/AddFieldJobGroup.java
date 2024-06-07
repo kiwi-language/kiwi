@@ -9,12 +9,11 @@ import tech.metavm.util.NncUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType("添加字段任务组")
+@EntityType
 public class AddFieldJobGroup extends TaskGroup {
 
-    @EntityField("字段")
     private final Field field;
-    @ChildEntity("模版实例字段列表")
+    @ChildEntity
     private final ReadWriteArray<Field> templateInstanceFields =
             addChild(new ReadWriteArray<>(Field.class), "templateInstanceFields");
 

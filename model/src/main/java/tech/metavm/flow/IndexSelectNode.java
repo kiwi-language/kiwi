@@ -16,7 +16,7 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-@EntityType("索引查询节点")
+@EntityType
 public class IndexSelectNode extends NodeRT {
 
     public static IndexSelectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -34,9 +34,7 @@ public class IndexSelectNode extends NodeRT {
         return node;
     }
 
-    @EntityField("索引")
     private Index index;
-    @EntityField("键")
     private IndexQueryKey key;
 
     public IndexSelectNode(Long tmpId, String name, @Nullable String code, ClassType type, NodeRT previous, ScopeRT scope,

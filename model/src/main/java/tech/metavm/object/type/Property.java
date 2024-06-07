@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
-@EntityType("属性")
+@EntityType
 public interface Property extends ClassMember, LocalKey {
 
     @Nullable Id tryGetId();

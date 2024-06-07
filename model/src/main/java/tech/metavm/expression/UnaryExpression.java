@@ -10,11 +10,9 @@ import tech.metavm.object.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("一元表达式")
+@EntityType
 public class UnaryExpression extends Expression {
-    @EntityField("运算符")
     private final UnaryOperator operator;
-    @EntityField("运算数")
     private final Expression operand;
 
     public UnaryExpression(@NotNull UnaryOperator operator, @NotNull Expression operand) {

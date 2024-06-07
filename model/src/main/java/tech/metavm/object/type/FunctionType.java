@@ -18,10 +18,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-@EntityType("函数类型")
+@EntityType
 public class FunctionType extends CompositeType {
 
-    @EntityField("返回类型")
     private Type returnType;
     private final ValueArray<Type> parameterTypes;
 

@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 public @interface EntityField {
 
-    String value();
+    String value() default "";
 
     boolean unique() default false;
 

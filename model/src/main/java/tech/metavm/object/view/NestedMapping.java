@@ -12,7 +12,7 @@ import tech.metavm.object.type.Type;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-@EntityType("嵌套映射")
+@EntityType
 public abstract class NestedMapping extends Entity implements LocalKey {
 
     public abstract Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope);

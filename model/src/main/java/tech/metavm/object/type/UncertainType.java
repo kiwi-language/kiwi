@@ -17,12 +17,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-@EntityType("不确定类型")
+@EntityType
 public class UncertainType extends CompositeType {
 
-    @EntityField("上限")
     private Type upperBound;
-    @EntityField("下限")
     private Type lowerBound;
 
     public UncertainType(Type lowerBound, Type upperBound) {

@@ -9,10 +9,9 @@ import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Klass;
 
-@EntityType("添加字段任务")
+@EntityType
 public class AddFieldTask extends ScanByClassTask {
 
-    @EntityField("字段")
     private final Field field;
 
     protected AddFieldTask(Klass declaringType, Field field) {

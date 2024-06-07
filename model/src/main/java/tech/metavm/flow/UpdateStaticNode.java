@@ -15,7 +15,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType("更新静态字段节点")
+@EntityType
 public class UpdateStaticNode extends NodeRT {
 
     public static final Logger logger = LoggerFactory.getLogger(UpdateStaticNode.class);
@@ -42,10 +42,9 @@ public class UpdateStaticNode extends NodeRT {
         return node;
     }
 
-    @EntityField("类型")
     private Klass klass;
 
-    @ChildEntity("字段列表")
+    @ChildEntity
     private final ChildArray<UpdateField> fields = addChild(new ChildArray<>(UpdateField.class), "fields");
 
     public UpdateStaticNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Klass klass, List<UpdateField> fields) {

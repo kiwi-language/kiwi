@@ -6,10 +6,10 @@ import tech.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 
-@EntityType("范围节点")
+@EntityType
 public abstract class ScopeNode extends NodeRT {
 
-    @ChildEntity("范围")
+    @ChildEntity
     protected final ScopeRT bodyScope;
 
     protected ScopeNode(Long tmpId, String name, @Nullable String code, @Nullable Type outputType, NodeRT previous, ScopeRT scope, boolean scopeWithBackEdge) {

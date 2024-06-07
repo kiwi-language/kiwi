@@ -6,7 +6,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.Objects;
 
-@EntityType("ParameterRef")
+@EntityType
 public class ParameterRef  extends ValueElement implements Reference {
 
     private final CallableRef callableRef;

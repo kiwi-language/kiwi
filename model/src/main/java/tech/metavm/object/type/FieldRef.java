@@ -6,7 +6,7 @@ import tech.metavm.object.type.rest.dto.FieldRefDTO;
 
 import java.util.Objects;
 
-@EntityType("FieldRef")
+@EntityType
 public class FieldRef extends ValueElement implements PropertyRef {
 
     public static FieldRef create(FieldRefDTO fieldRefDTO, EntityProvider entityProvider) {

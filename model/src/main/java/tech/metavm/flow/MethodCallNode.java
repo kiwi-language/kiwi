@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("方法调用节点")
+@EntityType
 public class MethodCallNode extends CallNode {
 
     public static MethodCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -83,7 +83,6 @@ public class MethodCallNode extends CallNode {
         return node;
     }
 
-    @EntityField("自身")
     @Nullable
     private Value self;
 

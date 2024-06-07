@@ -16,13 +16,11 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Supplier;
 
-@EntityType("直接视图字段")
+@EntityType
 public class DirectFieldMapping extends FieldMapping implements LocalKey, GenericElement {
 
-    @EntityField("源头字段")
     private Field sourceField;
 
-    @EntityField("模板")
     @CopyIgnore
     @Nullable
     private DirectFieldMapping template;

@@ -14,41 +14,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("字段")
+@EntityType
 public class Field extends Element implements ChangeAware, GenericElement, Property {
 
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
-    @EntityField("编号")
     @Nullable
     private String code;
-    @EntityField("所属类型")
     private final Klass declaringType;
-    @EntityField("可见范围")
     private Access access;
-    @EntityField("是否静态")
     private boolean _static;
-    @EntityField("默认值")
     private Instance defaultValue;
-    @EntityField("懒加载")
     private boolean lazy;
-    @EntityField("列")
     private final Column column;
-    @EntityField("是否子对象字段")
     private final boolean isChild;
-    @EntityField(value = "静态属性值", code = "static")
+    @EntityField(code = "static")
     private Instance staticValue;
     @Nullable
     private Expression initializer;
-    @EntityField("模板")
     @Nullable
     @CopyIgnore
     private Field copySource;
-    @EntityField("只读")
     private boolean readonly;
-    @EntityField("状态")
     private MetadataState state;
-    @EntityField("类型")
     private Type type;
 
     public Field(

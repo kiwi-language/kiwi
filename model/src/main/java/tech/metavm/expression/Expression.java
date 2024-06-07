@@ -11,7 +11,7 @@ import tech.metavm.util.InternalException;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType("表达式")
+@EntityType
 public abstract class Expression extends Element implements Value {
 
     protected abstract String buildSelf(VarType symbolType, boolean relaxedCheck);

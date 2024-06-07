@@ -12,7 +12,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.Date;
 
-@EntityType("常量值")
+@EntityType
 public class ConstantValue extends Value {
     public ConstantValue(ValueKind kind, Expression expression) {
         super(kind, expression);

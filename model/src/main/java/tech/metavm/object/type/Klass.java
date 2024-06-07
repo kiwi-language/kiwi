@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 
 import static tech.metavm.util.NncUtils.*;
 
-@EntityType("类")
+@EntityType
 public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity, GlobalKey, LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
@@ -43,7 +43,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public static final IndexDef<Klass> TEMPLATE_IDX = IndexDef.create(Klass.class, "template");
 
-    @EntityField(value = "name", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
     @Nullable
     private String code;
@@ -52,69 +52,59 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private boolean ephemeral;
     @Nullable
     private ClassType superType;
-    @ChildEntity("接口")
+    @ChildEntity
     private final ReadWriteArray<ClassType> interfaces = addChild(new ReadWriteArray<>(ClassType.class), "interfaces");
-    @EntityField("来源")
     private ClassSource source;
-    @ChildEntity("子类列表")
+    @ChildEntity
     private final ReadWriteArray<Klass> subTypes = addChild(new ReadWriteArray<>(Klass.class), "subTypes");
-    @EntityField("描述")
     @Nullable
     private String desc;
-    @ChildEntity("字段列表")
+    @ChildEntity
     private final ChildArray<Field> fields = addChild(new ChildArray<>(Field.class), "fields");
-    @EntityField("标题属性")
     @Nullable
     private Field titleField;
-    @ChildEntity("方法列表")
+    @ChildEntity
     private final ChildArray<Method> methods = addChild(new ChildArray<>(Method.class), "methods");
-    @ChildEntity("参数化方法列表")
+    @ChildEntity
     private final ChildArray<Method> parameterizedMethods = addChild(new ChildArray<>(Method.class), "parameterizedMethods");
 
-    @ChildEntity("静态字段列表")
+    @ChildEntity
     private final ChildArray<Field> staticFields = addChild(new ChildArray<>(Field.class), "staticFields");
-    @ChildEntity("约束列表")
+    @ChildEntity
     private final ChildArray<Constraint> constraints = addChild(new ChildArray<>(Constraint.class), "constraints");
     @Nullable
-    @EntityField("模板")
     private Klass template;
     // Don't remove, for search
     @SuppressWarnings("unused")
-    @EntityField("是否抽象")
     private boolean isAbstract;
-    @EntityField("是否模版")
     private boolean isTemplate;
     // Don't remove, used for search
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    @EntityField("是否参数化")
     private boolean isParameterized;
-    @ChildEntity("类型参数")
+    @ChildEntity
     private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
-    @ChildEntity("类型实参")
+    @ChildEntity
     private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
 
     // TODO (Important!) not scalable, must be optimized before going to production
-    @ChildEntity("依赖")
+    @ChildEntity
     private final ReadWriteArray<Klass> dependencies = addChild(new ReadWriteArray<>(Klass.class), "dependencies");
     @Nullable
     private String parameterizedTypeKey;
-    @ChildEntity("错误列表")
+    @ChildEntity
     private final ChildArray<Error> errors = addChild(new ChildArray<>(Error.class), "errors");
 
     private boolean error;
 
-    @ChildEntity("视图映射列表")
+    @ChildEntity
     private final ChildArray<ObjectMapping> mappings = addChild(new ChildArray<>(ObjectMapping.class), "mappings");
 
-    @EntityField("默认视图")
     @Nullable
     private ObjectMapping defaultMapping;
 
-    @EntityField("复制来源")
     @CopyIgnore
     private @Nullable Klass copySource;
 
-    @EntityField("状态")
     private ClassTypeState state = ClassTypeState.INIT;
 
     private final transient int tag;

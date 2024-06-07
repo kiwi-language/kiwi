@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-@EntityType("流程")
+@EntityType
 public abstract class Flow extends Element implements GenericDeclaration, Callable, LoadAware, CapturedTypeScope {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
@@ -34,46 +34,36 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     public static final IndexDef<Flow> IDX_HORIZONTAL_TEMPLATE =
             IndexDef.create(Flow.class, "horizontalTemplate");
 
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private @NotNull String name;
-    @EntityField("编号")
     @Nullable
     private String code;
-    @EntityField("是否原生")
     private boolean isNative;
-    @EntityField("是否合成")
     private final boolean isSynthetic;
-    @ChildEntity("参数列表")
+    @ChildEntity
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
-    @EntityField("返回类型")
     private @NotNull Type returnType;
-    @ChildEntity("根流程范围")
+    @ChildEntity
     private @Nullable ScopeRT rootScope;
     private transient long version;
     // Don't remove, for search
     @SuppressWarnings("unused")
-    @EntityField("是否模版")
     private boolean isTemplate;
-    @ChildEntity("类型参数")
+    @ChildEntity
     private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
-    @EntityField("水平模板")
     @CopyIgnore
     @Nullable
     private final Flow horizontalTemplate;
-    @ChildEntity("类型实参列表")
+    @ChildEntity
     private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
-    @EntityField("状态")
     private @NotNull MetadataState state;
-    @EntityField("类型")
     private @NotNull FunctionType type;
-    @EntityField("参数化键")
     @Nullable
     @CopyIgnore
     private String parameterizedKey;
     @Nullable
-    @EntityField("代码来源")
     private final CodeSource codeSource;
-    @ChildEntity("捕获类型列表")
+    @ChildEntity
     private final ChildArray<CapturedTypeVariable> capturedTypeVariables = addChild(new ChildArray<>(CapturedTypeVariable.class), "capturedTypeVariables");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;

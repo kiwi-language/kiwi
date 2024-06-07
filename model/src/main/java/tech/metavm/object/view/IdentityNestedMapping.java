@@ -8,7 +8,7 @@ import tech.metavm.object.type.Type;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-@EntityType("自身嵌套映射")
+@EntityType
 public class IdentityNestedMapping extends NestedMapping {
 
     private final Type type;

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-@EntityType("复合类型")
+@EntityType
 public abstract class CompositeType extends Type {
 
     public CompositeType(String name, @Nullable String code, boolean anonymous, boolean ephemeral, TypeCategory category) {

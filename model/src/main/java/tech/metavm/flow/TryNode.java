@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("Try节点")
+@EntityType
 public class TryNode extends ScopeNode {
 
     public static TryNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {

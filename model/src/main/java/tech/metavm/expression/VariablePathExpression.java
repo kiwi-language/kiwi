@@ -11,10 +11,9 @@ import tech.metavm.object.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("变量路径表达式")
+@EntityType
 public class VariablePathExpression extends Expression {
 
-    @EntityField("前缀")
     private final Expression qualifier;
     private final VariableExpression field;
 

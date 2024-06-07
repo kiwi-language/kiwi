@@ -11,7 +11,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType("计算节点")
+@EntityType
 public class ValueNode extends NodeRT {
 
     public static ValueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -29,7 +29,6 @@ public class ValueNode extends NodeRT {
         return node;
     }
 
-    @EntityField("值")
     private Value value;
 
     public ValueNode(Long tmpId, String name, @Nullable String code, Type outputType, NodeRT previous, ScopeRT scope, Value value) {

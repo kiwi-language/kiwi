@@ -2,7 +2,7 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.EntityType;
 
-@EntityType("类成员")
+@EntityType
 public interface ClassMember {
 
     Klass getDeclaringType();

@@ -7,15 +7,11 @@ import tech.metavm.util.BusinessException;
 import javax.annotation.Nullable;
 import java.util.Arrays;
 
-@EntityType("可见范围")
+@EntityType
 public enum Access {
-    @EnumConstant("公开")
     PUBLIC(1),
-    @EnumConstant("模块内可见")
     PACKAGE(2),
-    @EnumConstant("隐藏")
     PRIVATE(3),
-    @EnumConstant("受保护")
     PROTECTED(4)
 
     ;

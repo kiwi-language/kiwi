@@ -7,7 +7,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.LocalKey;
 import tech.metavm.object.type.Type;
 
-@EntityType("TypeAndCodeGenerator")
+@EntityType
 public class TypeAndCodeGenerator extends Entity implements LocalKey {
     private final Type type;
     private final NestedMapping nestedMapping;

@@ -9,7 +9,7 @@ import tech.metavm.message.Message;
 
 import java.util.List;
 
-@EntityType("删除邀请任务")
+@EntityType
 public class ClearInvitationTask extends Task {
 
     private final String appId;

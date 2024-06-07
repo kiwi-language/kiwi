@@ -10,7 +10,7 @@ import tech.metavm.object.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("变量表达式")
+@EntityType
 public class VariableExpression extends Expression {
 
     private final String variable;

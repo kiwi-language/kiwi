@@ -10,12 +10,10 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("游标表达式")
+@EntityType
 public class CursorExpression extends Expression{
 
-    @EntityField("别名")
     private final @Nullable String alias;
-    @EntityField("类型")
     private final Type type;
 
     public CursorExpression(Type type, @Nullable String alias) {

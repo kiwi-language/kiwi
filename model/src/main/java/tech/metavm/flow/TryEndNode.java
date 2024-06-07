@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@EntityType("TryEnd节点")
+@EntityType
 public class TryEndNode extends ChildTypeNode {
 
     public static TryEndNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -63,7 +63,7 @@ public class TryEndNode extends ChildTypeNode {
         return node;
     }
 
-    @ChildEntity("字段列表")
+    @ChildEntity
     private final ChildArray<TryEndField> fields = addChild(new ChildArray<>(TryEndField.class), "fields");
 
     public TryEndNode(Long tmpId, String name, @Nullable String code, Klass outputType, TryNode previous, ScopeRT scope) {

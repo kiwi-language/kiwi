@@ -3,7 +3,7 @@ package tech.metavm.task;
 import tech.metavm.entity.EntityType;
 import tech.metavm.util.NncUtils;
 
-@EntityType("任务状态")
+@EntityType
 public enum TaskState {
 
     RUNNABLE(1),

@@ -7,7 +7,7 @@ import tech.metavm.object.instance.core.IInstanceContext;
 
 import java.util.List;
 
-@EntityType("索引重建任务")
+@EntityType
 public class IndexRebuildTask extends ScanTask {
 
     protected IndexRebuildTask() {

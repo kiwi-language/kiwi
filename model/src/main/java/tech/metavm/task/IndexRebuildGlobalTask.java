@@ -4,7 +4,7 @@ import tech.metavm.application.Application;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 
-@EntityType("索引重建全局任务")
+@EntityType
 public class IndexRebuildGlobalTask extends GlobalTask {
 
     public IndexRebuildGlobalTask() {

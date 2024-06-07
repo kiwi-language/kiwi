@@ -16,7 +16,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType("删除数组元素节点")
+@EntityType
 public class RemoveElementNode extends NodeRT {
 
     public static RemoveElementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -32,9 +32,7 @@ public class RemoveElementNode extends NodeRT {
         return node;
     }
 
-    @EntityField("数组")
     private Value array;
-    @EntityField("元素")
     private Value element;
 
     public RemoveElementNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Value array, Value element) {

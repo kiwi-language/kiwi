@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
-@EntityType("索引扫描节点")
+@EntityType
 public class IndexScanNode extends NodeRT {
 
     public static IndexScanNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -34,11 +34,8 @@ public class IndexScanNode extends NodeRT {
         return node;
     }
 
-    @EntityField("索引")
     private Index index;
-    @EntityField("最小值")
     private IndexQueryKey from;
-    @EntityField("最大值")
     private IndexQueryKey to;
 
     public IndexScanNode(Long tmpId, String name, @Nullable String code, ArrayType type, NodeRT previous, ScopeRT scope, Index index,

@@ -17,15 +17,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-@EntityType("流程视图字段")
+@EntityType
 public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericElement {
 
-    @EntityField("读取流程")
     private Method getter;
-    @EntityField("写入流程")
     @Nullable
     private Method setter;
-    @EntityField("模板")
     @CopyIgnore
     @Nullable
     private FlowFieldMapping copySource;

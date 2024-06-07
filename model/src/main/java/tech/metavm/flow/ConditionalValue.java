@@ -6,11 +6,9 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.ConditionalValueDTO;
 
-@EntityType("分支值")
+@EntityType
 public class ConditionalValue extends Entity {
-    @EntityField("分支")
     private final Branch branch;
-    @EntityField("值")
     private Value value;
 
     public ConditionalValue(Branch branch, Value value) {

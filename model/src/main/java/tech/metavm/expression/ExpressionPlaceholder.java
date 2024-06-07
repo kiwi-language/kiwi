@@ -8,7 +8,7 @@ import tech.metavm.object.type.Type;
 
 import java.util.List;
 
-@EntityType("表达式占位符")
+@EntityType
 public class ExpressionPlaceholder extends Expression {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {

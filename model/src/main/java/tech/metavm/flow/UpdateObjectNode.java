@@ -18,7 +18,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("更新对象节点")
+@EntityType
 public class UpdateObjectNode extends NodeRT {
 
     public static UpdateObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
@@ -56,10 +56,9 @@ public class UpdateObjectNode extends NodeRT {
         }
     }
 
-    @EntityField("对象")
     private Value object;
 
-    @ChildEntity("字段列表")
+    @ChildEntity
     private final ChildArray<UpdateField> fields = addChild(new ChildArray<>(UpdateField.class), "fields");
 
     public UpdateObjectNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, Value object, List<UpdateField> fields) {

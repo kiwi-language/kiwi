@@ -4,7 +4,7 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.Instance;
 
-@EntityType("会话条目")
+@EntityType
 public class SessionEntry extends Entity  {
     private final String key;
     private Instance value;

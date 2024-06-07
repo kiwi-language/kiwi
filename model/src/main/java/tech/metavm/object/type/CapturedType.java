@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 // TODO make CapturedType the sub type of or the same type as VariableType
-@EntityType("捕获类型")
+@EntityType
 public class CapturedType extends Type {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");

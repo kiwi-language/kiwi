@@ -15,7 +15,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType("唯一索引节点")
+@EntityType
 public class GetUniqueNode extends NodeRT {
 
     public static GetUniqueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -33,9 +33,8 @@ public class GetUniqueNode extends NodeRT {
         return node;
     }
 
-    @EntityField("索引")
     private Index index;
-    @ChildEntity("值列表")
+    @ChildEntity
     private final ReadWriteArray<Value> values = addChild(new ReadWriteArray<>(Value.class), "values");
 
     public GetUniqueNode(Long tmpId, String name, @Nullable String code, UnionType type, Index index, NodeRT previous, ScopeRT scope, List<Value> values) {

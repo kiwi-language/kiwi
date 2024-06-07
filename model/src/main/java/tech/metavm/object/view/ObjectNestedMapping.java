@@ -13,10 +13,9 @@ import tech.metavm.util.NncUtils;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-@EntityType("对象嵌套映射")
+@EntityType
 public class ObjectNestedMapping extends NestedMapping {
 
-    @EntityField("映射")
     private final @NotNull ObjectMappingRef mappingRef;
 
     public ObjectNestedMapping(@NotNull ObjectMappingRef mappingRef) {

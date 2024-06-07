@@ -13,12 +13,10 @@ import tech.metavm.object.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("数组访问表达式")
+@EntityType
 public class ArrayAccessExpression extends Expression {
 
-    @EntityField("数组")
     private final Expression array;
-    @EntityField("索引")
     private final Expression index;
 
     public ArrayAccessExpression(@NotNull Expression array, @NotNull Expression index) {

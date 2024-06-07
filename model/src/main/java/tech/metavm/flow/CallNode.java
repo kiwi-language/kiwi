@@ -28,18 +28,17 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-@EntityType("调用节点")
+@EntityType
 public abstract class CallNode extends NodeRT {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    @EntityField("flowRef")
     private FlowRef flowRef;
-    @ChildEntity("参数列表")
+    @ChildEntity
     protected final ReadWriteArray<Argument> arguments = addChild(new ReadWriteArray<>(Argument.class), "arguments");
-    @ChildEntity("捕获类型列表")
+    @ChildEntity
     protected final ReadWriteArray<Type> capturedExpressionTypes = addChild(new ReadWriteArray<>(Type.class), "capturedExpressionTypes");
-    @ChildEntity("捕获类型表达式列表")
+    @ChildEntity
     protected final ReadWriteArray<Expression> capturedExpressions = addChild(new ReadWriteArray<>(Expression.class), "capturedExpressions");
 
     public CallNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, @NotNull FlowRef flowRef,

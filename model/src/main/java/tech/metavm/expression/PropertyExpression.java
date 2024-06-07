@@ -15,13 +15,11 @@ import java.util.Objects;
 
 import static tech.metavm.util.NncUtils.requireNonNull;
 
-@EntityType("属性表达式")
+@EntityType
 public class PropertyExpression extends Expression {
 
-    @EntityField("对象")
     private final Expression instance;
 
-    @EntityField("属性")
     private final PropertyRef propertyRef;
 
     public PropertyExpression(@NotNull Expression instance, @NotNull PropertyRef propertyRef) {

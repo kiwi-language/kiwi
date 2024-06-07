@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("创建对象节点")
+@EntityType
 public class NewObjectNode extends CallNode implements NewNode {
 
     public static final Logger logger = LoggerFactory.getLogger(NewObjectNode.class);
@@ -91,10 +91,8 @@ public class NewObjectNode extends CallNode implements NewNode {
     private ParentRef parentRef;
 
     // 临时对象：如果对象未被其他持久对象引用，则不会被持久化
-    @EntityField("是否临时")
     private boolean ephemeral;
 
-    @EntityField("是否未绑定")
     private boolean unbound;
 
     public NewObjectNode(Long tmpId, String name, @Nullable String code, MethodRef methodRef,

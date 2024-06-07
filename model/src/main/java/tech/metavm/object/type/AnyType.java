@@ -14,7 +14,7 @@ import tech.metavm.util.InstanceOutput;
 
 import java.util.function.Function;
 
-@EntityType("任意类型")
+@EntityType
 public class AnyType extends Type {
 
     public AnyType() {

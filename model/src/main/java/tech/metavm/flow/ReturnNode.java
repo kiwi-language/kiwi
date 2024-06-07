@@ -13,7 +13,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType("返回节点")
+@EntityType
 public class ReturnNode extends NodeRT {
 
     public static ReturnNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
@@ -28,7 +28,6 @@ public class ReturnNode extends NodeRT {
         return node;
     }
 
-    @EntityField("结果")
     private @Nullable Value value;
 
     public ReturnNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, @Nullable Value value) {

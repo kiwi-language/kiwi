@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-@EntityType("新增对象节点")
+@EntityType
 public class AddObjectNode extends ScopeNode implements NewNode {
 
     public static AddObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -48,13 +48,11 @@ public class AddObjectNode extends ScopeNode implements NewNode {
     @Nullable
     private ParentRef parentRef;
 
-    @EntityField("是否初始化数组子对象")
     private boolean initializeArrayChildren;
 
-    @EntityField("是否临时")
     private boolean ephemeral;
 
-    @ChildEntity("字段列表")
+    @ChildEntity
     private final ChildArray<FieldParam> fields = addChild(new ChildArray<>(FieldParam.class), "fields");
 
     public AddObjectNode(Long tmpId, String name, @Nullable String code, boolean initializeArrayChildren, boolean ephemeral, ClassType type, NodeRT prev,

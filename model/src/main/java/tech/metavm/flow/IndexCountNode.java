@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
-@EntityType("索引查询节点")
+@EntityType
 public class IndexCountNode extends NodeRT {
 
     public static IndexCountNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -31,11 +31,8 @@ public class IndexCountNode extends NodeRT {
         return node;
     }
 
-    @EntityField("索引")
     private Index index;
-    @EntityField("最小值")
     private IndexQueryKey from;
-    @EntityField("最大值")
     private IndexQueryKey to;
 
     public IndexCountNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Index index,

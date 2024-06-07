@@ -8,21 +8,19 @@ import tech.metavm.util.BusinessException;
 
 import java.util.List;
 
-@EntityType("应用")
+@EntityType
 public class Application extends Entity {
 
     public static final int MAX_NUM_ADMINS = 16;
 
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
 
-    @EntityField("所有人")
     private PlatformUser owner;
 
-    @ChildEntity("管理员列表")
+    @ChildEntity
     private final ReadWriteArray<PlatformUser> admins = addChild(new ReadWriteArray<>(PlatformUser.class), "admins");
 
-    @EntityField("状态")
     private ApplicationState state;
 
     public Application(String name, PlatformUser owner) {
