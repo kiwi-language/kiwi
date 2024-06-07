@@ -3,9 +3,9 @@ package tech.metavm.manufacturing.production;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType("工序")
+@EntityType
 public class Process {
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
 
     public Process(String name) {

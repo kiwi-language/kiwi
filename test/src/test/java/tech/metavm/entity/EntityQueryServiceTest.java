@@ -2,6 +2,8 @@ package tech.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.Page;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
@@ -13,6 +15,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class EntityQueryServiceTest extends TestCase {
+
+    public static final Logger logger = LoggerFactory.getLogger(EntityQueryServiceTest.class);
 
     private EntityQueryService entityQueryService;
     private EntityContextFactory entityContextFactory;

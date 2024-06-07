@@ -1,29 +1,20 @@
 package tech.metavm.manufacturing.material;
 
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType("批次")
+@EntityType
 public class Batch {
 
-    @EntityField("编码")
     private String code;
-    @EntityField("物料")
     private final Material material;
-    @EntityField("供应商")
     private @Nullable Supplier supplier;
-    @EntityField("供应商批号")
     private @Nullable String supplierBatchNo;
-    @EntityField("客户")
     private @Nullable Client client;
-    @EntityField("生产日期")
     private @Nullable Date productionDate;
-    @EntityField("过期日期")
     private @Nullable Date expirationDate;
-    @EntityField("到货日期")
     private @Nullable Date arrivalDate;
 
     public Batch(String code, Material material, @Nullable Supplier supplier, @Nullable String supplierBatchNo, @Nullable Client client, @Nullable Date productionDate, @Nullable Date expirationDate, @Nullable Date arrivalDate) {

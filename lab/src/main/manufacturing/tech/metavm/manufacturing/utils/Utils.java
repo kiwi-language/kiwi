@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.function.Predicate;
 
-@EntityType("Utils")
+@EntityType
 public class Utils {
 
     public static void assertTrue(boolean condition, String message) {

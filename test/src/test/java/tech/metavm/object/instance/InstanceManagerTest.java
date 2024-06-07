@@ -114,10 +114,10 @@ public class InstanceManagerTest extends TestCase {
                 new LoadInstancesByPathsRequest(
                         null,
                         List.of(
-                                Constants.CONSTANT_ID_PREFIX + id + ".巴",
-                                Constants.CONSTANT_ID_PREFIX + id + ".巴.编号",
-                                Constants.CONSTANT_ID_PREFIX + id + ".巴子.*.巴列表.0.编号",
-                                Constants.CONSTANT_ID_PREFIX + id + ".巴子.*.巴列表.1.编号"
+                                Constants.CONSTANT_ID_PREFIX + id + ".bar",
+                                Constants.CONSTANT_ID_PREFIX + id + ".bar.code",
+                                Constants.CONSTANT_ID_PREFIX + id + ".bazList.*.bars.0.code",
+                                Constants.CONSTANT_ID_PREFIX + id + ".bazList.*.bars.1.code"
                         )
                 )
         );
@@ -144,10 +144,10 @@ public class InstanceManagerTest extends TestCase {
         var page = instanceManager.select(new SelectRequest(
                 fooType.toExpression(),
                 List.of(
-                        "巴.编号",
-                        "量子X"
+                        "bar.code",
+                        "qux"
                 ),
-                "名称 = 'Big Foo'",
+                "name = 'Big Foo'",
                 1,
                 20
         ));

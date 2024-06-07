@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.task.Task;
 
-@EntityType("测试任务")
+@EntityType
 public class TestJob extends Task {
 
     private int count = 0;

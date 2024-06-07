@@ -8,15 +8,14 @@ import tech.metavm.entity.EntityType;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType("仓库")
+@EntityType
 public class Warehouse {
-    @EntityField("编码")
     private String code;
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
-    @ChildEntity("库区")
+    @ChildEntity
     private final ChildList<Area> areas = new ChildList<>();
-    @ChildEntity("库位")
+    @ChildEntity
     private final List<Position> positions = new ArrayList<>();
 
     public Warehouse(String code, String name) {

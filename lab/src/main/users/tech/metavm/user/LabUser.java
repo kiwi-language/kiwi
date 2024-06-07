@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-@EntityType("用户")
+@EntityType
 public class LabUser {
 
     public static final long MAX_ATTEMPTS_IN_15_MINUTES = 3;
@@ -24,26 +24,21 @@ public class LabUser {
 
     public static final long TOKEN_TTL = 7 * 24 * 60 * 60 * 1000L;
 
-    @EntityField("账号")
     private final String loginName;
 
-    @EntityField("密码")
     private Password password;
 
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
 
-    @EntityField("状态")
     private LabUserState state = LabUserState.ACTIVE;
 
-    @EntityField("应用")
     private final LabApplication application;
 
-    @EntityField("平台用户")
     @Nullable
     private LabPlatformUser platformUser;
 
-    @ChildEntity("角色列表")
+    @ChildEntity
     private final List<LabRole> roles = new ArrayList<>();
 
     public LabUser(String loginName, String password, String name, List<LabRole> roles, LabApplication application) {

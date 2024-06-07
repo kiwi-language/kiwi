@@ -2,7 +2,7 @@ package tech.metavm.autograph.mocks;
 
 import tech.metavm.entity.EntityType;
 
-@EntityType(value = "AST优惠券", compiled = true)
+@EntityType(compiled = true)
 public interface AstCoupon {
 
     long use(int amount);

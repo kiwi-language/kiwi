@@ -7,10 +7,10 @@ import tech.metavm.entity.ReadWriteArray;
 
 import java.util.List;
 
-@EntityType("巴子")
+@EntityType
 public class Baz extends Entity {
 
-    @ChildEntity("巴列表")
+    @ChildEntity
     private ReadWriteArray<Bar> bars = addChild(new ReadWriteArray<>(Bar.class), "bars");
 
     public Baz() {

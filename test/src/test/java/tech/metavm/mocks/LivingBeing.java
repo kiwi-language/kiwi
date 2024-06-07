@@ -4,23 +4,21 @@ import tech.metavm.entity.*;
 
 import java.util.List;
 
-@EntityType("生物")
+@EntityType
 public class LivingBeing extends Entity {
 
     public static final IndexDef<LivingBeing> IDX_AGE = IndexDef.create(
         LivingBeing.class, "age"
     );
 
-    @EntityField("年龄")
     private long age;
 
-    @EntityField("额外信息")
     private Object extraInfo;
 
-    @ChildEntity("后代")
+    @ChildEntity
     private final ReadWriteArray<LivingBeing> offsprings = addChild(new ReadWriteArray<>(LivingBeing.class), "offsprings");
 
-    @ChildEntity("祖先")
+    @ChildEntity
     private final ReadWriteArray<LivingBeing> ancestors = addChild(new ReadWriteArray<>(LivingBeing.class), "ancestors");
 
     public LivingBeing(long age) {

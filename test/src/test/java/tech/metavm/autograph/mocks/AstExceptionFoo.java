@@ -1,22 +1,18 @@
 package tech.metavm.autograph.mocks;
 
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
 import javax.annotation.Nullable;
 
-@EntityType(value = "异常测试", compiled = true)
+@EntityType(compiled = true)
 public class AstExceptionFoo extends Entity {
 
-    @EntityField("数量")
     private int amount;
 
     @Nullable
-    @EntityField("错误信息")
     public String errorMessage;
 
-    @EntityField("执行次数")
     public int executionCount;
 
     public void test(int dec) {

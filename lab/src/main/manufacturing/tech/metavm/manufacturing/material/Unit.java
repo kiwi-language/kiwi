@@ -5,17 +5,13 @@ import tech.metavm.entity.EntityType;
 
 import javax.annotation.Nullable;
 
-@EntityType("单位")
+@EntityType
 public class Unit {
-    @EntityField("编码")
     private String code;
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
-    @EntityField("舍入规则")
     private RoundingRule roundingRule;
-    @EntityField("精度")
     private int precision;
-    @EntityField("备注")
     private @Nullable String notes;
 
     public Unit(String code, String name, RoundingRule roundingRule, int precision, @Nullable String notes) {

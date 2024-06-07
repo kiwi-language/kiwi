@@ -34,15 +34,15 @@ public class MainTest extends CompilerTestBase {
     public void testShopping() {
         compileTwice(SHOPPING_SOURCE_ROOT);
         submit(() -> {
-            var productStateType = queryClassType("商品状态");
-            var productNormalState = TestUtils.getEnumConstantByName(productStateType, "正常");
-            var productType = queryClassType("AST产品");
+            var productStateType = getClassTypeByCode("tech.metavm.lab.shopping.AstProductState");
+            var productNormalState = TestUtils.getEnumConstantByName(productStateType, "NORMAL");
+            var productType = getClassTypeByCode("tech.metavm.lab.shopping.AstProduct");
             var product = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
                     Constants.CONSTANT_ID_PREFIX + productType.id(),
                     List.of(
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(productType, "title"),
-                                    PrimitiveFieldValue.createString("鞋子")
+                                    PrimitiveFieldValue.createString("shoes")
                             ),
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(productType, "orderCount"),
@@ -62,9 +62,9 @@ public class MainTest extends CompilerTestBase {
                             )
                     )
             ));
-            var directCouponType = queryClassType("AST立减优惠券");
-            var couponStateType = queryClassType("优惠券状态");
-            var couponNormalState = TestUtils.getEnumConstantByName(couponStateType, "未使用");
+            var directCouponType = getClassTypeByCode("tech.metavm.lab.shopping.AstDirectCoupon");
+            var couponStateType = getClassTypeByCode("tech.metavm.lab.shopping.AstCouponState");
+            var couponNormalState = TestUtils.getEnumConstantByName(couponStateType, "UNUSED");
             var coupon = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
                     TypeExpressions.getClassType(directCouponType.id()),
                     List.of(
@@ -82,7 +82,7 @@ public class MainTest extends CompilerTestBase {
                             )
                     )
             ));
-            var couponType = queryClassType("AST优惠券");
+            var couponType = getClassTypeByCode("tech.metavm.lab.shopping.AstCoupon");
             var order = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                     TestUtils.getMethodRefByCode(productType, "buy"),
                     product.id(),
@@ -95,7 +95,7 @@ public class MainTest extends CompilerTestBase {
                             ))
                     )
             )));
-            var orderType = queryClassType("AST订单");
+            var orderType = getClassTypeByCode("tech.metavm.lab.shopping.AstOrder");
             var price = (long) ((PrimitiveFieldValue) order.getFieldValue(getFieldIdByCode(orderType, "price"))).getValue();
             var orderCoupons = ((InstanceFieldValue) order.getFieldValue(getFieldIdByCode(orderType, "coupons"))).getInstance();
             Assert.assertEquals(1, orderCoupons.getListSize());
@@ -365,7 +365,7 @@ public class MainTest extends CompilerTestBase {
                                 TypeExpressions.getClassType(messageType.id()),
                                 null,
                                 null,
-                                "接受者 = $$" + anotherPlatformUser.id(),
+                                "receiver = $$" + anotherPlatformUser.id(),
                                 List.of(),
                                 1,
                                 20,
@@ -453,7 +453,7 @@ public class MainTest extends CompilerTestBase {
                                     )
                             )
                     ));
-                    Assert.fail("用户未加入应用无法进入");
+                    Assert.fail("Users that are not member of the application should not be able to enter it");
                 } catch (FlowExecutionException e) {
                     Assert.assertEquals("用户未加入应用无法进入", e.getMessage());
                 }
@@ -530,7 +530,7 @@ public class MainTest extends CompilerTestBase {
                     try {
                         login(userType, loginResultType, application, "leen", "123123", "192.168.0.1", false);
                         if (i == 4) {
-                            Assert.fail("登录尝试次数过多，应该抛出异常");
+                            Assert.fail("Exception should be raised when there are too many failed login attempts");
                         }
                     } catch (FlowExecutionException e) {
                         Assert.assertEquals("登录尝试次数过多，请稍后再试", e.getMessage());

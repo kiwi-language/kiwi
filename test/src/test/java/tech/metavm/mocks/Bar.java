@@ -4,9 +4,9 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType("巴")
+@EntityType
 public class Bar extends Entity {
-    @EntityField(value = "编号", asTitle = true)
+    @EntityField(asTitle = true)
     private final String code;
 
     public Bar(String code) {

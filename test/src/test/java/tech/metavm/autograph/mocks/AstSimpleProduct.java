@@ -4,22 +4,18 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType(value = "AST简化产品", compiled = true)
+@EntityType(compiled = true)
 public class AstSimpleProduct extends Entity {
 
-    @EntityField(value = "标题", asTitle = true)
+    @EntityField(asTitle = true)
     public String title;
 
-    @EntityField("订单数量")
     public int orderCount;
 
-    @EntityField("价格")
     public long price;
 
-    @EntityField("库存")
     public int inventory;
 
-    @EntityField("状态")
     public AstProductState state;
 
     public long calcOrderPrice(int amount, AstSimpleCoupon[] coupons) {

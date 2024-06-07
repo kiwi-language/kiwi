@@ -1,25 +1,24 @@
 package tech.metavm.manufacturing.storage;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ChildList;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.lang.SystemUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-@EntityType("调拨单")
+@EntityType
 public class TransferOrder {
-    @EntityField(value = "编号", asTitle = true)
+    @EntityField(asTitle = true)
     private String code;
-    @EntityField("业务类型")
     private final TransferBizType bizType;
-    @EntityField("发出仓库")
     private Warehouse fromWarehouse;
-    @EntityField("接收仓库")
     private Warehouse toWarehouse;
-    @EntityField("状态")
     private TransferOrderStatus status = TransferOrderStatus.PENDING;
-    @ChildEntity("调拨单行")
+    @ChildEntity
     private final ChildList<TransferOrderItem> items = new ChildList<>();
 
     public TransferOrder(String code, TransferBizType bizType, Warehouse fromWarehouse, Warehouse toWarehouse) {
@@ -69,7 +68,6 @@ public class TransferOrder {
         items.add(item);
     }
 
-    @EntityFlow("下发")
     public void issue() {
         if(status == TransferOrderStatus.PENDING)
             status = TransferOrderStatus.ISSUED;
@@ -77,7 +75,6 @@ public class TransferOrder {
             throw new IllegalStateException("调拨单状态不正确");
     }
 
-    @EntityFlow("关闭")
     public void close() {
         if(status != TransferOrderStatus.FINISHED)
             status = TransferOrderStatus.FINISHED;
@@ -85,7 +82,6 @@ public class TransferOrder {
             throw new IllegalStateException("调拨单状态不正确");
     }
 
-    @EntityFlow("调拨")
     public void transfer(TransferRequest request) {
         SystemUtils.print(String.format("Receiving a transfer request with %s items", request.items().size()));
         for (TransferRequestItem item : request.items()) {

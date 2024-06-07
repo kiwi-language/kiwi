@@ -3,11 +3,10 @@ package tech.metavm.manufacturing.material;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType("供应商")
+@EntityType
 public class Supplier {
-    @EntityField("编码")
     private String code;
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
 
     public Supplier(String code, String name) {

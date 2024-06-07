@@ -2,7 +2,7 @@ package tech.metavm.mocks;
 
 import tech.metavm.entity.EntityType;
 
-@EntityType("折扣类型")
+@EntityType
 public enum DiscountType {
     DEDUCT,
     PERCENTAGE

@@ -1,6 +1,9 @@
 package tech.metavm.manufacturing.storage;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityIndex;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.Index;
+import tech.metavm.entity.IndexUtils;
 import tech.metavm.lang.ObjectUtils;
 import tech.metavm.manufacturing.material.*;
 import tech.metavm.manufacturing.utils.Utils;
@@ -8,33 +11,20 @@ import tech.metavm.manufacturing.utils.Utils;
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType("库存")
+@EntityType
 public class Inventory {
-    @EntityField("物料")
     private final Material material;
-    @EntityField("数量")
     private long quantity;
-    @EntityField("库位")
     private final Position position;
-    @EntityField("质检状态")
     private final QualityInspectionState qualityInspectionState;
-    @EntityField("业务状态")
     private final InventoryBizState bizState;
-    @EntityField("批次")
     private final @Nullable Batch batch;
-    @EntityField("二维码")
     private final @Nullable String qrCode;
-    @EntityField("供应商")
     private final @Nullable Supplier supplier;
-    @EntityField("供应商批次号")
     private final @Nullable String supplierBatchNo;
-    @EntityField("客户")
     private final @Nullable Client client;
-    @EntityField("到货日期")
     private final @Nullable Date arrivalDate;
-    @EntityField("生产日期")
     private final @Nullable Date productionDate;
-    @EntityField("过期日期")
     private final @Nullable Date expirationDate;
 
     @EntityIndex("库存键")
@@ -154,7 +144,6 @@ public class Inventory {
         return expirationDate;
     }
 
-    @EntityFlow("增加库存")
     public void increaseQuantity(long quantity, Unit unit, InventoryOp op) {
         quantity = material.convertAmountToMainUnit(quantity, unit);
         this.quantity += quantity;
@@ -178,7 +167,6 @@ public class Inventory {
         );
     }
 
-    @EntityFlow("减少库存")
     public void decreaseQuantity(long quantity, Unit unit, InventoryOp op) {
         quantity = material.convertAmountToMainUnit(quantity, unit);
         if (this.quantity - quantity < 0)
@@ -204,7 +192,6 @@ public class Inventory {
         );
     }
 
-    @EntityFlow("添加库存")
     public static Inventory increaseQuantity(
             Material material,
             Position position,
@@ -261,7 +248,6 @@ public class Inventory {
         }
     }
 
-    @EntityFlow("减少指定库存")
     public static void decreaseInventory(Inventory inventory, long quantity, Unit unit, InventoryOp op) {
         inventory.decreaseQuantity(quantity, unit, op);
         if(inventory.quantity == 0)
@@ -269,7 +255,6 @@ public class Inventory {
 
     }
 
-    @EntityFlow("减少库存")
     public static void decreaseQuantity(
             Material material,
             Position position,

@@ -7,25 +7,21 @@ import tech.metavm.entity.EntityType;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType(value = "AST订单", compiled = true)
+@EntityType(compiled = true)
 public class AstOrder {
 
-    @EntityField(value = "编号", asTitle = true)
+    @EntityField(asTitle = true)
     public final String code;
 
-    @EntityField("价格")
     public final long price;
 
-    @EntityField("商品")
     public final AstProduct product;
 
-    @EntityField("数量")
     public final int amount;
 
-    @ChildEntity("优惠券")
+    @ChildEntity
     public final List<AstCoupon> coupons;
 
-    @EntityField("状态")
     public int state;
 
     public AstOrder(String code, long price, AstProduct product, int amount, List<AstCoupon> coupons) {

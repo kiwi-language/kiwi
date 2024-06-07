@@ -3,7 +3,7 @@ package tech.metavm.autograph.mocks;
 
 import tech.metavm.entity.EntityType;
 
-@EntityType(value = "AstSwitchFoo", compiled = true)
+@EntityType(compiled = true)
 public class AstSwitchFoo {
 
     private String title;

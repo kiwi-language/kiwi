@@ -7,7 +7,7 @@ import tech.metavm.manufacturing.material.*;
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType("入库记录")
+@EntityType
 public record InboundRecord(
         @EntityField(value = "入库单编码", asTitle = true) String inboundOrderCode,
         @EntityField("入库单项") InboundOrderItem inboundOrderItem,

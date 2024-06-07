@@ -2,7 +2,7 @@ package tech.metavm.autograph.mocks;
 
 import tech.metavm.entity.EntityType;
 
-@EntityType(value = "Ast异常", compiled = true)
+@EntityType(compiled = true)
 public class AstException extends Exception {
 
     public AstException() {

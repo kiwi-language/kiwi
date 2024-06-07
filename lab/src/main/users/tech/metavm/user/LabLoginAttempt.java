@@ -7,7 +7,7 @@ import tech.metavm.entity.Index;
 
 import java.util.Date;
 
-@EntityType("登录尝试")
+@EntityType
 public record LabLoginAttempt(@EntityField("是否成功") boolean successful, @EntityField("账号") String loginName,
                               @EntityField("IP地址") String clientIP, @EntityField("时间") Date time) {
 

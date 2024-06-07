@@ -3,13 +3,11 @@ package tech.metavm.manufacturing.material;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType("物料属性")
+@EntityType
 public class MaterialAttribute {
-    @EntityField("键")
     private final MaterialAttributeKey key;
-    @EntityField(value = "名称" ,asTitle = true)
+    @EntityField(asTitle = true)
     private final String name;
-    @EntityField("值")
     private Object value;
 
     public MaterialAttribute(MaterialAttributeKey key, Object value) {

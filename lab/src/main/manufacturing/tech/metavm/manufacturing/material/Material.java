@@ -1,7 +1,10 @@
 package tech.metavm.manufacturing.material;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ChildList;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.manufacturing.storage.Position;
 import tech.metavm.manufacturing.storage.Warehouse;
 import tech.metavm.manufacturing.utils.Utils;
@@ -10,67 +13,53 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType("物料")
+@EntityType
 public class Material {
 
-    @EntityField("编码")
     private final @NotNull String code;
 
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private @NotNull String name;
 
-    @EntityField("单位")
     private @NotNull Unit unit;
 
-    @ChildEntity("单位转换")
+    @ChildEntity
     private final ChildList<UnitConversion> unitConversions = new ChildList<>();
 
-    @EntityField("辅助单位")
     private @Nullable Unit auxiliaryUnit;
 
-    @EntityField("物料类型")
     private final MaterialKind kind;
 
-    @EntityField("是否启用批次")
     private boolean enableBatch;
 
-    @ChildEntity("物料属性")
+    @ChildEntity
     private final ChildList<MaterialAttribute> attributes = new ChildList<>();
 
-    @ChildEntity("批次属性")
+    @ChildEntity
     private final InventoryAttributes batchAttributes = new InventoryAttributes();
 
-    @EntityField("仓储单位")
     private @NotNull Unit storageUnit;
 
-    @EntityField("启用批量调拨")
     private boolean batchDispatchEnabled;
 
-    @EntityField("批量调拨单位")
     private @Nullable Unit batchDispatchUnit;
 
-    @EntityField("存储有效期")
     private int storageValidityPeriod;
 
-    @EntityField("有效期单位")
     private @NotNull TimeUnit storageValidityPeriodUnit;
 
-    @EntityField("先进先出")
     private boolean firstInFirstOut;
 
-    @ChildEntity("库存属性")
+    @ChildEntity
     private final InventoryAttributes inventoryAttributes = new InventoryAttributes();
 
-    @ChildEntity("投料质检状态")
+    @ChildEntity
     private final List<QualityInspectionState> feedQualityInspectionStates = new ArrayList<>();
 
-    @EntityField("投料单位")
     private @NotNull Unit feedUnit;
 
-    @EntityField("仓库")
     private @Nullable Warehouse warehouse;
 
-    @EntityField("默认库位")
     private @Nullable Position defaultPosition;
 
     public Material(@NotNull String code, @NotNull String name, @NotNull  MaterialKind kind,
@@ -135,7 +124,6 @@ public class Material {
         this.auxiliaryUnit = auxiliaryUnit;
     }
 
-    @EntityFlow("设置属性")
     public void setAttribute(MaterialAttributeKey key, Object value) {
         var existing = Utils.find(attributes, attr -> attr.getKey().equals(key));
         if(existing != null)
@@ -144,7 +132,6 @@ public class Material {
             attributes.add(new MaterialAttribute(key, value));
     }
 
-    @EntityFlow("删除属性")
     public void removeAttribute(MaterialAttributeKey key) {
         attributes.removeIf(attribute -> attribute.getKey().equals(key));
     }
@@ -210,7 +197,6 @@ public class Material {
         this.enableBatch = enableBatch;
     }
 
-    @EntityFlow("启用批量调拨")
     public void enableBatchDispatch(@NotNull Unit unit) {
         batchDispatchEnabled = true;
         batchDispatchUnit = unit;

@@ -6,7 +6,7 @@ import tech.metavm.user.LabPlatformUser;
 import tech.metavm.utils.LabBusinessException;
 import tech.metavm.utils.LabErrorCode;
 
-@EntityType("加入应用邀请")
+@EntityType
 public class LabAppInvitation {
 
     @EntityIndex("索引_应用")

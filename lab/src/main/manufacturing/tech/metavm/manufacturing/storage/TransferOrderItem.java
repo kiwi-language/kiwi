@@ -1,6 +1,5 @@
 package tech.metavm.manufacturing.storage;
 
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.manufacturing.material.Batch;
 import tech.metavm.manufacturing.material.Material;
@@ -9,21 +8,14 @@ import tech.metavm.manufacturing.material.Unit;
 
 import javax.annotation.Nullable;
 
-@EntityType("调拨单行")
+@EntityType
 public class TransferOrderItem {
-    @EntityField("调拨单")
     private final TransferOrder transferOrder;
-    @EntityField("物料")
     private Material material;
-    @EntityField("计划数量")
     private long planQuantity;
-    @EntityField("已发数量")
     private long issuedQuantity;
-    @EntityField("单位")
     private Unit unit;
-    @EntityField("供应商")
     private @Nullable Supplier supplier;
-    @EntityField("批次")
     private @Nullable Batch batch;
 
     public TransferOrderItem(TransferOrder transferOrder, Material material, long planQuantity, Unit unit, @Nullable Supplier supplier, @Nullable Batch batch) {

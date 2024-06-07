@@ -17,10 +17,10 @@ import tech.metavm.utils.LabErrorCode;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType("平台用户")
+@EntityType
 public class LabPlatformUser extends LabUser {
 
-    @ChildEntity("应用列表")
+    @ChildEntity
     private final List<LabApplication> applications = new ArrayList<>();
 
     public LabPlatformUser(String loginName, String password, String name, List<LabRole> roles) {

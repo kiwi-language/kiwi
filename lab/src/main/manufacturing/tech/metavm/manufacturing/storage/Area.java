@@ -9,19 +9,17 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType("库区")
+@EntityType
 public class Area {
 
     private final Warehouse warehouse;
-    @EntityField("编码")
     private String code;
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
-    @EntityField("上级库区")
     private final @Nullable Area parent;
-    @ChildEntity("下级库区")
+    @ChildEntity
     private final ChildList<Area> children = new ChildList<>();
-    @ChildEntity("库位")
+    @ChildEntity
     private final ChildList<Position> positions = new ChildList<>();
 
     public Area(String code, String name, Warehouse warehouse, @Nullable Area parent) {

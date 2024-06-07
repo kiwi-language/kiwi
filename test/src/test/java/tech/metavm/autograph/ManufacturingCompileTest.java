@@ -31,13 +31,13 @@ public class ManufacturingCompileTest extends CompilerTestBase {
             var profiler = ContextUtil.getProfiler();
             try (var ignored = profiler.enter("submit")) {
                 var roundingRuleType = getClassTypeByCode("tech.metavm.manufacturing.material.RoundingRule");
-                var roundHalfUp = TestUtils.getEnumConstantByName(roundingRuleType, "四舍五入");
+                var roundHalfUp = TestUtils.getEnumConstantByName(roundingRuleType, "ROUND_HALF_UP");
                 var unitType = getClassTypeByCode("tech.metavm.manufacturing.material.Unit");
                 var unit = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                         TestUtils.getMethodRefByCode(unitType, "Unit"),
                         null,
                         List.of(
-                                PrimitiveFieldValue.createString("米"),
+                                PrimitiveFieldValue.createString("meter"),
                                 PrimitiveFieldValue.createString("meter"),
                                 ReferenceFieldValue.create(roundHalfUp),
                                 PrimitiveFieldValue.createLong(2L),
@@ -46,10 +46,10 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 )));
 
                 var materialKindType = getClassTypeByCode("tech.metavm.manufacturing.material.MaterialKind");
-                var normal = TestUtils.getEnumConstantByName(materialKindType, "普通");
+                var normal = TestUtils.getEnumConstantByName(materialKindType, "NORMAL");
 
                 var timeUnitType = getClassTypeByCode("tech.metavm.manufacturing.material.TimeUnit");
-                var year = TestUtils.getEnumConstantByName(timeUnitType, "年");
+                var year = TestUtils.getEnumConstantByName(timeUnitType, "YEAR");
 
                 // create a material
                 var materialType = getClassTypeByCode("tech.metavm.manufacturing.material.Material");
@@ -58,7 +58,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                         null,
                         List.of(
                                 PrimitiveFieldValue.createString("sheet metal"),
-                                PrimitiveFieldValue.createString("钢板"),
+                                PrimitiveFieldValue.createString("sheet metal"),
                                 ReferenceFieldValue.create(normal),
                                 ReferenceFieldValue.create(unit),
                                 PrimitiveFieldValue.createLong(1L),
@@ -71,7 +71,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 // get QualityInspectionState type
                 var qualityInspectionStateType = getClassTypeByCode("tech.metavm.manufacturing.material.QualityInspectionState");
                 // get QualityInspectionState.QUALIFIED constant
-                var qualified = TestUtils.getEnumConstantByName(qualityInspectionStateType, "合格");
+                var qualified = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
                 // invoke material.setFeedQualityInspectionStates with a list containing the QUALIFIED constant
                 doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                         TestUtils.getMethodRefByCode(materialType, "setFeedQualityInspectionStates"),
@@ -170,7 +170,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 null,
                 List.of(
                         PrimitiveFieldValue.createString("warehouse1"),
-                        PrimitiveFieldValue.createString("仓库1")
+                        PrimitiveFieldValue.createString("warehouse1")
                 )
         )));
         var areaType = getClassTypeByCode("tech.metavm.manufacturing.storage.Area");
@@ -179,7 +179,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 null,
                 List.of(
                         PrimitiveFieldValue.createString("area1"),
-                        PrimitiveFieldValue.createString("库区1"),
+                        PrimitiveFieldValue.createString("area1"),
                         ReferenceFieldValue.create(warehouse),
                         PrimitiveFieldValue.createNull(
                         )
@@ -191,7 +191,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 null,
                 List.of(
                         PrimitiveFieldValue.createString("position1"),
-                        PrimitiveFieldValue.createString("库位1"),
+                        PrimitiveFieldValue.createString("position1"),
                         ReferenceFieldValue.create(area)
                 )
         )));
@@ -200,7 +200,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 null,
                 List.of(
                         PrimitiveFieldValue.createString("position2"),
-                        PrimitiveFieldValue.createString("库位2"),
+                        PrimitiveFieldValue.createString("position2"),
                         ReferenceFieldValue.create(area)
                 )
         )));
@@ -228,7 +228,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // get inventoryBizState type
         var inventoryBizStateType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryBizState");
         // get InventoryBizState.INITIAL constant
-        var initialBizState = TestUtils.getEnumConstantByName(inventoryBizStateType, "初始");
+        var initialBizState = TestUtils.getEnumConstantByName(inventoryBizStateType, "INITIAL");
 
         // create an inventory object
         var inventoryConstructorId = TestUtils.getMethodRefByCode(inventoryType, "Inventory");
@@ -258,7 +258,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                         TypeExpressions.getClassType(inventoryType.id()),
                         null,
                         null,
-                        String.format("物料 = $$%s and 库位 = $$%s and 质检状态 = $$%s and 业务状态 = $$%s",
+                        String.format("material = $$%s and position = $$%s and qualityInspectionState = $$%s and bizState = $$%s",
                                 material.id(), position.id(), qualifiedInspectionState.id(), initialBizState.id()),
                         List.of(),
                         1,
@@ -273,7 +273,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         Assert.assertEquals(inventory.id(), queriedInventory.id());
 
         var inventoryOpType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryOp");
-        var adjustment = TestUtils.getEnumConstantByName(inventoryOpType, "库存调整");
+        var adjustment = TestUtils.getEnumConstantByName(inventoryOpType, "ADJUSTMENT");
 
         // decrease the inventory by 100 and asserts that the inventory is removed
         var decreaseInventoryId = TestUtils.getStaticMethodRefByCode(inventoryType, "decreaseQuantity");
@@ -310,7 +310,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // get InboundBizType type
         var inboundBizTypeType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundBizType");
         // get InboundBizType.PURCHASE constant
-        var purchase = TestUtils.getEnumConstantByName(inboundBizTypeType, "采购");
+        var purchase = TestUtils.getEnumConstantByName(inboundBizTypeType, "PURCHASE");
 
         // get InboundOrder type
         var inboundOrderType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundOrder");
@@ -550,7 +550,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // get TransferBizType type
         var transferBizTypeType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferBizType");
         // get TransferBizType.STORAGE constant
-        var storage = TestUtils.getEnumConstantByName(transferBizTypeType, "仓储调拨");
+        var storage = TestUtils.getEnumConstantByName(transferBizTypeType, "STORAGE");
 
         // get transfer order type
         var transferOrderType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferOrder");
@@ -587,9 +587,9 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var inventoryType = getClassTypeByCode("tech.metavm.manufacturing.storage.Inventory");
         var inventoryConstructorId = TestUtils.getMethodRefByCode(inventoryType, "Inventory");
         var qualityInspectionStateType = getClassTypeByCode("tech.metavm.manufacturing.material.QualityInspectionState");
-        var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "合格");
+        var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
         var InventoryBizStateType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryBizState");
-        var initialBizState = TestUtils.getEnumConstantByName(InventoryBizStateType, "初始");
+        var initialBizState = TestUtils.getEnumConstantByName(InventoryBizStateType, "INITIAL");
         var inventory = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                 inventoryConstructorId,
                 null,
@@ -720,7 +720,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 processConstructorId,
                 null,
                 List.of(
-                        PrimitiveFieldValue.createString("工序1")
+                        PrimitiveFieldValue.createString("process1")
                 )
         )));
 
@@ -853,7 +853,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                                 ),
                                                                                 InstanceFieldDTO.create(
                                                                                         TestUtils.getFieldIdByCode(routingProcessViewType, "processDescription"),
-                                                                                        PrimitiveFieldValue.createString("工序2")
+                                                                                        PrimitiveFieldValue.createString("process2")
                                                                                 ),
                                                                                 InstanceFieldDTO.create(
                                                                                         TestUtils.getFieldIdByCode(routingProcessViewType, "workCenter"),
@@ -916,11 +916,11 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var componentMaterialItemType = getClassTypeByCode("tech.metavm.manufacturing.production.ComponentMaterialItem");
         var componentMaterialItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultViewKlassId(componentMaterialItemType), false)).type();
 
-        var directFeedType = TestUtils.getEnumConstantByName(feedTypeType, "直接投料");
-        var onDemandPickMethod = TestUtils.getEnumConstantByName(pickMethodType, "按需领料");
+        var directFeedType = TestUtils.getEnumConstantByName(feedTypeType, "DIRECT");
+        var onDemandPickMethod = TestUtils.getEnumConstantByName(pickMethodType, "ON_DEMAND");
 
-        var enabledGeneralState = TestUtils.getEnumConstantByName(generalStateType, "启用中");
-        var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "合格");
+        var enabledGeneralState = TestUtils.getEnumConstantByName(generalStateType, "ENABLED");
+        var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
 
         var bomView = doInTransaction(() -> instanceManager.create(
                 InstanceDTO.createClassInstance(

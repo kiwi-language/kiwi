@@ -3,10 +3,10 @@ package tech.metavm.user;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType("角色")
+@EntityType
 public class LabRole {
 
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
 
     public LabRole() {

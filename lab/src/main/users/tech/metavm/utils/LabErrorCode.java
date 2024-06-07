@@ -2,7 +2,7 @@ package tech.metavm.utils;
 
 import tech.metavm.entity.EntityType;
 
-@EntityType("错误代码")
+@EntityType
 public enum LabErrorCode {
 
     REENTERING_APP(608, "请先退出当前应用再进行操作"),

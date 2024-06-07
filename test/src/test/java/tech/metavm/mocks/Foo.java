@@ -6,32 +6,29 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
-@EntityType("傻")
+@EntityType
 public class Foo extends Entity {
 
     public static final IndexDef<Foo> IDX_NAME = new IndexDef<>(Foo.class, false, "name");
 
     public static final IndexDef<Foo> IDX_ALL_FLAG = new IndexDef<>(Foo.class, false, "allFlag");
 
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
 
-    @EntityField(value = "编号")
     @Nullable
     private String code;
 
-    @ChildEntity("巴")
+    @ChildEntity
     private Bar bar;
 
-    @EntityField("量子X")
     @Nullable
     private Qux qux;
 
-    @EntityField("量子X2")
     @Nullable
     private Qux qux2;
 
-    @ChildEntity("巴子")
+    @ChildEntity
     @Nullable
     private ReadWriteArray<Baz> bazList;
 

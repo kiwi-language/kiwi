@@ -5,7 +5,7 @@ import tech.metavm.entity.EntityType;
 
 import javax.annotation.Nullable;
 
-@EntityType("记录傻")
+@EntityType
 public record RecordFoo(
         @EntityField(value = "id", unique = true) int id,
         @Nullable @EntityField("名称") String name

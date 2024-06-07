@@ -1,7 +1,5 @@
 package tech.metavm.manufacturing.storage;
 
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityFlow;
 import tech.metavm.entity.EntityType;
 import tech.metavm.manufacturing.material.Batch;
 import tech.metavm.manufacturing.material.Material;
@@ -12,23 +10,15 @@ import tech.metavm.manufacturing.utils.Utils;
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType("入库单项")
+@EntityType
 public class InboundOrderItem {
-    @EntityField("入库单")
     private final InboundOrder inboundOrder;
-    @EntityField("物料")
     private Material material;
-    @EntityField("库位")
     private Position position;
-    @EntityField("应收数量")
     private long expectedQuantity;
-    @EntityField("实收数量")
     private long actualQuantity;
-    @EntityField("单位")
     private Unit unit;
-    @EntityField("批次")
     private @Nullable Batch batch;
-    @EntityField("冲销次数")
     private int reversalCount;
 
     public InboundOrderItem(InboundOrder inboundOrder, Material material, Position position, long expectedQuantity, Unit unit, @Nullable Batch batch) {
@@ -101,12 +91,10 @@ public class InboundOrderItem {
         this.reversalCount = reversalCount;
     }
 
-    @EntityFlow("获取待收数量")
     public long getPendingQuantity() {
         return expectedQuantity - actualQuantity;
     }
 
-    @EntityFlow("入库")
     public void inbound(InboundRequest request) {
         switch (request) {
             case ByAmountInboundRequest byAmountInboundRequest -> inboundByAmount(byAmountInboundRequest);
@@ -116,7 +104,6 @@ public class InboundOrderItem {
         }
     }
 
-    @EntityFlow("冲销")
     public void reverse(InboundReversalRequest request) {
         reversalCount++;
         for (InboundReversalRequestItem item : request.items()) {

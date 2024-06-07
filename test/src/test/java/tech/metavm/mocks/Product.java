@@ -4,13 +4,11 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType("商品")
+@EntityType
 public class Product extends Entity {
-    @EntityField(value = "标题", asTitle = true)
+    @EntityField(asTitle = true)
     private String title;
-    @EntityField("库存")
     private long inventory;
-    @EntityField("价格")
     private double price;
 
     public Product(String title, long inventory, double price) {

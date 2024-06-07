@@ -1,7 +1,6 @@
 package tech.metavm.application;
 
 import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.lang.SystemUtils;
 import tech.metavm.message.LabMessage;
@@ -15,18 +14,16 @@ import tech.metavm.utils.UserUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType("用户应用")
+@EntityType
 public class UserApplication extends LabApplication {
 
     public static final int MAX_NUM_ADMINS = 16;
 
-    @EntityField("所有人")
     private LabPlatformUser owner;
 
-    @ChildEntity("管理员列表")
+    @ChildEntity
     private final List<LabPlatformUser> admins = new ArrayList<>();
 
-    @EntityField("状态")
     private LabApplicationState state;
 
     public UserApplication(String name, LabPlatformUser owner) {

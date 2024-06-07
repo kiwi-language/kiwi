@@ -1,27 +1,20 @@
 package tech.metavm.manufacturing.material;
 
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType("单位换算")
+@EntityType
 public class UnitConversion {
 
-    @EntityField("X")
     private int x;
 
-    @EntityField("Y")
     private int y;
 
-    @EntityField("源单位")
     private Unit fromUnit;
 
-    @EntityField("目标单位")
     private Unit toUnit;
 
-    @EntityField("启用")
     private boolean enabled;
 
-    @EntityField("物料")
     private Material material;
 
     public UnitConversion(int x, int y, Unit fromUnit, Unit toUnit, boolean enabled, Material material) {

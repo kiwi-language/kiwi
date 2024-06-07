@@ -3,13 +3,11 @@ package tech.metavm.manufacturing.storage;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType("库位")
+@EntityType
 public class Position {
-    @EntityField("编码")
     private String code;
-    @EntityField(value = "名称", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
-    @EntityField("库区")
     private final Area area;
 
     public Position(String code, String name, Area area) {

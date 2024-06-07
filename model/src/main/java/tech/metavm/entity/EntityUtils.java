@@ -218,24 +218,24 @@ public class EntityUtils {
 
     public static String getMetaConstraintName(Field field) {
         var anno = field.getAnnotation(EntityConstraint.class);
-        return anno != null ? anno.value() : field.getName();
+        return anno != null && !anno.value().isEmpty() ? anno.value() : field.getName();
     }
 
     public static String getMetaFlowName(Method method) {
         var anno = method.getAnnotation(EntityFlow.class);
-        return anno != null ? anno.value() : method.getName();
+        return anno != null && !anno.value().isEmpty() ? anno.value() : method.getName();
     }
 
     public static String getMetaEnumConstantName(Enum<?> enumConstant) {
         var field = getField(enumConstant.getDeclaringClass(), enumConstant.name());
         var anno = field.getAnnotation(EnumConstant.class);
-        return anno != null ? anno.value() : enumConstant.name();
+        return anno != null && !anno.value().isEmpty() ? anno.value() : enumConstant.name();
     }
 
     public static String getMetaTypeName(Class<?> javaType) {
         EntityType entityType = javaType.getAnnotation(EntityType.class);
         ValueType valueType = javaType.getAnnotation(ValueType.class);
-        return NncUtils.firstNonNull(
+        return NncUtils.firstNonBlank(
                 NncUtils.get(entityType, EntityType::value),
                 NncUtils.get(valueType, ValueType::value),
                 javaType.getSimpleName()

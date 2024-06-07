@@ -2,7 +2,7 @@ package tech.metavm.user;
 
 import tech.metavm.entity.EntityType;
 
-@EntityType("注册请求")
+@EntityType
 public record LabRegisterRequest(
         String loginName,
         String name,

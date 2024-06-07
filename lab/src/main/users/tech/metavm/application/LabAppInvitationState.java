@@ -3,7 +3,7 @@ package tech.metavm.application;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType("应用邀请状态")
+@EntityType
 public enum LabAppInvitationState {
 
     @EntityField("等待接受")

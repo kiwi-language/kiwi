@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityType;
 
 import java.util.Objects;
 
-@EntityType("业务异常")
+@EntityType
 public class LabBusinessException extends RuntimeException {
 
     public LabBusinessException(LabErrorCode errorCode, Object...params) {

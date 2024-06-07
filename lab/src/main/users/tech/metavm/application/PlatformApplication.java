@@ -2,7 +2,7 @@ package tech.metavm.application;
 
 import tech.metavm.entity.EntityType;
 
-@EntityType("平台应用")
+@EntityType
 public class PlatformApplication extends LabApplication {
 
     private final static PlatformApplication INSTANCE = new PlatformApplication();

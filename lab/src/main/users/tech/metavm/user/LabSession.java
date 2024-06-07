@@ -1,6 +1,5 @@
 package tech.metavm.user;
 
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.Index;
@@ -9,21 +8,15 @@ import tech.metavm.lang.UUIDUtils;
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType("会话")
+@EntityType
 public class LabSession {
 
-    @EntityField("令牌")
     private final String token;
-    @EntityField("用户")
     private final LabUser user;
-    @EntityField("创建时间")
     private final Date createdAt;
-    @EntityField("关闭时间")
     @Nullable
     private Date closedAt;
-    @EntityField("自动关闭时间")
     private Date autoCloseAt;
-    @EntityField("状态")
     private LabSessionState state = LabSessionState.ACTIVE;
 
     public LabSession(LabUser user, Date autoCloseAt) {

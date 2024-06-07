@@ -7,22 +7,18 @@ import tech.metavm.entity.EntityType;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType(value = "AST产品", compiled = true)
+@EntityType(compiled = true)
 public class AstProduct extends Entity {
 
-    @EntityField(value = "标题", asTitle = true)
+    @EntityField(asTitle = true)
     public String title;
 
-    @EntityField("订单数量")
     public long orderCount;
 
-    @EntityField("价格")
     public long price;
 
-    @EntityField("库存")
     public long inventory;
 
-    @EntityField("状态")
     public AstProductState state;
 
     public void dec(int amount) {

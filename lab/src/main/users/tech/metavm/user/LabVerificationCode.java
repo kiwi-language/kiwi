@@ -1,6 +1,9 @@
 package tech.metavm.user;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityIndex;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.Index;
+import tech.metavm.entity.IndexUtils;
 import tech.metavm.lang.EmailUtils;
 import tech.metavm.lang.NumberUtils;
 import tech.metavm.lang.RegexUtils;
@@ -9,7 +12,7 @@ import tech.metavm.utils.LabErrorCode;
 
 import java.util.Date;
 
-@EntityType("验证码")
+@EntityType
 public class LabVerificationCode {
 
     @EntityIndex("接收者_验证码_失效时间索引")
@@ -35,19 +38,14 @@ public class LabVerificationCode {
         return new LabVerificationCode(receiver, code, new Date(System.currentTimeMillis() + DEFAULT_EXPIRE_IN_MILLIS), clientIP);
     }
 
-    @EntityField("验证码")
     private final String code;
 
-    @EntityField("接收地址")
     private final String receiver;
 
-    @EntityField("失效时间")
     private final Date expiredAt;
 
-    @EntityField("客户端IP")
     private final String clientIP;
 
-    @EntityField("创建时间")
     private final Date createdAt = new Date();
 
     public LabVerificationCode(String receiver, String code, Date expiredAt, String clientIP) {
