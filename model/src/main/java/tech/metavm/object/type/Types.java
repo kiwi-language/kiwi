@@ -307,14 +307,14 @@ public class Types {
     }
 
     public static ClassType createFunctionalClass(ClassType functionalInterface) {
-        var klass = ClassTypeBuilder.newBuilder(functionalInterface.getName() + "实现", null)
+        var klass = ClassTypeBuilder.newBuilder(functionalInterface.getName() + "Impl", null)
                 .interfaces(functionalInterface)
                 .ephemeral(true)
                 .build();
         klass.setEphemeralEntity(true);
         var sam = getSAM(functionalInterface.resolve());
         var funcType = new FunctionType(sam.getParameterTypes(), sam.getReturnType());
-        var funcField = FieldBuilder.newBuilder("函数", "func", klass, funcType).build();
+        var funcField = FieldBuilder.newBuilder("func", "func", klass, funcType).build();
 
         var flow = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode())
                 .overridden(List.of(sam))
@@ -322,15 +322,15 @@ public class Types {
                 .returnType(sam.getReturnType())
                 .build();
 
-        var selfNode = new SelfNode(null, "当前对象", null, flow.getDeclaringType().getType(), null, flow.getRootScope());
-        var inputType = ClassTypeBuilder.newBuilder("流程输入", "InputType").temporary().build();
+        var selfNode = new SelfNode(null, "self", null, flow.getDeclaringType().getType(), null, flow.getRootScope());
+        var inputType = ClassTypeBuilder.newBuilder("Input", "Input").temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
                     .build();
         }
 
-        var inputNode = new InputNode(null, "输入", null, inputType, selfNode, flow.getRootScope());
-        var funcNode = new FunctionNode(null, "函数", null, inputNode, flow.getRootScope(),
+        var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getRootScope());
+        var funcNode = new FunctionNode(null, "function", null, inputNode, flow.getRootScope(),
                 Values.expression(new PropertyExpression(new NodeExpression(selfNode), funcField.getRef())),
                 NncUtils.map(inputType.getReadyFields(),
                         inputField ->
@@ -338,7 +338,7 @@ public class Types {
                 )
         );
         var returnValue = flow.getReturnType().isVoid() ? null : Values.expression(new NodeExpression(funcNode));
-        new ReturnNode(null, "结束", null, funcNode, flow.getRootScope(), returnValue);
+        new ReturnNode(null, "return", null, funcNode, flow.getRootScope(), returnValue);
         return klass.getType();
     }
 
@@ -552,7 +552,7 @@ public class Types {
     } */
 
     public static String getMapTypeName(Type keyType, Type valueType) {
-        return getParameterizedName("词典", keyType, valueType);
+        return getParameterizedName("Map", keyType, valueType);
     }
 
     public static String getCollectionName(Type type) {
@@ -560,19 +560,19 @@ public class Types {
     }
 
     public static String getSetName(Type type) {
-        return getParameterizedName("集合", type);
+        return getParameterizedName("Set", type);
     }
 
     public static String getListName(Type type) {
-        return getParameterizedName("列表", type);
+        return getParameterizedName("List", type);
     }
 
     public static String getIteratorName(Type type) {
-        return getParameterizedName("迭代器", type);
+        return getParameterizedName("Iterator", type);
     }
 
     public static String getIteratorImplName(Type type) {
-        return getParameterizedName("迭代器实现", type);
+        return getParameterizedName("IteratorImpl", type);
     }
 
     public static String getParameterizedName(String templateName, Type... typeArguments) {

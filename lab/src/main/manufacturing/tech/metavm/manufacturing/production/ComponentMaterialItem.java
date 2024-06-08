@@ -3,7 +3,7 @@ package tech.metavm.manufacturing.production;
 import tech.metavm.entity.EntityStruct;
 import tech.metavm.manufacturing.material.QualityInspectionState;
 
-@EntityStruct("ComponentMaterialItem")
+@EntityStruct
 public class ComponentMaterialItem {
     private int sequence;
     private int numerator;

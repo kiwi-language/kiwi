@@ -8,10 +8,10 @@ import tech.metavm.manufacturing.material.*;
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityStruct(value = "规格入库请求", ephemeral = true)
+@EntityStruct(ephemeral = true)
 public class BySpecInboundRequest extends InboundRequest {
 
-    @ChildEntity("规格")
+    @ChildEntity
     private ChildList<BySpecInboundRequestItem> bySpecItems;
 
     public BySpecInboundRequest(InboundBizType bizType, Position position, Material material, @Nullable Batch batch, @Nullable Supplier supplier, @Nullable String supplierBatchNo, @Nullable Client client, @Nullable Date arrivalDate, @Nullable Date productionDate, @Nullable Date expirationDate, Unit unit, ChildList<BySpecInboundRequestItem> bySpecItems) {

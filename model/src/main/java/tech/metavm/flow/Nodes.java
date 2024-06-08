@@ -46,10 +46,10 @@ public class Nodes {
             Supplier<Value>> action,
             ScopeRT scope) {
         var seq = NncUtils.randomNonNegative();
-        var whileOutputType = ClassTypeBuilder.newBuilder("循环输出", null)
+        var whileOutputType = ClassTypeBuilder.newBuilder("WhileOutput", null)
                 .temporary()
                 .build();
-        var indexField = FieldBuilder.newBuilder("索引", "index", whileOutputType, StandardTypes.getLongType())
+        var indexField = FieldBuilder.newBuilder("index", "index", whileOutputType, StandardTypes.getLongType())
                 .build();
         var node = new WhileNode(
                 null, name, null, whileOutputType, scope.getLastNode(), scope,
@@ -71,7 +71,7 @@ public class Nodes {
         ));
         var bodyScope = node.getBodyScope();
         var element = new GetElementNode(
-                null, "数组元素_" + seq, "Element_" + seq, bodyScope.getLastNode(), bodyScope,
+                null, "Element_" + seq, "Element_" + seq, bodyScope.getLastNode(), bodyScope,
                 getArray.get(), Values.nodeProperty(node, indexField)
         );
         action.accept(bodyScope, () -> Values.node(element), () -> Values.nodeProperty(node, indexField));
@@ -84,17 +84,17 @@ public class Nodes {
             Supplier<Value>> action,
             ScopeRT scope) {
         var seq = NncUtils.randomNonNegative();
-        var whileOutputType = ClassTypeBuilder.newBuilder("循环输出", null)
+        var whileOutputType = ClassTypeBuilder.newBuilder("WhileOutput", null)
                 .temporary()
                 .build();
-        var indexField = FieldBuilder.newBuilder("索引", "index", whileOutputType, StandardTypes.getLongType())
+        var indexField = FieldBuilder.newBuilder("index", "index", whileOutputType, StandardTypes.getLongType())
                 .build();
         var list = getArray.get();
         var listClass = ((ClassType) list.getType()).resolve();
         var methodRef = listClass.getMethodByCodeAndParamTypes("size", List.of()).getRef();
         var size = new MethodCallNode(
                 null,
-                "列表大小_" + seq,
+                "ListSize_" + seq,
                 null,
                 scope.getLastNode(),
                 scope,
@@ -123,7 +123,7 @@ public class Nodes {
         var bodyScope = node.getBodyScope();
         var getMethod = listClass.getMethodByCodeAndParamTypes("get", List.of(StandardTypes.getLongType()));
         var element = new MethodCallNode(
-                null, "获取元素_" + seq, null,
+                null, "getElement_" + seq, null,
                 bodyScope.getLastNode(), bodyScope,
                 getArray.get(), getMethod.getRef(),
                 List.of(Nodes.argument(getMethod, 0, Values.nodeProperty(node, indexField)))
@@ -227,7 +227,7 @@ public class Nodes {
     public static void setSource(Value view, Value source, ScopeRT scope) {
         var seq = NncUtils.randomNonNegative();
         var setSourceFunc = NativeFunctions.setSource();
-        new FunctionCallNode(null, "设置来源_" + seq, "setSource_" + seq, scope.getLastNode(), scope,
+        new FunctionCallNode(null, "setSource_" + seq, "setSource_" + seq, scope.getLastNode(), scope,
                 setSourceFunc.getRef(), List.of(
                 Nodes.argument(setSourceFunc, 0, view),
                 Nodes.argument(setSourceFunc, 1, source)

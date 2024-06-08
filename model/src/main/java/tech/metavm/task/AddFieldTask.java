@@ -1,6 +1,5 @@
 package tech.metavm.task;
 
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -15,7 +14,7 @@ public class AddFieldTask extends ScanByClassTask {
     private final Field field;
 
     protected AddFieldTask(Klass declaringType, Field field) {
-        super(String.format("%s新增字段%s任务", declaringType.getName(), field.getName()), declaringType.getType());
+        super(String.format("Add field task %s.%s", declaringType.getName(), field.getName()), declaringType.getType());
         this.field = field;
     }
 

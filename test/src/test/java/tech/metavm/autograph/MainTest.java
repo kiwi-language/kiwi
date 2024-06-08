@@ -299,9 +299,9 @@ public class MainTest extends CompilerTestBase {
                                             ReferenceFieldValue.create(application))
                             )
                     ));
-                    Assert.fail("应用所有人无法退出应用");
+                    Assert.fail("Owner can leave the application");
                 } catch (FlowExecutionException e) {
-                    Assert.assertEquals("应用所有人无法退出应用", e.getMessage());
+                    Assert.assertEquals("The owner of the application cannot exit the application", e.getMessage());
                 }
 
                 // create a platform user to join the application and then leave
@@ -455,7 +455,7 @@ public class MainTest extends CompilerTestBase {
                     ));
                     Assert.fail("Users that are not member of the application should not be able to enter it");
                 } catch (FlowExecutionException e) {
-                    Assert.assertEquals("用户未加入应用无法进入", e.getMessage());
+                    Assert.assertEquals("User not joined in the application cannot enter", e.getMessage());
                 }
 
                 // test application view list
@@ -533,7 +533,7 @@ public class MainTest extends CompilerTestBase {
                             Assert.fail("Exception should be raised when there are too many failed login attempts");
                         }
                     } catch (FlowExecutionException e) {
-                        Assert.assertEquals("登录尝试次数过多，请稍后再试", e.getMessage());
+                        Assert.assertEquals("Too many login attempts, please try again later", e.getMessage());
                     }
                 }
 
@@ -623,7 +623,7 @@ public class MainTest extends CompilerTestBase {
                         null,
                         List.of(
                                 PrimitiveFieldValue.createString(email),
-                                PrimitiveFieldValue.createString("MetaVM验证码"),
+                                PrimitiveFieldValue.createString("MetaVM Verification Code"),
                                 PrimitiveFieldValue.createString("127.0.0.1")
                         )
                 )

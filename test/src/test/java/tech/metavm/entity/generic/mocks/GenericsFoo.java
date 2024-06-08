@@ -4,5 +4,5 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.TemplateVariable;
 
 @EntityType(compiled = true)
-public class GenericsFoo<T> extends GenericsBase<@TemplateVariable("元素") T> {
+public class GenericsFoo<T> extends GenericsBase<@TemplateVariable("Element") T> {
 }

@@ -252,7 +252,7 @@ public class Generator extends CodeGenVisitor {
             var mergeNode = builder().createMerge();
             exitCondSection(mergeNode, catchOutputVars);
 
-            var exceptionField = FieldBuilder.newBuilder("异常", "exception",
+            var exceptionField = FieldBuilder.newBuilder("exception", "exception",
                     mergeNode.getKlass(), StandardTypes.getNullableThrowableKlass()).build();
 
             final var exceptionExprFinal = exceptionExpr;
@@ -621,7 +621,7 @@ public class Generator extends CodeGenVisitor {
         var node = builder().createWhile();
         Field condField = null;
         if (condition != null) {
-            condField = builder().newTemproryField(node.getKlass(), "循环条件", StandardTypes.getBooleanType());
+            condField = builder().newTemproryField(node.getKlass(), "condition", StandardTypes.getBooleanType());
         }
         var bodyScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
         Set<QualifiedName> liveIn = requireNonNull(statement.getUserData(Keys.LIVE_VARS_IN));
@@ -697,7 +697,7 @@ public class Generator extends CodeGenVisitor {
             processLoop(statement, getExtraLoopTest(statement),
                     (whileNode, loopVar2Field) -> {
                         var indexField = FieldBuilder
-                                .newBuilder("索引", "index", whileNode.getKlass(), StandardTypes.getLongType())
+                                .newBuilder("index", "index", whileNode.getKlass(), StandardTypes.getLongType())
                                 .build();
                         whileNode.setCondition(
                                 Values.expression(

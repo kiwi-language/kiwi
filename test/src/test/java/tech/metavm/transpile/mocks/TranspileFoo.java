@@ -6,7 +6,7 @@ public class TranspileFoo {
         if (product.inventory > 0) {
             product.inventory--;
         }
-        else throw new RuntimeException("库存不足");
+        else throw new RuntimeException("Out of inventory");
     }
 
 }

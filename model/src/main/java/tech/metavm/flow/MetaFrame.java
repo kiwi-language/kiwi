@@ -164,7 +164,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
                 outputs.put(pc, output);
             pc = result.next();
         }
-        throw new FlowExecutionException(String.format("流程执行步骤超出限制: %d", MAX_STEPS));
+        throw new FlowExecutionException(String.format("Flow execution steps exceed the limit: %d", MAX_STEPS));
     }
 
     @SuppressWarnings("unused")

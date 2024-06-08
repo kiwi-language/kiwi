@@ -744,7 +744,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @SuppressWarnings("unused")
-    // DEBUG用，勿删！
+    // For debugging, DON'T REMOVE!!!
     public tech.metavm.object.type.Type getTypeByTable(ReadonlyArray<?> table) {
         for (Object model : models()) {
             if (model instanceof ClassType type) {

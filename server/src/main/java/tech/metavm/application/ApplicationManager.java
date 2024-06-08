@@ -207,7 +207,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
             platformCtx.bind(
                     new Message(
                             invitee,
-                            String.format("'%s'邀请您加入应用'%s'", currentUser.getName(), app.getName()),
+                            String.format("'%s' invited you to join application '%s'", currentUser.getName(), app.getName()),
                             MessageKind.INVITATION, invitationInst)
             );
             platformCtx.finish();
@@ -221,7 +221,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
             ensureAppAdmin(app);
             var user = context.getEntity(PlatformUser.class, userId);
             app.addAdmin(user);
-            context.bind(new Message(user, String.format("您已成为应用'%s'的管理员", app.getName()),
+            context.bind(new Message(user, String.format("You have become admin of '%s'", app.getName()),
                     MessageKind.DEFAULT,
                     Instances.nullInstance()));
             context.finish();
@@ -235,7 +235,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
             ensureAppAdmin(app);
             var user = context.getEntity(PlatformUser.class, userId);
             app.removeAdmin(user);
-            context.bind(new Message(user, String.format("您不再是应用'%s'的管理员", app.getName()),
+            context.bind(new Message(user, String.format("You are no longer admin of '%s'", app.getName()),
                     MessageKind.DEFAULT,
                     Instances.nullInstance()));
             context.finish();

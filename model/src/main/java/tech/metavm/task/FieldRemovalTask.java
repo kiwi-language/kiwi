@@ -6,7 +6,6 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
-//@EntityType("字段删除任务")
 public class FieldRemovalTask {
 
     public static final long BATCH_SIZE = 100;

@@ -102,7 +102,7 @@ public class MappingTest extends TestCase {
                 List.of(
                         InstanceFieldDTO.create(
                                 typeIds.productTitleFieldId(),
-                                PrimitiveFieldValue.createString("鞋子")
+                                PrimitiveFieldValue.createString("Shoes")
                         ),
                         InstanceFieldDTO.create(
                                 typeIds.productSkuListFieldId(),
@@ -200,7 +200,7 @@ public class MappingTest extends TestCase {
                 List.of(
                         InstanceFieldDTO.create(
                                 productViewTitleFieldId,
-                                PrimitiveFieldValue.createString("皮鞋")
+                                PrimitiveFieldValue.createString("Shoes")
                         ),
                         InstanceFieldDTO.create(
                                 productViewSkuListFieldId,
@@ -301,7 +301,7 @@ public class MappingTest extends TestCase {
                 null, TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()), null, null, null,
                 new ClassInstanceParam(
                         List.of(
-                                InstanceFieldDTO.create(shoppingTypeIds.skuTitleFieldId(), PrimitiveFieldValue.createString("鞋子40")),
+                                InstanceFieldDTO.create(shoppingTypeIds.skuTitleFieldId(), PrimitiveFieldValue.createString("Shoes 40")),
                                 InstanceFieldDTO.create(shoppingTypeIds.skuAmountFieldId(), PrimitiveFieldValue.createLong(100L)),
                                 InstanceFieldDTO.create(shoppingTypeIds.skuPriceFieldId(), PrimitiveFieldValue.createDouble(100.0))
                         )
@@ -311,7 +311,7 @@ public class MappingTest extends TestCase {
                 null, TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()), null, null, null,
                 new ClassInstanceParam(
                         List.of(
-                                InstanceFieldDTO.create(shoppingTypeIds.couponTitleFieldId(), PrimitiveFieldValue.createString("鞋子减5元")),
+                                InstanceFieldDTO.create(shoppingTypeIds.couponTitleFieldId(), PrimitiveFieldValue.createString("Shoes reduced by 5 Yuan")),
                                 InstanceFieldDTO.create(shoppingTypeIds.couponDiscountFieldId(), PrimitiveFieldValue.createDouble(5.0)),
                                 InstanceFieldDTO.create(shoppingTypeIds.couponStateFieldId(),
                                         ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId()))
@@ -322,7 +322,7 @@ public class MappingTest extends TestCase {
                 null, TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()), null, null, null,
                 new ClassInstanceParam(
                         List.of(
-                                InstanceFieldDTO.create(shoppingTypeIds.couponTitleFieldId(), PrimitiveFieldValue.createString("鞋子减10元")),
+                                InstanceFieldDTO.create(shoppingTypeIds.couponTitleFieldId(), PrimitiveFieldValue.createString("Shoes reduced by 10 Yuan")),
                                 InstanceFieldDTO.create(shoppingTypeIds.couponDiscountFieldId(), PrimitiveFieldValue.createDouble(10.0)),
                                 InstanceFieldDTO.create(shoppingTypeIds.couponStateFieldId(),
                                         ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId())
@@ -337,7 +337,7 @@ public class MappingTest extends TestCase {
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
-                                        shoppingTypeIds.orderCodeFieldId(), PrimitiveFieldValue.createString("鞋子001")
+                                        shoppingTypeIds.orderCodeFieldId(), PrimitiveFieldValue.createString("Shoes001")
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.orderPriceFieldId(), PrimitiveFieldValue.createDouble(85.0)

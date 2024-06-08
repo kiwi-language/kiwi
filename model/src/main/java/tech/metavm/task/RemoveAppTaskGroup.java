@@ -1,7 +1,6 @@
 package tech.metavm.task;
 
 import tech.metavm.application.Application;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 
@@ -20,8 +19,8 @@ public class RemoveAppTaskGroup extends TaskGroup {
     public List<Task> createTasks(IEntityContext context) {
         var app = context.getEntity(Application.class, appId);
         return List.of(
-                new ClearUsersTask(String.format("清空应用'%s'用户", app.getName()), appId),
-                new ClearInvitationTask(String.format("清空应用'%s'邀请", app.getName()), appId)
+                new ClearUsersTask(String.format("Clear users for '%s'", app.getName()), appId),
+                new ClearInvitationTask(String.format("Clear invitations for '%s'", app.getName()), appId)
         );
     }
 

@@ -70,7 +70,7 @@ public class TableManagerTest extends TestCase {
 
     public void testSave() {
         TableDTO tableDTO = new TableDTO(
-                TmpId.random().toString(), "傻", "Foo", null,
+                TmpId.random().toString(), "Foo", "Foo", null,
                 false, false,
                 new TitleFieldDTO(
                         NncUtils.randomNonNegative(),

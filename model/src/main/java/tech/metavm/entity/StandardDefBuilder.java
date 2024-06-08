@@ -70,14 +70,14 @@ public class StandardDefBuilder {
         ValueDef<Record> recordDef = createValueDef(
                 Record.class,
                 Record.class,
-                StandardTypes.setRecordKlass(ClassTypeBuilder.newBuilder("记录", Record.class.getSimpleName())
+                StandardTypes.setRecordKlass(ClassTypeBuilder.newBuilder("Record", Record.class.getSimpleName())
                         .source(ClassSource.BUILTIN)
                         .kind(ClassKind.VALUE).build()),
                 defContext
         );
         defContext.addDef(recordDef);
 
-        StandardTypes.setEntityKlass(ClassTypeBuilder.newBuilder("实体", Entity.class.getSimpleName())
+        StandardTypes.setEntityKlass(ClassTypeBuilder.newBuilder("Entity", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .build());
         EntityDef<Entity> entityDef = createEntityDef(
@@ -89,9 +89,9 @@ public class StandardDefBuilder {
 
         defContext.addDef(entityDef);
 
-        var enumTypeParam = new TypeVariable(null, "枚举类型", "EnumType",
+        var enumTypeParam = new TypeVariable(null, "EnumType", "EnumType",
                 DummyGenericDeclaration.INSTANCE);
-        StandardTypes.setEnumKlass(ClassTypeBuilder.newBuilder("枚举", Enum.class.getSimpleName())
+        StandardTypes.setEnumKlass(ClassTypeBuilder.newBuilder("Enum", Enum.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
                 .build());
@@ -133,7 +133,7 @@ public class StandardDefBuilder {
                 defContext.afterDefInitialized(defContext.getDef(javaType))
         );
 
-        StandardTypes.setThrowableKlass(ClassTypeBuilder.newBuilder("中断", Throwable.class.getSimpleName())
+        StandardTypes.setThrowableKlass(ClassTypeBuilder.newBuilder("Predicate", Throwable.class.getSimpleName())
                 .source(ClassSource.BUILTIN).build());
         createThrowableFlows(StandardTypes.getThrowableKlass());
         var throwableDef = createValueDef(
@@ -165,7 +165,7 @@ public class StandardDefBuilder {
                 throwableDef
         );
         defContext.afterDefInitialized(throwableDef);
-        StandardTypes.setExceptionKlass(ClassTypeBuilder.newBuilder("异常", Exception.class.getSimpleName())
+        StandardTypes.setExceptionKlass(ClassTypeBuilder.newBuilder("Exception", Exception.class.getSimpleName())
                 .superClass(StandardTypes.getThrowableKlass().getType())
                 .source(ClassSource.BUILTIN).build());
 
@@ -173,28 +173,28 @@ public class StandardDefBuilder {
 //        defContext.addDef(createValueDef(Exception.class, Exception.class, exceptionType, defContext));
         defContext.addDef(new DirectDef<>(Exception.class, StandardTypes.getExceptionKlass(), ExceptionNative.class));
 
-        StandardTypes.setRuntimeExceptionKlass(ClassTypeBuilder.newBuilder("运行时异常", RuntimeException.class.getSimpleName())
+        StandardTypes.setRuntimeExceptionKlass(ClassTypeBuilder.newBuilder("RuntimeException", RuntimeException.class.getSimpleName())
                 .superClass(StandardTypes.getExceptionKlass().getType())
                 .source(ClassSource.BUILTIN).build());
         createRuntimeExceptionFlows(StandardTypes.getRuntimeExceptionKlass());
         defContext.addDef(new DirectDef<>(
                 RuntimeException.class, StandardTypes.getRuntimeExceptionKlass(), RuntimeExceptionNative.class));
 
-        StandardTypes.setIllegalArgumentExceptionKlass(ClassTypeBuilder.newBuilder("非法参数异常", IllegalArgumentException.class.getSimpleName())
+        StandardTypes.setIllegalArgumentExceptionKlass(ClassTypeBuilder.newBuilder("IllegalArgumentException", IllegalArgumentException.class.getSimpleName())
                 .superClass(StandardTypes.getRuntimeExceptionKlass().getType())
                 .source(ClassSource.BUILTIN).build());
         createIllegalArgumentExceptionFlows(StandardTypes.getIllegalArgumentExceptionKlass());
         defContext.addDef(new DirectDef<>(
                 IllegalArgumentException.class, StandardTypes.getIllegalArgumentExceptionKlass(), IllegalArgumentExceptionNative.class));
 
-        StandardTypes.setIllegalStateExceptionKlass(ClassTypeBuilder.newBuilder("非法状态异常", IllegalStateException.class.getSimpleName())
+        StandardTypes.setIllegalStateExceptionKlass(ClassTypeBuilder.newBuilder("IllegalStateException", IllegalStateException.class.getSimpleName())
                 .superClass(StandardTypes.getRuntimeExceptionKlass().getType())
                 .source(ClassSource.BUILTIN).build());
         createIllegalStateExceptionFlows(StandardTypes.getIllegalStateExceptionKlass());
         defContext.addDef(new DirectDef<>(
                 IllegalStateException.class, StandardTypes.getIllegalStateExceptionKlass(), IllegalStateExceptionNative.class));
 
-        StandardTypes.setNullPointerExceptionKlass(ClassTypeBuilder.newBuilder("空指针异常", NullPointerException.class.getSimpleName())
+        StandardTypes.setNullPointerExceptionKlass(ClassTypeBuilder.newBuilder("NullPointerException", NullPointerException.class.getSimpleName())
                 .superClass(StandardTypes.getRuntimeExceptionKlass().getType())
                 .source(ClassSource.BUILTIN).build());
         createNullPointerExceptionFlows(StandardTypes.getNullPointerExceptionKlass());
@@ -203,145 +203,145 @@ public class StandardDefBuilder {
     }
 
     private Klass createConsumerKlass() {
-        var elementType = new TypeVariable(null, "元素", "T",
+        var elementType = new TypeVariable(null, "Element", "T",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(Consumer.class.getTypeParameters()[0], elementType);
-        var consumerType = ClassTypeBuilder.newBuilder("消费者", "Consumer")
+        var consumerType = ClassTypeBuilder.newBuilder("Consumer", "Consumer")
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .kind(ClassKind.INTERFACE)
                 .build();
         primTypeFactory.putType(Consumer.class, consumerType);
-        MethodBuilder.newBuilder(consumerType, "消费", "accept")
+        MethodBuilder.newBuilder(consumerType, "accept", "accept")
                 .returnType(StandardTypes.getVoidType())
-                .parameters(new Parameter(null, "元素", "element", elementType.getType()))
+                .parameters(new Parameter(null, "element", "element", elementType.getType()))
                 .build();
         return consumerType;
     }
 
     private Klass createPredicateKlass() {
-        var elementType = new TypeVariable(null, "元素", "T",
+        var elementType = new TypeVariable(null, "Element", "T",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(Predicate.class.getTypeParameters()[0], elementType);
-        var predicateType = ClassTypeBuilder.newBuilder("断言", "Predicate")
+        var predicateType = ClassTypeBuilder.newBuilder("Predicate", "Predicate")
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .kind(ClassKind.INTERFACE)
                 .build();
         primTypeFactory.putType(Predicate.class, predicateType);
-        MethodBuilder.newBuilder(predicateType, "测试", "test")
+        MethodBuilder.newBuilder(predicateType, "test", "test")
                 .returnType(StandardTypes.getBooleanType())
-                .parameters(new Parameter(null, "元素", "element", elementType.getType()))
+                .parameters(new Parameter(null, "element", "element", elementType.getType()))
                 .build();
         return predicateType;
     }
 
     private void initBuiltinFlows() {
-        var getSourceFunc = FunctionBuilder.newBuilder("获取来源", "getSource")
+        var getSourceFunc = FunctionBuilder.newBuilder("getSource", "getSource")
                 .isNative()
-                .parameters(new Parameter(null, "视图", "view", new AnyType()))
+                .parameters(new Parameter(null, "view", "view", new AnyType()))
                 .returnType(new AnyType())
                 .build();
         NativeFunctions.setGetSourceFunc(getSourceFunc);
         defContext.writeEntity(getSourceFunc);
 
-        var setSourceFunc = new FunctionBuilder("设置来源", "setSource")
+        var setSourceFunc = new FunctionBuilder("setSource", "setSource")
                 .isNative()
                 .parameters(
-                        new Parameter(null, "视图", "view", new AnyType()),
-                        new Parameter(null, "来源", "source", new AnyType())
+                        new Parameter(null, "view", "view", new AnyType()),
+                        new Parameter(null, "source", "source", new AnyType())
                 )
                 .returnType(StandardTypes.getVoidType())
                 .build();
         NativeFunctions.setSetSourceFunc(setSourceFunc);
         defContext.writeEntity(setSourceFunc);
 
-        var isSourcePresentFunc = FunctionBuilder.newBuilder("来源是否存在", "isSourcePResent")
+        var isSourcePresentFunc = FunctionBuilder.newBuilder("isSourcePresent", "isSourcePresent")
                 .isNative()
-                .parameters(new Parameter(null, "视图", "view", new AnyType()))
+                .parameters(new Parameter(null, "view", "view", new AnyType()))
                 .returnType(StandardTypes.getBooleanType())
                 .build();
         NativeFunctions.setIsSourcePresent(isSourcePresentFunc);
         defContext.writeEntity(isSourcePresentFunc);
 
-        var funcType = new TypeVariable(null, "函数类型", "FunctionType", DummyGenericDeclaration.INSTANCE);
-        var function2instance = FunctionBuilder.newBuilder("函数转实例", "functionToInstance")
+        var funcType = new TypeVariable(null, "FunctionType", "FunctionType", DummyGenericDeclaration.INSTANCE);
+        var function2instance = FunctionBuilder.newBuilder("functionToInstance", "functionToInstance")
                 .isNative()
                 .typeParameters(List.of(funcType))
-                .parameters(new Parameter(null, "函数", "function", StandardTypes.getAnyType()))
+                .parameters(new Parameter(null, "function", "function", StandardTypes.getAnyType()))
                 .returnType(funcType.getType())
                 .build();
         NativeFunctions.setFunctionToInstance(function2instance);
         defContext.writeEntity(function2instance);
 
-        var sendEmail = FunctionBuilder.newBuilder("发送邮件", "sendEmail")
+        var sendEmail = FunctionBuilder.newBuilder("sendEmail", "sendEmail")
                 .isNative()
                 .parameters(
-                        new Parameter(null, "收件人", "recipient", StandardTypes.getStringType()),
-                        new Parameter(null, "主题", "subject", StandardTypes.getStringType()),
-                        new Parameter(null, "内容", "content", StandardTypes.getStringType())
+                        new Parameter(null, "recipient", "recipient", StandardTypes.getStringType()),
+                        new Parameter(null, "subject", "subject", StandardTypes.getStringType()),
+                        new Parameter(null, "content", "content", StandardTypes.getStringType())
                 )
                 .returnType(StandardTypes.getVoidType())
                 .build();
         NativeFunctions.setSendEmail(sendEmail);
         defContext.writeEntity(sendEmail);
 
-        var getSessionEntry = FunctionBuilder.newBuilder("获取会话条目", "getSessionEntry")
+        var getSessionEntry = FunctionBuilder.newBuilder("getSessionEntry", "getSessionEntry")
                 .isNative()
                 .parameters(
-                        new Parameter(null, "键", "key", StandardTypes.getStringType())
+                        new Parameter(null, "key", "key", StandardTypes.getStringType())
                 )
                 .returnType(StandardTypes.getNullableAnyType())
                 .build();
         NativeFunctions.setGetSessionEntry(getSessionEntry);
         defContext.writeEntity(getSessionEntry);
 
-        var setSessionEntry = FunctionBuilder.newBuilder("设置会话条目", "setSessionEntry")
+        var setSessionEntry = FunctionBuilder.newBuilder("setSessionEntry", "setSessionEntry")
                 .isNative()
                 .parameters(
-                        new Parameter(null, "键", "key", StandardTypes.getStringType()),
-                        new Parameter(null, "值", "value", StandardTypes.getAnyType())
+                        new Parameter(null, "key", "key", StandardTypes.getStringType()),
+                        new Parameter(null, "value", "value", StandardTypes.getAnyType())
                 )
                 .returnType(StandardTypes.getVoidType())
                 .build();
         NativeFunctions.setSetSessionEntry(setSessionEntry);
         defContext.writeEntity(setSessionEntry);
 
-        var removeSessionEntry = FunctionBuilder.newBuilder("删除会话条目", "removeSessionEntry")
+        var removeSessionEntry = FunctionBuilder.newBuilder("removeSessionEntry", "removeSessionEntry")
                 .isNative()
                 .parameters(
-                        new Parameter(null, "键", "key", StandardTypes.getStringType())
+                        new Parameter(null, "key", "key", StandardTypes.getStringType())
                 )
                 .returnType(StandardTypes.getBooleanType())
                 .build();
         NativeFunctions.setRemoveSessionEntry(removeSessionEntry);
         defContext.writeEntity(removeSessionEntry);
 
-        var castedType = new TypeVariable(null, "转换类型", "CastedType", DummyGenericDeclaration.INSTANCE);
-        var typeCast = FunctionBuilder.newBuilder("类型转换", "typeCast")
+        var castedType = new TypeVariable(null, "CastedType", "CastedType", DummyGenericDeclaration.INSTANCE);
+        var typeCast = FunctionBuilder.newBuilder("typeCast", "typeCast")
                 .isNative()
                 .typeParameters(List.of(castedType))
                 .parameters(
-                        new Parameter(null, "实例", "instance", StandardTypes.getNullableAnyType())
+                        new Parameter(null, "instance", "instance", StandardTypes.getNullableAnyType())
                 )
                 .returnType(castedType.getType())
                 .build();
         NativeFunctions.setTypeCast(typeCast);
         defContext.writeEntity(typeCast);
 
-        var print = FunctionBuilder.newBuilder("打印", "print")
+        var print = FunctionBuilder.newBuilder("print", "print")
                 .isNative()
-                .parameters(new Parameter(null, "内容", "content", StandardTypes.getNullableAnyType()))
+                .parameters(new Parameter(null, "content", "content", StandardTypes.getNullableAnyType()))
                 .returnType(StandardTypes.getVoidType())
                 .build();
         NativeFunctions.setPrint(print);
         defContext.writeEntity(print);
 
-        var delete = FunctionBuilder.newBuilder("删除", "delete")
+        var delete = FunctionBuilder.newBuilder("delete", "delete")
                 .isNative()
-                .parameters(new Parameter(null, "实例", "instance", StandardTypes.getAnyType()))
+                .parameters(new Parameter(null, "instance", "instance", StandardTypes.getAnyType()))
                 .returnType(StandardTypes.getVoidType())
                 .build();
         NativeFunctions.setDelete(delete);
@@ -424,9 +424,9 @@ public class StandardDefBuilder {
     }
 
     public Klass createIteratorKlass() {
-        String name = getParameterizedName("迭代器");
+        String name = getParameterizedName("Iterator");
         String code = getParameterizedCode("Iterator");
-        var elementType = new TypeVariable(null, "迭代器元素", "IteratorElement",
+        var elementType = new TypeVariable(null, "IteratorElement", "IteratorElement",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(MetaIterator.class.getTypeParameters()[0], elementType);
@@ -442,13 +442,13 @@ public class StandardDefBuilder {
     private void createIteratorFlows(Klass iteratorType, Type elementType) {
         boolean isAbstract = iteratorType.isInterface();
         boolean isNative = !iteratorType.isInterface();
-        MethodBuilder.newBuilder(iteratorType, "是否存在次项", "hasNext")
+        MethodBuilder.newBuilder(iteratorType, "hasNext", "hasNext")
                 .isNative(isNative)
                 .isAbstract(isAbstract)
                 .returnType(StandardTypes.getBooleanType())
                 .build();
 
-        MethodBuilder.newBuilder(iteratorType, "获取次项", "next")
+        MethodBuilder.newBuilder(iteratorType, "next", "next")
                 .isAbstract(isAbstract)
                 .isNative(isNative)
                 .returnType(elementType)
@@ -458,11 +458,11 @@ public class StandardDefBuilder {
     }
 
     public Klass createIterableKlass() {
-        var elementType = new TypeVariable(null, "元素", "T",
+        var elementType = new TypeVariable(null, "Element", "T",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(MetaIterable.class.getTypeParameters()[0], elementType);
-        var iterableType = ClassTypeBuilder.newBuilder("可迭代", "Iterable")
+        var iterableType = ClassTypeBuilder.newBuilder("Iterable", "Iterable")
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .kind(ClassKind.INTERFACE)
@@ -483,7 +483,7 @@ public class StandardDefBuilder {
                 .build();
 
         var pIteratorType = StandardTypes.getIteratorKlass().getParameterized(List.of(elementType.getType()));
-        MethodBuilder.newBuilder(iterableType, "获取迭代器", "iterator")
+        MethodBuilder.newBuilder(iterableType, "iterator", "iterator")
                 .isNative(true)
                 .returnType(pIteratorType.getType())
                 .build();
@@ -494,7 +494,7 @@ public class StandardDefBuilder {
     public Klass createCollectionType() {
         String name = getParameterizedName("Collection");
         String code = getParameterizedCode("Collection");
-        var elementType = new TypeVariable(null, "Collection元素", "CollectionElement",
+        var elementType = new TypeVariable(null, "CollectionElement", "CollectionElement",
                 DummyGenericDeclaration.INSTANCE);
         var pIterableType = StandardTypes.getIterableKlass().getParameterized(List.of(elementType.getType()));
         elementType.setBounds(List.of(new AnyType()));
@@ -511,50 +511,50 @@ public class StandardDefBuilder {
     }
 
     private void createCollectionFlows(Klass collectionType, TypeVariable elementType) {
-        MethodBuilder.newBuilder(collectionType, "计数", "size")
+        MethodBuilder.newBuilder(collectionType, "size", "size")
                 .isNative(true)
                 .returnType(StandardTypes.getLongType())
                 .build();
 
-        MethodBuilder.newBuilder(collectionType, "是否为空", "isEmpty")
+        MethodBuilder.newBuilder(collectionType, "isEmpty", "isEmpty")
                 .isNative(true)
                 .returnType(StandardTypes.getBooleanType())
                 .build();
 
-        MethodBuilder.newBuilder(collectionType, "是否包含", "contains")
+        MethodBuilder.newBuilder(collectionType, "contains", "contains")
                 .isNative(true)
                 .returnType(StandardTypes.getBooleanType())
-                .parameters(new Parameter(null, "元素", "element", StandardTypes.getAnyType()))
+                .parameters(new Parameter(null, "element", "element", StandardTypes.getAnyType()))
                 .build();
 
-        MethodBuilder.newBuilder(collectionType, "添加", "add")
+        MethodBuilder.newBuilder(collectionType, "add", "add")
                 .isNative(true)
                 .returnType(StandardTypes.getBooleanType())
-                .parameters(new Parameter(null, "元素", "element", elementType.getType()))
+                .parameters(new Parameter(null, "element", "element", elementType.getType()))
                 .build();
 
-        MethodBuilder.newBuilder(collectionType, "添加全部", "addAll")
+        MethodBuilder.newBuilder(collectionType, "addAll", "addAll")
                 .isNative(true)
                 .returnType(StandardTypes.getBooleanType())
-                .parameters(new Parameter(null, "集合", "c",
+                .parameters(new Parameter(null, "c", "c",
                         collectionType.getParameterized(List.of(new UncertainType(StandardTypes.getNeverType(), elementType.getType()))).getType()))
                 .build();
 
-        MethodBuilder.newBuilder(collectionType, "删除", "remove")
+        MethodBuilder.newBuilder(collectionType, "remove", "remove")
                 .isNative(true)
                 .returnType(StandardTypes.getBooleanType())
-                .parameters(new Parameter(null, "元素", "element", StandardTypes.getAnyType()))
+                .parameters(new Parameter(null, "element", "element", StandardTypes.getAnyType()))
                 .build();
 
-        MethodBuilder.newBuilder(collectionType, "清空", "clear")
+        MethodBuilder.newBuilder(collectionType, "clear", "clear")
                 .isNative(true)
                 .returnType(StandardTypes.getVoidType())
                 .build();
 
-        MethodBuilder.newBuilder(collectionType, "条件删除", "removeIf")
+        MethodBuilder.newBuilder(collectionType, "removeIf", "removeIf")
                 .isNative(true)
                 .returnType(StandardTypes.getBooleanType())
-                .parameters(new Parameter(null, "条件", "filter",
+                .parameters(new Parameter(null, "filter", "filter",
                         StandardTypes.getPredicateKlass().getParameterized(
                                 List.of(new UncertainType(elementType.getType(), StandardTypes.getNullableAnyType()))
                         ).getType()))
@@ -564,9 +564,9 @@ public class StandardDefBuilder {
     }
 
     public Klass createSetKlass() {
-        String name = getParameterizedName("集合");
+        String name = getParameterizedName("Set");
         String code = getParameterizedCode("Set");
-        var elementType = new TypeVariable(null, "集合元素", "SetElement",
+        var elementType = new TypeVariable(null, "SetElement", "SetElement",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(MetaSet.class.getTypeParameters()[0], elementType);
@@ -580,7 +580,7 @@ public class StandardDefBuilder {
                 .dependencies(List.of(pIteratorImplType))
                 .build();
         primTypeFactory.putType(MetaSet.class, setType);
-        FieldBuilder.newBuilder("数组", "array", setType, new ArrayType(elementType.getType(), ArrayKind.READ_WRITE))
+        FieldBuilder.newBuilder("array", "array", setType, new ArrayType(elementType.getType(), ArrayKind.READ_WRITE))
                 .nullType(StandardTypes.getNullType())
                 .access(Access.PRIVATE)
                 .isChild(true)
@@ -591,7 +591,7 @@ public class StandardDefBuilder {
     }
 
     private void createSetFlows(Klass setType, /*ClassType pSetType, */Klass collectionType, Klass iterableType) {
-        MethodBuilder.newBuilder(setType, "集合", "Set")
+        MethodBuilder.newBuilder(setType, "Set", "Set")
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(setType.getType())
@@ -602,14 +602,14 @@ public class StandardDefBuilder {
     }
 
     public Klass createListKlass() {
-        var elementType = new TypeVariable(null, "列表元素",
+        var elementType = new TypeVariable(null, "ListElement",
                 "ListElement",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(MetaList.class.getTypeParameters()[0], elementType);
         var pCollectionType = StandardTypes.getCollectionKlass().getParameterized(List.of(elementType.getType()));
         var pIteratorImplType = StandardTypes.getIteratorImplKlass().getParameterized(List.of(elementType.getType()));
-        var listType = ClassTypeBuilder.newBuilder("列表", "List")
+        var listType = ClassTypeBuilder.newBuilder("List", "List")
                 .kind(ClassKind.INTERFACE)
                 .interfaces(pCollectionType.getType())
                 .typeParameters(elementType)
@@ -619,14 +619,14 @@ public class StandardDefBuilder {
         primTypeFactory.putType(MetaList.class, listType);
 
         var nullableElementType = new UnionType(Set.of(elementType.getType(), StandardTypes.getNullType()));
-        MethodBuilder.newBuilder(listType, "按索引删除", "removeAt")
-                .parameters(new Parameter(null, "索引", "index", StandardTypes.getLongType()))
+        MethodBuilder.newBuilder(listType, "removeAt", "removeAt")
+                .parameters(new Parameter(null, "index", "index", StandardTypes.getLongType()))
                 .isNative(true)
                 .returnType(nullableElementType)
                 .build();
 
-        MethodBuilder.newBuilder(listType, "查询", "get")
-                .parameters(new Parameter(null, "索引", "index", StandardTypes.getLongType()))
+        MethodBuilder.newBuilder(listType, "get", "get")
+                .parameters(new Parameter(null, "index", "index", StandardTypes.getLongType()))
                 .isNative(true)
                 .returnType(elementType.getType())
                 .build();
@@ -642,10 +642,10 @@ public class StandardDefBuilder {
                 .returnType(listType.getType())
                 .build();
 
-        MethodBuilder.newBuilder(listType, "写入", "set")
+        MethodBuilder.newBuilder(listType, "set", "set")
                 .parameters(
-                        new Parameter(null, "索引", "index", StandardTypes.getLongType()),
-                        new Parameter(null, "值", "value", elementType.getType())
+                        new Parameter(null, "index", "index", StandardTypes.getLongType()),
+                        new Parameter(null, "value", "value", elementType.getType())
                 )
                 .isNative(true)
                 .returnType(nullableElementType)
@@ -655,7 +655,7 @@ public class StandardDefBuilder {
                 .isStatic(true)
                 .isNative(true)
                 .parameters(
-                        new Parameter(null, "元素", "elements", new ArrayType(elementType.getType(), ArrayKind.READ_ONLY))
+                        new Parameter(null, "elements", "elements", new ArrayType(elementType.getType(), ArrayKind.READ_ONLY))
                 )
                 .returnType(listType.getType())
                 .build();
@@ -665,19 +665,19 @@ public class StandardDefBuilder {
     }
 
     public Klass createReadWriteListKlass() {
-        return createListImplKlass("读写列表", "ReadWriteList", ReadWriteMetaList.class, ClassKind.CLASS, ArrayKind.READ_WRITE);
+        return createListImplKlass("ReadWriteList", "ReadWriteList", ReadWriteMetaList.class, ClassKind.CLASS, ArrayKind.READ_WRITE);
     }
 
     public Klass createChildListKlass() {
-        return createListImplKlass("子对象列表", "ChildList", ChildMetaList.class, ClassKind.CLASS, ArrayKind.CHILD);
+        return createListImplKlass("ChildList", "ChildList", ChildMetaList.class, ClassKind.CLASS, ArrayKind.CHILD);
     }
 
     public Klass createValueListKlass() {
-        return createListImplKlass("值列表", "ValueList", ValueMetaList.class, ClassKind.VALUE, ArrayKind.VALUE);
+        return createListImplKlass("ValueList", "ValueList", ValueMetaList.class, ClassKind.VALUE, ArrayKind.VALUE);
     }
 
     public Klass createListImplKlass(String name, String code, Class<?> javaClass, ClassKind kind, ArrayKind arrayKind) {
-        var elementType = new TypeVariable(null, name + "元素", code + "Element",
+        var elementType = new TypeVariable(null, name + "Element", code + "Element",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(javaClass.getTypeParameters()[0], elementType);
@@ -693,7 +693,7 @@ public class StandardDefBuilder {
                 .dependencies(List.of(pIteratorImplType))
                 .build();
         primTypeFactory.putType(javaClass, listImplType);
-        FieldBuilder.newBuilder("数组", "array", listImplType,
+        FieldBuilder.newBuilder("array", "array", listImplType,
                         new ArrayType(elementType.getType(), arrayKind))
                 .nullType(StandardTypes.getNullType())
                 .access(Access.PRIVATE)
@@ -749,10 +749,10 @@ public class StandardDefBuilder {
                 .build();
 
         var nullableElementType = new UnionType(Set.of(elementType.getType(), StandardTypes.getNullType()));
-        MethodBuilder.newBuilder(listType, "写入", "set")
+        MethodBuilder.newBuilder(listType, "set", "set")
                 .parameters(
-                        new Parameter(null, "索引", "index", StandardTypes.getLongType()),
-                        new Parameter(null, "值", "value", elementType.getType())
+                        new Parameter(null, "index", "index", StandardTypes.getLongType()),
+                        new Parameter(null, "value", "value", elementType.getType())
                 )
                 .isNative(true)
                 .returnType(nullableElementType)
@@ -762,9 +762,9 @@ public class StandardDefBuilder {
     }
 
     public Klass createIteratorImplKlass() {
-        String name = getParameterizedName("迭代器实现");
+        String name = getParameterizedName("IteratorImpl");
         String code = getParameterizedCode("IteratorImpl");
-        var elementType = new TypeVariable(null, "迭代器实现元素", "IteratorImplElement",
+        var elementType = new TypeVariable(null, "IteratorImplElement", "IteratorImplElement",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(IteratorImpl.class.getTypeParameters()[0], elementType);
@@ -780,7 +780,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(iteratorImplType.getType())
-                .parameters(new Parameter(null, "集合", "collection", pCollectionType.getType()))
+                .parameters(new Parameter(null, "collection", "collection", pCollectionType.getType()))
                 .build();
         createOverridingFlows(iteratorImplType, pIteratorType);
         iteratorImplType.setStage(ResolutionStage.DEFINITION);
@@ -801,13 +801,13 @@ public class StandardDefBuilder {
     }
 
     public Klass createMapKlass() {
-        String name = getParameterizedName("词典");
+        String name = getParameterizedName("Map");
         String code = getParameterizedName("Map");
-        var keyType = new TypeVariable(null, "词典键", "MapKey",
+        var keyType = new TypeVariable(null, "MapKey", "MapKey",
                 DummyGenericDeclaration.INSTANCE);
         keyType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(MetaMap.class.getTypeParameters()[0], keyType);
-        var valueType = new TypeVariable(null, "词典值", "MapValue",
+        var valueType = new TypeVariable(null, "MapValue", "MapValue",
                 DummyGenericDeclaration.INSTANCE);
         valueType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(MetaMap.class.getTypeParameters()[1], valueType);
@@ -819,13 +819,13 @@ public class StandardDefBuilder {
                 .build();
         primTypeFactory.putType(MetaMap.class, mapType);
         FieldBuilder
-                .newBuilder("键数组", "keyArray", mapType, new ArrayType(keyType.getType(), ArrayKind.READ_WRITE))
+                .newBuilder("keyArray", "keyArray", mapType, new ArrayType(keyType.getType(), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
                 .isChild(true)
                 .nullType(StandardTypes.getNullType())
                 .build();
         FieldBuilder
-                .newBuilder("值数组", "valueArray", mapType, new ArrayType(valueType.getType(), ArrayKind.READ_WRITE))
+                .newBuilder("valueArray", "valueArray", mapType, new ArrayType(valueType.getType(), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
                 .isChild(true)
                 .nullType(StandardTypes.getNullType())
@@ -835,7 +835,7 @@ public class StandardDefBuilder {
     }
 
     private void createMapFlows(Klass mapType, Type keyType, Type valueType) {
-        MethodBuilder.newBuilder(mapType, "词典", "Map")
+        MethodBuilder.newBuilder(mapType, "Map", "Map")
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(mapType.getType())
@@ -843,31 +843,31 @@ public class StandardDefBuilder {
 
         var nullableValueType = new UnionType(Set.of(valueType, StandardTypes.getNullType()));
 
-        MethodBuilder.newBuilder(mapType, "添加", "put")
+        MethodBuilder.newBuilder(mapType, "put", "put")
                 .isNative(true)
                 .returnType(nullableValueType)
-                .parameters(new Parameter(null, "键", "key", keyType),
-                        new Parameter(null, "值", "value", valueType))
+                .parameters(new Parameter(null, "key", "key", keyType),
+                        new Parameter(null, "value", "value", valueType))
                 .build();
 
-        MethodBuilder.newBuilder(mapType, "查询", "get")
+        MethodBuilder.newBuilder(mapType, "get", "get")
                 .isNative(true)
                 .returnType(nullableValueType)
-                .parameters(new Parameter(null, "键", "key", keyType))
+                .parameters(new Parameter(null, "key", "key", keyType))
                 .build();
 
-        MethodBuilder.newBuilder(mapType, "删除", "remove")
+        MethodBuilder.newBuilder(mapType, "remove", "remove")
                 .isNative(true)
                 .returnType(nullableValueType)
-                .parameters(new Parameter(null, "键", "key", keyType))
+                .parameters(new Parameter(null, "key", "key", keyType))
                 .build();
 
-        MethodBuilder.newBuilder(mapType, "计数", "size")
+        MethodBuilder.newBuilder(mapType, "size", "size")
                 .isNative(true)
                 .returnType(StandardTypes.getLongType())
                 .build();
 
-        MethodBuilder.newBuilder(mapType, "清空", "clear")
+        MethodBuilder.newBuilder(mapType, "clear", "clear")
                 .isNative(true)
                 .returnType(StandardTypes.getVoidType())
                 .build();
@@ -885,14 +885,14 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(throwableType.getType())
-                .parameters(new Parameter(null, "错误详情", "message", StandardTypes.getStringType()))
+                .parameters(new Parameter(null, "message", "message", StandardTypes.getStringType()))
                 .build();
 
         MethodBuilder.newBuilder(throwableType, "Throwable", "Throwable")
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(throwableType.getType())
-                .parameters(new Parameter(null, "原因", "cause", throwableType.getType()))
+                .parameters(new Parameter(null, "cause", "cause", throwableType.getType()))
                 .build();
 
         MethodBuilder.newBuilder(throwableType, "Throwable", "Throwable")
@@ -900,12 +900,12 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(throwableType.getType())
                 .parameters(
-                        new Parameter(null, "错误详情", "message", StandardTypes.getStringType()),
-                        new Parameter(null, "原因", "cause", throwableType.getType())
+                        new Parameter(null, "message", "message", StandardTypes.getStringType()),
+                        new Parameter(null, "cause", "cause", throwableType.getType())
                 )
                 .build();
 
-        MethodBuilder.newBuilder(throwableType, "获取详情", "getMessage")
+        MethodBuilder.newBuilder(throwableType, "getMessage", "getMessage")
                 .isNative(true)
                 .returnType(StandardTypes.getNullableType(StandardTypes.getStringType()))
                 .build();
@@ -942,14 +942,14 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
-                .parameters(new Parameter(null, "错误详情", "message", StandardTypes.getStringType()))
+                .parameters(new Parameter(null, "message", "message", StandardTypes.getStringType()))
                 .build();
 
         MethodBuilder.newBuilder(runtimeExceptionType, name, code)
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
-                .parameters(new Parameter(null, "原因", "cause", StandardTypes.getThrowableKlass().getType()))
+                .parameters(new Parameter(null, "cause", "cause", StandardTypes.getThrowableKlass().getType()))
                 .build();
 
         MethodBuilder.newBuilder(runtimeExceptionType, name, code)
@@ -957,8 +957,8 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
                 .parameters(
-                        new Parameter(null, "错误详情", "message", StandardTypes.getStringType()),
-                        new Parameter(null, "原因", "cause", StandardTypes.getThrowableKlass().getType())
+                        new Parameter(null, "message", "message", StandardTypes.getStringType()),
+                        new Parameter(null, "cause", "cause", StandardTypes.getThrowableKlass().getType())
                 )
                 .build();
     }

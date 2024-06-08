@@ -71,7 +71,7 @@ public class MappingSaver {
         var sourceType = klassProvider.getKlass(Id.parse(mappingDTO.sourceType()));
         FieldsObjectMapping mapping = (FieldsObjectMapping) sourceType.findMapping(Id.parse(mappingDTO.id()));
         if (mapping == null) {
-            var targetKlass = createTargetKlass(sourceType, "预设视图", "builtin");
+            var targetKlass = createTargetKlass(sourceType, "builtin", "builtin");
             mapping = new FieldsObjectMapping(mappingDTO.tmpId(), mappingDTO.name(), mappingDTO.code(), sourceType, false,
                     targetKlass.getType(), NncUtils.map(mappingDTO.overriddenIds(), id -> sourceType.getMappingInAncestors(Id.parse(id))));
             mapping.generateDeclarations();
@@ -220,8 +220,8 @@ public class MappingSaver {
         NncUtils.requireTrue(type.isClass());
         var mapping = (FieldsObjectMapping) NncUtils.find(type.getMappings(), ObjectMapping::isBuiltin);
         if (mapping == null) {
-            var targetKlass = createTargetKlass(type, "预设视图", "builtin");
-            mapping = new FieldsObjectMapping(null, "预设视图", "builtin", type, true, targetKlass.getType(), List.of());
+            var targetKlass = createTargetKlass(type, "builtin", "builtin");
+            mapping = new FieldsObjectMapping(null, "builtin", "builtin", type, true, targetKlass.getType(), List.of());
             mapping.generateDeclarations();
         }
         retransformClassType(type);
@@ -396,9 +396,9 @@ public class MappingSaver {
     }
 
     public static String getTargetTypeName(Klass sourceType, String mappingName) {
-        if (mappingName.endsWith("视图") && mappingName.length() > 2)
-            mappingName = mappingName.substring(0, mappingName.length() - 2);
-        return NamingUtils.escapeTypeName(sourceType.getName()) + mappingName + "视图";
+        if (mappingName.endsWith("View") && mappingName.length() > 4)
+            mappingName = mappingName.substring(0, mappingName.length() - 4);
+        return NamingUtils.escapeTypeName(sourceType.getName()) + mappingName + "View";
     }
 
     public static @Nullable String getTargetTypeCode(Klass sourceType, @Nullable String mappingCode) {
@@ -582,7 +582,7 @@ public class MappingSaver {
         var field = getter.getDeclaringType().findFieldByCode(propertyCode);
         if (field != null)
             return new Accessor(getter, setter, field, field.getName(), propertyCode);
-        else if (getter.getName().startsWith("获取") && getter.getName().length() > 2)
+        else if (getter.getName().startsWith("get") && getter.getName().length() > 3)
             return new Accessor(getter, setter, null, getter.getName().substring(2), propertyCode);
         else if (getter.getName().startsWith(getterPrefix) && getter.getName().length() > getterPrefix.length())
             return new Accessor(getter, setter, null,

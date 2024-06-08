@@ -49,7 +49,7 @@ public class LabUser {
         this.roles.addAll(roles);
     }
 
-    @EntityIndex("平台用户索引")
+    @EntityIndex
     public record IndexAppPlatformUser(LabApplication application,
                                        LabPlatformUser platformUser) implements Index<LabUser> {
 
@@ -58,10 +58,10 @@ public class LabUser {
         }
     }
 
-    @EntityIndex(value = "登录名", unique = true)
+    @EntityIndex(unique = true)
     public record LoginNameIndex(
-            @EntityIndexField("应用") LabApplication application,
-            @EntityIndexField("登录名") String loginName) implements Index<LabUser> {
+            LabApplication application,
+            String loginName) implements Index<LabUser> {
 
         public LoginNameIndex(LabUser user) {
             this(user.application, user.loginName);

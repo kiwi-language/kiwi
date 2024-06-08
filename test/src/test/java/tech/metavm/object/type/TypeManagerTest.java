@@ -147,7 +147,7 @@ public class TypeManagerTest extends TestCase {
                         )
                 )
         )));
-        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(FieldDTOBuilder.newBuilder("编号", "string")
+        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(FieldDTOBuilder.newBuilder("code", "string")
                 .declaringTypeId(nodeType.id())
                 .code("code")
                 .defaultValue(PrimitiveFieldValue.createString("000"))
@@ -158,12 +158,12 @@ public class TypeManagerTest extends TestCase {
         var typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
                 .tmpId(NncUtils.randomNonNegative())
                 .addField(
-                        FieldDTOBuilder.newBuilder("名称", "string")
+                        FieldDTOBuilder.newBuilder("name", "string")
                                 .build()
                 )
                 .build();
         var savedTypeDTO = TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
-        var updatedFieldDTO = FieldDTOBuilder.newBuilder("名称", "string")
+        var updatedFieldDTO = FieldDTOBuilder.newBuilder("name", "string")
                 .id(savedTypeDTO.getClassParam().fields().get(0).id())
                 .declaringTypeId(savedTypeDTO.id())
                 .code("name")

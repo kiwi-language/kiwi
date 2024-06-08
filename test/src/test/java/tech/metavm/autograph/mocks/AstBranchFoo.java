@@ -11,7 +11,7 @@ public class AstBranchFoo extends Entity {
 
     public void dec(int amount) {
         if(state != AstProductState.NORMAL || this.inventory < amount)
-            throw new RuntimeException("商品未上架或库存不足");
+            throw new RuntimeException("Product is out of inventory of off shelf");
         this.inventory -= amount;
     }
 

@@ -24,7 +24,7 @@ public class NullInstance extends PrimitiveInstance {
 
     @Override
     public String getTitle() {
-        return "空";
+        return "null";
     }
 
     @Override

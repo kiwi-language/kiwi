@@ -289,7 +289,7 @@ public class Expressions {
         if (value instanceof LongInstance longInstance) {
             return longInstance;
         } else {
-            throw BusinessException.invalidExpressionValue("整数", value);
+            throw BusinessException.invalidExpressionValue("integer", value);
         }
     }
 
@@ -300,7 +300,7 @@ public class Expressions {
         if (value instanceof LongInstance longInstance) {
             return Instances.doubleInstance(longInstance.getValue());
         } else {
-            throw BusinessException.invalidExpressionValue("数值", value);
+            throw BusinessException.invalidExpressionValue("float", value);
         }
     }
 
@@ -308,7 +308,7 @@ public class Expressions {
         if (value instanceof BooleanInstance booleanInstance) {
             return booleanInstance;
         } else {
-            throw BusinessException.invalidExpressionValue("布尔", value);
+            throw BusinessException.invalidExpressionValue("boolean", value);
         }
     }
 
@@ -324,7 +324,7 @@ public class Expressions {
         if (value instanceof ArrayInstance arrayInstance) {
             return arrayInstance;
         } else {
-            throw BusinessException.invalidExpressionValue("集合", value);
+            throw BusinessException.invalidExpressionValue("Collection", value);
         }
     }
 

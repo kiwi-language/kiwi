@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 @EntityType
 public class LabMessage {
 
-    @EntityIndex("索引_目标")
+    @EntityIndex
     public record IndexTarget(@Nullable Object target) {
 
         public IndexTarget(LabMessage message) {

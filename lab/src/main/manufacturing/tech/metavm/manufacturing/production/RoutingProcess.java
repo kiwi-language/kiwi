@@ -9,16 +9,16 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityStruct("RoutingProcess")
+@EntityStruct
 public class RoutingProcess {
 
-    @EntityField(value ="processCode", asTitle = true)
+    @EntityField(asTitle = true)
     private String processCode;
     private int sequence;
     private Process process;
     private @Nullable WorkCenter workCenter;
     private @Nullable String processDescription;
-    @ChildEntity("items")
+    @ChildEntity
     private final ChildList<RoutingProcessItem> items;
 
     public RoutingProcess(String processCode, int sequence, Process process, @Nullable WorkCenter workCenter, @Nullable String processDescription, List<RoutingProcessItem> items) {

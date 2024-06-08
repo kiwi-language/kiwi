@@ -1,7 +1,6 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.EnumConstant;
 import tech.metavm.entity.natives.ArrayNative;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.*;
@@ -72,7 +71,7 @@ public enum TypeCategory {
     public static TypeCategory fromCode(int code) {
         return Arrays.stream(values()).filter(t -> t.code == code)
                 .findAny()
-                .orElseThrow(() -> new RuntimeException("模型类型不存在： " + code));
+                .orElseThrow(() -> new RuntimeException("Can not find type category fo：code: " + code));
     }
 
     public static List<TypeCategory> arrayCategories() {

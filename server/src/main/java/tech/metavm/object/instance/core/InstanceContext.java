@@ -15,7 +15,6 @@ import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.persistence.VersionRT;
-import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeDefProvider;
 import tech.metavm.object.view.MappingProvider;
@@ -26,7 +25,6 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 
 import static tech.metavm.util.NncUtils.mergeSets;
 
@@ -437,32 +435,11 @@ public class InstanceContext extends BufferingInstanceContext {
         );
     }
 
-    public static final Pattern PTN = Pattern.compile("对象'.+\\-(.+)'不存在");
-
     private void postProcess() {
         if (asyncPostProcessing) {
             executor.execute(this::postProcess0);
         } else {
-            try {
-                postProcess0();
-            } catch (BusinessException e) {
-                if (DebugEnv.debugging) {
-                    var m = PTN.matcher(e.getMessage());
-                    if (m.matches()) {
-                        var id = Id.parse(m.group(1));
-                        var instance = get(id);
-                        var field = (Field) Objects.requireNonNull(instance.getMappedEntity());
-                        var type = field.getDeclaringType();
-                        var logs = getAttribute(ContextAttributeKey.CHANGE_LOGS);
-                        var log = NncUtils.find(logs, l -> l.getId().equals(type.getId()));
-                        Entity root = field;
-                        while (root.getParentEntity() != null)
-                            root = root.getParentEntity();
-                        debugLogger.info("field: {}, root: {}, log: {}", EntityUtils.getEntityDesc(field), EntityUtils.getEntityDesc(root), log);
-                    }
-                }
-                throw e;
-            }
+            postProcess0();
         }
     }
 

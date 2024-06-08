@@ -28,7 +28,7 @@ public class AnyType extends Type {
 
     @Override
     public String getName() {
-        return "对象";
+        return "Any";
     }
 
     @Override

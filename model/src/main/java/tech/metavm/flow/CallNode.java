@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.expression.Expression;
@@ -80,7 +79,7 @@ public abstract class CallNode extends NodeRT {
         var targetFlow = flowRef.resolve();
         for (Parameter parameter : targetFlow.getParameters()) {
             if (parameter.getType().isNotNull() && argMap.get(parameter) == null)
-                return String.format("必填参数'%s'未配置", parameter.getName());
+                return String.format("Not null argument '%s' is not set", parameter.getName());
         }
         return null;
     }

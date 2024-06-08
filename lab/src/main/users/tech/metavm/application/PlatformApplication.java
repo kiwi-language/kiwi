@@ -8,7 +8,7 @@ public class PlatformApplication extends LabApplication {
     private final static PlatformApplication INSTANCE = new PlatformApplication();
 
     private PlatformApplication() {
-        super("平台应用");
+        super("platform");
     }
 
     public static PlatformApplication getInstance() {

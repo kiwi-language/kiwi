@@ -18,22 +18,18 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
+@EntityType
 public abstract class Mapping extends Element implements CodeSource, StagedEntity, LoadAware, GenericElement {
 
-    @EntityField("模板")
     @Nullable
     @CopyIgnore
     protected Mapping copySource;
-    @EntityField("名称")
     private String name;
-    @EntityField("编号")
     @Nullable
     private String code;
     protected final Type sourceType;
     protected final Type targetType;
-    @EntityField("映射函数")
     protected @Nullable Method mapper;
-    @EntityField("反映射函数")
     protected @Nullable Method unmapper;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
@@ -162,10 +158,10 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     public void generateDeclarations() {
         var declaringType = getClassTypeForDeclaration();
         mapper = MethodBuilder
-                .newBuilder(declaringType, "映射$" + getQualifiedName(),
+                .newBuilder(declaringType, "map$" + getQualifiedName(),
                         "map$" + getQualifiedCode())
                 .parameters(mapper != null ? mapper.getParameters().get(0) :
-                        new Parameter(null, "来源", "source", sourceType))
+                        new Parameter(null, "source", "source", sourceType))
                 .existing(mapper)
                 .codeSource(this)
                 .isSynthetic(true)
@@ -173,7 +169,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
                 .returnType(targetType)
                 .build();
         unmapper = MethodBuilder.newBuilder(
-                        declaringType, "反映射$" + getQualifiedName(),
+                        declaringType, "unmap$" + getQualifiedName(),
                         "unmap$" + getQualifiedCode()
                 )
                 .existing(unmapper)
@@ -181,7 +177,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
                 .codeSource(this)
                 .isStatic(true)
                 .parameters(unmapper != null ? unmapper.getParameters().get(0) :
-                        new Parameter(null, "视图", "view", targetType))
+                        new Parameter(null, "view", "view", targetType))
                 .returnType(sourceType)
                 .build();
         stage = ResolutionStage.DECLARATION;

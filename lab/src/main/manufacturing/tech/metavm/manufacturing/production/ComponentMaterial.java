@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityStruct("ComponentMaterial")
+@EntityStruct
 public class ComponentMaterial {
 
     private int sequence;
@@ -40,7 +40,7 @@ public class ComponentMaterial {
 
     private FeedType feedType;
 
-    @ChildEntity("items")
+    @ChildEntity
     private final ChildList<ComponentMaterialItem> items;
 
     public ComponentMaterial(int sequence,

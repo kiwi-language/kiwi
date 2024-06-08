@@ -12,59 +12,59 @@ public class MockStandardTypesInitializer {
 
     public static void init() {
         StandardTypes.setListKlass(
-                ClassTypeBuilder.newBuilder("列表", List.class.getSimpleName())
+                ClassTypeBuilder.newBuilder("List", List.class.getSimpleName())
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "元素类型", "E", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "E", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StandardTypes.setReadWriteListKlass(
-                ClassTypeBuilder.newBuilder("读写列表", "ReadWriteList")
+                ClassTypeBuilder.newBuilder("ReadWriteList", "ReadWriteList")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "读写列表元素", "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ReadWriteListElement", "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StandardTypes.setChildListKlass(
-                ClassTypeBuilder.newBuilder("子对象列表", "ChildList")
+                ClassTypeBuilder.newBuilder("ChildList", "ChildList")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "子对象列表元素", "ChildListElement", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ChildListElement", "ChildListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StandardTypes.setValueListKlass(
-                ClassTypeBuilder.newBuilder("值列表", "ValueList")
+                ClassTypeBuilder.newBuilder("ValueList", "ValueList")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "值列表元素", "ValueListElement", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ValueListElement", "ValueListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        var enumTypeParam = new TypeVariable(NncUtils.randomNonNegative(), "枚举类型", "EnumType",
+        var enumTypeParam = new TypeVariable(NncUtils.randomNonNegative(), "EnumType", "EnumType",
                 DummyGenericDeclaration.INSTANCE);
-        var enumType = ClassTypeBuilder.newBuilder("枚举", Enum.class.getSimpleName())
+        var enumType = ClassTypeBuilder.newBuilder("Enum", Enum.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
                 .tmpId(NncUtils.randomNonNegative())
                 .build();
         enumTypeParam.setBounds(List.of(enumType.getType()));
-        FieldBuilder.newBuilder("名称", "name", enumType, StandardTypes.getStringType()).build();
-        FieldBuilder.newBuilder("序号", "ordinal", enumType, StandardTypes.getLongType()).build();
+        FieldBuilder.newBuilder("name", "name", enumType, StandardTypes.getStringType()).build();
+        FieldBuilder.newBuilder("ordinal", "ordinal", enumType, StandardTypes.getLongType()).build();
         StandardTypes.setEnumKlass(enumType);
-        StandardTypes.setEntityKlass(ClassTypeBuilder.newBuilder("实体", Entity.class.getSimpleName())
+        StandardTypes.setEntityKlass(ClassTypeBuilder.newBuilder("Entity", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .build());
         StandardTypes.setPredicateKlass(
-                ClassTypeBuilder.newBuilder("断言", "Predicate")
+                ClassTypeBuilder.newBuilder("Predicate", "Predicate")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "元素", "T", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StandardTypes.setConsumerKlass(
-                ClassTypeBuilder.newBuilder("消费者", "Consumer")
+                ClassTypeBuilder.newBuilder("Consumer", "Consumer")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "元素", "T", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StandardTypes.setThrowableKlass(

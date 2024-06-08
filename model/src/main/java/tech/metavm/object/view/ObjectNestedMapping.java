@@ -1,7 +1,6 @@
 package tech.metavm.object.view;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Nodes;
 import tech.metavm.flow.ScopeRT;
@@ -24,7 +23,7 @@ public class ObjectNestedMapping extends NestedMapping {
 
     @Override
     public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
-        var mapNode = Nodes.map("嵌套映射", scope, getSource.get(), mappingRef.resolve());
+        var mapNode = Nodes.map("nested mapping", scope, getSource.get(), mappingRef.resolve());
         return () -> Values.node(mapNode);
     }
 
@@ -32,7 +31,7 @@ public class ObjectNestedMapping extends NestedMapping {
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
 //        if (sourceType == targetType)
 //            return getView;
-        var source = Nodes.unmap("反映射" + NncUtils.randomNonNegative(), scope, getView.get(), mappingRef.resolve());
+        var source = Nodes.unmap("unmap" + NncUtils.randomNonNegative(), scope, getView.get(), mappingRef.resolve());
         return () -> Values.node(source);
     }
 

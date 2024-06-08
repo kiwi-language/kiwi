@@ -2,7 +2,7 @@ package tech.metavm.entity;
 
 public @interface EntityIndex {
 
-    String value();
+    String value() default "";
 
     boolean unique() default false;
 

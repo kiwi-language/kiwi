@@ -82,7 +82,7 @@ public class TypeParsingContext extends BaseParsingContext {
             field = getField(t, var);
             if (field == null) {
                 if (errorWhenNotFound) {
-                    throw BusinessException.invalidExpression("属性'" + var + "'不存在");
+                    throw BusinessException.invalidExpression("Property '" + var + "' does not exist");
                 } else {
                     return null;
                 }

@@ -27,7 +27,7 @@ public class LabPlatformUser extends LabUser {
         super(loginName, password, name, roles, PlatformApplication.getInstance());
     }
 
-    @EntityIndex("应用索引")
+    @EntityIndex
     public record ApplicationsIndex(List<LabApplication> applications) {
         public ApplicationsIndex(LabPlatformUser user) {
             this(user.applications);
@@ -95,14 +95,6 @@ public class LabPlatformUser extends LabUser {
     public static void leaveApp(List<LabPlatformUser> platformUsers, UserApplication app) {
         for (LabPlatformUser platformUser : platformUsers) {
             platformUser.leaveApplication(app);
-//            platformContext.bind(
-//                    new Message(
-//                            platformUser,
-//                            String.format("您已退出应用'%s'", app.getName()),
-//                            MessageKind.LEAVE,
-//                            Instances.nullInstance()
-//                    )
-//            );
         }
         for (var platformUser : platformUsers) {
             var user = IndexUtils.selectFirst(new IndexAppPlatformUser(app, platformUser));

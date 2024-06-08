@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityStruct;
 import tech.metavm.manufacturing.material.Material;
 import tech.metavm.manufacturing.material.Unit;
 
-@EntityStruct("SecondaryOutput")
+@EntityStruct
 public class SecondaryOutput {
 
     private int seq;

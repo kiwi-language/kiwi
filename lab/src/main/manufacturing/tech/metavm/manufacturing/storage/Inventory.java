@@ -27,7 +27,7 @@ public class Inventory {
     private final @Nullable Date productionDate;
     private final @Nullable Date expirationDate;
 
-    @EntityIndex("库存键")
+    @EntityIndex
     public record Key(
             Material material,
             Position position,
@@ -170,7 +170,7 @@ public class Inventory {
     public void decreaseQuantity(long quantity, Unit unit, InventoryOp op) {
         quantity = material.convertAmountToMainUnit(quantity, unit);
         if (this.quantity - quantity < 0)
-            throw new IllegalArgumentException("库存不足");
+            throw new IllegalArgumentException("Out of inventory");
         this.quantity -= quantity;
         new InventoryChangeRecord(
                 material,
@@ -291,7 +291,7 @@ public class Inventory {
         if (existing != null) {
             decreaseInventory(existing, quantity, unit, op);
         } else {
-            throw new IllegalArgumentException("库存不足");
+            throw new IllegalArgumentException("Out of inventory");
         }
     }
 

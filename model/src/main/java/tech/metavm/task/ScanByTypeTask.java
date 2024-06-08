@@ -1,6 +1,6 @@
 package tech.metavm.task;
 
-import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
@@ -10,9 +10,9 @@ import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
+@EntityType
 public abstract class ScanByTypeTask extends ScanTask {
 
-    @EntityField("类型")
     protected final Type type;
 
     protected ScanByTypeTask(String title, Type type) {

@@ -3,7 +3,10 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.VarType;
@@ -90,7 +93,6 @@ public class NewObjectNode extends CallNode implements NewNode {
     @Nullable
     private ParentRef parentRef;
 
-    // 临时对象：如果对象未被其他持久对象引用，则不会被持久化
     private boolean ephemeral;
 
     private boolean unbound;

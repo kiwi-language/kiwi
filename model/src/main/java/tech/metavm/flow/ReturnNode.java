@@ -1,7 +1,10 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ReturnNodeParam;
@@ -71,9 +74,9 @@ public class ReturnNode extends NodeRT {
         var callable = getEnclosingCallable();
         if (!callable.getReturnType().isVoid()) {
             if (value == null)
-                return "未配置返回结果";
+                return "Return value is not set";
             else if (!callable.getReturnType().isAssignableFrom(getExpressionTypes().getType(value.getExpression())))
-                return "返回结果错误";
+                return "Invalid return value";
         }
         return null;
     }

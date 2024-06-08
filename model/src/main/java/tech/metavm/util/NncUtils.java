@@ -1493,7 +1493,7 @@ public class NncUtils {
     @Nullable
     public static <T> T requireNull(@Nullable T value) {
         if (value != null)
-            throw new InternalException("参数必须为空");
+            throw new InternalException("value must be null");
         else
             return null;
     }
@@ -1525,18 +1525,18 @@ public class NncUtils {
     @SuppressWarnings("unused")
     public static void requirePositive(int value) {
         if (value <= 0)
-            throw new InternalException("参数必须大于0");
+            throw new InternalException("value must be positive");
     }
 
     @SuppressWarnings("unused")
     public static void requireLessThan(int value, int max) {
         if (value >= max)
-            throw new InternalException("参数必须小于" + max);
+            throw new InternalException("value must be less than " + max);
     }
 
     public static void requireRangeInclusively(int value, int min, int max) {
         if (value < min || value > max)
-            throw new InternalException("参数必须在区间[" + min + "," + max + "]中");
+            throw new InternalException("value must be within the range of [" + min + "," + max + "]");
     }
 
     public static <T> T requireNonNull(@Nullable T value, String message) {
@@ -1629,7 +1629,7 @@ public class NncUtils {
 
     @NotNull
     public static <T> List<T> requireNotEmpty(List<T> collection) {
-        return requireNotEmpty(collection, "集合不能为空");
+        return requireNotEmpty(collection, "Collection is empty");
     }
 
     public static <T> List<T> requireNotEmpty(List<T> collection, String message) {

@@ -106,7 +106,7 @@ public class UserApplication extends LabApplication {
         var currentUser = LabPlatformUser.currentPlatformUser();
         var invitation = new LabAppInvitation(app, invitee, request.isAdmin());
         new LabMessage(
-                invitee, String.format("'%s'邀请您加入应用'%s'", currentUser.getName(), app.getName()),
+                invitee, String.format("'%s' invited you to join application '%s'", currentUser.getName(), app.getName()),
                 LabMessageKind.INVITATION, invitation);
         return invitation;
     }
@@ -131,14 +131,14 @@ public class UserApplication extends LabApplication {
     public static void promote(UserApplication app, LabPlatformUser user) {
         ensureAppAdmin(app);
         app.addAdmin(user);
-        new LabMessage(user, String.format("您已成为应用'%s'的管理员", app.getName()),
+        new LabMessage(user, String.format("You have become admin of application '%s'", app.getName()),
                 LabMessageKind.DEFAULT, null);
     }
 
     public static void demote(UserApplication app, LabPlatformUser user) {
         ensureAppAdmin(app);
         app.removeAdmin(user);
-        new LabMessage(user, String.format("您不再是应用'%s'的管理员", app.getName()),
+        new LabMessage(user, String.format("You are no longer admin of application '%s'", app.getName()),
                 LabMessageKind.DEFAULT, null);
     }
 

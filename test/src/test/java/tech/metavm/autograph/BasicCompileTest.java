@@ -153,7 +153,7 @@ public class BasicCompileTest extends CompilerTestBase {
                         )
                 )
         )));
-        Assert.assertEquals("是", result.title());
+        Assert.assertEquals("true", result.title());
     }
 
     private void processValueTypes() {

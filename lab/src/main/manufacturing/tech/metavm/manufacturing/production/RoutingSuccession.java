@@ -5,7 +5,7 @@ import tech.metavm.manufacturing.material.Material;
 import tech.metavm.manufacturing.material.QualityInspectionState;
 import tech.metavm.manufacturing.material.Unit;
 
-@EntityStruct("RoutingItemSuccession")
+@EntityStruct
 public class RoutingSuccession {
 
     private RoutingProcess from;

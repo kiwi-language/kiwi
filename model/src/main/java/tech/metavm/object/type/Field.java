@@ -103,7 +103,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public void update(FieldDTO update) {
         if (update.type() != null && !Objects.equals(getType().toExpression(), update.type()))
-            throw BusinessException.invalidField(this, "类型不支持修改");
+            throw BusinessException.invalidField(this, "Can not change field type");
         setName(update.name());
         setCode(update.code());
         setAccess(Access.getByCode(update.access()));
@@ -133,7 +133,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public void setUnique(boolean unique) {
         if (unique && isArray()) {
-            throw BusinessException.invalidField(this, "数组不支持唯一性约束");
+            throw BusinessException.invalidField(this, "Array fields can not be unique");
         }
         Index constraint = declaringType.getUniqueConstraint(List.of(this));
         if (constraint != null && !unique) {

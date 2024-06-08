@@ -29,7 +29,7 @@ public class AstProduct {
 
     public void dec(int amount) {
         if (state != AstProductState.NORMAL || inventory < amount) {
-            throw new RuntimeException("商品库存不足或未上架");
+            throw new RuntimeException("Production is out of inventory or off shelf");
         }
         inventory -= amount;
     }

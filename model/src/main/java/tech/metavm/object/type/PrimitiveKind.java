@@ -9,14 +9,14 @@ import tech.metavm.util.Password;
 import java.util.Date;
 
 public enum PrimitiveKind {
-    LONG(1, "整数", Long.class, LongInstance.class, TypeCategory.LONG),
-    DOUBLE(2, "浮点数", Double.class, DoubleInstance.class, TypeCategory.DOUBLE),
-    STRING(3, "字符串", String.class, StringInstance.class, TypeCategory.STRING),
-    BOOLEAN(4, "布尔", Boolean.class, BooleanInstance.class, TypeCategory.BOOLEAN),
-    TIME(5, "时间", Date.class, TimeInstance.class, TypeCategory.TIME),
-    PASSWORD(6, "密码", Password.class, PasswordInstance.class, TypeCategory.PASSWORD),
-    NULL(7, "空", Null.class, NullInstance.class, TypeCategory.NULL),
-    VOID(8, "无", Void.class, null, TypeCategory.VOID)
+    LONG(1, "long", Long.class, LongInstance.class, TypeCategory.LONG),
+    DOUBLE(2, "double", Double.class, DoubleInstance.class, TypeCategory.DOUBLE),
+    STRING(3, "string", String.class, StringInstance.class, TypeCategory.STRING),
+    BOOLEAN(4, "boolean", Boolean.class, BooleanInstance.class, TypeCategory.BOOLEAN),
+    TIME(5, "time", Date.class, TimeInstance.class, TypeCategory.TIME),
+    PASSWORD(6, "password", Password.class, PasswordInstance.class, TypeCategory.PASSWORD),
+    NULL(7, "null", Null.class, NullInstance.class, TypeCategory.NULL),
+    VOID(8, "void", Void.class, null, TypeCategory.VOID)
 
     ;
 

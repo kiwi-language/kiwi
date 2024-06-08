@@ -76,7 +76,7 @@ public class EntityUtils {
     }
 
     public static boolean isMapper(Object object) {
-        return object instanceof Function func && func.getName().startsWith("映射");
+        return object instanceof Function func && func.getName().startsWith("map");
     }
 
     public static boolean isDurable(Object object) {

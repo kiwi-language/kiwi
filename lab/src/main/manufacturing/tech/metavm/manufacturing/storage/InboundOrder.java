@@ -77,13 +77,13 @@ public class InboundOrder {
 
     public void issue() {
         if(this.state != InboundOrderState.NEW)
-            throw new IllegalStateException("入库单已下发");
+            throw new IllegalStateException("Inbound order was already issued");
         this.state = InboundOrderState.ISSUED;
     }
 
     public void cancel() {
         if(this.state == InboundOrderState.CANCELLED)
-            throw new IllegalStateException("入库单已取消");
+            throw new IllegalStateException("Inbound order was cancelled");
         this.state = InboundOrderState.CANCELLED;
     }
 

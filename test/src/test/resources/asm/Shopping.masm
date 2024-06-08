@@ -42,7 +42,7 @@ struct SKU {
 
     public void decQuantity(int quantity) {
         if (this.quantity < quantity) {
-            exception: new RuntimeException("库存不足");
+            exception: new RuntimeException("Out of inventory");
             throw exception;
         }
         this.quantity -= quantity;

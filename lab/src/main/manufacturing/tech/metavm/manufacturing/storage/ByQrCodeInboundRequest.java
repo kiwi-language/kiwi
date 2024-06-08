@@ -2,20 +2,18 @@ package tech.metavm.manufacturing.storage;
 
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ChildList;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityStruct;
 import tech.metavm.manufacturing.material.*;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityStruct(value = "扫码入库请求", ephemeral = true)
+@EntityStruct(ephemeral = true)
 public class ByQrCodeInboundRequest extends InboundRequest {
 
-    @EntityField("数量")
     private long amount;
 
-    @ChildEntity("二维码")
+    @ChildEntity
     private ChildList<ByQrcodeInboundRequestItem> byQrcodeItems;
 
     public ByQrCodeInboundRequest(InboundBizType bizType, Position position, Material material, @Nullable Batch batch, @Nullable Supplier supplier, @Nullable String supplierBatchNo, @Nullable Client client, @Nullable Date arrivalDate, @Nullable Date productionDate, @Nullable Date expirationDate, Unit unit, long amount, ChildList<ByQrcodeInboundRequestItem> byQrcodeItems) {

@@ -236,7 +236,7 @@ public class Material {
     public void setDefaultPosition(@Nullable Position defaultPosition) {
         if (warehouse != null) {
             if (defaultPosition != null && !warehouse.equals(defaultPosition.getWarehouse()))
-                throw new IllegalArgumentException("库位不属于当前仓库");
+                throw new IllegalArgumentException("Position is not in the warehouse");
         }
         else if(defaultPosition != null)
             warehouse = defaultPosition.getWarehouse();
@@ -248,7 +248,7 @@ public class Material {
             return amount;
         var conversion = Utils.find(unitConversions, c -> c.getFromUnit().equals(sourceUnit));
         if (conversion == null)
-            throw new IllegalArgumentException("找不到单位转换关系");
+            throw new IllegalArgumentException("Unit conversion not found");
         return amount * conversion.getY() / conversion.getX();
     }
 
@@ -257,7 +257,7 @@ public class Material {
             return amount;
         var conversion = Utils.find(unitConversions, c -> c.getToUnit().equals(targetUnit));
         if (conversion == null)
-            throw new IllegalArgumentException("找不到单位转换关系");
+            throw new IllegalArgumentException("Unit conversion not found");
         return amount * conversion.getX() / conversion.getY();
     }
 

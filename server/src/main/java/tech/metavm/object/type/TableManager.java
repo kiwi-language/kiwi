@@ -85,7 +85,7 @@ public class TableManager extends EntityContextFactoryBean {
 
     @Transactional
     public String saveColumn(ColumnDTO column) {
-        requireNonNull(column.ownerId(), () -> BusinessException.invalidParams("表格ID必填"));
+        requireNonNull(column.ownerId(), () -> BusinessException.invalidParams("table Id require"));
         IEntityContext context = newContext();
         var declaringType = context.getKlass(Id.parse(column.ownerId()));
         Field field = saveField(column, declaringType, context);
@@ -268,7 +268,7 @@ public class TableManager extends EntityContextFactoryBean {
                 type = StandardTypes.getNullableType(type);
             }
         } else {
-            throw BusinessException.invalidColumn(name, "未选择列类型或未选择关联表格");
+            throw BusinessException.invalidColumn(name, "column type required");
         }
         if (type.tryGetId() == null) {
             if (!context.containsEntity(type)) {
@@ -318,7 +318,7 @@ public class TableManager extends EntityContextFactoryBean {
     private static final Set<Class<?>> CONFIDENTIAL_JAVA_CLASSES = Set.of(Password.class);
 
     private boolean isVisible(FieldDTO fieldDTO, IEntityContext context) {
-        NncUtils.requireNonNull(fieldDTO.type(), "字段'" + fieldDTO.name() + "'的typeId为空");
+        NncUtils.requireNonNull(fieldDTO.type(), "type is missing for field '" + fieldDTO.name() + "'");
         Type fieldType = TypeParser.parseType(fieldDTO.type(), context);
         if (fieldType instanceof ClassType classType) {
             var klass = classType.resolve();

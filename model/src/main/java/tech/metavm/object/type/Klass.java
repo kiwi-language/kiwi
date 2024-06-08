@@ -659,10 +659,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (fields.contains(field))
             throw new RuntimeException("Field " + field.tryGetId() + " is already added");
         if (tryGetFieldByName(field.getName()) != null || tryGetStaticFieldByName(field.getName()) != null)
-            throw BusinessException.invalidField(field, "字段名称'" + field.getName() + "'已存在");
+            throw BusinessException.invalidField(field, "Field name '" + field.getName() + "' is already used");
         if (field.getCode() != null &&
                 (findSelfFieldByCode(field.getCode()) != null || findSelfStaticFieldByCode(field.getCode()) != null))
-            throw BusinessException.invalidField(field, "字段编号" + field.getCode() + "已存在");
+            throw BusinessException.invalidField(field, "Field code " + field.getCode() + " is already used");
         if (field.isStatic())
             staticFields.addChild(field);
         else

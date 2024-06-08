@@ -570,7 +570,7 @@ public class Assembler {
                 klass.setSuperType(currentClass.superType);
             if (interfaces != null)
                 klass.setInterfaces(NncUtils.map(interfaces.typeType(), t -> (ClassType) parseType(t, scope)));
-            var cinit = MethodBuilder.newBuilder(currentClass.klass, "类型初始化", "<cinit>")
+            var cinit = MethodBuilder.newBuilder(currentClass.klass, "<cinit>", "<cinit>")
                     .isStatic(true)
                     .tmpId(NncUtils.randomNonNegative())
                     .access(Access.PRIVATE)

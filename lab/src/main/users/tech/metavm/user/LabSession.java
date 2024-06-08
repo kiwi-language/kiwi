@@ -26,14 +26,14 @@ public class LabSession {
         this.autoCloseAt = autoCloseAt;
     }
 
-    @EntityIndex("用户状态索引")
+    @EntityIndex
     public record UserStateIndex(LabUser user, LabSessionState state) implements Index<LabSession> {
         public UserStateIndex(LabSession session) {
             this(session.user, session.state);
         }
     }
 
-    @EntityIndex("令牌索引")
+    @EntityIndex
     public record TokenIndex(String token) implements Index<LabSession> {
         public TokenIndex(LabSession session) {
             this(session.token);

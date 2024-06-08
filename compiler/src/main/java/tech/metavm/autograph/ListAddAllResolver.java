@@ -41,7 +41,7 @@ public class ListAddAllResolver implements MethodCallResolver {
         var self = expressionResolver.resolve(methodCallExpression.getMethodExpression().getQualifierExpression());
         var array = expressionResolver.resolve(methodCallExpression.getArgumentList().getExpressions()[0]);
         var loop = methodGenerator.createWhile();
-        var indexField = FieldBuilder.newBuilder("索引", null, loop.getKlass(), StandardTypes.getLongType())
+        var indexField = FieldBuilder.newBuilder("index", null, loop.getKlass(), StandardTypes.getLongType())
                 .build();
         loop.setCondition(
                 Values.expression(
@@ -61,7 +61,7 @@ public class ListAddAllResolver implements MethodCallResolver {
                 )
         );
         var element = new ValueNode(
-                null, "元素" + NncUtils.randomNonNegative(), null,
+                null, "element" + NncUtils.randomNonNegative(), null,
                 ((ArrayType) array.getType()).getElementType(),
                 loop.getBodyScope().getLastNode(), loop.getBodyScope(),
                 Values.expression(
@@ -69,7 +69,7 @@ public class ListAddAllResolver implements MethodCallResolver {
                 )
         );
         new AddElementNode(
-                null,"添加元素" + NncUtils.randomNonNegative(), null,
+                null,"add element" + NncUtils.randomNonNegative(), null,
                 loop.getBodyScope().getLastNode(), loop.getBodyScope(),
                 Values.expression(self), Values.node(element)
         );

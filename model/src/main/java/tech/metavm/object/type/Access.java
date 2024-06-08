@@ -1,7 +1,6 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.EnumConstant;
 import tech.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
@@ -28,7 +27,7 @@ public enum Access {
 
     public static Access getByCode(int code) {
         return Arrays.stream(values()).filter(acc -> acc.code == code).findAny()
-                .orElseThrow(() -> BusinessException.invalidParams("访问控制类型不存在: " + code));
+                .orElseThrow(() -> BusinessException.invalidParams("Can not find Access for code: " + code));
     }
 
     public static @Nullable Access findByCode(int code) {

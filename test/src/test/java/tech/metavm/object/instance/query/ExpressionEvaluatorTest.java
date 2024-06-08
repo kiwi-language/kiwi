@@ -36,7 +36,7 @@ public class ExpressionEvaluatorTest extends TestCase {
     public void testAllMatch() {
         var fooTypes = MockUtils.createFooTypes(true);
         var fooType = fooTypes.fooType();
-        String str = "allmatch(巴子列表, allmatch(巴列表, 编号=this.编号))";
+        String str = "allmatch(bazList, allmatch(bars, code=this.code))";
         Expression expression = ExpressionParser.parse(
                 str, new TypeParsingContext(
                         instanceProvider,
@@ -105,7 +105,7 @@ public class ExpressionEvaluatorTest extends TestCase {
                         new ArrayInstance(fooTypes.bazArrayType())
                 ))
                 .build();
-        String str = "allmatch(巴列表, 编号 = this.编号)";
+        String str = "allmatch(bars, code = this.code)";
         Expression expression = ExpressionParser.parse(
                 str, new TypeParsingContext(instanceProvider, typeDefProvider, fooType)
         );

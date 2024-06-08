@@ -91,7 +91,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
         ErrorBuilder errorBuffer = new ErrorBuilder();
         for (var field : allFields) {
             if (field.getType().isNotNull() && !fieldParamMap.containsKey(field)) {
-                errorBuffer.addError(String.format("必填字段'%s'未配置", field.getName()));
+                errorBuffer.addError(String.format("Not null field '%s' is not set", field.getName()));
             }
         }
         return errorBuffer.getMessage();

@@ -23,7 +23,7 @@ public class RegisterController {
 
     @PostMapping("/verification-code")
     public Result<Void> sendVerificationCode(@RequestBody SendVerificationCodeRequest request, HttpServletRequest servletRequest) {
-        verificationCodeService.sendVerificationCode(request.email(), "MetaVM验证码", RequestUtils.getClientIP(servletRequest));
+        verificationCodeService.sendVerificationCode(request.email(), "MetaVM Verification Code", RequestUtils.getClientIP(servletRequest));
         return Result.voidSuccess();
     }
 

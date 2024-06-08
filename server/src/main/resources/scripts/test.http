@@ -90,7 +90,7 @@ Content-Type: application/json
 
 {
   "loginName": "leen",
-  "name": "李二狗",
+  "name": "Twodogs Li",
   "password": "12345678",
   "roleIds": [
     1000200005
@@ -127,7 +127,7 @@ GET http://localhost:8080/type/13016
 GET http://localhost:8080/table
 
 ###
-GET http://localhost:8080/type?searchText=流程
+GET http://localhost:8080/type?searchText=Flow
 
 ###
 GET http://localhost:8080/instance/60133

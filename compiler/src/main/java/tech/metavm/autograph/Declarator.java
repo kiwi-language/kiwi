@@ -73,12 +73,12 @@ public class Declarator extends CodeGenVisitor {
         metaClass.setStage(ResolutionStage.DECLARATION);
         if (!metaClass.isInterface()) {
             if (metaClass.findSelfMethodByCode("<init>") == null) {
-                MethodBuilder.newBuilder(metaClass, "实例初始化", "<init>")
+                MethodBuilder.newBuilder(metaClass, "<init>", "<init>")
                         .access(Access.PRIVATE)
                         .build();
             }
             if (metaClass.findSelfMethodByCode("<cinit>") == null) {
-                MethodBuilder.newBuilder(metaClass, "类型初始化", "<cinit>")
+                MethodBuilder.newBuilder(metaClass, "<cinit>", "<cinit>")
                         .isStatic(true)
                         .access(Access.PRIVATE)
                         .build();
@@ -179,8 +179,8 @@ public class Declarator extends CodeGenVisitor {
 
     private List<Parameter> getEnumConstructorParams() {
         return List.of(
-                new Parameter(null, "名称", "__name__", StandardTypes.getStringType()),
-                new Parameter(null, "序号", "__ordinal__", StandardTypes.getLongType())
+                new Parameter(null, "name", "__name__", StandardTypes.getStringType()),
+                new Parameter(null, "ordinal", "__ordinal__", StandardTypes.getLongType())
         );
     }
 

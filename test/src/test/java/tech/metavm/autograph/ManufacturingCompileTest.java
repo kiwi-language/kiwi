@@ -302,7 +302,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
             instanceManager.get(inventory.id(), 1);
             Assert.fail("Inventory should be removed");
         } catch (BusinessException e) {
-            Assert.assertEquals(String.format("对象'%s'不存在", inventory.id()), e.getMessage());
+            Assert.assertEquals(String.format("Object '%s' does not exist", inventory.id()), e.getMessage());
         }
     }
 
@@ -710,7 +710,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 null,
                 List.of(
 //                        PrimitiveFieldValue.createString("workCenter1"),
-//                        PrimitiveFieldValue.createString("工作中心1")
+//                        PrimitiveFieldValue.createString("workCenter1")
                 )
         )));
 
@@ -762,7 +762,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                                                                                 ),
                                                                                                 InstanceFieldDTO.create(
                                                                                                         TestUtils.getFieldIdByCode(routingProcessViewType, "processDescription"),
-                                                                                                        PrimitiveFieldValue.createString("工序1")
+                                                                                                        PrimitiveFieldValue.createString("process1")
                                                                                                 ),
                                                                                                 InstanceFieldDTO.create(
                                                                                                         TestUtils.getFieldIdByCode(routingProcessViewType, "workCenter"),

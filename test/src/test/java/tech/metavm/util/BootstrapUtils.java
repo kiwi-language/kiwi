@@ -69,7 +69,7 @@ public class BootstrapUtils {
             StandardTypes.setIllegalStateExceptionKlass(defContext.getClassType(IllegalStateException.class).resolve());
             StandardTypes.setNullPointerExceptionKlass(defContext.getClassType(NullPointerException.class).resolve());
             NativeFunctions.setIsSourcePresent(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "isSourcePResent"
+                    Function.UNIQUE_IDX_CODE, "isSourcePresent"
             )));
             NativeFunctions.setSetSourceFunc(requireNonNull(defContext.selectFirstByKey(
                     Function.UNIQUE_IDX_CODE, "setSource"

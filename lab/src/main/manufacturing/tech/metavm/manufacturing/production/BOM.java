@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-@EntityStruct("BOM")
+@EntityStruct
 public class BOM {
 
     private Material product;
@@ -25,9 +25,9 @@ public class BOM {
     private GeneralState state;
     private boolean inbound;
     private boolean autoInbound;
-    @ChildEntity("components")
+    @ChildEntity
     private final ChildList<ComponentMaterial> components;
-    @ChildEntity("secondaryOutputs")
+    @ChildEntity
     private final ChildList<SecondaryOutput> secondaryOutputs;
 
     public BOM(Material product, Unit unit, @Nullable Routing routing, RoutingProcess reportingProcess, GeneralState state, boolean inbound, boolean autoInbound, List<ComponentMaterial> components, List<SecondaryOutput> secondaryOutputs) {

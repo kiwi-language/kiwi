@@ -14,9 +14,9 @@ import java.util.Set;
 
 @EntityType
 public record Column(
-        @EntityField("列类型") ColumnKind kind,
-        @EntityField(value = "列名", asTitle = true) String name,
-        @EntityField(value = "标签") int tag
+        ColumnKind kind,
+        @EntityField(asTitle = true) String name,
+        int tag
 ) implements GlobalKey {
 
     public static final Column ID = new Column(ColumnKind.INT, "id", 0);

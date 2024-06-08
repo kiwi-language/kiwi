@@ -36,25 +36,25 @@ public class ExpressionTypeResolverTest extends TestCase {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
         TestUtils.initEntityIds(fooType);
         typeDefRepository.save(List.of(fooType));
-        FieldBuilder.newBuilder("名称", "name", fooType, StandardTypes.getStringType()).build();
-        String exprString = "this.名称 = \"Big Foo\"";
+        FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType()).build();
+        String exprString = "this.name = \"Big Foo\"";
         var expression = ExpressionParser.parse(exprString, createTypeParsingContext(fooType));
         Assert.assertNotNull(expression);
         Assert.assertEquals(exprString, expression.build(VarType.NAME));
     }
 
     public void testAllMatch() {
-        var listViewType = ClassTypeBuilder.newBuilder("列表视图", "ListView").build();
-        var classTypeType = ClassTypeBuilder.newBuilder("Class类型", "ClassType").build();
-        var fieldType = ClassTypeBuilder.newBuilder("字段", "Field").build();
+        var listViewType = ClassTypeBuilder.newBuilder("ListView", "ListView").build();
+        var classTypeType = ClassTypeBuilder.newBuilder("ClassType", "ClassType").build();
+        var fieldType = ClassTypeBuilder.newBuilder("Field", "Field").build();
         var fieldChildArrayType = new ArrayType(fieldType.getType(), ArrayKind.CHILD);
-        FieldBuilder.newBuilder("可见字段", "visibleFields", listViewType, fieldChildArrayType).build();
-        FieldBuilder.newBuilder("类型", "type", listViewType, classTypeType.getType()).build();
-        FieldBuilder.newBuilder("所属类型", "declaringType", fieldType, classTypeType.getType()).build();
+        FieldBuilder.newBuilder("visibleFields", "visibleFields", listViewType, fieldChildArrayType).build();
+        FieldBuilder.newBuilder("type", "type", listViewType, classTypeType.getType()).build();
+        FieldBuilder.newBuilder("declaringType", "declaringType", fieldType, classTypeType.getType()).build();
         TestUtils.initEntityIds(listViewType);
         typeDefRepository.save(List.of(listViewType, classTypeType, fieldType));
 
-        String str = "allmatch(可见字段, 所属类型=this.类型)";
+        String str = "allmatch(visibleFields, declaringType=this.type)";
         var expression = ExpressionParser.parse(str, createTypeParsingContext(listViewType));
         Assert.assertTrue(expression instanceof AllMatchExpression);
         LOGGER.info(expression.build(VarType.NAME));

@@ -69,7 +69,7 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
                 return result.ret();
             else {
                 ThrowableNative nativeObject = (ThrowableNative) NativeMethods.getNativeObject(result.exception());
-                String message = nativeObject.getMessage() instanceof StringInstance str ? str.getValue() : "执行失败";
+                String message = nativeObject.getMessage() instanceof StringInstance str ? str.getValue() : " execution failed";
                 throw new FlowExecutionException(message);
             }
         }

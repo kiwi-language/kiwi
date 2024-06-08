@@ -28,12 +28,12 @@ import static tech.metavm.entity.StandardTypes.*;
 public class MockUtils {
 
     public static ShoppingTypes createShoppingTypes() {
-        var productType = ClassTypeBuilder.newBuilder("商品", "Product").build();
+        var productType = ClassTypeBuilder.newBuilder("Product", "Product").build();
         var skuType = ClassTypeBuilder.newBuilder("SKU", "SKU").build();
-        var couponType = ClassTypeBuilder.newBuilder("优惠券", "Coupon").build();
+        var couponType = ClassTypeBuilder.newBuilder("Coupon", "Coupon").build();
         var couponArrayType = new ArrayType(couponType.getType(), ArrayKind.READ_WRITE);
-        var orderType = ClassTypeBuilder.newBuilder("订单", "Order").build();
-        var couponStateType = ClassTypeBuilder.newBuilder("优惠券状态", "CouponState")
+        var orderType = ClassTypeBuilder.newBuilder("Order", "Order").build();
+        var couponStateType = ClassTypeBuilder.newBuilder("CouponState", "CouponState")
                 .kind(ClassKind.ENUM)
                 .build();
         var enumKlass = getEnumKlass();
@@ -48,7 +48,7 @@ public class MockUtils {
         var couponNormalState = ClassInstanceBuilder.newBuilder(couponStateType.getType())
                 .data(Map.of(
                         enumNameField,
-                        Instances.stringInstance("正常"),
+                        Instances.stringInstance("NORMAL"),
                         enumOrdinalField,
                         Instances.longInstance(0L)
                 ))
@@ -57,7 +57,7 @@ public class MockUtils {
         var couponUsedState = ClassInstanceBuilder.newBuilder(couponStateType.getType())
                 .data(Map.of(
                         enumNameField,
-                        Instances.stringInstance("已使用"),
+                        Instances.stringInstance("USED"),
                         enumOrdinalField,
                         Instances.longInstance(1L)
                 ))
@@ -65,36 +65,36 @@ public class MockUtils {
                 .build();
         createEnumConstantField(couponNormalState);
         createEnumConstantField(couponUsedState);
-        var productTitleField = FieldBuilder.newBuilder("标题", "title", productType, getStringType())
+        var productTitleField = FieldBuilder.newBuilder("title", "title", productType, getStringType())
                 .asTitle()
                 .build();
         var skuChildArrayType = new ArrayType(skuType.getType(), ArrayKind.CHILD);
-        var productSkuListField = FieldBuilder.newBuilder("sku列表", "skuList", productType, skuChildArrayType)
+        var productSkuListField = FieldBuilder.newBuilder("skuList", "skuList", productType, skuChildArrayType)
                 .isChild(true)
                 .build();
-        var skuTitleField = FieldBuilder.newBuilder("标题", "title", skuType, getStringType())
+        var skuTitleField = FieldBuilder.newBuilder("title", "title", skuType, getStringType())
                 .asTitle()
                 .build();
-        var skuPriceField = FieldBuilder.newBuilder("价格", "price", skuType, getDoubleType())
+        var skuPriceField = FieldBuilder.newBuilder("price", "price", skuType, getDoubleType())
                 .build();
-        var skuAmountField = FieldBuilder.newBuilder("数量", "amount", skuType, getLongType())
+        var skuAmountField = FieldBuilder.newBuilder("amount", "amount", skuType, getLongType())
                 .access(Access.PRIVATE)
                 .build();
-        var orderCodeField = FieldBuilder.newBuilder("编号", "code", orderType, getStringType())
+        var orderCodeField = FieldBuilder.newBuilder("code", "code", orderType, getStringType())
                 .asTitle()
                 .build();
-        var orderProductField = FieldBuilder.newBuilder("商品", "product", orderType, productType.getType()).build();
-        var orderCouponsField = FieldBuilder.newBuilder("优惠券列表", "coupons", orderType, couponArrayType)
+        var orderProductField = FieldBuilder.newBuilder("product", "product", orderType, productType.getType()).build();
+        var orderCouponsField = FieldBuilder.newBuilder("coupons", "coupons", orderType, couponArrayType)
                 .isChild(true).build();
-        var orderAmountField = FieldBuilder.newBuilder("数量", "amount", orderType, getLongType()).build();
-        var orderPriceField = FieldBuilder.newBuilder("价格", "price", orderType, getDoubleType()).build();
-        var orderTimeField = FieldBuilder.newBuilder("时间", "time", orderType, getTimeType()).build();
-        var couponTitleField = FieldBuilder.newBuilder("标题", "title", couponType, getStringType())
+        var orderAmountField = FieldBuilder.newBuilder("amount", "amount", orderType, getLongType()).build();
+        var orderPriceField = FieldBuilder.newBuilder("price", "price", orderType, getDoubleType()).build();
+        var orderTimeField = FieldBuilder.newBuilder("time", "time", orderType, getTimeType()).build();
+        var couponTitleField = FieldBuilder.newBuilder("title", "title", couponType, getStringType())
                 .asTitle()
                 .build();
-        var couponDiscountField = FieldBuilder.newBuilder("折扣", "discount", couponType, getDoubleType())
+        var couponDiscountField = FieldBuilder.newBuilder("discount", "discount", couponType, getDoubleType())
                 .build();
-        var couponStateField = FieldBuilder.newBuilder("状态", "state", couponType, couponStateType.getType())
+        var couponStateField = FieldBuilder.newBuilder("state", "state", couponType, couponStateType.getType())
                 .defaultValue(couponNormalState)
                 .build();
 
@@ -115,14 +115,14 @@ public class MockUtils {
         var couponFiveOff = new InstanceDTO(
                 null,
                 TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
-                "优惠券",
-                "减5元",
+                "coupon",
+                "5 Yuan Off",
                 null,
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponTitleFieldId(),
-                                        PrimitiveFieldValue.createString("减5元")
+                                        PrimitiveFieldValue.createString("5 Yuan Off")
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponDiscountFieldId(),
@@ -138,14 +138,14 @@ public class MockUtils {
         var couponTenOff = new InstanceDTO(
                 null,
                 TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
-                "优惠券",
-                "减10元",
+                "coupon",
+                "10 Yuan Off",
                 null,
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponTitleFieldId(),
-                                        PrimitiveFieldValue.createString("减10元")
+                                        PrimitiveFieldValue.createString("10 Yuan Off")
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponDiscountFieldId(),
@@ -161,14 +161,14 @@ public class MockUtils {
         var couponFifteenOff = new InstanceDTO(
                 null,
                 TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
-                "优惠券",
-                "减15元",
+                "coupon",
+                "15 Yuan Off",
                 null,
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponTitleFieldId(),
-                                        PrimitiveFieldValue.createString("减15元")
+                                        PrimitiveFieldValue.createString("15 Yuan Off")
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponDiscountFieldId(),
@@ -195,14 +195,14 @@ public class MockUtils {
         return new InstanceDTO(
                 null,
                 TypeExpressions.getClassType(shoppingTypeIds.productTypeId()),
-                "商品",
-                "鞋子",
+                "Product",
+                "Shoes",
                 null,
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.productTitleFieldId(),
-                                        PrimitiveFieldValue.createString("鞋子")
+                                        PrimitiveFieldValue.createString("Shoes")
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.productSkuListFieldId(),
@@ -327,7 +327,7 @@ public class MockUtils {
         var product = ClassInstanceBuilder.newBuilder(shoppingTypes.productType().getType())
                 .data(Map.of(
                         shoppingTypes.productTitleField(),
-                        Instances.stringInstance("鞋子"),
+                        Instances.stringInstance("shoes"),
                         shoppingTypes.productSkuListField(),
                         new ArrayInstance(shoppingTypes.skuChildArrayType(),
                                 List.of(sku40, sku41, sku42))
@@ -336,7 +336,7 @@ public class MockUtils {
         var couponFiveOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
                 .data(Map.of(
                         shoppingTypes.couponTitleField(),
-                        Instances.stringInstance("减5元"),
+                        Instances.stringInstance("5 Yuan Off"),
                         shoppingTypes.couponDiscountField(),
                         Instances.longInstance(5L)
                 ))
@@ -344,7 +344,7 @@ public class MockUtils {
         var couponTenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
                 .data(Map.of(
                         shoppingTypes.couponTitleField(),
-                        Instances.stringInstance("减10元"),
+                        Instances.stringInstance("10 Yuan Off"),
                         shoppingTypes.couponDiscountField(),
                         Instances.longInstance(10L)
                 ))
@@ -352,7 +352,7 @@ public class MockUtils {
         var couponFifteenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
                 .data(Map.of(
                         shoppingTypes.couponTitleField(),
-                        Instances.stringInstance("减15元"),
+                        Instances.stringInstance("15 Yuan Off"),
                         shoppingTypes.couponDiscountField(),
                         Instances.longInstance(15L)
                 ))
@@ -509,27 +509,27 @@ public class MockUtils {
     }
 
     public static FooTypes createFooTypes(boolean initIds) {
-        var fooType = ClassTypeBuilder.newBuilder("傻", "Foo").build();
-        var fooNameField = FieldBuilder.newBuilder("名称", "name", fooType, getStringType())
+        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
+        var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, getStringType())
                 .asTitle().build();
-        var fooCodeField = FieldBuilder.newBuilder("编号", "code", fooType, getNullableStringType())
+        var fooCodeField = FieldBuilder.newBuilder("code", "code", fooType, getNullableStringType())
                 .build();
-        var barType = ClassTypeBuilder.newBuilder("巴", "Bar").build();
-        var barCodeField = FieldBuilder.newBuilder("编号", "code", barType, getStringType())
+        var barType = ClassTypeBuilder.newBuilder("Bar", "Bar").build();
+        var barCodeField = FieldBuilder.newBuilder("code", "code", barType, getStringType())
                 .asTitle().build();
         var barChildArrayType = new ArrayType(barType.getType(), ArrayKind.CHILD);
         var barArrayType = new ArrayType(barType.getType(), ArrayKind.READ_WRITE);
 //        var nullableBarType = new UnionType(null, Set.of(barType, getNullType()));
-        var fooBarsField = FieldBuilder.newBuilder("巴列表", "bars", fooType, barChildArrayType)
+        var fooBarsField = FieldBuilder.newBuilder("bars", "bars", fooType, barChildArrayType)
                 .isChild(true).build();
-        var bazType = ClassTypeBuilder.newBuilder("巴子", "Baz").build();
+        var bazType = ClassTypeBuilder.newBuilder("Baz", "Baz").build();
         var bazArrayType = new ArrayType(bazType.getType(), ArrayKind.READ_WRITE);
-        var bazBarsField = FieldBuilder.newBuilder("巴列表", "bars", bazType, barArrayType).build();
-        var fooBazListField = FieldBuilder.newBuilder("巴子列表", "bazList", fooType, bazArrayType).build();
-        var quxType = ClassTypeBuilder.newBuilder("量子", "Qux").build();
-        var quxAmountField = FieldBuilder.newBuilder("数量", "amount", quxType, getLongType()).build();
+        var bazBarsField = FieldBuilder.newBuilder("bars", "bars", bazType, barArrayType).build();
+        var fooBazListField = FieldBuilder.newBuilder("bazList", "bazList", fooType, bazArrayType).build();
+        var quxType = ClassTypeBuilder.newBuilder("Qux", "Qux").build();
+        var quxAmountField = FieldBuilder.newBuilder("amount", "amount", quxType, getLongType()).build();
         var nullableQuxType = new UnionType(Set.of(quxType.getType(), getNullType()));
-        var fooQuxField = FieldBuilder.newBuilder("量子", "qux", fooType, nullableQuxType).build();
+        var fooQuxField = FieldBuilder.newBuilder("qux", "qux", fooType, nullableQuxType).build();
         if (initIds)
             TestUtils.initEntityIds(fooType);
         return new FooTypes(fooType, barType, quxType, bazType, barArrayType, barChildArrayType, bazArrayType, fooNameField,
@@ -537,27 +537,27 @@ public class MockUtils {
     }
 
     public static LivingBeingTypes createLivingBeingTypes(boolean initIds) {
-        var livingBeingType = ClassTypeBuilder.newBuilder("生物", "LivingBeing").build();
-        var livingBeingAgeField = FieldBuilder.newBuilder("年龄", "age", livingBeingType, getLongType())
+        var livingBeingType = ClassTypeBuilder.newBuilder("LivingBeing", "LivingBeing").build();
+        var livingBeingAgeField = FieldBuilder.newBuilder("age", "age", livingBeingType, getLongType())
                 .build();
-        var livingBeingExtraInfoField = FieldBuilder.newBuilder("额外信息", "extraInfo", livingBeingType, getAnyType())
+        var livingBeingExtraInfoField = FieldBuilder.newBuilder("extraInfo", "extraInfo", livingBeingType, getAnyType())
                 .build();
         var livingBeingArrayType = new ArrayType(livingBeingType.getType(), ArrayKind.READ_WRITE);
-        var livingBeingOffspringsField = FieldBuilder.newBuilder("后代", "offsprings", livingBeingType, livingBeingArrayType)
+        var livingBeingOffspringsField = FieldBuilder.newBuilder("offsprings", "offsprings", livingBeingType, livingBeingArrayType)
                 .isChild(true)
                 .build();
-        var livingBeingAncestorsField = FieldBuilder.newBuilder("祖先", "ancestors", livingBeingType, livingBeingArrayType)
+        var livingBeingAncestorsField = FieldBuilder.newBuilder("ancestors", "ancestors", livingBeingType, livingBeingArrayType)
                 .isChild(true)
                 .build();
-        var animalType = ClassTypeBuilder.newBuilder("动物", "Animal")
+        var animalType = ClassTypeBuilder.newBuilder("Animal", "Animal")
                 .superClass(livingBeingType.getType())
                 .build();
-        var animalIntelligenceField = FieldBuilder.newBuilder("智力", "intelligence", animalType, getLongType())
+        var animalIntelligenceField = FieldBuilder.newBuilder("intelligence", "intelligence", animalType, getLongType())
                 .build();
-        var humanType = ClassTypeBuilder.newBuilder("人类", "Human")
+        var humanType = ClassTypeBuilder.newBuilder("Human", "Human")
                 .superClass(animalType.getType())
                 .build();
-        var humanOccupationField = FieldBuilder.newBuilder("职业", "occupation", humanType, getStringType())
+        var humanOccupationField = FieldBuilder.newBuilder("occupation", "occupation", humanType, getStringType())
                 .build();
         if (initIds)
             TestUtils.initEntityIds(livingBeingType);
@@ -585,11 +585,11 @@ public class MockUtils {
                         livingBeingTypes.livingBeingOffspringsField(),
                         new ArrayInstance(livingBeingTypes.livingBeingArrayType()),
                         livingBeingTypes.livingBeingExtraInfoFIeld(),
-                        Instances.stringInstance("非常聪明"),
+                        Instances.stringInstance("very smart"),
                         livingBeingTypes.animalIntelligenceField(),
                         Instances.longInstance(160L),
                         livingBeingTypes.humanOccupationField(),
-                        Instances.stringInstance("程序员")
+                        Instances.stringInstance("programmer")
                 ))
                 .build();
         if (initIds)
@@ -691,52 +691,52 @@ public class MockUtils {
     }
 
     public static UserTypeIds createUserTypes(TypeManager typeManager) {
-        var platformUserTypeDTO = ClassTypeDTOBuilder.newBuilder("平台用户")
+        var platformUserTypeDTO = ClassTypeDTOBuilder.newBuilder("PlatformUser")
                 .code("PlatformUser")
                 .tmpId(NncUtils.randomNonNegative())
                 .titleFieldId(TmpId.of(NncUtils.randomNonNegative()).toString())
-                .addField(FieldDTOBuilder.newBuilder("登录名", "string")
+                .addField(FieldDTOBuilder.newBuilder("loginName", "string")
                         .code("loginName")
                         .asTitle(true)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
                 )
-                .addField(FieldDTOBuilder.newBuilder("密码", "password")
+                .addField(FieldDTOBuilder.newBuilder("password", "password")
                         .code("password")
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
                 )
                 .build();
         var applicationTypeTmpId = TmpId.random().toString();
-        var applicationTypeDTO = ClassTypeDTOBuilder.newBuilder("应用")
+        var applicationTypeDTO = ClassTypeDTOBuilder.newBuilder("Application")
                 .id(applicationTypeTmpId)
                 .code("Application")
                 .titleFieldId(TmpId.random().toString())
-                .addField(FieldDTOBuilder.newBuilder("名称", "string")
+                .addField(FieldDTOBuilder.newBuilder("name", "string")
                         .code("name")
                         .asTitle(true)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
                 )
-                .addField(FieldDTOBuilder.newBuilder("所有者", TypeExpressions.getClassType(platformUserTypeDTO.id()))
+                .addField(FieldDTOBuilder.newBuilder("owner", TypeExpressions.getClassType(platformUserTypeDTO.id()))
                         .code("owner")
                         .access(Access.PRIVATE.code())
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
                 )
-                .addMethod(MethodDTOBuilder.newBuilder(applicationTypeTmpId, "获取所有者")
+                .addMethod(MethodDTOBuilder.newBuilder(applicationTypeTmpId, "getOwner")
                         .tmpId(NncUtils.randomNonNegative())
                         .code("getOwner")
                         .returnType(TypeExpressions.getClassType(platformUserTypeDTO.id()))
                         .addNode(NodeDTOFactory.createSelfNode(
                                 NncUtils.randomNonNegative(),
-                                "当前记录",
+                                "self",
                                 applicationTypeTmpId
                         ))
                         .addNode(NodeDTOFactory.createReturnNode(
                                 NncUtils.randomNonNegative(),
-                                "返回",
-                                ValueDTOFactory.createReference("当前记录.所有者")
+                                "return",
+                                ValueDTOFactory.createReference("self.owner")
                         ))
                         .build())
                 .build();

@@ -5,47 +5,47 @@ import tech.metavm.entity.EntityType;
 @EntityType
 public enum LabErrorCode {
 
-    REENTERING_APP(608, "请先退出当前应用再进行操作"),
+    REENTERING_APP(608, "Please exit the current application before operating"),
 
-    NOT_IN_APP(609, "当前未进入任何APP"),
+    NOT_IN_APP(609, "Not in any APP currently"),
 
-    ALREADY_AN_ADMIN(613, "用户'{}'已经是管理员"),
+    ALREADY_AN_ADMIN(613, "User '{}' is already an administrator"),
 
-    USER_NOT_ADMIN(614, "用户'{}'不是管理员"),
+    USER_NOT_ADMIN(614, "User '{}' is not an administrator"),
 
-    ALREADY_JOINED_APP(611, "用户'{}'已加入当前应用"),
+    ALREADY_JOINED_APP(611, "User '{}' has already joined the current application"),
 
-    CAN_NOT_EVICT_APP_OWNER(1001, "应用所有人无法退出应用"),
+    CAN_NOT_EVICT_APP_OWNER(1001, "The owner of the application cannot exit the application"),
 
-    TOO_MANY_LOGIN_ATTEMPTS(613, "登录尝试次数过多，请稍后再试"),
+    TOO_MANY_LOGIN_ATTEMPTS(613, "Too many login attempts, please try again later"),
 
-    LOGIN_NAME_NOT_FOUND(602, "账号'{}'不存在"),
+    LOGIN_NAME_NOT_FOUND(602, "Account '{}' does not exist"),
 
-    LOGIN_FAILED(603, "登录失败"),
+    LOGIN_FAILED(603, "Login failed"),
 
-    NOT_A_MEMBER_OF_THE_APP(607, "用户未加入应用无法进入"),
+    NOT_A_MEMBER_OF_THE_APP(607, "User not joined in the application cannot enter"),
 
-    VERIFICATION_CODE_SENT_TOO_OFTEN(612, "验证码发送太频繁，请稍后再试"),
+    VERIFICATION_CODE_SENT_TOO_OFTEN(612, "Verification code sent too frequently, please try again later"),
 
-    INVALID_EMAIL_ADDRESS(615, "邮箱地址错误"),
+    INVALID_EMAIL_ADDRESS(615, "Incorrect email address"),
 
-    INCORRECT_VERIFICATION_CODE(611, "验证码错误"),
+    INCORRECT_VERIFICATION_CODE(611, "Incorrect verification code"),
 
-    USER_NOT_FOUND(604, "用户(id:{})不存在"),
+    USER_NOT_FOUND(604, "User (id:{}) does not exist"),
 
-    INVITATION_ALREADY_ACCEPTED(612, "邀请已经接受"),
+    INVITATION_ALREADY_ACCEPTED(612, "Invitation has already been accepted"),
 
-    USER_NOT_LOGGED_IN(614, "用户未登录"),
+    USER_NOT_LOGGED_IN(614, "User not logged in"),
 
-    CURRENT_USER_NOT_APP_ADMIN(1002, "您不是管理员，无法执行该操作"),
+    CURRENT_USER_NOT_APP_ADMIN(1002, "You are not an administrator and cannot perform this operation"),
 
-    CURRENT_USER_NOT_APP_OWNER(1002, "您不是应用所有者，无法执行该操作"),
+    CURRENT_USER_NOT_APP_OWNER(1002, "You are not the owner of the application and cannot perform this operation"),
 
-    ILLEGAL_ACCESS(413, "无权限访问"),
+    ILLEGAL_ACCESS(413, "No access permission"),
 
-    APPLICATION_NOT_SELECTED(414, "未选择应用"),
+    APPLICATION_NOT_SELECTED(414, "No application selected"),
 
-    COMPONENT_MATERIAL_LACK_VIRTUAL_BOM(415, "虚拟物料BOM组件需要虚拟BOM"),
+    COMPONENT_MATERIAL_LACK_VIRTUAL_BOM(415, "Virtual material BOM component requires virtual BOM"),
 
     ;
 

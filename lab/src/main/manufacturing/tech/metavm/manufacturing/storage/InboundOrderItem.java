@@ -109,7 +109,7 @@ public class InboundOrderItem {
         for (InboundReversalRequestItem item : request.items()) {
             var convertedAmount = material.convertAmount(item.amount(), item.unit(), unit);
             if(actualQuantity < convertedAmount)
-                throw new IllegalArgumentException("冲销数量超出实收数量");
+                throw new IllegalArgumentException("Reverse quantity is greater than actual received quantity");
             actualQuantity -= convertedAmount;
             Inventory.decreaseInventory(item.inventory(), item.amount(), item.unit(), InventoryOp.INBOUND);
         }

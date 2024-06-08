@@ -22,22 +22,18 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
+@EntityType
 public class Method extends Flow implements Property, GenericElement {
 
     public static final IndexDef<Method> IDX_PARAMETERIZED = IndexDef.create(Method.class, "parameterized");
     public static final Logger logger = LoggerFactory.getLogger(Method.class);
 
-    @EntityField("所属类型")
     private final @NotNull Klass declaringType;
-    @EntityField("是否静态")
     private boolean _static;
-    @EntityField("可见范围")
     private Access access;
-    @ChildEntity("被复写流程")
+    @ChildEntity
     private final ReadWriteArray<MethodRef> overridden = addChild(new ReadWriteArray<>(MethodRef.class), "overridden");
-    @EntityField("是否构造函数")
     private boolean isConstructor;
-    @EntityField("是否抽象")
     private boolean isAbstract;
     /*
      *                       horizontalTemplate
@@ -49,7 +45,6 @@ public class Method extends Flow implements Property, GenericElement {
      *                       horizontalTemplate
      */
 
-    @EntityField("垂直模板")
     @CopyIgnore
     @Nullable
     private Method verticalTemplate;
@@ -373,8 +368,8 @@ public class Method extends Flow implements Property, GenericElement {
                     var exception = ClassInstance.allocate(StandardTypes.getRuntimeExceptionKlass().getType());
                     var exceptionNative = new RuntimeExceptionNative(exception);
                     exceptionNative.RuntimeException(Instances.stringInstance(
-                                    "对象" + instance.getType().getName() + "创建失败，" +
-                                            "字段" + uninitializedField.getName() + "未初始化"),
+                                    "Failed to create object " + instance.getType().getName() + "，" +
+                                            "field " + uninitializedField.getName() + " was not initialized"),
                             callContext);
                     return new FlowExecResult(null, exception);
                 }

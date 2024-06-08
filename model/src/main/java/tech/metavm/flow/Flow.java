@@ -335,7 +335,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @SuppressWarnings("unused")
     public NodeRT getNodeByNameRequired(String nodeName) {
         return NncUtils.filterOneRequired(nodes(), n -> n.getName().equals(nodeName),
-                "流程节点'" + nodeName + "'不存在");
+                "Node '" + nodeName + "' does not exist");
     }
 
     @SuppressWarnings("unused")

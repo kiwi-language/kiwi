@@ -10,16 +10,16 @@ import tech.metavm.manufacturing.material.Unit;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityStruct("Routing")
+@EntityStruct
 public class Routing {
 
-    @EntityField(value = "name", asTitle = true)
+    @EntityField(asTitle = true)
     private String name;
     private Material product;
     private Unit unit;
-    @ChildEntity("processes")
+    @ChildEntity
     private final ChildList<RoutingProcess> processes;
-    @ChildEntity("successions")
+    @ChildEntity
     private final ChildList<RoutingSuccession> successions;
 
     public Routing(String name, Material product, Unit unit, List<RoutingProcess> processes, List<RoutingSuccession> successions) {

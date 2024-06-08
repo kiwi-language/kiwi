@@ -47,7 +47,7 @@ public class BooleanInstance extends PrimitiveInstance {
 
     @Override
     public String getTitle() {
-        return value ? "是" : "否";
+        return value ? "true" : "false";
     }
 
     @Override

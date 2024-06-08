@@ -28,10 +28,10 @@ public class ForeachNode extends LoopNode {
         var array = ValueFactory.create(param.getArray(), parsingContext);
         Value condition = Values.expression(Expressions.trueExpression());
         if (outputType.findFieldByCode("array") == null) {
-            FieldBuilder.newBuilder("数组", "array", outputType, array.getType()).build();
+            FieldBuilder.newBuilder("array", "array", outputType, array.getType()).build();
         }
         if (outputType.findFieldByCode("index") == null) {
-            FieldBuilder.newBuilder("索引", "index", outputType, ModelDefRegistry.getType(Long.class)).build();
+            FieldBuilder.newBuilder("index", "index", outputType, ModelDefRegistry.getType(Long.class)).build();
         }
         // IMPORTANT COMMENT DON"T REMOVE:
         // DO NOT call setLoopParam here. setLoopParam should be called after the loop body has been constructed.

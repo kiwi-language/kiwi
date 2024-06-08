@@ -52,7 +52,7 @@ public class EnumEditContext {
 
     private void validate() {
         if(optionDTOs != null && optionDTOs.isEmpty()) {
-            throw BusinessException.invalidField(name, "选项不能为空");
+            throw BusinessException.invalidField(name, "options can not be empty");
         }
     }
 

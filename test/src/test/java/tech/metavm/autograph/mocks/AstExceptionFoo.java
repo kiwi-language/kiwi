@@ -18,7 +18,7 @@ public class AstExceptionFoo extends Entity {
     public void test(int dec) {
         try {
             if (dec <= 0) {
-                throw new RuntimeException("参数错误");
+                throw new RuntimeException("Illegal arguments");
             }
             if (dec > amount) {
                 throw new AstException();
@@ -30,7 +30,7 @@ public class AstExceptionFoo extends Entity {
             if (message != null) {
                 errorMessage = message;
             } else {
-                errorMessage = "执行失败";
+                errorMessage = "Execution failed";
             }
         } finally {
             executionCount++;

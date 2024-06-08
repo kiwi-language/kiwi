@@ -2,7 +2,7 @@ package tech.metavm.manufacturing.production;
 
 import tech.metavm.entity.EntityStruct;
 
-@EntityStruct("RoutingProcessItem")
+@EntityStruct
 public class RoutingProcessItem {
     private int sequence;
     private long numerator;

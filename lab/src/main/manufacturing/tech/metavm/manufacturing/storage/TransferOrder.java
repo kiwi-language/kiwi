@@ -72,14 +72,14 @@ public class TransferOrder {
         if(status == TransferOrderStatus.PENDING)
             status = TransferOrderStatus.ISSUED;
         else
-            throw new IllegalStateException("调拨单状态不正确");
+            throw new IllegalStateException("Illegal transfer order state");
     }
 
     public void close() {
         if(status != TransferOrderStatus.FINISHED)
             status = TransferOrderStatus.FINISHED;
         else
-            throw new IllegalStateException("调拨单状态不正确");
+            throw new IllegalStateException("Illegal transfer order state");
     }
 
     public void transfer(TransferRequest request) {
@@ -87,7 +87,7 @@ public class TransferOrder {
         for (TransferRequestItem item : request.items()) {
             for (TransferRequestSubItem subItem : item.subItems()) {
                 if(subItem.inventory().getMaterial() != item.transferOrderItem().getMaterial())
-                    throw new IllegalArgumentException("调拨物料不一致");
+                    throw new IllegalArgumentException("Inventory material does not match the material of the transfer order");
                 processRequestSubItem(request.to(), subItem);
                 item.transferOrderItem().increaseIssuedQuantity(subItem.amount(), subItem.unit());
             }
@@ -97,7 +97,7 @@ public class TransferOrder {
     private void processRequestSubItem(Position inboundPosition, TransferRequestSubItem subItem) {
         var inventory = subItem.inventory();
         if(inventory.getPosition() == inboundPosition)
-            throw new IllegalArgumentException("调拨物料已在目标仓库");
+            throw new IllegalArgumentException("Inventory is already in the target position");
         Inventory.decreaseInventory(inventory, subItem.amount(), subItem.unit(), InventoryOp.MOVE_OUTBOUND);
         Inventory.increaseQuantity(
                 inventory.getMaterial(),

@@ -112,7 +112,7 @@ public class Index extends Constraint implements LocalKey {
 
     @Override
     public String getDefaultMessage() {
-        return "唯一属性'" + NncUtils.join(fields, IndexField::getName) + "'重复";
+        return "Duplicate field '" + NncUtils.join(fields, IndexField::getName) + "'";
     }
 
     @Override
@@ -157,7 +157,7 @@ public class Index extends Constraint implements LocalKey {
 
     @Override
     public String getDesc() {
-        return "唯一属性(" + NncUtils.join(fields, IndexField::getName) + ")";
+        return "Index(" + NncUtils.join(fields, IndexField::getName) + ")";
     }
 
     public IndexDef<?> getIndexDef() {

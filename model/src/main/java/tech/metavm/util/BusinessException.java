@@ -47,7 +47,7 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException notNullFieldWithoutDefaultValue(Field field) {
-        throw invalidField(field, "当类型下已经存在数据时，新增的必填字段必须带默认值");
+        throw invalidField(field, "When data already exists under the type, the newly added required field must carry a default value");
     }
 
     public static BusinessException invalidConditionExpr(String expr) {
@@ -63,11 +63,11 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException duplicateOptionName(String optionName) {
-        throw new BusinessException(ErrorCode.DUPLICATE_CHOICE_OPTION_PROP, "名称", optionName);
+        throw new BusinessException(ErrorCode.DUPLICATE_CHOICE_OPTION_PROP, "name", optionName);
     }
 
     public static BusinessException duplicateOptionOrder(int order) {
-        throw new BusinessException(ErrorCode.DUPLICATE_CHOICE_OPTION_PROP, "序号", order);
+        throw new BusinessException(ErrorCode.DUPLICATE_CHOICE_OPTION_PROP, "order", order);
     }
 
     public static BusinessException duplicateOption(EnumConstantRT choiceOption) {
@@ -127,14 +127,14 @@ public class BusinessException extends RuntimeException {
         List<String> quotedFieldNames = NncUtils.map(fieldNames, s -> "\"" + s + "\"");
         return new BusinessException(
                 ErrorCode.ERROR_DELETING_TYPE,
-                "\"" + type.getName() + "\"被以下表格列使用：" + NncUtils.join(quotedFieldNames)
+                "\"" + type.getName() + "\" is used by types：" + NncUtils.join(quotedFieldNames)
         );
     }
 
     public static BusinessException typeReferredByFlows(List<String> flowNames) {
         return new BusinessException(
                 ErrorCode.ERROR_DELETING_TYPE,
-                "类型被其他流程使用: " + NncUtils.join(flowNames)
+                "type is used by flows: " + NncUtils.join(flowNames)
         );
     }
 

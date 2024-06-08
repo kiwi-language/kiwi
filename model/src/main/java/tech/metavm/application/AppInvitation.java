@@ -56,7 +56,7 @@ public class AppInvitation extends Entity {
     }
 
     private String getTitle() {
-        return String.format("您被邀请加入应用: %s", application.getName());
+        return String.format("You are invited to join application %s", application.getName());
     }
 
 }

@@ -48,9 +48,9 @@ public class UnionNestedMapping extends NestedMapping {
         var valueFieldRef = new Object() {
             Field valueField;
         };
-        var source = Nodes.value("来源" + NncUtils.randomNonNegative(), getSource.get(), scope);
+        var source = Nodes.value("source" + NncUtils.randomNonNegative(), getSource.get(), scope);
         Nodes.branch(
-                "判断类型" + sourceType.getName(),
+                "check type " + sourceType.getName(),
                 null,
                 scope,
                 NncUtils.map(
@@ -70,9 +70,9 @@ public class UnionNestedMapping extends NestedMapping {
                             );
                         }
                 ),
-                branch -> Nodes.raise("未知类型", branch.getScope(), Values.constantString("类型错误")),
+                branch -> Nodes.raise("unknown type", branch.getScope(), Values.constantString("Invalid type")),
                 mergeNode -> {
-                    valueFieldRef.valueField = FieldBuilder.newBuilder("值", null, mergeNode.getType().resolve(), targetType).build();
+                    valueFieldRef.valueField = FieldBuilder.newBuilder("value", null, mergeNode.getType().resolve(), targetType).build();
                     new MergeNodeField(valueFieldRef.valueField, mergeNode, values);
                 }
         );
@@ -89,9 +89,9 @@ public class UnionNestedMapping extends NestedMapping {
         var valueFieldRef = new Object() {
             Field valueField;
         };
-        var view = Nodes.value("视图"+NncUtils.randomNonNegative(), getView.get(), scope);
+        var view = Nodes.value("view"+NncUtils.randomNonNegative(), getView.get(), scope);
         Nodes.branch(
-                "判断类型" + NncUtils.randomNonNegative(),
+                "check type " + NncUtils.randomNonNegative(),
                 null,
                 scope,
                 NncUtils.map(
@@ -110,9 +110,9 @@ public class UnionNestedMapping extends NestedMapping {
                             );
                         }
                 ),
-                branch -> Nodes.raise("未知类型", branch.getScope(), Values.constantString("类型错误")),
+                branch -> Nodes.raise("unknown type", branch.getScope(), Values.constantString("invalid type")),
                 mergeNode -> {
-                    valueFieldRef.valueField = FieldBuilder.newBuilder("值", null, mergeNode.getType().resolve(), sourceType).build();
+                    valueFieldRef.valueField = FieldBuilder.newBuilder("value", null, mergeNode.getType().resolve(), sourceType).build();
                     new MergeNodeField(valueFieldRef.valueField, mergeNode, values);
                 }
         );

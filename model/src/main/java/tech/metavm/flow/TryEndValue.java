@@ -1,15 +1,14 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.TryEndValueDTO;
 
+@EntityType
 public class TryEndValue extends Entity {
 
-    @EntityField("中断节点")
     private NodeRT raiseNode;
-    @EntityField("值")
     private Value value;
 
     public TryEndValue(NodeRT raiseNode, Value value) {

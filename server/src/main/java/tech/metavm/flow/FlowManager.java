@@ -60,10 +60,10 @@ public class FlowManager extends EntityContextFactoryBean {
         try (var context = newContext(); var serContext = SerializeContext.enter()) {
             var scope = context.getScope(nodeDTO.scopeId());
             TryNode tryNode = (TryNode) createNode(nodeDTO, scope, context);
-            TryEndNode tryEndNode = new TryEndNode(null, tryNode.getName() + "结束", null,
-                    ClassTypeBuilder.newBuilder("守护结束节点输出", "TryEndNodeOutput").temporary().build(),
+            TryEndNode tryEndNode = new TryEndNode(null, tryNode.getName() + " end", null,
+                    ClassTypeBuilder.newBuilder("TryEndOutput", "TryEndOutput").temporary().build(),
                     tryNode, scope);
-            FieldBuilder.newBuilder("异常", "exception",
+            FieldBuilder.newBuilder("exception", "exception",
                             tryEndNode.getType().resolve(), StandardTypes.getNullableType(StandardTypes.getThrowableKlass().getType()))
                     .build();
             context.bind(tryEndNode);
@@ -80,8 +80,8 @@ public class FlowManager extends EntityContextFactoryBean {
         try (var context = newContext(); var serContext = SerializeContext.enter()) {
             var scope = context.getScope(nodeDTO.scopeId());
             BranchNode branchNode = (BranchNode) createNode(nodeDTO, scope, context);
-            MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "合并", null,
-                    branchNode, ClassTypeBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
+            MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "mege", null,
+                    branchNode, ClassTypeBuilder.newBuilder("MergeOutput", "MergeOutput").temporary().build(),
                     scope);
             context.bind(mergeNode);
             afterFlowChange(scope.getFlow(), context);
@@ -327,7 +327,7 @@ public class FlowManager extends EntityContextFactoryBean {
     private SelfNode createSelfNode(Method flow, IEntityContext context) {
         NodeDTO selfNodeDTO = NodeDTO.newNode(
                 null,
-                "当前对象",
+                "self",
                 NodeKind.SELF.code(),
                 null
         );
@@ -336,12 +336,12 @@ public class FlowManager extends EntityContextFactoryBean {
     }
 
     private NodeRT createInputNode(Flow flow, NodeRT prev) {
-        var type = ClassTypeBuilder.newBuilder("输入类型", null).temporary().build();
+        var type = ClassTypeBuilder.newBuilder("Input", null).temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), type, parameter.getType())
                     .build();
         }
-        return new InputNode(null, "流程输入", null, type, prev, flow.getRootScope());
+        return new InputNode(null, "input", null, type, prev, flow.getRootScope());
     }
 
     private void createReturnNode(Flow flow, NodeRT prev) {
@@ -351,7 +351,7 @@ public class FlowManager extends EntityContextFactoryBean {
             value = Values.reference(new NodeExpression(flow.getRootNode()));
         } else
             value = null;
-        new ReturnNode(null, "结束", null, prev, flow.getRootScope(), value);
+        new ReturnNode(null, "return", null, prev, flow.getRootScope(), value);
     }
 
     @Transactional
@@ -580,7 +580,7 @@ public class FlowManager extends EntityContextFactoryBean {
         var currentKlassId = NncUtils.get(node, n -> n.getKlass().getStringId());
         List<FieldDTO> fields = NncUtils.map(inputFields, inputField -> inputField.toFieldDTO(currentKlassId));
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder(
-                        NncUtils.getOrElse(node, n -> n.getKlass().getName(), "输入类型" + NncUtils.randomNonNegative())
+                        NncUtils.getOrElse(node, n -> n.getKlass().getName(), "input" + NncUtils.randomNonNegative())
                 )
                 .id(currentKlassId)
                 .anonymous(true)
@@ -611,7 +611,7 @@ public class FlowManager extends EntityContextFactoryBean {
             excetpionFieldDTO = outputType.resolve().getFieldByCode("exception").toDTO();
         } else {
             excetpionFieldDTO = FieldDTOBuilder
-                    .newBuilder("异常", StandardTypes.getNullableThrowableKlass().toExpression())
+                    .newBuilder("exception", StandardTypes.getNullableThrowableKlass().toExpression())
                     .readonly(true)
                     .code("exception")
                     .build();
@@ -687,7 +687,7 @@ public class FlowManager extends EntityContextFactoryBean {
             fields.add(arrayField.toDTO());
         } else {
             fields.add(
-                    FieldDTOBuilder.newBuilder("数组", arrayValue.getType().toExpression())
+                    FieldDTOBuilder.newBuilder("array", arrayValue.getType().toExpression())
                             .code("array")
                             .readonly(true)
                             .id(TmpId.of(NncUtils.randomNonNegative()).toString())
@@ -699,7 +699,7 @@ public class FlowManager extends EntityContextFactoryBean {
         } else {
             fields.add(
                     FieldDTOBuilder
-                            .newBuilder("索引", "long")
+                            .newBuilder("index", "long")
                             .code("index")
                             .id(TmpId.of(NncUtils.randomNonNegative()).toString())
                             .build()
@@ -862,14 +862,14 @@ public class FlowManager extends EntityContextFactoryBean {
                 context.finish();
                 return branch.toDTO(true, serContext);
             } else {
-                throw BusinessException.invalidParams("节点" + branchDTO.ownerId() + "不是分支节点");
+                throw BusinessException.invalidParams("node " + branchDTO.ownerId() + " is not a branch node");
             }
         }
     }
 
     @Transactional
     public BranchDTO updateBranch(BranchDTO branchDTO) {
-        NncUtils.requireNonNull(branchDTO.index(), "分支序号必填");
+        NncUtils.requireNonNull(branchDTO.index(), "branch index required");
         try (var context = newContext(); var serContext = SerializeContext.enter()) {
             NodeRT owner = context.getEntity(NodeRT.class, branchDTO.ownerId());
             if (owner == null) {
@@ -884,7 +884,7 @@ public class FlowManager extends EntityContextFactoryBean {
                 context.finish();
                 return branch.toDTO(true, serContext);
             } else {
-                throw BusinessException.invalidParams("节点" + branchDTO.ownerId() + "不是分支节点");
+                throw BusinessException.invalidParams("object " + branchDTO.ownerId() + " is not a branch");
             }
         }
     }
@@ -901,7 +901,7 @@ public class FlowManager extends EntityContextFactoryBean {
                 context.remove(branch);
                 context.finish();
             } else {
-                throw BusinessException.invalidParams("节点" + ownerId + "不是分支节点");
+                throw BusinessException.invalidParams("Object " + ownerId + " is not a branch node");
             }
         }
     }

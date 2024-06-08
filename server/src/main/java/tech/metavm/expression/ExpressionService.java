@@ -70,7 +70,7 @@ public class ExpressionService extends EntityContextFactoryBean {
             } else if (contextDTO instanceof TypeParsingContextDTO typeContext) {
                 return TypeParsingContext.create(context.getKlass(typeContext.getTypeId()), entityContext);
             }
-            throw BusinessException.invalidParams("请求参数错误，未识别的解析上下文类型: " + contextDTO.getClass().getName());
+            throw BusinessException.invalidParams("Unrecognized ParseContext: " + contextDTO.getClass().getName());
         }
     }
 

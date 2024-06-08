@@ -7,7 +7,7 @@ import java.util.List;
 
 public class AstForeachFoo {
 
-    @ChildEntity("价格列表")
+    @ChildEntity
     private final List<Double> prices = new ArrayList<>();
 
     public double getAveragePrice() {

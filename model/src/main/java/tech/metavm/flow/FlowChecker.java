@@ -39,7 +39,7 @@ public class FlowChecker extends StructuralVisitor<Boolean> {
             method.getDeclaringType().addError(
                     method,
                     ErrorLevel.ERROR,
-                    String.format("方法'%s'配置错误", method.getName())
+                    String.format("Error in method '%s'", method.getName())
             );
         }
         this.flow = null;

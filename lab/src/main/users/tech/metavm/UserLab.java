@@ -62,7 +62,7 @@ public class UserLab {
     }
 
     public void sendVerificationCode(String receiver) {
-        LabVerificationCode.sendVerificationCode(receiver, "MetaVM注册验证码", "127.0.0.1");
+        LabVerificationCode.sendVerificationCode(receiver, "MetaVM Verification Code", "127.0.0.1");
     }
 
     public void register(String loginName, String name, String password, String verificationCode) {

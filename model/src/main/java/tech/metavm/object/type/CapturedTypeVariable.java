@@ -10,17 +10,16 @@ import tech.metavm.object.type.rest.dto.TypeDefDTO;
 
 import javax.annotation.Nullable;
 
+@EntityType
 public class CapturedTypeVariable extends TypeDef implements GenericElement, LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    @EntityField("范围")
     private CapturedTypeScope scope;
 
     private UncertainType uncertainType;
 
     @CopyIgnore
-    @EntityField("复制来源")
     private @Nullable CapturedTypeVariable copySource;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;

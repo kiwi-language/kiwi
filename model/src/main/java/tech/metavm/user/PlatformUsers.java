@@ -17,7 +17,7 @@ public class PlatformUsers {
             platformContext.bind(
                     new Message(
                             platformUser,
-                            String.format("您已退出应用'%s'", app.getName()),
+                            String.format("You have left application '%s'", app.getName()),
                             MessageKind.LEAVE,
                             Instances.nullInstance()
                     )

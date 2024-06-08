@@ -81,7 +81,7 @@ public class ShoppingTest extends TestCase {
             );
             fail("Should fail when amount is not enough");
         } catch (FlowExecutionException e) {
-            Assert.assertEquals("库存不足", e.getMessage());
+            Assert.assertEquals("Out of inventory", e.getMessage());
         }
     }
 

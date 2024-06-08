@@ -195,7 +195,7 @@ public class InstanceManagerTest extends TestCase {
                         )
                 )
         ));
-        Assert.assertEquals("是", contains.title());
+        Assert.assertEquals("true", contains.title());
 
         var contains2 = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
@@ -216,7 +216,7 @@ public class InstanceManagerTest extends TestCase {
                         )
                 )
         ));
-        Assert.assertEquals("是", contains2.title());
+        Assert.assertEquals("true", contains2.title());
     }
 
     public void testGenericOverloading() {
@@ -241,7 +241,7 @@ public class InstanceManagerTest extends TestCase {
                         List.of(PrimitiveFieldValue.createString("abc"))
                 )
         ));
-        Assert.assertEquals("是", result.title());
+        Assert.assertEquals("true", result.title());
     }
 
     public void testLambda() {
@@ -286,10 +286,10 @@ public class InstanceManagerTest extends TestCase {
         var method = TestUtils.getMethodByCode(humanType, "makeSound");
         logger.info("overridden of Human.makeSound: {}", ((MethodParam) method.param()).overriddenRefs());
         Assert.assertEquals("30", human.getFieldValue(typeIds.livingBeingAgeFieldId()).getDisplayValue());
-        Assert.assertEquals("空", human.getFieldValue(typeIds.livingBeingExtraFieldId()).getDisplayValue());
+        Assert.assertEquals("null", human.getFieldValue(typeIds.livingBeingExtraFieldId()).getDisplayValue());
         Assert.assertEquals("180", human.getFieldValue(typeIds.animalIntelligenceFieldId()).getDisplayValue());
         Assert.assertEquals("Inventor", human.getFieldValue(typeIds.humanOccupationFieldId()).getDisplayValue());
-        Assert.assertEquals("否", human.getFieldValue(typeIds.humanThinkingFieldId()).getDisplayValue());
+        Assert.assertEquals("false", human.getFieldValue(typeIds.humanThinkingFieldId()).getDisplayValue());
         var makeSoundResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
                         TestUtils.createMethodRef(typeIds.livingBeingTypeId(), typeIds.makeSoundMethodId()),
@@ -306,7 +306,7 @@ public class InstanceManagerTest extends TestCase {
                 )
         ));
         var reloadedHuman = instanceManager.get(human.id(), 2).instance();
-        Assert.assertEquals("是", reloadedHuman.getFieldValue(typeIds.humanThinkingFieldId()).getDisplayValue());
+        Assert.assertEquals("true", reloadedHuman.getFieldValue(typeIds.humanThinkingFieldId()).getDisplayValue());
     }
 
     public void testRemoveChildInUse() {
@@ -420,7 +420,7 @@ public class InstanceManagerTest extends TestCase {
             ));
             Assert.fail("Should not be able to delete child in use");
         } catch (BusinessException e) {
-            Assert.assertEquals(String.format("对象被其他对象关联，无法删除: %s-%s", childType.name(), child.title()), e.getMessage());
+            Assert.assertEquals(String.format("Object is referenced by other objects, cannot be deleted: %s-%s", childType.name(), child.title()), e.getMessage());
         }
     }
 

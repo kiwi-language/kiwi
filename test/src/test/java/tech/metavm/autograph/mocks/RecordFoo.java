@@ -7,8 +7,8 @@ import javax.annotation.Nullable;
 
 @EntityType
 public record RecordFoo(
-        @EntityField(value = "id", unique = true) int id,
-        @Nullable @EntityField("名称") String name
+        @EntityField(unique = true) int id,
+        @Nullable String name
 ) {
 
 }

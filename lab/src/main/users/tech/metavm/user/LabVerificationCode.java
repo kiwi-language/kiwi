@@ -15,7 +15,7 @@ import java.util.Date;
 @EntityType
 public class LabVerificationCode {
 
-    @EntityIndex("接收者_验证码_失效时间索引")
+    @EntityIndex
     public record IndexReceiverCodeExpiredAt(String receiver, String code,
                                              Date expiredAt) implements Index<LabVerificationCode> {
         public IndexReceiverCodeExpiredAt(LabVerificationCode verificationCode) {
@@ -23,7 +23,7 @@ public class LabVerificationCode {
         }
     }
 
-    @EntityIndex("IP地址_创建时间索引")
+    @EntityIndex
     public record IndexClientIpCreatedAt(String clientIP, Date createdAt) implements Index<LabVerificationCode> {
         public IndexClientIpCreatedAt(LabVerificationCode verificationCode) {
             this(verificationCode.clientIP, verificationCode.createdAt);

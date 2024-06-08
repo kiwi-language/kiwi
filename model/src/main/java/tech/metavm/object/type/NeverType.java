@@ -28,7 +28,7 @@ public class NeverType extends Type {
 
     @Override
     public String getName() {
-        return "不可能";
+        return "Never";
     }
 
     @Override

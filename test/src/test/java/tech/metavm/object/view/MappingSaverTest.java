@@ -67,7 +67,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
         TestUtils.initEntityIds(fooType);
         var mapping = saver.saveBuiltinMapping(fooType, true);
-        var fromViewMethod = MethodBuilder.newBuilder(fooType, "从视图创建", "fromView")
+        var fromViewMethod = MethodBuilder.newBuilder(fooType, "fromView", "fromView")
                 .parameters(new Parameter(null, "view", "view", mapping.getTargetType()))
                 .returnType(fooType.getType())
                 .build();
@@ -97,7 +97,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
 
         // generate getBars method
-        var getBarsMethod = MethodBuilder.newBuilder(fooType, "获取bars", "getBars")
+        var getBarsMethod = MethodBuilder.newBuilder(fooType, "getBars", "getBars")
                 .returnType(barReadWriteArrayType)
                 .build();
         {
@@ -109,7 +109,7 @@ public class MappingSaverTest extends TestCase {
         }
 
         // generate setBars method
-        var setBarsMethod = MethodBuilder.newBuilder(fooType, "设置bars", "setBars")
+        var setBarsMethod = MethodBuilder.newBuilder(fooType, "setBars", "setBars")
                 .parameters(new Parameter(null, "bars", "bars", barReadWriteArrayType))
                 .build();
         {
@@ -117,7 +117,7 @@ public class MappingSaverTest extends TestCase {
             var selfNode = Nodes.self("Self", null, fooType, scope);
             var inputNode = Nodes.input(setBarsMethod);
             Nodes.clearArray("ClearBars", null, Values.nodeProperty(selfNode, fooBarsField), scope);
-            Nodes.forEach("循环", () -> Values.inputValue(inputNode, 0),
+            Nodes.forEach("forEach", () -> Values.inputValue(inputNode, 0),
                     (bodyScope, element, index) -> {
                         Nodes.addElement("AddBar", null, Values.nodeProperty(selfNode, fooBarsField),
                                 element.get(), bodyScope);
@@ -253,7 +253,7 @@ public class MappingSaverTest extends TestCase {
                                         ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
                                                 .data(Map.of(
                                                         shoppingTypes.couponTitleField(),
-                                                        Instances.stringInstance("鞋子减5元"),
+                                                        Instances.stringInstance("Shoes reduced by 5 Yuan"),
                                                         shoppingTypes.couponDiscountField(),
                                                         Instances.longInstance(5L),
                                                         shoppingTypes.couponStateField(),
@@ -263,7 +263,7 @@ public class MappingSaverTest extends TestCase {
                                         ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
                                                 .data(Map.of(
                                                         shoppingTypes.couponTitleField(),
-                                                        Instances.stringInstance("鞋子减10元"),
+                                                        Instances.stringInstance("Shoes reduced by 10 Yuan"),
                                                         shoppingTypes.couponDiscountField(),
                                                         Instances.longInstance(10L),
                                                         shoppingTypes.couponStateField(),
@@ -278,7 +278,7 @@ public class MappingSaverTest extends TestCase {
                         ClassInstanceBuilder.newBuilder(shoppingTypes.productType().getType())
                                 .data(Map.of(
                                         shoppingTypes.productTitleField(),
-                                        Instances.stringInstance("鞋子"),
+                                        Instances.stringInstance("Shoes"),
                                         shoppingTypes.productSkuListField(),
                                         new ArrayInstance(
                                                 shoppingTypes.skuChildArrayType(),
@@ -328,7 +328,7 @@ public class MappingSaverTest extends TestCase {
             var input = Nodes.input(setSkuListMethod);
             Nodes.clearArray("clearArray", null, Values.nodeProperty(self, skuListField), scope);
             Nodes.forEach(
-                    "循环",
+                    "forEach",
                     () -> Values.inputValue(input, 0),
                     (bodyScope, getElement, getIndex) -> {
                         Nodes.addElement("addElement", null,
@@ -376,11 +376,11 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testUnionType() {
-        var flowType = ClassTypeBuilder.newBuilder("流程", "Flow").build();
-        var scopeType = ClassTypeBuilder.newBuilder("范围", "Scope").build();
+        var flowType = ClassTypeBuilder.newBuilder("Flow", "Flow").build();
+        var scopeType = ClassTypeBuilder.newBuilder("Scope", "Scope").build();
         var scopeArrayType = new ArrayType(scopeType.getType(), ArrayKind.CHILD);
         var nullableScopeArrayType = new UnionType(Set.of(scopeArrayType, StandardTypes.getNullType()));
-        var flowScopesField = FieldBuilder.newBuilder("范围列表", "scopes", flowType, nullableScopeArrayType).isChild(true).build();
+        var flowScopesField = FieldBuilder.newBuilder("scopes", "scopes", flowType, nullableScopeArrayType).isChild(true).build();
         TestUtils.initEntityIds(flowType);
         var typeRepository = new MockTypeDefRepository();
         typeRepository.save(flowType);
@@ -445,18 +445,18 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.entityRepository
         );
 
-        var nodeType = ClassTypeBuilder.newBuilder("节点", "Node")
-                .typeParameters(new TypeVariable(null, "值", "V", DummyGenericDeclaration.INSTANCE))
+        var nodeType = ClassTypeBuilder.newBuilder("Node", "Node")
+                .typeParameters(new TypeVariable(null, "V", "V", DummyGenericDeclaration.INSTANCE))
                 .build();
-        FieldBuilder.newBuilder("标签", "label", nodeType, getStringType())
+        FieldBuilder.newBuilder("label", "label", nodeType, getStringType())
                 .asTitle()
                 .build();
-        FieldBuilder.newBuilder("值", "value", nodeType, nodeType.getTypeParameters().get(0).getType())
+        FieldBuilder.newBuilder("value", "value", nodeType, nodeType.getTypeParameters().get(0).getType())
                 .build();
 
         var nodeMapping = saver.saveBuiltinMapping(nodeType, true);
-        var listTypeVar = new TypeVariable(null, "值", "T", DummyGenericDeclaration.INSTANCE);
-        var listKlass = ClassTypeBuilder.newBuilder("列表", "List")
+        var listTypeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
+        var listKlass = ClassTypeBuilder.newBuilder("List", "List")
                 .typeParameters(listTypeVar)
                 .build();
         var pNodeType = nodeType.getParameterized(List.of(listTypeVar.getType()), ResolutionStage.DEFINITION);
@@ -502,15 +502,15 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testApplication() {
-        var platformUserType = ClassTypeBuilder.newBuilder("平台用户", "PlatformUser").build();
-        var loginNameField = FieldBuilder.newBuilder("登录名", "loginName", platformUserType, getStringType()).asTitle().build();
+        var platformUserType = ClassTypeBuilder.newBuilder("PlatformUser", "PlatformUser").build();
+        var loginNameField = FieldBuilder.newBuilder("loginName", "loginName", platformUserType, getStringType()).asTitle().build();
 
-        var applicationType = ClassTypeBuilder.newBuilder("应用", "Application").build();
-        var nameField = FieldBuilder.newBuilder("名称", "name", applicationType, getStringType()).asTitle().build();
-        var ownerField = FieldBuilder.newBuilder("所有人", "owner", applicationType, platformUserType.getType())
+        var applicationType = ClassTypeBuilder.newBuilder("Application", "Application").build();
+        var nameField = FieldBuilder.newBuilder("name", "name", applicationType, getStringType()).asTitle().build();
+        var ownerField = FieldBuilder.newBuilder("owner", "owner", applicationType, platformUserType.getType())
                 .access(Access.PRIVATE).build();
         // create getOwner method
-        var getOwnerMethod = MethodBuilder.newBuilder(applicationType, "获取所有人", "getOwner")
+        var getOwnerMethod = MethodBuilder.newBuilder(applicationType, "getOwner", "getOwner")
                 .returnType(platformUserType.getType())
                 .build();
         {

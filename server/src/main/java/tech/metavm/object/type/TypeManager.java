@@ -475,7 +475,7 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     public Klass createType(TypeDTO classDTO, boolean withContent, IEntityContext context) {
-        NncUtils.requireNonNull(classDTO.name(), "类型名称不能为空");
+        NncUtils.requireNonNull(classDTO.name(), "class name required");
         ensureClassNameAvailable(classDTO, context);
         var stage = withContent ? ResolutionStage.DECLARATION : ResolutionStage.INIT;
         var batch = SaveTypeBatch.create(context, List.of(classDTO), List.of());
@@ -485,7 +485,7 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     public Klass updateType(TypeDTO typeDTO, Klass type, IEntityContext context) {
-        NncUtils.requireNonNull(typeDTO.name(), "类型名称不能为空");
+        NncUtils.requireNonNull(typeDTO.name(), "class name required");
         var batch = SaveTypeBatch.create(context, List.of(typeDTO), List.of());
         Types.saveClasType(typeDTO, ResolutionStage.DECLARATION, batch);
         createOverridingFlows(type, context);
@@ -496,7 +496,7 @@ public class TypeManager extends EntityContextFactoryBean {
         if (!typeDTO.anonymous()) {
             var classWithSameName = context.selectFirstByKey(Klass.IDX_NAME, typeDTO.name());
             if (classWithSameName != null && !classWithSameName.isAnonymous()) {
-                throw BusinessException.invalidType(typeDTO, "类型名称已存在");
+                throw BusinessException.invalidType(typeDTO, "class name already used");
             }
         }
     }

@@ -1,6 +1,9 @@
 package tech.metavm.object.type;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.ConstraintDef;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.BinaryExpression;
 import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.expression.PropertyExpression;
@@ -26,7 +29,7 @@ public class CheckConstraint extends Constraint {
 
     @Override
     public String getDefaultMessage() {
-        return "校验规则校验不通过";
+        return "Constraint check failed";
     }
 
     @Override

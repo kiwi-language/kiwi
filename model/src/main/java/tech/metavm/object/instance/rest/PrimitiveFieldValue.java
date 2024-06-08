@@ -9,15 +9,15 @@ import java.util.Set;
 public class PrimitiveFieldValue extends FieldValue {
 
     public static final PrimitiveFieldValue NULL = new PrimitiveFieldValue(
-            "空", PrimitiveKind.NULL.code(), null
+            "null", PrimitiveKind.NULL.code(), null
     );
 
     public static final PrimitiveFieldValue TRUE = new PrimitiveFieldValue(
-            "是", PrimitiveKind.BOOLEAN.code(), true
+            "true", PrimitiveKind.BOOLEAN.code(), true
     );
 
     public static final PrimitiveFieldValue FALSE = new PrimitiveFieldValue(
-            "否", PrimitiveKind.BOOLEAN.code(), false
+            "false", PrimitiveKind.BOOLEAN.code(), false
     );
 
     private final Object value;
@@ -57,7 +57,7 @@ public class PrimitiveFieldValue extends FieldValue {
     }
 
     public static PrimitiveFieldValue createNull() {
-        return new PrimitiveFieldValue("空", PrimitiveKind.NULL.code(), null);
+        return new PrimitiveFieldValue("null", PrimitiveKind.NULL.code(), null);
     }
 
     public Object getValue() {

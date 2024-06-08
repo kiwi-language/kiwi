@@ -50,9 +50,9 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     public static String getTargetTypeName(Klass sourceType, String mappingName) {
-        if (mappingName.endsWith("视图") && mappingName.length() > 2)
-            mappingName = mappingName.substring(0, mappingName.length() - 2);
-        return NamingUtils.escapeTypeName(sourceType.getName()) + mappingName + "视图";
+        if (mappingName.endsWith("View") && mappingName.length() > 4)
+            mappingName = mappingName.substring(0, mappingName.length() - 4);
+        return NamingUtils.escapeTypeName(sourceType.getName()) + mappingName + "View";
     }
 
     public static @Nullable String getTargetTypeCode(Klass sourceType, @Nullable String mappingCode) {
@@ -117,7 +117,7 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     private void generateReadMethodDeclaration() {
         readMethod = MethodBuilder.newBuilder(getSourceKlass(),
-                        "获取视图$" + getName(),
+                        "getView$" + getName(),
                         NncUtils.get(getCode(), c -> "getView$" + c)
                 )
                 .existing(readMethod)
@@ -130,7 +130,7 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     private void generateWriteMethodDeclaration() {
         writeMethod = MethodBuilder.newBuilder(getSourceKlass(),
-                        "保存视图$" + getName(),
+                        "saveView$" + getName(),
                         NncUtils.get(getCode(), c -> "saveView$" + c)
                 )
                 .existing(writeMethod)
@@ -138,34 +138,34 @@ public class FieldsObjectMapping extends ObjectMapping {
                 .returnType(StandardTypes.getVoidType())
                 .isSynthetic(true)
                 .parameters(writeMethod != null ? writeMethod.getParameter(0) :
-                        new Parameter(null, "视图", "View", getTargetType()))
+                        new Parameter(null, "view", "view", getTargetType()))
                 .overridden(NncUtils.map(overridden, ObjectMapping::getWriteMethod))
                 .build();
     }
 
     public void generateReadMethodCode() {
         var scope = Objects.requireNonNull(readMethod).newEphemeralRootScope();
-        var selfNode = new SelfNode(null, "当前对象", "Self", getTargetType(), null, scope);
+        var selfNode = new SelfNode(null, "self", "Self", getTargetType(), null, scope);
         List<FieldParam> fieldParams = new ArrayList<>();
         for (FieldMapping fieldMapping : fieldMappings)
             fieldParams.add(fieldMapping.generateReadCode(selfNode));
-        var view = new AddObjectNode(null, "视图", "View", false,
+        var view = new AddObjectNode(null, "view", "View", false,
                 true, getTargetType(), scope.getLastNode(), scope);
         fieldParams.forEach(view::addField);
-        new ReturnNode(null, "返回", "Return", scope.getLastNode(), scope, Values.node(view));
+        new ReturnNode(null, "return", "Return", scope.getLastNode(), scope, Values.node(view));
     }
 
     public void generateWriteMethodCode() {
         var scope = Objects.requireNonNull(writeMethod).newEphemeralRootScope();
-        var selfNode = new SelfNode(null, "当前对象", "Self", getSourceType(), null, scope);
+        var selfNode = new SelfNode(null, "self", "Self", getSourceType(), null, scope);
         var inputNode = Nodes.input(writeMethod);
-        var viewNode = new ValueNode(null, "视图", "View", getTargetType(), scope.getLastNode(), scope,
+        var viewNode = new ValueNode(null, "view", "View", getTargetType(), scope.getLastNode(), scope,
                 Values.inputValue(inputNode, 0));
         for (FieldMapping fieldMapping : fieldMappings) {
             if (!fieldMapping.isReadonly())
                 fieldMapping.generateWriteCode(selfNode, viewNode);
         }
-        new ReturnNode(null, "返回", "Return", scope.getLastNode(), scope, null);
+        new ReturnNode(null, "return", "Return", scope.getLastNode(), scope, null);
     }
 
     public void setName(String name) {

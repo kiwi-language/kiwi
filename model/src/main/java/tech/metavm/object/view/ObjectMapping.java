@@ -22,14 +22,14 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
+@EntityType
 public abstract class ObjectMapping extends Mapping implements LocalKey {
 
     public static final Logger logger = LoggerFactory.getLogger(ObjectMapping.class);
 
-    @ChildEntity("被复写映射列表")
+    @ChildEntity
     protected final ReadWriteArray<ObjectMapping> overridden =
             addChild(new ReadWriteArray<>(ObjectMapping.class), "overridden");
-    @EntityField("是否预置")
     private final boolean builtin;
     private final Klass sourceKlass;
 
@@ -46,13 +46,13 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var actualSourceType = (ClassType) mapper.getParameter(0).getType();
         var readMethod = getSourceMethod(actualSourceType.resolve(), getReadMethod());
         var view = new MethodCallNode(
-                null, "视图", "view",
+                null, "view", "view",
                 scope.getLastNode(), scope,
                 Values.inputValue(input, 0),
                 readMethod.getRef(), List.of()
         );
 //        Nodes.setSource(Values.node(view), Values.inputValue(input, 0), scope);
-        new ReturnNode(null, "结束", "Return", scope.getLastNode(), scope, Values.node(view));
+        new ReturnNode(null, "return", "Return", scope.getLastNode(), scope, Values.node(view));
         return mapper;
     }
 
@@ -64,40 +64,40 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var scope = unmapper.newEphemeralRootScope();
         var input = Nodes.input(unmapper);
         var isSourcePresent = Nodes.functionCall(
-                "来源是否存在", scope,
+                "isSourcePresent", scope,
                 NativeFunctions.isSourcePresent(),
                 List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, Values.inputValue(input, 0)))
         );
         Nodes.branch(
-                "分支", null, scope,
+                "branch", null, scope,
                 Values.node(isSourcePresent),
                 trueBranch -> {
                     var bodyScope = trueBranch.getScope();
                     var source = Nodes.functionCall(
-                            "来源", bodyScope,
+                            "source", bodyScope,
                             NativeFunctions.getSource(),
                             List.of(Nodes.argument(NativeFunctions.getSource(), 0, Values.inputValue(input, 0)))
                     );
-                    var castedSource = Nodes.cast("Casted来源", getSourceType(), Values.node(source), bodyScope);
+                    var castedSource = Nodes.cast("Casted source", getSourceType(), Values.node(source), bodyScope);
                     Nodes.methodCall(
-                            "保存视图", bodyScope, Values.node(castedSource),
+                            "save view", bodyScope, Values.node(castedSource),
                             writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.inputValue(input, 0)))
                     );
-                    Nodes.ret("返回", bodyScope, Values.node(castedSource));
+                    Nodes.ret("return", bodyScope, Values.node(castedSource));
                 },
                 falseBranch -> {
                     var bodyScope = falseBranch.getScope();
                     if (fromViewMethod != null) {
                         var fromView = Nodes.methodCall(
-                                "从视图创建", bodyScope,
+                                "fromView", bodyScope,
                                 null, fromViewMethod,
                                 List.of(
                                         Nodes.argument(fromViewMethod, 0, Values.inputValue(input, 0))
                                 )
                         );
-                        Nodes.ret("返回", bodyScope, Values.node(fromView));
+                        Nodes.ret("return", bodyScope, Values.node(fromView));
                     } else
-                        Nodes.raise("不支持从视图创建", bodyScope, Values.constant(Expressions.constantString("该对象不支持从视图创建")));
+                        Nodes.raise("fromView not supported", bodyScope, Values.constant(Expressions.constantString("fromView not supported")));
                 },
                 mergeNode -> {
                 }

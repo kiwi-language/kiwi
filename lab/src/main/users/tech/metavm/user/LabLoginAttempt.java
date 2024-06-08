@@ -1,6 +1,5 @@
 package tech.metavm.user;
 
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.Index;
@@ -8,10 +7,10 @@ import tech.metavm.entity.Index;
 import java.util.Date;
 
 @EntityType
-public record LabLoginAttempt(@EntityField("是否成功") boolean successful, @EntityField("账号") String loginName,
-                              @EntityField("IP地址") String clientIP, @EntityField("时间") Date time) {
+public record LabLoginAttempt(boolean successful, String loginName,
+                              String clientIP, Date time) {
 
-    @EntityIndex("登录名")
+    @EntityIndex
     public record LoginNameSuccTimeIndex(String loginName, boolean successful, Date time)
             implements Index<LabLoginAttempt> {
 
@@ -20,7 +19,7 @@ public record LabLoginAttempt(@EntityField("是否成功") boolean successful, @
         }
     }
 
-    @EntityIndex("ID地址")
+    @EntityIndex
     public record ClientIpSuccTimeIndex(String clientIP, boolean successful, Date time)
             implements Index<LabLoginAttempt> {
 

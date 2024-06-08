@@ -25,7 +25,7 @@ public class InstanceTest extends TestCase {
     public static final Logger LOGGER = LoggerFactory.getLogger(InstanceTest.class);
 
     public static final String CONST_BAR_CODE = "001";
-    public static final String CONST_FOO_NAME = "傻瓜一号";
+    public static final String CONST_FOO_NAME = "foo1";
 
     @Override
     protected void setUp() {

@@ -10,15 +10,14 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
+@EntityType
 public class TryEndField extends Entity implements LocalKey {
 
-    @EntityField("字段")
     private final Field field;
 
-    @ChildEntity("值列表")
+    @ChildEntity
     private final ChildArray<TryEndValue> values = addChild(new ChildArray<>(TryEndValue.class), "values");
 
-    @EntityField("默认值")
     private Value defaultValue;
 
     public TryEndField(Field field, List<TryEndValue> values, Value defaultValue, TryEndNode tryEndNode) {

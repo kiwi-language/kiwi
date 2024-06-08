@@ -1,42 +1,30 @@
 package tech.metavm.manufacturing.storage;
 
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityStruct;
 import tech.metavm.manufacturing.material.*;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityStruct(value = "入库请求", ephemeral = true)
+@EntityStruct(ephemeral = true)
 public abstract class InboundRequest {
-    @EntityField("业务类型")
     private InboundBizType bizType;
-    @EntityField("库位")
     private Position position;
-    @EntityField("物料")
     private Material material;
-    @EntityField("批次")
     @Nullable
     private Batch batch;
-    @EntityField("供应商")
     @Nullable
     private Supplier supplier;
-    @EntityField("供应商批次号")
     @Nullable
     private String supplierBatchNo;
-    @EntityField("客户")
     @Nullable
     private Client client;
-    @EntityField("入厂日期")
     @Nullable
     private Date arrivalDate;
-    @EntityField("生产日期")
     @Nullable
     private Date productionDate;
-    @EntityField("过期日期")
     @Nullable
     private Date expirationDate;
-    @EntityField("单位")
     private Unit unit;
 
     public InboundRequest(InboundBizType bizType, Position position, Material material, @Nullable Batch batch, @Nullable Supplier supplier, @Nullable String supplierBatchNo, @Nullable Client client, @Nullable Date arrivalDate, @Nullable Date productionDate, @Nullable Date expirationDate, Unit unit) {

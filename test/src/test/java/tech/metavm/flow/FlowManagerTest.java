@@ -101,7 +101,7 @@ public class FlowManagerTest extends TestCase {
                         branch.id(),
                         branch.index(),
                         branchNode.id(),
-                        ValueDTOFactory.createExpression("流程输入.quantity > 当前对象.quantity"),
+                        ValueDTOFactory.createExpression("input.quantity > self.quantity"),
                         new ScopeDTO(null, List.of()),
                         false,
                         false

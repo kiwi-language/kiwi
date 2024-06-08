@@ -66,7 +66,7 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     @Override
     protected void generateWriteCode0(SelfNode selfNode, Supplier<Value> fieldValueSupplier) {
         var scope = selfNode.getScope();
-        var updateNode = new UpdateObjectNode(null, "更新" + sourceField.getName(),
+        var updateNode = new UpdateObjectNode(null, "update " + sourceField.getName(),
                 NamingUtils.tryAddPrefix(sourceField.getCode(), "update"), scope.getLastNode(), scope, Values.node(selfNode), List.of());
         updateNode.setUpdateField(sourceField, UpdateOp.SET, fieldValueSupplier.get());
     }

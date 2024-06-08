@@ -38,7 +38,7 @@ public class ListNestedMapping extends NestedMapping {
                 StandardTypes.getReadWriteListKlass(targetKlass.getListElementType()).getDefaultConstructor() :
                 targetKlass.getDefaultConstructor();
         var targetList = Nodes.newObject(
-                targetType.getName() + "列表",
+                targetType.getName() + " list",
                 scope,
                 constructor,
                 List.of(),
@@ -47,7 +47,7 @@ public class ListNestedMapping extends NestedMapping {
         );
         var setSourceFunc = NativeFunctions.setSource();
         Nodes.functionCall(
-                "设置来源" + targetType.getName(),
+                "setSource " + targetType.getName(),
                 scope,
                 setSourceFunc,
                 List.of(
@@ -56,7 +56,7 @@ public class ListNestedMapping extends NestedMapping {
                 )
         );
         Nodes.listForEach(
-                "遍历" + sourceType.getName(),
+                "iterate " + sourceType.getName(),
                 getSource,
                 (bodyScope, getElement, getIndex) -> {
                     var getTargetElement = elementNestedMapping.generateMappingCode(getElement,
@@ -65,7 +65,7 @@ public class ListNestedMapping extends NestedMapping {
                             targetType.getListElementType()
                     ));
                     Nodes.methodCall(
-                            "添加" + sourceElementType.getName(),
+                            "add " + sourceElementType.getName(),
                             bodyScope,
                             Values.node(targetList),
                             addMethod,
@@ -85,7 +85,7 @@ public class ListNestedMapping extends NestedMapping {
 
     @Override
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
-        var isSourcePresent = Nodes.functionCall("来源是否存在", scope, NativeFunctions.isSourcePresent(),
+        var isSourcePresent = Nodes.functionCall("isSourcePresent", scope, NativeFunctions.isSourcePresent(),
                 List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())));
         var branch2sourceNode = new HashMap<Branch, Value>();
         var sourceKlass = sourceType.resolve();
@@ -93,19 +93,19 @@ public class ListNestedMapping extends NestedMapping {
             Field sourceField;
         };
         Nodes.branch(
-                "分支",
+                "branch",
                 null,
                 scope,
                 Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.trueExpression())),
                 trueBranch -> {
-                    var source = Nodes.functionCall(sourceType.getName() + "来源", trueBranch.getScope(),
+                    var source = Nodes.functionCall(sourceType.getName() + " source", trueBranch.getScope(),
                             NativeFunctions.getSource(),
                             List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())));
                     branch2sourceNode.put(trueBranch, Values.node(source));
                 },
                 falseBranch -> {
                     var source = Nodes.newObject(
-                            sourceType.getName() + "新建来源",
+                            sourceType.getName() + " new source",
                             falseBranch.getScope(),
                             sourceType.isChildList() ?
                                     sourceKlass.getDefaultConstructor() :
@@ -117,7 +117,7 @@ public class ListNestedMapping extends NestedMapping {
                     branch2sourceNode.put(falseBranch, Values.node(source));
                 },
                 mergeNode -> {
-                    sourceFieldRef.sourceField = FieldBuilder.newBuilder("来源", null, mergeNode.getType().resolve(), sourceType)
+                    sourceFieldRef.sourceField = FieldBuilder.newBuilder("source", null, mergeNode.getType().resolve(), sourceType)
                             .build();
                     new MergeNodeField(sourceFieldRef.sourceField, mergeNode, branch2sourceNode);
                 }
@@ -126,19 +126,19 @@ public class ListNestedMapping extends NestedMapping {
         var sourceField = sourceFieldRef.sourceField;
         var clearMethod = sourceKlass.getMethodByCodeAndParamTypes("clear", List.of());
         Nodes.methodCall(
-                "清空" + sourceType.getName(),
+                "clear " + sourceType.getName(),
                 scope,
                 Values.nodeProperty(mergeNode, sourceField),
                 clearMethod,
                 List.of()
         );
         Nodes.listForEach(
-                "遍历" + targetType.getName(), getView,
+                "iterate " + targetType.getName(), getView,
                 (bodyScope, getElement, getIndex) -> {
                     var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
                     var addMethod = sourceKlass.getMethodByCodeAndParamTypes("add", List.of(sourceType.getListElementType()));
                     Nodes.methodCall(
-                            "添加元素" + sourceType.getName(),
+                            "add element " + sourceType.getName(),
                             bodyScope,
                             Values.nodeProperty(mergeNode, sourceField),
                             addMethod,
