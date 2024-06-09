@@ -353,6 +353,7 @@ public class TypeResolverImpl implements TypeResolver {
                             .eq(new EntityIndexKey(List.of(requireNonNull(psiClass.getQualifiedName()))))
                             .build()));
             if (klass != null) {
+                klass.setName(name);
                 if (klass.getKind() != kind)
                     throw new BusinessException(ErrorCode.CHANGING_CATEGORY);
                 if (klass.isTemplate() != isTemplate)

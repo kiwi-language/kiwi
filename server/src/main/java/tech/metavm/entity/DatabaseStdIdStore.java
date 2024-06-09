@@ -37,7 +37,7 @@ public class DatabaseStdIdStore implements StdIdStore {
             return Map.of();
     }
 
-    private Map<String, Id> buildIds(byte[] content) {
+    public static Map<String, Id> buildIds(byte[] content) {
         var input = new InstanceInput(new ByteArrayInputStream(content));
         var size = input.readInt();
         var ids = new HashMap<String, Id>(size);
@@ -49,7 +49,7 @@ public class DatabaseStdIdStore implements StdIdStore {
         return ids;
     }
 
-    private FilePO buildFile(Map<String, Id> ids) {
+    public static FilePO buildFile(Map<String, Id> ids) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.writeInt(ids.size());

@@ -3,11 +3,13 @@ package tech.metavm.autograph;
 public class DefaultMain {
 
     public static void main(String[] args) {
-//        Main.main(new String[] {"logout"});
-//        Main.main(new String[] {"host", "http://localhost:8080"});
-//        Main.main(new String[] {"reset"});
-////        Main.main(new String[]{"deploy", "/Users/leen/workspace/object/lab/src/main/manufacturing"});
-        Main.main(new String[] {"deploy"});
+        Main.main(new String[] {
+                "deploy_direct",
+                "/Users/leen/workspace/object/lab/src/main/manufacturing/.metavm/default",
+                "/Users/leen/workspace/object/lab/src/main/manufacturing",
+                "1842616854",
+                "e90dcf01-e468-4cf9-a1aa-c964048119ba"
+        });
     }
 
 }

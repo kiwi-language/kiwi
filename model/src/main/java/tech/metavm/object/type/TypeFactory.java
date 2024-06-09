@@ -65,10 +65,10 @@ public abstract class TypeFactory {
     public Klass saveKlass(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveClassType")) {
             var param = typeDTO.getClassParam();
-            var type = batch.getContext().getKlass(typeDTO.id());
+            var klass = batch.getContext().getKlass(typeDTO.id());
             var context = batch.getContext();
-            if (type == null) {
-                type = ClassTypeBuilder.newBuilder(typeDTO.name(), typeDTO.code())
+            if (klass == null) {
+                klass = ClassTypeBuilder.newBuilder(typeDTO.name(), typeDTO.code())
                         .tmpId(typeDTO.tmpId())
                         .kind(ClassKind.fromCode(typeDTO.kind()))
                         .ephemeral(typeDTO.ephemeral())
@@ -81,48 +81,49 @@ public abstract class TypeFactory {
                         .source(ClassSource.getByCode(param.source()))
                         .tmpId(typeDTO.tmpId())
                         .build();
-                context.bind(type);
-            } else if (type.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
-                type.setCode(typeDTO.code());
-                type.setName(typeDTO.name());
-                type.setDesc(param.desc());
-                type.setStruct(param.struct());
-                type.setAbstract(param.isAbstract());
+                context.bind(klass);
+            } else if (klass.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
+                klass.setCode(typeDTO.code());
+                klass.setName(typeDTO.name());
+                klass.setDesc(param.desc());
+                klass.setStruct(param.struct());
+                klass.setAbstract(param.isAbstract());
+                batch.getContext().update(klass);
             }
-            var curStage = type.setStage(stage);
+            var curStage = klass.setStage(stage);
             if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {
-                if (type.isEnum()) {
+                if (klass.isEnum()) {
                     // TODO handle memory leak
-                    var enumSuperClass = StandardTypes.getEnumKlass().getParameterized(List.of(type.getType()));
-                    type.setSuperType(enumSuperClass.getType());
+                    var enumSuperClass = StandardTypes.getEnumKlass().getParameterized(List.of(klass.getType()));
+                    klass.setSuperType(enumSuperClass.getType());
                 } else
-                    type.setSuperType(NncUtils.get(param.superType(), t -> (ClassType) TypeParser.parseType(t, batch)));
-                type.setInterfaces(NncUtils.map(param.interfaces(), t -> (ClassType) TypeParser.parseType(t, batch)));
-                if (!type.isTemplate())
-                    type.setTypeArguments(NncUtils.map(param.typeArguments(), t -> TypeParser.parseType(t, batch)));
+                    klass.setSuperType(NncUtils.get(param.superType(), t -> (ClassType) TypeParser.parseType(t, batch)));
+                klass.setInterfaces(NncUtils.map(param.interfaces(), t -> (ClassType) TypeParser.parseType(t, batch)));
+                if (!klass.isTemplate())
+                    klass.setTypeArguments(NncUtils.map(param.typeArguments(), t -> TypeParser.parseType(t, batch)));
                 if (param.dependencyIds() != null)
-                    type.setDependencies(NncUtils.map(param.dependencyIds(), id -> context.getKlass(Id.parse(id))));
-                type.setStage(ResolutionStage.SIGNATURE);
+                    klass.setDependencies(NncUtils.map(param.dependencyIds(), id -> context.getKlass(Id.parse(id))));
+                klass.setStage(ResolutionStage.SIGNATURE);
             }
             if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION)) {
-                var declaringType = type;
+                var declaringType = klass;
                 if (param.fields() != null)
-                    type.setFields(NncUtils.map(param.fields(), f -> saveField(declaringType, f, context)));
+                    klass.setFields(NncUtils.map(param.fields(), f -> saveField(declaringType, f, context)));
                 if (param.staticFields() != null)
-                    type.setStaticFields(NncUtils.map(param.staticFields(), f -> saveField(declaringType, f, context)));
+                    klass.setStaticFields(NncUtils.map(param.staticFields(), f -> saveField(declaringType, f, context)));
                 if (param.constraints() != null)
-                    type.setConstraints(NncUtils.map(param.constraints(), c -> ConstraintFactory.save(c, context)));
+                    klass.setConstraints(NncUtils.map(param.constraints(), c -> ConstraintFactory.save(c, context)));
                 if (param.flows() != null) {
                     var methods = NncUtils.filterAndMap(param.flows(), f -> !f.synthetic(), f -> saveMethod(f, stage, batch));
-                    type.getMethods().forEach(m -> {
+                    klass.getMethods().forEach(m -> {
                         if(m.isSynthetic())
                             methods.add(m);
                     });
-                    type.setMethods(methods);
+                    klass.setMethods(methods);
                 }
                 if (param.titleFieldId() != null)
-                    type.setTitleField(NncUtils.find(type.getFields(), f -> f.getStringId().equals(param.titleFieldId())));
-                type.setStage(ResolutionStage.DECLARATION);
+                    klass.setTitleField(NncUtils.find(klass.getFields(), f -> f.getStringId().equals(param.titleFieldId())));
+                klass.setStage(ResolutionStage.DECLARATION);
             }
             if (stage.isAfterOrAt(ResolutionStage.DEFINITION) && curStage.isBefore(ResolutionStage.DEFINITION)) {
                 if (param.flows() != null) {
@@ -131,7 +132,7 @@ public abstract class TypeFactory {
                     }
                 }
             }
-            return type;
+            return klass;
         }
     }
 

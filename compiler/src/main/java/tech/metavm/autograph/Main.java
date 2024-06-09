@@ -288,6 +288,20 @@ public class Main {
                         new FileTypeTagStore("/not_exist"));
                 main.run();
             }
+            case "deploy_direct" -> {
+                CompilerHttpUtils.setHost("http://localhost:8080");
+                var main = new Main(
+                        args[1],
+                        args[2],
+                        Long.parseLong(args[3]),
+                        args[4],
+                        new HttpTypeClient(),
+                        new DirectoryAllocatorStore("/not_exist"),
+                        new FileColumnStore("/not_exist"),
+                        new FileTypeTagStore("/not_exist")
+                );
+                main.run();
+            }
             default -> usage();
         }
     }

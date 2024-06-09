@@ -2,6 +2,8 @@ POST http://localhost:7004/instance/trees
 Cookie: __token_2__=710ebaa5-8ab4-4c1e-aa94-31ba6db56d75; Max-Age=604800; Expires=Mon, 10 Jun 2024 14:01:12 GMT; Path=/
 AppId: 1000200006
 
+###
+POST http://localhost:7004/bootstrap/save?saveIds=false
 
 ###
 POST http://localhost:7004/bootstrap?saveIds=false
