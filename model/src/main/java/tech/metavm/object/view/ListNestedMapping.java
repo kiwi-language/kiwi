@@ -10,6 +10,7 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.FieldBuilder;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +39,7 @@ public class ListNestedMapping extends NestedMapping {
                 StandardTypes.getReadWriteListKlass(targetKlass.getListElementType()).getDefaultConstructor() :
                 targetKlass.getDefaultConstructor();
         var targetList = Nodes.newObject(
-                targetType.getName() + " list",
+                scope.nextNodeName("list"),
                 scope,
                 constructor,
                 List.of(),
@@ -47,7 +48,7 @@ public class ListNestedMapping extends NestedMapping {
         );
         var setSourceFunc = NativeFunctions.setSource();
         Nodes.functionCall(
-                "setSource " + targetType.getName(),
+                scope.nextNodeName("setSource"),
                 scope,
                 setSourceFunc,
                 List.of(
@@ -56,7 +57,7 @@ public class ListNestedMapping extends NestedMapping {
                 )
         );
         Nodes.listForEach(
-                "iterate " + sourceType.getName(),
+                scope.nextNodeName("iterate"),
                 getSource,
                 (bodyScope, getElement, getIndex) -> {
                     var getTargetElement = elementNestedMapping.generateMappingCode(getElement,
@@ -65,7 +66,7 @@ public class ListNestedMapping extends NestedMapping {
                             targetType.getListElementType()
                     ));
                     Nodes.methodCall(
-                            "add " + sourceElementType.getName(),
+                            scope.nextNodeName("add"),
                             bodyScope,
                             Values.node(targetList),
                             addMethod,
@@ -85,7 +86,7 @@ public class ListNestedMapping extends NestedMapping {
 
     @Override
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
-        var isSourcePresent = Nodes.functionCall("isSourcePresent", scope, NativeFunctions.isSourcePresent(),
+        var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, NativeFunctions.isSourcePresent(),
                 List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())));
         var branch2sourceNode = new HashMap<Branch, Value>();
         var sourceKlass = sourceType.resolve();
@@ -93,19 +94,19 @@ public class ListNestedMapping extends NestedMapping {
             Field sourceField;
         };
         Nodes.branch(
-                "branch",
+                scope.nextNodeName("branch"),
                 null,
                 scope,
                 Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.trueExpression())),
                 trueBranch -> {
-                    var source = Nodes.functionCall(sourceType.getName() + " source", trueBranch.getScope(),
+                    var source = Nodes.functionCall(scope.nextNodeName("source"), trueBranch.getScope(),
                             NativeFunctions.getSource(),
                             List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())));
                     branch2sourceNode.put(trueBranch, Values.node(source));
                 },
                 falseBranch -> {
                     var source = Nodes.newObject(
-                            sourceType.getName() + " new source",
+                            scope.nextNodeName("newSource"),
                             falseBranch.getScope(),
                             sourceType.isChildList() ?
                                     sourceKlass.getDefaultConstructor() :
@@ -117,7 +118,7 @@ public class ListNestedMapping extends NestedMapping {
                     branch2sourceNode.put(falseBranch, Values.node(source));
                 },
                 mergeNode -> {
-                    sourceFieldRef.sourceField = FieldBuilder.newBuilder("source", null, mergeNode.getType().resolve(), sourceType)
+                    sourceFieldRef.sourceField = FieldBuilder.newBuilder(scope.nextNodeName("source"), null, mergeNode.getType().resolve(), sourceType)
                             .build();
                     new MergeNodeField(sourceFieldRef.sourceField, mergeNode, branch2sourceNode);
                 }
@@ -126,19 +127,19 @@ public class ListNestedMapping extends NestedMapping {
         var sourceField = sourceFieldRef.sourceField;
         var clearMethod = sourceKlass.getMethodByCodeAndParamTypes("clear", List.of());
         Nodes.methodCall(
-                "clear " + sourceType.getName(),
+                scope.nextNodeName("clear"),
                 scope,
                 Values.nodeProperty(mergeNode, sourceField),
                 clearMethod,
                 List.of()
         );
         Nodes.listForEach(
-                "iterate " + targetType.getName(), getView,
+                scope.nextNodeName("iterate"), getView,
                 (bodyScope, getElement, getIndex) -> {
                     var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
                     var addMethod = sourceKlass.getMethodByCodeAndParamTypes("add", List.of(sourceType.getListElementType()));
                     Nodes.methodCall(
-                            "add element " + sourceType.getName(),
+                            scope.nextNodeName("addElement"),
                             bodyScope,
                             Values.nodeProperty(mergeNode, sourceField),
                             addMethod,

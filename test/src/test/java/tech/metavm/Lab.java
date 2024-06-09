@@ -1,15 +1,10 @@
 package tech.metavm;
 
-import com.alibaba.druid.pool.DruidDataSource;
-import tech.metavm.entity.DatabaseStdIdStore;
-import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.type.Type;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
 
 public class Lab {
 
@@ -18,34 +13,8 @@ public class Lab {
     private static Class<?> klass = Type.class;
 
     public static void main(String[] args) throws IOException, SQLException {
-        try (DruidDataSource dataSource = new DruidDataSource()) {
-            dataSource.setDriverClassName("org.postgresql.Driver");
-            dataSource.setUrl("jdbc:postgresql://127.0.0.1:5432/object");
-            dataSource.setUsername("postgres");
-            dataSource.setPassword("85263670");
-            dataSource.setMaxActive(1);
-
-            try (Connection connection = dataSource.getConnection();) {
-                var stmt = connection.createStatement();
-                var rs = stmt.executeQuery("select content from files");
-                rs.next();
-                var input = rs.getBinaryStream(1);
-                var bout = new ByteArrayOutputStream();
-                byte[] buf = new byte[1024];
-                int n;
-                while ((n = input.read(buf)) != -1)
-                    bout.write(buf, 0, n);
-                var bytes = bout.toByteArray();
-                var ids = DatabaseStdIdStore.buildIds(bytes);
-                var newIds = new HashMap<String, Id>();
-                ids.forEach((name, id) -> {
-                    if(name.contains("isSource"))
-                        System.out.printf("%s: %s%n", name, id);
-                });
-                System.out.println(ids.size());
-            }
-        }
-
+        var id = TmpId.of(9007199254740991L);
+        System.out.println(id);
     }
 
 

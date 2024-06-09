@@ -27,16 +27,13 @@ Content-Type: application/json
 
 
 ###
-POST https://www.metavm.tech/api/bootstrap/region
-
-###
-POST https://www.metavm.tech/api/bootstrap?saveIds=false
-
-###
 POST http://localhost:8080/bootstrap
 
 ###
 POST http://localhost:8080/bootstrap/save
+
+###
+POST http://localhost:8080/bootstrap/save?saveids=false
 
 <> 2022-12-13T001921.200.json
 

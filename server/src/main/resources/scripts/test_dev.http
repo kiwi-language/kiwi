@@ -9,9 +9,6 @@ POST http://localhost:7004/bootstrap/save?saveIds=false
 POST http://localhost:7004/bootstrap?saveIds=false
 
 ###
-POST http://localhost:7004/system/init-test
-
-###
 POST http://localhost:7004/bootstrap/init-root-application
 Accept: application/json
 

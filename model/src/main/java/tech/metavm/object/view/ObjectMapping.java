@@ -46,13 +46,12 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var actualSourceType = (ClassType) mapper.getParameter(0).getType();
         var readMethod = getSourceMethod(actualSourceType.resolve(), getReadMethod());
         var view = new MethodCallNode(
-                null, "view", "view",
+                null, scope.nextNodeName("view"), null,
                 scope.getLastNode(), scope,
                 Values.inputValue(input, 0),
                 readMethod.getRef(), List.of()
         );
-//        Nodes.setSource(Values.node(view), Values.inputValue(input, 0), scope);
-        new ReturnNode(null, "return", "Return", scope.getLastNode(), scope, Values.node(view));
+        new ReturnNode(null, scope.nextNodeName("return"), null, scope.getLastNode(), scope, Values.node(view));
         return mapper;
     }
 
@@ -64,40 +63,40 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var scope = unmapper.newEphemeralRootScope();
         var input = Nodes.input(unmapper);
         var isSourcePresent = Nodes.functionCall(
-                "isSourcePresent", scope,
+                scope.nextNodeName("isSourcePresent"), scope,
                 NativeFunctions.isSourcePresent(),
                 List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, Values.inputValue(input, 0)))
         );
         Nodes.branch(
-                "branch", null, scope,
+                scope.nextNodeName("branch"), null, scope,
                 Values.node(isSourcePresent),
                 trueBranch -> {
                     var bodyScope = trueBranch.getScope();
                     var source = Nodes.functionCall(
-                            "source", bodyScope,
+                            scope.nextNodeName("source"), bodyScope,
                             NativeFunctions.getSource(),
                             List.of(Nodes.argument(NativeFunctions.getSource(), 0, Values.inputValue(input, 0)))
                     );
-                    var castedSource = Nodes.cast("Casted source", getSourceType(), Values.node(source), bodyScope);
+                    var castedSource = Nodes.cast(scope.nextNodeName("castedSource"), getSourceType(), Values.node(source), bodyScope);
                     Nodes.methodCall(
-                            "save view", bodyScope, Values.node(castedSource),
+                            scope.nextNodeName("saveView"), bodyScope, Values.node(castedSource),
                             writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.inputValue(input, 0)))
                     );
-                    Nodes.ret("return", bodyScope, Values.node(castedSource));
+                    Nodes.ret(scope.nextNodeName("return"), bodyScope, Values.node(castedSource));
                 },
                 falseBranch -> {
                     var bodyScope = falseBranch.getScope();
                     if (fromViewMethod != null) {
                         var fromView = Nodes.methodCall(
-                                "fromView", bodyScope,
+                                scope.nextNodeName("fromView"), bodyScope,
                                 null, fromViewMethod,
                                 List.of(
                                         Nodes.argument(fromViewMethod, 0, Values.inputValue(input, 0))
                                 )
                         );
-                        Nodes.ret("return", bodyScope, Values.node(fromView));
+                        Nodes.ret(scope.nextNodeName("return"), bodyScope, Values.node(fromView));
                     } else
-                        Nodes.raise("fromView not supported", bodyScope, Values.constant(Expressions.constantString("fromView not supported")));
+                        Nodes.raise(scope.nextNodeName("fromViewNotSupported"), bodyScope, Values.constant(Expressions.constantString("fromView not supported")));
                 },
                 mergeNode -> {
                 }

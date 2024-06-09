@@ -553,8 +553,12 @@ public class NncUtils {
         return ThreadLocalRandom.current().nextLong();
     }
 
+    public static long random(long bound) {
+        return ThreadLocalRandom.current().nextLong(bound);
+    }
+
     public static long randomNonNegative() {
-        return Math.abs(random());
+        return random(9007199254740992L);
     }
 
     public static int randomInt(int bound) {

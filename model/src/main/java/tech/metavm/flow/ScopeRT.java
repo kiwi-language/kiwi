@@ -13,7 +13,9 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @EntityType
 public class ScopeRT extends Element {
@@ -217,6 +219,10 @@ public class ScopeRT extends Element {
         nodes.forEach(node -> node.write(writer));
         writer.unindent();
         writer.writeNewLine("}");
+    }
+
+    public String nextNodeName(String prefix) {
+        return flow.nextNodeName(prefix);
     }
 
 }

@@ -48,9 +48,9 @@ public class UnionNestedMapping extends NestedMapping {
         var valueFieldRef = new Object() {
             Field valueField;
         };
-        var source = Nodes.value("source" + NncUtils.randomNonNegative(), getSource.get(), scope);
+        var source = Nodes.value(scope.nextNodeName("source"), getSource.get(), scope);
         Nodes.branch(
-                "check type " + sourceType.getName(),
+                scope.nextNodeName("checkType"),
                 null,
                 scope,
                 NncUtils.map(
@@ -62,7 +62,7 @@ public class UnionNestedMapping extends NestedMapping {
                 NncUtils.map(
                         sourceType.getMembers(),
                         t -> branch -> {
-                            var castSource = Nodes.castNode("CastSource" +NncUtils.randomNonNegative(),
+                            var castSource = Nodes.castNode(scope.nextNodeName("castSource"),
                                     t, branch.getScope(), Values.node(source));
                             values.put(
                                     branch,
@@ -70,7 +70,7 @@ public class UnionNestedMapping extends NestedMapping {
                             );
                         }
                 ),
-                branch -> Nodes.raise("unknown type", branch.getScope(), Values.constantString("Invalid type")),
+                branch -> Nodes.raise(scope.nextNodeName("invalidTypeError"), branch.getScope(), Values.constantString("Invalid type")),
                 mergeNode -> {
                     valueFieldRef.valueField = FieldBuilder.newBuilder("value", null, mergeNode.getType().resolve(), targetType).build();
                     new MergeNodeField(valueFieldRef.valueField, mergeNode, values);
@@ -89,9 +89,9 @@ public class UnionNestedMapping extends NestedMapping {
         var valueFieldRef = new Object() {
             Field valueField;
         };
-        var view = Nodes.value("view"+NncUtils.randomNonNegative(), getView.get(), scope);
+        var view = Nodes.value(scope.nextNodeName("view"), getView.get(), scope);
         Nodes.branch(
-                "check type " + NncUtils.randomNonNegative(),
+                scope.nextNodeName("checkType"),
                 null,
                 scope,
                 NncUtils.map(
@@ -103,14 +103,14 @@ public class UnionNestedMapping extends NestedMapping {
                 NncUtils.map(
                         targetType.getMembers(),
                         t -> branch -> {
-                            var castView =  Nodes.cast("CastView" + NncUtils.randomNonNegative(), t, Values.node(view), branch.getScope());
+                            var castView =  Nodes.cast(scope.nextNodeName("castView"), t, Values.node(view), branch.getScope());
                             values.put(
                                     branch,
                                     targetType2codeGenerator.get(t).generateUnmappingCode(() -> Values.node(castView), branch.getScope()).get()
                             );
                         }
                 ),
-                branch -> Nodes.raise("unknown type", branch.getScope(), Values.constantString("invalid type")),
+                branch -> Nodes.raise(scope.nextNodeName("invalidTypeError"), branch.getScope(), Values.constantString("invalid type")),
                 mergeNode -> {
                     valueFieldRef.valueField = FieldBuilder.newBuilder("value", null, mergeNode.getType().resolve(), sourceType).build();
                     new MergeNodeField(valueFieldRef.valueField, mergeNode, values);

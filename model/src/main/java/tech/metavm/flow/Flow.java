@@ -17,10 +17,7 @@ import tech.metavm.object.type.generic.SubstitutorV2;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 
 @EntityType
@@ -70,6 +67,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);
     private transient ReadWriteArray<NodeRT> nodes = new ReadWriteArray<>(NodeRT.class);
     private transient ParameterizedElementMap<List<? extends Type>, Flow> parameterizedFlows;
+    private transient Set<String> nodeNames = new HashSet<>();
 
     public Flow(Long tmpId,
                 @NotNull String name,
@@ -137,6 +135,14 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @Override
     public void onLoad(IEntityContext context) {
         stage = ResolutionStage.INIT;
+        nodeNames = new HashSet<>();
+        accept(new VoidStructuralVisitor() {
+            @Override
+            public Void visitNode(NodeRT node) {
+                nodeNames.add(node.getName());
+                return super.visitNode(node);
+            }
+        });
         if (codeSource != null)
             codeSource.generateCode(this);
     }
@@ -208,6 +214,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
             nodes.clear();
         if (rootScope != null)
             rootScope.clearNodes();
+        nodeNames.clear();
     }
 
     public boolean isSynthetic() {
@@ -293,11 +300,13 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     void addNode(NodeRT node) {
+        nodeNames.add(node.getName());
         nodes().add(node);
         version++;
     }
 
     void removeNode(NodeRT node) {
+        nodeNames.remove(node.getName());
         nodes().remove(node);
         version++;
     }
@@ -639,6 +648,15 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public abstract FlowRef getRef();
+
+    public String nextNodeName(String prefix) {
+        if(!nodeNames.contains(prefix))
+            return prefix;
+        int n = 1;
+        while (nodeNames.contains(prefix + "_" + n))
+            n++;
+        return prefix + "_" + n;
+    }
 
 }
 
