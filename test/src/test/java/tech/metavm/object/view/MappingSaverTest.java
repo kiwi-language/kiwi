@@ -102,10 +102,10 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = getBarsMethod.getRootScope();
-            var selfNode = Nodes.self("Self", null, fooType, scope);
-            var barsNode = Nodes.newArray("NewArray", null, barReadWriteArrayType,
+            var selfNode = Nodes.self("self", null, fooType, scope);
+            var barsNode = Nodes.newArray("newArray", null, barReadWriteArrayType,
                     Values.nodeProperty(selfNode, fooBarsField), null, scope);
-            Nodes.ret("Return", scope, Values.node(barsNode));
+            Nodes.ret("return", scope, Values.node(barsNode));
         }
 
         // generate setBars method
@@ -114,7 +114,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = setBarsMethod.getRootScope();
-            var selfNode = Nodes.self("Self", null, fooType, scope);
+            var selfNode = Nodes.self("self", null, fooType, scope);
             var inputNode = Nodes.input(setBarsMethod);
             Nodes.clearArray("ClearBars", null, Values.nodeProperty(selfNode, fooBarsField), scope);
             Nodes.forEach("forEach", () -> Values.inputValue(inputNode, 0),
@@ -123,7 +123,7 @@ public class MappingSaverTest extends TestCase {
                                 element.get(), bodyScope);
                     },
                     scope);
-            Nodes.ret("Return", scope, null);
+            Nodes.ret("return", scope, null);
         }
         TestUtils.initEntityIds(fooType);
 
@@ -316,7 +316,7 @@ public class MappingSaverTest extends TestCase {
                     Values.nodeProperty(self, skuListField),
                     null, scope
             );
-            Nodes.ret("Return", scope, Values.node(skuList));
+            Nodes.ret("return", scope, Values.node(skuList));
         }
 
         var setSkuListMethod = MethodBuilder.newBuilder(productType, "setSkuList", "setSkuList")
@@ -515,8 +515,8 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = getOwnerMethod.getRootScope();
-            var selfNode = Nodes.self("Self", null, applicationType, scope);
-            Nodes.ret("Return", scope, Values.nodeProperty(selfNode, ownerField));
+            var selfNode = Nodes.self("self", null, applicationType, scope);
+            Nodes.ret("return", scope, Values.nodeProperty(selfNode, ownerField));
         }
         TestUtils.initEntityIds(applicationType);
 

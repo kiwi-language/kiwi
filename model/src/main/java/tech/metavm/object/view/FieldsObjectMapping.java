@@ -145,27 +145,27 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     public void generateReadMethodCode() {
         var scope = Objects.requireNonNull(readMethod).newEphemeralRootScope();
-        var selfNode = new SelfNode(null, "self", "Self", getTargetType(), null, scope);
+        var selfNode = new SelfNode(null, "self", null, getSourceType(), null, scope);
         List<FieldParam> fieldParams = new ArrayList<>();
         for (FieldMapping fieldMapping : fieldMappings)
             fieldParams.add(fieldMapping.generateReadCode(selfNode));
-        var view = new AddObjectNode(null, "view", "View", false,
+        var view = new AddObjectNode(null, "view", null, false,
                 true, getTargetType(), scope.getLastNode(), scope);
         fieldParams.forEach(view::addField);
-        new ReturnNode(null, "return", "Return", scope.getLastNode(), scope, Values.node(view));
+        new ReturnNode(null, "return", null, scope.getLastNode(), scope, Values.node(view));
     }
 
     public void generateWriteMethodCode() {
         var scope = Objects.requireNonNull(writeMethod).newEphemeralRootScope();
-        var selfNode = new SelfNode(null, "self", "Self", getSourceType(), null, scope);
+        var selfNode = new SelfNode(null, "self", null, getSourceType(), null, scope);
         var inputNode = Nodes.input(writeMethod);
-        var viewNode = new ValueNode(null, "view", "View", getTargetType(), scope.getLastNode(), scope,
+        var viewNode = new ValueNode(null, "view", null, getTargetType(), scope.getLastNode(), scope,
                 Values.inputValue(inputNode, 0));
         for (FieldMapping fieldMapping : fieldMappings) {
             if (!fieldMapping.isReadonly())
                 fieldMapping.generateWriteCode(selfNode, viewNode);
         }
-        new ReturnNode(null, "return", "Return", scope.getLastNode(), scope, null);
+        new ReturnNode(null, "return", null, scope.getLastNode(), scope, null);
     }
 
     public void setName(String name) {

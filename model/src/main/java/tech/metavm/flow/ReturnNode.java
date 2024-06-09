@@ -10,7 +10,6 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ReturnNodeParam;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -56,10 +55,8 @@ public class ReturnNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        try(var ignored = ContextUtil.getProfiler().enter("ReturnNode.execute")) {
-            var retValue = getType().isVoid() ? null : Objects.requireNonNull(value).evaluate(frame);
-            return NodeExecResult.ret(retValue);
-        }
+        var retValue = getType().isVoid() ? null : Objects.requireNonNull(value).evaluate(frame);
+        return NodeExecResult.ret(retValue);
     }
 
     @Override

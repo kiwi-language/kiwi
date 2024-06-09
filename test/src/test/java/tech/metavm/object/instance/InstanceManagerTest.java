@@ -381,7 +381,7 @@ public class InstanceManagerTest extends TestCase {
                                         .addNode(
                                                 NodeDTOFactory.createReturnNode(
                                                         NncUtils.randomNonNegative(),
-                                                        "Return",
+                                                        "return",
                                                         ValueDTOFactory.createReference("self")
                                                 )
                                         )

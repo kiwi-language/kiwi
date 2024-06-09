@@ -45,7 +45,6 @@ public class Nodes {
             Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
             Supplier<Value>> action,
             ScopeRT scope) {
-        var seq = NncUtils.randomNonNegative();
         var whileOutputType = ClassTypeBuilder.newBuilder("WhileOutput", null)
                 .temporary()
                 .build();
@@ -71,7 +70,7 @@ public class Nodes {
         ));
         var bodyScope = node.getBodyScope();
         var element = new GetElementNode(
-                null, "Element_" + seq, "Element_" + seq, bodyScope.getLastNode(), bodyScope,
+                null, scope.nextNodeName("Element"), null, bodyScope.getLastNode(), bodyScope,
                 getArray.get(), Values.nodeProperty(node, indexField)
         );
         action.accept(bodyScope, () -> Values.node(element), () -> Values.nodeProperty(node, indexField));
@@ -83,7 +82,6 @@ public class Nodes {
             Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
             Supplier<Value>> action,
             ScopeRT scope) {
-        var seq = NncUtils.randomNonNegative();
         var whileOutputType = ClassTypeBuilder.newBuilder("WhileOutput", null)
                 .temporary()
                 .build();
@@ -94,7 +92,7 @@ public class Nodes {
         var methodRef = listClass.getMethodByCodeAndParamTypes("size", List.of()).getRef();
         var size = new MethodCallNode(
                 null,
-                "ListSize_" + seq,
+                scope.nextNodeName("listSize"),
                 null,
                 scope.getLastNode(),
                 scope,
@@ -123,7 +121,7 @@ public class Nodes {
         var bodyScope = node.getBodyScope();
         var getMethod = listClass.getMethodByCodeAndParamTypes("get", List.of(StandardTypes.getLongType()));
         var element = new MethodCallNode(
-                null, "getElement_" + seq, null,
+                null, scope.nextNodeName("getElement"), null,
                 bodyScope.getLastNode(), bodyScope,
                 getArray.get(), getMethod.getRef(),
                 List.of(Nodes.argument(getMethod, 0, Values.nodeProperty(node, indexField)))
@@ -159,7 +157,7 @@ public class Nodes {
         defaultBranchGenerator.accept(elseBranch);
         var mergeOutput = ClassTypeBuilder.newBuilder("MergeOutput", null).temporary().build();
         var mergeNode = new MergeNode(
-                null, name + "_merge", NncUtils.get(code, c -> c + "_merge"),
+                null, scope.nextNodeName("merge"), null,
                 node, mergeOutput, scope
         );
         processMerge.accept(mergeNode);
@@ -193,7 +191,7 @@ public class Nodes {
     }
 
     public static InputNode input(Flow flow) {
-        return input(flow, "Input", "Input");
+        return input(flow, "input", null);
     }
 
     public static InputNode input(Flow flow, String name, String code) {
@@ -225,9 +223,8 @@ public class Nodes {
     }
 
     public static void setSource(Value view, Value source, ScopeRT scope) {
-        var seq = NncUtils.randomNonNegative();
         var setSourceFunc = NativeFunctions.setSource();
-        new FunctionCallNode(null, "setSource_" + seq, "setSource_" + seq, scope.getLastNode(), scope,
+        new FunctionCallNode(null, scope.nextNodeName("setSource"), null, scope.getLastNode(), scope,
                 setSourceFunc.getRef(), List.of(
                 Nodes.argument(setSourceFunc, 0, view),
                 Nodes.argument(setSourceFunc, 1, source)

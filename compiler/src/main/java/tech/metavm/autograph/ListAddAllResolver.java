@@ -10,7 +10,6 @@ import tech.metavm.flow.ValueNode;
 import tech.metavm.flow.Values;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.util.NncUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -60,17 +59,18 @@ public class ListAddAllResolver implements MethodCallResolver {
                         )
                 )
         );
+        var bodyScope = loop.getBodyScope();
         var element = new ValueNode(
-                null, "element" + NncUtils.randomNonNegative(), null,
+                null, bodyScope.nextNodeName("element"), null,
                 ((ArrayType) array.getType()).getElementType(),
-                loop.getBodyScope().getLastNode(), loop.getBodyScope(),
+                bodyScope.getLastNode(), bodyScope,
                 Values.expression(
                         Expressions.arrayAccess(array, Expressions.nodeProperty(loop, indexField))
                 )
         );
         new AddElementNode(
-                null,"add element" + NncUtils.randomNonNegative(), null,
-                loop.getBodyScope().getLastNode(), loop.getBodyScope(),
+                null,bodyScope.nextNodeName("addElement"), null,
+                bodyScope.getLastNode(), bodyScope,
                 Values.expression(self), Values.node(element)
         );
         return Expressions.trueExpression();

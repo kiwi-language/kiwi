@@ -463,11 +463,11 @@ public class MethodGenerator {
 
     public InputNode createInput() {
         var type = ClassTypeBuilder.newBuilder("Input", null).temporary().build();
-        return setNodeExprTypes(new InputNode(null, nextName("Input"), null, type, scope().getLastNode(), scope()));
+        return setNodeExprTypes(new InputNode(null, nextName("input"), null, type, scope().getLastNode(), scope()));
     }
 
     public SelfNode createSelf() {
-        return setNodeExprTypes(new SelfNode(null, nextName("Self"), null,
+        return setNodeExprTypes(new SelfNode(null, nextName("self"), null,
                 ((Method) scope().getFlow()).getDeclaringType().getType(),
                 scope().getLastNode(), scope()));
     }

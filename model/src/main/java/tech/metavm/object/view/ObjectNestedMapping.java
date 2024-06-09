@@ -7,7 +7,6 @@ import tech.metavm.flow.ScopeRT;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.Values;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.NncUtils;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -31,7 +30,7 @@ public class ObjectNestedMapping extends NestedMapping {
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
 //        if (sourceType == targetType)
 //            return getView;
-        var source = Nodes.unmap(scope.nextNodeName("unmap") + NncUtils.randomNonNegative(), scope, getView.get(), mappingRef.resolve());
+        var source = Nodes.unmap(scope.nextNodeName("unmap"), scope, getView.get(), mappingRef.resolve());
         return () -> Values.node(source);
     }
 
