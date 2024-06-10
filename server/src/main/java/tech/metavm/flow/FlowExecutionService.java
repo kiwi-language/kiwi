@@ -3,7 +3,7 @@ package tech.metavm.flow;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityContextFactoryBean;
+import tech.metavm.entity.EntityContextFactoryAware;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.natives.NativeMethods;
 import tech.metavm.entity.natives.ThrowableNative;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Component
-public class FlowExecutionService extends EntityContextFactoryBean  {
+public class FlowExecutionService extends EntityContextFactoryAware {
 
     public FlowExecutionService(EntityContextFactory entityContextFactory) {
         super(entityContextFactory);

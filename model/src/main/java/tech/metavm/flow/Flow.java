@@ -396,7 +396,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public List<Parameter> getParameters() {
-        return NncUtils.listOf(parameters);
+        return parameters.toList();
     }
 
     public @Nullable Parameter findParameter(Predicate<Parameter> predicate) {

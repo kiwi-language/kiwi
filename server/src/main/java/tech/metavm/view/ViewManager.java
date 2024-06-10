@@ -15,7 +15,7 @@ import java.util.List;
 import static tech.metavm.view.ListView.IDX_TYPE_PRIORITY;
 
 @Component
-public class ViewManager extends EntityContextFactoryBean {
+public class ViewManager extends EntityContextFactoryAware {
 
     public ViewManager(EntityContextFactory entityContextFactory) {
         super(entityContextFactory);

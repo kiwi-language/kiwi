@@ -1,12 +1,11 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.util.ValueUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -52,7 +51,7 @@ public class BinaryExpression extends Expression {
         if(operator.resultType() != null) {
             return operator.resultType();
         }
-        return ValueUtil.getCompatibleType(left.getType(), right.getType());
+        return ValueUtils.getCompatibleType(left.getType(), right.getType());
     }
 
     @Override

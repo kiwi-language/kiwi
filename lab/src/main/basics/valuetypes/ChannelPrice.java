@@ -2,6 +2,6 @@ package valuetypes;
 
 import tech.metavm.entity.ValueType;
 
-@ValueType("ChannelPrice")
+@ValueType
 public record ChannelPrice(String channel, Currency price) {
 }

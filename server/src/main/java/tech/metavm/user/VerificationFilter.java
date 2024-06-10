@@ -33,7 +33,8 @@ public class VerificationFilter extends OncePerRequestFilter {
             "/lab",
             "/get-login-info",
             "/register",
-            "/platform-user/change-password"
+            "/platform-user/change-password",
+            "/api"
     );
 
     public VerificationFilter(LoginService loginService) {

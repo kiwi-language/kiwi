@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 @Component
-public class Scheduler extends EntityContextFactoryBean {
+public class Scheduler extends EntityContextFactoryAware {
     public static int THREAD_POOL_SIZE = 1;
     private final NavigableMap<Long, TaskSignal> activeSignalMap = new ConcurrentSkipListMap<>();
     private final TransactionOperations transactionOperations;

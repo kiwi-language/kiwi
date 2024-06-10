@@ -3,7 +3,7 @@ package tech.metavm.object.instance.log;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityContextFactoryBean;
+import tech.metavm.entity.EntityContextFactoryAware;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.task.Task;
 import tech.metavm.task.TaskSignal;
@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 @Component
-public class TaskHandler extends EntityContextFactoryBean implements LogHandler<Task>  {
+public class TaskHandler extends EntityContextFactoryAware implements LogHandler<Task>  {
 
     private final TransactionOperations transactionOperations;
 

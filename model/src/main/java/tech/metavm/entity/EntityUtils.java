@@ -233,11 +233,15 @@ public class EntityUtils {
     }
 
     public static String getMetaTypeName(Class<?> javaType) {
-        EntityType entityType = javaType.getAnnotation(EntityType.class);
-        ValueType valueType = javaType.getAnnotation(ValueType.class);
+        var entityType = javaType.getAnnotation(EntityType.class);
+        var valueType = javaType.getAnnotation(ValueType.class);
+        var entityStruct = javaType.getAnnotation(EntityStruct.class);
+        var valueStruct = javaType.getAnnotation(ValueStruct.class);
         return NncUtils.firstNonBlank(
                 NncUtils.get(entityType, EntityType::value),
                 NncUtils.get(valueType, ValueType::value),
+                NncUtils.get(entityStruct, EntityStruct::value),
+                NncUtils.get(valueStruct, ValueStruct::value),
                 javaType.getSimpleName()
         );
     }
@@ -283,7 +287,7 @@ public class EntityUtils {
                                              LinkedList<String> path,
                                              Set<Object> visited,
                                              Set<ModelAndPath> result) {
-        if (object == null || ValueUtil.isPrimitive(object) || visited.contains(object) || !filter.test(object)) {
+        if (object == null || ValueUtils.isPrimitive(object) || visited.contains(object) || !filter.test(object)) {
             return;
         }
         result.add(new ModelAndPath(object, NncUtils.join(path, Objects::toString, ".")));
@@ -326,7 +330,7 @@ public class EntityUtils {
     }
 
     private static void extractReferences0(Object object, Set<Object> visited, Predicate<Object> filter, List<tech.metavm.util.Reference> result) {
-        if (object == null || ValueUtil.isPrimitive(object) || ValueUtil.isJavaType(object)
+        if (object == null || ValueUtils.isPrimitive(object) || ValueUtils.isJavaType(object)
                 || !filter.test(object) || visited.contains(object)) {
             return;
         }
@@ -334,7 +338,7 @@ public class EntityUtils {
         for (EntityProp prop : DescStore.get(object.getClass()).getProps()) {
             if (prop.isAccessible()) {
                 Object fieldValue = prop.get(object);
-                if (fieldValue != null && !ValueUtil.isPrimitive(fieldValue) && !ValueUtil.isJavaType(fieldValue)) {
+                if (fieldValue != null && !ValueUtils.isPrimitive(fieldValue) && !ValueUtils.isJavaType(fieldValue)) {
                     result.add(new Reference(object, prop.getField().getName(), fieldValue));
                     extractReferences0(fieldValue, visited, filter, result);
                 }

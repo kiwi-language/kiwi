@@ -130,15 +130,15 @@ public class Instances {
     public static boolean isPrimitive(Object value) {
         return value == null || value instanceof Date || value instanceof String ||
                 value instanceof Boolean || value instanceof Password ||
-                ValueUtil.isInteger(value) || ValueUtil.isFloat(value);
+                ValueUtils.isInteger(value) || ValueUtils.isFloat(value);
     }
 
     public static @Nullable PrimitiveInstance trySerializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
         if (value == null)
             return Instances.nullInstance();
-        if (ValueUtil.isInteger(value))
+        if (ValueUtils.isInteger(value))
             return Instances.longInstance(((Number) value).longValue(), getTypeFunc);
-        if (ValueUtil.isFloat(value))
+        if (ValueUtils.isFloat(value))
             return Instances.doubleInstance(((Number) value).doubleValue(), getTypeFunc);
         if (value instanceof Boolean bool)
             return Instances.booleanInstance(bool, getTypeFunc);

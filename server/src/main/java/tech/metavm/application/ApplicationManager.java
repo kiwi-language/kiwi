@@ -16,6 +16,7 @@ import tech.metavm.user.*;
 import tech.metavm.user.rest.dto.*;
 import tech.metavm.util.*;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -23,20 +24,25 @@ import java.util.Objects;
 import static tech.metavm.util.Constants.*;
 
 @Component
-public class ApplicationManager extends EntityContextFactoryBean {
+public class ApplicationManager extends EntityContextFactoryAware {
+
+    public static final int APP_SECRET_LEN = 32;
 
     private final RoleManager roleManager;
 
     private final PlatformUserManager platformUserManager;
 
+    private final VerificationCodeService verificationCodeService;
+
     private final IdService idService;
 
     private final EntityQueryService entityQueryService;
 
-    public ApplicationManager(EntityContextFactory entityContextFactory, RoleManager roleManager, PlatformUserManager platformUserManager, IdService idService, EntityQueryService entityQueryService) {
+    public ApplicationManager(EntityContextFactory entityContextFactory, RoleManager roleManager, PlatformUserManager platformUserManager, VerificationCodeService verificationCodeService, IdService idService, EntityQueryService entityQueryService) {
         super(entityContextFactory);
         this.roleManager = roleManager;
         this.platformUserManager = platformUserManager;
+        this.verificationCodeService = verificationCodeService;
         this.idService = idService;
         this.entityQueryService = entityQueryService;
     }
@@ -120,6 +126,20 @@ public class ApplicationManager extends EntityContextFactoryBean {
             }
             platformCtx.finish();
             return app.getTreeId();
+        }
+    }
+
+    @Transactional
+    public String generateSecret(long appId, String verificationCode) {
+        try(var context = newPlatformContext()) {
+            var user = context.getEntity(PlatformUser.class, ContextUtil.getUserId());
+            verificationCodeService.checkVerificationCode(user.getLoginName(), verificationCode, context);
+            var app = context.getEntity(Application.class, Constants.getAppId(appId));
+            var secret = generateSecret();
+            var h = EncodingUtils.secureHash(secret);
+            app.setSecret(new HashedValue(h[0], h[1]));
+            context.finish();
+            return secret;
         }
     }
 
@@ -282,6 +302,13 @@ public class ApplicationManager extends EntityContextFactoryBean {
             }
             return new Page<>(invitees, dataPage.total());
         }
+    }
+
+    private String generateSecret() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] secretBytes = new byte[APP_SECRET_LEN];
+        secureRandom.nextBytes(secretBytes);
+        return EncodingUtils.encodeBase64(secretBytes);
     }
 
     public void ensureAppAdmin(Application application) {

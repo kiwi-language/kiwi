@@ -6,6 +6,7 @@ import tech.metavm.entity.*;
 import tech.metavm.user.PlatformUser;
 import tech.metavm.util.BusinessException;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType
@@ -17,6 +18,8 @@ public class Application extends Entity {
     private String name;
 
     private PlatformUser owner;
+
+    private @Nullable HashedValue secret;
 
     @ChildEntity
     private final ReadWriteArray<PlatformUser> admins = addChild(new ReadWriteArray<>(PlatformUser.class), "admins");
@@ -92,4 +95,13 @@ public class Application extends Entity {
     public boolean isActive() {
         return state == ApplicationState.ACTIVE;
     }
+
+    public boolean verify(String secret) {
+        return this.secret == null || this.secret.verify(secret);
+    }
+
+    public void setSecret(@Nullable HashedValue secret) {
+        this.secret = secret;
+    }
+
 }

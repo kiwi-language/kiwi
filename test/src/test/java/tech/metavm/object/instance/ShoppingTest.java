@@ -2,17 +2,14 @@ package tech.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.entity.EntityQueryService;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.flow.FlowExecutionService;
-import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.instance.rest.ReferenceFieldValue;
 import tech.metavm.object.type.TypeManager;
-import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -20,7 +17,6 @@ import java.util.List;
 public class ShoppingTest extends TestCase {
 
     private TypeManager typeManager;
-    private FlowManager flowManager;
     private InstanceManager instanceManager;
     private FlowExecutionService flowExecutionService;
 
@@ -28,27 +24,15 @@ public class ShoppingTest extends TestCase {
     protected void setUp() throws Exception {
         MockStandardTypesInitializer.init();
         var bootResult = BootstrapUtils.bootstrap();
-        var instanceStore = bootResult.instanceStore();
-        var entityContextFactory = bootResult.entityContextFactory();
-        var transactionOptions = new MockTransactionOperations();
-        var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
-        typeManager = new TypeManager(entityContextFactory,
-                new EntityQueryService(instanceQueryService),
-                new TaskManager(entityContextFactory, transactionOptions)
-        );
-        flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
-        flowManager.setTypeManager(typeManager);
-        typeManager.setFlowManager(flowManager);
-        instanceManager = new InstanceManager(entityContextFactory, instanceStore, instanceQueryService);
-        typeManager.setInstanceManager(instanceManager);
-        flowExecutionService = new FlowExecutionService(entityContextFactory);
-        typeManager.setFlowExecutionService(flowExecutionService);
+        var managers = TestUtils.createCommonManagers(bootResult);
+        typeManager = managers.typeManager();
+        instanceManager = managers.instanceManager();
+        flowExecutionService = managers.flowExecutionService();
     }
 
     @Override
     protected void tearDown() {
         typeManager = null;
-        flowManager = null;
         instanceManager = null;
         flowExecutionService = null;
     }

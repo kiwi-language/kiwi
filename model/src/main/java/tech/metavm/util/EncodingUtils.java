@@ -86,13 +86,13 @@ public class EncodingUtils {
 
     public static String encodeBase64(byte[] bytes) {
         try(var ignored = ContextUtil.getProfiler().enter("encodeBase64")) {
-            return Base64.getEncoder().encodeToString(bytes);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         }
     }
 
     public static byte[] decodeBase64(String text) {
         try(var ignored = ContextUtil.getProfiler().enter("decodeBase64")) {
-            return Base64.getDecoder().decode(text);
+            return Base64.getUrlDecoder().decode(text);
         }
     }
 
@@ -118,6 +118,34 @@ public class EncodingUtils {
             bytes[i] = (byte) Integer.parseInt(hex.substring(i * 2, i * 2 + 2), 16);
         }
         return bytes;
+    }
+
+    public static String[] secureHash(String value) {
+        var secureRandom = new SecureRandom();
+        var salt = new byte[16];
+        secureRandom.nextBytes(salt);
+        var digest = getMessageDigest("SHA-256");
+        digest.update(salt);
+        var hashedBytes = digest.digest(decodeBase64(value));
+        return new String[]{encodeBase64(salt), encodeBase64(hashedBytes)};
+    }
+
+    public static boolean verifySecureHash(String value, String salt, String hashedValue) {
+        var saltBytes = decodeBase64(salt);
+        var digest = getMessageDigest("SHA-256");
+        digest.update(saltBytes);
+        var hashedInputBytes = digest.digest(decodeBase64(value));
+        var hashedInputHex = encodeBase64(hashedInputBytes);
+        return hashedInputHex.equals(hashedValue);
+    }
+
+    private static MessageDigest getMessageDigest(@SuppressWarnings("SameParameterValue") String algorithm) {
+        try {
+            return MessageDigest.getInstance(algorithm);
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw new InternalException("Invalid algorithm " + algorithm);
+        }
     }
 
 }

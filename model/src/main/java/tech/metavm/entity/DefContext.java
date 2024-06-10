@@ -354,7 +354,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         } else {
             NncUtils.requireTrue(javaType == javaClass,
                     "Generic type not supported: " + javaType);
-            TypeCategory typeCategory = ValueUtil.getTypeCategory(javaType);
+            TypeCategory typeCategory = ValueUtils.getTypeCategory(javaType);
             return switch (typeCategory) {
                 case ENUM -> new EnumParser<>(
                         javaClass.asSubclass(new TypeReference<Enum<?>>() {

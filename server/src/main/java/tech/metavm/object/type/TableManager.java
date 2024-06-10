@@ -21,7 +21,7 @@ import static tech.metavm.object.type.Types.*;
 import static tech.metavm.util.NncUtils.requireNonNull;
 
 @Component
-public class TableManager extends EntityContextFactoryBean {
+public class TableManager extends EntityContextFactoryAware {
 
     private final TypeManager typeManager;
 

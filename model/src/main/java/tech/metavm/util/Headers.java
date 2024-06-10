@@ -2,10 +2,12 @@ package tech.metavm.util;
 
 public class Headers {
 
-    public static final String CLIENT_ID = "ClientId";
+    public static final String CLIENT_ID = "X-Client-ID";
 
-    public static final String APP_ID = "AppId";
+    public static final String APP_ID = "X-App-ID";
 
-    public static final String META_VERSION = "MetaVersion";
+    public static final String SECRET = "X-App-Secret";
+
+    public static final String META_VERSION = "X-Meta-Version";
 
 }

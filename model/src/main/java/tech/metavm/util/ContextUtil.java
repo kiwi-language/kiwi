@@ -62,6 +62,10 @@ public class ContextUtil {
         return getContextInfo().userId;
     }
 
+    public static Id getPlatformUserId() {
+        return getContextInfo().platformUserId;
+    }
+
     public static @Nullable String getClientId() {
         return getContextInfo().clientId;
     }

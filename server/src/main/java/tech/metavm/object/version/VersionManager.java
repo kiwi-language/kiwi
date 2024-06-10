@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class VersionManager extends EntityContextFactoryBean {
+public class VersionManager extends EntityContextFactoryAware {
 
     public VersionManager(EntityContextFactory entityContextFactory) {
         super(entityContextFactory);

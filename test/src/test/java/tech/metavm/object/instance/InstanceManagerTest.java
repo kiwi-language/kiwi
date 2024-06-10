@@ -6,7 +6,10 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.flow.rest.MethodParam;
@@ -29,7 +32,6 @@ import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
 import tech.metavm.object.type.rest.dto.FieldRefDTO;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.view.rest.dto.DirectMappingKey;
-import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -41,29 +43,17 @@ public class InstanceManagerTest extends TestCase {
     private InstanceManager instanceManager;
     private EntityContextFactory entityContextFactory;
     private TypeManager typeManager;
-    private FlowManager flowManager;
     private FlowExecutionService flowExecutionService;
 
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
-        var instanceSearchService = bootResult.instanceSearchService();
-        var instanceQueryService = new InstanceQueryService(instanceSearchService);
+        var managers = TestUtils.createCommonManagers(bootResult);
         entityContextFactory = bootResult.entityContextFactory();
-        instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService);
+        instanceManager = managers.instanceManager();
+        typeManager = managers.typeManager();
+        flowExecutionService = managers.flowExecutionService();
         ContextUtil.setAppId(TestConstants.APP_ID);
-        var entityQueryService = new EntityQueryService(instanceQueryService);
-        var transactionOperations = new MockTransactionOperations();
-        typeManager = new TypeManager(
-                bootResult.entityContextFactory(),
-                entityQueryService,
-                new TaskManager(entityContextFactory, transactionOperations)
-        );
-        flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
-        flowManager.setTypeManager(typeManager);
-        typeManager.setFlowManager(flowManager);
-        flowExecutionService = new FlowExecutionService(entityContextFactory);
-        typeManager.setFlowExecutionService(flowExecutionService);
         FlowSavingContext.initConfig();
     }
 
@@ -72,7 +62,6 @@ public class InstanceManagerTest extends TestCase {
         instanceManager = null;
         entityContextFactory = null;
         typeManager = null;
-        flowManager = null;
         flowExecutionService = null;
         FlowSavingContext.clearConfig();
     }

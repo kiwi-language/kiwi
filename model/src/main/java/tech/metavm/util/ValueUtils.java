@@ -11,7 +11,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class ValueUtil {
+public class ValueUtils {
 
     public static final Pattern INT_PATTERN = Pattern.compile("-?[0-9]+");
 

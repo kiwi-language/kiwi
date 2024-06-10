@@ -2,7 +2,7 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.util.ValueUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,7 +11,7 @@ import java.util.List;
 public class Path {
 
     public static boolean isIndexItem(String pathItem) {
-        return ValueUtil.isIntegerStr(pathItem);
+        return ValueUtils.isIntegerStr(pathItem);
     }
 
     public static boolean isAsteriskItem(String pathITem) {

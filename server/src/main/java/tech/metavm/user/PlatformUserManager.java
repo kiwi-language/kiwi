@@ -17,7 +17,7 @@ import tech.metavm.util.*;
 import java.util.List;
 
 @Component
-public class PlatformUserManager extends EntityContextFactoryBean {
+public class PlatformUserManager extends EntityContextFactoryAware {
 
     private final LoginService loginService;
 

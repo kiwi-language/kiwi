@@ -3,7 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.util.ValueUtils;
 
 import java.util.List;
 
@@ -14,7 +14,7 @@ public class Var {
     public static Var parse(String str) {
         if(str.startsWith(ID_PREFIX)) {
             String idString = str.substring(ID_PREFIX.length());
-            if(ValueUtil.isIntegerStr(idString)) {
+            if(ValueUtils.isIntegerStr(idString)) {
                 return idVar(Long.parseLong(idString));
             }
             else {

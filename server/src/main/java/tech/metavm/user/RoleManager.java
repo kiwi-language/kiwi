@@ -9,7 +9,7 @@ import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
 @Component
-public class RoleManager extends EntityContextFactoryBean{
+public class RoleManager extends EntityContextFactoryAware {
 
     private final EntityQueryService entityQueryService;
 

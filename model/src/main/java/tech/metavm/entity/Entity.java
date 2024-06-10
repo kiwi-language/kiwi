@@ -207,7 +207,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         var desc = DescStore.get(EntityUtils.getRealType(this));
         for (var prop : desc.getNonTransientProps()) {
             var ref = prop.get(this);
-            if (ref != null && !ValueUtil.isPrimitive(ref)) {
+            if (ref != null && !ValueUtils.isPrimitive(ref)) {
                 if(DebugEnv.recordPath) {
                     EntityUtils.enterPathItem(prop.getName());
                     action.accept(ref);

@@ -43,6 +43,8 @@ mybatis:
 
 metavm:
   resource-cp-root: /Users/leen/workspace/object/model/src/main/resources
+  api:
+    verify: true
   token:
     encrypt:
       certificate: /etc/metavm/encrypt_key.pub

@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-public class InstanceManager extends EntityContextFactoryBean {
+public class InstanceManager extends EntityContextFactoryAware {
 
     private static final Logger logger = LoggerFactory.getLogger(InstanceManager.class);
 

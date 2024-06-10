@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 @Component
-public class FlowManager extends EntityContextFactoryBean {
+public class FlowManager extends EntityContextFactoryAware {
 
     private TypeManager typeManager;
 

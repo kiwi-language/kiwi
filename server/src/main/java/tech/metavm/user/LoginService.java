@@ -3,17 +3,15 @@ package tech.metavm.user;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import tech.metavm.application.Application;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityContextFactoryBean;
+import tech.metavm.entity.EntityContextFactoryAware;
 import tech.metavm.entity.EntityIndexKey;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.user.rest.dto.LoginInfo;
 import tech.metavm.user.rest.dto.LoginRequest;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.EncodingUtils;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import java.util.Date;
 import java.util.List;
@@ -21,7 +19,7 @@ import java.util.List;
 import static tech.metavm.user.Tokens.TOKEN_TTL;
 
 @Component
-public class LoginService extends EntityContextFactoryBean {
+public class LoginService extends EntityContextFactoryAware {
 
     public static final long MAX_ATTEMPTS_IN_15_MINUTES = 30;
 
@@ -101,6 +99,13 @@ public class LoginService extends EntityContextFactoryBean {
                 return new LoginInfo(appId, session.getUser().getStringId());
             } else
                 return LoginInfo.failed();
+        }
+    }
+
+    public boolean verifySecret(long appId, String secret) {
+        try(var context = newPlatformContext()) {
+            var app = context.getEntity(Application.class, Constants.getAppId(appId));
+            return app.verify(secret);
         }
     }
 

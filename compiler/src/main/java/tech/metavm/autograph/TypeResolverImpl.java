@@ -400,7 +400,7 @@ public class TypeResolverImpl implements TypeResolver {
             return ClassKind.ENUM;
         if(psiClass.isInterface())
             return ClassKind.INTERFACE;
-        if(psiClass.hasAnnotation(ValueType.class.getName()))
+        if(psiClass.hasAnnotation(ValueType.class.getName()) || psiClass.hasAnnotation(ValueStruct.class.getName()))
             return ClassKind.VALUE;
         return ClassKind.CLASS;
     }

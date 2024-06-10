@@ -4,7 +4,7 @@ import tech.metavm.entity.ReadonlyList;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Password;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.util.ValueUtils;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -29,7 +29,7 @@ public enum Func {
     BOUNDED_RANDOM(Long.class, Long.class),
 
     IF(Object.class, List.of(Boolean.class, Object.class, Object.class),
-            types -> ValueUtil.getCompatibleType(types.get(1), types.get(2))),
+            types -> ValueUtils.getCompatibleType(types.get(1), types.get(2))),
 
     IS_BLANK(Boolean.class, String.class),
 

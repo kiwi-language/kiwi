@@ -13,11 +13,14 @@ import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
 import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
+import tech.metavm.flow.FlowExecutionService;
+import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.flow.rest.MethodRefDTO;
 import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.instance.InstanceManager;
+import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.cache.MockCache;
 import tech.metavm.object.instance.core.StructuralVisitor;
 import tech.metavm.object.instance.core.*;
@@ -28,7 +31,9 @@ import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.object.version.VersionManager;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
+import tech.metavm.task.TaskManager;
 
 import javax.sql.DataSource;
 import java.io.*;
@@ -451,6 +456,29 @@ public class TestUtils {
 
     public static void printIdClassName(String id) {
         System.out.println(Id.parse(id).getClass().getName());
+    }
+
+    public static CommonManagers createCommonManagers(BootstrapResult bootResult) {
+        var entityContextFactory = bootResult.entityContextFactory();
+        var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
+        var entityQueryService = new EntityQueryService(instanceQueryService);
+        var transactionOps = new MockTransactionOperations();
+        var taskManager = new TaskManager(entityContextFactory, transactionOps);
+        var typeManager = new TypeManager(entityContextFactory, entityQueryService, taskManager);
+        var flowExecutionService = new FlowExecutionService(entityContextFactory);
+        var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService);
+        var flowManager = new FlowManager(entityContextFactory, transactionOps);
+        flowManager.setTypeManager(typeManager);
+        typeManager.setFlowExecutionService(flowExecutionService);
+        typeManager.setVersionManager(new VersionManager(entityContextFactory));
+        typeManager.setFlowManager(flowManager);
+        typeManager.setInstanceManager(instanceManager);
+        return new CommonManagers(
+                typeManager,
+                flowManager,
+                instanceManager,
+                flowExecutionService
+        );
     }
 
 }

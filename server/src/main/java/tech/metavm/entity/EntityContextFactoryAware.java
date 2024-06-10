@@ -2,11 +2,11 @@ package tech.metavm.entity;
 
 import tech.metavm.util.Constants;
 
-public class EntityContextFactoryBean {
+public class EntityContextFactoryAware {
 
     protected final EntityContextFactory entityContextFactory;
 
-    public EntityContextFactoryBean(EntityContextFactory entityContextFactory) {
+    public EntityContextFactoryAware(EntityContextFactory entityContextFactory) {
         this.entityContextFactory = entityContextFactory;
     }
 

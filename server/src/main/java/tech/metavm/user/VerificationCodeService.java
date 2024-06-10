@@ -7,7 +7,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import tech.metavm.common.EmailService;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityContextFactoryBean;
+import tech.metavm.entity.EntityContextFactoryAware;
 import tech.metavm.entity.EntityIndexKey;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.util.BusinessException;
@@ -19,7 +19,7 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-public class VerificationCodeService extends EntityContextFactoryBean {
+public class VerificationCodeService extends EntityContextFactoryAware {
 
     private static final int MAX_SENT_PER_FIFTEEN_MINUTES = 15;
 

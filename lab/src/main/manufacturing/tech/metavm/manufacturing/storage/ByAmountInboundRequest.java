@@ -1,12 +1,12 @@
 package tech.metavm.manufacturing.storage;
 
-import tech.metavm.entity.EntityStruct;
+import tech.metavm.entity.ValueStruct;
 import tech.metavm.manufacturing.material.*;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityStruct(ephemeral = true)
+@ValueStruct
 public class ByAmountInboundRequest extends InboundRequest {
 
     private long amount;

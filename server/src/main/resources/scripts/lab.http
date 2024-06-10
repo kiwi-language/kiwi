@@ -650,3 +650,61 @@ Content-Type: application/json
 
 ###
 
+POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
+Content-Type: application/json
+AppId: 1843016862
+X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
+
+[
+  "meter",
+  "meter",
+  "$$01d0b9c5dd0d00",
+  2,
+  null
+]
+
+###
+POST http://localhost:8080/api/tech/metavm/manufacturing/material/Material/new
+Content-Type: application/json
+AppId: 1843016862
+X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
+
+[
+  "m1",
+  "m1",
+  "$$01feb9c5dd0d00",
+  "$$01b6bac5dd0d00",
+  1,
+  "$$0196bac5dd0d00"
+]
+
+###
+POST http://localhost:8080/api/01bebac5dd0d06
+Content-Type: application/json
+AppId: 1843016862
+X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
+
+[
+  "m1",
+  "m1",
+  "$$01feb9c5dd0d00",
+  "$$01b6bac5dd0d00",
+  1,
+  "$$0196bac5dd0d00"
+]
+
+###
+POST http://localhost:8080/api/$$01b2efdddd0d06/inbound
+Content-Type: application/json
+AppId: 1843216866
+X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
+
+[
+  {
+    "bizType": "$$01ceeedddd0d00",
+    "material": "$$01b0efdddd0d00",
+    "position": "$$01aeefdddd0d00",
+    "unit": "$$01aaefdddd0d00",
+    "amount": 10
+  }
+]

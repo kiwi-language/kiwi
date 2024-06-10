@@ -2,6 +2,6 @@ package valuetypes;
 
 import tech.metavm.entity.ValueType;
 
-@ValueType("Currency")
+@ValueType
 public record Currency(double quantity, CurrencyKind kind) {
 }

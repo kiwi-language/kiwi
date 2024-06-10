@@ -94,7 +94,7 @@ public abstract class CompilerTestBase extends TestCase  {
         platformUserManager = new PlatformUserManager(bootResult.entityContextFactory(),
                 loginService, entityQueryService, new MockEventQueue(), verificationCodeService);
         applicationManager = new ApplicationManager(bootResult.entityContextFactory(), roleManager, platformUserManager,
-                (IdService) bootResult.idProvider(), entityQueryService);
+                verificationCodeService, (IdService) bootResult.idProvider(), entityQueryService);
         ContextUtil.resetProfiler();
     }
 

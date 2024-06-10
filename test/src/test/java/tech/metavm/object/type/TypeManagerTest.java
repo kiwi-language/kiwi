@@ -5,14 +5,8 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityQueryService;
-import tech.metavm.entity.MemInstanceStore;
-import tech.metavm.flow.FlowExecutionService;
-import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.object.instance.InstanceManager;
-import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchServiceV2;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.ClassInstanceParam;
@@ -20,7 +14,6 @@ import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.type.rest.dto.*;
-import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -29,46 +22,25 @@ public class TypeManagerTest extends TestCase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(TypeManagerTest.class);
 
-    private TypeManager typeManager;
-    private FlowManager flowManager;
     private MemInstanceSearchServiceV2 instanceSearchService;
-    @SuppressWarnings("FieldCanBeLocal")
-    private MemInstanceStore instanceStore;
+    private TypeManager typeManager;
     private InstanceManager instanceManager;
-    private EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
-        entityContextFactory = bootResult.entityContextFactory();
-        instanceStore = bootResult.instanceStore();
         instanceSearchService = bootResult.instanceSearchService();
-        var transactionOperations = new MockTransactionOperations();
-        var entityQueryService = new EntityQueryService(new InstanceQueryService(instanceSearchService));
-        typeManager = new TypeManager(
-                entityContextFactory, entityQueryService,
-                new TaskManager(entityContextFactory, transactionOperations)
-        );
-        instanceManager = new InstanceManager(
-                entityContextFactory, instanceStore, new InstanceQueryService(instanceSearchService)
-        );
-        typeManager.setInstanceManager(instanceManager);
-        flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
-        flowManager.setTypeManager(typeManager);
-        typeManager.setFlowManager(flowManager);
-        var flowExecutionService = new FlowExecutionService(entityContextFactory);
-        typeManager.setFlowExecutionService(flowExecutionService);
+        var managers = TestUtils.createCommonManagers(bootResult);
+        typeManager = managers.typeManager();
+        instanceManager = managers.instanceManager();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     @Override
     protected void tearDown() {
         typeManager = null;
-        flowManager = null;
         instanceSearchService = null;
-        instanceStore = null;
         instanceManager = null;
-        entityContextFactory = null;
     }
 
     public void test() {

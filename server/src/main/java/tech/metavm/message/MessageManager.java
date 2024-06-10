@@ -7,7 +7,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import tech.metavm.common.ErrorCode;
 import tech.metavm.common.Page;
 import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityContextFactoryBean;
+import tech.metavm.entity.EntityContextFactoryAware;
 import tech.metavm.entity.EntityQueryBuilder;
 import tech.metavm.entity.EntityQueryService;
 import tech.metavm.event.EventQueue;
@@ -20,7 +20,7 @@ import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 @Component
-public class MessageManager extends EntityContextFactoryBean {
+public class MessageManager extends EntityContextFactoryAware {
 
     private final EventQueue eventQueue;
     private final EntityQueryService entityQueryService;

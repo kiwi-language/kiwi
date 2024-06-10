@@ -18,7 +18,7 @@ import java.util.Set;
 import static tech.metavm.util.Constants.ROOT_APP_ID;
 
 @Component
-public class Bootstrap extends EntityContextFactoryBean implements InitializingBean {
+public class Bootstrap extends EntityContextFactoryAware implements InitializingBean {
 
     private static final Logger logger = LoggerFactory.getLogger(Bootstrap.class);
 

@@ -50,4 +50,13 @@ public class Constants {
         return PhysicalId.of(id, 0L, ModelDefRegistry.getType(Application.class));
     }
 
+    public static String removeConstantIdPrefix(String str) {
+        assert str.startsWith(CONSTANT_ID_PREFIX);
+        return str.substring(CONSTANT_ID_PREFIX.length());
+    }
+
+    public static String addConstantIdPrefix(String str) {
+        return CONSTANT_ID_PREFIX + str;
+    }
+
 }

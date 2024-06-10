@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityContextFactoryBean;
+import tech.metavm.entity.EntityContextFactoryAware;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -17,7 +17,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 @Component
-public class InstanceLogServiceImpl extends EntityContextFactoryBean implements InstanceLogService {
+public class InstanceLogServiceImpl extends EntityContextFactoryAware implements InstanceLogService {
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceLogServiceImpl.class);
 

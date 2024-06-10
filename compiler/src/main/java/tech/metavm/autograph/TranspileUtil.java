@@ -732,7 +732,9 @@ public class TranspileUtil {
             return value;
         if((value = getAnnotationAttr(psiClass, ValueType.class, attributeName)) != null)
             return value;
-        return getAnnotationAttr(psiClass, EntityStruct.class, attributeName);
+        if((value = getAnnotationAttr(psiClass, EntityStruct.class, attributeName)) != null)
+            return value;
+        return getAnnotationAttr(psiClass, ValueStruct.class, attributeName);
     }
 
     public static Access getAccess(PsiVariable psiField) {
@@ -760,7 +762,7 @@ public class TranspileUtil {
     public static boolean isStruct(PsiClass psiClass) {
         return psiClass.isRecord()
                 && NncUtils.count(psiClass.getConstructors(), m -> !(m instanceof LightRecordCanonicalConstructor)) == 0
-                || psiClass.hasAnnotation(EntityStruct.class.getName());
+                || psiClass.hasAnnotation(EntityStruct.class.getName()) || psiClass.hasAnnotation(ValueStruct.class.getName());
     }
 
     public static boolean isStatic(PsiModifierListOwner modifierListOwner) {

@@ -34,6 +34,7 @@ public enum ErrorCode {
     TITLE_FIELD_MUST_BE_STRING(317, "Title field must be of string type"),
     CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED(318, "From object field does not support basic type"),
     ENTITY_STRUCT_LACKS_CANONICAL_CONSTRUCTOR(319, "Entity structure {} lacks canonical constructor"),
+    CLASS_NOT_FOUND(320, "Class '{}' not found"),
 
     // instance
     INSTANCE_NOT_FOUND(301, "Object '{}' does not exist"),
@@ -53,6 +54,9 @@ public enum ErrorCode {
     NOT_A_CLASS_INSTANCE(414, "Object '{}' is not a class object"),
     DELETE_NON_DURABLE_INSTANCE(415, "Cannot delete non-persistent object"),
     INCORRECT_INSTANCE_FIELD_VALUE(416, "Field '{}' is illegal, reason:{}"),
+    FAILED_TO_RESOLVE_VALUE(417, "Failed to resolve value: {}"),
+    FAILED_TO_RESOLVE_VALUE_OF_TYPE(418, "Failed to resolve value of type {}"),
+    FAILED_TO_FORMAT_VALUE(419, "Failed to format value {}"),
 
     // Flow
     FLOW_NOT_FOUND(401, "Flow {} does not exist"),
@@ -97,6 +101,7 @@ public enum ErrorCode {
     VIEW_NODE_SOURCE_TYPE_MISMATCH(437, "View node source type mismatch"),
     INSTANCE_METHOD_MISSING_STATIC_TYPE(438, "Instance method lacks static type"),
     MODIFYING_SYNTHETIC_FLOW(439, "{} is a synthetic flow, cannot be modified"),
+    METHOD_RESOLUTION_FAILED(440, "Can not resolve method {}"),
 
     // expression
     EXPRESSION_INVALID(501, "Expression error, reason: {}"),
@@ -107,7 +112,7 @@ public enum ErrorCode {
 
 
     // user
-    AUTH_FAILED(601, "Username or password error"),
+    AUTH_FAILED(601, "Authorization failed"),
     LOGIN_NAME_NOT_FOUND(602, "Account '{}' does not exist"),
     INVALID_TOKEN(603, "Login information expired, please log in again"),
     USER_NOT_FOUND(604, "User (id:{}) does not exist"),
@@ -163,6 +168,11 @@ public enum ErrorCode {
     INCORRECT_MAPPING(1411, "Mapping configuration error"),
     DEFAULT_VIEW_NOT_FOUND(1412, "Cannot find default view"),
     FAIL_TO_SAVE_VIEW(1413, "Save view failed: {}"),
+
+    // API
+    INVALID_REQUEST_METHOD(1501, "Invalid request method"),
+    INVALID_REQUEST_PATH(1502, "Invalid request path"),
+
 
     ;
 

@@ -234,11 +234,11 @@ public class Expressions {
     }
 
     public static boolean isAllInteger(Object first, Object second) {
-        return ValueUtil.isInteger(first) && ValueUtil.isInteger(second);
+        return ValueUtils.isInteger(first) && ValueUtils.isInteger(second);
     }
 
     public static boolean isAllNumeric(Object first, Object second) {
-        return ValueUtil.isNumber(first) && ValueUtil.isNumber(second);
+        return ValueUtils.isNumber(first) && ValueUtils.isNumber(second);
     }
 
     public static Expression trueExpression() {

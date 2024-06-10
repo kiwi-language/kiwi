@@ -35,6 +35,11 @@ public class ApplicationController {
         return Result.success(applicationManager.get(id));
     }
 
+    @PostMapping("/{id:[0-9]+}/generate-secret")
+    public Result<GenerateSecretResponse> generateSecret(@PathVariable("id") long id, @RequestBody GenerateSecretRequest request) {
+        return Result.success(new GenerateSecretResponse(applicationManager.generateSecret(id, request.verificationCode())));
+    }
+
     @DeleteMapping("/{id:[0-9]+}")
     public Result<Void> delete(@PathVariable("id") long id) {
         applicationManager.delete(id);

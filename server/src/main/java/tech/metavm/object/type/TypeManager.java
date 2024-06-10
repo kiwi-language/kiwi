@@ -30,14 +30,14 @@ import tech.metavm.util.NncUtils;
 import java.util.*;
 
 @Component
-public class TypeManager extends EntityContextFactoryBean {
+public class TypeManager extends EntityContextFactoryAware {
 
     public static final Logger logger = LoggerFactory.getLogger(TypeManager.class);
 
     private final EntityQueryService entityQueryService;
 
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private final TaskManager jobManager;
+    private final TaskManager taskManager;
 
     private FlowExecutionService flowExecutionService;
 
@@ -49,10 +49,10 @@ public class TypeManager extends EntityContextFactoryBean {
 
     public TypeManager(EntityContextFactory entityContextFactory,
                        EntityQueryService entityQueryService,
-                       TaskManager jobManager) {
+                       TaskManager taskManager) {
         super(entityContextFactory);
         this.entityQueryService = entityQueryService;
-        this.jobManager = jobManager;
+        this.taskManager = taskManager;
     }
 
     public Map<Integer, String> getPrimitiveMap() {

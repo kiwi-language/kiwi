@@ -2,13 +2,13 @@ package tech.metavm.manufacturing.storage;
 
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ChildList;
-import tech.metavm.entity.EntityStruct;
+import tech.metavm.entity.ValueStruct;
 import tech.metavm.manufacturing.material.*;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityStruct(ephemeral = true)
+@ValueStruct
 public class BySpecInboundRequest extends InboundRequest {
 
     @ChildEntity

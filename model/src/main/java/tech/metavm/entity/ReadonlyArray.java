@@ -73,7 +73,7 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
     public void forEachReference(Consumer<Object> action) {
         int i = 0;
         for (T t : this) {
-            if (t != null && !ValueUtil.isPrimitive(t)) {
+            if (t != null && !ValueUtils.isPrimitive(t)) {
                 if(DebugEnv.recordPath) {
                     EntityUtils.enterPathItem(i + "");
                     action.accept(t);

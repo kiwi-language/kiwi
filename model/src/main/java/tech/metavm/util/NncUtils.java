@@ -487,6 +487,32 @@ public class NncUtils {
         throw new NullPointerException("All strings are either null or empty");
     }
 
+    public static String firstNonBlank(String s1, String s2, String s3, String s4) {
+        if(!isBlank(s1))
+            return s1;
+        if(!isBlank(s2))
+            return s2;
+        if(!isBlank(s3))
+            return s3;
+        if(!isBlank(s4))
+            return s4;
+        throw new NullPointerException("All strings are either null or empty");
+    }
+
+    public static String firstNonBlank(String s1, String s2, String s3, String s4, String s5) {
+        if(!isBlank(s1))
+            return s1;
+        if(!isBlank(s2))
+            return s2;
+        if(!isBlank(s3))
+            return s3;
+        if(!isBlank(s4))
+            return s4;
+        if(!isBlank(s5))
+            return s5;
+        throw new NullPointerException("All strings are either null or empty");
+    }
+
     public static <T> T firstNonNull(T t1, T t2, T t3, T t4) {
         if (t1 == null && t2 == null && t3 == null && t4 == null) {
             throw new IllegalArgumentException("Arguments can't all be null");

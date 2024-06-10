@@ -62,6 +62,10 @@ public class ClassType extends Type implements ISubstitutor {
         return klass;
     }
 
+    public boolean isStruct() {
+        return klass.isStruct();
+    }
+
     public ClassType getEffectiveTemplate() {
         return klass.getType();
     }

@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityContextFactoryBean;
+import tech.metavm.entity.EntityContextFactoryAware;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.dto.*;
 import tech.metavm.flow.NodeRT;
@@ -19,7 +19,7 @@ import tech.metavm.util.NncUtils;
 import java.util.List;
 
 @Component
-public class ExpressionService extends EntityContextFactoryBean {
+public class ExpressionService extends EntityContextFactoryAware {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ExpressionService.class);
 
