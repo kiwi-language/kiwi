@@ -25,4 +25,9 @@ public class ExpressionFieldValue extends FieldValue {
         else
             return false;
     }
+
+    @Override
+    public Object toJson() {
+        throw new UnsupportedOperationException();
+    }
 }

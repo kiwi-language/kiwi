@@ -1,5 +1,7 @@
 package tech.metavm.object.instance.rest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.ErrorCode;
@@ -9,6 +11,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.entity.natives.ThrowableNative;
+import tech.metavm.flow.Flow;
 import tech.metavm.flow.FlowExecResult;
 import tech.metavm.flow.Method;
 import tech.metavm.object.instance.core.*;
@@ -16,10 +19,17 @@ import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class ApiService extends EntityContextFactoryAware {
+
+    public static final Logger logger = LoggerFactory.getLogger(ApiService.class);
+    public static final String KEY_ID = "$id";
+    public static final String KEY_CLASS = "$class";
 
     public ApiService(EntityContextFactory entityContextFactory) {
         super(entityContextFactory);
@@ -32,7 +42,7 @@ public class ApiService extends EntityContextFactoryAware {
             var r = resolveMethod(klass, null, rawArguments, false, true, context);
             var self = ClassInstanceBuilder.newBuilder(klass.getType()).build();
             context.getInstanceContext().bind(self);
-            var result = r.method().execute(self, r.arguments(), context.getInstanceContext());
+            var result = executeFlow(r.method(), self, r.arguments(), context);
             context.finish();
             return (String) handleExecutionResult(result);
         }
@@ -43,7 +53,7 @@ public class ApiService extends EntityContextFactoryAware {
         try (var context = newContext()) {
             var self = (ClassInstance) context.getInstanceContext().get(Id.parse(id));
             var r = resolveMethod(self.getKlass(), methodCode, rawArguments, false, false, context);
-            var result = r.method().execute(self, r.arguments(), context.getInstanceContext());
+            var result = executeFlow(r.method(), self, r.arguments(), context);
             context.finish();
             return handleExecutionResult(result);
         }
@@ -54,9 +64,18 @@ public class ApiService extends EntityContextFactoryAware {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
-            var result = r.method().execute(null, r.arguments(), context.getInstanceContext());
+            var result = executeFlow(r.method, null, r.arguments(), context);
             context.finish();
             return handleExecutionResult(result);
+        }
+    }
+
+    private FlowExecResult executeFlow(Flow flow, @Nullable ClassInstance self, List<Instance> arguments, IEntityContext context) {
+        try {
+            ContextUtil.setEntityContext(context);
+            return flow.execute(self, arguments, context.getInstanceContext());
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
@@ -83,14 +102,14 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional
-    public String createInstance(String classCode, Object object) {
+    public String saveInstance(String classCode, Map<String, Object> object) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
-            var r = tryResolveValue(object, klass.getType(), true, context);
+            var r = tryResolveValue(object, klass.getType(), true, null, context);
             if (r.successful()) {
                 var inst = (DurableInstance) r.resolved();
                 var instanceContext = context.getInstanceContext();
-                if(!instanceContext.containsInstance(inst))
+                if (!instanceContext.containsInstance(inst))
                     instanceContext.bind(inst);
                 context.finish();
                 return inst.getStringId();
@@ -168,7 +187,7 @@ public class ApiService extends EntityContextFactoryAware {
     private List<Instance> tryResolveArguments(Method method, List<Object> rawArguments, IEntityContext context) {
         var resolvedArgs = new ArrayList<Instance>();
         for (int i = 0; i < method.getParameters().size(); i++) {
-            var r = tryResolveValue(rawArguments.get(i), method.getParameters().get(i).getType(), false, context);
+            var r = tryResolveValue(rawArguments.get(i), method.getParameters().get(i).getType(), false, null, context);
             if (!r.successful())
                 return null;
             resolvedArgs.add(r.resolved());
@@ -176,19 +195,19 @@ public class ApiService extends EntityContextFactoryAware {
         return resolvedArgs;
     }
 
-    private ValueResolutionResult tryResolveValue(Object rawValue, Type type, boolean asValue, IEntityContext context) {
+    private ValueResolutionResult tryResolveValue(Object rawValue, Type type, boolean asValue, @org.jetbrains.annotations.Nullable Instance currentValue, IEntityContext context) {
         return switch (type) {
             case PrimitiveType primitiveType -> tryResolvePrimitive(rawValue, primitiveType);
             case ClassType classType -> {
                 if (classType.getKlass().isList())
-                    yield tryResolveList(rawValue, classType, context);
+                    yield tryResolveList(rawValue, classType, currentValue, context);
                 else
                     yield tryResolveObject(rawValue, classType, asValue, context);
             }
-            case ArrayType arrayType -> tryResolveArray(rawValue, arrayType, context);
+            case ArrayType arrayType -> tryResolveArray(rawValue, arrayType, currentValue, context);
             case UnionType unionType -> {
                 for (Type member : unionType.getMembers()) {
-                    var r = tryResolveValue(rawValue, member, asValue, context);
+                    var r = tryResolveValue(rawValue, member, asValue, currentValue, context);
                     if (r.successful())
                         yield r;
                 }
@@ -221,63 +240,116 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ValueResolutionResult tryResolveObject(Object rawValue, ClassType type, boolean asValue, IEntityContext context) {
-        if ((type.isValue() || asValue)) {
+        if (rawValue instanceof Map<?, ?>) {
             if (type.isStruct())
                 return tryResolveValueObject(rawValue, type, context);
             else
                 return ValueResolutionResult.failed;
-        } else
+        } else if (!type.isValue() && !asValue)
             return tryResolveReference(rawValue, type, context);
+        else
+            return ValueResolutionResult.failed;
     }
 
     private ValueResolutionResult tryResolveValueObject(Object rawValue, ClassType type, IEntityContext context) {
         if (rawValue instanceof Map<?, ?> map) {
-            var klass = type.resolve();
+            var classCode = (String) map.get(KEY_CLASS);
+            ClassType actualType;
+            if (classCode != null) {
+                actualType = getKlass(classCode, context).getType();
+                if (!type.isAssignableFrom(actualType))
+                    return ValueResolutionResult.failed;
+            } else
+                actualType = type;
+            var klass = actualType.resolve();
             if (klass.isStruct()) {
-                var mapping = Objects.requireNonNull(klass.getBuiltinMapping());
-                var view = createObject(map, mapping.getTargetKlass(), context);
-                return view != null ?
-                        ValueResolutionResult.of(mapping.unmap(view, context.getInstanceContext()))
-                        : ValueResolutionResult.failed;
+//                var mapping = klass.getBuiltinMapping();
+//                if (mapping != null) {
+//                    var view = saveObject(map, mapping.getTargetKlass(), context);
+//                    return view != null ?
+//                            ValueResolutionResult.of(mapping.unmap(view, context.getInstanceContext()))
+//                            : ValueResolutionResult.failed;
+//                } else {
+                    var instance = saveObject(map, klass, context);
+                    return instance != null ? ValueResolutionResult.of(instance) : ValueResolutionResult.failed;
+//                }
             } else {
-                var instance = createObject(map, klass, context);
+                var instance = saveObject(map, klass, context);
                 return instance != null ? ValueResolutionResult.of(instance) : ValueResolutionResult.failed;
             }
         } else
             return ValueResolutionResult.failed;
     }
 
-    private @Nullable ClassInstance createObject(Map<?, ?> map, Klass klass, IEntityContext context) {
-        var data = new HashMap<Field, Instance>();
-        for (Field field : klass.getAllFields()) {
-            var r = tryResolveValue(map.get(field.getCode()), field.getType(), field.isChild(), context);
-            if (r.successful())
-                data.put(field, r.resolved());
-            else
+    private @Nullable ClassInstance saveObject(Map<?, ?> map, Klass klass, IEntityContext context) {
+        var id = (String) map.get(KEY_ID);
+        if (id != null) {
+            var inst = (ClassInstance) context.getInstanceContext().get(Id.parse(id));
+//            var mapping = inst.getKlass().getBuiltinMapping();
+//            if(mapping != null)
+//                inst = mapping.map(inst, context.getInstanceContext());
+            if(!klass.getType().isInstance(inst))
                 return null;
+            var data = new HashMap<Field, Instance>();
+            for (var entry : map.entrySet()) {
+                var field = inst.getKlass().findFieldByCode((String) entry.getKey());
+                if(field == null)
+                    continue;
+                var r = tryResolveValue(entry.getValue(), field.getType(), field.isChild(), inst.getField(field), context);
+                if (r.successful())
+                    data.put(field, r.resolved);
+                else
+                    return null;
+            }
+            data.forEach(inst::setField);
+            return inst;
+        } else {
+            var data = new HashMap<Field, Instance>();
+            for (Field field : klass.getAllFields()) {
+                var r = tryResolveValue(map.get(field.getCode()), field.getType(), field.isChild(), null, context);
+                if (r.successful()) {
+                    data.put(field, r.resolved());
+                } else {
+                    if (DebugEnv.logApiParsing)
+                        logger.error("Failed to parse field {}", field.getCode());
+                    return null;
+                }
+            }
+            var inst =  ClassInstance.create(data, klass.getType());
+            var sourceMapping = klass.getSourceMapping();
+            if(sourceMapping != null) {
+                var source = sourceMapping.unmap(inst, context.getInstanceContext());
+                inst.setSourceRef(new SourceRef(source, sourceMapping));
+            }
+            return inst;
         }
-        return ClassInstance.create(data, klass.getType());
     }
 
-    private ValueResolutionResult tryResolveArray(Object rawValue, ArrayType type, IEntityContext context) {
+    private ValueResolutionResult tryResolveArray(Object rawValue, ArrayType type, @Nullable Instance currentValue, IEntityContext context) {
         if (!type.isValue() && rawValue instanceof String s)
             return tryResolveReference(s, type, context);
         else if (rawValue instanceof List<?> list) {
             var elements = new ArrayList<Instance>();
             var isChildArray = type.isChildArray();
             for (Object o : list) {
-                var r = tryResolveValue(o, type.getElementType(), isChildArray, context);
+                var r = tryResolveValue(o, type.getElementType(), isChildArray, null, context);
                 if (r.successful())
                     elements.add(r.resolved());
                 else
                     return ValueResolutionResult.failed;
             }
-            return ValueResolutionResult.of(new ArrayInstance(type, elements));
+            if(currentValue instanceof ArrayInstance currentArray && type.isInstance(currentValue)) {
+                currentArray.clear();
+                currentArray.addAll(elements);
+                return ValueResolutionResult.of(currentArray);
+            }
+            else
+                return ValueResolutionResult.of(new ArrayInstance(type, elements));
         } else
             return ValueResolutionResult.failed;
     }
 
-    private ValueResolutionResult tryResolveList(Object rawValue, ClassType type, IEntityContext context) {
+    private ValueResolutionResult tryResolveList(Object rawValue, ClassType type, @Nullable Instance currentValue, IEntityContext context) {
         if (!type.isValue() && rawValue instanceof String s)
             return tryResolveReference(s, type, context);
         else if (rawValue instanceof List<?> list) {
@@ -285,7 +357,7 @@ public class ApiService extends EntityContextFactoryAware {
             var klass = type.resolve();
             var isChildList = klass.isChildList();
             for (Object o : list) {
-                var r = tryResolveValue(o, type.getListElementType(), isChildList, context);
+                var r = tryResolveValue(o, type.getListElementType(), isChildList, null, context);
                 if (r.successful())
                     elements.add(r.resolved());
                 else
@@ -295,11 +367,16 @@ public class ApiService extends EntityContextFactoryAware {
                 type = type.isParameterized() ? new ClassType(StandardTypes.getReadWriteListKlass(), type.getTypeArguments())
                         : StandardTypes.getReadWriteListKlass().getType();
             }
-            var listInst = ClassInstance.allocate(type);
-            var listNative = new ListNative(listInst);
-            listNative.List();
+            ListNative listNative;
+            if (currentValue instanceof ClassInstance currentList && type.isInstance(currentList)) {
+                listNative = new ListNative(currentList);
+                listNative.clear();
+            } else {
+                listNative = new ListNative(ClassInstance.allocate(type));
+                listNative.List();
+            }
             elements.forEach(listNative::add);
-            return ValueResolutionResult.of(listInst);
+            return ValueResolutionResult.of(listNative.getInstance());
         } else
             return ValueResolutionResult.failed;
     }

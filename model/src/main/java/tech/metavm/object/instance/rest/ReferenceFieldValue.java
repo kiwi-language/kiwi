@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import tech.metavm.util.Constants;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -51,6 +52,11 @@ public class ReferenceFieldValue extends FieldValue {
     @Override
     public String referenceId() {
         return id;
+    }
+
+    @Override
+    public Object toJson() {
+        return Constants.prefixId(id);
     }
 
     @Override

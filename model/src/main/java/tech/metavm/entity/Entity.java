@@ -380,4 +380,13 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public void setTmpId(Long tmpId) {
         initId(tmpId != null ? TmpId.of(tmpId) : null);
     }
+
+    public @Nullable <T extends Entity> T findAncestorEntity(Class<T> ancestorClass) {
+        var e = parentEntity;
+        while (e != null && !ancestorClass.isInstance(e)) {
+            e = e.parentEntity;
+        }
+        return ancestorClass.cast(e);
+    }
+
 }

@@ -8,24 +8,17 @@ import java.util.Date;
 
 @ValueStruct
 public abstract class InboundRequest {
-    private InboundBizType bizType;
-    private Position position;
-    private Material material;
-    @Nullable
-    private Batch batch;
-    @Nullable
-    private Supplier supplier;
-    @Nullable
-    private String supplierBatchNo;
-    @Nullable
-    private Client client;
-    @Nullable
-    private Date arrivalDate;
-    @Nullable
-    private Date productionDate;
-    @Nullable
-    private Date expirationDate;
-    private Unit unit;
+    private final InboundBizType bizType;
+    private final Position position;
+    private final Material material;
+    private final @Nullable Batch batch;
+    private final @Nullable Supplier supplier;
+    private final @Nullable String supplierBatchNo;
+    private final @Nullable Client client;
+    private final @Nullable Date arrivalDate;
+    private final @Nullable Date productionDate;
+    private final @Nullable Date expirationDate;
+    private final Unit unit;
 
     public InboundRequest(InboundBizType bizType, Position position, Material material, @Nullable Batch batch, @Nullable Supplier supplier, @Nullable String supplierBatchNo, @Nullable Client client, @Nullable Date arrivalDate, @Nullable Date productionDate, @Nullable Date expirationDate, Unit unit) {
         this.bizType = bizType;
@@ -41,98 +34,55 @@ public abstract class InboundRequest {
         this.unit = unit;
     }
 
-    public InboundBizType bizType() {
+    public InboundBizType getBizType() {
         return bizType;
     }
 
-    public Position position() {
+    public Position getPosition() {
         return position;
     }
 
-    public Material material() {
+    public Material getMaterial() {
         return material;
     }
 
     @Nullable
-    public Batch batch() {
+    public Batch getBatch() {
         return batch;
     }
 
     @Nullable
-    public Supplier supplier() {
+    public Supplier getSupplier() {
         return supplier;
     }
 
     @Nullable
-    public String supplierBatchNo() {
+    public String getSupplierBatchNo() {
         return supplierBatchNo;
     }
 
     @Nullable
-    public Client client() {
+    public Client getClient() {
         return client;
     }
 
     @Nullable
-    public Date arrivalDate() {
+    public Date getArrivalDate() {
         return arrivalDate;
     }
 
     @Nullable
-    public Date productionDate() {
+    public Date getProductionDate() {
         return productionDate;
     }
 
     @Nullable
-    public Date expirationDate() {
+    public Date getExpirationDate() {
         return expirationDate;
-    }
-
-    public void setBizType(InboundBizType bizType) {
-        this.bizType = bizType;
-    }
-
-    public void setPosition(Position position) {
-        this.position = position;
-    }
-
-    public void setMaterial(Material material) {
-        this.material = material;
-    }
-
-    public void setBatch(@Nullable Batch batch) {
-        this.batch = batch;
-    }
-
-    public void setSupplier(@Nullable Supplier supplier) {
-        this.supplier = supplier;
-    }
-
-    public void setSupplierBatchNo(@Nullable String supplierBatchNo) {
-        this.supplierBatchNo = supplierBatchNo;
-    }
-
-    public void setClient(@Nullable Client client) {
-        this.client = client;
-    }
-
-    public void setArrivalDate(@Nullable Date arrivalDate) {
-        this.arrivalDate = arrivalDate;
-    }
-
-    public void setProductionDate(@Nullable Date productionDate) {
-        this.productionDate = productionDate;
-    }
-
-    public void setExpirationDate(@Nullable Date expirationDate) {
-        this.expirationDate = expirationDate;
     }
 
     public Unit getUnit() {
         return unit;
     }
 
-    public void setUnit(Unit unit) {
-        this.unit = unit;
-    }
 }

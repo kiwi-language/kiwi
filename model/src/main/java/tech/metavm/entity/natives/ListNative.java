@@ -67,6 +67,14 @@ public class ListNative extends IterableNative {
         return List(c, callContext);
     }
 
+    public Instance ValueList(CallContext callContext) {
+        return List(callContext);
+    }
+
+    public Instance ValueList(Instance c, CallContext callContext) {
+        return List(c, callContext);
+    }
+
     public ClassInstance iterator(CallContext callContext) {
         var iteratorImplType = (Klass) instance.getKlass().getDependency(StandardTypes.getIteratorImplKlass());
         var it = ClassInstance.allocate(iteratorImplType.getType());
@@ -167,4 +175,7 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
+    public ClassInstance getInstance() {
+        return instance;
+    }
 }

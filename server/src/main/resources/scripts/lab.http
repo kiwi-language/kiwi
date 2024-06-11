@@ -21,7 +21,7 @@ appId: 2
 POST http://localhost:8080/platform-user
 Accept: application/json
 Content-Type: application/json
-AppId: 2
+X-App-ID: 2
 
 {
   "loginName": "leen",
@@ -36,12 +36,12 @@ GET http://localhost:8080/platform-user/apps
 ###
 POST http://localhost:8080/platform-user/enter-app/1839816797
 Accept: application/json
-AppId: 2
+X-App-ID: 2
 
 ###
 GET http://localhost:8080/type/field/0198a3ecc60d01b4d503
 Accept: application/json
-AppId: 1816816338
+X-App-ID: 1816816338
 
 ###
 POST http://localhost:8080/platform-user/exit-app
@@ -192,7 +192,7 @@ Content-Type: application/json
 GET http://localhost:8080/type/load-all-metadata
 Accept: application/json
 Content-Type: application/json
-AppId: 1212504251
+X-App-ID: 1212504251
 
 ###
 
@@ -282,7 +282,7 @@ Content-Type: application/json
 
 ###
 GET http://localhost:8080/instance/01f4b4bfda0d0003a6f3beda0d00
-AppId: 1839816797
+X-App-ID: 1839816797
 
 ###
 DELETE http://localhost:8080/instance/1206304127
@@ -366,7 +366,7 @@ GET http://localhost:8080/instance?typeId=13021&searchText=$$1004700100 = this A
 POST http://localhost:8080/type/get
 Accept: application/json
 Content-Type: application/json
-AppId: 1267505351
+X-App-ID: 1267505351
 
 {
   "id": 1267805367
@@ -559,7 +559,7 @@ GET http://localhost:8080/type/constraint/1008300172
 POST http://localhost:8080/type/batch-delete
 Accept: application/json
 Content-Type: application/json
-AppId: 1839816797
+X-App-ID: 1839816797
 
 [
 ]
@@ -567,7 +567,7 @@ AppId: 1839816797
 POST http://localhost:8080/instance/batch-delete
 Accept: application/json
 Content-Type: application/json
-AppId: 1839816797
+X-App-ID: 1839816797
 
 [
 "01f4b4bfda0d0003a6f3beda0d00",
@@ -630,7 +630,7 @@ GET http://localhost:8080/type?page=1&pageSize=20&categoryCodes=18,11,13,16,19,1
 POST http://localhost:8081/api/type/get-parameterized-type
 Accept: application/json
 Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7
-AppId: 1323806477
+X-App-ID: 1323806477
 ClientId: 42f2959a-48cd-4157-9499-2f805106eed0
 Connection: keep-alive
 Cookie: __token_1297705955__=d02ed146-29d8-41de-b3fa-c8a4ba028f58; __token_1301106023__=f50aa506-2faa-4011-ae5c-58278bb785e7; __token_1304406089__=1309d9ec-66d0-47ce-96a8-8052305196eb; __token_1308206165__=7b6eb1cc-8974-466c-968e-3040d41038b2; __token_1314806297__=fdcb1f46-9e95-4ba8-8dfb-1071b923e1eb; __token_1316606333__=54c82629-565b-4b1b-b0ea-65471d597184; __token_1319006381__=f0887a2c-62f5-4c0a-bde1-669c76239854; __token_1320906419__=5f999cbf-4115-4927-9d70-3e1bd6a59d6c; __token_2__=a20c9a2e-5df0-42be-9396-aac9e56758d0; __token_1323806477__=0fe16b2b-34a2-46e5-99fd-9d4736b4836e
@@ -652,7 +652,7 @@ Content-Type: application/json
 
 POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
 Content-Type: application/json
-AppId: 1843016862
+X-App-ID: 1843016862
 X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
 
 [
@@ -666,7 +666,7 @@ X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
 ###
 POST http://localhost:8080/api/tech/metavm/manufacturing/material/Material/new
 Content-Type: application/json
-AppId: 1843016862
+X-App-ID: 1843016862
 X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
 
 [
@@ -681,7 +681,7 @@ X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
 ###
 POST http://localhost:8080/api/01bebac5dd0d06
 Content-Type: application/json
-AppId: 1843016862
+X-App-ID: 1843016862
 X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
 
 [
@@ -696,15 +696,41 @@ X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
 ###
 POST http://localhost:8080/api/$$01b2efdddd0d06/inbound
 Content-Type: application/json
-AppId: 1843216866
+X-App-ID: 1843216866
 X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
 
 [
   {
+    "$class": "tech.metavm.manufacturing.storage.ByAmountInboundRequest",
     "bizType": "$$01ceeedddd0d00",
     "material": "$$01b0efdddd0d00",
     "position": "$$01aeefdddd0d00",
     "unit": "$$01aaefdddd0d00",
     "amount": 10
+  }
+]
+
+###
+POST http://localhost:8080/api/$$01b2efdddd0d06/inbound
+Content-Type: application/json
+X-App-ID: 1843216866
+X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
+
+[
+  {
+    "$class": "tech.metavm.manufacturing.storage.ByQrCodeInboundRequest",
+    "bizType": "$$01ceeedddd0d00",
+    "material": "$$01b0efdddd0d00",
+    "position": "$$01aeefdddd0d00",
+    "unit": "$$01aaefdddd0d00",
+    "amount": 10,
+    "byQrcodeItems": [
+       {
+          "qrCode": "qr0001"
+       },
+       {
+          "qrCode": "qr0002"
+       }
+    ]
   }
 ]

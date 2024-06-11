@@ -1,10 +1,10 @@
 package tech.metavm;
 
-import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.type.Type;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Base64;
 
 public class Lab {
 
@@ -13,8 +13,9 @@ public class Lab {
     private static Class<?> klass = Type.class;
 
     public static void main(String[] args) throws IOException, SQLException {
-        var id = TmpId.of(9007199254740991L);
-        System.out.println(id);
+        var bytes = new byte[] {1};
+        var base64 = Base64.getEncoder().encodeToString(bytes);
+        System.out.println(base64);
     }
 
 

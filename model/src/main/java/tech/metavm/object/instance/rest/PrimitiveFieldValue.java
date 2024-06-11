@@ -92,6 +92,11 @@ public class PrimitiveFieldValue extends FieldValue {
     }
 
     @Override
+    public Object toJson() {
+        return value;
+    }
+
+    @Override
     public String toString() {
         return "PrimitiveFieldValueDTO{" +
                 "value=" + value +

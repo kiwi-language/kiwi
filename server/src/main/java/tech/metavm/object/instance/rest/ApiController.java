@@ -10,6 +10,7 @@ import tech.metavm.user.LoginService;
 import tech.metavm.util.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -53,7 +54,7 @@ public class ApiController {
             }
             case "PUT" -> {
                 var klassName = path.replace('/', '.');
-                return apiService.createInstance(klassName, requestBody);
+                return apiService.saveInstance(klassName, (Map<String, Object>) requestBody);
             }
             case "DELETE" -> {
                 apiService.deleteInstance(Constants.removeConstantIdPrefix(path));

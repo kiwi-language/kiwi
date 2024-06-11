@@ -214,19 +214,19 @@ public class MappingSaver {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    public FieldsObjectMapping saveBuiltinMapping(Klass type, boolean generateCode) {
+    public FieldsObjectMapping saveBuiltinMapping(Klass klass, boolean generateCode) {
         if(DebugEnv.printMapping)
-            logger.info("saveBuiltinMapping. type: {}, generateCode: {}", type.getTypeDesc(), generateCode);
-        NncUtils.requireTrue(type.isClass());
-        var mapping = (FieldsObjectMapping) NncUtils.find(type.getMappings(), ObjectMapping::isBuiltin);
+            logger.info("saveBuiltinMapping. type: {}, generateCode: {}", klass.getTypeDesc(), generateCode);
+        NncUtils.requireTrue(klass.isClass() || klass.isValue());
+        var mapping = (FieldsObjectMapping) NncUtils.find(klass.getMappings(), ObjectMapping::isBuiltin);
         if (mapping == null) {
-            var targetKlass = createTargetKlass(type, "builtin", "builtin");
-            mapping = new FieldsObjectMapping(null, "builtin", "builtin", type, true, targetKlass.getType(), List.of());
+            var targetKlass = createTargetKlass(klass, "builtin", "builtin");
+            mapping = new FieldsObjectMapping(null, "builtin", "builtin", klass, true, targetKlass.getType(), List.of());
             mapping.generateDeclarations();
         }
-        retransformClassType(type);
-        if (type.isStruct())
-            saveFromViewMethod(type, mapping, false);
+        retransformClassType(klass);
+        if (klass.isStruct())
+            saveFromViewMethod(klass, mapping, false);
         if (generateCode) {
             var directFieldMappings = NncUtils.toMap(
                     NncUtils.filterByType(mapping.getFieldMappings(), DirectFieldMapping.class),
@@ -234,7 +234,7 @@ public class MappingSaver {
                     Function.identity()
             );
             var fieldMappings = new ArrayList<FieldMapping>();
-            for (var field : getVisibleFields(type)) {
+            for (var field : getVisibleFields(klass)) {
                 fieldMappings.add(saveBuiltinDirectFieldMapping(field, mapping, directFieldMappings));
             }
             var propertyFieldMappings = NncUtils.toMap(
@@ -242,14 +242,14 @@ public class MappingSaver {
                     FlowFieldMapping::getGetter,
                     Function.identity()
             );
-            for (var accessor : getAccessors(type))
+            for (var accessor : getAccessors(klass))
                 fieldMappings.add(saveBuiltinFlowFieldMapping(accessor, mapping, propertyFieldMappings));
             mapping.setFieldMappings(fieldMappings);
             mapping.generateCode();
-            if (type.isStruct())
-                saveFromViewMethod(type, mapping, true);
+            if (klass.isStruct())
+                saveFromViewMethod(klass, mapping, true);
             retransformClassType(mapping.getTargetKlass().getEffectiveTemplate());
-            retransformClassType(type);
+            retransformClassType(klass);
         }
         if(DebugEnv.printMapping)
             logger.info(mapping.getText());
@@ -258,7 +258,7 @@ public class MappingSaver {
 
     private void saveFromViewMethod(Klass klass, FieldsObjectMapping mapping, boolean generateCode) {
         var viewType = mapping.getTargetType();
-        var canonicalConstructor = getFromViewConstructor(klass);
+        var canonicalConstructor = getCanonicalConstructor(klass);
         var fromView = klass.findMethodByCodeAndParamTypes("fromView", List.of(viewType));
         if (fromView == null) {
             fromView = MethodBuilder.newBuilder(klass, "fromView", "fromView")
@@ -309,22 +309,22 @@ public class MappingSaver {
         }
     }
 
-    private Method getFromViewConstructor(Klass type) {
+    private Method getCanonicalConstructor(Klass klass) {
         var fields = NncUtils.merge(
-                NncUtils.map(getVisibleFields(type), f -> new NameAndType(f.getCodeRequired(), f.getType())),
-                NncUtils.map(getAccessors(type), a -> new NameAndType(requireNonNull(a.code), a.getter.getReturnType()))
+                NncUtils.map(getVisibleFields(klass), f -> new NameAndType(f.getCodeRequired(), f.getType())),
+                NncUtils.map(getAccessors(klass), a -> new NameAndType(requireNonNull(a.code), a.getter.getReturnType()))
         );
         var fieldTypes = NncUtils.toMap(fields, f -> f.name, f -> f.type);
         var constructor = NncUtils.find(
-                type.getMethods(),
-                m -> m.isConstructor() && isFromViewConstructor(m, fieldTypes)
+                klass.getMethods(),
+                m -> m.isConstructor() && isCanonicalConstructor(m, fieldTypes)
         );
         if (constructor == null)
-            throw new BusinessException(ErrorCode.ENTITY_STRUCT_LACKS_CANONICAL_CONSTRUCTOR, type.getName());
+            throw new BusinessException(ErrorCode.ENTITY_STRUCT_LACKS_CANONICAL_CONSTRUCTOR, klass.getName());
         return constructor;
     }
 
-    private boolean isFromViewConstructor(Method constructor, Map<String, Type> fieldTypes) {
+    private boolean isCanonicalConstructor(Method constructor, Map<String, Type> fieldTypes) {
         if (constructor.getParameters().size() == fieldTypes.size()) {
             return NncUtils.allMatch(
                     constructor.getParameters(),

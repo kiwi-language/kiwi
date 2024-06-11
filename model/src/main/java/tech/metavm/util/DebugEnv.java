@@ -16,6 +16,8 @@ public class DebugEnv {
 
     public static volatile boolean recordPath = false;
 
+    public static volatile boolean logApiParsing = true;
+
     public static volatile boolean bootstrapVerbose = false;
 
     public static volatile boolean buildPatchLog = false;

@@ -58,4 +58,9 @@ public class ListFieldValue extends FieldValue {
         } else
             return false;
     }
+
+    @Override
+    public Object toJson() {
+        return NncUtils.map(elements, FieldValue::toJson);
+    }
 }

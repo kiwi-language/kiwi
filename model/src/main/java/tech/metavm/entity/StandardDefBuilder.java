@@ -36,6 +36,7 @@ public class StandardDefBuilder {
             Map.entry(MetaSet.class, SetNative.class),
             Map.entry(ChildMetaList.class, ListNative.class),
             Map.entry(ReadWriteMetaList.class, ListNative.class),
+            Map.entry(ValueMetaList.class, ListNative.class),
             Map.entry(MetaList.class, ListNative.class),
             Map.entry(MetaMap.class, MapNative.class),
             Map.entry(IteratorImpl.class, IteratorImplNative.class),

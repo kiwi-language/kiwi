@@ -6,6 +6,7 @@ import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 public record TypeDTO(
         String id,
@@ -25,6 +26,11 @@ public record TypeDTO(
     @JsonIgnore
     public ArrayTypeParam getArrayTypeParam() {
         return (ArrayTypeParam) param;
+    }
+
+    @JsonIgnore
+    public String getCodeRequired() {
+        return Objects.requireNonNull(code);
     }
 
     @JsonIgnore

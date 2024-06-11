@@ -29,6 +29,11 @@ public class InstanceFieldValue extends FieldValue {
     }
 
     @Override
+    public Object toJson() {
+        return instance.toJson();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

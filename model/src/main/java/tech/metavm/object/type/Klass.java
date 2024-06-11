@@ -1800,7 +1800,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public boolean shouldGenerateBuiltinMapping() {
-        return isClass() && !anonymous;
+        return (isClass() || isValue()) && !anonymous;
     }
 
     public void setDefaultMapping(@Nullable ObjectMapping mapping) {
@@ -1884,6 +1884,17 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void sortMethods(Comparator<Method> comparator) {
         methods.sort(comparator);
+    }
+
+    public @Nullable ObjectMapping getSourceMapping() {
+        var template = getEffectiveTemplate();
+        var mapping = template.findAncestorEntity(ObjectMapping.class);
+        if(mapping != null) {
+            var sourceKlass = mapping.getSourceKlass().getParameterized(typeArguments);
+            return sourceKlass.getMapping(m -> m.getEffectiveTemplate() == mapping);
+        }
+        else
+            return null;
     }
 
 }

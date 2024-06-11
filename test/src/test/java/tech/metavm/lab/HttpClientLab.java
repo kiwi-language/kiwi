@@ -1,6 +1,7 @@
 package tech.metavm.lab;
 
 import tech.metavm.user.rest.dto.LoginRequest;
+import tech.metavm.util.Headers;
 import tech.metavm.util.NncUtils;
 
 import java.io.IOException;
@@ -27,7 +28,7 @@ public class HttpClientLab {
                 .uri(uri)
                 .header("Accept", "application/json")
                 .header("Content-Type", "application/json")
-                .header("AppId", Long.toString(2L))
+                .header(Headers.APP_ID, Long.toString(2L))
                 .POST(HttpRequest.BodyPublishers.ofString(
                         NncUtils.toJSONString(new LoginRequest(2L, "demo", "123456"))
                 ))

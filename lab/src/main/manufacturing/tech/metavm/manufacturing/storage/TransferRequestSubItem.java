@@ -1,9 +1,9 @@
 package tech.metavm.manufacturing.storage;
 
-import tech.metavm.entity.EntityStruct;
+import tech.metavm.entity.ValueStruct;
 import tech.metavm.manufacturing.material.Unit;
 
-@EntityStruct(ephemeral = true)
+@ValueStruct
 public record TransferRequestSubItem(
         Inventory inventory,
         long amount,

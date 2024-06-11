@@ -7,10 +7,12 @@ import tech.metavm.object.instance.InstanceParamTypeIdResolver;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.view.rest.dto.ObjectMappingRefDTO;
+import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -127,6 +129,15 @@ public record InstanceDTO(
             throw new IllegalStateException("Not an array or list instance");
     }
 
+    public String prefixedId() {
+        return Constants.prefixId(getIdRequired());
+    }
+
+    @JsonIgnore
+    public String getIdRequired() {
+        return Objects.requireNonNull(id);
+    }
+
     @JsonIgnore
     public InstanceDTO getElementInstance(int index) {
         return ((InstanceFieldValue) getElement(index)).getInstance();
@@ -169,6 +180,25 @@ public record InstanceDTO(
     @JsonIgnore
     public boolean isNew() {
         return id == null || Id.parse(id) instanceof TmpId;
+    }
+
+    public Object toJson() {
+        return switch (param) {
+            case ClassInstanceParam classInstanceParam -> {
+                var map = new HashMap<String, Object>();
+                if (id != null)
+                    map.put("$id", id);
+                for (InstanceFieldDTO field : classInstanceParam.fields()) {
+                    map.put(field.fieldName(), field.value().toJson());
+                }
+                yield  map;
+            }
+            case ArrayInstanceParam arrayInstanceParam ->
+                    NncUtils.map(arrayInstanceParam.elements(), FieldValue::toJson);
+            case ListInstanceParam listInstanceParam -> NncUtils.map(listInstanceParam.elements(), FieldValue::toJson);
+            case PrimitiveInstanceParam primitiveInstanceParam -> primitiveInstanceParam.value();
+            default -> throw new IllegalStateException("Unrecognized instance param: " + param);
+        };
     }
 
 }

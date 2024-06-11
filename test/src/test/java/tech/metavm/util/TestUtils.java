@@ -359,7 +359,7 @@ public class TestUtils {
         return NncUtils.findRequired(typeDTO.getClassParam().fields(), f -> name.equals(f.name()));
     }
 
-    public static TypeDTO getViewType(TypeDTO type, TypeManager typeManager) {
+    public static TypeDTO getViewKlass(TypeDTO type, TypeManager typeManager) {
         var defaultMapping = getDefaultMapping(type);
         var targetKlassId = TypeExpressions.extractKlassId(defaultMapping.targetType());
         return typeManager.getType(new GetTypeRequest(targetKlassId, false)).type();
@@ -481,4 +481,7 @@ public class TestUtils {
         );
     }
 
+    public static String getSourceId(String viewId) {
+        return ((DefaultViewId) Id.parse(viewId)).getSourceId().toString();
+    }
 }

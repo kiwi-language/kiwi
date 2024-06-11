@@ -1,7 +1,6 @@
 package tech.metavm.object.instance.rest;
 
 import junit.framework.TestCase;
-import org.h2.schema.Constant;
 import org.junit.Assert;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.type.TypeManager;
@@ -54,7 +53,7 @@ public class ApiServiceTest extends TestCase {
 //        var skuId = (String) TestUtils.doInTransaction(() -> apiService.handleNewInstance(
 //                "SKU", List.of("Shoes-40", 100.0, 100L)
 //        ));
-        var skuId = TestUtils.doInTransaction(() -> apiService.createInstance("SKU", Map.of(
+        var skuId = TestUtils.doInTransaction(() -> apiService.saveInstance("SKU", Map.of(
             "name", "Shoes-40",
             "price", 100.0,
             "quantity", 100L
@@ -81,8 +80,8 @@ public class ApiServiceTest extends TestCase {
                 skuId,
                 "buy",
                 List.of(1, List.of(
-                        Constants.addConstantIdPrefix(coupon1Id),
-                        Constants.addConstantIdPrefix(coupon2Id)
+                        Constants.prefixId(coupon1Id),
+                        Constants.prefixId(coupon2Id)
                 ))
         ));
         var order = instanceManager.get(orderId, 2).instance();

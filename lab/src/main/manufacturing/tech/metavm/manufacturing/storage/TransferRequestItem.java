@@ -1,12 +1,11 @@
 package tech.metavm.manufacturing.storage;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.ChildList;
-import tech.metavm.entity.EntityStruct;
+import tech.metavm.entity.ValueList;
+import tech.metavm.entity.ValueStruct;
 
-@EntityStruct(ephemeral = true)
+@ValueStruct
 public record TransferRequestItem(
         TransferOrderItem transferOrderItem,
-        @ChildEntity ChildList<TransferRequestSubItem> subItems
+        ValueList<TransferRequestSubItem> subItems
 ) {
 }

@@ -128,7 +128,7 @@ public class InboundOrderItem {
     private void inboundBySpec(BySpecInboundRequest request) {
         for (BySpecInboundRequestItem bySpecItem : request.getBySpecItems()) {
             for (int i = 0; i < bySpecItem.qrCodeAmount(); i++) {
-                actualInbound(request, bySpecItem.inboundAmount(), request.getUnit(), Utils.randomQrCode(request.material().getCode()));
+                actualInbound(request, bySpecItem.inboundAmount(), request.getUnit(), Utils.randomQrCode(request.getMaterial().getCode()));
             }
         }
     }
@@ -137,19 +137,19 @@ public class InboundOrderItem {
         new InboundRecord(
                 inboundOrder.getCode(),
                 this,
-                request.bizType(),
-                request.material(),
-                request.position(),
+                request.getBizType(),
+                request.getMaterial(),
+                request.getPosition(),
                 quantity,
                 unit,
                 qrCode,
-                request.batch(),
-                request.supplier(),
-                request.supplierBatchNo(),
-                request.client(),
-                request.arrivalDate(),
-                request.productionDate(),
-                request.expirationDate(),
+                request.getBatch(),
+                request.getSupplier(),
+                request.getSupplierBatchNo(),
+                request.getClient(),
+                request.getArrivalDate(),
+                request.getProductionDate(),
+                request.getExpirationDate(),
                 new Date()
         );
         Inventory.increaseQuantity(
@@ -159,17 +159,17 @@ public class InboundOrderItem {
                 InventoryBizState.INITIAL,
                 batch,
                 qrCode,
-                request.supplier(),
-                request.supplierBatchNo(),
-                request.client(),
-                request.arrivalDate(),
-                request.productionDate(),
-                request.expirationDate(),
+                request.getSupplier(),
+                request.getSupplierBatchNo(),
+                request.getClient(),
+                request.getArrivalDate(),
+                request.getProductionDate(),
+                request.getExpirationDate(),
                 quantity,
                 unit,
                 InventoryOp.INBOUND
         );
-        actualQuantity += request.material().convertAmount(quantity, unit, this.unit);
+        actualQuantity += request.getMaterial().convertAmount(quantity, unit, this.unit);
     }
 
 }

@@ -187,8 +187,8 @@ public class TypeManagerTest extends TestCase {
                         .build()
         ));
 
-        var skuViewType = TestUtils.getViewType(skuType, typeManager);
-        var productViewType = TestUtils.getViewType(productType, typeManager);
+        var skuViewType = TestUtils.getViewKlass(skuType, typeManager);
+        var productViewType = TestUtils.getViewKlass(productType, typeManager);
         var skuViewChildArrayType = TypeExpressions.getChildArrayType(TypeExpressions.getClassType(skuViewType.id()));
 
         var productViewSkuField = TestUtils.getFieldByName(productViewType, "sku");
@@ -201,7 +201,7 @@ public class TypeManagerTest extends TestCase {
                         .build()
         ));
 
-        var reloadedProductViewType = TestUtils.getViewType(productType, typeManager);
+        var reloadedProductViewType = TestUtils.getViewKlass(productType, typeManager);
         var reloadedProductViewSkuField = TestUtils.getFieldByName(reloadedProductViewType, "sku");
         Assert.assertEquals(skuViewChildArrayType, reloadedProductViewSkuField.type());
     }

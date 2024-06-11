@@ -1,21 +1,19 @@
 package tech.metavm.autograph;
 
 import org.junit.Assert;
-import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.view.rest.dto.DirectMappingKey;
-import tech.metavm.object.view.rest.dto.ObjectMappingRefDTO;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.TestUtils;
+import tech.metavm.util.*;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static tech.metavm.util.TestUtils.doInTransaction;
 import static tech.metavm.util.TestUtils.doInTransactionWithoutResult;
@@ -33,18 +31,10 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 var roundingRuleType = getClassTypeByCode("tech.metavm.manufacturing.material.RoundingRule");
                 var roundHalfUp = TestUtils.getEnumConstantByName(roundingRuleType, "ROUND_HALF_UP");
                 var unitType = getClassTypeByCode("tech.metavm.manufacturing.material.Unit");
-                var unit = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                        TestUtils.getMethodRefByCode(unitType, "Unit"),
-                        null,
-                        List.of(
-                                PrimitiveFieldValue.createString("meter"),
-                                PrimitiveFieldValue.createString("meter"),
-                                ReferenceFieldValue.create(roundHalfUp),
-                                PrimitiveFieldValue.createLong(2L),
-                                PrimitiveFieldValue.createNull()
-                        )
-                )));
-
+                var unitId = doInTransaction(() -> apiService.handleNewInstance(
+                        unitType.getCodeRequired(),
+                        Arrays.asList("meter", "meter", roundHalfUp.prefixedId(), 2, null)
+                ));
                 var materialKindType = getClassTypeByCode("tech.metavm.manufacturing.material.MaterialKind");
                 var normal = TestUtils.getEnumConstantByName(materialKindType, "NORMAL");
 
@@ -53,36 +43,23 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 
                 // create a material
                 var materialType = getClassTypeByCode("tech.metavm.manufacturing.material.Material");
-                var material = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                        TestUtils.getMethodRefByCode(materialType, "Material"),
-                        null,
-                        List.of(
-                                PrimitiveFieldValue.createString("sheet metal"),
-                                PrimitiveFieldValue.createString("sheet metal"),
-                                ReferenceFieldValue.create(normal),
-                                ReferenceFieldValue.create(unit),
-                                PrimitiveFieldValue.createLong(1L),
-                                ReferenceFieldValue.create(year)
-                        )
-                )));
-                Assert.assertNotNull(material);
-
-                var materialId = material.id();
+                var materialId = doInTransaction(() -> apiService.handleNewInstance(
+                        materialType.getCodeRequired(),
+                        Arrays.asList("sheet metal", "sheet metal", normal.prefixedId(), Constants.prefixId(unitId), 1, year.prefixedId())
+                ));
                 // get QualityInspectionState type
                 var qualityInspectionStateType = getClassTypeByCode("tech.metavm.manufacturing.material.QualityInspectionState");
                 // get QualityInspectionState.QUALIFIED constant
                 var qualified = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
                 // invoke material.setFeedQualityInspectionStates with a list containing the QUALIFIED constant
-                doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                        TestUtils.getMethodRefByCode(materialType, "setFeedQualityInspectionStates"),
-                        materialId,
+                doInTransaction(() -> apiService.handleInstanceMethodCall(
+                        materialId, "setFeedQualityInspectionStates",
                         List.of(
-                                new ListFieldValue(null, false, List.of(ReferenceFieldValue.create(qualified)))
+                                List.of(qualified.prefixedId())
                         )
-                )));
-
+                ));
                 // reload the material object
-                material = instanceManager.get(materialId, 1).instance();
+                var material = instanceManager.get(materialId, 1).instance();
                 // assert that the feedQualityInspectionStates field of the material object contains the QUALIFIED constant
                 var feedQualityInspectionStates = material.getFieldValue(TestUtils.getFieldIdByCode(materialType, "feedQualityInspectionStates"));
                 Assert.assertTrue(feedQualityInspectionStates instanceof InstanceFieldValue);
@@ -129,23 +106,20 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 Assert.assertEquals(0, utilsType.getClassParam().errors().size());
 
                 var storageObjects = createPosition();
+                var unit = instanceManager.get(unitId, 2).instance();
                 try (var ignored2 = profiler.enter("processInventory")) {
                     processInventory(material, storageObjects.position, qualified, unit);
                 }
-
                 try (var ignored2 = profiler.enter("processInbound")) {
                     processInbound(storageObjects, material, unit);
                 }
-
                 try (var ignored2 = profiler.enter("processTransfer")) {
                     processTransfer(storageObjects, material, unit);
                 }
-
                 RoutingObjects routingObjects;
                 try (var ignored2 = profiler.enter("processObjects")) {
                     routingObjects = processRouting(material, unit);
                 }
-
                 try (var ignored2 = profiler.enter("processBOM")) {
                     processBOM(
                             material,
@@ -164,47 +138,29 @@ public class ManufacturingCompileTest extends CompilerTestBase {
     }
 
     private StorageObjects createPosition() {
-        var warehouseType = getClassTypeByCode("tech.metavm.manufacturing.storage.Warehouse");
-        var warehouse = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                TestUtils.getMethodRefByCode(warehouseType, "Warehouse"),
-                null,
-                List.of(
-                        PrimitiveFieldValue.createString("warehouse1"),
-                        PrimitiveFieldValue.createString("warehouse1")
-                )
-        )));
-        var areaType = getClassTypeByCode("tech.metavm.manufacturing.storage.Area");
-        var area = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                TestUtils.getMethodRefByCode(areaType, "Area"),
-                null,
-                List.of(
-                        PrimitiveFieldValue.createString("area1"),
-                        PrimitiveFieldValue.createString("area1"),
-                        ReferenceFieldValue.create(warehouse),
-                        PrimitiveFieldValue.createNull(
-                        )
-                ))));
-        var positionType = getClassTypeByCode("tech.metavm.manufacturing.storage.Position");
-        var positionConstructorId = TestUtils.getMethodRefByCode(positionType, "Position");
-        var position = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                positionConstructorId,
-                null,
-                List.of(
-                        PrimitiveFieldValue.createString("position1"),
-                        PrimitiveFieldValue.createString("position1"),
-                        ReferenceFieldValue.create(area)
-                )
-        )));
-        var position2 = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                positionConstructorId,
-                null,
-                List.of(
-                        PrimitiveFieldValue.createString("position2"),
-                        PrimitiveFieldValue.createString("position2"),
-                        ReferenceFieldValue.create(area)
-                )
-        )));
-
+        var qcWarehouse = "tech.metavm.manufacturing.storage.Warehouse";
+        var warehouseId = doInTransaction(() -> apiService.handleNewInstance(
+                qcWarehouse,
+                List.of("warehouse1", "warehouse1")
+        ));
+        var qcArea = "tech.metavm.manufacturing.storage.Area";
+        var areaId = doInTransaction(() -> apiService.handleNewInstance(
+                qcArea,
+                Arrays.asList("area1", "area1", Constants.prefixId(warehouseId), null)
+        ));
+        var qcPosition = "tech.metavm.manufacturing.storage.Position";
+        var positionId = doInTransaction(() -> apiService.handleNewInstance(
+                qcPosition,
+                List.of("position1", "position1", Constants.prefixId(areaId))
+        ));
+        var position2Id = doInTransaction(() -> apiService.handleNewInstance(
+                qcPosition,
+                List.of("position2", "position2", Constants.prefixId(areaId))
+        ));
+        var warehouse = instanceManager.get(warehouseId, 2).instance();
+        var area = instanceManager.get(areaId, 2).instance();
+        var position = instanceManager.get(positionId, 2).instance();
+        var position2 = instanceManager.get(position2Id, 2).instance();
         return new StorageObjects(warehouse, area, position, position2);
     }
 
@@ -229,29 +185,25 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var inventoryBizStateType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryBizState");
         // get InventoryBizState.INITIAL constant
         var initialBizState = TestUtils.getEnumConstantByName(inventoryBizStateType, "INITIAL");
-
         // create an inventory object
-        var inventoryConstructorId = TestUtils.getMethodRefByCode(inventoryType, "Inventory");
-        var inventory = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                inventoryConstructorId,
-                null,
-                List.of(
-                        ReferenceFieldValue.create(material),
-                        ReferenceFieldValue.create(position),
-                        ReferenceFieldValue.create(qualifiedInspectionState),
-                        ReferenceFieldValue.create(initialBizState),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createLong(100L)
+        var inventoryId = doInTransaction(() -> apiService.handleNewInstance(
+                inventoryType.getCodeRequired(),
+                Arrays.asList(
+                        material.prefixedId(),
+                        position.prefixedId(),
+                        qualifiedInspectionState.prefixedId(),
+                        initialBizState.prefixedId(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        100
                 )
-        )));
-
+        ));
         // query the inventory object by condition
         var queryResp = instanceManager.query(
                 new InstanceQueryDTO(
@@ -270,39 +222,38 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         );
         Assert.assertEquals(1, queryResp.page().total());
         var queriedInventory = queryResp.page().data().get(0);
-        Assert.assertEquals(inventory.id(), queriedInventory.id());
+        Assert.assertEquals(inventoryId, queriedInventory.id());
 
         var inventoryOpType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryOp");
         var adjustment = TestUtils.getEnumConstantByName(inventoryOpType, "ADJUSTMENT");
 
         // decrease the inventory by 100 and asserts that the inventory is removed
-        var decreaseInventoryId = TestUtils.getStaticMethodRefByCode(inventoryType, "decreaseQuantity");
-        doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                decreaseInventoryId,
-                null,
-                List.of(
-                        ReferenceFieldValue.create(material),
-                        ReferenceFieldValue.create(position),
-                        ReferenceFieldValue.create(qualifiedInspectionState),
-                        ReferenceFieldValue.create(initialBizState),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createLong(100L),
-                        ReferenceFieldValue.create(unit),
-                        ReferenceFieldValue.create(adjustment)
+        doInTransaction(() -> apiService.handleStaticMethodCall(
+                Objects.requireNonNull(inventoryType.code()),
+                "decreaseQuantity",
+                Arrays.asList(
+                        material.prefixedId(),
+                        position.prefixedId(),
+                        qualifiedInspectionState.prefixedId(),
+                        initialBizState.prefixedId(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        100L,
+                        unit.prefixedId(),
+                        adjustment.prefixedId()
                 )
-        )));
+        ));
         try {
-            instanceManager.get(inventory.id(), 1);
+            instanceManager.get(inventoryId, 1);
             Assert.fail("Inventory should be removed");
         } catch (BusinessException e) {
-            Assert.assertEquals(String.format("Object '%s' does not exist", inventory.id()), e.getMessage());
+            Assert.assertEquals(String.format("Object '%s' does not exist", inventoryId), e.getMessage());
         }
     }
 
@@ -315,232 +266,82 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // get InboundOrder type
         var inboundOrderType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundOrder");
         // create an inbound order
-        var inboundOrderConstructorId = TestUtils.getMethodRefByCode(inboundOrderType, "InboundOrder");
-        var inboundOrder = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                inboundOrderConstructorId,
-                null,
-                List.of(
-                        PrimitiveFieldValue.createString("inboundOrder1"),
-                        ReferenceFieldValue.create(purchase),
-                        ReferenceFieldValue.create(storageObjects.warehouse),
-                        PrimitiveFieldValue.createNull()
+        var inboundOrderId = doInTransaction(() -> apiService.handleNewInstance(
+                inboundOrderType.getCodeRequired(),
+                Arrays.asList(
+                        "inboundOrder1",
+                        purchase.prefixedId(),
+                        storageObjects.warehouse.prefixedId(),
+                        null
                 )
-        )));
-        // create an inbound order item
+        ));
         var inboundOrderItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundOrderItem");
-        var inboundOrderItemConstructorId = TestUtils.getMethodRefByCode(inboundOrderItemType, "InboundOrderItem");
-        var inboundOrderItem = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                inboundOrderItemConstructorId,
-                null,
-                List.of(
-                        ReferenceFieldValue.create(inboundOrder),
-                        ReferenceFieldValue.create(material),
-                        ReferenceFieldValue.create(storageObjects.position),
-                        PrimitiveFieldValue.createLong(100L),
-                        ReferenceFieldValue.create(unit),
-                        PrimitiveFieldValue.createNull()
+        var inboundOrderItemId = doInTransaction(() -> apiService.handleNewInstance(
+                inboundOrderItemType.getCodeRequired(),
+                Arrays.asList(
+                        Constants.prefixId(inboundOrderId),
+                        material.prefixedId(),
+                        storageObjects.position.prefixedId(),
+                        100,
+                        unit.prefixedId(),
+                        null
                 )
-        )));
+        ));
 
         // get the InboundRequest type
         var inboundRequestType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundRequest");
-
         // assert that the InboundRequest type is abstract
         Assert.assertTrue(inboundRequestType.getClassParam().isAbstract());
-
         // get the ByAmountInboundRequest type
-        var byAmountInboundRequestType = getClassTypeByCode("tech.metavm.manufacturing.storage.ByAmountInboundRequest");
-        // assert that the ByAmountInboundRequest type is a struct
-        Assert.assertTrue(byAmountInboundRequestType.getClassParam().struct());
-
+        var qcByBoundInboundRequestType = "tech.metavm.manufacturing.storage.ByAmountInboundRequest";
         // invoke InboundOrderItem.inbound with the inboundRequest object
-        var inboundId = TestUtils.getMethodRefByCode(inboundOrderItemType, "inbound");
-        doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                inboundId,
-                inboundOrderItem.id(),
+        TestUtils.doInTransaction(() -> apiService.handleInstanceMethodCall(
+                inboundOrderItemId,
+                "inbound",
                 List.of(
-                        InstanceFieldValue.of(
-                                InstanceDTO.createClassInstance(
-                                        TypeExpressions.getClassType(byAmountInboundRequestType.id()),
-                                        List.of(
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "bizType"),
-                                                        ReferenceFieldValue.create(purchase)
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "position"),
-                                                        ReferenceFieldValue.create(storageObjects.position)
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "material"),
-                                                        ReferenceFieldValue.create(material)
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "batch"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // supplier
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "supplier"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // supplier batch no
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "supplierBatchNo"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // client
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "client"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // arrival date
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "arrivalDate"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // production date
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "productionDate"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // expiration date
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "expirationDate"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "unit"),
-                                                        ReferenceFieldValue.create(unit)
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(byAmountInboundRequestType, "amount"),
-                                                        PrimitiveFieldValue.createLong(100L)
-                                                )
-                                        )
-                                )
+                        Map.ofEntries(
+                                Map.entry(ApiService.KEY_CLASS, qcByBoundInboundRequestType),
+                                Map.entry("bizType", purchase.prefixedId()),
+                                Map.entry("position", storageObjects.position.prefixedId()),
+                                Map.entry("material", material.prefixedId()),
+                                Map.entry("unit", unit.prefixedId()),
+                                Map.entry("amount", 100L)
                         )
                 )
-        )));
-
+        ));
         // reload the inbound order item and check the actualQuantity field
-        var reloadedInboundOrderItem = instanceManager.get(inboundOrderItem.id(), 1).instance();
+        var reloadedInboundOrderItem = instanceManager.get(inboundOrderItemId, 1).instance();
         var actualQuantity = reloadedInboundOrderItem.getFieldValue(TestUtils.getFieldIdByCode(inboundOrderItemType, "actualQuantity"));
         Assert.assertEquals(100L, ((PrimitiveFieldValue) actualQuantity).getValue());
 
         // inbound by spec
-
-        // get the ByAmountInboundRequest type
-        var bySpecInboundRequestType = getClassTypeByCode("tech.metavm.manufacturing.storage.BySpecInboundRequest");
-        var bySpecInboundRequestItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.BySpecInboundRequestItem");
-        // assert that the ByAmountInboundRequest type is a struct
-        Assert.assertTrue(byAmountInboundRequestType.getClassParam().struct());
-
+        var qcBySpecInboundRequestType = "tech.metavm.manufacturing.storage.BySpecInboundRequest";
         // invoke InboundOrderItem.inbound with the inboundRequest object
-        doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                inboundId,
-                inboundOrderItem.id(),
+        doInTransaction(() -> apiService.handleInstanceMethodCall(
+                inboundOrderItemId,
+                "inbound",
                 List.of(
-                        InstanceFieldValue.of(
-                                InstanceDTO.createClassInstance(
-                                        TypeExpressions.getClassType(bySpecInboundRequestType.id()),
-                                        List.of(
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "bizType"),
-                                                        ReferenceFieldValue.create(purchase)
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "position"),
-                                                        ReferenceFieldValue.create(storageObjects.position)
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "material"),
-                                                        ReferenceFieldValue.create(material)
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "batch"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // supplier
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "supplier"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // supplier batch no
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "supplierBatchNo"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // client
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "client"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // arrival date
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "arrivalDate"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // production date
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "productionDate"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                // expiration date
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "expirationDate"),
-                                                        PrimitiveFieldValue.createNull()
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(inboundRequestType, "unit"),
-                                                        ReferenceFieldValue.create(unit)
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(bySpecInboundRequestType, "bySpecItems"),
-                                                        new ListFieldValue(
-                                                                null,
-                                                                true,
-                                                                List.of(
-                                                                        InstanceFieldValue.of(
-                                                                                InstanceDTO.createClassInstance(
-                                                                                        TypeExpressions.getClassType(bySpecInboundRequestItemType.id()),
-                                                                                        List.of(
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        TestUtils.getFieldIdByCode(bySpecInboundRequestItemType, "qrCodeAmount"),
-                                                                                                        PrimitiveFieldValue.createLong(2)
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        TestUtils.getFieldIdByCode(bySpecInboundRequestItemType, "inboundAmount"),
-                                                                                                        PrimitiveFieldValue.createLong(10)
-                                                                                                )
-                                                                                        )
-                                                                                )
-                                                                        ),
-                                                                        InstanceFieldValue.of(
-                                                                                InstanceDTO.createClassInstance(
-                                                                                        TypeExpressions.getClassType(bySpecInboundRequestItemType.id()),
-                                                                                        List.of(
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        TestUtils.getFieldIdByCode(bySpecInboundRequestItemType, "qrCodeAmount"),
-                                                                                                        PrimitiveFieldValue.createLong(3)
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        TestUtils.getFieldIdByCode(bySpecInboundRequestItemType, "inboundAmount"),
-                                                                                                        PrimitiveFieldValue.createLong(5)
-                                                                                                )
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                                )
-                                                        )
-                                                )
+                        Map.ofEntries(
+                                Map.entry(ApiService.KEY_CLASS, qcBySpecInboundRequestType),
+                                Map.entry("bizType", purchase.prefixedId()),
+                                Map.entry("position", storageObjects.position.prefixedId()),
+                                Map.entry("material", material.prefixedId()),
+                                Map.entry("unit", unit.prefixedId()),
+                                Map.entry("bySpecItems", List.of(
+                                        Map.ofEntries(
+                                                Map.entry("qrCodeAmount", 2),
+                                                Map.entry("inboundAmount", 10)
+                                        ),
+                                        Map.ofEntries(
+                                                Map.entry("qrCodeAmount", 3),
+                                                Map.entry("inboundAmount", 5)
                                         )
-                                )
+                                ))
                         )
                 )
-        )));
+        ));
 
-        reloadedInboundOrderItem = instanceManager.get(inboundOrderItem.id(), 1).instance();
+        reloadedInboundOrderItem = instanceManager.get(inboundOrderItemId, 1).instance();
         actualQuantity = reloadedInboundOrderItem.getFieldValue(TestUtils.getFieldIdByCode(inboundOrderItemType, "actualQuantity"));
         Assert.assertEquals(135L, ((PrimitiveFieldValue) actualQuantity).getValue());
     }
@@ -553,138 +354,66 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var storage = TestUtils.getEnumConstantByName(transferBizTypeType, "STORAGE");
 
         // get transfer order type
-        var transferOrderType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferOrder");
+        var qcTransferOrder = "tech.metavm.manufacturing.storage.TransferOrder";
         // create a transfer order
-        var transferOrderConstructorId = TestUtils.getMethodRefByCode(transferOrderType, "TransferOrder");
-        var transferOrder = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                transferOrderConstructorId,
-                null,
-                List.of(
-                        PrimitiveFieldValue.createString("transferOrder1"),
-                        ReferenceFieldValue.create(storage),
-                        ReferenceFieldValue.create(storageObjects.warehouse),
-                        ReferenceFieldValue.create(storageObjects.warehouse)
-                )
-        )));
-
+        var transferOrderId = doInTransaction(() -> apiService.handleNewInstance(
+                qcTransferOrder,
+                List.of("transferOrder1", storage.prefixedId(), storageObjects.warehouse.prefixedId(), storageObjects.warehouse.prefixedId())
+        ));
         // create a transfer order item
-        var transferOrderItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferOrderItem");
-        var transferOrderItemConstructorId = TestUtils.getMethodRefByCode(transferOrderItemType, "TransferOrderItem");
-        var transferOrderItem = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                transferOrderItemConstructorId,
-                null,
-                List.of(
-                        ReferenceFieldValue.create(transferOrder),
-                        ReferenceFieldValue.create(material),
-                        PrimitiveFieldValue.createLong(100L),
-                        ReferenceFieldValue.create(unit),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull()
-                )
-        )));
-
+        var qcTransferOrderItem = "tech.metavm.manufacturing.storage.TransferOrderItem";
+        var transferOrderItemId = doInTransaction(() -> apiService.handleNewInstance(
+                qcTransferOrderItem,
+                Arrays.asList(Constants.prefixId(transferOrderId), material.prefixedId(), 100, unit.prefixedId(), null, null)
+        ));
         // create an inventory
         var inventoryType = getClassTypeByCode("tech.metavm.manufacturing.storage.Inventory");
-        var inventoryConstructorId = TestUtils.getMethodRefByCode(inventoryType, "Inventory");
         var qualityInspectionStateType = getClassTypeByCode("tech.metavm.manufacturing.material.QualityInspectionState");
         var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
         var InventoryBizStateType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryBizState");
         var initialBizState = TestUtils.getEnumConstantByName(InventoryBizStateType, "INITIAL");
-        var inventory = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                inventoryConstructorId,
-                null,
-                List.of(
-                        ReferenceFieldValue.create(material),
-                        ReferenceFieldValue.create(storageObjects.position),
-                        ReferenceFieldValue.create(qualifiedInspectionState),
-                        ReferenceFieldValue.create(initialBizState),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createNull(),
-                        PrimitiveFieldValue.createLong(100L)
+        var inventoryId = doInTransaction(() -> apiService.handleNewInstance(
+                inventoryType.getCodeRequired(),
+                Arrays.asList(
+                        material.prefixedId(),
+                        storageObjects.position.prefixedId(),
+                        qualifiedInspectionState.prefixedId(),
+                        initialBizState.prefixedId(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        100
                 )
-        )));
-
+        ));
         // invoke TransferOrderItem.transfer with storageObjects.position2 as the target position
-        var transferRequestType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferRequest");
-        var transferRequestItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferRequestItem");
-        var transferRequestSubItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferRequestSubItem");
-
-        var transferId = TestUtils.getMethodRefByCode(transferOrderType, "transfer");
-        doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                                transferId,
-                                transferOrder.id(),
-                                List.of(
-                                        InstanceFieldValue.of(
-                                                InstanceDTO.createClassInstance(
-                                                        TypeExpressions.getClassType(transferRequestType.id()),
-                                                        List.of(
-                                                                InstanceFieldDTO.create(
-                                                                        TestUtils.getFieldIdByCode(transferRequestType, "to"),
-                                                                        ReferenceFieldValue.create(storageObjects.position2)
-                                                                ),
-                                                                InstanceFieldDTO.create(
-                                                                        TestUtils.getFieldIdByCode(transferRequestType, "items"),
-                                                                        new ListFieldValue(
-                                                                                null,
-                                                                                true,
-                                                                                List.of(
-                                                                                        InstanceFieldValue.of(
-                                                                                                InstanceDTO.createClassInstance(
-                                                                                                        TypeExpressions.getClassType(transferRequestItemType.id()),
-                                                                                                        List.of(
-                                                                                                                InstanceFieldDTO.create(
-                                                                                                                        TestUtils.getFieldIdByCode(transferRequestItemType, "transferOrderItem"),
-                                                                                                                        ReferenceFieldValue.create(transferOrderItem)
-                                                                                                                ),
-                                                                                                                InstanceFieldDTO.create(
-                                                                                                                        TestUtils.getFieldIdByCode(transferRequestItemType, "subItems"),
-                                                                                                                        new ListFieldValue(
-                                                                                                                                null,
-                                                                                                                                true,
-                                                                                                                                List.of(
-                                                                                                                                        InstanceFieldValue.of(
-                                                                                                                                                InstanceDTO.createClassInstance(
-                                                                                                                                                        TypeExpressions.getClassType(transferRequestSubItemType.id()),
-                                                                                                                                                        List.of(
-                                                                                                                                                                InstanceFieldDTO.create(
-                                                                                                                                                                        TestUtils.getFieldIdByCode(transferRequestSubItemType, "inventory"),
-                                                                                                                                                                        ReferenceFieldValue.create(inventory)
-                                                                                                                                                                ),
-                                                                                                                                                                InstanceFieldDTO.create(
-                                                                                                                                                                        TestUtils.getFieldIdByCode(transferRequestSubItemType, "amount"),
-                                                                                                                                                                        PrimitiveFieldValue.createLong(20L)
-                                                                                                                                                                ),
-                                                                                                                                                                InstanceFieldDTO.create(
-                                                                                                                                                                        TestUtils.getFieldIdByCode(transferRequestSubItemType, "unit"),
-                                                                                                                                                                        ReferenceFieldValue.create(unit)
-                                                                                                                                                                )
-                                                                                                                                                        )
-                                                                                                                                                )
-                                                                                                                                        )
-                                                                                                                                )
-                                                                                                                        )
-                                                                                                                )
-                                                                                                        )
-                                                                                                )
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                                )
+        doInTransaction(() -> apiService.handleInstanceMethodCall(
+                transferOrderId,
+                "transfer",
+                List.of(
+                        Map.of(
+                                "to", storageObjects.position2.prefixedId(),
+                                "items", List.of(
+                                        Map.of(
+                                                "transferOrderItem", Constants.prefixId(transferOrderItemId),
+                                                "subItems", List.of(
+                                                        Map.of(
+                                                                "inventory", Constants.prefixId(inventoryId),
+                                                                "amount", 20,
+                                                                "unit", unit.prefixedId()
                                                         )
                                                 )
                                         )
                                 )
                         )
                 )
-        );
+        ));
         // assert that the transfer has taken place
-        var reloadedInventory = instanceManager.get(inventory.id(), 1).instance();
+        var reloadedInventory = instanceManager.get(inventoryId, 1).instance();
         assertEquals(PrimitiveFieldValue.createLong(80L), reloadedInventory.getFieldValue(TestUtils.getFieldIdByCode(inventoryType, "quantity")));
     }
 
@@ -696,210 +425,147 @@ public class ManufacturingCompileTest extends CompilerTestBase {
     }
 
     private RoutingObjects processRouting(InstanceDTO material, InstanceDTO unit) {
-        var routingType = getClassTypeByCode("tech.metavm.manufacturing.production.Routing");
-        var defaultMapping = TestUtils.getDefaultMapping(routingType);
-        var routingViewType = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(defaultMapping.targetType()), false)).type();
-        var fromViewMethodId = TestUtils.getStaticMethodRefByCode(routingType, "fromView");
-        var routingProcessType = getClassTypeByCode("tech.metavm.manufacturing.production.RoutingProcess");
-        var routingProcessViewType = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(TestUtils.getDefaultMapping(routingProcessType).targetType()), false)).type();
-
-        var workCenterType = getClassTypeByCode("tech.metavm.manufacturing.production.WorkCenter");
-        var workCenterConstructorId = TestUtils.getMethodRefByCode(workCenterType, "WorkCenter");
-        var workCenter = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                workCenterConstructorId,
-                null,
-                List.of(
-//                        PrimitiveFieldValue.createString("workCenter1"),
-//                        PrimitiveFieldValue.createString("workCenter1")
-                )
-        )));
-
-        var processType = getClassTypeByCode("tech.metavm.manufacturing.production.Process");
-        var processConstructorId = TestUtils.getMethodRefByCode(processType, "Process");
-        var process = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                processConstructorId,
-                null,
-                List.of(
-                        PrimitiveFieldValue.createString("process1")
-                )
-        )));
-
-        var routing = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                fromViewMethodId,
-                null,
-                List.of(
-                        InstanceFieldValue.of(
-                                InstanceDTO.createClassInstance(
-                                        TmpId.random().toString(),
-                                        TypeExpressions.getClassType(routingViewType.id()),
-                                        List.of(
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(routingViewType, "name"),
-                                                        PrimitiveFieldValue.createString("routing001")
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(routingViewType, "product"),
-                                                        ReferenceFieldValue.create(material)
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(routingViewType, "unit"),
-                                                        ReferenceFieldValue.create(unit)
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(routingViewType, "processes"),
-                                                        new ListFieldValue(
-                                                                null,
-                                                                true,
-                                                                List.of(
-                                                                        // create a RoutingProcess
-                                                                        InstanceFieldValue.of(
-                                                                                InstanceDTO.createClassInstance(
-                                                                                        TypeExpressions.getClassType(routingProcessViewType.id()),
-                                                                                        List.of(
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "processCode"),
-                                                                                                        PrimitiveFieldValue.createString("process1")
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "processDescription"),
-                                                                                                        PrimitiveFieldValue.createString("process1")
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "workCenter"),
-                                                                                                        ReferenceFieldValue.create(workCenter)
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "sequence"),
-                                                                                                        PrimitiveFieldValue.createLong(1L)
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "process"),
-                                                                                                        ReferenceFieldValue.create(process)
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "items"),
-                                                                                                        new ListFieldValue(
-                                                                                                                null,
-                                                                                                                true,
-                                                                                                                List.of()
-                                                                                                        )
-                                                                                                )
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                                )
-                                                        )
-                                                ),
-                                                InstanceFieldDTO.create(
-                                                        TestUtils.getFieldIdByCode(routingViewType, "successions"),
-                                                        new ListFieldValue(
-                                                                null,
-                                                                true,
-                                                                List.of()
-                                                        )
-                                                )
-                                        )
+        var routingKlass = getClassTypeByCode("tech.metavm.manufacturing.production.Routing");
+        var routingViewKlass = TestUtils.getViewKlass(routingKlass, typeManager);
+        var qcWorkCenter = "tech.metavm.manufacturing.production.WorkCenter";
+        var workCenterId = doInTransaction(() -> apiService.handleNewInstance(qcWorkCenter, List.of()));
+        var qcProcess = "tech.metavm.manufacturing.production.Process";
+        var processId = doInTransaction(() -> apiService.handleNewInstance(qcProcess, List.of("process1")));
+        var routingViewId = (String) doInTransaction(() -> apiService.saveInstance(
+                routingViewKlass.getCodeRequired(),
+                Map.of(
+                        "name", "routing001",
+                        "product", material.prefixedId(),
+                        "unit", unit.prefixedId(),
+                        "processes", List.of(
+                                Map.of(
+                                        "processCode", "process1",
+                                        "processDescription", "process1",
+                                        "sequence", 1,
+                                        "process", Constants.prefixId(processId),
+                                        "workCenter", Constants.prefixId(workCenterId),
+                                        "items", List.of()
                                 )
-                        )
+                        ),
+                        "successions", List.of()
                 )
-        )));
-
-        Assert.assertNotNull(routing.id());
+        ));
+        Assert.assertNotNull(routingViewId);
         // reload routing
-        var reloadedRoutingView = instanceManager.getDefaultView(routing.id()).instance();
+        var routingId = TestUtils.getSourceId(routingViewId);
+        var reloadedRoutingView = instanceManager.getDefaultView(routingId).instance();
         var viewId = (DefaultViewId) Id.parse(reloadedRoutingView.id());
-        Assert.assertEquals(viewId.getSourceId(), Id.parse(routing.id()));
-        var routingProcesses = (InstanceFieldValue) routing.getFieldValue(TestUtils.getFieldIdByCode(routingType, "processes"));
-        var routingProcess = ((InstanceFieldValue) TestUtils.getListElement(routingProcesses, 0)).getInstance();
-
-        var processListView = (InstanceFieldValue) reloadedRoutingView.getFieldValue(TestUtils.getFieldIdByCode(routingViewType, "processes"));
-        var itemView = ((InstanceFieldValue) TestUtils.getListElement(processListView, 0)).getInstance();
-        var successionListView = (InstanceFieldValue) reloadedRoutingView.getFieldValue(TestUtils.getFieldIdByCode(routingViewType, "successions"));
-
-        doInTransactionWithoutResult(() -> instanceManager.update(
-                InstanceDTO.createClassInstance(
-                        reloadedRoutingView.id(),
-                        TypeExpressions.getClassType(routingViewType.id()),
-                        List.of(
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(routingViewType, "name"),
-                                        PrimitiveFieldValue.createString("routing001")
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(routingViewType, "product"),
-                                        ReferenceFieldValue.create(material)
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(routingViewType, "unit"),
-                                        ReferenceFieldValue.create(unit)
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(routingViewType, "processes"),
-                                        new ListFieldValue(
-                                                processListView.getInstance().id(),
-                                                true,
-                                                List.of(
-                                                        InstanceFieldValue.of(
-                                                                itemView
-                                                        ),
-                                                        InstanceFieldValue.of(
-                                                                InstanceDTO.createClassInstance(
-                                                                        TmpId.random().toString(),
-                                                                        TypeExpressions.getClassType(routingProcessViewType.id()),
-                                                                        List.of(
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "processCode"),
-                                                                                        PrimitiveFieldValue.createString("process2")
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "processDescription"),
-                                                                                        PrimitiveFieldValue.createString("process2")
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "workCenter"),
-                                                                                        ReferenceFieldValue.create(workCenter)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "sequence"),
-                                                                                        PrimitiveFieldValue.createLong(1L)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "process"),
-                                                                                        ReferenceFieldValue.create(process)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "items"),
-                                                                                        new ListFieldValue(
-                                                                                                null,
-                                                                                                true,
-                                                                                                List.of()
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                                )
-                                                        )
-                                                )
-                                        )
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(routingViewType, "successions"),
-                                        new ListFieldValue(
-                                                successionListView.getInstance().id(),
-                                                true,
-                                                List.of()
-                                        )
+        Assert.assertEquals(viewId.getSourceId(), Id.parse(routingId));
+        var routing = instanceManager.get(routingId, 2).instance();
+        var routingProcess = routing.getInstance("processes").getElementInstance(0);
+        var processListView = reloadedRoutingView.getInstance("processes");
+        var itemView = processListView.getElementInstance(0);
+//        var successionListView = reloadedRoutingView.getInstance("successions");
+        DebugEnv.flag = true;
+        doInTransactionWithoutResult(() -> apiService.saveInstance(
+                routingViewKlass.getCodeRequired(),
+                Map.of(
+                        ApiService.KEY_ID, reloadedRoutingView.getIdRequired(),
+                        "name", "routing001",
+                        "product", material.prefixedId(),
+                        "unit", unit.prefixedId(),
+                        "processes", List.of(
+                                itemView.toJson(),
+                                Map.of(
+                                        "processCode", "process2",
+                                        "processDescription", "process2",
+                                        "sequence", 1,
+                                        "workCenter", Constants.prefixId(workCenterId),
+                                        "process", Constants.prefixId(processId),
+                                        "items", List.of()
                                 )
-                        )
+                        ),
+                        "successions", List.of()
                 )
+//                instanceManager.update(
+//                InstanceDTO.createClassInstance(
+//                        reloadedRoutingView.id(),
+//                        TypeExpressions.getClassType(routingViewType.id()),
+//                        List.of(
+//                                InstanceFieldDTO.create(
+//                                        TestUtils.getFieldIdByCode(routingViewType, "name"),
+//                                        PrimitiveFieldValue.createString("routing001")
+//                                ),
+//                                InstanceFieldDTO.create(
+//                                        TestUtils.getFieldIdByCode(routingViewType, "product"),
+//                                        ReferenceFieldValue.create(material)
+//                                ),
+//                                InstanceFieldDTO.create(
+//                                        TestUtils.getFieldIdByCode(routingViewType, "unit"),
+//                                        ReferenceFieldValue.create(unit)
+//                                ),
+//                                InstanceFieldDTO.create(
+//                                        TestUtils.getFieldIdByCode(routingViewType, "processes"),
+//                                        new ListFieldValue(
+//                                                processListView.id(),
+//                                                true,
+//                                                List.of(
+//                                                        InstanceFieldValue.of(
+//                                                                itemView
+//                                                        ),
+//                                                        InstanceFieldValue.of(
+//                                                                InstanceDTO.createClassInstance(
+//                                                                        TmpId.random().toString(),
+//                                                                        TypeExpressions.getClassType(routingProcessViewType.id()),
+//                                                                        List.of(
+//                                                                                InstanceFieldDTO.create(
+//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "processCode"),
+//                                                                                        PrimitiveFieldValue.createString("process2")
+//                                                                                ),
+//                                                                                InstanceFieldDTO.create(
+//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "processDescription"),
+//                                                                                        PrimitiveFieldValue.createString("process2")
+//                                                                                ),
+//                                                                                InstanceFieldDTO.create(
+//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "workCenter"),
+//                                                                                        ReferenceFieldValue.create(workCenterId)
+//                                                                                ),
+//                                                                                InstanceFieldDTO.create(
+//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "sequence"),
+//                                                                                        PrimitiveFieldValue.createLong(1L)
+//                                                                                ),
+//                                                                                InstanceFieldDTO.create(
+//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "process"),
+//                                                                                        ReferenceFieldValue.create(processId)
+//                                                                                ),
+//                                                                                InstanceFieldDTO.create(
+//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "items"),
+//                                                                                        new ListFieldValue(
+//                                                                                                null,
+//                                                                                                true,
+//                                                                                                List.of()
+//                                                                                        )
+//                                                                                )
+//                                                                        )
+//                                                                )
+//                                                        )
+//                                                )
+//                                        )
+//                                ),
+//                                InstanceFieldDTO.create(
+//                                        TestUtils.getFieldIdByCode(routingViewType, "successions"),
+//                                        new ListFieldValue(
+//                                                successionListView.id(),
+//                                                true,
+//                                                List.of()
+//                                        )
+//                                )
+//                        )
+//                )
         ));
         // assert that the update is successful
         var reloadedRoutingView2 = instanceManager.getDefaultView(routing.id()).instance();
-        var itemListView2 = (InstanceFieldValue) reloadedRoutingView2.getFieldValue(TestUtils.getFieldIdByCode(routingViewType, "processes"));
+        var itemListView2 = (InstanceFieldValue) reloadedRoutingView2.getFieldValue(TestUtils.getFieldIdByCode(routingViewKlass, "processes"));
         var itemView2 = ((InstanceFieldValue) TestUtils.getListElement(itemListView2, 0)).getInstance();
         var itemView3 = ((InstanceFieldValue) TestUtils.getListElement(itemListView2, 1)).getInstance();
         Assert.assertEquals(2, ((ListInstanceParam) itemListView2.getInstance().param()).elements().size());
-        Assert.assertEquals("process1", itemView2.getFieldValue(TestUtils.getFieldIdByCode(routingProcessViewType, "processCode")).getDisplayValue());
-        Assert.assertEquals("process2", itemView3.getFieldValue(TestUtils.getFieldIdByCode(routingProcessViewType, "processCode")).getDisplayValue());
+        Assert.assertEquals("process1", itemView2.getPrimitiveValue("processCode"));
+        Assert.assertEquals("process2", itemView3.getPrimitiveValue("processCode"));
 
         return new RoutingObjects(routing, routingProcess);
     }
@@ -907,189 +573,58 @@ public class ManufacturingCompileTest extends CompilerTestBase {
     private void processBOM(InstanceDTO material, InstanceDTO unit, InstanceDTO routing, InstanceDTO routingProcess,
                             TypeDTO feedTypeType, TypeDTO pickMethodType, TypeDTO generalStateType, TypeDTO qualityInspectionStateType) {
         var bomKlass = getClassTypeByCode("tech.metavm.manufacturing.production.BOM");
-        var bomDefaultMapping = TestUtils.getDefaultMapping(bomKlass);
-        var bomViewKlass = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(bomDefaultMapping.targetType()), false)).type();
-
-        var componentMaterialType = getClassTypeByCode("tech.metavm.manufacturing.production.ComponentMaterial");
-        var componentMaterialViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultViewKlassId(componentMaterialType), false)).type();
-
-        var componentMaterialItemType = getClassTypeByCode("tech.metavm.manufacturing.production.ComponentMaterialItem");
-        var componentMaterialItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultViewKlassId(componentMaterialItemType), false)).type();
-
+        var bomViewKlass = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultViewKlassId(bomKlass), false)).type();
         var directFeedType = TestUtils.getEnumConstantByName(feedTypeType, "DIRECT");
         var onDemandPickMethod = TestUtils.getEnumConstantByName(pickMethodType, "ON_DEMAND");
-
         var enabledGeneralState = TestUtils.getEnumConstantByName(generalStateType, "ENABLED");
         var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
-
-        var bomView = doInTransaction(() -> instanceManager.create(
-                InstanceDTO.createClassInstance(
-                        null,
-                        TypeExpressions.getClassType(bomViewKlass.id()),
-                        new ObjectMappingRefDTO(
-                                TypeExpressions.getClassType(bomKlass.id()),
-                                bomDefaultMapping.id()
-                        ),
-                        List.of(
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(bomViewKlass, "product"),
-                                        ReferenceFieldValue.create(material)
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(bomViewKlass, "unit"),
-                                        ReferenceFieldValue.create(unit)
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(bomViewKlass, "routing"),
-                                        ReferenceFieldValue.create(routing)
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(bomViewKlass, "reportingProcess"),
-                                        ReferenceFieldValue.create(routingProcess)
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(bomViewKlass, "state"),
-                                        ReferenceFieldValue.create(enabledGeneralState)
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(bomViewKlass, "inbound"),
-                                        PrimitiveFieldValue.createBoolean(true)
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(bomViewKlass, "autoInbound"),
-                                        PrimitiveFieldValue.createBoolean(true)
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(bomViewKlass, "components"),
-                                        new ListFieldValue(
-                                                null,
-                                                true,
-                                                List.of(
-                                                        // create a ComponentMaterial
-                                                        InstanceFieldValue.of(
-                                                                InstanceDTO.createClassInstance(
-                                                                        TypeExpressions.getClassType(componentMaterialViewType.id()),
-                                                                        List.of(
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "sequence"),
-                                                                                        PrimitiveFieldValue.createLong(1L)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "material"),
-                                                                                        ReferenceFieldValue.create(material)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "unit"),
-                                                                                        ReferenceFieldValue.create(unit)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "numerator"),
-                                                                                        PrimitiveFieldValue.createLong(1L)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "denominator"),
-                                                                                        PrimitiveFieldValue.createLong(1L)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "attritionRate"),
-                                                                                        PrimitiveFieldValue.createDouble(0.0)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "version"),
-                                                                                        PrimitiveFieldValue.createNull()
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "pickMethod"),
-                                                                                        ReferenceFieldValue.create(onDemandPickMethod)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "routingSpecified"),
-                                                                                        PrimitiveFieldValue.createBoolean(false)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "process"),
-                                                                                        ReferenceFieldValue.create(routingProcess)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "qualityInspectionState"),
-                                                                                        ReferenceFieldValue.create(qualifiedInspectionState)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "feedType"),
-                                                                                        ReferenceFieldValue.create(directFeedType)
-                                                                                ),
-                                                                                InstanceFieldDTO.create(
-                                                                                        TestUtils.getFieldIdByCode(componentMaterialViewType, "items"),
-                                                                                        new ListFieldValue(
-                                                                                                null,
-                                                                                                true,
-                                                                                                List.of(
-                                                                                                        // create a ComponentMaterialItem
-                                                                                                        InstanceFieldValue.of(
-                                                                                                                InstanceDTO.createClassInstance(
-                                                                                                                        TypeExpressions.getClassType(componentMaterialItemViewType.id()),
-                                                                                                                        List.of(
-                                                                                                                                InstanceFieldDTO.create(
-                                                                                                                                        TestUtils.getFieldIdByCode(componentMaterialItemViewType, "sequence"),
-                                                                                                                                        PrimitiveFieldValue.createLong(1L)
-                                                                                                                                ),
-                                                                                                                                InstanceFieldDTO.create(
-                                                                                                                                        TestUtils.getFieldIdByCode(componentMaterialItemViewType, "numerator"),
-                                                                                                                                        PrimitiveFieldValue.createLong(1L)
-                                                                                                                                ),
-                                                                                                                                InstanceFieldDTO.create(
-                                                                                                                                        TestUtils.getFieldIdByCode(componentMaterialItemViewType, "denominator"),
-                                                                                                                                        PrimitiveFieldValue.createLong(1L)
-                                                                                                                                ),
-                                                                                                                                InstanceFieldDTO.create(
-                                                                                                                                        TestUtils.getFieldIdByCode(componentMaterialItemViewType, "process"),
-                                                                                                                                        ReferenceFieldValue.create(routingProcess)
-                                                                                                                                ),
-                                                                                                                                InstanceFieldDTO.create(
-                                                                                                                                        TestUtils.getFieldIdByCode(componentMaterialItemViewType, "qualityInspectionState"),
-                                                                                                                                        ReferenceFieldValue.create(qualifiedInspectionState)
-                                                                                                                                ),
-                                                                                                                                InstanceFieldDTO.create(
-                                                                                                                                        TestUtils.getFieldIdByCode(componentMaterialItemViewType, "feedType"),
-                                                                                                                                        ReferenceFieldValue.create(directFeedType)
-                                                                                                                                )
-                                                                                                                        )
-                                                                                                                )
-                                                                                                        )
-                                                                                                )
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                                )
-                                                        )
+        var bomViewId = doInTransaction(() -> apiService.saveInstance(
+                bomViewKlass.getCodeRequired(),
+                Map.of(
+                        "product", material.prefixedId(),
+                        "unit", unit.prefixedId(),
+                        "routing", routing.prefixedId(),
+                        "reportingProcess", routingProcess.prefixedId(),
+                        "state", enabledGeneralState.prefixedId(),
+                        "inbound", true,
+                        "autoInbound", true,
+                        "secondaryOutputs", List.of(),
+                        "components", List.of(
+                                Map.ofEntries(
+                                        Map.entry("sequence", 1),
+                                        Map.entry("material", material.prefixedId()),
+                                        Map.entry("unit", unit.prefixedId()),
+                                        Map.entry("numerator", 1),
+                                        Map.entry("denominator", 1),
+                                        Map.entry("attritionRate", 0.0),
+                                        Map.entry("pickMethod", onDemandPickMethod.prefixedId()),
+                                        Map.entry("routingSpecified", false),
+                                        Map.entry("process", routingProcess.prefixedId()),
+                                        Map.entry("qualityInspectionState", qualifiedInspectionState.prefixedId()),
+                                        Map.entry("feedType", directFeedType.prefixedId()),
+                                        Map.entry("items", List.of(
+                                                Map.of(
+                                                        "sequence", 1,
+                                                        "numerator", 1,
+                                                        "denominator", 1,
+                                                        "process", routingProcess.prefixedId(),
+                                                        "qualityInspectionState", qualifiedInspectionState.prefixedId(),
+                                                        "feedType", directFeedType.prefixedId()
                                                 )
-                                        )
-                                ),
-                                InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(bomViewKlass, "secondaryOutputs"),
-                                        new ListFieldValue(
-                                                null,
-                                                true,
-                                                List.of()
-                                        )
+                                        ))
                                 )
                         )
                 )
         ));
-
+        var bomId = TestUtils.getSourceId(bomViewId);
         // create production order
-        var bomId = ((DefaultViewId) Id.parse(bomView)).getSourceId().toString();
-        var createProductionOrderMethodId = TestUtils.getMethodRefByCode(bomKlass, "createProductionOrder");
         long startTime = System.currentTimeMillis();
-        var productionOrder = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                createProductionOrderMethodId,
+        var productionOrderId = (String) doInTransaction(() -> apiService.handleInstanceMethodCall(
                 bomId,
-                List.of(
-                        PrimitiveFieldValue.createTime(startTime),
-                        PrimitiveFieldValue.createTime(startTime + 3 * 24 * 60 * 60 * 1000),
-                        PrimitiveFieldValue.createLong(10)
-                )
-        )));
+                "createProductionOrder",
+                List.of(startTime, startTime + 3 * 24 * 60 * 60 * 1000, 10))
+        );
+        var productionOrder = instanceManager.get(productionOrderId, 2).instance();
         var productionOrderType = getClassTypeByCode("tech.metavm.manufacturing.production.ProductionOrder");
         var orderStartTimeFieldId = TestUtils.getFieldIdByCode(productionOrderType, "plannedStartTime");
         var orderIngredientsFieldId = TestUtils.getFieldIdByCode(productionOrderType, "ingredients");

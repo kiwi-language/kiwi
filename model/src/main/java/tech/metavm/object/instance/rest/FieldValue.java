@@ -59,4 +59,6 @@ public abstract class FieldValue {
         throw new UnsupportedOperationException();
     }
 
+    public abstract Object toJson();
+
 }

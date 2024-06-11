@@ -1,8 +1,8 @@
 package tech.metavm.manufacturing.storage;
 
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.ValueStruct;
 
-@EntityType(ephemeral = true)
+@ValueStruct
 public record BySpecInboundRequestItem(
         int qrCodeAmount,
         long inboundAmount) {

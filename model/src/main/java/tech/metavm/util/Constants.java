@@ -55,7 +55,7 @@ public class Constants {
         return str.substring(CONSTANT_ID_PREFIX.length());
     }
 
-    public static String addConstantIdPrefix(String str) {
+    public static String prefixId(String str) {
         return CONSTANT_ID_PREFIX + str;
     }
 

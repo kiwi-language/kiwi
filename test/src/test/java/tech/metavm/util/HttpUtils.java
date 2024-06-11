@@ -55,7 +55,7 @@ public class HttpUtils {
                     .uri(uri)
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/json")
-                    .header("AppId", Long.toString(appId))
+                    .header(Headers.APP_ID, Long.toString(appId))
                     .DELETE()
                     .build();
             var respStr = client.send(httpRequest, HttpResponse.BodyHandlers.ofString()).body();
@@ -81,7 +81,7 @@ public class HttpUtils {
                     .uri(uri)
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/json")
-                    .header("AppId", Long.toString(appId))
+                    .header(Headers.APP_ID, Long.toString(appId))
                     .POST(
                             HttpRequest.BodyPublishers.ofString(NncUtils.toJSONString(request))
                     )
