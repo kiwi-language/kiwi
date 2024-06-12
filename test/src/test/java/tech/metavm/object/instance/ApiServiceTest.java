@@ -1,8 +1,7 @@
-package tech.metavm.object.instance.rest;
+package tech.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.util.BootstrapUtils;
 import tech.metavm.util.Constants;

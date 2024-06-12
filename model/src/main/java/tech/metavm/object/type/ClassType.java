@@ -202,7 +202,7 @@ public class ClassType extends Type implements ISubstitutor {
 
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
-        var id = getTypeDefExpr == null ? Constants.CONSTANT_ID_PREFIX + serializeContext.getStringId(klass) : getTypeDefExpr.apply(klass);
+        var id = getTypeDefExpr == null ? Constants.ID_PREFIX + serializeContext.getStringId(klass) : getTypeDefExpr.apply(klass);
         var tag = klass.getTag();
         return typeArguments.isEmpty() ? (tag == 0 ? id : id + ":" + tag)
                 : id + "<" + NncUtils.join(typeArguments, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ">";

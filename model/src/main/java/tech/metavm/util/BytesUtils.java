@@ -1,5 +1,6 @@
 package tech.metavm.util;
 
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParam;
@@ -119,6 +120,16 @@ public class BytesUtils {
         @Override
         protected void writeTree(TreeWriter treeWriter) {
 
+        }
+
+        @Override
+        public boolean isMutable() {
+            return false;
+        }
+
+        @Override
+        public Object toJson(IEntityContext context) {
+            throw new UnsupportedOperationException();
         }
     }
 

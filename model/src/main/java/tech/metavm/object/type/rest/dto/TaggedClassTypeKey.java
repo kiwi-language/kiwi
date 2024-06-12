@@ -20,7 +20,7 @@ public record TaggedClassTypeKey(Id id, int tag) implements TypeKey {
 
     @Override
     public String toTypeExpression() {
-        return Constants.CONSTANT_ID_PREFIX + id + ":" + tag;
+        return Constants.ID_PREFIX + id + ":" + tag;
     }
 
     @Override

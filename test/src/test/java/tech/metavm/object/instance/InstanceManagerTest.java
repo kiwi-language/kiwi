@@ -103,10 +103,10 @@ public class InstanceManagerTest extends TestCase {
                 new LoadInstancesByPathsRequest(
                         null,
                         List.of(
-                                Constants.CONSTANT_ID_PREFIX + id + ".bar",
-                                Constants.CONSTANT_ID_PREFIX + id + ".bar.code",
-                                Constants.CONSTANT_ID_PREFIX + id + ".bazList.*.bars.0.code",
-                                Constants.CONSTANT_ID_PREFIX + id + ".bazList.*.bars.1.code"
+                                Constants.ID_PREFIX + id + ".bar",
+                                Constants.ID_PREFIX + id + ".bar.code",
+                                Constants.ID_PREFIX + id + ".bazList.*.bars.0.code",
+                                Constants.ID_PREFIX + id + ".bazList.*.bars.1.code"
                         )
                 )
         );
@@ -215,7 +215,7 @@ public class InstanceManagerTest extends TestCase {
         var testMethodId = TestUtils.getMethodByCode(baseType, "test").id();
         var subId = TestUtils.doInTransaction(() -> instanceManager.create(
                 InstanceDTO.createClassInstance(
-                        Constants.CONSTANT_ID_PREFIX + subType.id(),
+                        Constants.ID_PREFIX + subType.id(),
                         List.of()
                 )
         ));

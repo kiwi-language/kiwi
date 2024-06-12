@@ -283,7 +283,7 @@ public class InstanceManager extends EntityContextFactoryAware {
             Set<Instance> visited = new IdentitySet<>();
             List<InstanceDTO> result = new ArrayList<>();
             for (Path path : paths) {
-                var instanceId = Id.parse(path.firstItem().substring(Constants.CONSTANT_ID_PREFIX.length()));
+                var instanceId = Id.parse(path.firstItem().substring(Constants.ID_PREFIX.length()));
                 Instance instance = context.get(instanceId);
                 InstanceNode<?> node = instance2node.get(instance);
                 List<Instance> values = node.getFetchResults(instance, path.subPath());
@@ -301,7 +301,7 @@ public class InstanceManager extends EntityContextFactoryAware {
     private Map<Instance, InstanceNode<?>> buildObjectTree(List<Path> paths, IInstanceContext context) {
         Map<Instance, PathTree> pathTreeMap = new HashMap<>();
         for (Path path : paths) {
-            Instance instance = context.get(Id.parse(path.firstItem().substring(Constants.CONSTANT_ID_PREFIX.length())));
+            Instance instance = context.get(Id.parse(path.firstItem().substring(Constants.ID_PREFIX.length())));
             PathTree pathTree = pathTreeMap.computeIfAbsent(instance, k -> new PathTree(k + ""));
             if (path.hasSubPath()) {
                 pathTree.addPath(path.subPath());

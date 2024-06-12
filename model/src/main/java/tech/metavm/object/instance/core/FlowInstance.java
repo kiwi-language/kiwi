@@ -50,4 +50,5 @@ public class FlowInstance extends FunctionInstance {
     public <R> R accept(InstanceVisitor<R> visitor) {
         return visitor.visitFlowInstance(this);
     }
+
 }

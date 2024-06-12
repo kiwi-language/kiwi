@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.natives.CallContext;
 import tech.metavm.flow.FlowExecResult;
 import tech.metavm.object.instance.rest.FieldValue;
@@ -65,5 +66,15 @@ public abstract class FunctionInstance extends Instance {
     @Override
     protected void writeTree(TreeWriter treeWriter) {
         treeWriter.writeLine("function");
+    }
+
+    @Override
+    public Object toJson(IEntityContext context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isMutable() {
+        return false;
     }
 }

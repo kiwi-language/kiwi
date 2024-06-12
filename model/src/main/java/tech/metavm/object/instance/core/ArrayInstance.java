@@ -2,6 +2,7 @@ package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.object.instance.ArrayListener;
 import tech.metavm.object.instance.rest.ArrayInstanceParam;
@@ -450,5 +451,16 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
                 treeWriter.writeLine(element.getTitle());
         }
         treeWriter.deIndent();
+    }
+
+    public List<Object> toJson(IEntityContext context) {
+        var list = new ArrayList<>();
+        forEach(e -> list.add(e.toJson(context)));
+        return list;
+    }
+
+    @Override
+    public boolean isMutable() {
+        return getType().getKind() != ArrayKind.VALUE;
     }
 }

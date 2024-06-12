@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.object.instance.ApiService;
 import tech.metavm.user.LoginService;
 import tech.metavm.util.*;
 
@@ -41,7 +42,7 @@ public class ApiController {
                     throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
                 var methodCode = path.substring(idx + 1);
                 var qualifier = path.substring(0, idx);
-                if (qualifier.startsWith(Constants.CONSTANT_ID_PREFIX)) {
+                if (qualifier.startsWith(Constants.ID_PREFIX)) {
                     var id = Constants.removeConstantIdPrefix(qualifier);
                     return apiService.handleInstanceMethodCall(id, methodCode, (List<Object>) requestBody);
                 } else if (methodCode.equals("new"))

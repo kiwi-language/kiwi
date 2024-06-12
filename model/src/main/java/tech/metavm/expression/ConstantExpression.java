@@ -2,7 +2,6 @@ package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
@@ -39,9 +38,9 @@ public class ConstantExpression extends Expression {
         }
         else if(value instanceof DurableInstance d){
             if(relaxedCheck)
-                return Constants.CONSTANT_ID_PREFIX + NncUtils.orElse(d.getStringId(), "<uninitializedId>");
+                return Constants.ID_PREFIX + NncUtils.orElse(d.getStringId(), "<uninitializedId>");
             else
-                return Constants.CONSTANT_ID_PREFIX + NncUtils.requireNonNull(d.getStringId());
+                return Constants.ID_PREFIX + NncUtils.requireNonNull(d.getStringId());
         }
         else
             throw new InternalException("Invalid instance " + value);

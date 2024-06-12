@@ -38,7 +38,7 @@ public class MainTest extends CompilerTestBase {
             var productNormalState = TestUtils.getEnumConstantByName(productStateType, "NORMAL");
             var productType = getClassTypeByCode("tech.metavm.lab.shopping.AstProduct");
             var product = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
-                    Constants.CONSTANT_ID_PREFIX + productType.id(),
+                    Constants.ID_PREFIX + productType.id(),
                     List.of(
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(productType, "title"),

@@ -51,4 +51,9 @@ public class ThrowableNative extends NativeBase {
         return messageField.get(instance);
     }
 
+    public static String getMessage(ClassInstance exception) {
+        var n = new ThrowableNative(exception);
+        return ((StringInstance) n.getMessage()).getValue();
+    }
+
 }

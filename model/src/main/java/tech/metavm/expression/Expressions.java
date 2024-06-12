@@ -342,7 +342,7 @@ public class Expressions {
             }
         }
         if (fieldValue instanceof ReferenceFieldValue refFieldValue) {
-            return Constants.CONSTANT_ID_PREFIX + refFieldValue.getId();
+            return Constants.ID_PREFIX + refFieldValue.getId();
         }
         if (fieldValue instanceof ArrayFieldValue arrayFieldValue) {
             return "[" + NncUtils.join(arrayFieldValue.getElements(), Expressions::constantToExpression) + "]";
@@ -366,8 +366,8 @@ public class Expressions {
     }
 
     public static String parseIdFromConstantVar(String var) {
-        if (var.startsWith(Constants.CONSTANT_ID_PREFIX)) {
-            return var.substring(Constants.CONSTANT_ID_PREFIX.length());
+        if (var.startsWith(Constants.ID_PREFIX)) {
+            return var.substring(Constants.ID_PREFIX.length());
         }
         throw new InternalException("Path item '" + var + "' does not represent an identity");
     }

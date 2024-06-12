@@ -4,10 +4,12 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.flow.Flow;
+import tech.metavm.flow.Flows;
 import tech.metavm.flow.Method;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.rest.*;
@@ -565,6 +567,29 @@ public class ClassInstance extends DurableInstance {
         return field(klass.tryGetFieldByName(fieldName)).getInstanceArray();
     }
 
+    @Override
+    public Object toJson(IEntityContext context) {
+        if(isList()) {
+            var listNative = new ListNative(this);
+            var array = listNative.toArray();
+            var list = new ArrayList<>();
+            array.forEach(e -> list.add(e.toJson( context)));
+            return list;
+        }
+        else {
+            var map = new HashMap<String, Object>();
+            forEachField((f, v) -> {
+                if(f.isPublic())
+                    map.put(f.getCode(), v.toJson(context));
+            });
+            getKlass().forEachMethod(m -> {
+                if(m.isGetter())
+                    map.put(m.getPropertyName(), Flows.invokeGetter(m, this, context));
+            });
+            return map;
+        }
+    }
+
     private void ensureFieldInitialized(Field field) {
         if (fields.get(InstanceField::getField, field) != null) {
             return;
@@ -591,5 +616,10 @@ public class ClassInstance extends DurableInstance {
     public Klass getKlass() {
         ensureLoaded();
         return klass;
+    }
+
+    @Override
+    public boolean isMutable() {
+        return getKlass().getKind() != ClassKind.VALUE;
     }
 }

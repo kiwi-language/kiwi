@@ -77,7 +77,7 @@ public class VariableType extends Type implements IVariableType {
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
         if(getTypeDefExpr == null)
-            return "?" + Constants.CONSTANT_ID_PREFIX + serializeContext.getStringId(variable);
+            return "?" + Constants.ID_PREFIX + serializeContext.getStringId(variable);
         else
             return getTypeDefExpr.apply(variable);
     }

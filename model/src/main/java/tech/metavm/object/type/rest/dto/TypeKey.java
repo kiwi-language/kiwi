@@ -67,7 +67,7 @@ public interface TypeKey extends TypeOrTypeKey {
         }
         if (ctx.classType() != null) {
             var classType = ctx.classType();
-            var id = Id.parse(classType.qualifiedName().getText().substring(Constants.CONSTANT_ID_PREFIX.length()));
+            var id = Id.parse(classType.qualifiedName().getText().substring(Constants.ID_PREFIX.length()));
             if(classType.typeArguments() != null)
                 return new ParameterizedTypeKey(id, NncUtils.map(classType.typeArguments().typeList().type(), TypeKey::fromTypeContext));
             else if(classType.DECIMAL_LITERAL() != null)
@@ -76,7 +76,7 @@ public interface TypeKey extends TypeOrTypeKey {
                 return new ClassTypeKey(id);
         }
         if(ctx.variableType() != null)
-            return new VariableTypeKey(Id.parse(ctx.variableType().IDENTIFIER().getText().substring(Constants.CONSTANT_ID_PREFIX.length())));
+            return new VariableTypeKey(Id.parse(ctx.variableType().IDENTIFIER().getText().substring(Constants.ID_PREFIX.length())));
         if (ctx.elementType != null) {
             var kind = ctx.arrayKind();
             return new ArrayTypeKey(parseArrayKind(kind).code(), fromTypeContext(ctx.elementType));

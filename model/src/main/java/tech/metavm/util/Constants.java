@@ -31,7 +31,7 @@ public class Constants {
     public static final String ROOT_ADMIN_LOGIN_NAME = "root";
     public static final String PLATFORM_ADMIN_LOGIN_NAME = "platform";
     public static final String PLATFORM_ADMIN_PASSWORD = "123456";
-    public static final String CONSTANT_ID_PREFIX = "$$";
+    public static final String ID_PREFIX = "$$";
     public static final String CONSTANT_TMP_ID_PREFIX = "$_$";
 
     public static final int BATCH_SIZE = 3000;
@@ -51,12 +51,12 @@ public class Constants {
     }
 
     public static String removeConstantIdPrefix(String str) {
-        assert str.startsWith(CONSTANT_ID_PREFIX);
-        return str.substring(CONSTANT_ID_PREFIX.length());
+        assert str.startsWith(ID_PREFIX);
+        return str.substring(ID_PREFIX.length());
     }
 
     public static String prefixId(String str) {
-        return CONSTANT_ID_PREFIX + str;
+        return ID_PREFIX + str;
     }
 
 }

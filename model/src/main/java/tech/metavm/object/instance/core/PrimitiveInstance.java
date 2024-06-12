@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveInstanceParam;
 import tech.metavm.object.type.PrimitiveType;
@@ -108,5 +109,15 @@ public abstract class PrimitiveInstance extends Instance implements Comparable<P
     @Override
     protected void writeTree(TreeWriter treeWriter) {
         treeWriter.writeLine(Objects.toString(getValue()));
+    }
+
+    @Override
+    public Object toJson(IEntityContext context) {
+        return getValue();
+    }
+
+    @Override
+    public boolean isMutable() {
+        return false;
     }
 }

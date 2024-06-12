@@ -152,8 +152,8 @@ public class ExpressionParser {
     private StaticPropertyExpression parseStaticField(MetaVMParser.ExpressionContext expression) {
         var klass = ((ClassType) parseTypeType(expression.typeType(0))).resolve();
         String identifier = expression.identifier().IDENTIFIER().getText();
-        Field field = identifier.startsWith(Constants.CONSTANT_ID_PREFIX) ?
-                klass.getField(Id.parse(identifier.substring(Constants.CONSTANT_ID_PREFIX.length()))) :
+        Field field = identifier.startsWith(Constants.ID_PREFIX) ?
+                klass.getField(Id.parse(identifier.substring(Constants.ID_PREFIX.length()))) :
                 klass.getFieldByName(identifier);
         return new StaticPropertyExpression(field.getRef());
     }
@@ -215,9 +215,9 @@ public class ExpressionParser {
             var identifier = classType.typeIdentifier();
             if (identifier.IDENTIFIER() != null) {
                 String name = identifier.IDENTIFIER().getText();
-                if (name.startsWith(Constants.CONSTANT_ID_PREFIX)) {
+                if (name.startsWith(Constants.ID_PREFIX)) {
                     return context.getTypeDefProvider().getKlass(
-                            Id.parse(name.substring(Constants.CONSTANT_ID_PREFIX.length()))
+                            Id.parse(name.substring(Constants.ID_PREFIX.length()))
                     ).getType();
                 } else {
                     String className = classType.typeArguments().isEmpty() ? name :
@@ -269,9 +269,9 @@ public class ExpressionParser {
     private Expression parseIdentifier(MetaVMParser.IdentifierContext identifier) {
         if (identifier.IDENTIFIER() != null) {
             String text = identifier.IDENTIFIER().getText();
-            if (text.startsWith(Constants.CONSTANT_ID_PREFIX)) {
+            if (text.startsWith(Constants.ID_PREFIX)) {
                 return new ConstantExpression(context.getInstanceProvider().get(
-                        Id.parse(text.substring(Constants.CONSTANT_ID_PREFIX.length()))));
+                        Id.parse(text.substring(Constants.ID_PREFIX.length()))));
             } else {
                 return new VariableExpression(identifier.IDENTIFIER().getText());
             }

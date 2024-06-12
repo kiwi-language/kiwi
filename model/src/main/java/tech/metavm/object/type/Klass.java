@@ -1897,5 +1897,21 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             return null;
     }
 
+    public Method findGetterByPropertyName(String propertyName) {
+        for (Method method : getAllMethods()) {
+            if(method.isGetter() && method.getPropertyName().equals(propertyName))
+                return method;
+        }
+        return null;
+    }
+
+    public Method findSetterByPropertyName(String propertyName) {
+        for (Method method : getAllMethods()) {
+            if(method.isSetter() && method.getPropertyName().equals(propertyName))
+                return method;
+        }
+        return null;
+    }
+
 }
 

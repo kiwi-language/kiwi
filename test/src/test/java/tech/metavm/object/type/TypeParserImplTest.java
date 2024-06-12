@@ -26,7 +26,7 @@ public class TypeParserImplTest extends TestCase {
         var testMethod = MethodBuilder.newBuilder(fooKlass, "test", "test").build();
         TestUtils.initEntityIds(fooKlass);
         var methodRef = TypeParser.parseMethodRef(
-                String.format("%s.%s", fooKlass.getType().toExpression(), Constants.CONSTANT_ID_PREFIX + testMethod.getStringId()),
+                String.format("%s.%s", fooKlass.getType().toExpression(), Constants.ID_PREFIX + testMethod.getStringId()),
                 id -> {
                     if (fooKlass.idEquals(id))
                         return fooKlass;

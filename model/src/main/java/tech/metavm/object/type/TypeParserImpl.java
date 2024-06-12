@@ -77,7 +77,7 @@ public class TypeParserImpl implements TypeParser {
 
     private MethodRef parseMethodRef(tech.metavm.object.type.antlr.TypeParser.MethodRefContext ctx) {
         var classType = parseClassType(ctx.classType());
-        var rawMethod = classType.getKlass().getMethod(Id.parse(ctx.IDENTIFIER().getText().substring(Constants.CONSTANT_ID_PREFIX.length())));
+        var rawMethod = classType.getKlass().getMethod(Id.parse(ctx.IDENTIFIER().getText().substring(Constants.ID_PREFIX.length())));
         List<Type> typeArgs = ctx.typeArguments() != null ? parseTypeList(ctx.typeArguments().typeList()) : List.of();
         return new MethodRef(classType, rawMethod, typeArgs);
     }
@@ -142,8 +142,8 @@ public class TypeParserImpl implements TypeParser {
     }
 
     private TypeDef getTypeDef(String name) {
-        if (name.startsWith(Constants.CONSTANT_ID_PREFIX)) {
-            var id = name.substring(Constants.CONSTANT_ID_PREFIX.length());
+        if (name.startsWith(Constants.ID_PREFIX)) {
+            var id = name.substring(Constants.ID_PREFIX.length());
             return typeDefProvider.getTypeDef(Id.parse(id));
         } else
             throw new InternalException("Invalid id: " + name);

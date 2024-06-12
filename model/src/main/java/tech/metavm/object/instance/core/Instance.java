@@ -2,6 +2,7 @@ package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.object.instance.rest.FieldValue;
@@ -174,5 +175,9 @@ public abstract class Instance {
     }
 
     protected abstract void writeTree(TreeWriter treeWriter);
+
+    public abstract  boolean isMutable();
+
+    public abstract Object toJson(IEntityContext context);
 
 }

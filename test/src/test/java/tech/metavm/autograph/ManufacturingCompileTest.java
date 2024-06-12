@@ -1,6 +1,7 @@
 package tech.metavm.autograph;
 
 import org.junit.Assert;
+import tech.metavm.object.instance.ApiService;
 import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.*;
@@ -431,8 +432,8 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var workCenterId = doInTransaction(() -> apiService.handleNewInstance(qcWorkCenter, List.of()));
         var qcProcess = "tech.metavm.manufacturing.production.Process";
         var processId = doInTransaction(() -> apiService.handleNewInstance(qcProcess, List.of("process1")));
-        var routingViewId = (String) doInTransaction(() -> apiService.saveInstance(
-                routingViewKlass.getCodeRequired(),
+        var routingId = (String) doInTransaction(() -> apiService.saveInstance(
+                routingKlass.getCodeRequired(),
                 Map.of(
                         "name", "routing001",
                         "product", material.prefixedId(),
@@ -450,27 +451,27 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                         "successions", List.of()
                 )
         ));
-        Assert.assertNotNull(routingViewId);
+        Assert.assertNotNull(routingId);
         // reload routing
-        var routingId = TestUtils.getSourceId(routingViewId);
-        var reloadedRoutingView = instanceManager.getDefaultView(routingId).instance();
-        var viewId = (DefaultViewId) Id.parse(reloadedRoutingView.id());
-        Assert.assertEquals(viewId.getSourceId(), Id.parse(routingId));
+//        var routingId = TestUtils.getSourceId(routingViewId);
+//        var reloadedRoutingView = instanceManager.getDefaultView(routingId).instance();
+//        var viewId = (DefaultViewId) Id.parse(reloadedRoutingView.id());
+//        Assert.assertEquals(viewId.getSourceId(), Id.parse(routingId));
         var routing = instanceManager.get(routingId, 2).instance();
         var routingProcess = routing.getInstance("processes").getElementInstance(0);
-        var processListView = reloadedRoutingView.getInstance("processes");
-        var itemView = processListView.getElementInstance(0);
+//        var processListView = reloadedRoutingView.getInstance("processes");
+//        var itemView = processListView.getElementInstance(0);
 //        var successionListView = reloadedRoutingView.getInstance("successions");
         DebugEnv.flag = true;
         doInTransactionWithoutResult(() -> apiService.saveInstance(
-                routingViewKlass.getCodeRequired(),
+                routingKlass.getCodeRequired(),
                 Map.of(
-                        ApiService.KEY_ID, reloadedRoutingView.getIdRequired(),
+                        ApiService.KEY_ID, routing.getIdRequired(),
                         "name", "routing001",
                         "product", material.prefixedId(),
                         "unit", unit.prefixedId(),
                         "processes", List.of(
-                                itemView.toJson(),
+                                routingProcess.toJson(),
                                 Map.of(
                                         "processCode", "process2",
                                         "processDescription", "process2",
@@ -482,81 +483,6 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                         ),
                         "successions", List.of()
                 )
-//                instanceManager.update(
-//                InstanceDTO.createClassInstance(
-//                        reloadedRoutingView.id(),
-//                        TypeExpressions.getClassType(routingViewType.id()),
-//                        List.of(
-//                                InstanceFieldDTO.create(
-//                                        TestUtils.getFieldIdByCode(routingViewType, "name"),
-//                                        PrimitiveFieldValue.createString("routing001")
-//                                ),
-//                                InstanceFieldDTO.create(
-//                                        TestUtils.getFieldIdByCode(routingViewType, "product"),
-//                                        ReferenceFieldValue.create(material)
-//                                ),
-//                                InstanceFieldDTO.create(
-//                                        TestUtils.getFieldIdByCode(routingViewType, "unit"),
-//                                        ReferenceFieldValue.create(unit)
-//                                ),
-//                                InstanceFieldDTO.create(
-//                                        TestUtils.getFieldIdByCode(routingViewType, "processes"),
-//                                        new ListFieldValue(
-//                                                processListView.id(),
-//                                                true,
-//                                                List.of(
-//                                                        InstanceFieldValue.of(
-//                                                                itemView
-//                                                        ),
-//                                                        InstanceFieldValue.of(
-//                                                                InstanceDTO.createClassInstance(
-//                                                                        TmpId.random().toString(),
-//                                                                        TypeExpressions.getClassType(routingProcessViewType.id()),
-//                                                                        List.of(
-//                                                                                InstanceFieldDTO.create(
-//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "processCode"),
-//                                                                                        PrimitiveFieldValue.createString("process2")
-//                                                                                ),
-//                                                                                InstanceFieldDTO.create(
-//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "processDescription"),
-//                                                                                        PrimitiveFieldValue.createString("process2")
-//                                                                                ),
-//                                                                                InstanceFieldDTO.create(
-//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "workCenter"),
-//                                                                                        ReferenceFieldValue.create(workCenterId)
-//                                                                                ),
-//                                                                                InstanceFieldDTO.create(
-//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "sequence"),
-//                                                                                        PrimitiveFieldValue.createLong(1L)
-//                                                                                ),
-//                                                                                InstanceFieldDTO.create(
-//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "process"),
-//                                                                                        ReferenceFieldValue.create(processId)
-//                                                                                ),
-//                                                                                InstanceFieldDTO.create(
-//                                                                                        TestUtils.getFieldIdByCode(routingProcessViewType, "items"),
-//                                                                                        new ListFieldValue(
-//                                                                                                null,
-//                                                                                                true,
-//                                                                                                List.of()
-//                                                                                        )
-//                                                                                )
-//                                                                        )
-//                                                                )
-//                                                        )
-//                                                )
-//                                        )
-//                                ),
-//                                InstanceFieldDTO.create(
-//                                        TestUtils.getFieldIdByCode(routingViewType, "successions"),
-//                                        new ListFieldValue(
-//                                                successionListView.id(),
-//                                                true,
-//                                                List.of()
-//                                        )
-//                                )
-//                        )
-//                )
         ));
         // assert that the update is successful
         var reloadedRoutingView2 = instanceManager.getDefaultView(routing.id()).instance();
@@ -573,13 +499,13 @@ public class ManufacturingCompileTest extends CompilerTestBase {
     private void processBOM(InstanceDTO material, InstanceDTO unit, InstanceDTO routing, InstanceDTO routingProcess,
                             TypeDTO feedTypeType, TypeDTO pickMethodType, TypeDTO generalStateType, TypeDTO qualityInspectionStateType) {
         var bomKlass = getClassTypeByCode("tech.metavm.manufacturing.production.BOM");
-        var bomViewKlass = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultViewKlassId(bomKlass), false)).type();
+//        var bomViewKlass = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultViewKlassId(bomKlass), false)).type();
         var directFeedType = TestUtils.getEnumConstantByName(feedTypeType, "DIRECT");
         var onDemandPickMethod = TestUtils.getEnumConstantByName(pickMethodType, "ON_DEMAND");
         var enabledGeneralState = TestUtils.getEnumConstantByName(generalStateType, "ENABLED");
         var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
-        var bomViewId = doInTransaction(() -> apiService.saveInstance(
-                bomViewKlass.getCodeRequired(),
+        var bomId = doInTransaction(() -> apiService.saveInstance(
+                bomKlass.getCodeRequired(),
                 Map.of(
                         "product", material.prefixedId(),
                         "unit", unit.prefixedId(),
@@ -616,7 +542,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                         )
                 )
         ));
-        var bomId = TestUtils.getSourceId(bomViewId);
+//        var bomId = TestUtils.getSourceId(bomViewId);
         // create production order
         long startTime = System.currentTimeMillis();
         var productionOrderId = (String) doInTransaction(() -> apiService.handleInstanceMethodCall(

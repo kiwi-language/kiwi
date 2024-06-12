@@ -21,12 +21,16 @@ import tech.metavm.util.*;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 @EntityType
 public class Method extends Flow implements Property, GenericElement {
 
     public static final IndexDef<Method> IDX_PARAMETERIZED = IndexDef.create(Method.class, "parameterized");
     public static final Logger logger = LoggerFactory.getLogger(Method.class);
+
+    private static final Pattern GETTER_PTN = Pattern.compile("(get|is)([A-Z][a-zA-Z0-9]*)");
+    private static final Pattern SETTER_PTN = Pattern.compile("set([A-Z][a-zA-Z0-9]*)");
 
     private final @NotNull Klass declaringType;
     private boolean _static;
@@ -354,8 +358,7 @@ public class Method extends Flow implements Property, GenericElement {
                 try {
                     result = new MetaFrame(this.getRootNode(), declaringType, self,
                             arguments, callContext.instanceRepository()).execute();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     logger.info("Fail to execute method {}", getQualifiedName());
                     logger.info(getText());
                     throw new InternalException("fail to execute method " + getQualifiedName(), e);
@@ -447,4 +450,30 @@ public class Method extends Flow implements Property, GenericElement {
         substitutor.exitElement();
         return (Flow) result;
     }
+
+    public boolean isGetter() {
+        if (!isPublic())
+            return false;
+        var code = getCode();
+        return code != null && GETTER_PTN.matcher(code).matches() && getParameters().isEmpty() && !getReturnType().isVoid();
+    }
+
+    public String getPropertyName() {
+        var code = Objects.requireNonNull(getCode());
+        var matcher = GETTER_PTN.matcher(code);
+        if (matcher.matches())
+            return NamingUtils.firstCharToLowerCase(matcher.group(2));
+        matcher = SETTER_PTN.matcher(code);
+        if(matcher.matches())
+            return NamingUtils.firstCharToLowerCase(matcher.group(1));
+        throw new IllegalStateException("Method " + getQualifiedName() + " is not a getter or setter");
+    }
+
+    public boolean isSetter() {
+        if (!isPublic())
+            return false;
+        var code = getCode();
+        return code != null && SETTER_PTN.matcher(code).matches() && getParameters().size() == 1;
+    }
+
 }
