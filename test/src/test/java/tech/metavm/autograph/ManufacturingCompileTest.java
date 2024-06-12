@@ -9,7 +9,10 @@ import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.view.rest.dto.DirectMappingKey;
-import tech.metavm.util.*;
+import tech.metavm.util.BusinessException;
+import tech.metavm.util.ContextUtil;
+import tech.metavm.util.DebugEnv;
+import tech.metavm.util.TestUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,8 +36,8 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 var roundHalfUp = TestUtils.getEnumConstantByName(roundingRuleType, "ROUND_HALF_UP");
                 var unitType = getClassTypeByCode("tech.metavm.manufacturing.material.Unit");
                 var unitId = doInTransaction(() -> apiService.handleNewInstance(
-                        unitType.getCodeRequired(),
-                        Arrays.asList("meter", "meter", roundHalfUp.prefixedId(), 2, null)
+                        unitType.getCode(),
+                        Arrays.asList("meter", "meter", roundHalfUp.getId(), 2, null)
                 ));
                 var materialKindType = getClassTypeByCode("tech.metavm.manufacturing.material.MaterialKind");
                 var normal = TestUtils.getEnumConstantByName(materialKindType, "NORMAL");
@@ -45,8 +48,8 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 // create a material
                 var materialType = getClassTypeByCode("tech.metavm.manufacturing.material.Material");
                 var materialId = doInTransaction(() -> apiService.handleNewInstance(
-                        materialType.getCodeRequired(),
-                        Arrays.asList("sheet metal", "sheet metal", normal.prefixedId(), Constants.prefixId(unitId), 1, year.prefixedId())
+                        materialType.getCode(),
+                        Arrays.asList("sheet metal", "sheet metal", normal.getId(), unitId, 1, year.getId())
                 ));
                 // get QualityInspectionState type
                 var qualityInspectionStateType = getClassTypeByCode("tech.metavm.manufacturing.material.QualityInspectionState");
@@ -56,7 +59,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 doInTransaction(() -> apiService.handleInstanceMethodCall(
                         materialId, "setFeedQualityInspectionStates",
                         List.of(
-                                List.of(qualified.prefixedId())
+                                List.of(qualified.getId())
                         )
                 ));
                 // reload the material object
@@ -147,16 +150,16 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var qcArea = "tech.metavm.manufacturing.storage.Area";
         var areaId = doInTransaction(() -> apiService.handleNewInstance(
                 qcArea,
-                Arrays.asList("area1", "area1", Constants.prefixId(warehouseId), null)
+                Arrays.asList("area1", "area1", warehouseId, null)
         ));
         var qcPosition = "tech.metavm.manufacturing.storage.Position";
         var positionId = doInTransaction(() -> apiService.handleNewInstance(
                 qcPosition,
-                List.of("position1", "position1", Constants.prefixId(areaId))
+                List.of("position1", "position1", areaId)
         ));
         var position2Id = doInTransaction(() -> apiService.handleNewInstance(
                 qcPosition,
-                List.of("position2", "position2", Constants.prefixId(areaId))
+                List.of("position2", "position2", areaId)
         ));
         var warehouse = instanceManager.get(warehouseId, 2).instance();
         var area = instanceManager.get(areaId, 2).instance();
@@ -188,12 +191,12 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var initialBizState = TestUtils.getEnumConstantByName(inventoryBizStateType, "INITIAL");
         // create an inventory object
         var inventoryId = doInTransaction(() -> apiService.handleNewInstance(
-                inventoryType.getCodeRequired(),
+                inventoryType.getCode(),
                 Arrays.asList(
-                        material.prefixedId(),
-                        position.prefixedId(),
-                        qualifiedInspectionState.prefixedId(),
-                        initialBizState.prefixedId(),
+                        material.getId(),
+                        position.getId(),
+                        qualifiedInspectionState.getId(),
+                        initialBizState.getId(),
                         null,
                         null,
                         null,
@@ -233,10 +236,10 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 Objects.requireNonNull(inventoryType.code()),
                 "decreaseQuantity",
                 Arrays.asList(
-                        material.prefixedId(),
-                        position.prefixedId(),
-                        qualifiedInspectionState.prefixedId(),
-                        initialBizState.prefixedId(),
+                        material.getId(),
+                        position.getId(),
+                        qualifiedInspectionState.getId(),
+                        initialBizState.getId(),
                         null,
                         null,
                         null,
@@ -246,8 +249,8 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                         null,
                         null,
                         100L,
-                        unit.prefixedId(),
-                        adjustment.prefixedId()
+                        unit.getId(),
+                        adjustment.getId()
                 )
         ));
         try {
@@ -268,23 +271,23 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var inboundOrderType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundOrder");
         // create an inbound order
         var inboundOrderId = doInTransaction(() -> apiService.handleNewInstance(
-                inboundOrderType.getCodeRequired(),
+                inboundOrderType.getCode(),
                 Arrays.asList(
                         "inboundOrder1",
-                        purchase.prefixedId(),
-                        storageObjects.warehouse.prefixedId(),
+                        purchase.getId(),
+                        storageObjects.warehouse.getId(),
                         null
                 )
         ));
         var inboundOrderItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundOrderItem");
         var inboundOrderItemId = doInTransaction(() -> apiService.handleNewInstance(
-                inboundOrderItemType.getCodeRequired(),
+                inboundOrderItemType.getCode(),
                 Arrays.asList(
-                        Constants.prefixId(inboundOrderId),
-                        material.prefixedId(),
-                        storageObjects.position.prefixedId(),
+                        inboundOrderId,
+                        material.getId(),
+                        storageObjects.position.getId(),
                         100,
-                        unit.prefixedId(),
+                        unit.getId(),
                         null
                 )
         ));
@@ -302,10 +305,10 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 List.of(
                         Map.ofEntries(
                                 Map.entry(ApiService.KEY_CLASS, qcByBoundInboundRequestType),
-                                Map.entry("bizType", purchase.prefixedId()),
-                                Map.entry("position", storageObjects.position.prefixedId()),
-                                Map.entry("material", material.prefixedId()),
-                                Map.entry("unit", unit.prefixedId()),
+                                Map.entry("bizType", purchase.getId()),
+                                Map.entry("position", storageObjects.position.getId()),
+                                Map.entry("material", material.getId()),
+                                Map.entry("unit", unit.getId()),
                                 Map.entry("amount", 100L)
                         )
                 )
@@ -324,10 +327,10 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 List.of(
                         Map.ofEntries(
                                 Map.entry(ApiService.KEY_CLASS, qcBySpecInboundRequestType),
-                                Map.entry("bizType", purchase.prefixedId()),
-                                Map.entry("position", storageObjects.position.prefixedId()),
-                                Map.entry("material", material.prefixedId()),
-                                Map.entry("unit", unit.prefixedId()),
+                                Map.entry("bizType", purchase.getId()),
+                                Map.entry("position", storageObjects.position.getId()),
+                                Map.entry("material", material.getId()),
+                                Map.entry("unit", unit.getId()),
                                 Map.entry("bySpecItems", List.of(
                                         Map.ofEntries(
                                                 Map.entry("qrCodeAmount", 2),
@@ -359,13 +362,13 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // create a transfer order
         var transferOrderId = doInTransaction(() -> apiService.handleNewInstance(
                 qcTransferOrder,
-                List.of("transferOrder1", storage.prefixedId(), storageObjects.warehouse.prefixedId(), storageObjects.warehouse.prefixedId())
+                List.of("transferOrder1", storage.getId(), storageObjects.warehouse.getId(), storageObjects.warehouse.getId())
         ));
         // create a transfer order item
         var qcTransferOrderItem = "tech.metavm.manufacturing.storage.TransferOrderItem";
         var transferOrderItemId = doInTransaction(() -> apiService.handleNewInstance(
                 qcTransferOrderItem,
-                Arrays.asList(Constants.prefixId(transferOrderId), material.prefixedId(), 100, unit.prefixedId(), null, null)
+                Arrays.asList(transferOrderId, material.getId(), 100, unit.getId(), null, null)
         ));
         // create an inventory
         var inventoryType = getClassTypeByCode("tech.metavm.manufacturing.storage.Inventory");
@@ -374,12 +377,12 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var InventoryBizStateType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryBizState");
         var initialBizState = TestUtils.getEnumConstantByName(InventoryBizStateType, "INITIAL");
         var inventoryId = doInTransaction(() -> apiService.handleNewInstance(
-                inventoryType.getCodeRequired(),
+                inventoryType.getCode(),
                 Arrays.asList(
-                        material.prefixedId(),
-                        storageObjects.position.prefixedId(),
-                        qualifiedInspectionState.prefixedId(),
-                        initialBizState.prefixedId(),
+                        material.getId(),
+                        storageObjects.position.getId(),
+                        qualifiedInspectionState.getId(),
+                        initialBizState.getId(),
                         null,
                         null,
                         null,
@@ -397,15 +400,15 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 "transfer",
                 List.of(
                         Map.of(
-                                "to", storageObjects.position2.prefixedId(),
+                                "to", storageObjects.position2.getId(),
                                 "items", List.of(
                                         Map.of(
-                                                "transferOrderItem", Constants.prefixId(transferOrderItemId),
+                                                "transferOrderItem", transferOrderItemId,
                                                 "subItems", List.of(
                                                         Map.of(
-                                                                "inventory", Constants.prefixId(inventoryId),
+                                                                "inventory", inventoryId,
                                                                 "amount", 20,
-                                                                "unit", unit.prefixedId()
+                                                                "unit", unit.getId()
                                                         )
                                                 )
                                         )
@@ -433,18 +436,18 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var qcProcess = "tech.metavm.manufacturing.production.Process";
         var processId = doInTransaction(() -> apiService.handleNewInstance(qcProcess, List.of("process1")));
         var routingId = (String) doInTransaction(() -> apiService.saveInstance(
-                routingKlass.getCodeRequired(),
+                routingKlass.getCode(),
                 Map.of(
                         "name", "routing001",
-                        "product", material.prefixedId(),
-                        "unit", unit.prefixedId(),
+                        "product", material.getId(),
+                        "unit", unit.getId(),
                         "processes", List.of(
                                 Map.of(
                                         "processCode", "process1",
                                         "processDescription", "process1",
                                         "sequence", 1,
-                                        "process", Constants.prefixId(processId),
-                                        "workCenter", Constants.prefixId(workCenterId),
+                                        "process", processId,
+                                        "workCenter", workCenterId,
                                         "items", List.of()
                                 )
                         ),
@@ -464,20 +467,20 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 //        var successionListView = reloadedRoutingView.getInstance("successions");
         DebugEnv.flag = true;
         doInTransactionWithoutResult(() -> apiService.saveInstance(
-                routingKlass.getCodeRequired(),
+                routingKlass.getCode(),
                 Map.of(
-                        ApiService.KEY_ID, routing.getIdRequired(),
+                        ApiService.KEY_ID, routing.getId(),
                         "name", "routing001",
-                        "product", material.prefixedId(),
-                        "unit", unit.prefixedId(),
+                        "product", material.getId(),
+                        "unit", unit.getId(),
                         "processes", List.of(
                                 routingProcess.toJson(),
                                 Map.of(
                                         "processCode", "process2",
                                         "processDescription", "process2",
                                         "sequence", 1,
-                                        "workCenter", Constants.prefixId(workCenterId),
-                                        "process", Constants.prefixId(processId),
+                                        "workCenter", workCenterId,
+                                        "process", processId,
                                         "items", List.of()
                                 )
                         ),
@@ -505,37 +508,37 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var enabledGeneralState = TestUtils.getEnumConstantByName(generalStateType, "ENABLED");
         var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
         var bomId = doInTransaction(() -> apiService.saveInstance(
-                bomKlass.getCodeRequired(),
+                bomKlass.getCode(),
                 Map.of(
-                        "product", material.prefixedId(),
-                        "unit", unit.prefixedId(),
-                        "routing", routing.prefixedId(),
-                        "reportingProcess", routingProcess.prefixedId(),
-                        "state", enabledGeneralState.prefixedId(),
+                        "product", material.getId(),
+                        "unit", unit.getId(),
+                        "routing", routing.getId(),
+                        "reportingProcess", routingProcess.getId(),
+                        "state", enabledGeneralState.getId(),
                         "inbound", true,
                         "autoInbound", true,
                         "secondaryOutputs", List.of(),
                         "components", List.of(
                                 Map.ofEntries(
                                         Map.entry("sequence", 1),
-                                        Map.entry("material", material.prefixedId()),
-                                        Map.entry("unit", unit.prefixedId()),
+                                        Map.entry("material", material.getId()),
+                                        Map.entry("unit", unit.getId()),
                                         Map.entry("numerator", 1),
                                         Map.entry("denominator", 1),
                                         Map.entry("attritionRate", 0.0),
-                                        Map.entry("pickMethod", onDemandPickMethod.prefixedId()),
+                                        Map.entry("pickMethod", onDemandPickMethod.getId()),
                                         Map.entry("routingSpecified", false),
-                                        Map.entry("process", routingProcess.prefixedId()),
-                                        Map.entry("qualityInspectionState", qualifiedInspectionState.prefixedId()),
-                                        Map.entry("feedType", directFeedType.prefixedId()),
+                                        Map.entry("process", routingProcess.getId()),
+                                        Map.entry("qualityInspectionState", qualifiedInspectionState.getId()),
+                                        Map.entry("feedType", directFeedType.getId()),
                                         Map.entry("items", List.of(
                                                 Map.of(
                                                         "sequence", 1,
                                                         "numerator", 1,
                                                         "denominator", 1,
-                                                        "process", routingProcess.prefixedId(),
-                                                        "qualityInspectionState", qualifiedInspectionState.prefixedId(),
-                                                        "feedType", directFeedType.prefixedId()
+                                                        "process", routingProcess.getId(),
+                                                        "qualityInspectionState", qualifiedInspectionState.getId(),
+                                                        "feedType", directFeedType.getId()
                                                 )
                                         ))
                                 )

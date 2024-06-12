@@ -1860,6 +1860,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return getTypeArguments().get(0);
     }
 
+    public Type getIterableElementType() {
+        var iterableType = Objects.requireNonNull(
+                findAncestor(StandardTypes.getIterableKlass()),
+                () -> getTypeDesc() + " is not an Iterable class");
+        return iterableType.getTypeArguments().get(0);
+    }
+
     public boolean isSAMInterface() {
         return isInterface() && getMethods().size() == 1;
     }

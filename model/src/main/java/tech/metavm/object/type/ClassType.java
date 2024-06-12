@@ -74,6 +74,14 @@ public class ClassType extends Type implements ISubstitutor {
         return resolve().getListElementType();
     }
 
+    public Type getIterableElementType() {
+        return resolve().getIterableElementType();
+    }
+
+    public @Nullable ClassType findAncestorType(Klass rawKlass) {
+        return NncUtils.get(resolve().findAncestor(rawKlass), Klass::getType);
+    }
+
     public List<Type> getTypeArguments() {
         // the type arguments should be the list of type parameters for a raw ClassType
         return isParameterized() ? typeArguments.toList() : klass.getTypeArguments();
@@ -292,5 +300,9 @@ public class ClassType extends Type implements ISubstitutor {
     @Override
     public boolean isValue() {
         return klass.getKind() == ClassKind.VALUE;
+    }
+
+    public boolean isAbstract() {
+        return klass.isAbstract();
     }
 }

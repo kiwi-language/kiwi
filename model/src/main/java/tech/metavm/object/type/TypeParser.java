@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.flow.MethodRef;
+import tech.metavm.flow.SimpleMethodRef;
 import tech.metavm.util.InternalException;
 
 public interface TypeParser {
@@ -31,8 +32,18 @@ public interface TypeParser {
         }
     }
 
+    static SimpleMethodRef parseSimpleMethodRef(@NotNull String expression, ParserTypeDefProvider typeDefProvider) {
+        try {
+            return new TypeParserImpl(typeDefProvider).parseSimpleMethodRef(expression);
+        }
+        catch (Exception e) {
+            throw new InternalException("Fail to parse type expression " + expression, e);
+        }
+    }
+
     Type parseType(String expression);
 
     MethodRef parseMethodRef(String expression);
 
+    SimpleMethodRef parseSimpleMethodRef(String expression);
 }

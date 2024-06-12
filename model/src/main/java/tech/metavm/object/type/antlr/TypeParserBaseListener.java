@@ -41,6 +41,18 @@ public class TypeParserBaseListener implements TypeParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterSimpleMethodRef(TypeParser.SimpleMethodRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSimpleMethodRef(TypeParser.SimpleMethodRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterArrayKind(TypeParser.ArrayKindContext ctx) { }
 	/**
 	 * {@inheritDoc}

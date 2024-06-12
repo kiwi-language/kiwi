@@ -146,7 +146,7 @@ public abstract class CompilerTestBase extends TestCase  {
 
 
     protected TypeDTO queryClassType(String name) {
-        return queryClassType(name, List.of(ClassKind.CLASS.code(), ClassKind.ENUM.code(), ClassKind.INTERFACE.code()));
+        return queryClassType(name, List.of(ClassKind.CLASS.code(), ClassKind.ENUM.code(), ClassKind.INTERFACE.code(), ClassKind.VALUE.code()));
     }
 
     protected void assertNoError(TypeDTO typeDTO) {

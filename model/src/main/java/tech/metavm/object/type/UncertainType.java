@@ -1,7 +1,6 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
@@ -171,5 +170,10 @@ public class UncertainType extends CompositeType {
     @Override
     public int hashCode() {
         return Objects.hash(lowerBound, upperBound);
+    }
+
+    @Override
+    public Type getUpperBound2() {
+        return upperBound;
     }
 }

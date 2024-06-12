@@ -161,6 +161,10 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
         return this;
     }
 
+    public Type getUpperBound2() {
+        return this;
+    }
+
     public boolean isInstance(Instance value) {
         return isAssignableFrom(value.getType());
     }

@@ -1,5 +1,6 @@
 package tech.metavm.object.instance;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import tech.metavm.flow.Flows;
 import tech.metavm.flow.Method;
 import tech.metavm.flow.Parameter;
 import tech.metavm.object.instance.core.*;
+import tech.metavm.object.type.TypeParser;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -110,15 +112,15 @@ public class ApiService extends EntityContextFactoryAware {
     private Object handleExecutionResult(FlowExecResult result) {
         if (result.exception() != null) {
             var throwableNative = new ThrowableNative(result.exception());
-            throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, throwableNative.getMessage());
+            throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, throwableNative.getMessage().getTitle());
         } else
             return result.ret() != null ? formatInstance(result.ret(), false) : null;
     }
 
     private @Nullable Id tryResolveId(Object rawValue) {
-        if (rawValue instanceof String s && s.startsWith(Constants.ID_PREFIX)) {
+        if (rawValue instanceof String s) {
             try {
-                return Id.parse(Constants.removeConstantIdPrefix(s));
+                return Id.parse(s);
             } catch (Exception ignored) {
                 return null;
             }
@@ -161,15 +163,22 @@ public class ApiService extends EntityContextFactoryAware {
         return list;
     }
 
-    private ResolutionResult resolveMethod(Klass klass, String methodCode, List<Object> rawArguments, boolean _static, boolean constructor, IEntityContext context) {
-        for (Method method : klass.getAllMethods()) {
-            if (method.isPublic() && (methodCode == null || methodCode.equals(method.getCode())) && method.getParameters().size() == rawArguments.size()
-                    && _static == method.isStatic() && constructor == method.isConstructor()) {
-                var resolvedArgs = tryResolveArguments(method, rawArguments, context);
-                if (resolvedArgs != null)
-                    return new ResolutionResult(method, resolvedArgs);
+    private ResolutionResult resolveMethod(@NotNull Klass klass, String methodCode, List<Object> rawArguments, boolean _static, boolean constructor, IEntityContext context) {
+        var methodRef = methodCode != null ?
+                TypeParser.parseSimpleMethodRef(methodCode, name -> getKlass(name, context)) : null;
+        var k = klass;
+        do {
+            for (Method method : k.getMethods()) {
+                if (method.isPublic() && !method.isAbstract() && (methodRef == null || methodRef.name().equals(method.getCode())) && method.getParameters().size() == rawArguments.size()
+                        && _static == method.isStatic() && constructor == method.isConstructor()) {
+                    method = methodRef != null ? method.getParameterized(methodRef.typeArguments()) : method;
+                    var resolvedArgs = tryResolveArguments(method, rawArguments, context);
+                    if (resolvedArgs != null)
+                        return new ResolutionResult(method, resolvedArgs);
+                }
             }
-        }
+            k = NncUtils.get(k.getSuperType(), ClassType::resolve);
+        } while (k != null);
         throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getCode() + "." + methodCode);
     }
 
@@ -195,12 +204,12 @@ public class ApiService extends EntityContextFactoryAware {
     private ValueResolutionResult tryResolveValue(Object rawValue, Type type, boolean asValue, @Nullable Instance currentValue, IEntityContext context) {
         return switch (type) {
             case PrimitiveType primitiveType -> tryResolvePrimitive(rawValue, primitiveType);
-            case ClassType classType -> {
-                if (classType.getKlass().isList())
-                    yield tryResolveList(rawValue, classType, currentValue, context);
-                else
-                    yield tryResolveObject(rawValue, classType, asValue, context);
-            }
+            case ClassType classType -> switch (rawValue) {
+                case String s -> asValue ? ValueResolutionResult.failed : tryResolveReference(s, classType, context);
+                case List<?> list -> tryResolveList(list, classType, currentValue, context);
+                case Map<?, ?> map -> tryResolveObject(map, classType, context);
+                default -> ValueResolutionResult.failed;
+            };
             case ArrayType arrayType -> tryResolveArray(rawValue, arrayType, currentValue, context);
             case UnionType unionType -> {
                 for (Type member : unionType.getMembers()) {
@@ -236,16 +245,8 @@ public class ApiService extends EntityContextFactoryAware {
         };
     }
 
-    private ValueResolutionResult tryResolveObject(Object rawValue, ClassType type, boolean asValue, IEntityContext context) {
-        if (rawValue instanceof Map<?, ?>) {
-            if (type.isStruct())
-                return tryResolveValueObject(rawValue, type, context);
-            else
-                return ValueResolutionResult.failed;
-        } else if (!type.isValue() && !asValue)
-            return tryResolveReference(rawValue, type, context);
-        else
-            return ValueResolutionResult.failed;
+    private ValueResolutionResult tryResolveObject(Map<?, ?> map, ClassType type, IEntityContext context) {
+        return tryResolveValueObject(map, type, context);
     }
 
     private ValueResolutionResult tryResolveValueObject(Object rawValue, ClassType type, IEntityContext context) {
@@ -295,42 +296,52 @@ public class ApiService extends EntityContextFactoryAware {
                 currentArray.clear();
                 currentArray.addAll(elements);
                 return ValueResolutionResult.of(currentArray);
-            } else
-                return ValueResolutionResult.of(new ArrayInstance(type, elements));
+            } else {
+                var actualType = new ArrayType(type.getElementType().getUpperBound2(), type.getKind());
+                return ValueResolutionResult.of(new ArrayInstance(actualType, elements));
+            }
         } else
             return ValueResolutionResult.failed;
     }
 
-    private ValueResolutionResult tryResolveList(Object rawValue, ClassType type, @Nullable Instance currentValue, IEntityContext context) {
-        if (!type.isValue() && rawValue instanceof String s)
-            return tryResolveReference(s, type, context);
-        else if (rawValue instanceof List<?> list) {
-            var elements = new ArrayList<Instance>();
-            var klass = type.resolve();
-            var isChildList = klass.isChildList();
-            for (Object o : list) {
-                var r = tryResolveValue(o, type.getListElementType(), isChildList, null, context);
-                if (r.successful())
-                    elements.add(r.resolved());
-                else
+    private ValueResolutionResult tryResolveList(List<?> list, ClassType type, @Nullable Instance currentValue, IEntityContext context) {
+        if (DebugEnv.flag)
+            System.out.println("Caught");
+        ListNative listNative;
+        if (currentValue instanceof ClassInstance currentList && type.isInstance(currentList)) {
+            listNative = new ListNative(currentList);
+            listNative.clear();
+        } else {
+            ClassType concreteType;
+            if (type.isInterface() || type.isAbstract()) {
+                var iterableType = type.findAncestorType(StandardTypes.getIterableKlass());
+                if (iterableType != null) {
+                    var elementType = iterableType.getTypeArguments().get(0).getUpperBound2();
+                    concreteType = StandardTypes.getReadWriteListKlass(elementType).getParameterized(List.of()).getType();
+                    if (!type.isAssignableFrom(concreteType))
+                        return ValueResolutionResult.failed;
+                } else
                     return ValueResolutionResult.failed;
-            }
-            if (type.getKlass() == StandardTypes.getListKlass()) {
-                type = type.isParameterized() ? new ClassType(StandardTypes.getReadWriteListKlass(), type.getTypeArguments())
-                        : StandardTypes.getReadWriteListKlass().getType();
-            }
-            ListNative listNative;
-            if (currentValue instanceof ClassInstance currentList && type.isInstance(currentList)) {
-                listNative = new ListNative(currentList);
-                listNative.clear();
-            } else {
-                listNative = new ListNative(ClassInstance.allocate(type));
-                listNative.List();
-            }
-            elements.forEach(listNative::add);
-            return ValueResolutionResult.of(listNative.getInstance());
-        } else
-            return ValueResolutionResult.failed;
+            } else if (type.isList())
+                concreteType = type;
+            else
+                return ValueResolutionResult.failed;
+            listNative = new ListNative(ClassInstance.allocate(concreteType));
+            listNative.List();
+        }
+        var elements = new ArrayList<Instance>();
+        var actualType = listNative.getInstance().getType();
+        var isChildList = actualType.resolve().isChildList();
+        var elementType = actualType.getListElementType();
+        for (Object o : list) {
+            var r = tryResolveValue(o, elementType, isChildList, null, context);
+            if (r.successful())
+                elements.add(r.resolved());
+            else
+                return ValueResolutionResult.failed;
+        }
+        elements.forEach(listNative::add);
+        return ValueResolutionResult.of(listNative.getInstance());
     }
 
     private ValueResolutionResult tryResolveReference(Object rawValue, Type type, IEntityContext context) {
@@ -370,7 +381,7 @@ public class ApiService extends EntityContextFactoryAware {
         var self = ClassInstance.allocate(actualType);
         context.getInstanceContext().bind(self);
         var result = Flows.execute(r.method, self, r.arguments, context);
-        if(result.exception() != null)
+        if (result.exception() != null)
             throw new InternalException("Failed to create object of " + type.getTypeDesc() + " with value " + map
                     + ", message: " + ThrowableNative.getMessage(result.exception()));
         var updateMap = new HashMap<String, Object>();
@@ -390,10 +401,9 @@ public class ApiService extends EntityContextFactoryAware {
         map.forEach((k, v) -> {
             var field = klass.findFieldByCode(k);
             if (field != null) {
-                if(!field.isReadonly())
+                if (!field.isReadonly())
                     instance.setField(field, resolveValue(v, field.getType(), false, instance.getField(field), context));
-            }
-            else {
+            } else {
                 var setter = klass.findSetterByPropertyName(k);
                 if (setter != null) {
                     var getter = klass.findGetterByPropertyName(k);
@@ -405,8 +415,8 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ResolutionResult resolveConstructor(Klass klass, Map<?, ?> map, IEntityContext context) {
-        for (Method method : klass.getAllMethods()) {
-            if(method.isConstructor() && method.getDeclaringType() == klass && method.isPublic()) {
+        for (Method method : klass.getMethods()) {
+            if (method.isConstructor()) {
                 var args = tryResolveConstructor(method, map, context);
                 if (args != null)
                     return new ResolutionResult(method, args);

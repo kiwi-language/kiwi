@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.util.BootstrapUtils;
-import tech.metavm.util.Constants;
 import tech.metavm.util.MockUtils;
 import tech.metavm.util.TestUtils;
 
@@ -78,10 +77,7 @@ public class ApiServiceTest extends TestCase {
         var orderId = (String) TestUtils.doInTransaction(() -> apiService.handleInstanceMethodCall(
                 skuId,
                 "buy",
-                List.of(1, List.of(
-                        Constants.prefixId(coupon1Id),
-                        Constants.prefixId(coupon2Id)
-                ))
+                List.of(1, List.of(coupon1Id, coupon2Id))
         ));
         var order = instanceManager.get(orderId, 2).instance();
         Assert.assertEquals(1L, order.getPrimitiveValue("quantity"));

@@ -1,10 +1,10 @@
 package tech.metavm.user;
 
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.ValueStruct;
 
 import javax.annotation.Nullable;
 
-@EntityType(ephemeral = true)
+@ValueStruct
 public record LabLoginResult(@Nullable String token, LabUser user) {
 
 }

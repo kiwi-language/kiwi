@@ -4,15 +4,14 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorDTO;
-import tech.metavm.entity.StandardTypes;
-import tech.metavm.flow.rest.FlowExecutionRequest;
-import tech.metavm.flow.rest.MethodRefDTO;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.ClassKind;
 import tech.metavm.object.type.TypeExpressions;
+import tech.metavm.util.DebugEnv;
 import tech.metavm.util.TestUtils;
 
 import java.util.List;
+import java.util.Map;
 
 public class BasicCompileTest extends CompilerTestBase {
 
@@ -31,129 +30,48 @@ public class BasicCompileTest extends CompilerTestBase {
     }
 
     private void processCapturedType() {
-//            DebugEnv.debugLogger_ON = true;
         var utilsType = getClassTypeByCode("capturedtypes.CtUtils");
         for (ErrorDTO error : utilsType.getClassParam().errors()) {
             logger.info("Utils error: {}", error.message());
         }
         Assert.assertEquals(0, utilsType.getClassParam().errors().size());
-
         var labType = getClassTypeByCode("capturedtypes.CtLab");
-        var fooType = getClassTypeByCode("capturedtypes.CtFoo");
-        var labFoosFieldId = TestUtils.getFieldIdByCode(labType, "foos");
-        var fooNameFieldId = TestUtils.getFieldIdByCode(fooType, "name");
-
-        var labId = TestUtils.doInTransaction(() ->
-                instanceManager.create(InstanceDTO.createClassInstance(
-                        TypeExpressions.getClassType(labType.id()),
-                        List.of(
-                                InstanceFieldDTO.create(
-                                        labFoosFieldId,
-                                        new ListFieldValue(
-                                                null,
-                                                true,
-                                                List.of(
-                                                        InstanceFieldValue.of(
-                                                                InstanceDTO.createClassInstance(
-                                                                        TypeExpressions.getClassType(fooType.id()),
-                                                                        List.of(
-                                                                                InstanceFieldDTO.create(
-                                                                                        fooNameFieldId,
-                                                                                        PrimitiveFieldValue.createString("foo001")
-                                                                                )
-                                                                        )
-                                                                )
-                                                        ),
-                                                        InstanceFieldValue.of(
-                                                                InstanceDTO.createClassInstance(
-                                                                        TypeExpressions.getClassType(fooType.id()),
-                                                                        List.of(
-                                                                                InstanceFieldDTO.create(
-                                                                                        fooNameFieldId,
-                                                                                        PrimitiveFieldValue.createString("foo002")
-                                                                                )
-                                                                        )
-                                                                )
-                                                        ),
-                                                        InstanceFieldValue.of(
-                                                                InstanceDTO.createClassInstance(
-                                                                        TypeExpressions.getClassType(fooType.id()),
-                                                                        List.of(
-                                                                                InstanceFieldDTO.create(
-                                                                                        fooNameFieldId,
-                                                                                        PrimitiveFieldValue.createString("foo003")
-                                                                                )
-                                                                        )
-                                                                )
-                                                        )
-                                                )
-                                        )
-                                )
-                        )
-                ))
-        );
-        var lab = instanceManager.get(labId, 2).instance();
-        var foos = ((InstanceFieldValue) lab.getFieldValue(labFoosFieldId)).getInstance();
-        Assert.assertEquals(3, foos.getElements().size());
-        var foo002 = ((InstanceFieldValue) foos.getElements().get(1)).getInstance();
-
-        var foundFoo = TestUtils.doInTransaction(() ->
-                flowExecutionService.execute(
-                        new FlowExecutionRequest(
-                                TestUtils.getMethodRefByCode(labType, "getFooByName"),
-                                labId,
-                                List.of(
-                                        PrimitiveFieldValue.createString("foo002")
+        var labId = TestUtils.doInTransaction(() -> apiService.saveInstance(
+                        labType.getCode(),
+                        Map.of(
+                                "foos", List.of(
+                                        Map.of("name", "foo001"),
+                                        Map.of("name", "foo002"),
+                                        Map.of("name", "foo003")
                                 )
                         )
                 )
         );
-        Assert.assertEquals(foo002.id(), foundFoo.id());
+        var lab = instanceManager.get(labId, 2).instance();
+        var foos = lab.getInstance("foos");
+        Assert.assertEquals(3, foos.getElements().size());
+        var foo002 = ((InstanceFieldValue) foos.getElements().get(1)).getInstance();
+        var foundFooId = TestUtils.doInTransaction(() -> apiService.handleInstanceMethodCall(
+                labId,
+                "getFooByName",
+                List.of("foo002"))
+        );
+        Assert.assertEquals(foo002.id(), foundFooId);
     }
 
     private void processGenericOverride() {
-        var baseType = getClassTypeByCode("genericoverride.Base");
         var subType = getClassTypeByCode("genericoverride.Sub");
-        var subId = TestUtils.doInTransaction(() -> instanceManager.create(
-                InstanceDTO.createClassInstance(
-                        TypeExpressions.getClassType(subType.id()),
-                        List.of()
+        var subId = TestUtils.doInTransaction(() -> apiService.saveInstance(subType.getCode(), Map.of()));
+        DebugEnv.flag = true;
+        var result = TestUtils.doInTransaction(() -> apiService.handleInstanceMethodCall(
+                subId,
+                "containsAny<string>",
+                List.of(
+                        List.of("a", "b", "c"),
+                        List.of("c", "d")
                 )
         ));
-        var containsAnyMethodId = TestUtils.getMethodIdByCode(baseType, "containsAny");
-        var stringListType = StandardTypes.getReadWriteListKlass().getParameterized(List.of(StandardTypes.getStringType()));
-        var result = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                new MethodRefDTO(
-                        TypeExpressions.getClassType(baseType),
-                        containsAnyMethodId,
-                        List.of("string")
-                ),
-                subId,
-                List.of(
-                        InstanceFieldValue.of(
-                                InstanceDTO.createListInstance(
-                                        stringListType.getType().toExpression(),
-                                        false,
-                                        List.of(
-                                                PrimitiveFieldValue.createString("a"),
-                                                PrimitiveFieldValue.createString("b"),
-                                                PrimitiveFieldValue.createString("c")
-                                        )
-                                )
-                        ),
-                        InstanceFieldValue.of(
-                                InstanceDTO.createListInstance(
-                                        stringListType.getType().toExpression(),
-                                        false,
-                                        List.of(
-                                                PrimitiveFieldValue.createString("c"),
-                                                PrimitiveFieldValue.createString("d")
-                                        )
-                                )
-                        )
-                )
-        )));
-        Assert.assertEquals("true", result.title());
+        Assert.assertEquals(true, result);
     }
 
     private void processValueTypes() {

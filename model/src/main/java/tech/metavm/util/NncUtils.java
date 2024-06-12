@@ -1826,4 +1826,11 @@ public class NncUtils {
         }
     }
 
+    public static Throwable getRootCause(Throwable t) {
+        var e = t;
+        while (e.getCause() != null)
+            e = e.getCause();
+        return e;
+    }
+
 }

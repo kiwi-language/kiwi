@@ -1,8 +1,8 @@
 package tech.metavm.user;
 
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.EntityStruct;
 
-@EntityType(ephemeral = true)
+@EntityStruct
 public record LabChangePasswordRequest(
         String verificationCode,
         String loginName,

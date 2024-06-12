@@ -43,7 +43,7 @@ public class ApiController {
                 var methodCode = path.substring(idx + 1);
                 var qualifier = path.substring(0, idx);
                 if (qualifier.startsWith(Constants.ID_PREFIX)) {
-                    var id = Constants.removeConstantIdPrefix(qualifier);
+                    var id = Constants.removeIdPrefix(qualifier);
                     return apiService.handleInstanceMethodCall(id, methodCode, (List<Object>) requestBody);
                 } else if (methodCode.equals("new"))
                     return apiService.handleNewInstance(qualifier.replace('/', '.'), (List<Object>) requestBody);
@@ -51,14 +51,14 @@ public class ApiController {
                     return apiService.handleStaticMethodCall(qualifier.replace('/', '.'), methodCode, (List<Object>) requestBody);
             }
             case "GET" -> {
-                return apiService.getInstance(Constants.removeConstantIdPrefix(path));
+                return apiService.getInstance(Constants.removeIdPrefix(path));
             }
             case "PUT" -> {
                 var klassName = path.replace('/', '.');
                 return apiService.saveInstance(klassName, (Map<String, Object>) requestBody);
             }
             case "DELETE" -> {
-                apiService.deleteInstance(Constants.removeConstantIdPrefix(path));
+                apiService.deleteInstance(Constants.removeIdPrefix(path));
                 return null;
             }
             default -> throw new BusinessException(ErrorCode.INVALID_REQUEST_METHOD);

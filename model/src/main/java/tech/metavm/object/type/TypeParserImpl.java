@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.flow.MethodRef;
+import tech.metavm.flow.SimpleMethodRef;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.antlr.TypeLexer;
 import tech.metavm.util.Constants;
@@ -16,9 +17,19 @@ import java.util.List;
 
 public class TypeParserImpl implements TypeParser {
 
-    private final TypeDefProvider typeDefProvider;
+    private final ParserTypeDefProvider typeDefProvider;
 
     public TypeParserImpl(TypeDefProvider typeDefProvider) {
+        this.typeDefProvider = name -> {
+            if (name.startsWith(Constants.ID_PREFIX)) {
+                var id = Constants.removeIdPrefix(name);
+                return typeDefProvider.getTypeDef(Id.parse(id));
+            } else
+                throw new InternalException("Invalid id: " + name);
+        };
+    }
+
+    public TypeParserImpl(ParserTypeDefProvider typeDefProvider) {
         this.typeDefProvider = typeDefProvider;
     }
 
@@ -39,6 +50,16 @@ public class TypeParserImpl implements TypeParser {
             return parseMethodRef(parser.methodRef());
         } catch (Exception e) {
             throw new InternalException("Failed to parse method reference: " + expression, e);
+        }
+    }
+
+    @Override
+    public SimpleMethodRef parseSimpleMethodRef(String expression) {
+        var parser = createAntlrParser(expression);
+        try {
+            return parseSimpleMethodRef(parser.simpleMethodRef());
+        } catch (Exception e) {
+            throw new InternalException("Failed to parse simple method reference: " + expression, e);
         }
     }
 
@@ -80,6 +101,13 @@ public class TypeParserImpl implements TypeParser {
         var rawMethod = classType.getKlass().getMethod(Id.parse(ctx.IDENTIFIER().getText().substring(Constants.ID_PREFIX.length())));
         List<Type> typeArgs = ctx.typeArguments() != null ? parseTypeList(ctx.typeArguments().typeList()) : List.of();
         return new MethodRef(classType, rawMethod, typeArgs);
+    }
+
+    private SimpleMethodRef parseSimpleMethodRef(tech.metavm.object.type.antlr.TypeParser.SimpleMethodRefContext ctx) {
+        return new SimpleMethodRef(
+                ctx.IDENTIFIER().getText(),
+                ctx.typeArguments() != null ? NncUtils.map(ctx.typeArguments().typeList().type(), this::parseType) : List.of()
+        );
     }
 
     private VariableType parseVariableType(tech.metavm.object.type.antlr.TypeParser.VariableTypeContext ctx) {
@@ -142,12 +170,7 @@ public class TypeParserImpl implements TypeParser {
     }
 
     private TypeDef getTypeDef(String name) {
-        if (name.startsWith(Constants.ID_PREFIX)) {
-            var id = name.substring(Constants.ID_PREFIX.length());
-            return typeDefProvider.getTypeDef(Id.parse(id));
-        } else
-            throw new InternalException("Invalid id: " + name);
-
+        return typeDefProvider.getTypeDef(name);
     }
 
     private ArrayKind parseArrayKind(@Nullable tech.metavm.object.type.antlr.TypeParser.ArrayKindContext ctx) {

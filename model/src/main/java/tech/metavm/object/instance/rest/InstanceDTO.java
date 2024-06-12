@@ -7,7 +7,6 @@ import tech.metavm.object.instance.InstanceParamTypeIdResolver;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.object.view.rest.dto.ObjectMappingRefDTO;
-import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -129,12 +128,7 @@ public record InstanceDTO(
             throw new IllegalStateException("Not an array or list instance");
     }
 
-    public String prefixedId() {
-        return Constants.prefixId(getIdRequired());
-    }
-
-    @JsonIgnore
-    public String getIdRequired() {
+    public String getId() {
         return Objects.requireNonNull(id);
     }
 

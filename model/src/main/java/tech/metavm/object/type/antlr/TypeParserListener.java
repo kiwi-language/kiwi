@@ -28,6 +28,16 @@ public interface TypeParserListener extends ParseTreeListener {
 	 */
 	void exitMethodRef(TypeParser.MethodRefContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link TypeParser#simpleMethodRef}.
+	 * @param ctx the parse tree
+	 */
+	void enterSimpleMethodRef(TypeParser.SimpleMethodRefContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TypeParser#simpleMethodRef}.
+	 * @param ctx the parse tree
+	 */
+	void exitSimpleMethodRef(TypeParser.SimpleMethodRefContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link TypeParser#arrayKind}.
 	 * @param ctx the parse tree
 	 */
