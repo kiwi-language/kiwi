@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static tech.metavm.entity.IndexUtils.*;
+
 @EntityType
 public class LabUser {
 
@@ -69,19 +71,19 @@ public class LabUser {
     }
 
     public static LabLoginResult login(LabApplication application, String loginName, String password, String clientIP) {
-        var failedCountByIP = IndexUtils.count(
+        var failedCountByIP = count(
                 new LabLoginAttempt.ClientIpSuccTimeIndex(clientIP, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS)),
                 new LabLoginAttempt.ClientIpSuccTimeIndex(clientIP, false, new Date())
         );
         if (failedCountByIP > MAX_ATTEMPTS_IN_15_MINUTES)
             throw new LabBusinessException(LabErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
-        var failedCountByLoginName = IndexUtils.count(
+        var failedCountByLoginName = count(
                 new LabLoginAttempt.LoginNameSuccTimeIndex(loginName, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS)),
                 new LabLoginAttempt.LoginNameSuccTimeIndex(loginName, false, new Date())
         );
         if (failedCountByLoginName > MAX_ATTEMPTS_IN_15_MINUTES)
             throw new LabBusinessException(LabErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
-        var users = IndexUtils.select(new LoginNameIndex(application, loginName));
+        var users = select(new LoginNameIndex(application, loginName));
         if (users.isEmpty())
             throw new LabBusinessException(LabErrorCode.LOGIN_NAME_NOT_FOUND, loginName);
         var user = users.get(0);
@@ -122,7 +124,7 @@ public class LabUser {
 
     public static void logout(List<LabToken> tokens) {
         for (LabToken token : tokens) {
-            var session = IndexUtils.selectFirst(new LabSession.TokenIndex(token.token()));
+            var session = selectFirst(new LabSession.TokenIndex(token.token()));
             if (session != null) {
                 if (session.isActive())
                     session.close();
@@ -131,7 +133,7 @@ public class LabUser {
     }
 
     public static LabLoginInfo verify(LabToken token) {
-        var session = IndexUtils.selectFirst(new LabSession.TokenIndex(token.token()));
+        var session = selectFirst(new LabSession.TokenIndex(token.token()));
         if (session != null && session.isActive()) {
             return new LabLoginInfo(token.application(), session.getUser());
         } else

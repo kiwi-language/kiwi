@@ -428,10 +428,8 @@ public class ExpressionResolver {
     private MethodCallResolver getMethodCallResolver(PsiMethodCallExpression methodCallExpression) {
         var methodExpr = methodCallExpression.getMethodExpression();
         var qualifier = methodExpr.getQualifierExpression();
-        if (qualifier == null)
-            return null;
         var method = (PsiMethod) Objects.requireNonNull(methodExpr.resolve());
-        var signature = TranspileUtil.getSignature(method, (PsiClassType) qualifier.getType());
+        var signature = TranspileUtil.getSignature(method, NncUtils.get(qualifier, q -> (PsiClassType) q.getType()));
         return NncUtils.find(
                 methodCallResolvers,
                 resolver -> NncUtils.anyMatch(resolver.getSignatures(), s -> s.matches(signature))
