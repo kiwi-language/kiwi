@@ -128,7 +128,8 @@ public record InstanceDTO(
             throw new IllegalStateException("Not an array or list instance");
     }
 
-    public String getId() {
+    @JsonIgnore
+    public String getIdRequired() {
         return Objects.requireNonNull(id);
     }
 

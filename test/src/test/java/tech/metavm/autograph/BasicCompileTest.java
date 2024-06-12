@@ -4,9 +4,8 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorDTO;
-import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.instance.rest.InstanceFieldValue;
 import tech.metavm.object.type.ClassKind;
-import tech.metavm.object.type.TypeExpressions;
 import tech.metavm.util.DebugEnv;
 import tech.metavm.util.TestUtils;
 
@@ -37,7 +36,7 @@ public class BasicCompileTest extends CompilerTestBase {
         Assert.assertEquals(0, utilsType.getClassParam().errors().size());
         var labType = getClassTypeByCode("capturedtypes.CtLab");
         var labId = TestUtils.doInTransaction(() -> apiService.saveInstance(
-                        labType.getCode(),
+                        labType.getCodeRequired(),
                         Map.of(
                                 "foos", List.of(
                                         Map.of("name", "foo001"),
@@ -61,7 +60,7 @@ public class BasicCompileTest extends CompilerTestBase {
 
     private void processGenericOverride() {
         var subType = getClassTypeByCode("genericoverride.Sub");
-        var subId = TestUtils.doInTransaction(() -> apiService.saveInstance(subType.getCode(), Map.of()));
+        var subId = TestUtils.doInTransaction(() -> apiService.saveInstance(subType.getCodeRequired(), Map.of()));
         DebugEnv.flag = true;
         var result = TestUtils.doInTransaction(() -> apiService.handleInstanceMethodCall(
                 subId,
@@ -78,114 +77,36 @@ public class BasicCompileTest extends CompilerTestBase {
         var currencyKlass = getClassTypeByCode("valuetypes.Currency");
         Assert.assertEquals(ClassKind.VALUE.code(), currencyKlass.kind());
         var productKlass = getClassTypeByCode("valuetypes.Product");
-        var pricesKlass = getClassTypeByCode("valuetypes.Price");
-        var channelPriceKlass = getClassTypeByCode("valuetypes.ChannelPrice");
         var currencyKindKlass = getClassTypeByCode("valuetypes.CurrencyKind");
         var currencyKindYuan = TestUtils.getEnumConstantByName(currencyKindKlass, "YUAN");
-
-        var productId = TestUtils.doInTransaction(() -> instanceManager.create(InstanceDTO.createClassInstance(
-                TypeExpressions.getClassType(productKlass),
-                List.of(
-                        InstanceFieldDTO.create(
-                                TestUtils.getFieldIdByCode(productKlass, "name"),
-                                PrimitiveFieldValue.createString("shoes")
-                        ),
-                        InstanceFieldDTO.create(
-                                TestUtils.getFieldIdByCode(productKlass, "price"),
-                                InstanceFieldValue.of(
-                                        InstanceDTO.createClassInstance(
-                                                TypeExpressions.getClassType(pricesKlass),
-                                                List.of(
-                                                        InstanceFieldDTO.create(
-                                                                TestUtils.getFieldIdByCode(pricesKlass, "defaultPrice"),
-                                                                InstanceFieldValue.of(
-                                                                        InstanceDTO.createClassInstance(
-                                                                                TypeExpressions.getClassType(currencyKlass),
-                                                                                List.of(
-                                                                                        InstanceFieldDTO.create(
-                                                                                                TestUtils.getFieldIdByCode(currencyKlass, "quantity"),
-                                                                                                PrimitiveFieldValue.createDouble(100.0)
-                                                                                        ),
-                                                                                        InstanceFieldDTO.create(
-                                                                                                TestUtils.getFieldIdByCode(currencyKlass, "kind"),
-                                                                                                ReferenceFieldValue.create(currencyKindYuan)
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                                )
-                                                        ),
-                                                        InstanceFieldDTO.create(
-                                                                TestUtils.getFieldIdByCode(pricesKlass, "channelPrices"),
-                                                                new ListFieldValue(
-                                                                        null, false,
-                                                                        List.of(
-                                                                                InstanceFieldValue.of(
-                                                                                        InstanceDTO.createClassInstance(
-                                                                                                TypeExpressions.getClassType(channelPriceKlass),
-                                                                                                List.of(
-                                                                                                        InstanceFieldDTO.create(
-                                                                                                                TestUtils.getFieldIdByCode(channelPriceKlass, "channel"),
-                                                                                                                PrimitiveFieldValue.createString("mobile")
-                                                                                                        ),
-                                                                                                        InstanceFieldDTO.create(
-                                                                                                                TestUtils.getFieldIdByCode(channelPriceKlass, "price"),
-                                                                                                                InstanceFieldValue.of(
-                                                                                                                        InstanceDTO.createClassInstance(
-                                                                                                                                TypeExpressions.getClassType(currencyKlass),
-                                                                                                                                List.of(
-                                                                                                                                        InstanceFieldDTO.create(
-                                                                                                                                                TestUtils.getFieldIdByCode(currencyKlass, "quantity"),
-                                                                                                                                                PrimitiveFieldValue.createDouble(80.0)
-                                                                                                                                        ),
-                                                                                                                                        InstanceFieldDTO.create(
-                                                                                                                                                TestUtils.getFieldIdByCode(currencyKlass, "kind"),
-                                                                                                                                                ReferenceFieldValue.create(currencyKindYuan)
-                                                                                                                                        )
-                                                                                                                                )
-                                                                                                                        )
-                                                                                                                )
-                                                                                                        )
-                                                                                                )
-                                                                                        )
-                                                                                ),
-                                                                                InstanceFieldValue.of(
-                                                                                        InstanceDTO.createClassInstance(
-                                                                                                TypeExpressions.getClassType(channelPriceKlass),
-                                                                                                List.of(
-                                                                                                        InstanceFieldDTO.create(
-                                                                                                                TestUtils.getFieldIdByCode(channelPriceKlass, "channel"),
-                                                                                                                PrimitiveFieldValue.createString("web")
-                                                                                                        ),
-                                                                                                        InstanceFieldDTO.create(
-                                                                                                                TestUtils.getFieldIdByCode(channelPriceKlass, "price"),
-                                                                                                                InstanceFieldValue.of(
-                                                                                                                        InstanceDTO.createClassInstance(
-                                                                                                                                TypeExpressions.getClassType(currencyKlass),
-                                                                                                                                List.of(
-                                                                                                                                        InstanceFieldDTO.create(
-                                                                                                                                                TestUtils.getFieldIdByCode(currencyKlass, "quantity"),
-                                                                                                                                                PrimitiveFieldValue.createDouble(95.0)
-                                                                                                                                        ),
-                                                                                                                                        InstanceFieldDTO.create(
-                                                                                                                                                TestUtils.getFieldIdByCode(currencyKlass, "kind"),
-                                                                                                                                                ReferenceFieldValue.create(currencyKindYuan)
-                                                                                                                                        )
-                                                                                                                                )
-                                                                                                                        )
-                                                                                                                )
-                                                                                                        )
-                                                                                                )
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                                )
-                                                        )
+        var productId = TestUtils.doInTransaction(() -> apiService.saveInstance(
+                productKlass.getCodeRequired(),
+                Map.of(
+                        "name", "Shoes",
+                        "price", Map.of(
+                                "defaultPrice", Map.of(
+                                        "quantity", 100,
+                                        "kind", currencyKindYuan.getIdRequired()
+                                ),
+                                "channelPrices", List.of(
+                                        Map.of(
+                                                "channel", "mobile",
+                                                "price", Map.of(
+                                                        "quantity", 80,
+                                                        "kind", currencyKindYuan.getIdRequired()
+                                                )
+                                        ),
+                                        Map.of(
+                                                "channel", "web",
+                                                "price", Map.of(
+                                                        "quantity", 95,
+                                                        "kind", currencyKindYuan.getIdRequired()
                                                 )
                                         )
                                 )
                         )
                 )
-        )));
+        ));
         var product = instanceManager.get(productId, 2).instance();
         var price = product.getInstance("price");
         Assert.assertNull(price.id());

@@ -29,7 +29,7 @@ public record TypeDTO(
     }
 
     @JsonIgnore
-    public String getCode() {
+    public String getCodeRequired() {
         return Objects.requireNonNull(code);
     }
 

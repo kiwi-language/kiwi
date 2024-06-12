@@ -64,8 +64,6 @@ public class ClassInstance extends DurableInstance {
 
     public ClassInstance(Id id, ClassType type, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
         super(id, type, 0, 0, ephemeral, load);
-        if(id != null && id.toString().equals("029ec908009202"))
-            System.out.println("Caught");
         this.klass = type.resolve();
     }
 

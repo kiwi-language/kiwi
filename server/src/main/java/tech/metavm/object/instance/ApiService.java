@@ -208,7 +208,7 @@ public class ApiService extends EntityContextFactoryAware {
                 case String s -> asValue ? ValueResolutionResult.failed : tryResolveReference(s, classType, context);
                 case List<?> list -> tryResolveList(list, classType, currentValue, context);
                 case Map<?, ?> map -> tryResolveObject(map, classType, context);
-                default -> ValueResolutionResult.failed;
+                case null, default -> ValueResolutionResult.failed;
             };
             case ArrayType arrayType -> tryResolveArray(rawValue, arrayType, currentValue, context);
             case UnionType unionType -> {
@@ -305,8 +305,6 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ValueResolutionResult tryResolveList(List<?> list, ClassType type, @Nullable Instance currentValue, IEntityContext context) {
-        if (DebugEnv.flag)
-            System.out.println("Caught");
         ListNative listNative;
         if (currentValue instanceof ClassInstance currentList && type.isInstance(currentList)) {
             listNative = new ListNative(currentList);
