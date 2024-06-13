@@ -18,6 +18,18 @@ import java.util.Objects;
 
 public abstract class Id implements Comparable<Id> {
 
+    public static boolean isId(String s) {
+        return tryParse(s) != null;
+    }
+
+    public static @javax.annotation.Nullable Id tryParse(String s) {
+        try {
+            return parse(s);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     public abstract void write(InstanceOutput output);
 
     public static boolean isPersistedId(@Nullable String id) {

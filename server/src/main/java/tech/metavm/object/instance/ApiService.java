@@ -117,17 +117,6 @@ public class ApiService extends EntityContextFactoryAware {
             return result.ret() != null ? formatInstance(result.ret(), false) : null;
     }
 
-    private @Nullable Id tryResolveId(Object rawValue) {
-        if (rawValue instanceof String s) {
-            try {
-                return Id.parse(s);
-            } catch (Exception ignored) {
-                return null;
-            }
-        } else
-            return null;
-    }
-
     private Object formatInstance(Instance instance, boolean asValue) {
         return switch (instance) {
             case PrimitiveInstance primitiveInstance -> primitiveInstance.getValue();
@@ -142,9 +131,13 @@ public class ApiService extends EntityContextFactoryAware {
         };
     }
 
-    private Map<String, Object> formatValueObject(ClassInstance classInstance) {
+    private Map<String, Object> formatValueObject(ClassInstance instance) {
         var map = new HashMap<String, Object>();
-        classInstance.forEachField((field, value) -> map.put(field.getCode(), formatInstance(value, field.isChild())));
+        var id = instance.getStringId();
+        if (id != null)
+            map.put(KEY_ID, id);
+        map.put(KEY_CLASS, instance.getType().resolve().getCode());
+        instance.forEachField((field, value) -> map.put(field.getCode(), formatInstance(value, field.isChild())));
         return map;
     }
 
@@ -344,7 +337,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     private ValueResolutionResult tryResolveReference(Object rawValue, Type type, IEntityContext context) {
         if (rawValue instanceof String str) {
-            var id = tryResolveId(str);
+            var id = Id.tryParse(str);
             if (id != null) {
                 var inst = context.getInstanceContext().get(id);
                 return type.isInstance(inst) ? ValueResolutionResult.of(inst) : ValueResolutionResult.failed;
@@ -357,7 +350,7 @@ public class ApiService extends EntityContextFactoryAware {
         if (rawValue == null)
             return Instances.nullInstance();
         if (rawValue instanceof String str) {
-            var id = tryResolveId(str);
+            var id = Id.tryParse(str);
             if (id != null)
                 return context.getInstanceContext().get(id);
             return Instances.stringInstance(str);

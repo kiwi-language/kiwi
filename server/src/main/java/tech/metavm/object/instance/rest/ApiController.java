@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.ApiService;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.user.LoginService;
 import tech.metavm.util.*;
 
@@ -29,7 +30,6 @@ public class ApiController {
         this.verify = verify;
     }
 
-    @SuppressWarnings("unchecked")
     @RequestMapping("/**")
     public Object handle(HttpServletRequest request, @RequestBody(required = false) Object requestBody) {
         verify(request);
@@ -37,28 +37,30 @@ public class ApiController {
         var path = request.getRequestURI().substring(5);
         switch (method) {
             case "POST" -> {
-                var idx = path.lastIndexOf('/');
+                var idx = path.indexOf('/');
                 if (idx == -1)
                     throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
                 var methodCode = path.substring(idx + 1);
-                var qualifier = path.substring(0, idx);
-                if (qualifier.startsWith(Constants.ID_PREFIX)) {
-                    var id = Constants.removeIdPrefix(qualifier);
-                    return apiService.handleInstanceMethodCall(id, methodCode, (List<Object>) requestBody);
-                } else if (methodCode.equals("new"))
-                    return apiService.handleNewInstance(qualifier.replace('/', '.'), (List<Object>) requestBody);
+                var qualifier = path.substring(0, idx).replace('/', '.');
+                //noinspection unchecked
+                var arguments = (List<Object>) requestBody;
+                if (Id.isId(qualifier))
+                    return apiService.handleInstanceMethodCall(qualifier, methodCode, arguments);
+                else if (methodCode.equals("new"))
+                    return apiService.handleNewInstance(qualifier, arguments);
                 else
-                    return apiService.handleStaticMethodCall(qualifier.replace('/', '.'), methodCode, (List<Object>) requestBody);
+                    return apiService.handleStaticMethodCall(qualifier, methodCode, arguments);
             }
             case "GET" -> {
-                return apiService.getInstance(Constants.removeIdPrefix(path));
+                return apiService.getInstance(path);
             }
             case "PUT" -> {
                 var klassName = path.replace('/', '.');
+                //noinspection unchecked
                 return apiService.saveInstance(klassName, (Map<String, Object>) requestBody);
             }
             case "DELETE" -> {
-                apiService.deleteInstance(Constants.removeIdPrefix(path));
+                apiService.deleteInstance(path);
                 return null;
             }
             default -> throw new BusinessException(ErrorCode.INVALID_REQUEST_METHOD);

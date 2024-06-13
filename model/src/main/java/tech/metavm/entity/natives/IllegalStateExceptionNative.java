@@ -9,15 +9,15 @@ public class IllegalStateExceptionNative extends RuntimeExceptionNative {
         super(instance);
     }
 
-    public ClassInstance IllegalArgumentException(CallContext callContext) {
+    public ClassInstance IllegalStateException(CallContext callContext) {
         return RuntimeException(callContext);
     }
 
-    public ClassInstance IllegalArgumentException(Instance causeOrMessage, CallContext callContext) {
+    public ClassInstance IllegalStateException(Instance causeOrMessage, CallContext callContext) {
         return RuntimeException(causeOrMessage, callContext);
     }
 
-    public ClassInstance IllegalArgumentException(Instance message, Instance cause, CallContext callContext) {
+    public ClassInstance IllegalStateException(Instance message, Instance cause, CallContext callContext) {
         return RuntimeException(message, cause, callContext);
     }
 
