@@ -1,15 +1,15 @@
 ###
-POST https://metavm.tech/api/bootstrap?saveIds=false
+POST https://metavm.tech/rest/bootstrap?saveIds=false
 
 ###
 GET https://metavm.tech/websocket/metavm-websocket
 Upgrade: websocket
 
 ###
-POST https://metavm.tech/api/bootstrap/save
+POST https://metavm.tech/rest/bootstrap/save
 
 ###
-POST https://metavm.tech/api/application/create
+POST https://metavm.tech/rest/application/create
 Accept: application/json
 Content-Type: application/json
 
@@ -19,7 +19,7 @@ Content-Type: application/json
 }
 
 ###
-POST https://metavm.tech/api/login
+POST https://metavm.tech/rest/login
 Accept: application/json
 Content-Type: application/json
 
@@ -30,8 +30,8 @@ Content-Type: application/json
 }
 
 ###
-DELETE https://metavm.tech/api/instance/7205760404292733
+DELETE https://metavm.tech/rest/instance/7205760404292733
 
 ###
-GET https://metavm.tech/api/system/cache/1005400109
+GET https://metavm.tech/rest/system/cache/1005400109
 

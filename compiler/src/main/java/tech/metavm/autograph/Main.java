@@ -29,7 +29,7 @@ public class Main {
 
     private static String selectedEnv = getEnvPath("default");
 
-    public static final String DEFAULT_HOST = "https://metavm.tech/api";
+    public static final String DEFAULT_HOST = "https://metavm.tech/rest";
 
     private final Compiler compiler;
     private final String sourceRoot;
