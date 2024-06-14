@@ -1,0 +1,79 @@
+package org.metavm.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.metavm.object.instance.ObjectInstanceMap;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.util.ReflectionUtils;
+
+import javax.annotation.Nullable;
+import java.lang.reflect.Field;
+
+public class FieldDef implements IFieldDef {
+
+    private final Field javaField;
+    private final PojoDef<?> declaringTypeDef;
+    private final org.metavm.object.type.Field field;
+    private final @Nullable Mapper<?, ?> targetMapper;
+
+    public FieldDef(org.metavm.object.type.Field field,
+                    boolean nullable,
+                    Field javaField,
+                    PojoDef<?> declaringTypeDef,
+                    @Nullable Mapper<?, ?> targetMapper) {
+        this.javaField = javaField;
+        this.targetMapper = targetMapper;
+        this.declaringTypeDef = declaringTypeDef;
+        this.field = field;
+        declaringTypeDef.addFieldDef(this);
+    }
+
+    @Override
+    public void setModelField(Object model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+        Object fieldValue = getModelFieldValue(instance, objectInstanceMap);
+        ReflectionUtils.set(model, javaField, fieldValue);
+    }
+
+    @Override
+    public Object getModelFieldValue(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+        Instance fieldValue = instance.getField(field);
+        if (targetMapper instanceof InstanceArrayMapper<?, ?>) {
+//            noinspection rawtypes,unchecked
+            return objectInstanceMap.getEntity(javaField.getType(), fieldValue, (Mapper) targetMapper);
+        }
+        return objectInstanceMap.getEntity(javaField.getType(), fieldValue);
+    }
+
+    @Override
+    public Instance getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
+        EntityUtils.ensureProxyInitialized(model);
+        return instanceMap.getInstance(ReflectionUtils.get(model, javaField));
+    }
+
+    @Override
+    @JsonIgnore
+    @SuppressWarnings("unused")
+    public PojoDef<?> getDeclaringTypeDef() {
+        return declaringTypeDef;
+    }
+
+    private String fieldName() {
+        return javaField.getDeclaringClass().getName() + "." + javaField.getName();
+    }
+
+    @Override
+    public Field getJavaField() {
+        return javaField;
+    }
+
+    @Override
+    public org.metavm.object.type.Field getField() {
+        return field;
+    }
+
+    @Override
+    public String getName() {
+        return field.getName();
+    }
+
+}

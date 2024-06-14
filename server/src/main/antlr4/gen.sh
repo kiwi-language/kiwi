@@ -1,5 +1,5 @@
-TARGET=/Users/leen/workspace/object/model/src/main/java/tech/metavm/expression/antlr
-PKG=tech.metavm.expression.antlr
+TARGET=/Users/leen/workspace/object/model/src/main/java/org/metavm/expression/antlr
+PKG=org.metavm.expression.antlr
 FILES=(MetaVMLexer.g4 MetaVMParser.g4)
 antlr4 -package $PKG -o $TARGET ${FILES[*]}
 FRONT_TARGET=/Users/leen/workspace/front/src/expression/antlr

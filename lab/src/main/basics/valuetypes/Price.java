@@ -1,7 +1,7 @@
 package valuetypes;
 
-import tech.metavm.entity.ValueList;
-import tech.metavm.entity.ValueType;
+import org.metavm.entity.ValueList;
+import org.metavm.entity.ValueType;
 
 @ValueType
 public record Price(

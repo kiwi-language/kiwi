@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="tech.metavm.object.instance.persistence.mappers.InstanceMapper">
-    <resultMap id="BaseResultMap" type="tech.metavm.object.instance.persistence.InstancePO">
+<mapper namespace="org.metavm.object.instance.persistence.mappers.InstanceMapper">
+    <resultMap id="BaseResultMap" type="org.metavm.object.instance.persistence.InstancePO">
         <!--@mbg.generated-->
         <!--@Table instance-->
         <id property="id" jdbcType="BIGINT" column="id"/>
@@ -133,7 +133,7 @@
         limit #{limit}
     </select>
 
-    <select id="selectVersions" resultType="tech.metavm.object.instance.core.TreeVersion">
+    <select id="selectVersions" resultType="org.metavm.object.instance.core.TreeVersion">
         select id, version
         from instance
         where app_id = #{appId}

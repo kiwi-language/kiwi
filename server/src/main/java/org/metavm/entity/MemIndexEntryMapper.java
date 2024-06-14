@@ -1,0 +1,148 @@
+package org.metavm.entity;
+
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.persistence.IndexEntryPO;
+import org.metavm.object.instance.persistence.IndexKeyPO;
+import org.metavm.object.instance.persistence.IndexQueryPO;
+import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
+
+import javax.annotation.Nullable;
+import java.util.*;
+
+public class MemIndexEntryMapper implements IndexEntryMapper {
+
+    private final Map<GlobalKey, List<IndexEntryPO>> key2items = new HashMap<>();
+    private final NavigableSet<IndexEntryPO> entries = new TreeSet<>();
+    private final Map<Id, List<IndexEntryPO>> instanceId2items = new HashMap<>();
+
+    private List<IndexEntryPO> getItems(GlobalKey key) {
+        return key2items.computeIfAbsent(key, k -> new ArrayList<>());
+    }
+
+    private List<IndexEntryPO> getItemsByInstanceId(Id instanceId) {
+        return instanceId2items.computeIfAbsent(instanceId, k -> new ArrayList<>());
+    }
+
+    @Override
+    public List<IndexEntryPO> query(IndexQueryPO query) {
+        return query(query.appId(), query.indexId(), query.from(), query.to()).stream().toList();
+    }
+
+    @Override
+    public long countRange(long appId, IndexKeyPO from, IndexKeyPO to) {
+        if(!Arrays.equals(from.getIndexId(), to.getIndexId()))
+            throw new InternalException("from.getIndexId() not equal to to.getIndexId()");
+        return query(appId, from.getIndexId(), from, to).stream().map(IndexEntryPO::getId).distinct().count();
+    }
+
+    @Override
+    public List<IndexEntryPO> scan(long appId, IndexKeyPO from, IndexKeyPO to) {
+        if(!Arrays.equals(from.getIndexId(), to.getIndexId()))
+            throw new InternalException("from.getIndexId() not equal to to.getIndexId()");
+        return query(appId, from.getIndexId(), from, to).stream().toList();
+    }
+
+    public long count(IndexQueryPO query) {
+        return query(query.appId(), query.indexId(), query.from(), query.to()).stream()
+                .map(IndexEntryPO::getId)
+                .distinct()
+                .count();
+    }
+
+    public static final byte[] MIN_BYTES = new byte[0];
+
+    public static final byte[] MAX_BYTES = new byte[] {
+            -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1
+    };
+
+    private static final byte[][] MIN_COLUMNS = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
+    private static final byte[][] MAX_COLUMNS = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
+
+    static {
+        for (int i = 0; i < IndexKeyPO.MAX_KEY_COLUMNS; i++) {
+            MIN_COLUMNS[i] = MIN_BYTES;
+            MAX_COLUMNS[i] = MAX_BYTES;
+        }
+    }
+
+    public Collection<IndexEntryPO> query(long appId, byte[] indexId, @Nullable IndexKeyPO from, @Nullable IndexKeyPO to) {
+        if(from == null)
+            from = new IndexKeyPO(indexId, MIN_COLUMNS);
+        if(to == null)
+            to = new IndexKeyPO(indexId, MAX_COLUMNS);
+        return entries.subSet(new IndexEntryPO(appId, from, MIN_BYTES), true, new IndexEntryPO(appId, to, MAX_BYTES), true);
+    }
+
+    @Override
+    public List<IndexEntryPO> selectByInstanceIdsOrKeys(long appId,
+                                                        Collection<byte[]> instanceIds,
+                                                        Collection<IndexKeyPO> keys) {
+        var globalKeys = NncUtils.map(keys, k -> new GlobalKey(appId, k));
+        return NncUtils.union(
+                NncUtils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id))),
+                NncUtils.flatMap(globalKeys, this::getItems)
+        );
+    }
+
+    @Override
+    public List<IndexEntryPO> selectByInstanceIds(long appId, Collection<byte[]> instanceIds) {
+        try (var ignored = ContextUtil.getProfiler().enter("MemIndexEntryMapper.selectByInstanceIds")) {
+            return NncUtils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id)));
+        }
+    }
+
+    @Override
+    public List<IndexEntryPO> selectByKeys(long appId, Collection<IndexKeyPO> keys) {
+        try (var ignored = ContextUtil.getProfiler().enter("MemIndexEntryMapper.selectByKeys")) {
+            var globalKeys = NncUtils.map(keys, k -> new GlobalKey(appId, k));
+            return NncUtils.flatMap(globalKeys, this::getItems);
+        }
+    }
+
+    @Override
+    public void batchInsert(Collection<IndexEntryPO> entries) {
+        for (IndexEntryPO entry : entries) {
+            getItems(new GlobalKey(entry.getAppId(), entry.getKey())).add(entry);
+            getItemsByInstanceId(entry.getId()).add(entry);
+            if(!this.entries.add(entry))
+                throw new InternalException("Duplicate index entry: " + entry);
+        }
+    }
+
+    @Override
+    public void batchDelete(Collection<IndexEntryPO> items) {
+        for (IndexEntryPO item : items) {
+            if(!this.entries.remove(item))
+                throw new InternalException(item + " does not exist");
+            getItems(new GlobalKey(item.getAppId(), item.getKey())).remove(item);
+            getItemsByInstanceId(item.getId()).remove(item);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public void clear() {
+        entries.clear();
+        key2items.clear();
+        instanceId2items.clear();
+    }
+
+    private record GlobalKey(
+            long appId,
+            IndexKeyPO key
+    ) {
+
+    }
+
+    public MemIndexEntryMapper copy() {
+        var copy = new MemIndexEntryMapper();
+        copy.batchInsert(NncUtils.map(entries, IndexEntryPO::copy));
+        return copy;
+    }
+
+}

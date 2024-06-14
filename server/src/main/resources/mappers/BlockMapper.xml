@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="tech.metavm.system.persistence.BlockMapper">
+<mapper namespace="org.metavm.system.persistence.BlockMapper">
 
-  <resultMap id="BaseResultMap" type="tech.metavm.system.persistence.BlockPO">
+  <resultMap id="BaseResultMap" type="org.metavm.system.persistence.BlockPO">
     <!--@mbg.generated-->
     <!--@Table id_block-->
     <id column="id" jdbcType="BIGINT" property="id"/>

@@ -1,7 +1,7 @@
 package capturedtypes;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.ChildList;
+import org.metavm.entity.ChildEntity;
+import org.metavm.entity.ChildList;
 
 import java.util.List;
 

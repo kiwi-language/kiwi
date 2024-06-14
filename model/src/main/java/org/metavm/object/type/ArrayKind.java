@@ -1,0 +1,110 @@
+package org.metavm.object.type;
+
+import org.metavm.entity.*;
+import org.metavm.flow.Flow;
+import org.metavm.util.NncUtils;
+
+import javax.annotation.Nullable;
+import java.util.List;
+
+public enum ArrayKind {
+
+    READ_WRITE(1, TypeCategory.READ_WRITE_ARRAY, TypeTags.READ_WRITE_ARRAY, ReadWriteArray.class, "[]") {
+        @Override
+        public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
+             return (that == READ_WRITE || that == CHILD) && assignedElementType.contains(assignmentElementType);
+        }
+
+        @Override
+        public String getInternalName(Type elementType, @Nullable Flow current) {
+            return List.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        }
+
+    },
+    READ_ONLY(2, TypeCategory.READ_ONLY_ARRAY, TypeTags.READONLY_ARRAY, ReadonlyArray.class, "[R]") {
+        @Override
+        public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
+            return assignedElementType.isAssignableFrom(assignmentElementType);
+        }
+
+        @Override
+        public String getInternalName(Type elementType, @Nullable Flow current) {
+            return ReadonlyList.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        }
+    },
+    CHILD(3, TypeCategory.CHILD_ARRAY, TypeTags.CHILD_ARRAY, ChildArray.class, "[C]") {
+        @Override
+        public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
+            return that == CHILD && assignedElementType.contains(assignmentElementType);
+        }
+
+        @Override
+        public String getInternalName(Type elementType, @Nullable Flow current) {
+            return ChildList.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        }
+    },
+    VALUE(4, TypeCategory.VALUE_ARRAY, TypeTags.VALUE_ARRAY, ValueArray.class, "[V]") {
+        @Override
+        public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
+            return that == VALUE && assignedElementType.contains(assignmentElementType);
+        }
+
+        @Override
+        public String getInternalName(Type elementType, @Nullable Flow current) {
+            return ValueList.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        }
+    },
+    ;
+
+    private final int code;
+    private final TypeCategory category;
+    private final int typeTag;
+    private final Class<?> entityClass;
+    private final String suffix;
+
+    ArrayKind(int code, TypeCategory category, int typeTag, Class<?> entityClass, String suffix) {
+        this.code = code;
+        this.category = category;
+        this.typeTag = typeTag;
+        this.entityClass = entityClass;
+        this.suffix = suffix;
+    }
+
+    public static ArrayKind fromCode(int code) {
+        return NncUtils.findRequired(values(), v -> v.code == code);
+    }
+
+    public static ArrayKind fromEntityClass(Class<?> entityClass) {
+        return NncUtils.findRequired(values(), v -> v.entityClass == entityClass);
+    }
+
+    public int code() {
+        return code;
+    }
+
+    public TypeCategory category() {
+        return category;
+    }
+
+    public int typeTag() {
+        return typeTag;
+    }
+
+    public abstract boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType);
+
+    public abstract String getInternalName(Type elementType, @Nullable Flow current);
+
+    @SuppressWarnings("rawtypes")
+    public Class<? extends ReadonlyArray> getEntityClass() {
+        //noinspection unchecked
+        return (Class<? extends ReadonlyArray<?>>) entityClass;
+    }
+
+    public static ArrayKind getByEntityClass(Class<?> klass) {
+        return NncUtils.findRequired(values(), v -> v.entityClass == klass);
+    }
+
+    public String getSuffix() {
+        return suffix;
+    }
+}

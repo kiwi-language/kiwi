@@ -3,7 +3,7 @@
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import tech.metavm.antlr4.TestParser;
+import org.metavm.antlr4.TestParser;
 
 /**
  * This class provides an empty implementation of {@link TestListener},

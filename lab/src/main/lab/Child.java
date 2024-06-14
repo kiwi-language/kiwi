@@ -1,4 +1,4 @@
-import tech.metavm.entity.EntityField;
+import org.metavm.entity.EntityField;
 
 import javax.annotation.Nullable;
 

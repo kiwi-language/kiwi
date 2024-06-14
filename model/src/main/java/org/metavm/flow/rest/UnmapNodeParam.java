@@ -1,0 +1,9 @@
+package org.metavm.flow.rest;
+
+import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
+
+public record UnmapNodeParam(
+        ValueDTO view,
+        ObjectMappingRefDTO mappingRef
+) {
+}

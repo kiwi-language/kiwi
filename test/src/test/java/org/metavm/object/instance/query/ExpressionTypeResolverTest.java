@@ -1,0 +1,67 @@
+package org.metavm.object.instance.query;
+
+import junit.framework.TestCase;
+import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.entity.StandardTypes;
+import org.metavm.expression.AllMatchExpression;
+import org.metavm.expression.ExpressionParser;
+import org.metavm.expression.TypeParsingContext;
+import org.metavm.expression.VarType;
+import org.metavm.object.instance.core.InstanceProvider;
+import org.metavm.object.instance.core.mocks.MockInstanceRepository;
+import org.metavm.object.type.*;
+import org.metavm.object.type.mocks.MockTypeDefRepository;
+import org.metavm.util.TestUtils;
+
+import java.util.List;
+
+public class ExpressionTypeResolverTest extends TestCase {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(ExpressionTypeResolverTest.class);
+
+    private TypeDefRepository typeDefRepository;
+    private InstanceProvider instanceProvider;
+
+    @Override
+    protected void setUp() throws Exception {
+        typeDefRepository = new MockTypeDefRepository();
+        instanceProvider = new MockInstanceRepository();
+        MockStandardTypesInitializer.init();
+    }
+
+    public void testEq() {
+        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
+        TestUtils.initEntityIds(fooType);
+        typeDefRepository.save(List.of(fooType));
+        FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType()).build();
+        String exprString = "this.name = \"Big Foo\"";
+        var expression = ExpressionParser.parse(exprString, createTypeParsingContext(fooType));
+        Assert.assertNotNull(expression);
+        Assert.assertEquals(exprString, expression.build(VarType.NAME));
+    }
+
+    public void testAllMatch() {
+        var listViewType = ClassTypeBuilder.newBuilder("ListView", "ListView").build();
+        var classTypeType = ClassTypeBuilder.newBuilder("ClassType", "ClassType").build();
+        var fieldType = ClassTypeBuilder.newBuilder("Field", "Field").build();
+        var fieldChildArrayType = new ArrayType(fieldType.getType(), ArrayKind.CHILD);
+        FieldBuilder.newBuilder("visibleFields", "visibleFields", listViewType, fieldChildArrayType).build();
+        FieldBuilder.newBuilder("type", "type", listViewType, classTypeType.getType()).build();
+        FieldBuilder.newBuilder("declaringType", "declaringType", fieldType, classTypeType.getType()).build();
+        TestUtils.initEntityIds(listViewType);
+        typeDefRepository.save(List.of(listViewType, classTypeType, fieldType));
+
+        String str = "allmatch(visibleFields, declaringType=this.type)";
+        var expression = ExpressionParser.parse(str, createTypeParsingContext(listViewType));
+        Assert.assertTrue(expression instanceof AllMatchExpression);
+        LOGGER.info(expression.build(VarType.NAME));
+    }
+
+    private TypeParsingContext createTypeParsingContext(Klass type) {
+        return new TypeParsingContext(instanceProvider, typeDefRepository, type);
+    }
+
+}

@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>tech.metavm</groupId>
-    <artifactId>object</artifactId>
+    <groupId>org.metavm</groupId>
+    <artifactId>metavm-parent</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
@@ -65,20 +65,20 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>tech.metavm</groupId>
-                <artifactId>model</artifactId>
+                <groupId>org.metavm</groupId>
+                <artifactId>metavm-model</artifactId>
                 <version>${version}</version>
             </dependency>
 
             <dependency>
-                <groupId>tech.metavm</groupId>
-                <artifactId>api</artifactId>
+                <groupId>org.metavm</groupId>
+                <artifactId>metavm-api</artifactId>
                 <version>${version}</version>
             </dependency>
 
             <dependency>
-                <groupId>tech.metavm</groupId>
-                <artifactId>compiler</artifactId>
+                <groupId>org.metavm</groupId>
+                <artifactId>metavm-compiler</artifactId>
                 <version>${version}</version>
             </dependency>
 

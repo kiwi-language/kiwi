@@ -1,0 +1,43 @@
+package org.metavm.entity;
+
+import org.metavm.object.instance.ObjectInstanceMap;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.type.Klass;
+import org.metavm.util.NncUtils;
+import org.metavm.util.ReflectionUtils;
+
+import javax.annotation.Nullable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.RecordComponent;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+
+public class RecordDef<T extends Record> extends PojoDef<T> {
+
+    private final Constructor<T> constructor;
+
+    public RecordDef(Class<T> javaType, Type genericType, @Nullable PojoDef<? super T> parentDef, Klass type, DefContext defContext) {
+        super(javaType, genericType, parentDef, type, defContext);
+        Class<?>[] componentTypes =
+                Arrays.stream(javaType.getRecordComponents()).map(RecordComponent::getType).toArray(Class<?>[]::new);
+        constructor = ReflectionUtils.getDeclaredConstructor(javaType, componentTypes);
+    }
+
+    @Override
+    public void initEntity(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public T createEntity(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+        Object[] fieldValues = NncUtils.map(getFieldDefList(), fieldDef -> fieldDef.getModelFieldValue(instance, objectInstanceMap))
+                .toArray(Object[]::new);
+        return ReflectionUtils.invokeConstructor(constructor, fieldValues);
+    }
+
+    @Override
+    public void updateEntity(T pojo, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+
+    }
+
+}

@@ -1,0 +1,88 @@
+package org.metavm.instance.core;
+
+import org.metavm.entity.IdInitializer;
+import org.metavm.entity.VersionSource;
+import org.metavm.event.EventQueue;
+import org.metavm.object.instance.IndexSource;
+import org.metavm.object.instance.TreeSource;
+import org.metavm.object.instance.core.BufferingInstanceContext;
+import org.metavm.object.instance.core.DurableInstance;
+import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.type.TypeDefProvider;
+import org.metavm.object.view.MappingProvider;
+
+import javax.annotation.Nullable;
+import java.util.List;
+
+public class CompilerInstanceContext extends BufferingInstanceContext {
+
+    public CompilerInstanceContext(long appId,
+                                   List<TreeSource> treeSources,
+                                   VersionSource versionSource,
+                                   IdInitializer idService,
+                                   IndexSource indexSource,
+                                   IInstanceContext parent,
+                                   TypeDefProvider typeDefProvider,
+                                   MappingProvider mappingProvider,
+                                   boolean readonly) {
+        super(appId,
+                treeSources, versionSource,
+                indexSource, idService,
+                parent,
+                typeDefProvider,
+                mappingProvider, readonly);
+    }
+
+    @Override
+    public IInstanceContext createSame(long appId) {
+        return null;
+    }
+
+    @Override
+    public List<DurableInstance> scan(long start, long limit) {
+        throw new UnsupportedOperationException();
+    }
+
+//    @Override
+//    public List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit) {
+//        return null;
+//    }
+
+//    @Override
+//    public List<DurableInstance> scan(DurableInstance startExclusive, long limit) {
+//        return null;
+//    }
+
+//    @Override
+//    public boolean existsInstances(Type type, boolean persistedOnly) {
+//        return false;
+//    }
+
+    @Override
+    public List<DurableInstance> getByReferenceTargetId(Id targetId, long startExclusive, long limit) {
+        return null;
+    }
+
+    @Override
+    protected void finishInternal() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isFinished() {
+        return false;
+    }
+
+    @Override
+    public void initIds() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public EventQueue getEventQueue() {
+        return null;
+    }
+
+}
