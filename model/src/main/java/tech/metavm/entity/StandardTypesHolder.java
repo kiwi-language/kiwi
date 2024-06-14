@@ -88,4 +88,7 @@ public interface StandardTypesHolder {
 
     void setNullPointerExceptionKlass(Klass klass);
 
+    Klass getInterceptorKlass();
+
+    void setInterceptorKlass(Klass klass);
 }

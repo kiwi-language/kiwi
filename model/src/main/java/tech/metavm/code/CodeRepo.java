@@ -2,7 +2,6 @@ package tech.metavm.code;
 
 import tech.metavm.code.rest.dto.CodeRepoDTO;
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 

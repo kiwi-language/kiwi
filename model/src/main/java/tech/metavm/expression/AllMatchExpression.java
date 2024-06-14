@@ -2,7 +2,6 @@ package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;

@@ -1,7 +1,6 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueArray;
 import tech.metavm.object.instance.core.Instance;

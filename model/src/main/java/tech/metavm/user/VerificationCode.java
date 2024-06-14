@@ -1,7 +1,6 @@
 package tech.metavm.user;
 
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
 

@@ -1,7 +1,6 @@
 package tech.metavm.task;
 
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
 
@@ -18,7 +17,7 @@ public class JobSchedulerStatus extends Entity {
     private long lastHeartbeat;
     @Nullable
     private String nodeIP;
-    private boolean allFlag = true;
+    private final boolean allFlag = true;
 
     public long getVersion() {
         return version;

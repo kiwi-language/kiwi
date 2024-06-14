@@ -10,7 +10,6 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.FieldBuilder;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
 import java.util.List;

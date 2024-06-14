@@ -1,16 +1,28 @@
 package tech.metavm.object.instance.rest;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.entity.HttpCookie;
+import tech.metavm.entity.HttpHeader;
+import tech.metavm.entity.HttpRequest;
+import tech.metavm.entity.HttpResponse;
+import tech.metavm.http.HttpRequestImpl;
+import tech.metavm.http.HttpResponseImpl;
 import tech.metavm.object.instance.ApiService;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.user.LoginService;
-import tech.metavm.util.*;
+import tech.metavm.util.BusinessException;
+import tech.metavm.util.ContextUtil;
+import tech.metavm.util.Headers;
+import tech.metavm.util.ValueUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,11 +43,13 @@ public class ApiController {
     }
 
     @RequestMapping("/**")
-    public Object handle(HttpServletRequest request, @RequestBody(required = false) Object requestBody) {
-        verify(request);
-        var method = request.getMethod();
-        var path = request.getRequestURI().substring(5);
-        switch (method) {
+    public Object handle(HttpServletRequest servletRequest, HttpServletResponse servletResponse, @RequestBody(required = false) Object requestBody) {
+        verify(servletRequest);
+        var request = createRequest(servletRequest);
+        var response = new HttpResponseImpl();
+        var method = servletRequest.getMethod();
+        var path = servletRequest.getRequestURI().substring(5);
+        var result = switch (method) {
             case "POST" -> {
                 var idx = path.indexOf('/');
                 if (idx == -1)
@@ -45,26 +59,26 @@ public class ApiController {
                 //noinspection unchecked
                 var arguments = (List<Object>) requestBody;
                 if (Id.isId(qualifier))
-                    return apiService.handleInstanceMethodCall(qualifier, methodCode, arguments);
+                    yield apiService.handleInstanceMethodCall(qualifier, methodCode, arguments, request, response);
                 else if (methodCode.equals("new"))
-                    return apiService.handleNewInstance(qualifier, arguments);
+                    yield apiService.handleNewInstance(qualifier, arguments, request, response);
                 else
-                    return apiService.handleStaticMethodCall(qualifier, methodCode, arguments);
+                    yield apiService.handleStaticMethodCall(qualifier, methodCode, arguments, request, response);
             }
-            case "GET" -> {
-                return apiService.getInstance(path);
-            }
+            case "GET" -> apiService.getInstance(path);
             case "PUT" -> {
                 var klassName = path.replace('/', '.');
                 //noinspection unchecked
-                return apiService.saveInstance(klassName, (Map<String, Object>) requestBody);
+                yield apiService.saveInstance(klassName, (Map<String, Object>) requestBody, request, response);
             }
             case "DELETE" -> {
                 apiService.deleteInstance(path);
-                return null;
+                yield null;
             }
             default -> throw new BusinessException(ErrorCode.INVALID_REQUEST_METHOD);
-        }
+        };
+        saveResponse(response, servletResponse);
+        return result;
     }
 
     private void verify(HttpServletRequest request) {
@@ -72,12 +86,42 @@ public class ApiController {
         if (appIdStr == null || !ValueUtils.isIntegerStr(appIdStr))
             throw new BusinessException(ErrorCode.AUTH_FAILED);
         var appId = Long.parseLong(appIdStr);
-        if(verify) {
+        if (verify) {
             var secret = request.getHeader(Headers.SECRET);
             if (!loginService.verifySecret(appId, secret))
                 throw new BusinessException(ErrorCode.AUTH_FAILED);
         }
         ContextUtil.setAppId(appId);
+    }
+
+    private HttpRequest createRequest(HttpServletRequest servletRequest) {
+        var headers = new ArrayList<HttpHeader>();
+        var names = servletRequest.getHeaderNames();
+        while (names.hasMoreElements()) {
+            var name = names.nextElement();
+            headers.add(new HttpHeader(name, servletRequest.getHeader(name)));
+        }
+        var cookies = new ArrayList<HttpCookie>();
+        for (Cookie cookie : servletRequest.getCookies()) {
+            cookies.add(new HttpCookie(cookie.getName(), cookie.getValue()));
+        }
+        return new HttpRequestImpl(
+                servletRequest.getMethod(),
+                servletRequest.getRequestURI(),
+                headers,
+                cookies
+        );
+    }
+
+    private void saveResponse(HttpResponse response, HttpServletResponse servletResponse) {
+        for (HttpCookie cookie : response.getCookies()) {
+            var servletCookie = new Cookie(cookie.name(), cookie.value());
+            servletCookie.setPath("/");
+            servletResponse.addCookie(servletCookie);
+        }
+        for (HttpHeader header : response.getHeaders()) {
+            servletResponse.addHeader(header.name(), header.value());
+        }
     }
 
 }

@@ -154,8 +154,7 @@ public class NncUtils {
     public static void createDirectories(String path) {
         try {
             Files.createDirectories(Paths.get(path));
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new InternalException("Failed to create directories for path " + path);
         }
     }
@@ -478,37 +477,37 @@ public class NncUtils {
     }
 
     public static String firstNonBlank(String s1, String s2, String s3) {
-        if(!isBlank(s1))
+        if (!isBlank(s1))
             return s1;
-        if(!isBlank(s2))
+        if (!isBlank(s2))
             return s2;
-        if(!isBlank(s3))
+        if (!isBlank(s3))
             return s3;
         throw new NullPointerException("All strings are either null or empty");
     }
 
     public static String firstNonBlank(String s1, String s2, String s3, String s4) {
-        if(!isBlank(s1))
+        if (!isBlank(s1))
             return s1;
-        if(!isBlank(s2))
+        if (!isBlank(s2))
             return s2;
-        if(!isBlank(s3))
+        if (!isBlank(s3))
             return s3;
-        if(!isBlank(s4))
+        if (!isBlank(s4))
             return s4;
         throw new NullPointerException("All strings are either null or empty");
     }
 
     public static String firstNonBlank(String s1, String s2, String s3, String s4, String s5) {
-        if(!isBlank(s1))
+        if (!isBlank(s1))
             return s1;
-        if(!isBlank(s2))
+        if (!isBlank(s2))
             return s2;
-        if(!isBlank(s3))
+        if (!isBlank(s3))
             return s3;
-        if(!isBlank(s4))
+        if (!isBlank(s4))
             return s4;
-        if(!isBlank(s5))
+        if (!isBlank(s5))
             return s5;
         throw new NullPointerException("All strings are either null or empty");
     }
@@ -1091,6 +1090,11 @@ public class NncUtils {
             return null;
         }
         return streamOf(iterable).filter(filter).findAny().orElse(null);
+    }
+
+    public static <T, R> @Nullable R findAndMap(Iterable<T> iterable, Predicate<? super T> filter,
+                                                Function<? super T, ? extends R> mapper) {
+        return streamOf(iterable).filter(filter).findFirst().map(mapper).orElse(null);
     }
 
     public static <T> boolean exists(Iterable<T> iterable, Predicate<T> filter) {
@@ -1820,8 +1824,7 @@ public class NncUtils {
         try {
             var u = new URI(url);
             return u.getScheme() + "://" + u.getHost();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new InternalException("Invalid URL: " + url);
         }
     }

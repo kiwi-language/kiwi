@@ -35,7 +35,7 @@ public class BasicCompileTest extends CompilerTestBase {
         }
         Assert.assertEquals(0, utilsType.getClassParam().errors().size());
         var labType = getClassTypeByCode("capturedtypes.CtLab");
-        var labId = TestUtils.doInTransaction(() -> apiService.saveInstance(
+        var labId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                         labType.getCodeRequired(),
                         Map.of(
                                 "foos", List.of(
@@ -50,7 +50,7 @@ public class BasicCompileTest extends CompilerTestBase {
         var foos = lab.getInstance("foos");
         Assert.assertEquals(3, foos.getElements().size());
         var foo002 = ((InstanceFieldValue) foos.getElements().get(1)).getInstance();
-        var foundFooId = TestUtils.doInTransaction(() -> apiService.handleInstanceMethodCall(
+        var foundFooId = TestUtils.doInTransaction(() -> apiClient.callInstanceMethod(
                 labId,
                 "getFooByName",
                 List.of("foo002"))
@@ -60,9 +60,9 @@ public class BasicCompileTest extends CompilerTestBase {
 
     private void processGenericOverride() {
         var subType = getClassTypeByCode("genericoverride.Sub");
-        var subId = TestUtils.doInTransaction(() -> apiService.saveInstance(subType.getCodeRequired(), Map.of()));
+        var subId = TestUtils.doInTransaction(() -> apiClient.saveInstance(subType.getCodeRequired(), Map.of()));
         DebugEnv.flag = true;
-        var result = TestUtils.doInTransaction(() -> apiService.handleInstanceMethodCall(
+        var result = TestUtils.doInTransaction(() -> apiClient.callInstanceMethod(
                 subId,
                 "containsAny<string>",
                 List.of(
@@ -79,7 +79,7 @@ public class BasicCompileTest extends CompilerTestBase {
         var productKlass = getClassTypeByCode("valuetypes.Product");
         var currencyKindKlass = getClassTypeByCode("valuetypes.CurrencyKind");
         var currencyKindYuan = TestUtils.getEnumConstantByName(currencyKindKlass, "YUAN");
-        var productId = TestUtils.doInTransaction(() -> apiService.saveInstance(
+        var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                 productKlass.getCodeRequired(),
                 Map.of(
                         "name", "Shoes",

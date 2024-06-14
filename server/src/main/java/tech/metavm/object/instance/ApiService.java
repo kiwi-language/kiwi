@@ -5,11 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tech.metavm.application.InterceptorRegistry;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityContextFactoryAware;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.StandardTypes;
+import tech.metavm.entity.*;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.entity.natives.ThrowableNative;
 import tech.metavm.flow.FlowExecResult;
@@ -23,6 +21,7 @@ import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Supplier;
 
 @Service
 public class ApiService extends EntityContextFactoryAware {
@@ -36,38 +35,76 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional
-    public String handleNewInstance(String classCode, List<Object> rawArguments) {
+    public String handleNewInstance(String classCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, null, rawArguments, false, true, context);
             var self = ClassInstanceBuilder.newBuilder(klass.getType()).build();
             context.getInstanceContext().bind(self);
-            var result = Flows.execute(r.method(), self, r.arguments(), context);
+            var result = execute(r.method, self, r.arguments, request, response, context);
             context.finish();
-            return (String) handleExecutionResult(result);
+            return (String) formatInstance(result, false);
         }
     }
 
     @Transactional
-    public Object handleInstanceMethodCall(String id, String methodCode, List<Object> rawArguments) {
+    public Object handleInstanceMethodCall(String id, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var self = (ClassInstance) context.getInstanceContext().get(Id.parse(id));
             var r = resolveMethod(self.getKlass(), methodCode, rawArguments, false, false, context);
-            var result = Flows.execute(r.method(), self, r.arguments(), context);
+            var inst = execute(r.method, self, r.arguments, request, response, context);
             context.finish();
-            return handleExecutionResult(result);
+            return formatInstance(inst, false);
         }
     }
 
     @Transactional
-    public Object handleStaticMethodCall(String classCode, String methodCode, List<Object> rawArguments) {
+    public Object handleStaticMethodCall(String classCode, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
             var result = Flows.execute(r.method, null, r.arguments(), context);
+            var inst = execute(r.method, null, r.arguments, request, response, context);
             context.finish();
-            return handleExecutionResult(result);
+            return formatInstance(inst, false);
         }
+    }
+
+    private Instance execute(Method method,
+                             @Nullable ClassInstance self,
+                             List<Instance> arguments,
+                             HttpRequest request,
+                             HttpResponse response,
+                             IEntityContext context) {
+        return doIntercepted(
+                () -> handleExecutionResult(Flows.execute(method, self, arguments, context)),
+                request,
+                response,
+                context
+        );
+    }
+
+    private Instance doIntercepted(Supplier<Instance> action, HttpRequest request, HttpResponse response, IEntityContext context) {
+        var registry = InterceptorRegistry.getInstance(context);
+        var interceptorKlass = StandardTypes.getInterceptorKlass();
+        var beforeMethod = interceptorKlass.getMethodByCode("before");
+        var afterMethod = interceptorKlass.getMethodByCode("after");
+        var interceptors = registry.getInterceptors();
+        var reqInst = context.getInstance(request);
+        var respInst = context.getInstance(response);
+        for (ClassInstance interceptor : interceptors) {
+            ensureSuccessful(Flows.execute(beforeMethod, interceptor, List.of(reqInst, respInst), context));
+        }
+        var result = action.get();
+        for (ClassInstance interceptor : interceptors) {
+            result = handleExecutionResult(Flows.execute(afterMethod, interceptor, List.of(reqInst, respInst, result), context));
+        }
+        return result;
+    }
+
+    private void ensureSuccessful(FlowExecResult result) {
+        if (result.exception() != null)
+            throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
     }
 
     private Klass getKlass(String classCode, IEntityContext context) {
@@ -93,15 +130,22 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional
-    public String saveInstance(String classCode, Map<String, Object> object) {
+    public String saveInstance(String classCode, Map<String, Object> object, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
-            var r = tryResolveValue(object, klass.getType(), true, null, context);
-            if (r.successful()) {
-                var inst = (DurableInstance) r.resolved();
-                var instanceContext = context.getInstanceContext();
-                if (!instanceContext.containsInstance(inst))
-                    instanceContext.bind(inst);
+            var inst = (ClassInstance) doIntercepted(() -> {
+                var r = tryResolveValue(object, klass.getType(), true, null, context);
+                if(r.successful()) {
+                    var i = (DurableInstance) r.resolved();
+                    var instanceContext = context.getInstanceContext();
+                    if (!instanceContext.containsInstance(i))
+                        instanceContext.bind(i);
+                    return i;
+                }
+                else
+                    return null;
+            }, request, response, context);
+            if (inst != null) {
                 context.finish();
                 return inst.getStringId();
             } else
@@ -109,16 +153,17 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    private Object handleExecutionResult(FlowExecResult result) {
+    private Instance handleExecutionResult(FlowExecResult result) {
         if (result.exception() != null) {
             var throwableNative = new ThrowableNative(result.exception());
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, throwableNative.getMessage().getTitle());
         } else
-            return result.ret() != null ? formatInstance(result.ret(), false) : null;
+            return result.ret();
     }
 
-    private Object formatInstance(Instance instance, boolean asValue) {
+    private Object formatInstance(@Nullable Instance instance, boolean asValue) {
         return switch (instance) {
+            case null -> null;
             case PrimitiveInstance primitiveInstance -> primitiveInstance.getValue();
             case ClassInstance classInstance -> {
                 if (classInstance.isList())

@@ -16,7 +16,7 @@ public class ShoppingCompilingTest extends CompilerTestBase {
         compileTwice(SHOPPING_SOURCE_ROOT);
         submit(() -> {
             var productType = getClassTypeByCode("tech.metavm.lab.shopping.AstProduct");
-            var productId = TestUtils.doInTransaction(() -> apiService.saveInstance(
+            var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                     productType.getCodeRequired(),
                     Map.of(
                             "title", "shoes",
@@ -27,7 +27,7 @@ public class ShoppingCompilingTest extends CompilerTestBase {
             var directCouponType = getClassTypeByCode("tech.metavm.lab.shopping.AstDirectCoupon");
             var couponStateType = getClassTypeByCode("tech.metavm.lab.shopping.AstCouponState");
             var couponNormalState = TestUtils.getEnumConstantByName(couponStateType, "UNUSED");
-            var couponId = TestUtils.doInTransaction(() -> apiService.saveInstance(
+            var couponId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                     directCouponType.getCodeRequired(),
                     Map.of(
                             "discount", 5,
@@ -35,7 +35,7 @@ public class ShoppingCompilingTest extends CompilerTestBase {
                             "product", productId
                     )
             ));
-            var orderId = (String) doInTransaction(() -> apiService.handleInstanceMethodCall(
+            var orderId = (String) doInTransaction(() -> apiClient.callInstanceMethod(
                     productId,
                     "buy",
                     List.of(1, List.of(couponId))

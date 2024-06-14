@@ -1,7 +1,6 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.EnumConstant;
 import tech.metavm.expression.Expression;
 import tech.metavm.flow.rest.ValueKindCodes;
 

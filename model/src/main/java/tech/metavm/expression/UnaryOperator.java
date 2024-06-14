@@ -1,7 +1,6 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.EnumConstant;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.Instance;

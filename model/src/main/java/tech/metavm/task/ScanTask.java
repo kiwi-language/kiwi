@@ -1,6 +1,5 @@
 package tech.metavm.task;
 
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.core.DurableInstance;

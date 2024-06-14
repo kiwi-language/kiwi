@@ -35,7 +35,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 var roundingRuleType = getClassTypeByCode("tech.metavm.manufacturing.material.RoundingRule");
                 var roundHalfUp = TestUtils.getEnumConstantByName(roundingRuleType, "ROUND_HALF_UP");
                 var unitType = getClassTypeByCode("tech.metavm.manufacturing.material.Unit");
-                var unitId = doInTransaction(() -> apiService.handleNewInstance(
+                var unitId = doInTransaction(() -> apiClient.newInstance(
                         unitType.getCodeRequired(),
                         Arrays.asList("meter", "meter", roundHalfUp.getIdRequired(), 2, null)
                 ));
@@ -47,7 +47,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 
                 // create a material
                 var materialType = getClassTypeByCode("tech.metavm.manufacturing.material.Material");
-                var materialId = doInTransaction(() -> apiService.handleNewInstance(
+                var materialId = doInTransaction(() -> apiClient.newInstance(
                         materialType.getCodeRequired(),
                         Arrays.asList("sheet metal", "sheet metal", normal.getIdRequired(), unitId, 1, year.getIdRequired())
                 ));
@@ -56,7 +56,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 // get QualityInspectionState.QUALIFIED constant
                 var qualified = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
                 // invoke material.setFeedQualityInspectionStates with a list containing the QUALIFIED constant
-                doInTransaction(() -> apiService.handleInstanceMethodCall(
+                doInTransaction(() -> apiClient.callInstanceMethod(
                         materialId, "setFeedQualityInspectionStates",
                         List.of(
                                 List.of(qualified.getIdRequired())
@@ -143,21 +143,21 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 
     private StorageObjects createPosition() {
         var qcWarehouse = "tech.metavm.manufacturing.storage.Warehouse";
-        var warehouseId = doInTransaction(() -> apiService.handleNewInstance(
+        var warehouseId = doInTransaction(() -> apiClient.newInstance(
                 qcWarehouse,
                 List.of("warehouse1", "warehouse1")
         ));
         var qcArea = "tech.metavm.manufacturing.storage.Area";
-        var areaId = doInTransaction(() -> apiService.handleNewInstance(
+        var areaId = doInTransaction(() -> apiClient.newInstance(
                 qcArea,
                 Arrays.asList("area1", "area1", warehouseId, null)
         ));
         var qcPosition = "tech.metavm.manufacturing.storage.Position";
-        var positionId = doInTransaction(() -> apiService.handleNewInstance(
+        var positionId = doInTransaction(() -> apiClient.newInstance(
                 qcPosition,
                 List.of("position1", "position1", areaId)
         ));
-        var position2Id = doInTransaction(() -> apiService.handleNewInstance(
+        var position2Id = doInTransaction(() -> apiClient.newInstance(
                 qcPosition,
                 List.of("position2", "position2", areaId)
         ));
@@ -190,7 +190,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // get InventoryBizState.INITIAL constant
         var initialBizState = TestUtils.getEnumConstantByName(inventoryBizStateType, "INITIAL");
         // create an inventory object
-        var inventoryId = doInTransaction(() -> apiService.handleNewInstance(
+        var inventoryId = doInTransaction(() -> apiClient.newInstance(
                 inventoryType.getCodeRequired(),
                 Arrays.asList(
                         material.getIdRequired(),
@@ -232,7 +232,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var adjustment = TestUtils.getEnumConstantByName(inventoryOpType, "ADJUSTMENT");
 
         // decrease the inventory by 100 and asserts that the inventory is removed
-        doInTransaction(() -> apiService.handleStaticMethodCall(
+        doInTransaction(() -> apiClient.callStaticMethod(
                 Objects.requireNonNull(inventoryType.code()),
                 "decreaseQuantity",
                 Arrays.asList(
@@ -270,7 +270,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // get InboundOrder type
         var inboundOrderType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundOrder");
         // create an inbound order
-        var inboundOrderId = doInTransaction(() -> apiService.handleNewInstance(
+        var inboundOrderId = doInTransaction(() -> apiClient.newInstance(
                 inboundOrderType.getCodeRequired(),
                 Arrays.asList(
                         "inboundOrder1",
@@ -280,7 +280,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 )
         ));
         var inboundOrderItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundOrderItem");
-        var inboundOrderItemId = doInTransaction(() -> apiService.handleNewInstance(
+        var inboundOrderItemId = doInTransaction(() -> apiClient.newInstance(
                 inboundOrderItemType.getCodeRequired(),
                 Arrays.asList(
                         inboundOrderId,
@@ -299,7 +299,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // get the ByAmountInboundRequest type
         var qcByBoundInboundRequestType = "tech.metavm.manufacturing.storage.ByAmountInboundRequest";
         // invoke InboundOrderItem.inbound with the inboundRequest object
-        TestUtils.doInTransaction(() -> apiService.handleInstanceMethodCall(
+        TestUtils.doInTransaction(() -> apiClient.callInstanceMethod(
                 inboundOrderItemId,
                 "inbound",
                 List.of(
@@ -321,7 +321,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // inbound by spec
         var qcBySpecInboundRequestType = "tech.metavm.manufacturing.storage.BySpecInboundRequest";
         // invoke InboundOrderItem.inbound with the inboundRequest object
-        doInTransaction(() -> apiService.handleInstanceMethodCall(
+        doInTransaction(() -> apiClient.callInstanceMethod(
                 inboundOrderItemId,
                 "inbound",
                 List.of(
@@ -360,13 +360,13 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // get transfer order type
         var qcTransferOrder = "tech.metavm.manufacturing.storage.TransferOrder";
         // create a transfer order
-        var transferOrderId = doInTransaction(() -> apiService.handleNewInstance(
+        var transferOrderId = doInTransaction(() -> apiClient.newInstance(
                 qcTransferOrder,
                 List.of("transferOrder1", storage.getIdRequired(), storageObjects.warehouse.getIdRequired(), storageObjects.warehouse.getIdRequired())
         ));
         // create a transfer order item
         var qcTransferOrderItem = "tech.metavm.manufacturing.storage.TransferOrderItem";
-        var transferOrderItemId = doInTransaction(() -> apiService.handleNewInstance(
+        var transferOrderItemId = doInTransaction(() -> apiClient.newInstance(
                 qcTransferOrderItem,
                 Arrays.asList(transferOrderId, material.getIdRequired(), 100, unit.getIdRequired(), null, null)
         ));
@@ -376,7 +376,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
         var InventoryBizStateType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryBizState");
         var initialBizState = TestUtils.getEnumConstantByName(InventoryBizStateType, "INITIAL");
-        var inventoryId = doInTransaction(() -> apiService.handleNewInstance(
+        var inventoryId = doInTransaction(() -> apiClient.newInstance(
                 inventoryType.getCodeRequired(),
                 Arrays.asList(
                         material.getIdRequired(),
@@ -395,7 +395,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 )
         ));
         // invoke TransferOrderItem.transfer with storageObjects.position2 as the target position
-        doInTransaction(() -> apiService.handleInstanceMethodCall(
+        doInTransaction(() -> apiClient.callInstanceMethod(
                 transferOrderId,
                 "transfer",
                 List.of(
@@ -432,10 +432,10 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var routingKlass = getClassTypeByCode("tech.metavm.manufacturing.production.Routing");
         var routingViewKlass = TestUtils.getViewKlass(routingKlass, typeManager);
         var qcWorkCenter = "tech.metavm.manufacturing.production.WorkCenter";
-        var workCenterId = doInTransaction(() -> apiService.handleNewInstance(qcWorkCenter, List.of()));
+        var workCenterId = doInTransaction(() -> apiClient.newInstance(qcWorkCenter, List.of()));
         var qcProcess = "tech.metavm.manufacturing.production.Process";
-        var processId = doInTransaction(() -> apiService.handleNewInstance(qcProcess, List.of("process1")));
-        var routingId = (String) doInTransaction(() -> apiService.saveInstance(
+        var processId = doInTransaction(() -> apiClient.newInstance(qcProcess, List.of("process1")));
+        var routingId = (String) doInTransaction(() -> apiClient.saveInstance(
                 routingKlass.getCodeRequired(),
                 Map.of(
                         "name", "routing001",
@@ -466,7 +466,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 //        var itemView = processListView.getElementInstance(0);
 //        var successionListView = reloadedRoutingView.getInstance("successions");
         DebugEnv.flag = true;
-        doInTransactionWithoutResult(() -> apiService.saveInstance(
+        doInTransactionWithoutResult(() -> apiClient.saveInstance(
                 routingKlass.getCodeRequired(),
                 Map.of(
                         ApiService.KEY_ID, routing.getIdRequired(),
@@ -507,7 +507,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var onDemandPickMethod = TestUtils.getEnumConstantByName(pickMethodType, "ON_DEMAND");
         var enabledGeneralState = TestUtils.getEnumConstantByName(generalStateType, "ENABLED");
         var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
-        var bomId = doInTransaction(() -> apiService.saveInstance(
+        var bomId = doInTransaction(() -> apiClient.saveInstance(
                 bomKlass.getCodeRequired(),
                 Map.of(
                         "product", material.getIdRequired(),
@@ -548,7 +548,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 //        var bomId = TestUtils.getSourceId(bomViewId);
         // create production order
         long startTime = System.currentTimeMillis();
-        var productionOrderId = (String) doInTransaction(() -> apiService.handleInstanceMethodCall(
+        var productionOrderId = (String) doInTransaction(() -> apiClient.callInstanceMethod(
                 bomId,
                 "createProductionOrder",
                 List.of(startTime, startTime + 3 * 24 * 60 * 60 * 1000, 10))

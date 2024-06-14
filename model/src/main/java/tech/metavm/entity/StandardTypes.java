@@ -195,6 +195,10 @@ public class StandardTypes {
         return Objects.requireNonNull(holder.getCollectionKlass());
     }
 
+    public static Klass getInterceptorKlass() {
+        return Objects.requireNonNull(holder.getInterceptorKlass());
+    }
+
     public static Klass getIterableKlass() {
         return Objects.requireNonNull(holder.getIterableKlass());
     }

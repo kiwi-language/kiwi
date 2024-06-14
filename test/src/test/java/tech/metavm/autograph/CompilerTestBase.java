@@ -53,7 +53,7 @@ public abstract class CompilerTestBase extends TestCase  {
     protected ApplicationManager applicationManager;
     protected LoginService loginService;
     protected PlatformUserManager platformUserManager;
-    protected ApiService apiService;
+    protected ApiClient apiClient;
 
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
@@ -97,7 +97,8 @@ public abstract class CompilerTestBase extends TestCase  {
                 loginService, entityQueryService, new MockEventQueue(), verificationCodeService);
         applicationManager = new ApplicationManager(bootResult.entityContextFactory(), roleManager, platformUserManager,
                 verificationCodeService, (IdService) bootResult.idProvider(), entityQueryService);
-        apiService = new ApiService(bootResult.entityContextFactory());
+        var apiService = new ApiService(bootResult.entityContextFactory());
+        apiClient = new ApiClient(apiService);
         ContextUtil.resetProfiler();
     }
 
@@ -116,7 +117,7 @@ public abstract class CompilerTestBase extends TestCase  {
         applicationManager = null;
         loginService = null;
         platformUserManager = null;
-        apiService = null;
+        apiClient = null;
         StandardTypes.setHolder(new GlobalStandardTypesHolder());
         NativeFunctions.setHolder(new GlobalNativeFunctionsHolder());
         ModelDefRegistry.setHolder(new GlobalDefContextHolder());

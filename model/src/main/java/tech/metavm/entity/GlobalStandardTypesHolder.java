@@ -25,6 +25,7 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private Klass illegalArgumentExceptionType;
     private Klass illegalStateExceptionType;
     private Klass nullPointerExceptionType;
+    private Klass interceptorKlass;
 
     @Override
     public Klass getEnumKlass() {
@@ -234,6 +235,16 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public void setNullPointerExceptionKlass(Klass nullPointerExceptionType) {
         this.nullPointerExceptionType = nullPointerExceptionType;
+    }
+
+    @Override
+    public Klass getInterceptorKlass() {
+        return interceptorKlass;
+    }
+
+    @Override
+    public void setInterceptorKlass(Klass klass) {
+        this.interceptorKlass = klass;
     }
 
 }
