@@ -1,8 +1,8 @@
 package org.metavm.message;
 
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.entity.IndexDef;
 import org.metavm.message.rest.dto.MessageDTO;
 import org.metavm.object.instance.core.Instance;

@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.api.ChildEntity;
 import org.metavm.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;

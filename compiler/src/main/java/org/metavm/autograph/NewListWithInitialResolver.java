@@ -3,7 +3,7 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiNewExpression;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.ChildList;
+import org.metavm.api.ChildList;
 import org.metavm.expression.Expression;
 import org.metavm.expression.NodeExpression;
 import org.metavm.object.type.ArrayKind;

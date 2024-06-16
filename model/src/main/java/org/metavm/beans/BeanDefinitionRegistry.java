@@ -1,0 +1,114 @@
+package org.metavm.beans;
+
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
+import org.metavm.entity.*;
+import org.metavm.flow.Flow;
+import org.metavm.flow.Parameter;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.type.ClassType;
+import org.metavm.util.Instances;
+import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+@EntityType
+public class BeanDefinitionRegistry extends Entity {
+    public static final IndexDef<BeanDefinitionRegistry> IDX_ALL_FLAGS = IndexDef.create(BeanDefinitionRegistry.class, "allFlags");
+
+    @SuppressWarnings("unused")
+    private final boolean allFlags = true;
+
+    @ChildEntity
+    private final ChildArray<BeanDefinition> beanDefinitions = addChild(new ChildArray<>(BeanDefinition.class), "beanDefinitions");
+
+    public static BeanDefinitionRegistry getInstance(IEntityContext context) {
+        return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAGS, true), "BeanDefinitionRegistry not found");
+    }
+
+    public void registerBeanDefinition(BeanDefinition beanDefinition) {
+        if(NncUtils.exists(beanDefinitions, b -> b.getName().equals(beanDefinition.getName())))
+            throw new IllegalStateException("BeanDefinition with name " + beanDefinition.getName() + " already exists");
+        beanDefinitions.addChild(beanDefinition);
+    }
+
+    public BeanDefinition getBeanDefinition(String name) {
+        return NncUtils.findRequired(beanDefinitions, b -> b.getName().equals(name),
+                "BeanDefinition with name " + name + " not found");
+    }
+
+    public ClassInstance getBean(String name) {
+        return getBeanDefinition(name).getBean();
+    }
+
+    public void removeBeanDefinition(String name) {
+        beanDefinitions.removeIf(b -> b.getName().equals(name));
+    }
+
+    public List<BeanDefinition> getBeanDefinitionsByType(ClassType type) {
+        return NncUtils.filter(beanDefinitions, b -> type.isAssignableFrom(b.getBeanType()));
+    }
+
+    public List<ClassInstance> getBeansOfType(ClassType type) {
+        return NncUtils.filterAndMap(beanDefinitions, b -> type.isAssignableFrom(b.getBeanType()), BeanDefinition::getBean);
+    }
+
+    public List<Instance> getFlowArguments(Flow method) {
+        var arguments = new ArrayList<Instance>();
+        for (Parameter parameter : method.getParameters()) {
+            var beanName = parameter.getAttribute(AttributeNames.BEAN_NAME);
+            if (beanName != null) {
+                var bean = getBean(beanName);
+                if (parameter.getType().isInstance(bean))
+                    arguments.add(bean);
+                else
+                    throw new InternalException("Bean " + beanName + " is not of type " + parameter.getType());
+                continue;
+            }
+            if (parameter.getType() instanceof ClassType paramType) {
+                if (paramType.isList()) {
+                    if(paramType.getListElementType() instanceof ClassType beanType)
+                        arguments.add(Instances.createList(paramType, getBeansOfType(beanType)));
+                    else
+                        throw new InternalException("Unsupported list element type " + paramType.getListElementType() + " in bean factory method " + method.getName());
+                } else {
+                    var beans = getBeansOfType(paramType);
+                    if (beans.isEmpty())
+                        throw new InternalException("No beans of type " + paramType + " found");
+                    if (beans.size() > 1)
+                        throw new InternalException("Multiple beans of type " + paramType + " found");
+                    arguments.add(beans.get(0));
+                }
+            } else {
+                throw new InternalException("Unsupported parameter type " + parameter.getType() + " in bean factory method " + method.getName());
+            }
+        }
+        return arguments;
+    }
+
+    public List<BeanDefinition> getFlowDependencies(Flow flow) {
+        return NncUtils.flatMap(flow.getParameters(), parameter -> {
+            var beanName = parameter.getAttribute(AttributeNames.BEAN_NAME);
+            if (beanName != null)
+                return List.of(getBeanDefinition(beanName));
+            var type = parameter.getType();
+            if(type instanceof ClassType classType) {
+                if (classType.isList()) {
+                    if(classType.getListElementType() instanceof ClassType elementType)
+                        return getBeanDefinitionsByType(elementType);
+                    else
+                        return List.of();
+                }
+                return getBeanDefinitionsByType(classType);
+            }
+            else
+                return List.of();
+        });
+
+    }
+
+}

@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.api.Value;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.LongInstance;

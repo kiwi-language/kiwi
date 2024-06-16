@@ -16,20 +16,20 @@ public class TypesTest extends TestCase {
     }
 
     public void testGetCommonSuperTypes() {
-        var c1 = ClassTypeBuilder.newBuilder("c1", null).build();
-        var c2 = ClassTypeBuilder.newBuilder("c1", null)
+        var c1 = KlassBuilder.newBuilder("c1", null).build();
+        var c2 = KlassBuilder.newBuilder("c1", null)
                 .superClass(c1.getType()).build();
-        var c3 = ClassTypeBuilder.newBuilder("c3", null)
+        var c3 = KlassBuilder.newBuilder("c3", null)
                 .superClass(c1.getType()).build();
         Assert.assertEquals(c1.getType(), Types.getLeastUpperBound(List.of(c1.getType(), c2.getType(), c3.getType())));
         Assert.assertEquals(c1.getType(), Types.getLeastUpperBound(List.of(c2.getType(), c3.getType())));
     }
 
     public void testGetCommonSuperTypes_union() {
-        var c1 = ClassTypeBuilder.newBuilder("c1", null).build();
-        var c2 = ClassTypeBuilder.newBuilder("c2", null)
+        var c1 = KlassBuilder.newBuilder("c1", null).build();
+        var c2 = KlassBuilder.newBuilder("c2", null)
                 .superClass(c1.getType()).build();
-        var c3 = ClassTypeBuilder.newBuilder("c3", null)
+        var c3 = KlassBuilder.newBuilder("c3", null)
                 .superClass(c1.getType()).build();
         var u1 = new UnionType(Set.of(c2.getType(), c3.getType()));
         var cst = Types.getLeastUpperBound(List.of(c1.getType(), u1));
@@ -37,11 +37,11 @@ public class TypesTest extends TestCase {
     }
 
     public void testGetCommonSuperTypes_intersection() {
-        var c0 = ClassTypeBuilder.newBuilder("c0", null).build();
-        var c1 = ClassTypeBuilder.newBuilder("c1", null).superClass(c0.getType()).build();
-        var c2 = ClassTypeBuilder.newBuilder("c2", null)
+        var c0 = KlassBuilder.newBuilder("c0", null).build();
+        var c1 = KlassBuilder.newBuilder("c1", null).superClass(c0.getType()).build();
+        var c2 = KlassBuilder.newBuilder("c2", null)
                 .superClass(c0.getType()).build();
-        var c3 = ClassTypeBuilder.newBuilder("c3", null)
+        var c3 = KlassBuilder.newBuilder("c3", null)
                 .superClass(c1.getType()).build();
         var intersect = new IntersectionType(Set.of(c2.getType(), c3.getType()));
         var cst = Types.getLeastUpperBound(List.of(c1.getType(), intersect));
@@ -49,21 +49,21 @@ public class TypesTest extends TestCase {
     }
 
     public void testGetCommonSuperTypes_interface() {
-        var c1 = ClassTypeBuilder.newBuilder("c1", null)
+        var c1 = KlassBuilder.newBuilder("c1", null)
                 .kind(ClassKind.INTERFACE).build();
-        var c2 = ClassTypeBuilder.newBuilder("c2", null)
+        var c2 = KlassBuilder.newBuilder("c2", null)
                 .interfaces(c1.getType()).build();
-        var c3 = ClassTypeBuilder.newBuilder("c3", null)
+        var c3 = KlassBuilder.newBuilder("c3", null)
                 .interfaces(c1.getType()).build();
         var cst = Types.getLeastUpperBound(List.of(c2.getType(), c3.getType()));
         Assert.assertEquals(c1.getType(), cst);
     }
 
     public void testGetCommonSuperTypes_nullable() {
-        var c1 = ClassTypeBuilder.newBuilder("c1", null).build();
-        var c2 = ClassTypeBuilder.newBuilder("c2", null)
+        var c1 = KlassBuilder.newBuilder("c1", null).build();
+        var c2 = KlassBuilder.newBuilder("c2", null)
                 .superClass(c1.getType()).build();
-        var c3 = ClassTypeBuilder.newBuilder("c3", null)
+        var c3 = KlassBuilder.newBuilder("c3", null)
                 .superClass(c1.getType()).build();
         var nullable_c3 = new UnionType(Set.of(StandardTypes.getNullType(), c3.getType()));
         var cst = Types.getLeastUpperBound(List.of(c2.getType(), nullable_c3));

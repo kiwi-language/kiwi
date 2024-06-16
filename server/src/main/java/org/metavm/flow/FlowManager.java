@@ -1,5 +1,9 @@
 package org.metavm.flow;
 
+import org.metavm.flow.rest.GetFlowRequest;
+import org.metavm.flow.rest.GetFlowResponse;
+import org.metavm.flow.rest.GetParameterizedFlowRequest;
+import org.metavm.object.type.TypeManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,7 +65,7 @@ public class FlowManager extends EntityContextFactoryAware {
             var scope = context.getScope(nodeDTO.scopeId());
             TryNode tryNode = (TryNode) createNode(nodeDTO, scope, context);
             TryEndNode tryEndNode = new TryEndNode(null, tryNode.getName() + " end", null,
-                    ClassTypeBuilder.newBuilder("TryEndOutput", "TryEndOutput").temporary().build(),
+                    KlassBuilder.newBuilder("TryEndOutput", "TryEndOutput").temporary().build(),
                     tryNode, scope);
             FieldBuilder.newBuilder("exception", "exception",
                             tryEndNode.getType().resolve(), StandardTypes.getNullableType(StandardTypes.getThrowableKlass().getType()))
@@ -81,7 +85,7 @@ public class FlowManager extends EntityContextFactoryAware {
             var scope = context.getScope(nodeDTO.scopeId());
             BranchNode branchNode = (BranchNode) createNode(nodeDTO, scope, context);
             MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "mege", null,
-                    branchNode, ClassTypeBuilder.newBuilder("MergeOutput", "MergeOutput").temporary().build(),
+                    branchNode, KlassBuilder.newBuilder("MergeOutput", "MergeOutput").temporary().build(),
                     scope);
             context.bind(mergeNode);
             afterFlowChange(scope.getFlow(), context);
@@ -336,7 +340,7 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     private NodeRT createInputNode(Flow flow, NodeRT prev) {
-        var type = ClassTypeBuilder.newBuilder("Input", null).temporary().build();
+        var type = KlassBuilder.newBuilder("Input", null).temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), type, parameter.getType())
                     .build();

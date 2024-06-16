@@ -1,5 +1,7 @@
 package org.metavm.object.instance;
 
+import org.metavm.object.instance.ColumnKind;
+
 public class TableSQLBuilder {
 
     private final StringBuffer buf = new StringBuffer();

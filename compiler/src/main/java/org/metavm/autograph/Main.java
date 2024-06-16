@@ -37,7 +37,7 @@ public class Main {
     public Main(String home, String sourceRoot, long appId, String token, TypeClient typeClient, AllocatorStore allocatorStore, ColumnStore columnStore, TypeTagStore typeTagStore) {
         this.sourceRoot = sourceRoot;
         CompilerContext compilerContext = new CompilerContext(home, typeClient, allocatorStore, columnStore, typeTagStore);
-        CompilerHttpUtils.setAppId(appId);
+        typeClient.setAppId(appId);
         CompilerHttpUtils.setToken(appId, token);
         compilerContext.getBootstrap().boot();
         compilerContext.getTreeLoader().load();

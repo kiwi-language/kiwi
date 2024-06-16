@@ -1,5 +1,6 @@
 package org.metavm.object.view;
 
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.TypeParser;

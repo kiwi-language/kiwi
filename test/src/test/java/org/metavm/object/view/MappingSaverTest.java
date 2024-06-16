@@ -60,7 +60,7 @@ public class MappingSaverTest extends TestCase {
                 mappingProvider,
                 entityRepository
         );
-        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo")
+        var fooType = KlassBuilder.newBuilder("Foo", "Foo")
                 .build();
         FieldBuilder.newBuilder("name", "name", fooType, getStringType())
                 .asTitle()
@@ -77,9 +77,9 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testSaveBuiltin() {
-        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo")
+        var fooType = KlassBuilder.newBuilder("Foo", "Foo")
                 .build();
-        var barType = ClassTypeBuilder.newBuilder("Bar", "Bar")
+        var barType = KlassBuilder.newBuilder("Bar", "Bar")
                 .build();
 
         var barChildArrayType = new ArrayType(barType.getType(), ArrayKind.CHILD);
@@ -102,7 +102,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = getBarsMethod.getRootScope();
-            var selfNode = Nodes.self("self", null, fooType, scope);
+            var selfNode = Nodes.self("self", fooType, scope);
             var barsNode = Nodes.newArray("newArray", null, barReadWriteArrayType,
                     Values.nodeProperty(selfNode, fooBarsField), null, scope);
             Nodes.ret("return", scope, Values.node(barsNode));
@@ -114,7 +114,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = setBarsMethod.getRootScope();
-            var selfNode = Nodes.self("self", null, fooType, scope);
+            var selfNode = Nodes.self("self", fooType, scope);
             var inputNode = Nodes.input(setBarsMethod);
             Nodes.clearArray("ClearBars", null, Values.nodeProperty(selfNode, fooBarsField), scope);
             Nodes.forEach("forEach", () -> Values.inputValue(inputNode, 0),
@@ -296,8 +296,8 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testPathId() {
-        var productType = ClassTypeBuilder.newBuilder("Product", "Product").build();
-        var skuType = ClassTypeBuilder.newBuilder("Sku", "Sku").build();
+        var productType = KlassBuilder.newBuilder("Product", "Product").build();
+        var skuType = KlassBuilder.newBuilder("Sku", "Sku").build();
         var skuChildArrayType = new ArrayType(skuType.getType(), ArrayKind.CHILD);
         var skuListField = FieldBuilder.newBuilder("skuList", "skuList", productType, skuChildArrayType)
                 .isChild(true)
@@ -309,7 +309,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = getSkuListMethod.getRootScope();
-            var self = Nodes.self("self", "self", productType, scope);
+            var self = Nodes.self("self", productType, scope);
             Nodes.input(getSkuListMethod);
             var skuList = Nodes.newArray(
                     "skuList", "skuList", skuRwArrayType,
@@ -324,7 +324,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = setSkuListMethod.getRootScope();
-            var self = Nodes.self("self", "self", productType, scope);
+            var self = Nodes.self("self", productType, scope);
             var input = Nodes.input(setSkuListMethod);
             Nodes.clearArray("clearArray", null, Values.nodeProperty(self, skuListField), scope);
             Nodes.forEach(
@@ -376,8 +376,8 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testUnionType() {
-        var flowType = ClassTypeBuilder.newBuilder("Flow", "Flow").build();
-        var scopeType = ClassTypeBuilder.newBuilder("Scope", "Scope").build();
+        var flowType = KlassBuilder.newBuilder("Flow", "Flow").build();
+        var scopeType = KlassBuilder.newBuilder("Scope", "Scope").build();
         var scopeArrayType = new ArrayType(scopeType.getType(), ArrayKind.CHILD);
         var nullableScopeArrayType = new UnionType(Set.of(scopeArrayType, StandardTypes.getNullType()));
         var flowScopesField = FieldBuilder.newBuilder("scopes", "scopes", flowType, nullableScopeArrayType).isChild(true).build();
@@ -445,7 +445,7 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.entityRepository
         );
 
-        var nodeType = ClassTypeBuilder.newBuilder("Node", "Node")
+        var nodeType = KlassBuilder.newBuilder("Node", "Node")
                 .typeParameters(new TypeVariable(null, "V", "V", DummyGenericDeclaration.INSTANCE))
                 .build();
         FieldBuilder.newBuilder("label", "label", nodeType, getStringType())
@@ -456,7 +456,7 @@ public class MappingSaverTest extends TestCase {
 
         var nodeMapping = saver.saveBuiltinMapping(nodeType, true);
         var listTypeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
-        var listKlass = ClassTypeBuilder.newBuilder("List", "List")
+        var listKlass = KlassBuilder.newBuilder("List", "List")
                 .typeParameters(listTypeVar)
                 .build();
         var pNodeType = nodeType.getParameterized(List.of(listTypeVar.getType()), ResolutionStage.DEFINITION);
@@ -502,10 +502,10 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testApplication() {
-        var platformUserType = ClassTypeBuilder.newBuilder("PlatformUser", "PlatformUser").build();
+        var platformUserType = KlassBuilder.newBuilder("PlatformUser", "PlatformUser").build();
         var loginNameField = FieldBuilder.newBuilder("loginName", "loginName", platformUserType, getStringType()).asTitle().build();
 
-        var applicationType = ClassTypeBuilder.newBuilder("Application", "Application").build();
+        var applicationType = KlassBuilder.newBuilder("Application", "Application").build();
         var nameField = FieldBuilder.newBuilder("name", "name", applicationType, getStringType()).asTitle().build();
         var ownerField = FieldBuilder.newBuilder("owner", "owner", applicationType, platformUserType.getType())
                 .access(Access.PRIVATE).build();
@@ -515,7 +515,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = getOwnerMethod.getRootScope();
-            var selfNode = Nodes.self("self", null, applicationType, scope);
+            var selfNode = Nodes.self("self", applicationType, scope);
             Nodes.ret("return", scope, Values.nodeProperty(selfNode, ownerField));
         }
         TestUtils.initEntityIds(applicationType);

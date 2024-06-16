@@ -12,6 +12,7 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ClassTypeDTOBuilder {
 
@@ -284,6 +285,7 @@ public class ClassTypeDTOBuilder {
                 kind,
                 ephemeral,
                 anonymous,
+                Map.of(),
                 buildClassTypeParam()
         );
     }

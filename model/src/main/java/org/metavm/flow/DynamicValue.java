@@ -1,6 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.expression.Expression;
 import org.metavm.expression.VarType;
 import org.metavm.object.instance.rest.ExpressionFieldValue;

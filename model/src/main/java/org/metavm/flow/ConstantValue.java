@@ -1,6 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.expression.*;
 import org.metavm.object.instance.core.LongInstance;
 import org.metavm.object.instance.core.TimeInstance;

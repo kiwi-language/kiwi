@@ -22,7 +22,7 @@ public class TypeParserImplTest extends TestCase {
     }
 
     public void testMethodRef() {
-        var fooKlass = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
+        var fooKlass = KlassBuilder.newBuilder("Foo", "Foo").build();
         var testMethod = MethodBuilder.newBuilder(fooKlass, "test", "test").build();
         TestUtils.initEntityIds(fooKlass);
         var methodRef = TypeParser.parseMethodRef(

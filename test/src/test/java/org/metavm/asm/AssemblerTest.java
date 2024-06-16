@@ -1,6 +1,8 @@
 package org.metavm.asm;
 
 import junit.framework.TestCase;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.TestConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
@@ -68,6 +70,7 @@ public class AssemblerTest extends TestCase {
         var assembler = AssemblerFactory.createWithStandardTypes();
         var request = assemble(List.of(source), assembler);
 //        DebugEnv.DEBUG_ON = true;
+        ContextUtil.setAppId(TestConstants.APP_ID);
         TestUtils.doInTransaction(() -> typeManager.batchSave(request));
     }
 

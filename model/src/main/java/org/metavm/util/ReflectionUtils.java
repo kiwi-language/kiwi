@@ -1011,4 +1011,10 @@ public class ReflectionUtils {
         }
     }
 
+    public static boolean isAnnotatedWithNullable(AnnotatedElement element) {
+        return element.isAnnotationPresent(javax.annotation.Nullable.class)
+                || element.isAnnotationPresent(Nullable.class);
+
+    }
+
 }

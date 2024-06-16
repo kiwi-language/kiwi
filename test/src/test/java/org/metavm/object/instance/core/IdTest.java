@@ -3,7 +3,7 @@ package org.metavm.object.instance.core;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.ClassTypeBuilder;
+import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.rest.dto.AnyTypeKey;
 import org.metavm.object.view.rest.dto.DirectMappingKey;
 
@@ -53,7 +53,7 @@ public class IdTest extends TestCase {
     }
 
     private ClassType mockClassTypeKey(long treeId, long nodeId) {
-        var klass = ClassTypeBuilder.newBuilder("Mock", "Mock").build();
+        var klass = KlassBuilder.newBuilder("Mock", "Mock").build();
         klass.initId(new PhysicalId(false, treeId, nodeId));
         return klass.getType();
     }

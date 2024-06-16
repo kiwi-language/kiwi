@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import javassist.util.proxy.ProxyObject;
+import org.metavm.api.*;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 import org.metavm.flow.Flow;

@@ -1,8 +1,8 @@
 package org.metavm.application;
 
-import org.metavm.entity.ChildEntity;
-import org.metavm.entity.EntityType;
-import org.metavm.lang.SystemUtils;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
+import org.metavm.api.lang.SystemUtils;
 import org.metavm.message.LabMessage;
 import org.metavm.message.LabMessageKind;
 import org.metavm.user.LabPlatformUser;

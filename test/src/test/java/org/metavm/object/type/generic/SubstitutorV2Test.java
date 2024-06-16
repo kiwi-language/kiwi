@@ -33,7 +33,7 @@ public class SubstitutorV2Test extends TestCase {
         var voidType = new PrimitiveType(PrimitiveKind.VOID);
 
         var typeVar = new TypeVariable(null, "E", "E", DummyGenericDeclaration.INSTANCE);
-        Klass foo = ClassTypeBuilder.newBuilder("Foo", "Foo")
+        Klass foo = KlassBuilder.newBuilder("Foo", "Foo")
                 .typeParameters(typeVar)
                 .build();
 
@@ -67,7 +67,7 @@ public class SubstitutorV2Test extends TestCase {
                     .parameters(new Parameter(null, "value", "value", typeVar.getType()))
                     .build();
             var selfNode = new SelfNode(null, "self", null, foo.getType(), null, flow.getRootScope());
-            var inputType = ClassTypeBuilder.newBuilder("setValueInput", "setValueInput")
+            var inputType = KlassBuilder.newBuilder("setValueInput", "setValueInput")
                     .ephemeral(true)
                     .anonymous(true)
                     .build();
@@ -114,7 +114,7 @@ public class SubstitutorV2Test extends TestCase {
     }
 
     public void testFlow() {
-        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
+        var fooType = KlassBuilder.newBuilder("Foo", "Foo").build();
         var barMethod = MethodBuilder.newBuilder(fooType, "bar", "bar")
                 .typeParameters(List.of(
                         new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE)

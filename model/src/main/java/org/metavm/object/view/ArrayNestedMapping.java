@@ -1,7 +1,7 @@
 package org.metavm.object.view;
 
-import org.metavm.entity.ChildEntity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.metavm.entity.natives.NativeFunctions;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.*;

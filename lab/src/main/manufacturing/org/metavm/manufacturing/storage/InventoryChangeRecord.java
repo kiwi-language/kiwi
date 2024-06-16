@@ -1,6 +1,6 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.entity.EntityStruct;
+import org.metavm.api.EntityStruct;
 import org.metavm.manufacturing.material.Batch;
 import org.metavm.manufacturing.material.Client;
 import org.metavm.manufacturing.material.Material;

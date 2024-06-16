@@ -1,0 +1,42 @@
+POST http://localhost:9004/instance/trees
+Cookie: __token_2__=710ebaa5-8ab4-4c1e-aa94-31ba6db56d75; Max-Age=604800; Expires=Mon, 10 Jun 2024 14:01:12 GMT; Path=/
+AppId: 1000200006
+
+###
+POST http://localhost:9004/bootstrap/save?saveIds=false
+
+###
+POST http://localhost:9004/bootstrap?saveIds=false
+
+###
+POST http://localhost:9004/bootstrap/init-root-application
+Accept: application/json
+
+###
+POST http://localhost:9004/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "appId": 1,
+  "loginName": "admin",
+  "password": "123456"
+}
+
+<> 2023-01-24T212755.200.json
+
+
+###
+GET http://localhost:9004/type/13054
+
+###
+POST http://localhost:9004/bootstrap/init-root-application
+Accept: application/json
+
+###
+POST http://localhost:9004/application/repair/1000100003
+Accept: application/json
+
+###
+POST http://localhost:9004/bootstrap/rebuild-index
+Accept: application/json

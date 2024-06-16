@@ -1,6 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.common.ErrorCode;
+import org.metavm.entity.Attribute;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.StandardTypes;
@@ -68,7 +69,7 @@ public abstract class TypeFactory {
             var klass = batch.getContext().getKlass(typeDTO.id());
             var context = batch.getContext();
             if (klass == null) {
-                klass = ClassTypeBuilder.newBuilder(typeDTO.name(), typeDTO.code())
+                klass = KlassBuilder.newBuilder(typeDTO.name(), typeDTO.code())
                         .tmpId(typeDTO.tmpId())
                         .kind(ClassKind.fromCode(typeDTO.kind()))
                         .ephemeral(typeDTO.ephemeral())
@@ -90,6 +91,8 @@ public abstract class TypeFactory {
                 klass.setAbstract(param.isAbstract());
                 batch.getContext().update(klass);
             }
+            if(typeDTO.attributes() != null)
+                klass.setAttributes(Attribute.fromMap(typeDTO.attributes()));
             var curStage = klass.setStage(stage);
             if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {
                 if (klass.isEnum()) {
@@ -189,6 +192,8 @@ public abstract class TypeFactory {
             method.setName(flowDTO.name());
             method.setCode(flowDTO.code());
         }
+        if(flowDTO.attributes() != null)
+            method.setAttributes(Attribute.fromMap(flowDTO.attributes()));
         method.setNative(flowDTO.isNative());
         method.setAbstract(param.isAbstract());
         method.setConstructor(param.isConstructor());
@@ -236,6 +241,8 @@ public abstract class TypeFactory {
             param.setName(parameterDTO.name());
             param.setCode(parameterDTO.code());
         }
+        if(parameterDTO.attributes() != null)
+            param.setAttributes(Attribute.fromMap(parameterDTO.attributes()));
         return param;
     }
 

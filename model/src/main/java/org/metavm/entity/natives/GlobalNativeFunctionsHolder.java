@@ -21,7 +21,7 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
 
     public static final Logger logger = LoggerFactory.getLogger(GlobalNativeFunctionsHolder.class);
 
-    private final Map<Function, TriFunction<Function, List<Instance>, CallContext, Instance>> functions = new IdentityHashMap<>();
+    private final Map<Function, TriFunction<Function, List<? extends Instance>, CallContext, Instance>> functions = new IdentityHashMap<>();
 
     private EmailSender emailSender;
 
@@ -109,7 +109,7 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     }
 
     @Override
-    public FlowExecResult invoke(@NotNull Function flow, @NotNull List<Instance> arguments, CallContext callContext) {
+    public FlowExecResult invoke(@NotNull Function flow, @NotNull List<? extends Instance> arguments, CallContext callContext) {
         var func = Objects.requireNonNull(functions.get(flow.getEffectiveHorizontalTemplate()));
         return new FlowExecResult(func.apply(flow, arguments, callContext), null);
     }

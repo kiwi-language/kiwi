@@ -1,7 +1,7 @@
 package org.metavm.flow;
 
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.NodeDTO;

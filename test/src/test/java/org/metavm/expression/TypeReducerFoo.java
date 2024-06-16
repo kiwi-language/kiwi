@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 
 import javax.annotation.Nullable;
 

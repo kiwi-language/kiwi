@@ -1,6 +1,6 @@
 package org.metavm.task;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.util.NncUtils;
 
 @EntityType

@@ -1,5 +1,7 @@
 package org.metavm.object.type;
 
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.InstanceEvaluationContext;

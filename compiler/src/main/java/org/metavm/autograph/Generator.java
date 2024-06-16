@@ -1,7 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
-import org.metavm.entity.EntityIndex;
+import org.metavm.api.EntityIndex;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.StandardTypes;
 import org.metavm.expression.*;
@@ -148,7 +148,9 @@ public class Generator extends CodeGenVisitor {
             index.setFields(indexFields);
             return;
         }
-        var field = NncUtils.requireNonNull(psiField.getUserData(Keys.FIELD));
+//        An NPE may occur here for record fields if modifications are made between declaration stage and generation stage.
+//        To track these modifications, set a breakpoint at com.intellij.openapi.util.SimpleModificationTracker.incModificationCount.
+        var field = Objects.requireNonNull(psiField.getUserData(Keys.FIELD));
         if (psiField.getInitializer() != null) {
             if (field.isStatic()) {
                 var builder = currentClassInfo().staticBuilder;
@@ -316,13 +318,13 @@ public class Generator extends CodeGenVisitor {
         var capturedTypeListener = new CompositeTypeListener() {
             @Override
             public void onTypeCreated(Type type) {
-                if(type.isCaptured())
+                if (type.isCaptured())
                     method.addCapturedCompositeType(type);
             }
 
             @Override
             public void onFlowCreated(Flow flow) {
-                if(NncUtils.anyMatch(flow.getTypeArguments(), Type::isCaptured))
+                if (NncUtils.anyMatch(flow.getTypeArguments(), Type::isCaptured))
                     method.addCapturedFlow(flow);
             }
         };

@@ -1,5 +1,6 @@
 package org.metavm.application;
 
+import org.metavm.beans.BeanDefinitionRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.metavm.application.rest.dto.*;
@@ -156,10 +157,11 @@ public class ApplicationManager extends EntityContextFactoryAware {
 
     private CreateAppResult createBuiltin(Long id, ApplicationCreateRequest request) {
         ContextUtil.setAppId(PLATFORM_APP_ID);
+        long appId;
+        PlatformUser owner;
         try (var platformContext = newPlatformContext()) {
-            long appId = id != null ? id :
+            appId = id != null ? id :
                     idService.allocate(PLATFORM_APP_ID, ModelDefRegistry.getType(Application.class));
-            PlatformUser owner;
             if (request.creatorId() == null) {
                 Role role = roleManager.save(new RoleDTO(TmpId.of(ContextUtil.nextTmpId()).toString(), ADMIN_ROLE_NAME), platformContext);
                 owner = platformUserManager.save(
@@ -174,7 +176,15 @@ public class ApplicationManager extends EntityContextFactoryAware {
                 owner = platformContext.getEntity(PlatformUser.class, request.creatorId());
             createApp(appId, request.name(), owner, platformContext);
             platformContext.finish();
-            return new CreateAppResult(appId, owner.getStringId());
+        }
+        setupApplication(appId);
+        return new CreateAppResult(appId, owner.getStringId());
+    }
+
+    private void setupApplication(long appId) {
+        try(var context = newContext(appId)) {
+            context.bind(new BeanDefinitionRegistry());
+            context.finish();
         }
     }
 

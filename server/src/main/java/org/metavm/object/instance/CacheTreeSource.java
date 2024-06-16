@@ -1,5 +1,6 @@
 package org.metavm.object.instance;
 
+import org.metavm.object.instance.TreeSource;
 import org.springframework.stereotype.Component;
 import org.metavm.entity.Tree;
 import org.metavm.object.instance.cache.Cache;

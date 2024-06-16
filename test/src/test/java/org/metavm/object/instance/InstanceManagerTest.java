@@ -3,6 +3,8 @@ package org.metavm.object.instance;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
+import org.metavm.flow.FlowExecutionService;
+import org.metavm.flow.FlowSavingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
@@ -24,7 +26,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.ClassTypeBuilder;
+import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.TypeExpressions;
 import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
@@ -467,7 +469,7 @@ public class InstanceManagerTest extends TestCase {
         var classType = new ClassType(StandardTypes.getChildListKlass(), List.of(StandardTypes.getStringType()));
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
-                var klass = ClassTypeBuilder.newBuilder("Foo", null).build();
+                var klass = KlassBuilder.newBuilder("Foo", null).build();
                 var method = MethodBuilder.newBuilder(klass, "test", null).build();
                 var methodCallNode = new MethodCallNode(
                         null,

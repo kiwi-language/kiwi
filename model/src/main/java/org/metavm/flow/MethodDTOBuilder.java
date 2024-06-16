@@ -8,6 +8,7 @@ import org.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class MethodDTOBuilder {
 
@@ -191,6 +192,7 @@ public class MethodDTOBuilder {
                 capturedCompositeTypeIds,
                 capturedFlowIds,
                 false,
+                Map.of(),
                 state,
                 new MethodParam(
                         isConstructor,

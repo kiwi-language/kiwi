@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.natives.ArrayNative;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.type.rest.dto.*;

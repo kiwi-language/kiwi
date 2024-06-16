@@ -1,7 +1,7 @@
 package org.metavm.object.type.mocks;
 
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 
 @EntityType(compiled = true)
 public class GenericFoo<T> extends Entity {

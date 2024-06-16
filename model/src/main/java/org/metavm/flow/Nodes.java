@@ -9,7 +9,9 @@ import org.metavm.util.NncUtils;
 import org.metavm.util.TriConsumer;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -21,8 +23,8 @@ public class Nodes {
                 RaiseParameterKind.MESSAGE, null, message);
     }
 
-    public static SelfNode self(String name, @Nullable String code, Klass type, ScopeRT scope) {
-        return new SelfNode(null, name, code, type.getType(), scope.getLastNode(), scope);
+    public static SelfNode self(String name, Klass type, ScopeRT scope) {
+        return new SelfNode(null, name, null, type.getType(), scope.getLastNode(), scope);
     }
 
     public static NewArrayNode newArray(String name, @Nullable String code, ArrayType type,
@@ -45,7 +47,7 @@ public class Nodes {
             Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
             Supplier<Value>> action,
             ScopeRT scope) {
-        var whileOutputType = ClassTypeBuilder.newBuilder("WhileOutput", null)
+        var whileOutputType = KlassBuilder.newBuilder("WhileOutput", null)
                 .temporary()
                 .build();
         var indexField = FieldBuilder.newBuilder("index", "index", whileOutputType, StandardTypes.getLongType())
@@ -82,7 +84,7 @@ public class Nodes {
             Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
             Supplier<Value>> action,
             ScopeRT scope) {
-        var whileOutputType = ClassTypeBuilder.newBuilder("WhileOutput", null)
+        var whileOutputType = KlassBuilder.newBuilder("WhileOutput", null)
                 .temporary()
                 .build();
         var indexField = FieldBuilder.newBuilder("index", "index", whileOutputType, StandardTypes.getLongType())
@@ -155,7 +157,7 @@ public class Nodes {
         });
         var elseBranch = node.addDefaultBranch();
         defaultBranchGenerator.accept(elseBranch);
-        var mergeOutput = ClassTypeBuilder.newBuilder("MergeOutput", null).temporary().build();
+        var mergeOutput = KlassBuilder.newBuilder("MergeOutput", null).temporary().build();
         var mergeNode = new MergeNode(
                 null, scope.nextNodeName("merge"), null,
                 node, mergeOutput, scope
@@ -195,7 +197,7 @@ public class Nodes {
     }
 
     public static InputNode input(Flow flow, String name, String code) {
-        var inputType = ClassTypeBuilder.newBuilder("Input", null)
+        var inputType = KlassBuilder.newBuilder("Input", null)
                 .temporary()
                 .tmpId(NncUtils.randomNonNegative())
                 .build();
@@ -229,6 +231,34 @@ public class Nodes {
                 Nodes.argument(setSourceFunc, 0, view),
                 Nodes.argument(setSourceFunc, 1, source)
         ));
+    }
+
+    public static UpdateObjectNode updateField(String name, Value self, Field field, Value value, ScopeRT scope) {
+        return new UpdateObjectNode(
+                null,
+                name,
+                null,
+                scope.getLastNode(),
+                scope,
+                self,
+                List.of(
+                        new UpdateField(field.getRef(), UpdateOp.SET, value)
+                )
+        );
+    }
+
+    public static UpdateObjectNode update(String name, Value self, Map<Field, Value> updates, ScopeRT scope) {
+        var fields = new ArrayList<UpdateField>();
+        updates.forEach((field, value) -> fields.add(new UpdateField(field.getRef(), UpdateOp.SET, value)));
+        return new UpdateObjectNode(
+                null,
+                name,
+                null,
+                scope.getLastNode(),
+                scope,
+                self,
+                fields
+        );
     }
 
 }

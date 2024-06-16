@@ -48,7 +48,7 @@ public class Flows {
             throw new InternalException("Can not get static type of flow: " + flow);
     }
 
-    public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<Instance> arguments, IEntityContext context) {
+    public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Instance> arguments, IEntityContext context) {
         try {
             ContextUtil.setEntityContext(context);
             return flow.execute(self, arguments, context.getInstanceContext());
@@ -56,6 +56,14 @@ public class Flows {
         finally {
             ContextUtil.setEntityContext(null);
         }
+    }
+
+    public static @Nullable Instance invoke(Flow flow, ClassInstance self, List<? extends Instance> arguments, IEntityContext context) {
+        var result = execute(flow, self, arguments, context);
+        if(result.exception() != null)
+            throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
+        else
+            return result.ret();
     }
 
     public static Instance invokeGetter(Method getter, ClassInstance instance, IEntityContext context) {

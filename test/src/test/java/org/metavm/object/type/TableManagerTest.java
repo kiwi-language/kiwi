@@ -28,7 +28,7 @@ public class TableManagerTest extends TestCase {
         TaskManager jobManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
         EntityQueryService entityQueryService =
                 new EntityQueryService(new InstanceQueryService(bootResult.instanceSearchService()));
-        TypeManager typeManager = new TypeManager(entityContextFactory, entityQueryService, jobManager);
+        TypeManager typeManager = new TypeManager(entityContextFactory, entityQueryService, jobManager, new BeanManager());
         tableManager = new TableManager(entityContextFactory, typeManager);
         ContextUtil.setAppId(TestConstants.APP_ID);
     }

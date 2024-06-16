@@ -1,5 +1,6 @@
 package org.metavm.object.instance;
 
+import org.metavm.object.instance.log.InstanceLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -7,7 +8,6 @@ import org.springframework.stereotype.Component;
 import org.metavm.entity.EntityChange;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.log.InstanceLog;
-import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.util.NncUtils;
 

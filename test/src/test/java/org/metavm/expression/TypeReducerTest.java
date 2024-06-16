@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StandardTypes;
-import org.metavm.object.type.ClassTypeBuilder;
+import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.UnionType;
 
@@ -21,7 +21,7 @@ public class TypeReducerTest extends TestCase {
     }
 
     public void test() {
-        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
+        var fooType = KlassBuilder.newBuilder("Foo", "Foo").build();
         var nullableStringType = new UnionType(
                 Set.of(StandardTypes.getStringType(), StandardTypes.getNullType()));
         var nameField = FieldBuilder.newBuilder("code", "code", fooType, nullableStringType)

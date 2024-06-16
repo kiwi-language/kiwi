@@ -1,9 +1,9 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.entity.ChildEntity;
-import org.metavm.entity.ChildList;
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityType;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.ChildList;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;

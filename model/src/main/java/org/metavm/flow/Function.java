@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.NativeFunctions;
@@ -64,7 +65,7 @@ public class Function extends Flow implements GlobalKey {
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext) {
+    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
         NncUtils.requireNull(self);
         arguments = checkArguments(arguments);
         if (isNative())

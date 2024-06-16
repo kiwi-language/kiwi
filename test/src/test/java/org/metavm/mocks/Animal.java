@@ -1,6 +1,6 @@
 package org.metavm.mocks;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 
 @EntityType
 public class Animal extends LivingBeing {

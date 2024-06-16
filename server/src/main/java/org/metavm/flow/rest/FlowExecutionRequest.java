@@ -1,5 +1,6 @@
 package org.metavm.flow.rest;
 
+import org.metavm.flow.rest.FlowRefDTO;
 import org.metavm.object.instance.rest.FieldValue;
 
 import javax.annotation.Nullable;

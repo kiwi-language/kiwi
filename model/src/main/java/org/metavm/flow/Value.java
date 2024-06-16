@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
@@ -12,7 +13,7 @@ import org.metavm.object.type.Type;
 import javax.annotation.Nullable;
 
 @EntityType
-public abstract class Value extends Element implements org.metavm.entity.Value {
+public abstract class Value extends Element implements org.metavm.api.Value {
 
     protected final ValueKind kind;
 

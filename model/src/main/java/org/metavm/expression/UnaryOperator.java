@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.core.BooleanInstance;
 import org.metavm.object.instance.core.Instance;

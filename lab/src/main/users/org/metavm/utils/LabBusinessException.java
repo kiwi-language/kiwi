@@ -1,6 +1,6 @@
 package org.metavm.utils;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 
 import java.util.Objects;
 

@@ -1,8 +1,8 @@
 package org.metavm.manufacturing.utils;
 
-import org.metavm.entity.EntityType;
-import org.metavm.lang.NumberUtils;
-import org.metavm.lang.SystemUtils;
+import org.metavm.api.EntityType;
+import org.metavm.api.lang.NumberUtils;
+import org.metavm.api.lang.SystemUtils;
 
 import javax.annotation.Nullable;
 import java.util.Date;

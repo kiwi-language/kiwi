@@ -2,6 +2,9 @@ package org.metavm.object.type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
@@ -659,10 +662,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (fields.contains(field))
             throw new RuntimeException("Field " + field.tryGetId() + " is already added");
         if (tryGetFieldByName(field.getName()) != null || tryGetStaticFieldByName(field.getName()) != null)
-            throw BusinessException.invalidField(field, "Field name '" + field.getName() + "' is already used");
+            throw BusinessException.invalidField(field, "Field name '" + field.getName() + "' is already used in class " + getName());
         if (field.getCode() != null &&
                 (findSelfFieldByCode(field.getCode()) != null || findSelfStaticFieldByCode(field.getCode()) != null))
-            throw BusinessException.invalidField(field, "Field code " + field.getCode() + " is already used");
+            throw BusinessException.invalidField(field, "Field code " + field.getCode() + " is already used in class " + getName());
         if (field.isStatic())
             staticFields.addChild(field);
         else
@@ -1197,6 +1200,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 kind.code(),
                 ephemeral,
                 anonymous,
+                getAttributesMap(),
                 getParam(serializeContext)
         );
     }

@@ -94,9 +94,9 @@ public class InstanceInputTest extends TestCase {
 
     public void test() {
         String fooName = "foo", barCode = "bar001";
-        Klass fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        Klass barType = ClassTypeBuilder.newBuilder("Bar", "Bar").build();
-        Klass quxType = ClassTypeBuilder.newBuilder("Qux", "Qux").build();
+        Klass fooType = KlassBuilder.newBuilder("Foo", "Foo").build();
+        Klass barType = KlassBuilder.newBuilder("Bar", "Bar").build();
+        Klass quxType = KlassBuilder.newBuilder("Qux", "Qux").build();
 
         fooType.initId(PhysicalId.of(10001L, 0L, TestUtils.mockClassType()));
         barType.initId(PhysicalId.of(10002L, 0L, TestUtils.mockClassType()));

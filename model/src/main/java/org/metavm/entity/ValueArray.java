@@ -1,5 +1,7 @@
 package org.metavm.entity;
 
+import org.metavm.api.Value;
+
 import java.lang.reflect.Type;
 import java.util.Collection;
 

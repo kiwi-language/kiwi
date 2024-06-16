@@ -1,10 +1,10 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.entity.EntityIndex;
-import org.metavm.entity.EntityType;
-import org.metavm.entity.Index;
-import org.metavm.entity.IndexUtils;
-import org.metavm.lang.ObjectUtils;
+import org.metavm.api.EntityIndex;
+import org.metavm.api.EntityType;
+import org.metavm.api.Index;
+import org.metavm.api.IndexUtils;
+import org.metavm.api.lang.ObjectUtils;
 import org.metavm.manufacturing.material.*;
 import org.metavm.manufacturing.utils.Utils;
 

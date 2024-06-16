@@ -1,5 +1,6 @@
 package org.metavm.event;
 
+import org.metavm.event.EventQueue;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.metavm.event.rest.dto.AppEvent;

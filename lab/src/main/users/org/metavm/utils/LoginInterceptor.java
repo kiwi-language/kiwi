@@ -1,11 +1,10 @@
 package org.metavm.utils;
 
-import org.metavm.entity.EntityType;
-import org.metavm.entity.HttpRequest;
-import org.metavm.entity.HttpResponse;
-import org.metavm.entity.Interceptor;
+import org.metavm.api.EntityType;
+import org.metavm.api.entity.HttpRequest;
+import org.metavm.api.entity.HttpResponse;
+import org.metavm.api.Interceptor;
 import org.metavm.user.LabLoginResult;
-import org.metavm.user.LabPlatformUser;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -13,7 +12,7 @@ import java.util.Objects;
 @EntityType
 public class LoginInterceptor implements Interceptor {
 
-    private static final String URI = "/api/" + LabPlatformUser.class.getName().replace('.', '/') + "/login";
+    private static final String URI = "/api/org/metavm/user/LabPlatformUser/login";
 
     @Override
     public void before(HttpRequest request, HttpResponse response) {

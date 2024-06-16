@@ -1,7 +1,7 @@
 package org.metavm.object.view;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.flow.Nodes;
 import org.metavm.flow.ScopeRT;
 import org.metavm.flow.Value;

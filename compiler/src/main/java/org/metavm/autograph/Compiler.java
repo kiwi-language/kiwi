@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
-import org.metavm.entity.ChildList;
+import org.metavm.api.ChildList;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.type.Klass;
@@ -101,13 +101,13 @@ public class Compiler {
                     psiClasses, TranspileUtil.getElementFactory()::createType
             );
             for (ResolutionStage stage : ResolutionStage.values()) {
-                try(var stageEntry = profiler.enter("stage: " + stage)) {
+                try(var ignored = profiler.enter("stage: " + stage)) {
                     psiClassTypes.forEach(t -> typeResolver.resolve(t, stage));
                 }
+                if(stage == ResolutionStage.DECLARATION)
+                    System.out.println("Caught");
             }
             var generatedTypes = typeResolver.getGeneratedTypeDefs();
-                    //NncUtils.exclude(typeResolver.getGeneratedTypes(), this::isCapturedByParameterizedFlow);
-//            var generatedPFlows = NncUtils.exclude(typeResolver.getGeneratedParameterizedFlows(), this::isCapturedByParameterizedFlow);
             long elapsed = System.currentTimeMillis() - start;
             logger.info("Compilation done in {} ms. {} types generated", elapsed, generatedTypes.size());
             deploy(generatedTypes, typeResolver);
@@ -123,18 +123,6 @@ public class Compiler {
         }
 
     }
-
-    /*private boolean isCapturedByParameterizedFlow(Type type) {
-        for (CapturedType capturedType : type.getCapturedTypes()) {
-            if(capturedType.getScope() instanceof Flow flow && flow.getParameterizedFlows())
-                return true;
-        }
-        return false;
-    }
-
-    private boolean isCapturedByParameterizedFlow(Flow flow) {
-        return flow.getParameterizedFlows() && NncUtils.anyMatch(flow.getTypeArguments(), this::isCapturedByParameterizedFlow);
-    }*/
 
     private void deploy(Collection<TypeDef> generatedTypeDefs, TypeResolver typeResolver) {
         try (var serContext = SerializeContext.enter();

@@ -1,6 +1,8 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
@@ -48,7 +50,6 @@ public class Method extends Flow implements Property, GenericElement {
      * Foo<Integer>.bar<E>  <-------------------  Foo<Integer>.bar<String>
      *                       horizontalTemplate
      */
-
     @CopyIgnore
     @Nullable
     private Method verticalTemplate;
@@ -58,6 +59,7 @@ public class Method extends Flow implements Property, GenericElement {
     private boolean hidden;
 
     private final boolean parameterized;
+
 
     public Method(Long tmpId,
                   @NotNull Klass declaringType,
@@ -335,7 +337,7 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext) {
+    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
         try (var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName() + "." + getName())) {
             if (DebugEnv.debugging) {
                 var methodName = getDeclaringType().getName() + "." + getNameWithTypeArguments();

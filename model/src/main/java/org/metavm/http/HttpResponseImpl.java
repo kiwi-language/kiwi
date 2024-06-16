@@ -1,5 +1,9 @@
 package org.metavm.http;
 
+import org.metavm.api.*;
+import org.metavm.api.entity.HttpCookie;
+import org.metavm.api.entity.HttpHeader;
+import org.metavm.api.entity.HttpResponse;
 import org.metavm.entity.*;
 
 import java.util.List;

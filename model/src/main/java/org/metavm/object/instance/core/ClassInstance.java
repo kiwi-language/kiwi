@@ -26,7 +26,7 @@ public class ClassInstance extends DurableInstance {
 
     public static final Logger logger = LoggerFactory.getLogger(ClassInstance.class);
 
-    public static final Klass uninitializedKlass = ClassTypeBuilder.newBuilder("Uninitialized", "Uninitialized").build();
+    public static final Klass uninitializedKlass = KlassBuilder.newBuilder("Uninitialized", "Uninitialized").build();
 
     private final ReadWriteArray<InstanceField> fields = new ReadWriteArray<>(InstanceField.class);
     private final ReadWriteArray<UnknownField> unknownFields = new ReadWriteArray<>(UnknownField.class);

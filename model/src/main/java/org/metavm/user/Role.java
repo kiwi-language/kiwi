@@ -1,8 +1,8 @@
 package org.metavm.user;
 
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.entity.SerializeContext;
 import org.metavm.user.rest.dto.RoleDTO;
 

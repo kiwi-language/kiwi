@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.api.EnumConstant;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.EnumConstantRT;

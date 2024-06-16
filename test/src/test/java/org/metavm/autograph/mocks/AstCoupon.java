@@ -1,6 +1,6 @@
 package org.metavm.autograph.mocks;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 
 @EntityType(compiled = true)
 public interface AstCoupon {

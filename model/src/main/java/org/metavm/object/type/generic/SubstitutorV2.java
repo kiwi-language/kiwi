@@ -382,7 +382,7 @@ public class SubstitutorV2 extends CopyVisitor {
             var typeArguments = NncUtils.map(klass.getTypeArguments(), this::substituteType);
             var name = Types.getParameterizedName(template.getName(), typeArguments);
             if (copy == null) {
-                copy = ClassTypeBuilder.newBuilder(name, null)
+                copy = KlassBuilder.newBuilder(name, null)
                         .kind(klass.getKind())
                         .typeArguments(typeArguments)
                         .anonymous(true)

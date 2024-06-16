@@ -1,5 +1,6 @@
 package org.metavm.message;
 
+import org.metavm.message.Message;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;

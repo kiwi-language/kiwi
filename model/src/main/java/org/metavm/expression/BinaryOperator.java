@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.StandardTypes;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.query.OperatorTypes;

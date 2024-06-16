@@ -14,7 +14,7 @@ public class ArrayTypeTest extends TestCase {
 
     public void testIsAssignable() {
         var anyType = StandardTypes.getAnyType();
-        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build().getType();
+        var fooType = KlassBuilder.newBuilder("Foo", "Foo").build().getType();
         Assert.assertTrue(anyType.isAssignableFrom(fooType));
 
         var objectArrayType = new ArrayType(anyType, ArrayKind.READ_WRITE);

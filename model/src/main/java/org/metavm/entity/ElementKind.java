@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.api.EntityType;
 import org.metavm.expression.Expression;
 import org.metavm.flow.Value;
 import org.metavm.flow.*;

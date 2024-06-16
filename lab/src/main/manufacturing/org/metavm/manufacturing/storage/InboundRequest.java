@@ -1,6 +1,6 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.entity.ValueStruct;
+import org.metavm.api.ValueStruct;
 import org.metavm.manufacturing.material.*;
 
 import javax.annotation.Nullable;

@@ -1,6 +1,10 @@
 package org.metavm.entity;
 
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.expression.TypeParsingContext;
+import org.metavm.flow.Parameter;
 import org.metavm.flow.ValueFactory;
 import org.metavm.flow.rest.ValueDTO;
 import org.metavm.object.instance.core.ArrayInstance;
@@ -12,7 +16,6 @@ import org.metavm.object.type.*;
 import org.metavm.object.view.MappingSaver;
 import org.metavm.util.*;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -170,10 +173,8 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
             var javaFieldType = evaluateFieldType(javaField);
             var fieldType = defContext.getType(javaFieldType);
             var targetMapper = fieldType instanceof PrimitiveType ? null : defContext.getMapper(javaFieldType);
-            if (javaField.isAnnotationPresent(Nullable.class) ||
-                    javaField.isAnnotationPresent(org.jetbrains.annotations.Nullable.class)) {
+            if (ReflectionUtils.isAnnotatedWithNullable(javaField))
                 fieldType = StandardTypes.getNullableType(fieldType);
-            }
             org.metavm.object.type.Field field = createField(javaField, declaringTypeDef, fieldType);
             new FieldDef(
                     field,
@@ -219,29 +220,43 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         return def.getFieldDef(field).getField();
     }
 
-    protected org.metavm.object.type.Field createField(Field reflectField,
-                                                        PojoDef<?> declaringTypeDef,
-                                                        Type fieldType) {
-        EntityField annotation = reflectField.getAnnotation(EntityField.class);
+    protected org.metavm.object.type.Field createField(Field javaField,
+                                                       PojoDef<?> declaringTypeDef,
+                                                       Type fieldType) {
+        EntityField annotation = javaField.getAnnotation(EntityField.class);
         boolean unique = annotation != null && annotation.unique();
         boolean asTitle = annotation != null && annotation.asTitle();
-        boolean isChild = reflectField.isAnnotationPresent(ChildEntity.class);
-        boolean lazy = isChild && reflectField.getAnnotation(ChildEntity.class).lazy();
+        boolean isChild = javaField.isAnnotationPresent(ChildEntity.class);
+        boolean lazy = isChild && javaField.getAnnotation(ChildEntity.class).lazy();
         var declaringType = declaringTypeDef.getKlass();
         var field = FieldBuilder.newBuilder(
-                        EntityUtils.getMetaFieldName(reflectField),
-                        reflectField.getName(), declaringType, fieldType)
+                        EntityUtils.getMetaFieldName(javaField),
+                        javaField.getName(), declaringType, fieldType)
                 .unique(unique)
                 .lazy(lazy)
-                .readonly(Modifier.isFinal(reflectField.getModifiers()))
-                .column(columnStore.getColumn(javaType, reflectField, fieldType.getSQLType()))
+                .readonly(Modifier.isFinal(javaField.getModifiers()))
+                .column(columnStore.getColumn(javaType, javaField, fieldType.getSQLType()))
                 .defaultValue(new NullInstance(StandardTypes.getNullType()))
                 .isChild(isChild)
                 .staticValue(new NullInstance(StandardTypes.getNullType()))
+                .access(parseAccess(javaField.getModifiers()))
                 .build();
         if (asTitle)
             declaringType.setTitleField(field);
         return field;
+    }
+
+    private Access parseAccess(int modifiers) {
+        if (isSystemAPI()) {
+            if (Modifier.isPublic(modifiers))
+                return Access.PUBLIC;
+            if (Modifier.isProtected(modifiers))
+                return Access.PROTECTED;
+            if (Modifier.isPrivate(modifiers))
+                return Access.PRIVATE;
+            return Access.PACKAGE;
+        } else
+            return Access.PUBLIC;
     }
 
     private java.lang.reflect.Type evaluateFieldType(Field javaField) {
@@ -252,7 +267,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         var templateDef = javaType != javaClass ? defContext.getPojoDef(javaClass, INIT) : null;
         PojoDef<? super T> superDef = getSuperDef();
         List<InterfaceDef<? super T>> interfaceDefs = getInterfaceDefs();
-        return ClassTypeBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))
+        return KlassBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))
                 .kind(ClassKind.fromTypeCategory(getTypeCategory()))
                 .source(ClassSource.BUILTIN)
                 .template(NncUtils.get(templateDef, PojoDef::getKlass))
@@ -275,5 +290,22 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
     }
 
     protected abstract TypeCategory getTypeCategory();
+
+    protected Parameter createParameter(java.lang.reflect.Parameter javaParameter) {
+        var type = defContext.getType(javaParameter.getParameterizedType());
+        if (ReflectionUtils.isAnnotatedWithNullable(javaParameter))
+            type = StandardTypes.getNullableType(type);
+        return new Parameter(
+                null,
+                javaParameter.getName(),
+                javaParameter.getName(),
+                type
+        );
+    }
+
+    protected boolean isSystemAPI() {
+        var annotation = javaClass.getAnnotation(EntityType.class);
+        return annotation != null && annotation.systemAPI();
+    }
 
 }

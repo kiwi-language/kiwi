@@ -1,5 +1,7 @@
 package org.metavm.entity;
 
+import org.metavm.api.Value;
+
 public abstract class ValueElement extends Element implements Value {
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")

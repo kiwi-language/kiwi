@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.InstanceFactory;

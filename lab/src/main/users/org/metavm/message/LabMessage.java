@@ -1,8 +1,8 @@
 package org.metavm.message;
 
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityIndex;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityIndex;
+import org.metavm.api.EntityType;
 import org.metavm.user.LabUser;
 import org.metavm.utils.LabBusinessException;
 import org.metavm.utils.LabErrorCode;

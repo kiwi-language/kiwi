@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import junit.framework.TestCase;
+import org.metavm.object.type.BeanManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.entity.EntityQueryService;
@@ -35,7 +36,7 @@ public class FlowManagerTest extends TestCase {
                 new EntityQueryService(new InstanceQueryService(instanceSearchService));
         var jobManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
         typeManager =
-                new TypeManager(entityContextFactory, entityQueryService, jobManager);
+                new TypeManager(entityContextFactory, entityQueryService, jobManager, new BeanManager());
         flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         FlowSavingContext.initConfig();

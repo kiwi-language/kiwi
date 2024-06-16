@@ -1,5 +1,7 @@
 package org.metavm.object.version;
 
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.object.version.rest.dto.VersionDTO;
 

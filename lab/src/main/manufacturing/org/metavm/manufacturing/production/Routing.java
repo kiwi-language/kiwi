@@ -1,9 +1,9 @@
 package org.metavm.manufacturing.production;
 
-import org.metavm.entity.ChildEntity;
-import org.metavm.entity.ChildList;
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityStruct;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.ChildList;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityStruct;
 import org.metavm.manufacturing.material.Material;
 import org.metavm.manufacturing.material.Unit;
 

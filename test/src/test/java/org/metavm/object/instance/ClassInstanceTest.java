@@ -79,7 +79,7 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void test_add_not_null_field() {
-        Klass type = ClassTypeBuilder.newBuilder("Lab", null).build();
+        Klass type = KlassBuilder.newBuilder("Lab", null).build();
         Field titleField = FieldBuilder
                 .newBuilder("title", null, type, StandardTypes.getStringType())
                 .build();
@@ -109,8 +109,8 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void testEphemeral() {
-        var flowType = ClassTypeBuilder.newBuilder("Flow", "Flow").build();
-        var scopeType = ClassTypeBuilder.newBuilder("Scope", "Scope").build();
+        var flowType = KlassBuilder.newBuilder("Flow", "Flow").build();
+        var scopeType = KlassBuilder.newBuilder("Scope", "Scope").build();
         var nullableScopeType = new UnionType(Set.of(StandardTypes.getNullType(), scopeType.getType()));
         var rootScopeField = FieldBuilder.newBuilder("rootScope", "rootScope", flowType, nullableScopeType)
                 .isChild(true)

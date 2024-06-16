@@ -3,7 +3,7 @@ package org.metavm.object.view;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.LocalKey;
 import org.metavm.flow.ScopeRT;
 import org.metavm.flow.Value;

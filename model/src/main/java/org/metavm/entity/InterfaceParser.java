@@ -1,8 +1,13 @@
 package org.metavm.entity;
 
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Parameter;
 import org.metavm.object.type.ColumnStore;
 import org.metavm.object.type.TypeCategory;
+import org.metavm.util.NncUtils;
+import org.metavm.util.ReflectionUtils;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
 public class InterfaceParser<T> extends PojoParser<T, InterfaceDef<T>> {
@@ -23,46 +28,20 @@ public class InterfaceParser<T> extends PojoParser<T, InterfaceDef<T>> {
         return TypeCategory.INTERFACE;
     }
 
-//    private final Type javaType;
-//    private final Class<T> javaClass;
-//    protected final DefMap defMap;
-//    private final JavaSubstitutor substitutor;
-//
-//    public InterfaceParser(Class<T> javaClass, Type javaType, DefMap defMap) {
-//        this.javaType = javaType;
-//        this.javaClass = javaClass;
-//        substitutor = ReflectUtils.resolveGenerics(javaType);
-//        this.defMap =  defMap;
-//    }
-//
-//    @Override
-//    public InterfaceDef<T> create() {
-//        //noinspection unchecked
-//        List<InterfaceDef<? super T>> superDefs = NncUtils.map(
-//            javaClass.getGenericInterfaces(),
-//            it -> (InterfaceDef<? super T>) defMap.getDef(substitutor.substitute(it))
-//        );
-//        List<ClassType> superInterfaces = NncUtils.map(superDefs, InterfaceDef::getType);
-//        return new InterfaceDef<>(javaClass, javaType, createType(superInterfaces), superDefs);
-//    }
-//
-//    @Override
-//    public void initialize() {
-//
-//    }
-//
-//    @Override
-//    public List<Type> getDependencyTypes() {
-//        return List.of();
-//    }
-//
-//    private ClassType createType(List<ClassType> superInterfaces) {
-//        List<>
-//
-//        return ClassBuilder.newBuilder(ReflectUtils.getMetaTypeName(javaClass), javaClass.getSimpleName())
-//                .interfaces(superInterfaces)
-//                .source(ClassSource.REFLECTION)
-//                .category(TypeCategory.INTERFACE)
-//                .build();
-//    }
+    @Override
+    public void generateDeclaration() {
+        super.generateDeclaration();
+        if (isSystemAPI()) {
+            for (Method method : javaClass.getMethods()) {
+                var returnType = defContext.getType(method.getGenericReturnType());
+                if(ReflectionUtils.isAnnotatedWithNullable(method))
+                    returnType = StandardTypes.getNullableType(returnType);
+                MethodBuilder.newBuilder(get().klass, method.getName(), method.getName())
+                        .parameters(NncUtils.map(method.getParameters(), this::createParameter))
+                        .returnType(returnType)
+                        .build();
+            }
+        }
+    }
+
 }

@@ -4,13 +4,13 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiRecordComponent;
-import org.metavm.entity.EntityIndex;
+import org.metavm.api.EntityIndex;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.StandardTypes;
 import org.metavm.expression.ThisExpression;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Values;
-import org.metavm.object.type.ClassTypeBuilder;
+import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Index;
 
@@ -42,7 +42,7 @@ public class IndexDefiner extends VisitorBase {
     public void visitMethod(PsiMethod psiMethod) {
         var psiClass = requireNonNull(psiMethod.getContainingClass());
         if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null && psiMethod.isConstructor()) {
-            var dummyType = ClassTypeBuilder.newBuilder("IndexDummy", "IndexDummy").build();
+            var dummyType = KlassBuilder.newBuilder("IndexDummy", "IndexDummy").build();
             var dummyMethod = MethodBuilder.newBuilder(
                             dummyType,
                             "dummy", "dummy"

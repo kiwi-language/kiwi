@@ -1,6 +1,6 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.manufacturing.material.Batch;
 import org.metavm.manufacturing.material.Material;
 import org.metavm.manufacturing.material.QualityInspectionState;

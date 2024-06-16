@@ -371,7 +371,7 @@ public class MappingSaver {
         var viewTypeName = getTargetTypeName(sourceKlass, name);
         var viewTypeCode = getTargetTypeCode(sourceKlass, code);
         if (sourceKlass.isTemplate()) {
-            var template = ClassTypeBuilder.newBuilder(viewTypeName, viewTypeCode)
+            var template = KlassBuilder.newBuilder(viewTypeName, viewTypeCode)
                     .isTemplate(true)
                     .ephemeral(true)
                     .struct(true)
@@ -387,7 +387,7 @@ public class MappingSaver {
             );
             return (Klass) template.accept(subst);
         } else {
-            return ClassTypeBuilder.newBuilder(viewTypeName, viewTypeCode)
+            return KlassBuilder.newBuilder(viewTypeName, viewTypeCode)
                     .ephemeral(true)
                     .anonymous(true)
                     .struct(true)

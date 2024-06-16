@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;

@@ -2,9 +2,13 @@ package org.metavm.autograph;
 
 import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
+import org.metavm.api.ChildList;
+import org.metavm.api.ValueList;
+import org.metavm.api.ValueStruct;
+import org.metavm.api.ValueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.metavm.builtin.Password;
+import org.metavm.api.builtin.Password;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
@@ -196,7 +200,9 @@ public class TypeResolverImpl implements TypeResolver {
             if (TranspileUtil.createClassType(Map.class).isAssignableFrom(classType)) {
                 classType = TranspileUtil.getSuperType(classType, Map.class);
             }
-            var psiClass = requireNonNull(classType.resolve());
+            var classTypeText = classType.getCanonicalText();
+            var psiClass = requireNonNull(classType.resolve(),
+                    () -> "Failed to resolve class type " + classTypeText);
             if (psiClass instanceof PsiTypeParameter typeParameter)
                 return resolveTypeVariable(typeParameter);
             else if (TranspileUtil.isObjectClass(psiClass))
@@ -343,6 +349,8 @@ public class TypeResolverImpl implements TypeResolver {
 
     private Klass createMetaClass(PsiClass psiClass) {
         try (var ignored = ContextUtil.getProfiler().enter("createMetaClass")) {
+            NncUtils.requireFalse(Objects.requireNonNull(psiClass.getQualifiedName()).startsWith("org.metavm.api."),
+                    () -> new IllegalStateException("Can not create meta class for API class: " + psiClass.getQualifiedName()));
             var name = TranspileUtil.getBizClassName(psiClass);
             var kind = getClassKind(psiClass);
             boolean isTemplate = psiClass.getTypeParameterList() != null
@@ -359,7 +367,7 @@ public class TypeResolverImpl implements TypeResolver {
                 if (klass.isTemplate() != isTemplate)
                     throw new BusinessException(ErrorCode.CHANGING_IS_TEMPLATE);
             } else {
-                klass = ClassTypeBuilder.newBuilder(name, psiClass.getQualifiedName())
+                klass = KlassBuilder.newBuilder(name, psiClass.getQualifiedName())
                         .kind(kind)
                         .ephemeral(TranspileUtil.isEphemeral(psiClass))
                         .struct(TranspileUtil.isStruct(psiClass))

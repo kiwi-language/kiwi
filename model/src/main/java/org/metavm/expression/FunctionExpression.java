@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.ValueArray;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Type;

@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import org.metavm.entity.Attribute;
 import org.metavm.entity.StandardTypes;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.type.*;
@@ -44,6 +45,7 @@ public class MethodBuilder {
     private Method existing;
     private boolean _static;
     private @Nullable CodeSource codeSource;
+    private final List<Attribute> attributes = new ArrayList<>();
     private MetadataState state;
 
     private MethodBuilder(Klass declaringType, String name, @Nullable String code) {
@@ -156,6 +158,12 @@ public class MethodBuilder {
         return this;
     }
 
+    public MethodBuilder addAttribute(String name, String value) {
+        attributes.removeIf(a -> a.name().equals(name));
+        attributes.add(new Attribute(name, value));
+        return this;
+    }
+
     public Method build() {
         if (returnType == null) {
             if (isConstructor)
@@ -170,10 +178,11 @@ public class MethodBuilder {
         var effectiveTmpId = tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId);
         if(!hidden && !typeArguments.isEmpty())
             hidden = NncUtils.anyMatch(typeArguments, Type::isCaptured);
+        Method method;
         if (existing == null) {
             if (state == null)
                 state = MetadataState.READY;
-            return new Method(
+            method = new Method(
                     effectiveTmpId,
                     declaringType,
                     name,
@@ -195,6 +204,7 @@ public class MethodBuilder {
                     state
             );
         } else {
+            method = existing;
             existing.setName(name);
             existing.setCode(code);
             existing.setParameters(parameters);
@@ -205,8 +215,9 @@ public class MethodBuilder {
             existing.setStaticType(staticType);
             if (state != null)
                 existing.setState(state);
-            return existing;
         }
+        method.setAttributes(attributes);
+        return method;
     }
 
     public static Map<String, Long> getFieldTmpIds(@Nullable TypeDTO typeDTO) {

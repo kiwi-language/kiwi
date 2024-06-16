@@ -1,6 +1,9 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.type.rest.dto.TypeVariableDTO;

@@ -1,7 +1,7 @@
 package org.metavm.lab.shopping;
 
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 
 import java.util.ArrayList;
 import java.util.List;

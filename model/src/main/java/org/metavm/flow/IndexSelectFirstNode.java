@@ -1,6 +1,7 @@
 
 package org.metavm.flow;
 
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.IndexSelectFirstNodeParam;

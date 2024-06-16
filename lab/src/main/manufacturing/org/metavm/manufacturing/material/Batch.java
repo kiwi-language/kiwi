@@ -1,6 +1,6 @@
 package org.metavm.manufacturing.material;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 
 import javax.annotation.Nullable;
 import java.util.Date;

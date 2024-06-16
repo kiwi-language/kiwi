@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.api.Value;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Instance;

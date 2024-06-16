@@ -1,5 +1,8 @@
 package org.metavm.application;
 
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.application.rest.dto.ApplicationDTO;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;

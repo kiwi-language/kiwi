@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.IndexQueryKeyItemDTO;
@@ -10,7 +11,7 @@ import org.metavm.object.type.IndexField;
 import static java.util.Objects.requireNonNull;
 
 @EntityType
-public class IndexQueryKeyItem extends Entity implements org.metavm.entity.Value {
+public class IndexQueryKeyItem extends Entity implements org.metavm.api.Value {
 
     public static IndexQueryKeyItem create(IndexQueryKeyItemDTO itemDTO, IEntityContext context, ParsingContext parsingContext) {
         return new IndexQueryKeyItem(

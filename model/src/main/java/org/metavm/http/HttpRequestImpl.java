@@ -1,5 +1,9 @@
 package org.metavm.http;
 
+import org.metavm.api.*;
+import org.metavm.api.entity.HttpCookie;
+import org.metavm.api.entity.HttpHeader;
+import org.metavm.api.entity.HttpRequest;
 import org.metavm.entity.*;
 import org.metavm.util.NncUtils;
 

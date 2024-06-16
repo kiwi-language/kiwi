@@ -1,6 +1,6 @@
 package org.metavm.object.view;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.flow.ScopeRT;
 import org.metavm.flow.Value;
 import org.metavm.object.type.Type;

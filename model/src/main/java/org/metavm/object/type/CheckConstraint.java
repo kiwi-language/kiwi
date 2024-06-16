@@ -2,7 +2,7 @@ package org.metavm.object.type;
 
 import org.metavm.entity.ConstraintDef;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.expression.BinaryExpression;
 import org.metavm.expression.InstanceEvaluationContext;

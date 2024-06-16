@@ -1,6 +1,8 @@
 package org.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.entity.*;

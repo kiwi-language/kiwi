@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.FieldRefDTO;

@@ -1,6 +1,6 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.entity.ValueStruct;
+import org.metavm.api.ValueStruct;
 
 @ValueStruct
 public record BySpecInboundRequestItem(

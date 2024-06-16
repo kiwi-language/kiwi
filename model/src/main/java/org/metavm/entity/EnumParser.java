@@ -4,7 +4,7 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassKind;
 import org.metavm.object.type.ClassSource;
-import org.metavm.object.type.ClassTypeBuilder;
+import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.ResolutionStage;
 import org.metavm.util.NncUtils;
 
@@ -37,7 +37,7 @@ public class EnumParser<T extends Enum<?>> extends DefParser<T, ClassInstance, E
         def = new EnumDef<>(
                 javaClass,
                 superDef,
-                ClassTypeBuilder.newBuilder(EntityUtils.getMetaTypeName(javaClass), javaClass.getName())
+                KlassBuilder.newBuilder(EntityUtils.getMetaTypeName(javaClass), javaClass.getName())
                         .superClass(superDef.getType())
                         .kind(ClassKind.ENUM)
                         .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getType))

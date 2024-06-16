@@ -1,7 +1,7 @@
 package org.metavm.manufacturing.production;
 
-import org.metavm.entity.ChildList;
-import org.metavm.entity.EntityField;
+import org.metavm.api.ChildList;
+import org.metavm.api.EntityField;
 
 import javax.annotation.Nullable;
 import java.util.List;

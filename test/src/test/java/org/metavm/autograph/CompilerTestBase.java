@@ -15,6 +15,8 @@ import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
+import org.metavm.object.type.BeanManager;
+import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.TypeDTO;
 import org.metavm.object.type.rest.dto.TypeQuery;
@@ -74,8 +76,8 @@ public abstract class CompilerTestBase extends TestCase  {
         typeManager = new TypeManager(
                 bootResult.entityContextFactory(),
                 new EntityQueryService(instanceQueryService),
-                new TaskManager(bootResult.entityContextFactory(), new MockTransactionOperations())
-        );
+                new TaskManager(bootResult.entityContextFactory(), new MockTransactionOperations()),
+                new BeanManager());
         instanceManager = new InstanceManager(bootResult.entityContextFactory(),
                 bootResult.instanceStore(), instanceQueryService);
         typeManager.setInstanceManager(instanceManager);

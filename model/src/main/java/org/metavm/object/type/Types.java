@@ -307,7 +307,7 @@ public class Types {
     }
 
     public static ClassType createFunctionalClass(ClassType functionalInterface) {
-        var klass = ClassTypeBuilder.newBuilder(functionalInterface.getName() + "Impl", null)
+        var klass = KlassBuilder.newBuilder(functionalInterface.getName() + "Impl", null)
                 .interfaces(functionalInterface)
                 .ephemeral(true)
                 .build();
@@ -323,7 +323,7 @@ public class Types {
                 .build();
 
         var selfNode = new SelfNode(null, "self", null, flow.getDeclaringType().getType(), null, flow.getRootScope());
-        var inputType = ClassTypeBuilder.newBuilder("Input", "Input").temporary().build();
+        var inputType = KlassBuilder.newBuilder("Input", "Input").temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
                     .build();
@@ -354,7 +354,7 @@ public class Types {
     }
 
     public static Klass createSAMInterfaceImpl(Klass samInterface, FunctionInstance function) {
-        var klass = ClassTypeBuilder.newBuilder(
+        var klass = KlassBuilder.newBuilder(
                         samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
                 .interfaces(samInterface.getType())
                 .ephemeral(true)

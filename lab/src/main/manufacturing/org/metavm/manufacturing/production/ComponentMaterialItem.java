@@ -1,6 +1,6 @@
 package org.metavm.manufacturing.production;
 
-import org.metavm.entity.EntityStruct;
+import org.metavm.api.EntityStruct;
 import org.metavm.manufacturing.material.QualityInspectionState;
 
 @EntityStruct

@@ -3,6 +3,7 @@ package org.metavm.object.view;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
+import org.metavm.object.type.BeanManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionOperations;
@@ -46,8 +47,8 @@ public class MappingTest extends TestCase {
         EntityQueryService entityQueryService = new EntityQueryService(instanceQueryService);
         typeManager = new TypeManager(
                 bootResult.entityContextFactory(), entityQueryService,
-                new TaskManager(bootResult.entityContextFactory(), transactionOperations)
-        );
+                new TaskManager(bootResult.entityContextFactory(), transactionOperations),
+                new BeanManager());
         instanceManager = new InstanceManager(
                 bootResult.entityContextFactory(), bootResult.instanceStore(), instanceQueryService
         );

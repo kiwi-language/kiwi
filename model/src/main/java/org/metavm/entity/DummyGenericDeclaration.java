@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import org.jetbrains.annotations.Nullable;
+import org.metavm.api.EntityType;
 import org.metavm.flow.Flow;
 import org.metavm.object.type.TypeVariable;
 

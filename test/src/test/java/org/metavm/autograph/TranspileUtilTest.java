@@ -15,7 +15,7 @@ import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StandardTypes;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
-import org.metavm.object.type.ClassTypeBuilder;
+import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.UncertainType;
 import org.metavm.util.NncUtils;
@@ -64,7 +64,7 @@ public class TranspileUtilTest extends TestCase {
         var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("add"));
         var sig = TranspileUtil.getInternalName(getMethod);
 
-        var fooType = ClassTypeBuilder.newBuilder("SignatureFoo", SignatureFoo.class.getName()).build();
+        var fooType = KlassBuilder.newBuilder("SignatureFoo", SignatureFoo.class.getName()).build();
         var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
 
         var addMethod = MethodBuilder.newBuilder(fooType, "add", "add")

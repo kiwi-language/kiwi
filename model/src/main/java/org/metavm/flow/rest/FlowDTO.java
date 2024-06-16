@@ -7,6 +7,7 @@ import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 public record FlowDTO(
         String id,
@@ -25,6 +26,7 @@ public record FlowDTO(
         List<String> capturedCompositeTypeIds,
         List<String> capturedFlowIds,
         boolean isTemplate,
+        Map<String, String> attributes,
         int state,
         FlowParam param
 ) implements BaseDTO, GenericDeclarationDTO {

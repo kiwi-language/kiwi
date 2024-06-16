@@ -1,5 +1,8 @@
 package org.metavm.object.type;
 
+import org.metavm.beans.BeanDefinitionRegistry;
+import org.metavm.object.version.VersionManager;
+import org.metavm.object.version.Versions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +22,6 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.rest.dto.*;
-import org.metavm.object.version.VersionManager;
-import org.metavm.object.version.Versions;
 import org.metavm.task.AddFieldJobGroup;
 import org.metavm.task.TaskManager;
 import org.metavm.util.BusinessException;
@@ -47,12 +48,15 @@ public class TypeManager extends EntityContextFactoryAware {
 
     private VersionManager versionManager;
 
+    private final BeanManager beanManager;
+
     public TypeManager(EntityContextFactory entityContextFactory,
                        EntityQueryService entityQueryService,
-                       TaskManager taskManager) {
+                       TaskManager taskManager, BeanManager beanManager) {
         super(entityContextFactory);
         this.entityQueryService = entityQueryService;
         this.taskManager = taskManager;
+        this.beanManager = beanManager;
     }
 
     public Map<Integer, String> getPrimitiveMap() {
@@ -305,10 +309,13 @@ public class TypeManager extends EntityContextFactoryAware {
         for (FlowDTO function : functions) {
             flowManager.saveContent(function, context.getFunction(Id.parse(function.id())), context);
         }
+        var klasses = new ArrayList<Klass>();
         for (TypeDTO typeDTO : batch.getTypeDTOs()) {
             var klass = context.getKlass(Id.parse(typeDTO.id()));
+            klasses.add(klass);
             createOverridingFlows(klass, context);
         }
+        beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
         return batch.getTypes();
     }
 
@@ -336,8 +343,8 @@ public class TypeManager extends EntityContextFactoryAware {
 
     public GetTypesResponse getByRange(GetByRangeRequest request) {
         try (var context = newContext()) {
-            var lowerBound = TypeParser.parseType(request.lowerBoundId(), context);
-            var upperBound = TypeParser.parseType(request.upperBoundId(), context);
+            var lowerBound = org.metavm.object.type.TypeParser.parseType(request.lowerBoundId(), context);
+            var upperBound = org.metavm.object.type.TypeParser.parseType(request.upperBoundId(), context);
 
             List<Klass> types;
             if (lowerBound.equals(StandardTypes.getNeverType()) && upperBound.equals(StandardTypes.getAnyType())) {
@@ -406,7 +413,7 @@ public class TypeManager extends EntityContextFactoryAware {
     public String saveEnumConstant(InstanceDTO instanceDTO) {
         try (var context = newContext()) {
             var instanceContext = Objects.requireNonNull(context.getInstanceContext());
-            var klass = TypeParser.parseClassType(instanceDTO.type(), context).resolve();
+            var klass = org.metavm.object.type.TypeParser.parseClassType(instanceDTO.type(), context).resolve();
             ClassInstance instance;
             if (instanceDTO.isNew()) {
                 instanceDTO = setOrdinal(instanceDTO, klass.getEnumConstants().size(), klass);

@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.flow.rest.ParameterRefDTO;
 import org.metavm.util.NncUtils;

@@ -1,7 +1,7 @@
 package org.metavm.entity.mocks;
 
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 
 @EntityType
 public class EntityFoo extends Entity {

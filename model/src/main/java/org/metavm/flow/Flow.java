@@ -1,6 +1,9 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
@@ -21,7 +24,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 @EntityType
-public abstract class Flow extends Element implements GenericDeclaration, Callable, LoadAware, CapturedTypeScope {
+public abstract class Flow extends AttributedElement implements GenericDeclaration, Callable, LoadAware, CapturedTypeScope {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
@@ -101,7 +104,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         this.state = state;
     }
 
-    public abstract FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, CallContext callContext);
+    public abstract FlowExecResult execute(@Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext);
 
     public List<Type> getParameterTypes() {
         return NncUtils.map(parameters, Parameter::getType);
@@ -191,6 +194,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                 List.of(),
                 List.of(),
                 isTemplate(),
+                getAttributesMap(),
                 getState().code(),
                 getParam(includeCode, serContext)
         );
@@ -498,7 +502,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         this.state = state;
     }
 
-    protected List<Instance> checkArguments(List<Instance> arguments) {
+    protected List<Instance> checkArguments(List<? extends Instance> arguments) {
         List<Instance> convertedArgs = new ArrayList<>();
         out:
         if (arguments.size() == parameters.size()) {

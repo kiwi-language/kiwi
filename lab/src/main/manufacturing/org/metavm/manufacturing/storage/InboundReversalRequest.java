@@ -1,8 +1,8 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.entity.ChildEntity;
-import org.metavm.entity.ChildList;
-import org.metavm.entity.EntityStruct;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.ChildList;
+import org.metavm.api.EntityStruct;
 
 @EntityStruct(ephemeral = true)
 public record InboundReversalRequest(

@@ -953,7 +953,7 @@ public class Assembler {
                             initialValues.put(fieldName, parseValue(decl.expression(), parsingContext));
                         }
                     }
-                    var loopKlass = ClassTypeBuilder.newBuilder("loop" + NncUtils.randomNonNegative(), null)
+                    var loopKlass = KlassBuilder.newBuilder("loop" + NncUtils.randomNonNegative(), null)
                             .tmpId(NncUtils.randomNonNegative())
                             .temporary()
                             .build();
@@ -1010,7 +1010,7 @@ public class Assembler {
                             null
                     );
                     var bodyScope = lambdaNode.getBodyScope();
-                    var inputKlass = ClassTypeBuilder.newBuilder("Input" + NncUtils.randomNonNegative(), null)
+                    var inputKlass = KlassBuilder.newBuilder("Input" + NncUtils.randomNonNegative(), null)
                             .tmpId(NncUtils.randomNonNegative())
                             .temporary()
                             .build();
@@ -1210,7 +1210,7 @@ public class Assembler {
     }
 
     private Klass createKlass(String name, ClassKind kind) {
-        var klass = ClassTypeBuilder.newBuilder(name, name).kind(kind).tmpId(NncUtils.randomNonNegative()).build();
+        var klass = KlassBuilder.newBuilder(name, name).kind(kind).tmpId(NncUtils.randomNonNegative()).build();
         code2klass.put(name, klass);
         return klass;
     }

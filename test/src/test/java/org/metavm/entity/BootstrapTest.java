@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.api.Value;
 import org.slf4j.Logger;
 import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.InstanceStore;

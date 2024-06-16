@@ -1,6 +1,8 @@
 package org.metavm.utils;
 
-import org.metavm.entity.*;
+import org.metavm.api.*;
+import org.metavm.api.entity.HttpRequest;
+import org.metavm.api.entity.HttpResponse;
 import org.metavm.user.LabSession;
 
 import javax.annotation.Nullable;

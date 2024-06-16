@@ -1,10 +1,10 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.entity.ChildEntity;
-import org.metavm.entity.ChildList;
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityType;
-import org.metavm.lang.SystemUtils;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.ChildList;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
+import org.metavm.api.lang.SystemUtils;
 
 import java.util.ArrayList;
 import java.util.Date;

@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
@@ -7,10 +8,8 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.TypeId;
 import org.metavm.object.instance.core.TypeTag;
-import org.metavm.object.type.rest.dto.TypeDTO;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.object.type.rest.dto.TypeKeyCodes;
-import org.metavm.object.type.rest.dto.TypeParam;
 import org.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -253,20 +252,6 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
 
     public ColumnKind getSQLType() {
         return getCategory().getSQLType();
-    }
-
-    protected TypeDTO toDTO(TypeParam param) {
-        try (var ser = SerializeContext.enter()) {
-            return new TypeDTO(
-                    ser.getStringId(this),
-                    getName(),
-                    getCode(),
-                    getCategory().code(),
-                    isEphemeral(),
-                    false,
-                    param
-            );
-        }
     }
 
     @Override

@@ -1,8 +1,8 @@
 package org.metavm.mocks;
 
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 
 @EntityType
 public class Product extends Entity {

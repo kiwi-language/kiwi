@@ -4,8 +4,8 @@ import org.metavm.application.LabAppInvitation;
 import org.metavm.application.LabAppInvitationRequest;
 import org.metavm.application.LabApplication;
 import org.metavm.application.UserApplication;
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.message.LabMessage;
 import org.metavm.user.*;
 

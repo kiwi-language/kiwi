@@ -1,5 +1,7 @@
 package org.metavm.user;
 
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.Instance;

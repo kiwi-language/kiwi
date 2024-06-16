@@ -1,8 +1,8 @@
 package org.metavm.util;
 
-import org.metavm.entity.HttpCookie;
-import org.metavm.entity.HttpRequest;
-import org.metavm.entity.HttpResponse;
+import org.metavm.api.entity.HttpCookie;
+import org.metavm.api.entity.HttpRequest;
+import org.metavm.api.entity.HttpResponse;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;

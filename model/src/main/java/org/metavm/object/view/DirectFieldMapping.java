@@ -1,6 +1,7 @@
 package org.metavm.object.view;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.flow.Value;

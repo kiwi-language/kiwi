@@ -1,7 +1,7 @@
 package org.metavm.task;
 
 import org.metavm.application.Application;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 
 @EntityType

@@ -21,7 +21,7 @@ public interface NativeFunctionsHolder {
 
     void setSetSourceFunc(@NotNull Function function);
 
-    FlowExecResult invoke(@NotNull Function flow, @NotNull List<Instance> arguments, CallContext callContext);
+    FlowExecResult invoke(@NotNull Function flow, @NotNull List<? extends Instance> arguments, CallContext callContext);
 
     Function getFunctionToInstance();
 

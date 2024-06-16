@@ -2,7 +2,7 @@ package org.metavm.user;
 
 
 import org.metavm.application.LabApplication;
-import org.metavm.entity.ValueStruct;
+import org.metavm.api.ValueStruct;
 
 import javax.annotation.Nullable;
 

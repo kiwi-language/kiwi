@@ -1,6 +1,8 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.flow.rest.ParameterDTO;
 import org.metavm.object.type.Type;
@@ -10,12 +12,11 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 @EntityType
-public class Parameter extends Element implements GenericElement, LocalKey {
+public class Parameter extends AttributedElement implements GenericElement, LocalKey {
     @EntityField(asTitle = true)
     private String name;
     @EntityField(asKey = true)
-    @Nullable
-    private String code;
+    private @Nullable String code;
     private Type type;
     @Nullable
     private Value condition;
@@ -28,7 +29,10 @@ public class Parameter extends Element implements GenericElement, LocalKey {
         this(tmpId, name, code, type, null, null, DummyCallable.INSTANCE);
     }
 
-    public Parameter(Long tmpId, String name, @Nullable String code, Type type,
+    public Parameter(Long tmpId,
+                     String name,
+                     @Nullable String code,
+                     Type type,
                      @Nullable Value condition,
                      @Nullable Parameter copySource,
                      Callable callable) {
@@ -91,6 +95,7 @@ public class Parameter extends Element implements GenericElement, LocalKey {
                     type.toExpression(serContext),
                     NncUtils.get(condition, Value::toDTO),
                     NncUtils.get(copySource, serContext::getStringId),
+                    getAttributesMap(),
                     serContext.getStringId(callable)
             );
         }
@@ -155,4 +160,5 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     public String getText() {
         return name + ":" + type.getName();
     }
+
 }

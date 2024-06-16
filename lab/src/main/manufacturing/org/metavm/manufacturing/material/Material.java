@@ -1,10 +1,10 @@
 package org.metavm.manufacturing.material;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ChildEntity;
-import org.metavm.entity.ChildList;
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityType;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.ChildList;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.manufacturing.storage.Position;
 import org.metavm.manufacturing.storage.Warehouse;
 import org.metavm.manufacturing.utils.Utils;

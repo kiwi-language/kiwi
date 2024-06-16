@@ -1,19 +1,20 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.metavm.entity.EntityIndex;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.StandardTypes;
+import org.metavm.api.*;
+import org.metavm.entity.*;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.flow.Values;
+import org.metavm.object.type.Index;
 import org.metavm.object.type.*;
 import org.metavm.util.CompilerConfig;
 import org.metavm.util.IdentitySet;
+import org.metavm.util.NamingUtils;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -68,49 +69,68 @@ public class Declarator extends CodeGenVisitor {
         }
         visitedFields.clear();
         visitedMethods.clear();
-        var metaClass = Objects.requireNonNull(psiClass.getUserData(Keys.MV_CLASS),
+        var klass = Objects.requireNonNull(psiClass.getUserData(Keys.MV_CLASS),
                 () -> "Meta class not found for '" + psiClass.getQualifiedName() + "'");
-        metaClass.setStage(ResolutionStage.DECLARATION);
-        if (!metaClass.isInterface()) {
-            if (metaClass.findSelfMethodByCode("<init>") == null) {
-                MethodBuilder.newBuilder(metaClass, "<init>", "<init>")
+        klass.setStage(ResolutionStage.DECLARATION);
+        if (!klass.isInterface()) {
+            if (klass.findSelfMethodByCode("<init>") == null) {
+                MethodBuilder.newBuilder(klass, "<init>", "<init>")
                         .access(Access.PRIVATE)
                         .build();
             }
-            if (metaClass.findSelfMethodByCode("<cinit>") == null) {
-                MethodBuilder.newBuilder(metaClass, "<cinit>", "<cinit>")
+            if (klass.findSelfMethodByCode("<cinit>") == null) {
+                MethodBuilder.newBuilder(klass, "<cinit>", "<cinit>")
                         .isStatic(true)
                         .access(Access.PRIVATE)
                         .build();
             }
-            var initMethod = Objects.requireNonNull(metaClass.findSelfMethodByCode("<init>"));
-            var cinitMethod = Objects.requireNonNull(metaClass.findSelfMethodByCode("<cinit>"));
+            var initMethod = Objects.requireNonNull(klass.findSelfMethodByCode("<init>"));
+            var cinitMethod = Objects.requireNonNull(klass.findSelfMethodByCode("<cinit>"));
             initMethod.clearContent();
             cinitMethod.clearContent();
             visitedMethods.add(initMethod);
             visitedMethods.add(cinitMethod);
         }
-        classStack.push(metaClass);
+        klass.clearAttributes();
+        var componentAnno = TranspileUtil.getAnnotation(psiClass, Component.class);
+        PsiAnnotation configurationAnno;
+        if (componentAnno != null) {
+            klass.setAttribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT);
+            klass.setAttribute(AttributeNames.BEAN_NAME,
+                    (String) TranspileUtil.getAnnotationAttribute(componentAnno, "value", getDefaultBeanName(klass)));
+        } else if ((configurationAnno = TranspileUtil.getAnnotation(psiClass, Configuration.class)) != null) {
+            klass.setAttribute(AttributeNames.BEAN_KIND, BeanKinds.CONFIGURATION);
+            klass.setAttribute(AttributeNames.BEAN_NAME,
+                    (String) TranspileUtil.getAnnotationAttribute(configurationAnno, "value", getDefaultBeanName(klass)));
+        }
+        classStack.push(klass);
         super.visitClass(psiClass);
         classStack.pop();
-        var removedFields = NncUtils.exclude(metaClass.getFields(), visitedFields::contains);
-        removedFields.forEach(metaClass::removeField);
-        var removedMethods = NncUtils.filter(metaClass.getMethods(),
+        var removedFields = NncUtils.exclude(klass.getFields(), visitedFields::contains);
+        removedFields.forEach(klass::removeField);
+        var removedMethods = NncUtils.filter(klass.getMethods(),
                 m -> !visitedMethods.contains(m));
         var fieldIndices = new HashMap<String, Integer>();
         for (int i = 0; i < psiClass.getFields().length; i++) {
             fieldIndices.put(psiClass.getFields()[i].getName(), i);
         }
-        metaClass.sortFields(Comparator.comparingInt(f -> fieldIndices.get(f.getCode())));
+        klass.sortFields(Comparator.comparingInt(f -> fieldIndices.get(f.getCode())));
         var methodIndices = new HashMap<Method, Integer>();
         for (int i = 0; i < psiClass.getMethods().length; i++) {
             var method = psiClass.getMethods()[i].getUserData(Keys.Method);
-            if(method != null)
+            if (method != null)
                 methodIndices.put(method, i);
         }
-        metaClass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
-        removedMethods.forEach(metaClass::removeMethod);
+        klass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
+        removedMethods.forEach(klass::removeMethod);
 //        metaClass.setStage(ResolutionStage.DECLARATION);
+    }
+
+    private String getDefaultBeanName(Klass klass) {
+        var klassName = klass.getCodeRequired();
+        var idx = klassName.lastIndexOf('.');
+        var simpleName = idx == -1 ? klassName : klassName.substring(idx + 1);
+        return NamingUtils.firstCharToLowerCase(simpleName);
     }
 
     @Override
@@ -118,7 +138,7 @@ public class Declarator extends CodeGenVisitor {
         if (CompilerConfig.isMethodBlacklisted(method))
             return;
         var psiClass = requireNonNull(method.getContainingClass());
-        if(TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null)
+        if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null)
             return;
         List<PsiMethod> overriddenMethods = TranspileUtil.getOverriddenMethods(method);
         List<Method> overridden = new ArrayList<>();
@@ -156,9 +176,18 @@ public class Declarator extends CodeGenVisitor {
             flow.setName(getFlowName(method));
             NncUtils.biForEach(
                     flow.getParameters(), resolvedParams,
-                    (param, resolvedParam) -> param.setName(resolvedParam.getName())
+                    (param, resolvedParam) -> {
+                        param.setName(resolvedParam.getName());
+                        param.setAttributes(resolvedParam.getAttributes());
+                    }
             );
             flow.setReturnType(getReturnType(method));
+        }
+        flow.clearAttributes();
+        var beanAnnotation = TranspileUtil.getAnnotation(method, Bean.class);
+        if (beanAnnotation != null) {
+            var beanName = (String) TranspileUtil.getAnnotationAttribute(beanAnnotation, "value", flow.getCodeRequired());
+            flow.setAttribute(AttributeNames.BEAN_NAME, beanName);
         }
         visitedMethods.add(flow);
         for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
@@ -187,7 +216,13 @@ public class Declarator extends CodeGenVisitor {
     private List<Parameter> processParameters(PsiParameterList parameterList) {
         return NncUtils.map(
                 parameterList.getParameters(),
-                param -> new Parameter(null, getFlowParamName(param), param.getName(), resolveParameterType(param))
+                param -> {
+                    var p = new Parameter(null, getFlowParamName(param), param.getName(), resolveParameterType(param));
+                    var beanName = (String) TranspileUtil.getAnnotationAttribute(param, Resource.class, "value");
+                    if (beanName != null)
+                        p.setAttribute(AttributeNames.BEAN_NAME, beanName);
+                    return p;
+                }
         );
     }
 

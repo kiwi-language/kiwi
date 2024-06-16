@@ -71,14 +71,14 @@ public class StandardDefBuilder {
         ValueDef<Record> recordDef = createValueDef(
                 Record.class,
                 Record.class,
-                StandardTypes.setRecordKlass(ClassTypeBuilder.newBuilder("Record", Record.class.getSimpleName())
+                StandardTypes.setRecordKlass(KlassBuilder.newBuilder("Record", Record.class.getSimpleName())
                         .source(ClassSource.BUILTIN)
                         .kind(ClassKind.VALUE).build()),
                 defContext
         );
         defContext.addDef(recordDef);
 
-        StandardTypes.setEntityKlass(ClassTypeBuilder.newBuilder("Entity", Entity.class.getSimpleName())
+        StandardTypes.setEntityKlass(KlassBuilder.newBuilder("Entity", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .build());
         EntityDef<Entity> entityDef = createEntityDef(
@@ -92,7 +92,7 @@ public class StandardDefBuilder {
 
         var enumTypeParam = new TypeVariable(null, "EnumType", "EnumType",
                 DummyGenericDeclaration.INSTANCE);
-        StandardTypes.setEnumKlass(ClassTypeBuilder.newBuilder("Enum", Enum.class.getSimpleName())
+        StandardTypes.setEnumKlass(KlassBuilder.newBuilder("Enum", Enum.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
                 .build());
@@ -134,7 +134,7 @@ public class StandardDefBuilder {
                 defContext.afterDefInitialized(defContext.getDef(javaType))
         );
 
-        StandardTypes.setThrowableKlass(ClassTypeBuilder.newBuilder("Predicate", Throwable.class.getSimpleName())
+        StandardTypes.setThrowableKlass(KlassBuilder.newBuilder("Predicate", Throwable.class.getSimpleName())
                 .source(ClassSource.BUILTIN).build());
         createThrowableFlows(StandardTypes.getThrowableKlass());
         var throwableDef = createValueDef(
@@ -166,7 +166,7 @@ public class StandardDefBuilder {
                 throwableDef
         );
         defContext.afterDefInitialized(throwableDef);
-        StandardTypes.setExceptionKlass(ClassTypeBuilder.newBuilder("Exception", Exception.class.getSimpleName())
+        StandardTypes.setExceptionKlass(KlassBuilder.newBuilder("Exception", Exception.class.getSimpleName())
                 .superClass(StandardTypes.getThrowableKlass().getType())
                 .source(ClassSource.BUILTIN).build());
 
@@ -174,28 +174,28 @@ public class StandardDefBuilder {
 //        defContext.addDef(createValueDef(Exception.class, Exception.class, exceptionType, defContext));
         defContext.addDef(new DirectDef<>(Exception.class, StandardTypes.getExceptionKlass(), ExceptionNative.class));
 
-        StandardTypes.setRuntimeExceptionKlass(ClassTypeBuilder.newBuilder("RuntimeException", RuntimeException.class.getSimpleName())
+        StandardTypes.setRuntimeExceptionKlass(KlassBuilder.newBuilder("RuntimeException", RuntimeException.class.getSimpleName())
                 .superClass(StandardTypes.getExceptionKlass().getType())
                 .source(ClassSource.BUILTIN).build());
         createRuntimeExceptionFlows(StandardTypes.getRuntimeExceptionKlass());
         defContext.addDef(new DirectDef<>(
                 RuntimeException.class, StandardTypes.getRuntimeExceptionKlass(), RuntimeExceptionNative.class));
 
-        StandardTypes.setIllegalArgumentExceptionKlass(ClassTypeBuilder.newBuilder("IllegalArgumentException", IllegalArgumentException.class.getSimpleName())
+        StandardTypes.setIllegalArgumentExceptionKlass(KlassBuilder.newBuilder("IllegalArgumentException", IllegalArgumentException.class.getSimpleName())
                 .superClass(StandardTypes.getRuntimeExceptionKlass().getType())
                 .source(ClassSource.BUILTIN).build());
         createIllegalArgumentExceptionFlows(StandardTypes.getIllegalArgumentExceptionKlass());
         defContext.addDef(new DirectDef<>(
                 IllegalArgumentException.class, StandardTypes.getIllegalArgumentExceptionKlass(), IllegalArgumentExceptionNative.class));
 
-        StandardTypes.setIllegalStateExceptionKlass(ClassTypeBuilder.newBuilder("IllegalStateException", IllegalStateException.class.getSimpleName())
+        StandardTypes.setIllegalStateExceptionKlass(KlassBuilder.newBuilder("IllegalStateException", IllegalStateException.class.getSimpleName())
                 .superClass(StandardTypes.getRuntimeExceptionKlass().getType())
                 .source(ClassSource.BUILTIN).build());
         createIllegalStateExceptionFlows(StandardTypes.getIllegalStateExceptionKlass());
         defContext.addDef(new DirectDef<>(
                 IllegalStateException.class, StandardTypes.getIllegalStateExceptionKlass(), IllegalStateExceptionNative.class));
 
-        StandardTypes.setNullPointerExceptionKlass(ClassTypeBuilder.newBuilder("NullPointerException", NullPointerException.class.getSimpleName())
+        StandardTypes.setNullPointerExceptionKlass(KlassBuilder.newBuilder("NullPointerException", NullPointerException.class.getSimpleName())
                 .superClass(StandardTypes.getRuntimeExceptionKlass().getType())
                 .source(ClassSource.BUILTIN).build());
         createNullPointerExceptionFlows(StandardTypes.getNullPointerExceptionKlass());
@@ -208,7 +208,7 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(Consumer.class.getTypeParameters()[0], elementType);
-        var consumerType = ClassTypeBuilder.newBuilder("Consumer", "Consumer")
+        var consumerType = KlassBuilder.newBuilder("Consumer", "Consumer")
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .kind(ClassKind.INTERFACE)
@@ -226,7 +226,7 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(Predicate.class.getTypeParameters()[0], elementType);
-        var predicateType = ClassTypeBuilder.newBuilder("Predicate", "Predicate")
+        var predicateType = KlassBuilder.newBuilder("Predicate", "Predicate")
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .kind(ClassKind.INTERFACE)
@@ -431,7 +431,7 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(MetaIterator.class.getTypeParameters()[0], elementType);
-        Klass iteratorType = ClassTypeBuilder.newBuilder(name, code)
+        Klass iteratorType = KlassBuilder.newBuilder(name, code)
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .kind(ClassKind.INTERFACE).build();
@@ -463,7 +463,7 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(MetaIterable.class.getTypeParameters()[0], elementType);
-        var iterableType = ClassTypeBuilder.newBuilder("Iterable", "Iterable")
+        var iterableType = KlassBuilder.newBuilder("Iterable", "Iterable")
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .kind(ClassKind.INTERFACE)
@@ -500,7 +500,7 @@ public class StandardDefBuilder {
         var pIterableType = StandardTypes.getIterableKlass().getParameterized(List.of(elementType.getType()));
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(Collection.class.getTypeParameters()[0], elementType);
-        Klass collectionType = ClassTypeBuilder.newBuilder(name, code)
+        Klass collectionType = KlassBuilder.newBuilder(name, code)
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .interfaces(pIterableType.getType())
@@ -574,7 +574,7 @@ public class StandardDefBuilder {
         var pIterableType = StandardTypes.getIterableKlass().getParameterized(List.of(elementType.getType()));
         var pCollectionType = StandardTypes.getCollectionKlass().getParameterized(List.of(elementType.getType()));
         var pIteratorImplType = StandardTypes.getIteratorImplKlass().getParameterized(List.of(elementType.getType()));
-        Klass setType = ClassTypeBuilder.newBuilder(name, code)
+        Klass setType = KlassBuilder.newBuilder(name, code)
                 .interfaces(pCollectionType.getType())
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
@@ -610,7 +610,7 @@ public class StandardDefBuilder {
         primTypeFactory.putType(MetaList.class.getTypeParameters()[0], elementType);
         var pCollectionType = StandardTypes.getCollectionKlass().getParameterized(List.of(elementType.getType()));
         var pIteratorImplType = StandardTypes.getIteratorImplKlass().getParameterized(List.of(elementType.getType()));
-        var listType = ClassTypeBuilder.newBuilder("List", "List")
+        var listType = KlassBuilder.newBuilder("List", "List")
                 .kind(ClassKind.INTERFACE)
                 .interfaces(pCollectionType.getType())
                 .typeParameters(elementType)
@@ -686,7 +686,7 @@ public class StandardDefBuilder {
         var pCollectionType = StandardTypes.getCollectionKlass().getParameterized(List.of(elementType.getType()));
         var pListType = StandardTypes.getListKlass().getParameterized(List.of(elementType.getType()));
         var pIteratorImplType = StandardTypes.getIteratorImplKlass().getParameterized(List.of(elementType.getType()));
-        var listImplType = ClassTypeBuilder.newBuilder(name, code)
+        var listImplType = KlassBuilder.newBuilder(name, code)
                 .kind(kind)
                 .interfaces(pListType.getType())
                 .typeParameters(elementType)
@@ -770,7 +770,7 @@ public class StandardDefBuilder {
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(IteratorImpl.class.getTypeParameters()[0], elementType);
         var pIteratorType = StandardTypes.getIteratorKlass().getParameterized(List.of(elementType.getType()));
-        Klass iteratorImplType = ClassTypeBuilder.newBuilder(name, code)
+        Klass iteratorImplType = KlassBuilder.newBuilder(name, code)
                 .interfaces(List.of(pIteratorType.getType()))
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
@@ -813,7 +813,7 @@ public class StandardDefBuilder {
         valueType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(MetaMap.class.getTypeParameters()[1], valueType);
         var pSetType = StandardTypes.getSetKlass().getParameterized(List.of(keyType.getType()));
-        Klass mapType = ClassTypeBuilder.newBuilder(name, code)
+        Klass mapType = KlassBuilder.newBuilder(name, code)
                 .source(ClassSource.BUILTIN)
                 .dependencies(List.of(pSetType))
                 .typeParameters(keyType, valueType)

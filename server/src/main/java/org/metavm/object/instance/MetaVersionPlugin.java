@@ -1,5 +1,6 @@
 package org.metavm.object.instance;
 
+import org.metavm.object.version.Versions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.entity.EntityChange;
@@ -8,7 +9,6 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.version.VersionRepository;
-import org.metavm.object.version.Versions;
 
 import java.util.HashSet;
 

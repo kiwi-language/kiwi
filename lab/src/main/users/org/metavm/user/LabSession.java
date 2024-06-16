@@ -1,9 +1,9 @@
 package org.metavm.user;
 
-import org.metavm.entity.EntityIndex;
-import org.metavm.entity.EntityType;
-import org.metavm.entity.Index;
-import org.metavm.lang.UUIDUtils;
+import org.metavm.api.EntityIndex;
+import org.metavm.api.EntityType;
+import org.metavm.api.Index;
+import org.metavm.api.lang.UUIDUtils;
 
 import javax.annotation.Nullable;
 import java.util.Date;

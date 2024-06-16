@@ -1,8 +1,8 @@
 package org.metavm.object.view;
 
 import org.metavm.entity.ChildArray;
-import org.metavm.entity.ChildEntity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.metavm.expression.InstanceOfExpression;
 import org.metavm.flow.*;
 import org.metavm.object.type.Field;

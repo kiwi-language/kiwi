@@ -6,6 +6,7 @@ import org.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public record TypeDTO(
@@ -15,6 +16,7 @@ public record TypeDTO(
         int kind,
         boolean ephemeral,
         boolean anonymous,
+        Map<String, String> attributes,
         TypeParam param
 ) implements TypeDefDTO, GenericDeclarationDTO {
 

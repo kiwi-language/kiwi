@@ -1,6 +1,6 @@
 package org.metavm.mocks;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.task.Task;
 

@@ -20,7 +20,7 @@ import java.util.List;
 
 public class NativeMethods {
 
-    public static @NotNull FlowExecResult invoke(Method method, @Nullable Instance self, List<Instance> arguments, CallContext callContext) {
+    public static @NotNull FlowExecResult invoke(Method method, @Nullable Instance self, List<? extends Instance> arguments, CallContext callContext) {
         if (method.isStatic()) {
             var nativeClass = tryGetNativeClass(method.getDeclaringType());
             NncUtils.requireNonNull(nativeClass,

@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import org.metavm.flow.rest.FlowExecutionRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.metavm.entity.EntityContextFactory;
@@ -7,7 +8,6 @@ import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.entity.natives.ThrowableNative;
-import org.metavm.flow.rest.FlowExecutionRequest;
 import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.InstanceDTO;

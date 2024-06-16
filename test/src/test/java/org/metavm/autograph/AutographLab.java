@@ -1,6 +1,6 @@
 package org.metavm.autograph;
 
-import org.metavm.entity.ChildList;
+import org.metavm.api.ChildList;
 
 import java.io.File;
 import java.net.URISyntaxException;

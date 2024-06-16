@@ -1,6 +1,6 @@
 package org.metavm.autograph.mocks;
 
-import org.metavm.entity.ChildEntity;
+import org.metavm.api.ChildEntity;
 
 import java.util.ArrayList;
 import java.util.List;

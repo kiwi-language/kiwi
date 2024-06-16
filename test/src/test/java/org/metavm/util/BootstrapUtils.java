@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.NativeFunctions;
 import org.metavm.event.MockEventQueue;
@@ -120,6 +121,12 @@ public class BootstrapUtils {
                     context.finish();
                 }
             });
+            TestUtils.doInTransactionWithoutResult(() -> {
+                try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                    context.bind(new BeanDefinitionRegistry());
+                    context.finish();
+                }
+            });
             return new BootstrapResult(
                     entityContextFactory,
                     idProvider,
@@ -171,6 +178,12 @@ public class BootstrapUtils {
                 try (var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                     context.bind(new JobSchedulerStatus());
                     context.bind(new TaskSignal(TestConstants.APP_ID));
+                    context.finish();
+                }
+            });
+            TestUtils.doInTransactionWithoutResult(() -> {
+                try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                    context.bind(new BeanDefinitionRegistry());
                     context.finish();
                 }
             });

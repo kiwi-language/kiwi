@@ -1,6 +1,6 @@
 package org.metavm.lab.shopping;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 
 @EntityType
 public enum AstProductState {

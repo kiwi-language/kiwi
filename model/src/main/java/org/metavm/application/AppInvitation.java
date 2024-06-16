@@ -3,7 +3,7 @@ package org.metavm.application;
 import org.metavm.application.rest.dto.AppInvitationDTO;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.user.PlatformUser;

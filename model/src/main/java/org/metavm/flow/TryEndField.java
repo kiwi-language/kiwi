@@ -1,6 +1,8 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.flow.rest.TryEndFieldDTO;
 import org.metavm.object.type.Field;

@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.entity.ReadonlyList;
+import org.metavm.api.ReadonlyList;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Type;
 import org.metavm.util.Password;

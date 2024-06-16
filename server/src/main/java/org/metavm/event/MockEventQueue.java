@@ -1,5 +1,6 @@
 package org.metavm.event;
 
+import org.metavm.event.EventQueue;
 import org.metavm.event.rest.dto.AppEvent;
 import org.metavm.event.rest.dto.UserEvent;
 

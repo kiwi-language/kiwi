@@ -1,5 +1,6 @@
 package org.metavm.task;
 
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 
 import javax.annotation.Nullable;

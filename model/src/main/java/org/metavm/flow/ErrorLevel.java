@@ -1,7 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.entity.EntityType;
-import org.metavm.entity.EnumConstant;
+import org.metavm.api.EntityType;
 
 @EntityType
 public enum ErrorLevel {

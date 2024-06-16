@@ -3,7 +3,7 @@ package org.metavm.object.instance;
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.persistence.IndexKeyPO;
-import org.metavm.object.type.ClassTypeBuilder;
+import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.IndexField;
 import org.metavm.object.type.Klass;
@@ -17,7 +17,7 @@ import java.util.Objects;
 
 public class IndexKeyRT implements Comparable<IndexKeyRT> {
 
-    private static final Klass DUMMY_TYPE = ClassTypeBuilder.newBuilder("Dummy", "Dummy").build();
+    private static final Klass DUMMY_TYPE = KlassBuilder.newBuilder("Dummy", "Dummy").build();
 
     public  static final ClassInstance MIN_INSTANCE = ClassInstance.allocate(DUMMY_TYPE.getType());
 

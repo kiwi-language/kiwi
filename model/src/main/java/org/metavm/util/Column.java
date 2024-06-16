@@ -2,8 +2,8 @@ package org.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.BuildKeyContext;
-import org.metavm.entity.EntityField;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.entity.GlobalKey;
 import org.metavm.object.instance.ColumnKind;
 

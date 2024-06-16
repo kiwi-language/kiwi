@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.LocalKey;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.NncUtils;

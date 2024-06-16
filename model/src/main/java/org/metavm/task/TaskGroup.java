@@ -1,5 +1,7 @@
 package org.metavm.task;
 
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 
 import java.util.List;

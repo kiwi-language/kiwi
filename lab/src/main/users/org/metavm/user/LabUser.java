@@ -1,12 +1,12 @@
 package org.metavm.user;
 
+import org.metavm.api.*;
 import org.metavm.application.LabApplication;
-import org.metavm.builtin.Password;
-import org.metavm.entity.*;
-import org.metavm.lang.IdUtils;
-import org.metavm.lang.MD5Utils;
-import org.metavm.lang.SessionUtils;
-import org.metavm.lang.SystemUtils;
+import org.metavm.api.builtin.Password;
+import org.metavm.api.lang.IdUtils;
+import org.metavm.api.lang.MD5Utils;
+import org.metavm.api.lang.SessionUtils;
+import org.metavm.api.lang.SystemUtils;
 import org.metavm.utils.LabBusinessException;
 import org.metavm.utils.LabErrorCode;
 
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static org.metavm.entity.IndexUtils.*;
+import static org.metavm.api.IndexUtils.*;
 
 @EntityType
 public class LabUser {

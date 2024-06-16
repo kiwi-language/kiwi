@@ -99,7 +99,7 @@ public class TableManager extends EntityContextFactoryAware {
             if (fieldDTO == null || !isVisible(fieldDTO, context)) {
                 return null;
             }
-            return convertToColumnDTO(fieldDTO, TypeParser.parseType(fieldDTO.type(), context));
+            return convertToColumnDTO(fieldDTO, org.metavm.object.type.TypeParser.parseType(fieldDTO.type(), context));
         }
     }
 
@@ -129,7 +129,7 @@ public class TableManager extends EntityContextFactoryAware {
                     )
                     : NncUtils.first(enumEditContext.getDefaultOptions(), enumConstantRT1 -> enumConstantRT1.toFieldValue(context.getInstanceContext()));
         } else {
-            type = getType(column, NncUtils.get(column.targetId(), id -> TypeParser.parseType(id, context)), context);
+            type = getType(column, NncUtils.get(column.targetId(), id -> org.metavm.object.type.TypeParser.parseType(id, context)), context);
             defaultValue = column.defaultValue();
         }
         return typeManager.saveField(
@@ -310,7 +310,7 @@ public class TableManager extends EntityContextFactoryAware {
                 NncUtils.filterAndMap(
                         param.fields(),
                         f -> isVisible(f, context),
-                        f -> convertToColumnDTO(f, TypeParser.parseType(f.type(), context))
+                        f -> convertToColumnDTO(f, org.metavm.object.type.TypeParser.parseType(f.type(), context))
                 )
         );
     }
@@ -319,7 +319,7 @@ public class TableManager extends EntityContextFactoryAware {
 
     private boolean isVisible(FieldDTO fieldDTO, IEntityContext context) {
         NncUtils.requireNonNull(fieldDTO.type(), "type is missing for field '" + fieldDTO.name() + "'");
-        Type fieldType = TypeParser.parseType(fieldDTO.type(), context);
+        Type fieldType = org.metavm.object.type.TypeParser.parseType(fieldDTO.type(), context);
         if (fieldType instanceof ClassType classType) {
             var klass = classType.resolve();
             if(ModelDefRegistry.containsDef(klass)) {

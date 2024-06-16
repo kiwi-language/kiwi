@@ -1,8 +1,8 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ChildEntity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;

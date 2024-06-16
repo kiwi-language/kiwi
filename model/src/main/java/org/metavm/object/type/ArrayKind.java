@@ -1,5 +1,8 @@
 package org.metavm.object.type;
 
+import org.metavm.api.ChildList;
+import org.metavm.api.ReadonlyList;
+import org.metavm.api.ValueList;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.util.NncUtils;

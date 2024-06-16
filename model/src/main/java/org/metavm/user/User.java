@@ -1,5 +1,8 @@
 package org.metavm.user;
 
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.user.rest.dto.UserDTO;
 import org.metavm.util.NncUtils;

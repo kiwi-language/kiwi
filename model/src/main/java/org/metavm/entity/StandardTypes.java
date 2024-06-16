@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.api.Interceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.object.type.*;
@@ -196,7 +197,7 @@ public class StandardTypes {
     }
 
     public static Klass getInterceptorKlass() {
-        return Objects.requireNonNull(holder.getInterceptorKlass());
+        return ModelDefRegistry.getDefContext().getKlass(Interceptor.class);
     }
 
     public static Klass getIterableKlass() {

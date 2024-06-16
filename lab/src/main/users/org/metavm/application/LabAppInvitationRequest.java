@@ -1,6 +1,6 @@
 package org.metavm.application;
 
-import org.metavm.entity.ValueStruct;
+import org.metavm.api.ValueStruct;
 import org.metavm.user.LabPlatformUser;
 
 @ValueStruct

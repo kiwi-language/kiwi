@@ -1,11 +1,9 @@
 package org.metavm.object.instance;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.metavm.application.InterceptorRegistry;
+import org.metavm.api.entity.HttpRequest;
+import org.metavm.api.entity.HttpResponse;
+import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.ListNative;
@@ -18,6 +16,10 @@ import org.metavm.object.instance.core.*;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -63,7 +65,6 @@ public class ApiService extends EntityContextFactoryAware {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
-            var result = Flows.execute(r.method, null, r.arguments(), context);
             var inst = execute(r.method, null, r.arguments, request, response, context);
             context.finish();
             return formatInstance(inst, false);
@@ -85,11 +86,11 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private Instance doIntercepted(Supplier<Instance> action, HttpRequest request, HttpResponse response, IEntityContext context) {
-        var registry = InterceptorRegistry.getInstance(context);
+        var registry = BeanDefinitionRegistry.getInstance(context);
         var interceptorKlass = StandardTypes.getInterceptorKlass();
         var beforeMethod = interceptorKlass.getMethodByCode("before");
         var afterMethod = interceptorKlass.getMethodByCode("after");
-        var interceptors = registry.getInterceptors();
+        var interceptors = registry.getBeansOfType(StandardTypes.getInterceptorKlass().getType());
         var reqInst = context.getInstance(request);
         var respInst = context.getInstance(response);
         for (ClassInstance interceptor : interceptors) {

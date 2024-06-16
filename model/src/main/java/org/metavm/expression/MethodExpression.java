@@ -2,7 +2,7 @@ package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodRef;
 import org.metavm.flow.Parameter;

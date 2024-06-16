@@ -1,8 +1,7 @@
 package org.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.metavm.api.Value;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
 import org.metavm.flow.ScopeRT;
@@ -13,6 +12,8 @@ import org.metavm.object.type.Index;
 import org.metavm.object.type.*;
 import org.metavm.object.view.Mapping;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.ParameterizedType;
@@ -91,14 +92,24 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         var type = StandardTypes.getPrimitiveType(javaType);
         if (type != null)
             return type;
-        if(javaType instanceof Class<?> k && Instance.class.isAssignableFrom(k))
+        if (javaType instanceof Class<?> k && Instance.class.isAssignableFrom(k))
             return new AnyType();
         if (BiUnion.isNullable(javaType))
             return StandardTypes.getNullableType(getType(BiUnion.getUnderlyingType(javaType)));
         if (javaType instanceof ParameterizedType pType) {
             var rawClass = (Class<?>) pType.getRawType();
+            var typeArgs = pType.getActualTypeArguments();
             if (ReadonlyArray.class.isAssignableFrom(rawClass))
-                return new ArrayType(getType(pType.getActualTypeArguments()[0]), ArrayKind.fromEntityClass(rawClass));
+                return new ArrayType(getType(typeArgs[0]), ArrayKind.fromEntityClass(rawClass));
+            else if (List.class.isAssignableFrom(rawClass))
+                return StandardTypes.getListKlass()
+                        .getParameterized(List.of(getType(typeArgs[0]))).getType();
+            else if (Set.class.isAssignableFrom(rawClass))
+                return StandardTypes.getSetKlass()
+                        .getParameterized(List.of(getType(typeArgs[0]))).getType();
+            else if (Map.class.isAssignableFrom(rawClass))
+                return StandardTypes.getMapKlass()
+                        .getParameterized(List.of(getType(typeArgs[0]), getType(typeArgs[1]))).getType();
             else
                 return new ClassType(((ClassType) getDef(rawClass).getType()).getKlass(), NncUtils.map(pType.getActualTypeArguments(), this::getType));
         } else
@@ -280,9 +291,9 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             return ArrayKind.READ_WRITE;
         if (rawClass == ChildArray.class)
             return ArrayKind.CHILD;
-        if(rawClass == ValueArray.class)
+        if (rawClass == ValueArray.class)
             return ArrayKind.VALUE;
-        if(rawClass == ReadonlyArray.class)
+        if (rawClass == ReadonlyArray.class)
             return ArrayKind.READ_ONLY;
         throw new InternalException("Unrecognized array class " + rawClass.getName());
     }
@@ -499,7 +510,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     void writeEntity(Object entity) {
         if (entities.add(entity)) {
             pendingModels.add(entity);
-            if(!(entity instanceof Value)) {
+            if (!(entity instanceof Value)) {
                 tryInitEntityId(entity);
                 memoryIndex.save(entity);
             }

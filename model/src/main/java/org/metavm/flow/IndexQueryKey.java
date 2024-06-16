@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
-import org.metavm.entity.Value;
+import org.metavm.api.EntityType;
+import org.metavm.api.Value;
 import org.metavm.entity.*;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.ParsingContext;

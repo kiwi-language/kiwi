@@ -27,7 +27,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
     @Nullable
     private final ClassInstance self;
-    private final List<Instance> arguments;
+    private final List<? extends Instance> arguments;
     @Nullable
     private final Klass owner;
     private final Map<NodeRT, Instance> outputs = new HashMap<>();
@@ -43,7 +43,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
     private final Map<TryNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
 
-    public MetaFrame(NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<Instance> arguments,
+    public MetaFrame(NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<? extends Instance> arguments,
                      InstanceRepository instanceRepository) {
         this.entry = entry;
         this.owner = owner;

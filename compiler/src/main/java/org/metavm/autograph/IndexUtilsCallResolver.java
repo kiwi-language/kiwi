@@ -4,7 +4,7 @@ import com.intellij.psi.PsiCallExpression;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
-import org.metavm.entity.IndexUtils;
+import org.metavm.api.IndexUtils;
 import org.metavm.expression.Expression;
 import org.metavm.expression.NodeExpression;
 import org.metavm.flow.IndexQueryKey;
@@ -18,46 +18,46 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class IndexUtilsCallResolver implements MethodCallResolver {
+public class IndexUtilsCallResolver implements org.metavm.autograph.MethodCallResolver {
 
     public static final List<MethodSignature> SIGNATURES = List.of(
-            MethodSignature.createStatic(
-                    TranspileUtil.createClassType(IndexUtils.class),
+            org.metavm.autograph.MethodSignature.createStatic(
+                    org.metavm.autograph.TranspileUtil.createClassType(IndexUtils.class),
                     "count",
-                    TranspileUtil.createTypeVariableType(
-                            ReflectionUtils.getMethod(IndexUtils.class, "count", org.metavm.entity.Index.class, org.metavm.entity.Index.class),
+                    org.metavm.autograph.TranspileUtil.createTypeVariableType(
+                            ReflectionUtils.getMethod(IndexUtils.class, "count", org.metavm.api.Index.class, org.metavm.api.Index.class),
                             1
                     ),
-                    TranspileUtil.createTypeVariableType(
-                            ReflectionUtils.getMethod(IndexUtils.class, "count", org.metavm.entity.Index.class, org.metavm.entity.Index.class),
+                    org.metavm.autograph.TranspileUtil.createTypeVariableType(
+                            ReflectionUtils.getMethod(IndexUtils.class, "count", org.metavm.api.Index.class, org.metavm.api.Index.class),
                             1
                     )
             ),
-            MethodSignature.createStatic(
-                    TranspileUtil.createClassType(IndexUtils.class),
+            org.metavm.autograph.MethodSignature.createStatic(
+                    org.metavm.autograph.TranspileUtil.createClassType(IndexUtils.class),
                     "scan",
-                    TranspileUtil.createTypeVariableType(
-                            ReflectionUtils.getMethod(IndexUtils.class, "scan", org.metavm.entity.Index.class, org.metavm.entity.Index.class),
+                    org.metavm.autograph.TranspileUtil.createTypeVariableType(
+                            ReflectionUtils.getMethod(IndexUtils.class, "scan", org.metavm.api.Index.class, org.metavm.api.Index.class),
                             1
                     ),
-                    TranspileUtil.createTypeVariableType(
-                            ReflectionUtils.getMethod(IndexUtils.class, "scan", org.metavm.entity.Index.class, org.metavm.entity.Index.class),
+                    org.metavm.autograph.TranspileUtil.createTypeVariableType(
+                            ReflectionUtils.getMethod(IndexUtils.class, "scan", org.metavm.api.Index.class, org.metavm.api.Index.class),
                             1
                     )
             ),
-            MethodSignature.createStatic(
-                    TranspileUtil.createClassType(IndexUtils.class),
+            org.metavm.autograph.MethodSignature.createStatic(
+                    org.metavm.autograph.TranspileUtil.createClassType(IndexUtils.class),
                     "select",
-                    TranspileUtil.createTypeVariableType(
-                            ReflectionUtils.getMethod(IndexUtils.class, "select", org.metavm.entity.Index.class),
+                    org.metavm.autograph.TranspileUtil.createTypeVariableType(
+                            ReflectionUtils.getMethod(IndexUtils.class, "select", org.metavm.api.Index.class),
                             1
                     )
             ),
-            MethodSignature.createStatic(
-                    TranspileUtil.createClassType(IndexUtils.class),
+            org.metavm.autograph.MethodSignature.createStatic(
+                    org.metavm.autograph.TranspileUtil.createClassType(IndexUtils.class),
                     "selectFirst",
-                    TranspileUtil.createTypeVariableType(
-                            ReflectionUtils.getMethod(IndexUtils.class, "selectFirst", org.metavm.entity.Index.class),
+                    org.metavm.autograph.TranspileUtil.createTypeVariableType(
+                            ReflectionUtils.getMethod(IndexUtils.class, "selectFirst", org.metavm.api.Index.class),
                             1
                     )
             )
@@ -69,14 +69,14 @@ public class IndexUtilsCallResolver implements MethodCallResolver {
     }
 
     @Override
-    public Expression resolve(PsiMethodCallExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
+    public Expression resolve(PsiMethodCallExpression methodCallExpression, org.metavm.autograph.ExpressionResolver expressionResolver, org.metavm.autograph.MethodGenerator methodGenerator) {
         var methodGenerics = methodCallExpression.resolveMethodGenerics();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var indexPsiClassType = requireNonNull(((PsiClassType) requireNonNull(
                 methodGenerics.getSubstitutor().substitute(method.getTypeParameters()[1])))
                 .resolve());
         var methodName = requireNonNull(methodCallExpression.getMethodExpression().getReferenceName());
-        var index = requireNonNull(indexPsiClassType.getUserData(Keys.INDEX));
+        var index = requireNonNull(indexPsiClassType.getUserData(org.metavm.autograph.Keys.INDEX));
         var args = methodCallExpression.getArgumentList().getExpressions();
         if (methodName.equals("select")) {
             var key = resolveIndexQueryKey(index, (PsiCallExpression) args[0], expressionResolver);
@@ -94,7 +94,7 @@ public class IndexUtilsCallResolver implements MethodCallResolver {
         }
     }
 
-    private IndexQueryKey resolveIndexQueryKey(Index index, PsiCallExpression callExpression, ExpressionResolver expressionResolver) {
+    private IndexQueryKey resolveIndexQueryKey(Index index, PsiCallExpression callExpression, org.metavm.autograph.ExpressionResolver expressionResolver) {
         var items = new ArrayList<IndexQueryKeyItem>();
         for (int i = 0; i < index.getFields().size(); i++) {
             var indexField = index.getFields().get(i);

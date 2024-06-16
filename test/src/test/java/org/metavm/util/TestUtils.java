@@ -10,6 +10,8 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.hamcrest.MatcherAssert;
+import org.metavm.object.type.BeanManager;
+import org.metavm.object.type.TypeManager;
 import org.slf4j.Logger;
 import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
@@ -448,7 +450,7 @@ public class TestUtils {
         return NncUtils.findRequired(typeDTO.getClassParam().enumConstants(), f -> name.equals(f.title()));
     }
 
-    private static final Klass mockKlass = ClassTypeBuilder.newBuilder("TestUtilsMock", "TestUtilsMock").build();
+    private static final Klass mockKlass = KlassBuilder.newBuilder("TestUtilsMock", "TestUtilsMock").build();
 
     public static ClassType mockClassType() {
         return mockKlass.getType();
@@ -464,7 +466,7 @@ public class TestUtils {
         var entityQueryService = new EntityQueryService(instanceQueryService);
         var transactionOps = new MockTransactionOperations();
         var taskManager = new TaskManager(entityContextFactory, transactionOps);
-        var typeManager = new TypeManager(entityContextFactory, entityQueryService, taskManager);
+        var typeManager = new TypeManager(entityContextFactory, entityQueryService, taskManager, new BeanManager());
         var flowExecutionService = new FlowExecutionService(entityContextFactory);
         var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService);
         var flowManager = new FlowManager(entityContextFactory, transactionOps);

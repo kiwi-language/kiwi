@@ -1,7 +1,7 @@
 package org.metavm.autograph.mocks;
 
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 
 @EntityType(compiled = true)
 public class AstDirectCoupon extends Entity implements AstCoupon {

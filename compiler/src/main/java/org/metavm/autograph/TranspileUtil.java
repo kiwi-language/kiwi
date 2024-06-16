@@ -10,7 +10,8 @@ import com.intellij.psi.impl.light.LightRecordCanonicalConstructor;
 import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.builtin.IndexDef;
+import org.metavm.api.*;
+import org.metavm.api.builtin.IndexDef;
 import org.metavm.entity.*;
 import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
@@ -630,9 +631,20 @@ public class TranspileUtil {
                 psiMethod.getName(),
                 NncUtils.map(
                         psiMethod.getParameterList().getParameters(),
-                        param -> typeResolver.resolveTypeOnly(param.getType())
+                        param -> resolveParameterType(param, typeResolver)
                 )
         );
+    }
+
+    public static Type resolveParameterType(PsiParameter parameter, TypeResolver typeResolver) {
+        var type = typeResolver.resolveTypeOnly(parameter.getType());
+        if(isAnnotatedWithNullable(parameter))
+            type = StandardTypes.getNullableType(type);
+        return type;
+    }
+
+    public static boolean isAnnotatedWithNullable(PsiModifierListOwner element) {
+        return hasAnnotation(element, Nullable.class) || hasAnnotation(element, org.jetbrains.annotations.Nullable.class);
     }
 
     public static PsiClassType createTemplateType(PsiClass klass) {
@@ -712,12 +724,12 @@ public class TranspileUtil {
     }
 
     public static boolean isTitleField(PsiVariable psiField) {
-        Boolean asTitle = (Boolean) getAnnotationAttr(psiField, EntityField.class, "asTitle");
+        Boolean asTitle = (Boolean) getAnnotationAttribute(psiField, EntityField.class, "asTitle");
         return asTitle == Boolean.TRUE;
     }
 
     public static boolean isUnique(PsiVariable psiField) {
-        Boolean asTitle = (Boolean) getAnnotationAttr(psiField, EntityField.class, "unique");
+        Boolean asTitle = (Boolean) getAnnotationAttribute(psiField, EntityField.class, "unique");
         return asTitle == Boolean.TRUE;
     }
 
@@ -727,14 +739,14 @@ public class TranspileUtil {
     }
 
     private static @Nullable Object getEntityAnnotationAttr(PsiClass psiClass, String attributeName) {
-        var value = getAnnotationAttr(psiClass, EntityType.class, attributeName);
+        var value = getAnnotationAttribute(psiClass, EntityType.class, attributeName);
         if (value != null)
             return value;
-        if((value = getAnnotationAttr(psiClass, ValueType.class, attributeName)) != null)
+        if((value = getAnnotationAttribute(psiClass, ValueType.class, attributeName)) != null)
             return value;
-        if((value = getAnnotationAttr(psiClass, EntityStruct.class, attributeName)) != null)
+        if((value = getAnnotationAttribute(psiClass, EntityStruct.class, attributeName)) != null)
             return value;
-        return getAnnotationAttr(psiClass, ValueStruct.class, attributeName);
+        return getAnnotationAttribute(psiClass, ValueStruct.class, attributeName);
     }
 
     public static Access getAccess(PsiVariable psiField) {
@@ -784,7 +796,7 @@ public class TranspileUtil {
     }
 
     public static boolean isUniqueIndex(PsiClass klass) {
-        var unique = getAnnotationAttr(klass, EntityIndex.class, "unique");
+        var unique = getAnnotationAttribute(klass, EntityIndex.class, "unique");
         return unique != null ? (Boolean) unique : false;
     }
 
@@ -797,7 +809,7 @@ public class TranspileUtil {
     }
 
     private static String tryGetNameFromAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
-        var value =  (String) getAnnotationAttr(element, annotationClass, "value");
+        var value =  (String) getAnnotationAttribute(element, annotationClass, "value");
         return NncUtils.isNotBlank(value) ? value : null;
     }
 
@@ -861,16 +873,21 @@ public class TranspileUtil {
         return null;
     }
 
-    public static Object getAnnotationAttr(PsiModifierListOwner element, Class<? extends Annotation> annotationClass, String attributeName) {
+    public static Object getAnnotationAttribute(PsiModifierListOwner element, Class<? extends Annotation> annotationClass, String attributeName) {
         var annotation = getAnnotation(element, annotationClass);
-        if (annotation != null) {
-            var attr = NncUtils.find(annotation.getAttributes(), a -> a.getAttributeName().equals(attributeName));
-            if (attr != null) {
-                JvmAnnotationConstantValue value = (JvmAnnotationConstantValue) attr.getAttributeValue();
-                return requireNonNull(value).getConstantValue();
-            }
-        }
+        if (annotation != null)
+            return getAnnotationAttribute(annotation, attributeName, null);
         return null;
+    }
+
+    public static Object getAnnotationAttribute(PsiAnnotation annotation, String attributeName, @Nullable Object defaultValue) {
+        var attr = NncUtils.find(annotation.getAttributes(), a -> a.getAttributeName().equals(attributeName));
+        if (attr != null) {
+            JvmAnnotationConstantValue value = (JvmAnnotationConstantValue) attr.getAttributeValue();
+            return requireNonNull(value).getConstantValue();
+        }
+        else
+            return defaultValue;
     }
 
     private static final Map<String, String> typeNameMap = Map.ofEntries(
@@ -905,7 +922,7 @@ public class TranspileUtil {
         );
         paramTypeNames.addAll(
                 NncUtils.map(method.getParameterList().getParameters(),
-                        p -> getInternalName(p.getType(), hasAnnotation(p, Nullable.class), method))
+                        p -> getInternalName(p.getType(), isAnnotatedWithNullable(p), method))
         );
         return getInternalName(createType(method.getContainingClass()), null) + "." +
                 method.getName() + "(" + NncUtils.join(paramTypeNames, ",") + ")";

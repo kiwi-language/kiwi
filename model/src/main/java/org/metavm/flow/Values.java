@@ -4,7 +4,10 @@ import org.metavm.expression.Expression;
 import org.metavm.expression.ExpressionParser;
 import org.metavm.expression.Expressions;
 import org.metavm.expression.ParsingContext;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Property;
+
+import java.util.Objects;
 
 public class Values {
 
@@ -50,6 +53,13 @@ public class Values {
 
     public static Value nodeProperty(NodeRT node, Property property) {
         return reference(Expressions.nodeProperty(node, property));
+    }
+
+    public static Value nodeProperty(NodeRT node, String fieldCode) {
+        var type = (ClassType) Objects.requireNonNull(node.getType());
+        var klass = type.resolve();
+        var field = klass.getFieldByCode(fieldCode);
+        return reference(Expressions.nodeProperty(node, field));
     }
 
     public static Value inputValue(InputNode node, int parameterIndex) {

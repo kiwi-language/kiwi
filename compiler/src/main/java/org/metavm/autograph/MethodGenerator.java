@@ -54,7 +54,7 @@ public class MethodGenerator {
                     nextName("Merge"),
                     null,
                     branchNode,
-                    ClassTypeBuilder.newBuilder("MergeOutput", null).temporary().build(),
+                    KlassBuilder.newBuilder("MergeOutput", null).temporary().build(),
                     scope()
             ));
             mergeNode.mergeExpressionTypes(MergeNode.getExpressionTypeMap(branchNode));
@@ -77,7 +77,7 @@ public class MethodGenerator {
     TryEndNode createTryEnd() {
         var node = new TryEndNode(
                 null, nextName("TryEnd"), null,
-                ClassTypeBuilder.newBuilder("TryEndOutput", null)
+                KlassBuilder.newBuilder("TryEndOutput", null)
                         .temporary().build(),
                 (TryNode) scope().getLastNode(),
                 scope()
@@ -386,7 +386,7 @@ public class MethodGenerator {
 
     public Klass newTemporaryType(String namePrefix) {
         String name = namePrefix + "_" + NncUtils.randomNonNegative();
-        return ClassTypeBuilder.newBuilder(name, null)
+        return KlassBuilder.newBuilder(name, null)
                 .anonymous(true)
                 .ephemeral(true)
                 .build();
@@ -462,7 +462,7 @@ public class MethodGenerator {
     }
 
     public InputNode createInput() {
-        var type = ClassTypeBuilder.newBuilder("Input", null).temporary().build();
+        var type = KlassBuilder.newBuilder("Input", null).temporary().build();
         return setNodeExprTypes(new InputNode(null, nextName("input"), null, type, scope().getLastNode(), scope()));
     }
 

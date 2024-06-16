@@ -2,7 +2,7 @@ package org.metavm.code;
 
 import org.metavm.code.rest.dto.CodeRepoDTO;
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 
 @EntityType

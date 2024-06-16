@@ -1,6 +1,8 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.expression.Expressions;

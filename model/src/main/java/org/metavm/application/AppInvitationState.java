@@ -1,6 +1,6 @@
 package org.metavm.application;
 
-import org.metavm.entity.EntityType;
+import org.metavm.api.EntityType;
 
 @EntityType
 public enum AppInvitationState {

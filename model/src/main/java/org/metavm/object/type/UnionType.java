@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
