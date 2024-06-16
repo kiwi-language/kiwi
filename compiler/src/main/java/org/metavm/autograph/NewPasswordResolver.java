@@ -1,7 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiNewExpression;
-import org.metavm.builtin.Password;
+import org.metavm.api.builtin.Password;
 import org.metavm.expression.Expression;
 import org.metavm.expression.Func;
 import org.metavm.expression.FunctionExpression;

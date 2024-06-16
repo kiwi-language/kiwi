@@ -1,4 +1,4 @@
-package org.metavm.builtin;
+package org.metavm.api.builtin;
 
 import java.util.List;
 

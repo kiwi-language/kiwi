@@ -1,4 +1,4 @@
-package org.metavm.builtin;
+package org.metavm.api.builtin;
 
 public class Password {
 

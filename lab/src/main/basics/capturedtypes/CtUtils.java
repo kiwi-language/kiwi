@@ -1,6 +1,6 @@
 package capturedtypes;
 
-import org.metavm.lang.SystemUtils;
+import org.metavm.api.lang.SystemUtils;
 
 import javax.annotation.Nullable;
 import java.util.function.Predicate;

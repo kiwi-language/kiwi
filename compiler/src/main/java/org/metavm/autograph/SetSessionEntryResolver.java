@@ -3,7 +3,7 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiMethodCallExpression;
 import org.metavm.entity.natives.NativeFunctions;
 import org.metavm.expression.Expression;
-import org.metavm.lang.SessionUtils;
+import org.metavm.api.lang.SessionUtils;
 
 import java.util.List;
 

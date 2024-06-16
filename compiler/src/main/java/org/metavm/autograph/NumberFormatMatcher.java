@@ -4,7 +4,7 @@ import com.intellij.psi.PsiMethodCallExpression;
 import org.metavm.expression.Expression;
 import org.metavm.expression.Func;
 import org.metavm.expression.FunctionExpression;
-import org.metavm.lang.NumberUtils;
+import org.metavm.api.lang.NumberUtils;
 
 import java.util.List;
 

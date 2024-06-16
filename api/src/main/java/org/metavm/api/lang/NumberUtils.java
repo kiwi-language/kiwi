@@ -1,4 +1,4 @@
-package org.metavm.lang;
+package org.metavm.api.lang;
 
 import java.text.DecimalFormat;
 import java.util.Random;
