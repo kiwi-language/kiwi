@@ -1,7 +1,7 @@
 package org.metavm.entity.natives;
 
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.BuiltinKlasses;
+import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.FunctionInstance;
@@ -43,7 +43,7 @@ public class SetNative extends IterableNative {
     }
 
     public ClassInstance iterator(CallContext callContext) {
-        var iteratorImplType = (Klass) instance.getKlass().getDependency(BuiltinKlasses.iteratorImpl.get());
+        var iteratorImplType = (Klass) instance.getKlass().getDependency(StdKlass.iteratorImpl.get());
         var it = ClassInstance.allocate(iteratorImplType.getType());
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);

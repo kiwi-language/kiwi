@@ -2,6 +2,7 @@ package org.metavm.util;
 
 import org.metavm.application.Application;
 import org.metavm.entity.ModelDefRegistry;
+import org.metavm.entity.natives.EmailSender;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 
@@ -35,6 +36,7 @@ public class Constants {
     public static final String CONSTANT_TMP_ID_PREFIX = "$_$";
 
     public static final int BATCH_SIZE = 3000;
+    public static EmailSender emailSender;
 
     private Constants() {}
 

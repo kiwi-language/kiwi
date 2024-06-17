@@ -1,6 +1,6 @@
 package org.metavm.object.instance;
 
-import org.metavm.entity.BuiltinKlasses;
+import org.metavm.entity.StdKlass;
 import org.metavm.expression.*;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
@@ -119,7 +119,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         if (RegionConstants.isArrayId(id)) {
             return new ArrayInstance(id, Types.getAnyArrayType(), false, null);
         } else {
-            return new ClassInstance(id, BuiltinKlasses.entity.get().getType(), false, null);
+            return new ClassInstance(id, StdKlass.entity.get().getType(), false, null);
         }
     }
 

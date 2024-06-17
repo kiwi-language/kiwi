@@ -5,10 +5,10 @@ import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.IEntityContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.flow.FlowExecResult;
@@ -90,7 +90,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     private Instance doIntercepted(Supplier<Instance> action, HttpRequest request, HttpResponse response, IEntityContext context) {
         var registry = BeanDefinitionRegistry.getInstance(context);
-        var interceptorKlass = BuiltinKlasses.interceptor.get();
+        var interceptorKlass = StdKlass.interceptor.get();
         var beforeMethod = interceptorKlass.getMethodByCode("before");
         var afterMethod = interceptorKlass.getMethodByCode("after");
         var interceptors = registry.getBeansOfType(interceptorKlass.getType());
@@ -354,10 +354,10 @@ public class ApiService extends EntityContextFactoryAware {
         } else {
             ClassType concreteType;
             if (type.isInterface() || type.isAbstract()) {
-                var iterableType = type.findAncestorType(BuiltinKlasses.iterable.get());
+                var iterableType = type.findAncestorType(StdKlass.iterable.get());
                 if (iterableType != null) {
                     var elementType = iterableType.getTypeArguments().get(0).getUpperBound2();
-                    concreteType = BuiltinKlasses.arrayList.get().getParameterized(List.of(elementType)).getParameterized(List.of()).getType();
+                    concreteType = StdKlass.arrayList.get().getParameterized(List.of(elementType)).getParameterized(List.of()).getType();
                     if (!type.isAssignableFrom(concreteType))
                         return ValueResolutionResult.failed;
                 } else

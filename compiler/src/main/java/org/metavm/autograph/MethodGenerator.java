@@ -1,9 +1,9 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiMethod;
-import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.ModelDefRegistry;
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.StdKlass;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expression;
 import org.metavm.expression.ExpressionTypeMap;
 import org.metavm.expression.Expressions;
@@ -366,7 +366,7 @@ public class MethodGenerator {
     }
 
     public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
-        var listType = BuiltinKlasses.arrayList.get().getParameterized(List.of(index.getDeclaringType().getType()));
+        var listType = StdKlass.arrayList.get().getParameterized(List.of(index.getDeclaringType().getType()));
         return setNodeExprTypes(new IndexSelectNode(
                 null, nextName("IndexSelect"), null, listType.getType(),
                 scope().getLastNode(), scope(), index, key
@@ -415,7 +415,7 @@ public class MethodGenerator {
         if (operand.getType().isNullable() && !targetType.isNullable())
             targetType = new UnionType(Set.of(targetType, Types.getNullType()));
         return createFunctionCall(
-                NativeFunctions.typeCast.get().getParameterized(List.of(targetType)),
+                StdFunction.typeCast.get().getParameterized(List.of(targetType)),
                 List.of(operand)
         );
     }

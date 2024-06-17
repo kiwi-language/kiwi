@@ -726,7 +726,7 @@ public class Types {
     }
 
     public static Type getNullableThrowableType() {
-        return getNullableType(BuiltinKlasses.throwable.get().getType());
+        return getNullableType(StdKlass.throwable.get().getType());
     }
 
 }

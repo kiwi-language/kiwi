@@ -1,10 +1,10 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.ExceptionNative;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.expression.FlowParsingContext;
@@ -94,7 +94,7 @@ public class RaiseNode extends NodeRT {
             return NodeExecResult.exception((ClassInstance) this.exception.evaluate(frame));
         } else {
             NncUtils.requireNonNull(message);
-            var exceptionInst = ClassInstance.allocate(BuiltinKlasses.exception.get().getType());
+            var exceptionInst = ClassInstance.allocate(StdKlass.exception.get().getType());
             ExceptionNative nativeObj = (ExceptionNative) NativeMethods.getNativeObject(exceptionInst);
             nativeObj.Exception(message.evaluate(frame), frame);
             return frame.catchException(this, exceptionInst);

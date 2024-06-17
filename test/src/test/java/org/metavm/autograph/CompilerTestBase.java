@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.metavm.application.ApplicationManager;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.*;
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowExecutionService;
 import org.metavm.flow.FlowManager;
@@ -56,8 +56,8 @@ public abstract class CompilerTestBase extends TestCase  {
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
         AUTH_CONFIG = AuthConfig.fromFile("/Users/leen/workspace/object/test/src/test/resources/auth");
-        NativeFunctions.setThreadLocalMode();
-        BuiltinKlasses.setThreadLocalMode();
+        StdFunction.setThreadLocalMode();
+        StdKlass.setThreadLocalMode();
         ModelDefRegistry.setHolder(new ThreadLocalDefContextHolder());
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
@@ -116,8 +116,8 @@ public abstract class CompilerTestBase extends TestCase  {
         loginService = null;
         platformUserManager = null;
         apiClient = null;
-        NativeFunctions.setDefaultMode();
-        BuiltinKlasses.setDefaultMode();;
+        StdFunction.setDefaultMode();
+        StdKlass.setDefaultMode();;
         ModelDefRegistry.setHolder(new GlobalDefContextHolder());
     }
 

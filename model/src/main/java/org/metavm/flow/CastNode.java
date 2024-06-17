@@ -2,10 +2,10 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.ExceptionNative;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.CastNodeParam;
@@ -75,7 +75,7 @@ public class CastNode extends NodeRT {
         if (type.isInstance(inst))
             return next(inst);
         else {
-            var exception = ClassInstance.allocate(BuiltinKlasses.exception.get().getType());
+            var exception = ClassInstance.allocate(StdKlass.exception.get().getType());
             var exceptionNative = new ExceptionNative(exception);
             exceptionNative.Exception(Instances.stringInstance(
                     String.format("Can not cast instance '%s' to type '%s'", inst.getTitle(), type.getName())

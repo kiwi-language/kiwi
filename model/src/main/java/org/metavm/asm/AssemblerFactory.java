@@ -1,7 +1,6 @@
 package org.metavm.asm;
 
-import org.metavm.entity.BuiltinKlassDef;
-import org.metavm.entity.BuiltinKlasses;
+import org.metavm.entity.StdKlass;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.NncUtils;
 
@@ -14,7 +13,7 @@ public class AssemblerFactory {
     }
 
     private static List<TypeDef> getStandardTypeDefs() {
-        return NncUtils.map(BuiltinKlasses.defs(), BuiltinKlassDef::get);
+        return NncUtils.map(StdKlass.values(), StdKlass::get);
     }
 
 }

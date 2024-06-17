@@ -5,7 +5,7 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.ClassInstance;
@@ -66,8 +66,8 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var input = Nodes.input(unmapper);
         var isSourcePresent = Nodes.functionCall(
                 scope.nextNodeName("isSourcePresent"), scope,
-                NativeFunctions.isSourcePresent.get(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent.get(), 0, Values.inputValue(input, 0)))
+                StdFunction.isSourcePresent.get(),
+                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, Values.inputValue(input, 0)))
         );
         Nodes.branch(
                 scope.nextNodeName("branch"), null, scope,
@@ -76,8 +76,8 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                     var bodyScope = trueBranch.getScope();
                     var source = Nodes.functionCall(
                             scope.nextNodeName("source"), bodyScope,
-                            NativeFunctions.getSource.get(),
-                            List.of(Nodes.argument(NativeFunctions.getSource.get(), 0, Values.inputValue(input, 0)))
+                            StdFunction.getSource.get(),
+                            List.of(Nodes.argument(StdFunction.getSource.get(), 0, Values.inputValue(input, 0)))
                     );
                     var castedSource = Nodes.cast(scope.nextNodeName("castedSource"), getSourceType(), Values.node(source), bodyScope);
                     Nodes.methodCall(

@@ -10,9 +10,9 @@ import org.metavm.autograph.mocks.PTypeFoo;
 import org.metavm.autograph.mocks.RecordFoo;
 import org.metavm.autograph.mocks.SignatureFoo;
 import org.metavm.autograph.mocks.TypeFoo;
-import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.type.KlassBuilder;
@@ -73,7 +73,7 @@ public class TranspileUtilsTest extends TestCase {
                 .typeParameters(List.of(typeVar))
                 .parameters(
                         new Parameter(null, "list", "list",
-                                BuiltinKlasses.list.get().getParameterized(List.of(new UncertainType(typeVar.getType(), Types.getNullableAnyType()))).getType()
+                                StdKlass.list.get().getParameterized(List.of(new UncertainType(typeVar.getType(), Types.getNullableAnyType()))).getType()
                         ),
                         new Parameter(null, "element", "element", typeVar.getType())
                 )

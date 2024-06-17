@@ -3,7 +3,7 @@ package org.metavm.autograph;
 import com.google.common.collect.Streams;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.*;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.BooleanInstance;
@@ -535,7 +535,7 @@ public class ExpressionResolver {
     }
 
     private NodeRT createSAMConversion(Klass samInterface, Expression function) {
-        var func = NativeFunctions.functionToInstance.get().getParameterized(List.of(samInterface.getType()));
+        var func = StdFunction.functionToInstance.get().getParameterized(List.of(samInterface.getType()));
         return methodGenerator.createFunctionCall(func, List.of(function));
     }
 

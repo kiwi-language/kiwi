@@ -2,7 +2,7 @@ package org.metavm.entity;
 
 import org.metavm.api.ChildList;
 import org.metavm.api.ValueList;
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
@@ -242,11 +242,11 @@ public class StandardDefBuilder {
     }
 
     private void initSystemFunctions() {
-        NativeFunctions.defineSystemFunctions().forEach(defContext::writeEntity);
+        StdFunction.defineSystemFunctions().forEach(defContext::writeEntity);
     }
 
     public void initUserFunctions() {
-        NativeFunctions.defineUserFunctions(defContext).forEach(defContext::writeEntity);
+        StdFunction.defineUserFunctions(defContext).forEach(defContext::writeEntity);
     }
 
     @SuppressWarnings("SameParameterValue")

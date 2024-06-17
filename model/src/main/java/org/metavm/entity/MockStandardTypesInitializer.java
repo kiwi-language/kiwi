@@ -8,28 +8,28 @@ import java.util.List;
 public class MockStandardTypesInitializer {
 
     public static void init() {
-        BuiltinKlasses.list.set(
+        StdKlass.list.set(
                 KlassBuilder.newBuilder("List", List.class.getSimpleName())
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "E", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        BuiltinKlasses.arrayList.set(
+        StdKlass.arrayList.set(
                 KlassBuilder.newBuilder("ReadWriteList", "ReadWriteList")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ReadWriteListElement", "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        BuiltinKlasses.childList.set(
+        StdKlass.childList.set(
                 KlassBuilder.newBuilder("ChildList", "ChildList")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ChildListElement", "ChildListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        BuiltinKlasses.valueList.set(
+        StdKlass.valueList.set(
                 KlassBuilder.newBuilder("ValueList", "ValueList")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
@@ -46,50 +46,50 @@ public class MockStandardTypesInitializer {
         enumTypeParam.setBounds(List.of(enumType.getType()));
         FieldBuilder.newBuilder("name", "name", enumType, Types.getStringType()).build();
         FieldBuilder.newBuilder("ordinal", "ordinal", enumType, Types.getLongType()).build();
-        BuiltinKlasses.enum_.set(enumType);
-        BuiltinKlasses.entity.set(KlassBuilder.newBuilder("Entity", Entity.class.getSimpleName())
+        StdKlass.enum_.set(enumType);
+        StdKlass.entity.set(KlassBuilder.newBuilder("Entity", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .build());
-        BuiltinKlasses.predicate.set(
+        StdKlass.predicate.set(
                 KlassBuilder.newBuilder("Predicate", "Predicate")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        BuiltinKlasses.consumer.set(
+        StdKlass.consumer.set(
                 KlassBuilder.newBuilder("Consumer", "Consumer")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        BuiltinKlasses.throwable.set(
+        StdKlass.throwable.set(
                 KlassBuilder.newBuilder("Throwable", "Throwable")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
         );
-        BuiltinKlasses.exception.set(
+        StdKlass.exception.set(
                 KlassBuilder.newBuilder("Exception", "Exception")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
         );
-        BuiltinKlasses.runtimeException.set(
+        StdKlass.runtimeException.set(
                 KlassBuilder.newBuilder("RuntimeException", "RuntimeException")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
         );
-        BuiltinKlasses.iterable.set(
+        StdKlass.iterable.set(
                 KlassBuilder.newBuilder("Iterable", "Iterable")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "T", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        BuiltinKlasses.iterator.set(
+        StdKlass.iterator.set(
                 KlassBuilder.newBuilder("Iterator", "Iterator")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())

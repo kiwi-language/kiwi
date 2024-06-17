@@ -5,7 +5,7 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.util.InternalException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -32,7 +32,7 @@ public class EmailServiceImpl implements EmailService {
         this.port = port;
         this.username = username;
         this.password = password;
-        NativeFunctions.setEmailSender(((recipient, subject, content) -> {
+        StdFunction.setEmailSender(((recipient, subject, content) -> {
             EXECUTOR.execute(() -> send(recipient, subject, content));
         }));
     }

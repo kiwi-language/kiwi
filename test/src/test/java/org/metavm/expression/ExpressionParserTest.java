@@ -1,8 +1,8 @@
 package org.metavm.expression;
 
 import junit.framework.TestCase;
-import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceProvider;
@@ -34,7 +34,7 @@ public class ExpressionParserTest extends TestCase {
 
                     @Override
                     public Expression resolveVar(Var var) {
-                        return new ThisExpression(BuiltinKlasses.enum_.get().getType());
+                        return new ThisExpression(StdKlass.enum_.get().getType());
                     }
 
                     @Override
@@ -58,12 +58,12 @@ public class ExpressionParserTest extends TestCase {
                             @Nullable
                             @Override
                             public Klass findKlassByName(String name) {
-                                return BuiltinKlasses.enum_.get();
+                                return StdKlass.enum_.get();
                             }
 
                             @Override
                             public TypeDef getTypeDef(Id id) {
-                                return BuiltinKlasses.enum_.get();
+                                return StdKlass.enum_.get();
                             }
                         };
                     }

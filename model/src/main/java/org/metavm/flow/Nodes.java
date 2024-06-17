@@ -1,6 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expressions;
 import org.metavm.object.type.*;
 import org.metavm.object.view.ObjectMapping;
@@ -224,7 +224,7 @@ public class Nodes {
     }
 
     public static void setSource(Value view, Value source, ScopeRT scope) {
-        var setSourceFunc = NativeFunctions.setSource.get();
+        var setSourceFunc = StdFunction.setSource.get();
         new FunctionCallNode(null, scope.nextNodeName("setSource"), null, scope.getLastNode(), scope,
                 setSourceFunc.getRef(), List.of(
                 Nodes.argument(setSourceFunc, 0, view),

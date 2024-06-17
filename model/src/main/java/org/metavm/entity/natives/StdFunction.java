@@ -3,12 +3,13 @@ package org.metavm.entity.natives;
 import org.metavm.api.lang.EmailUtils;
 import org.metavm.api.lang.*;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.DefContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
+import org.metavm.object.type.TypeParserImpl;
 import org.metavm.object.type.Types;
 import org.metavm.user.Session;
 import org.metavm.util.*;
@@ -19,31 +20,25 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-public class NativeFunctions {
+public enum StdFunction {
 
-    private static EmailSender emailSender;
-    private static Supplier<ValueHolder<Function>> functionHolderSupplier = DirectValueHolder::new;
-    private static final List<NativeFunctionDef> defs = new ArrayList<>();
-
-    public static final NativeFunctionDef isSourcePresent = createDef(
+    isSourcePresent(
             "boolean isSourcePresent(any view)", true, List.of(),
             (func, args, callContext) -> {
                 if (args.get(0) instanceof DurableInstance durableInstance)
                     return FlowExecResult.of(Instances.booleanInstance(durableInstance.tryGetSource() != null));
                 else
                     throw new InternalException("Can not get source of a non-durable instance: " + args.get(0));
-            });
-
-    public static final NativeFunctionDef getSource = createDef(
+            }),
+    getSource(
             "any getSource(any view)", true, List.of(),
             (func, args, callContext) -> {
                 if (args.get(0) instanceof DurableInstance durableInstance)
                     return FlowExecResult.of(durableInstance.getSource());
                 else
                     throw new InternalException("Can not get source of a non-durable instance: " + args.get(0));
-            });
-
-    public static final NativeFunctionDef setSource = createDef(
+            }),
+    setSource(
             "void setSource(any view, any source)", true, List.of(),
             (func, args, callContext) -> {
                 if (args.get(0) instanceof DurableInstance durableInstance) {
@@ -51,9 +46,8 @@ public class NativeFunctions {
                     return FlowExecResult.of(Instances.nullInstance());
                 } else
                     throw new InternalException("Can not set source for a non-durable instance: " + args.get(0));
-            });
-
-    public static final NativeFunctionDef functionToInstance = createDef(
+            }),
+    functionToInstance(
             "T functionToInstance<T>(any func)", true, List.of(),
             (func, args, callContext) -> {
                 if (args.get(0) instanceof FunctionInstance functionInstance) {
@@ -63,22 +57,8 @@ public class NativeFunctions {
                 } else {
                     throw new InternalException("Invalid function instance: " + Instances.getInstancePath(args.get(0)));
                 }
-            });
-
-    public static final NativeFunctionDef sendEmail = createDef(
-            "void sendEmail(string recipient, string subject, string content)",
-            false,
-            List.of(ReflectionUtils.getMethod(EmailUtils.class, "send", String.class, String.class, String.class)),
-            (func, args, callContext) -> {
-                emailSender.send(
-                        ((StringInstance) args.get(0)).getValue(),
-                        ((StringInstance) args.get(1)).getValue(),
-                        ((StringInstance) args.get(2)).getValue()
-                );
-                return FlowExecResult.of(Instances.nullInstance());
-            });
-
-    public static final NativeFunctionDef getSessionEntry = createDef(
+            }),
+    getSessionEntry(
             "any|null getSessionEntry(string key)",
             false,
             List.of(ReflectionUtils.getMethod(SessionUtils.class, "getEntry", String.class)),
@@ -90,9 +70,8 @@ public class NativeFunctions {
                     throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
                 var value = session.getEntry(key);
                 return FlowExecResult.of(NncUtils.orElse(value, Instances.nullInstance()));
-            });
-
-    public static final NativeFunctionDef setSessionEntry = createDef(
+            }),
+    setSessionEntry(
             "void setSessionEntry(string key, any value)",
             false,
             List.of(ReflectionUtils.getMethod(SessionUtils.class, "setEntry", String.class, Object.class)),
@@ -105,9 +84,8 @@ public class NativeFunctions {
                     throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
                 session.setEntry(key, value);
                 return FlowExecResult.of(Instances.nullInstance());
-            });
-
-    public static final NativeFunctionDef removeSessionEntry = createDef(
+            }),
+    removeSessionEntry(
             "boolean removeSessionEntry(string key)",
             false,
             List.of(ReflectionUtils.getMethod(SessionUtils.class, "removeEntry", String.class)),
@@ -118,9 +96,8 @@ public class NativeFunctions {
                 if (session == null || !session.isActive())
                     throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
                 return FlowExecResult.of(Instances.booleanInstance(session.removeEntry(key)));
-            });
-
-    public static final NativeFunctionDef typeCast = createDef(
+            }),
+    typeCast(
             "T typeCast<T>(any|null instance)",
             true,
             List.of(),
@@ -131,18 +108,16 @@ public class NativeFunctions {
                     return FlowExecResult.of(value);
                 else
                     throw new BusinessException(ErrorCode.TYPE_CAST_ERROR, value.getType(), type);
-            });
-
-    public static final NativeFunctionDef print = createDef(
+            }),
+    print(
             "void print(any|null content)",
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "print", Object.class)),
             (func, args, callContext) -> {
                 System.out.println(args.get(0).getTitle());
                 return FlowExecResult.of(Instances.nullInstance());
-            });
-
-    public static final NativeFunctionDef delete = createDef(
+            }),
+    delete(
             "void delete(any instance)",
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "delete", Object.class)),
@@ -154,9 +129,8 @@ public class NativeFunctions {
                     return FlowExecResult.of(Instances.nullInstance());
                 } else
                     throw new BusinessException(ErrorCode.DELETE_NON_DURABLE_INSTANCE, instance);
-            });
-
-    public static final NativeFunctionDef setContext = createDef(
+            }),
+    setContext(
             "void setContext(string key, string value)",
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "setContext", String.class, Object.class)),
@@ -164,18 +138,16 @@ public class NativeFunctions {
                 var key = (StringInstance) args.get(0);
                 ContextUtil.setUserData(key.getValue(), args.get(1));
                 return FlowExecResult.of(Instances.nullInstance());
-            });
-
-    public static final NativeFunctionDef getContext = createDef(
+            }),
+    getContext(
             "string|null getContext(string key)",
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "getContext", String.class)),
             (func, args, callContext) -> {
                 var key = (StringInstance) args.get(0);
                 return FlowExecResult.of(ContextUtil.getUserData(key.getValue()));
-            });
-
-    public static final NativeFunctionDef toString = createDef(
+            }),
+    toString(
             "string toString(any|null instance)",
             true,
             List.of(ReflectionUtils.getMethod(Object.class, "toString"),
@@ -190,9 +162,8 @@ public class NativeFunctions {
                     ReflectionUtils.getMethod(Character.class, "toString", char.class)
             ),
             (func, args, callContext) -> FlowExecResult.of(Instances.stringInstance(args.get(0).getTitle()))
-    );
-
-    public static final NativeFunctionDef requireNonNull = createDef(
+    ),
+    requireNonNull(
             "T requireNonNull<T>(T|null value)",
             true,
             List.of(ReflectionUtils.getMethod(Objects.class, "requireNonNull", Object.class)),
@@ -204,14 +175,13 @@ public class NativeFunctions {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(BuiltinKlasses.nullPointerException.get().getType());
+                    var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
                     nat.NullPointerException(ctx);
                     return FlowExecResult.ofException(npe);
                 }
-            });
-
-    public static final NativeFunctionDef requireNonNull1 = createDef(
+            }),
+    requireNonNull1(
             "T requireNonNull1<T>(T|null value, string message)",
             true,
             List.of(ReflectionUtils.getMethod(Objects.class, "requireNonNull", Object.class, String.class)),
@@ -224,14 +194,13 @@ public class NativeFunctions {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(BuiltinKlasses.nullPointerException.get().getType());
+                    var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
                     nat.NullPointerException(message, ctx);
                     return FlowExecResult.ofException(npe);
                 }
-            });
-
-    public static final NativeFunctionDef requireNonNull2 = createDef(
+            }),
+    requireNonNull2(
             "T requireNonNull2<T>(T|null value, java.util.function.Supplier<string> messageSupplier)",
             false,
             List.of(ReflectionUtils.getMethod(Objects.class, "requireNonNull", Object.class, Supplier.class)),
@@ -244,7 +213,7 @@ public class NativeFunctions {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(BuiltinKlasses.nullPointerException.get().getType());
+                    var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
                     var getMethod = messageSupplier.getKlass().getMethodByCodeAndParamTypes("get", List.of());
                     var getResult = getMethod.execute(messageSupplier, List.of(), ctx);
@@ -254,9 +223,8 @@ public class NativeFunctions {
                     nat.NullPointerException(message, ctx);
                     return FlowExecResult.ofException(npe);
                 }
-            });
-
-    public static final NativeFunctionDef dateBefore = createDef(
+            }),
+    dateBefore(
             "boolean dateBefore(time date1, time date2)",
             true,
             List.of(ReflectionUtils.getMethod(Date.class, "before", Date.class)),
@@ -264,9 +232,8 @@ public class NativeFunctions {
                 var date1 = (TimeInstance) args.get(0);
                 var date2 = (TimeInstance) args.get(1);
                 return FlowExecResult.of(date1.before(date2));
-            });
-
-    public static final NativeFunctionDef dateAfter = createDef(
+            }),
+    dateAfter(
             "boolean dateAfter(time date1, time date2)",
             true,
             List.of(ReflectionUtils.getMethod(Date.class, "after", Date.class)),
@@ -274,9 +241,8 @@ public class NativeFunctions {
                 var date1 = (TimeInstance) args.get(0);
                 var date2 = (TimeInstance) args.get(1);
                 return FlowExecResult.of(date1.after(date2));
-            });
-
-    public static final NativeFunctionDef concat = createDef(
+            }),
+    concat(
             "string concat(string str1, string str2)",
             true,
             List.of(ReflectionUtils.getMethod(String.class, "concat", String.class)),
@@ -284,9 +250,8 @@ public class NativeFunctions {
                 var str1 = (StringInstance) args.get(0);
                 var str2 = (StringInstance) args.get(1);
                 return FlowExecResult.of(Instances.stringInstance(str1.getValue() + str2.getValue()));
-            });
-
-    public static final NativeFunctionDef replace = createDef(
+            }),
+    replace(
             "string replace(string str, string target, string replacement)",
             true,
             List.of(ReflectionUtils.getMethod(String.class, "replace", CharSequence.class, CharSequence.class)),
@@ -295,9 +260,8 @@ public class NativeFunctions {
                 var target = (StringInstance) args.get(1);
                 var replacement = (StringInstance) args.get(2);
                 return FlowExecResult.of(Instances.stringInstance(str.getValue().replace(target.getValue(), replacement.getValue())));
-            });
-
-    public static final NativeFunctionDef replaceFirst = createDef(
+            }),
+    replaceFirst(
             "string replaceFirst(string str, string regex, string replacement)",
             true,
             List.of(ReflectionUtils.getMethod(String.class, "replaceFirst", String.class, String.class)),
@@ -306,47 +270,41 @@ public class NativeFunctions {
                 var regex = (StringInstance) args.get(1);
                 var replacement = (StringInstance) args.get(2);
                 return FlowExecResult.of(Instances.stringInstance(str.getValue().replaceFirst(regex.getValue(), replacement.getValue())));
-            });
-
-    public static final NativeFunctionDef randomUUID = createDef(
+            }),
+    randomUUID(
             "string randomUUID()",
             true,
             List.of(ReflectionUtils.getMethod(UUIDUtils.class, "randomUUID")),
             (func, args, ctx) -> FlowExecResult.of(Instances.stringInstance(UUID.randomUUID().toString()))
-    );
-
-    public static final NativeFunctionDef currentTimeMillis = createDef(
+    ),
+    currentTimeMillis(
             "long currentTimeMillis()",
             true,
             List.of(ReflectionUtils.getMethod(System.class, "currentTimeMillis")),
             (func, args, ctx) -> FlowExecResult.of(Instances.longInstance(System.currentTimeMillis()))
-    );
-
-    public static final NativeFunctionDef equals = createDef(
+    ),
+    equals(
             "boolean equals(any obj1, any obj2)",
             true,
             List.of(ReflectionUtils.getMethod(Objects.class, "equals", Object.class, Object.class),
                     ReflectionUtils.getMethod(Object.class, "equals", Object.class)),
             (func, args, ctx) -> FlowExecResult.of(Instances.booleanInstance(args.get(0).equals(args.get(1))))
-    );
-
-    public static final NativeFunctionDef md5 = createDef(
+    ),
+    md5(
             "string md5(string str)",
             true,
             List.of(ReflectionUtils.getMethod(MD5Utils.class, "md5", String.class)),
             (func, args, ctx) -> {
                 var str = (StringInstance) args.get(0);
                 return FlowExecResult.of(Instances.stringInstance(EncodingUtils.md5(str.getValue())));
-            });
-
-    public static final NativeFunctionDef randomPassword = createDef(
+            }),
+    randomPassword(
             "string randomPassword()",
             true,
             List.of(ReflectionUtils.getMethod(PasswordUtils.class, "randomPassword")),
             (func, args, ctx) -> FlowExecResult.of(Instances.stringInstance(NncUtils.randomPassword()))
-    );
-
-    public static final NativeFunctionDef regexMatch = createDef(
+    ),
+    regexMatch(
             "boolean regexMatch(string pattern, string str)",
             true,
             List.of(ReflectionUtils.getMethod(RegexUtils.class, "match", String.class, String.class)),
@@ -354,9 +312,8 @@ public class NativeFunctions {
                 var pattern = (StringInstance) args.get(0);
                 var str = (StringInstance) args.get(1);
                 return FlowExecResult.of(Instances.booleanInstance(Pattern.compile(pattern.getValue()).matcher(str.getValue()).matches()));
-            });
-
-    public static final NativeFunctionDef random = createDef(
+            }),
+    random(
             "long random(long bound)",
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "random", long.class)),
@@ -364,18 +321,16 @@ public class NativeFunctions {
                 var bound = (LongInstance) args.get(0);
                 return FlowExecResult.of(Instances.longInstance(NncUtils.random(bound.getValue())));
             }
-    );
-
-    public static final NativeFunctionDef timeToLong = createDef(
+    ),
+    timeToLong(
             "long timeToLong(time value)",
             true,
             List.of(ReflectionUtils.getMethod(Date.class, "getTime")),
             (func, args, ctx) -> {
                 var date = (TimeInstance) args.get(0);
                 return FlowExecResult.of(Instances.longInstance(date.getValue()));
-            });
-
-    public static final NativeFunctionDef formatNumber = createDef(
+            }),
+    formatNumber(
             "string formatNumber(string format, long number)",
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "formatNumber", String.class, long.class)),
@@ -383,9 +338,8 @@ public class NativeFunctions {
                 var format = (StringInstance) args.get(0);
                 var number = (LongInstance) args.get(1);
                 return FlowExecResult.of(Instances.stringInstance(new DecimalFormat(format.getValue()).format(number.getValue())));
-            });
-
-    public static final NativeFunctionDef format = createDef(
+            }),
+    format(
             "string format(string format, any[] values)",
             true,
             List.of(ReflectionUtils.getMethod(String.class, "format", String.class, Object[].class)),
@@ -397,9 +351,8 @@ public class NativeFunctions {
                     argsArray[i] = values.get(i).getTitle();
                 }
                 return FlowExecResult.of(Instances.stringInstance(String.format(format.getValue(), argsArray)));
-            });
-
-    public static final NativeFunctionDef getId = createDef(
+            }),
+    getId(
             "string getId(any obj)",
             true,
             List.of(ReflectionUtils.getMethod(IdUtils.class, "getId", Object.class)),
@@ -410,43 +363,76 @@ public class NativeFunctions {
                     if (id != null)
                         return FlowExecResult.of(Instances.stringInstance(id));
                 }
-                var npe = ClassInstance.allocate(BuiltinKlasses.nullPointerException.get().getType());
+                var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
                 var nat = new NullPointerExceptionNative(npe);
                 nat.NullPointerException(Instances.stringInstance("Object has no ID"), ctx);
                 return FlowExecResult.ofException(npe);
-            });
+            }),
+    sendEmail(
+            "void sendEmail(string recipient, string subject, string content)",
+                    false,
+            List.of(ReflectionUtils.getMethod(EmailUtils.class, "send", String.class, String.class, String.class)),
+            (func, args, callContext) -> {
+        Constants.emailSender.send(
+                ((StringInstance) args.get(0)).getValue(),
+                ((StringInstance) args.get(1)).getValue(),
+                ((StringInstance) args.get(2)).getValue()
+        );
+        return FlowExecResult.of(Instances.nullInstance());
+    });
 
+
+    private final String name;
+    private final String signature;
+    private final boolean system;
+    private ValueHolder<Function> functionHolder;
+    private final FunctionImpl impl;
+    private final List<Method> javaMethods;
+
+    StdFunction(String signature, boolean system, List<Method> javaMethods, FunctionImpl impl) {
+        this.signature = signature;
+        this.system = system;
+        this.javaMethods = new ArrayList<>(javaMethods);
+        this.impl = impl;
+        this.functionHolder = new DirectValueHolder<>();
+        var typeParser = new TypeParserImpl((String name) -> {
+            throw new NullPointerException("defContext is null");
+        });
+        this.name = typeParser.getFunctionName(signature);
+    }
 
     public static void setDefaultMode() {
-        functionHolderSupplier = DirectValueHolder::new;
-        defs.forEach(def -> def.setFunctionHolder(new DirectValueHolder<>()));
+        for (StdFunction value : values()) {
+            value.setFunctionHolder(new DirectValueHolder<>());
+        }
     }
 
     public static void setThreadLocalMode() {
-        functionHolderSupplier = ThreadLocalValueHolder::new;
-        defs.forEach(def -> def.setFunctionHolder(new ThreadLocalValueHolder<>()));
+        for (StdFunction value : values()) {
+            value.setFunctionHolder(new ThreadLocalValueHolder<>());
+        }
     }
 
     public static void setEmailSender(EmailSender emailSender) {
-        NativeFunctions.emailSender = emailSender;
+        Constants.emailSender = emailSender;
     }
 
     public static List<Function> defineSystemFunctions() {
-        return defs.stream()
-                .filter(NativeFunctionDef::isSystem)
+        return Arrays.stream(values())
+                .filter(StdFunction::isSystem)
                 .map(def -> def.define(null))
                 .toList();
     }
 
     public static List<Function> defineUserFunctions(DefContext defContext) {
-        return defs.stream()
+        return Arrays.stream(values())
                 .filter(def -> !def.isSystem())
                 .map(def -> def.define(defContext))
                 .toList();
     }
 
     public static void initializeFromDefContext(DefContext defContext) {
-        for (NativeFunctionDef def : defs) {
+        for (StdFunction def : values()) {
             def.set(Objects.requireNonNull(
                     defContext.selectFirstByKey(Function.UNIQUE_IDX_CODE, def.getName()),
                     "Function not found: " + def.getName())
@@ -454,14 +440,54 @@ public class NativeFunctions {
         }
     }
 
-    public static List<NativeFunctionDef> defs() {
-        return Collections.unmodifiableList(defs);
+    public String getName() {
+        return name;
     }
 
-    private static NativeFunctionDef createDef(String signature, boolean system, List<Method> javaMethods, FunctionImpl impl) {
-        var def = new NativeFunctionDef(signature, system, javaMethods, functionHolderSupplier.get(), impl);
-        defs.add(def);
-        return def;
+    public boolean isSystem() {
+        return system;
     }
 
+    public Function define(DefContext defContext) {
+        var function = parseFunction(defContext);
+        function.setNative(true);
+        function.setNativeCode(impl);
+        set(function);
+        return function;
+    }
+
+    private Function parseFunction(DefContext defContext) {
+        return new TypeParserImpl(
+                (String name) -> {
+                    if(defContext != null)
+                        return defContext.getKlass(ReflectionUtils.classForName(name));
+                    else
+                        throw new NullPointerException("defContext is null");
+                }
+        ).parseFunction(signature);
+    }
+
+    public List<Method> getJavaMethods() {
+        return javaMethods;
+    }
+
+    public String getSignature() {
+        return signature;
+    }
+
+    public void set(Function function) {
+        functionHolder.set(function);
+    }
+
+    public Function get() {
+        return functionHolder.get();
+    }
+
+    public void setFunctionHolder(ValueHolder<Function> functionHolder) {
+        this.functionHolder = functionHolder;
+    }
+
+    public FunctionImpl getImpl() {
+        return impl;
+    }
 }

@@ -72,10 +72,10 @@ public class TypeResolverImpl implements TypeResolver {
 
     static {
         var map = new HashMap<PsiClassType, Supplier<Klass>>();
-        for (BuiltinKlassDef def : BuiltinKlasses.defs()) {
+        for (StdKlass def : StdKlass.values()) {
             map.put(TranspileUtils.createClassType(def.getJavaClass()), def::get);
         }
-        map.put(TranspileUtils.createClassType(LinkedList.class), BuiltinKlasses.arrayList::get);
+        map.put(TranspileUtils.createClassType(LinkedList.class), StdKlass.arrayList::get);
         STANDARD_CLASSES = Collections.unmodifiableMap(map);
     }
 
@@ -347,29 +347,29 @@ public class TypeResolverImpl implements TypeResolver {
             var ownerType = TranspileUtils.createType(psiClass);
             var childListType = TranspileUtils.createClassType(ChildList.class);
             if (childListType.isAssignableFrom(ownerType))
-                return BuiltinKlasses.childList.get().getTypeParameters().get(0);
+                return StdKlass.childList.get().getTypeParameters().get(0);
             var valueListType = TranspileUtils.createClassType(ValueList.class);
             if(valueListType.isAssignableFrom(ownerType))
-                return BuiltinKlasses.valueList.get().getTypeParameters().get(0);
+                return StdKlass.valueList.get().getTypeParameters().get(0);
             var arrayListType = TranspileUtils.createClassType(ArrayList.class);
             var linkedListType = TranspileUtils.createClassType(LinkedList.class);
             if (arrayListType.isAssignableFrom(ownerType) || linkedListType.isAssignableFrom(ownerType))
-                return BuiltinKlasses.arrayList.get().getTypeParameters().get(0);
+                return StdKlass.arrayList.get().getTypeParameters().get(0);
             var listType = TranspileUtils.createClassType(List.class);
             if (listType.isAssignableFrom(ownerType))
-                return BuiltinKlasses.list.get().getTypeParameters().get(0);
+                return StdKlass.list.get().getTypeParameters().get(0);
             var setType = TranspileUtils.createClassType(Set.class);
             if (setType.isAssignableFrom(ownerType))
-                return BuiltinKlasses.set.get().getTypeParameters().get(0);
+                return StdKlass.set.get().getTypeParameters().get(0);
             var mapType = TranspileUtils.createClassType(Map.class);
             if (mapType.isAssignableFrom(ownerType)) {
                 int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
                         .getTypeParameterIndex(typeParameter);
-                return BuiltinKlasses.map.get().getTypeParameters().get(index);
+                return StdKlass.map.get().getTypeParameters().get(index);
             }
             var enumType = TranspileUtils.createClassType(Enum.class);
             if (ownerType.equals(enumType))
-                return BuiltinKlasses.enum_.get().getTypeParameters().get(0);
+                return StdKlass.enum_.get().getTypeParameters().get(0);
         }
         return null;
     }

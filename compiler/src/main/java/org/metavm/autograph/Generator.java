@@ -2,8 +2,8 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import org.metavm.api.EntityIndex;
-import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.IEntityContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.expression.*;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
@@ -388,15 +388,15 @@ public class Generator extends CodeGenVisitor {
     }
 
     private boolean isEnumType(Klass classType) {
-        return classType.getTemplate() != null && classType.getTemplate() == BuiltinKlasses.enum_.get();
+        return classType.getTemplate() != null && classType.getTemplate() == StdKlass.enum_.get();
     }
 
     private boolean isEntityType(Klass classType) {
-        return classType == BuiltinKlasses.entity.get();
+        return classType == StdKlass.entity.get();
     }
 
     private boolean isRecordType(Klass classType) {
-        return classType == BuiltinKlasses.record.get();
+        return classType == StdKlass.record.get();
     }
 
     private static boolean isSuperCallPresent(PsiMethod method) {

@@ -13,8 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.*;
 import org.metavm.api.builtin.IndexDef;
 import org.metavm.entity.FlowParam;
-import org.metavm.entity.natives.NativeFunctionDef;
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
@@ -522,7 +521,7 @@ public class TranspileUtils {
         TranspileUtils.elementFactory = elementFactory;
         TranspileUtils.project = project;
         nativeFunctionCallResolvers.clear();
-        for (NativeFunctionDef def : NativeFunctions.defs()) {
+        for (StdFunction def : StdFunction.values()) {
             for (Method javaMethod : def.getJavaMethods()) {
                 nativeFunctionCallResolvers.add(new NativeFunctionCallResolver(getMethodSignature(javaMethod), def.get()));
             }

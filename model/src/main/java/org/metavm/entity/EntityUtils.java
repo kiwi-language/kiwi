@@ -352,7 +352,7 @@ public class EntityUtils {
                 new Reflections(new ConfigurationBuilder().forPackages("org.metavm"));
         Set<Class<? extends Entity>> entitySubTypes = reflections.getSubTypesOf(Entity.class);
         Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(EntityType.class);
-        var builtinClasses = NncUtils.filterAndMapUnique(BuiltinKlasses.defs(), BuiltinKlassDef::isAutoDefine, BuiltinKlassDef::getJavaClass);
+        var builtinClasses = NncUtils.filterAndMapUnique(List.of(StdKlass.values()), StdKlass::isAutoDefine, StdKlass::getJavaClass);
         return NncUtils.filterUnique(
                 NncUtils.mergeSets(entitySubTypes, entityTypes, builtinClasses),
                 klass -> !isCompiled(klass)

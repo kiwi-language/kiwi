@@ -1,7 +1,7 @@
 package org.metavm.util;
 
 import org.metavm.asm.AssemblerFactory;
-import org.metavm.entity.BuiltinKlasses;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.MethodDTOBuilder;
 import org.metavm.flow.NodeDTOFactory;
@@ -35,7 +35,7 @@ public class MockUtils {
         var couponStateType = KlassBuilder.newBuilder("CouponState", "CouponState")
                 .kind(ClassKind.ENUM)
                 .build();
-        var enumKlass = BuiltinKlasses.enum_.get();
+        var enumKlass = StdKlass.enum_.get();
         var subst = new SubstitutorV2(
                 enumKlass, enumKlass.getTypeParameters(), List.of(couponStateType.getType()),
                 ResolutionStage.DEFINITION

@@ -2,7 +2,7 @@ package org.metavm.util;
 
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.entity.*;
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.log.InstanceLogServiceImpl;
@@ -65,9 +65,9 @@ public class BootstrapUtils {
             StandardTypes.setIllegalArgumentExceptionKlass(defContext.getClassType(IllegalArgumentException.class).resolve());
             StandardTypes.setIllegalStateExceptionKlass(defContext.getClassType(IllegalStateException.class).resolve());
             StandardTypes.setNullPointerExceptionKlass(defContext.getClassType(NullPointerException.class).resolve());*/
-            NativeFunctions.initializeFromDefContext(defContext);
-            NativeFunctions.setEmailSender(MockEmailSender.INSTANCE);
-            BuiltinKlasses.initialize(defContext);
+            StdFunction.initializeFromDefContext(defContext);
+            StdFunction.setEmailSender(MockEmailSender.INSTANCE);
+            StdKlass.initialize(defContext);
 
             var state = BootstrapUtils.state.copy();
             var instanceStore = new MemInstanceStore(
@@ -104,7 +104,7 @@ public class BootstrapUtils {
                     state.typeTagStore()
             );
         } else {
-            NativeFunctions.setEmailSender(MockEmailSender.INSTANCE);
+            StdFunction.setEmailSender(MockEmailSender.INSTANCE);
             var regionMapper = new MemRegionMapper();
             var regionManager = new RegionManager(regionMapper);
             regionManager.initialize();

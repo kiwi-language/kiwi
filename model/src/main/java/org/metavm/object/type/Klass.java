@@ -1861,7 +1861,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public boolean isChildList() {
-        return getEffectiveTemplate() == BuiltinKlasses.childList.get();
+        return getEffectiveTemplate() == StdKlass.childList.get();
     }
 
     public Type getListElementType() {
@@ -1871,7 +1871,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Type getIterableElementType() {
         var iterableType = Objects.requireNonNull(
-                findAncestor(BuiltinKlasses.iterable.get()),
+                findAncestor(StdKlass.iterable.get()),
                 () -> getTypeDesc() + " is not an Iterable class");
         return iterableType.getTypeArguments().get(0);
     }

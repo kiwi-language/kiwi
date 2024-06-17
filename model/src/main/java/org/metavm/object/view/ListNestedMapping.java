@@ -2,8 +2,8 @@ package org.metavm.object.view;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.entity.BuiltinKlasses;
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.StdKlass;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
 import org.metavm.object.type.ClassType;
@@ -34,7 +34,7 @@ public class ListNestedMapping extends NestedMapping {
     public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
         var targetKlass = targetType.resolve();
         var constructor = targetKlass.isEffectiveAbstract() ?
-                BuiltinKlasses.arrayList.get().getParameterized(List.of(targetKlass.getListElementType())).getDefaultConstructor() :
+                StdKlass.arrayList.get().getParameterized(List.of(targetKlass.getListElementType())).getDefaultConstructor() :
                 targetKlass.getDefaultConstructor();
         var targetList = Nodes.newObject(
                 scope.nextNodeName("list"),
@@ -44,7 +44,7 @@ public class ListNestedMapping extends NestedMapping {
                 false,
                 true
         );
-        var setSourceFunc = NativeFunctions.setSource.get();
+        var setSourceFunc = StdFunction.setSource.get();
         Nodes.functionCall(
                 scope.nextNodeName("setSource"),
                 scope,
@@ -84,8 +84,8 @@ public class ListNestedMapping extends NestedMapping {
 
     @Override
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
-        var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, NativeFunctions.isSourcePresent.get(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent.get(), 0, getView.get())));
+        var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, StdFunction.isSourcePresent.get(),
+                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, getView.get())));
         var branch2sourceNode = new HashMap<Branch, Value>();
         var sourceKlass = sourceType.resolve();
         var sourceFieldRef = new Object() {
@@ -98,8 +98,8 @@ public class ListNestedMapping extends NestedMapping {
                 Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.trueExpression())),
                 trueBranch -> {
                     var source = Nodes.functionCall(scope.nextNodeName("source"), trueBranch.getScope(),
-                            NativeFunctions.getSource.get(),
-                            List.of(Nodes.argument(NativeFunctions.getSource.get(), 0, getView.get())));
+                            StdFunction.getSource.get(),
+                            List.of(Nodes.argument(StdFunction.getSource.get(), 0, getView.get())));
                     branch2sourceNode.put(trueBranch, Values.node(source));
                 },
                 falseBranch -> {
@@ -108,7 +108,7 @@ public class ListNestedMapping extends NestedMapping {
                             falseBranch.getScope(),
                             sourceType.isChildList() ?
                                     sourceKlass.getDefaultConstructor() :
-                                    BuiltinKlasses.arrayList.get().getParameterized(List.of(sourceKlass.getListElementType())).getDefaultConstructor(),
+                                    StdKlass.arrayList.get().getParameterized(List.of(sourceKlass.getListElementType())).getDefaultConstructor(),
                             List.of(),
                             false,
                             true

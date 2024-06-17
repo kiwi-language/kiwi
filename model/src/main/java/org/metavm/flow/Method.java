@@ -370,7 +370,7 @@ public class Method extends Flow implements Property, GenericElement {
                 var instance = (ClassInstance) result.ret();
                 var uninitializedField = instance.findUninitializedField(declaringType);
                 if (uninitializedField != null) {
-                    var exception = ClassInstance.allocate(BuiltinKlasses.runtimeException.get().getType());
+                    var exception = ClassInstance.allocate(StdKlass.runtimeException.get().getType());
                     var exceptionNative = new RuntimeExceptionNative(exception);
                     exceptionNative.RuntimeException(Instances.stringInstance(
                                     "Failed to create object " + instance.getType().getName() + "，" +

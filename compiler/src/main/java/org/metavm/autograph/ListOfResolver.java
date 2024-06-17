@@ -4,7 +4,7 @@ import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiModifier;
-import org.metavm.entity.BuiltinKlasses;
+import org.metavm.entity.StdKlass;
 import org.metavm.expression.Expression;
 import org.metavm.expression.Expressions;
 import org.metavm.object.type.ClassType;
@@ -45,7 +45,7 @@ public class ListOfResolver implements MethodCallResolver {
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var listType = (ClassType) expressionResolver.getTypeResolver().resolve(
                 methodGenerics.getSubstitutor().substitute(method.getReturnType()));
-        var readWriteListType = BuiltinKlasses.arrayList.get().getParameterized(List.of(listType.getListElementType()));
+        var readWriteListType = StdKlass.arrayList.get().getParameterized(List.of(listType.getListElementType()));
         var list = methodGenerator.createNew(
                 readWriteListType.getDefaultConstructor(),
                 List.of(),
