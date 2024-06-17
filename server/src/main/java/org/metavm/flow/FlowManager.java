@@ -1,13 +1,5 @@
 package org.metavm.flow;
 
-import org.metavm.flow.rest.GetFlowRequest;
-import org.metavm.flow.rest.GetFlowResponse;
-import org.metavm.flow.rest.GetParameterizedFlowRequest;
-import org.metavm.object.type.TypeManager;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionOperations;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
 import org.metavm.entity.*;
@@ -25,6 +17,10 @@ import org.metavm.object.type.rest.dto.FieldDTO;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
 import org.metavm.object.type.rest.dto.TypeDTO;
 import org.metavm.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -68,7 +64,7 @@ public class FlowManager extends EntityContextFactoryAware {
                     KlassBuilder.newBuilder("TryEndOutput", "TryEndOutput").temporary().build(),
                     tryNode, scope);
             FieldBuilder.newBuilder("exception", "exception",
-                            tryEndNode.getType().resolve(), StandardTypes.getNullableType(StandardTypes.getThrowableKlass().getType()))
+                            tryEndNode.getType().resolve(), StandardTypes.getNullableThrowableType())
                     .build();
             context.bind(tryEndNode);
             afterFlowChange(scope.getFlow(), context);
@@ -615,7 +611,7 @@ public class FlowManager extends EntityContextFactoryAware {
             excetpionFieldDTO = outputType.resolve().getFieldByCode("exception").toDTO();
         } else {
             excetpionFieldDTO = FieldDTOBuilder
-                    .newBuilder("exception", StandardTypes.getNullableThrowableKlass().toExpression())
+                    .newBuilder("exception", StandardTypes.getNullableThrowableType().toExpression())
                     .readonly(true)
                     .code("exception")
                     .build();

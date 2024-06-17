@@ -510,8 +510,8 @@ public class Instances {
     public static ClassInstance createList(ClassType listType, List<? extends Instance> elements) {
        if(listType.isList()) {
            var elementType = listType.getListElementType();
-           if(listType.getKlass() == StandardTypes.getListKlass()) {
-               listType = StandardTypes.getReadWriteListKlass().getParameterized(List.of(elementType)).getType();
+           if(listType.getKlass() == BuiltinKlasses.list.get()) {
+               listType = BuiltinKlasses.arrayList.get().getParameterized(List.of(elementType)).getType();
            }
            var list = ClassInstance.allocate(listType);
            var listNative = new ListNative(list);

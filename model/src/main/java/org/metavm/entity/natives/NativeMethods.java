@@ -1,8 +1,6 @@
 package org.metavm.entity.natives;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.DirectDef;
-import org.metavm.entity.ModelDefRegistry;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.ClassInstance;
@@ -84,13 +82,16 @@ public class NativeMethods {
 
     private static Class<?> tryGetNativeClass(Klass klass) {
         while (klass != null) {
-            var def = ModelDefRegistry.tryGetDef(klass.getEffectiveTemplate());
-            if (def != null) {
-                if (def instanceof DirectDef<?> directDef && directDef.getNativeClass() != null)
-                    return directDef.getNativeClass();
-                else
-                    return null;
-            } else
+//            var def = ModelDefRegistry.tryGetDef(klass.getEffectiveTemplate());
+//            if (def != null) {
+//                if (def instanceof DirectDef<?> directDef && directDef.getNativeClass() != null)
+//                    return directDef.getNativeClass();
+//                else
+//                    return null;
+            var nativeClass = klass.getEffectiveTemplate().getNativeClass();
+            if(nativeClass != null)
+                return nativeClass;
+            else
                 klass = NncUtils.get(klass.getSuperType(), ClassType::resolve);
         }
         return null;

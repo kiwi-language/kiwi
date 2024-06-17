@@ -1,17 +1,14 @@
 package org.metavm.entity;
 
-import org.metavm.api.Interceptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.object.type.*;
 import org.metavm.util.Never;
 import org.metavm.util.Null;
 import org.metavm.util.Password;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Date;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -96,17 +93,17 @@ public class StandardTypes {
         return nullable ? getNullableAnyType() : getAnyType();
     }
 
-    public static Klass getEnumKlass() {
-        return holder.getEnumKlass();
-    }
+//    public static Klass getEnumKlass() {
+//        return holder.getEnumKlass();
+//    }
 
-    public static Klass getEntityKlass() {
-        return holder.getEntityKlass();
-    }
+//    public static Klass getEntityKlass() {
+//        return holder.getEntityKlass();
+//    }
 
-    public static Klass getRecordKlass() {
-        return holder.getRecordKlass();
-    }
+//    public static Klass getRecordKlass() {
+//        return holder.getRecordKlass();
+//    }
 
     public static PrimitiveType getBooleanType() {
         return new PrimitiveType(PrimitiveKind.BOOLEAN);
@@ -164,155 +161,151 @@ public class StandardTypes {
         return classType.getFieldByCode("ordinal");
     }
 
-    public static Klass getListKlass() {
-        return holder.getListKlass();
-    }
+//    public static Klass getListKlass() {
+//        return holder.getListKlass();
+//    }
 
-    public static Klass getReadWriteListKlass() {
-        return holder.getReadWriteListKlass();
-    }
+//    public static Klass getReadWriteListKlass() {
+//        return holder.getReadWriteListKlass();
+//    }
 
-    public static Klass getReadWriteListKlass(Type elementType) {
-        return new ClassType(getReadWriteListKlass(), List.of(elementType)).resolve();
-    }
+//    public static Klass getReadWriteListKlass(Type elementType) {
+//        return new ClassType(getReadWriteListKlass(), List.of(elementType)).resolve();
+//    }
 
-    public static Klass getChildListKlass() {
-        return Objects.requireNonNull(holder.getChildListKlass());
-    }
+//    public static Klass getChildListKlass() {
+//        return Objects.requireNonNull(holder.getChildListKlass());
+//    }
 
-    public static Klass getValueListKlass() {
-        return Objects.requireNonNull(holder.getValueListKlass());
-    }
+//    public static Klass getValueListKlass() {
+//        return Objects.requireNonNull(holder.getValueListKlass());
+//    }
 
-    public static Klass getSetKlass() {
-        return Objects.requireNonNull(holder.getSetKlass());
-    }
+//    public static Klass getSetKlass() {
+//        return Objects.requireNonNull(holder.getSetKlass());
+//    }
 
-    public static Klass getMapKlass() {
-        return Objects.requireNonNull(holder.getMapKlass());
-    }
+//    public static Klass getMapKlass() {
+//        return Objects.requireNonNull(holder.getMapKlass());
+//    }
 
-    public static Klass getCollectionKlass() {
-        return Objects.requireNonNull(holder.getCollectionKlass());
-    }
+//    public static Klass getCollectionKlass() {
+//        return Objects.requireNonNull(holder.getCollectionKlass());
+//    }
 
-    public static Klass getInterceptorKlass() {
-        return ModelDefRegistry.getDefContext().getKlass(Interceptor.class);
-    }
+//    public static Klass getIterableKlass() {
+//        return Objects.requireNonNull(holder.getIterableKlass());
+//    }
 
-    public static Klass getIterableKlass() {
-        return Objects.requireNonNull(holder.getIterableKlass());
-    }
+//    public static Klass getIteratorKlass() {
+//        return Objects.requireNonNull(holder.getIteratorKlass());
+//    }
 
-    public static Klass getIteratorKlass() {
-        return Objects.requireNonNull(holder.getIteratorKlass());
-    }
+//    public static Klass getIteratorImplKlass() {
+//        return Objects.requireNonNull(holder.getIteratorImplKlass());
+//    }
 
-    public static Klass getIteratorImplKlass() {
-        return Objects.requireNonNull(holder.getIteratorImplKlass());
-    }
+//    public static Klass getThrowableKlass() {
+//        return Objects.requireNonNull(holder.getThrowableKlass());
+//    }
 
-    public static Klass getThrowableKlass() {
-        return Objects.requireNonNull(holder.getThrowableKlass());
-    }
+//    public static Klass getExceptionKlass() {
+//        return Objects.requireNonNull(holder.getExceptionKlass());
+//    }
 
-    public static Klass getExceptionKlass() {
-        return Objects.requireNonNull(holder.getExceptionKlass());
-    }
+//    public static Klass getRuntimeExceptionKlass() {
+//        return Objects.requireNonNull(holder.getRuntimeExceptionKlass());
+//    }
 
-    public static Klass getRuntimeExceptionKlass() {
-        return Objects.requireNonNull(holder.getRuntimeExceptionKlass());
-    }
-
-    public static UnionType getNullableThrowableKlass() {
-        return UnionType.create(getThrowableKlass().getType(), getNullType());
-    }
+//    public static UnionType getNullableThrowableKlass() {
+//        return UnionType.create(getThrowableKlass().getType(), getNullType());
+//    }
 
     public static UnionType getNullableStringType() {
         return new UnionType(Set.of(getStringType(), getNullType()));
     }
 
-    public static Klass getConsumerKlass() {
-        return Objects.requireNonNull(holder.getConsumerKlass());
-    }
+//    public static Klass getConsumerKlass() {
+//        return Objects.requireNonNull(holder.getConsumerKlass());
+//    }
 
-    public static void setConsumerKlass(Klass type) {
-        holder.setConsumerKlass(type);
-    }
+//    public static void setConsumerKlass(Klass type) {
+//        holder.setConsumerKlass(type);
+//    }
 
-    public static Klass getPredicateKlass() {
-        return Objects.requireNonNull(holder.getPredicateKlass());
-    }
+//    public static Klass getPredicateKlass() {
+//        return Objects.requireNonNull(holder.getPredicateKlass());
+//    }
 
-    public static void setPredicateKlass(Klass type) {
-        holder.setPredicateKlass(type);
-    }
+//    public static void setPredicateKlass(Klass type) {
+//        holder.setPredicateKlass(type);
+//    }
 
     public static NeverType getNeverType() {
         return new NeverType();
     }
 
-    public static void setEnumKlass(Klass enumKlass) {
-        holder.setEnumKlass(enumKlass);
-    }
+//    public static void setEnumKlass(Klass enumKlass) {
+//        holder.setEnumKlass(enumKlass);
+//    }
 
-    public static void setThrowableKlass(Klass throwableKlas) {
-        holder.setThrowableKlass(throwableKlas);
-    }
+//    public static void setThrowableKlass(Klass throwableKlas) {
+//        holder.setThrowableKlass(throwableKlas);
+//    }
 
-    public static void setExceptionKlass(Klass exceptionKlass) {
-        holder.setExceptionKlass(exceptionKlass);
-    }
+//    public static void setExceptionKlass(Klass exceptionKlass) {
+//        holder.setExceptionKlass(exceptionKlass);
+//    }
 
-    public static void setRuntimeExceptionKlass(Klass runtimeExceptionKlass) {
-        holder.setRuntimeExceptionKlass(runtimeExceptionKlass);
-    }
+//    public static void setRuntimeExceptionKlass(Klass runtimeExceptionKlass) {
+//        holder.setRuntimeExceptionKlass(runtimeExceptionKlass);
+//    }
 
-    public static void setIllegalArgumentExceptionKlass(Klass illegalArgumentExceptionKlass) {
-        holder.setIllegalArgumentExceptionKlass(illegalArgumentExceptionKlass);
-    }
+//    public static void setIllegalArgumentExceptionKlass(Klass illegalArgumentExceptionKlass) {
+//        holder.setIllegalArgumentExceptionKlass(illegalArgumentExceptionKlass);
+//    }
 
-    public static void setIllegalStateExceptionKlass(Klass illegalStateExceptionKlass) {
-        holder.setIllegalStateExceptionKlass(illegalStateExceptionKlass);
-    }
+//    public static void setIllegalStateExceptionKlass(Klass illegalStateExceptionKlass) {
+//        holder.setIllegalStateExceptionKlass(illegalStateExceptionKlass);
+//    }
 
-    public static Klass getNullPointerExceptionKlass() {
-        return holder.getNullPointerExceptionKlass();
-    }
+//    public static Klass getNullPointerExceptionKlass() {
+//        return holder.getNullPointerExceptionKlass();
+//    }
 
-    public static void setNullPointerExceptionKlass(Klass nullPointerExceptionKlass) {
-        holder.setNullPointerExceptionKlass(nullPointerExceptionKlass);
-    }
+//    public static void setNullPointerExceptionKlass(Klass nullPointerExceptionKlass) {
+//        holder.setNullPointerExceptionKlass(nullPointerExceptionKlass);
+//    }
 
-    public static Klass getIllegalArgumentExceptionKlass() {
-        return holder.getIllegalArgumentExceptionKlass();
-    }
+//    public static Klass getIllegalArgumentExceptionKlass() {
+//        return holder.getIllegalArgumentExceptionKlass();
+//    }
 
-    public static Klass getIllegalStateExceptionKlass() {
-        return holder.getIllegalStateExceptionKlass();
-    }
+//    public static Klass getIllegalStateExceptionKlass() {
+//        return holder.getIllegalStateExceptionKlass();
+//    }
 
-    public static void setEntityKlass(Klass entityKlass) {
-        holder.setEntityKlass(entityKlass);
-    }
+//    public static void setEntityKlass(Klass entityKlass) {
+//        holder.setEntityKlass(entityKlass);
+//    }
 
-    public static Klass setRecordKlass(Klass recordKlass) {
-        holder.setRecordKlass(recordKlass);
-        return recordKlass;
-    }
+//    public static Klass setRecordKlass(Klass recordKlass) {
+//        holder.setRecordKlass(recordKlass);
+//        return recordKlass;
+//    }
 
-    public static void setCollectionKlass(Klass collectionKlass) {
-        holder.setCollectionKlass(collectionKlass);
-    }
+//    public static void setCollectionKlass(Klass collectionKlass) {
+//        holder.setCollectionKlass(collectionKlass);
+//    }
 
-    public static void setSetKlass(Klass setKlass) {
-        holder.setSetKlass(setKlass);
-    }
+//    public static void setSetKlass(Klass setKlass) {
+//        holder.setSetKlass(setKlass);
+//    }
 
-    public static void setListKlass(Klass listKlass) {
-        holder.setListKlass(listKlass);
-    }
-
+//    public static void setListKlass(Klass listKlass) {
+//        holder.setListKlass(listKlass);
+//    }
+/*
     public static void setReadWriteListKlass(Klass readWriteListKlass) {
         holder.setReadWriteListKlass(readWriteListKlass);
     }
@@ -340,9 +333,12 @@ public class StandardTypes {
     public static void setIteratorImplKlass(Klass iteratorImplKlass) {
         holder.setIteratorImplKlass(iteratorImplKlass);
     }
-
+*/
     public static UnionType getNullableType(Type type) {
         return new UnionType(Set.of(type, getNullType()));
     }
 
+    public static Type getNullableThrowableType() {
+        return getNullableType(BuiltinKlasses.throwable.get().getType());
+    }
 }

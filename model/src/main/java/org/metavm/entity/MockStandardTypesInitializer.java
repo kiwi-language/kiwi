@@ -1,8 +1,8 @@
 package org.metavm.entity;
 
 import org.metavm.object.type.ClassSource;
-import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.FieldBuilder;
+import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.util.NncUtils;
 
@@ -11,28 +11,28 @@ import java.util.List;
 public class MockStandardTypesInitializer {
 
     public static void init() {
-        StandardTypes.setListKlass(
+        BuiltinKlasses.list.set(
                 KlassBuilder.newBuilder("List", List.class.getSimpleName())
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "E", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        StandardTypes.setReadWriteListKlass(
+        BuiltinKlasses.arrayList.set(
                 KlassBuilder.newBuilder("ReadWriteList", "ReadWriteList")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ReadWriteListElement", "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        StandardTypes.setChildListKlass(
+        BuiltinKlasses.childList.set(
                 KlassBuilder.newBuilder("ChildList", "ChildList")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ChildListElement", "ChildListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        StandardTypes.setValueListKlass(
+        BuiltinKlasses.valueList.set(
                 KlassBuilder.newBuilder("ValueList", "ValueList")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
@@ -49,50 +49,50 @@ public class MockStandardTypesInitializer {
         enumTypeParam.setBounds(List.of(enumType.getType()));
         FieldBuilder.newBuilder("name", "name", enumType, StandardTypes.getStringType()).build();
         FieldBuilder.newBuilder("ordinal", "ordinal", enumType, StandardTypes.getLongType()).build();
-        StandardTypes.setEnumKlass(enumType);
-        StandardTypes.setEntityKlass(KlassBuilder.newBuilder("Entity", Entity.class.getSimpleName())
+        BuiltinKlasses.enum_.set(enumType);
+        BuiltinKlasses.entity.set(KlassBuilder.newBuilder("Entity", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .build());
-        StandardTypes.setPredicateKlass(
+        BuiltinKlasses.predicate.set(
                 KlassBuilder.newBuilder("Predicate", "Predicate")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        StandardTypes.setConsumerKlass(
+        BuiltinKlasses.consumer.set(
                 KlassBuilder.newBuilder("Consumer", "Consumer")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        StandardTypes.setThrowableKlass(
+        BuiltinKlasses.throwable.set(
                 KlassBuilder.newBuilder("Throwable", "Throwable")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
         );
-        StandardTypes.setExceptionKlass(
+        BuiltinKlasses.exception.set(
                 KlassBuilder.newBuilder("Exception", "Exception")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
         );
-        StandardTypes.setRuntimeExceptionKlass(
+        BuiltinKlasses.runtimeException.set(
                 KlassBuilder.newBuilder("RuntimeException", "RuntimeException")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
         );
-        StandardTypes.setIterableKlass(
+        BuiltinKlasses.iterable.set(
                 KlassBuilder.newBuilder("Iterable", "Iterable")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "T", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        StandardTypes.setIteratorKlass(
+        BuiltinKlasses.iterator.set(
                 KlassBuilder.newBuilder("Iterator", "Iterator")
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())

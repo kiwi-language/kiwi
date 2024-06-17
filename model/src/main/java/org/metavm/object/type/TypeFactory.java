@@ -2,9 +2,9 @@ package org.metavm.object.type;
 
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.Attribute;
+import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.StandardTypes;
 import org.metavm.flow.*;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.flow.rest.FunctionParam;
@@ -97,7 +97,7 @@ public abstract class TypeFactory {
             if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {
                 if (klass.isEnum()) {
                     // TODO handle memory leak
-                    var enumSuperClass = StandardTypes.getEnumKlass().getParameterized(List.of(klass.getType()));
+                    var enumSuperClass = BuiltinKlasses.enum_.get().getParameterized(List.of(klass.getType()));
                     klass.setSuperType(enumSuperClass.getType());
                 } else
                     klass.setSuperType(NncUtils.get(param.superType(), t -> (ClassType) TypeParser.parseType(t, batch)));

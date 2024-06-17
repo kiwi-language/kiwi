@@ -101,15 +101,15 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             var typeArgs = pType.getActualTypeArguments();
             if (ReadonlyArray.class.isAssignableFrom(rawClass))
                 return new ArrayType(getType(typeArgs[0]), ArrayKind.fromEntityClass(rawClass));
-            else if (List.class.isAssignableFrom(rawClass))
-                return StandardTypes.getListKlass()
-                        .getParameterized(List.of(getType(typeArgs[0]))).getType();
-            else if (Set.class.isAssignableFrom(rawClass))
-                return StandardTypes.getSetKlass()
-                        .getParameterized(List.of(getType(typeArgs[0]))).getType();
-            else if (Map.class.isAssignableFrom(rawClass))
-                return StandardTypes.getMapKlass()
-                        .getParameterized(List.of(getType(typeArgs[0]), getType(typeArgs[1]))).getType();
+//            else if (List.class.isAssignableFrom(rawClass))
+//                return BuiltinKlasses.list.get()
+//                        .getParameterized(List.of(getType(typeArgs[0]))).getType();
+//            else if (Set.class.isAssignableFrom(rawClass))
+//                return BuiltinKlasses.set.get()
+//                        .getParameterized(List.of(getType(typeArgs[0]))).getType();
+//            else if (Map.class.isAssignableFrom(rawClass))
+//                return BuiltinKlasses.map.get()
+//                        .getParameterized(List.of(getType(typeArgs[0]), getType(typeArgs[1]))).getType();
             else
                 return new ClassType(((ClassType) getDef(rawClass).getType()).getKlass(), NncUtils.map(pType.getActualTypeArguments(), this::getType));
         } else
@@ -822,7 +822,8 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return Collections.unmodifiableSet(entities);
     }
 
-    public void initUserFunctions() {
+    public void postProcess() {
+        BuiltinKlasses.initialize(this);
         standardDefBuilder.initUserFunctions();
     }
 

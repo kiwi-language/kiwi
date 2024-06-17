@@ -5,7 +5,10 @@ import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.BuiltinKlasses;
+import org.metavm.entity.EntityContextFactory;
+import org.metavm.entity.EntityContextFactoryAware;
+import org.metavm.entity.IEntityContext;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.flow.FlowExecResult;
@@ -87,10 +90,10 @@ public class ApiService extends EntityContextFactoryAware {
 
     private Instance doIntercepted(Supplier<Instance> action, HttpRequest request, HttpResponse response, IEntityContext context) {
         var registry = BeanDefinitionRegistry.getInstance(context);
-        var interceptorKlass = StandardTypes.getInterceptorKlass();
+        var interceptorKlass = BuiltinKlasses.interceptor.get();
         var beforeMethod = interceptorKlass.getMethodByCode("before");
         var afterMethod = interceptorKlass.getMethodByCode("after");
-        var interceptors = registry.getBeansOfType(StandardTypes.getInterceptorKlass().getType());
+        var interceptors = registry.getBeansOfType(interceptorKlass.getType());
         var reqInst = context.getInstance(request);
         var respInst = context.getInstance(response);
         for (ClassInstance interceptor : interceptors) {
@@ -351,10 +354,10 @@ public class ApiService extends EntityContextFactoryAware {
         } else {
             ClassType concreteType;
             if (type.isInterface() || type.isAbstract()) {
-                var iterableType = type.findAncestorType(StandardTypes.getIterableKlass());
+                var iterableType = type.findAncestorType(BuiltinKlasses.iterable.get());
                 if (iterableType != null) {
                     var elementType = iterableType.getTypeArguments().get(0).getUpperBound2();
-                    concreteType = StandardTypes.getReadWriteListKlass(elementType).getParameterized(List.of()).getType();
+                    concreteType = BuiltinKlasses.arrayList.get().getParameterized(List.of(elementType)).getParameterized(List.of()).getType();
                     if (!type.isAssignableFrom(concreteType))
                         return ValueResolutionResult.failed;
                 } else

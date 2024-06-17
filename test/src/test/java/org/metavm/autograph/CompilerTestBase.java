@@ -58,6 +58,7 @@ public abstract class CompilerTestBase extends TestCase  {
         AUTH_CONFIG = AuthConfig.fromFile("/Users/leen/workspace/object/test/src/test/resources/auth");
         StandardTypes.setHolder(new ThreadLocalStandardTypesHolder());
         NativeFunctions.setThreadLocalMode();
+        BuiltinKlasses.setThreadLocalMode();
         ModelDefRegistry.setHolder(new ThreadLocalDefContextHolder());
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
@@ -117,7 +118,8 @@ public abstract class CompilerTestBase extends TestCase  {
         platformUserManager = null;
         apiClient = null;
         StandardTypes.setHolder(new GlobalStandardTypesHolder());
-        NativeFunctions.setDirectMode();
+        NativeFunctions.setDefaultMode();
+        BuiltinKlasses.setDefaultMode();;
         ModelDefRegistry.setHolder(new GlobalDefContextHolder());
     }
 

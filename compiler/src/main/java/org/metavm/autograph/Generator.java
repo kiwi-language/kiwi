@@ -2,6 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import org.metavm.api.EntityIndex;
+import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.StandardTypes;
 import org.metavm.expression.*;
@@ -255,7 +256,7 @@ public class Generator extends CodeGenVisitor {
             exitCondSection(mergeNode, catchOutputVars);
 
             var exceptionField = FieldBuilder.newBuilder("exception", "exception",
-                    mergeNode.getKlass(), StandardTypes.getNullableThrowableKlass()).build();
+                    mergeNode.getKlass(), StandardTypes.getNullableThrowableType()).build();
 
             final var exceptionExprFinal = exceptionExpr;
             new MergeNodeField(
@@ -388,15 +389,15 @@ public class Generator extends CodeGenVisitor {
     }
 
     private boolean isEnumType(Klass classType) {
-        return classType.getTemplate() != null && classType.getTemplate() == StandardTypes.getEnumKlass();
+        return classType.getTemplate() != null && classType.getTemplate() == BuiltinKlasses.enum_.get();
     }
 
     private boolean isEntityType(Klass classType) {
-        return classType == StandardTypes.getEntityKlass();
+        return classType == BuiltinKlasses.entity.get();
     }
 
     private boolean isRecordType(Klass classType) {
-        return classType == StandardTypes.getRecordKlass();
+        return classType == BuiltinKlasses.record.get();
     }
 
     private static boolean isSuperCallPresent(PsiMethod method) {

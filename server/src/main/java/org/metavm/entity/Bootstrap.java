@@ -60,7 +60,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
                         defContext.getDef(entityClass, stage);
                 }
             }
-            defContext.initUserFunctions();
+            defContext.postProcess();
             defContext.flushAndWriteInstances();
             ModelDefRegistry.setDefContext(defContext);
             var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && !inst.isValue() && inst.tryGetTreeId() == null);

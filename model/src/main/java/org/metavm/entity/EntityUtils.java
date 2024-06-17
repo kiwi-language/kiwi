@@ -22,7 +22,6 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import static org.metavm.util.ReflectionUtils.*;
 
@@ -348,15 +347,14 @@ public class EntityUtils {
         }
     }
 
-    private static final Set<Class<?>> builtinModelClasses = Set.of(Supplier.class);
-
     public static Set<Class<?>> getModelClasses() {
         Reflections reflections =
                 new Reflections(new ConfigurationBuilder().forPackages("org.metavm"));
         Set<Class<? extends Entity>> entitySubTypes = reflections.getSubTypesOf(Entity.class);
         Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(EntityType.class);
+        var builtinClasses = NncUtils.filterAndMapUnique(BuiltinKlasses.defs(), BuiltinKlassDef::isAutoDefine, BuiltinKlassDef::getJavaClass);
         return NncUtils.filterUnique(
-                NncUtils.mergeSets(entitySubTypes, entityTypes, builtinModelClasses),
+                NncUtils.mergeSets(entitySubTypes, entityTypes, builtinClasses),
                 klass -> !isCompiled(klass)
         );
     }

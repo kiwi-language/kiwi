@@ -4,8 +4,6 @@ import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.api.Value;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.expression.ConstantExpression;
 import org.metavm.flow.NodeRT;
 import org.metavm.mocks.Bar;
@@ -16,6 +14,8 @@ import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -42,6 +42,7 @@ public class DefContextTest extends TestCase {
                 new StdIdProvider(new EmptyStdIdStore()), instanceContext, new MemColumnStore(), new MemTypeTagStore(), new IdentityContext());
         bridge.setEntityContext(defContext);
         objectInstanceMap = defContext.getObjectInstanceMap();
+        defContext.postProcess();
     }
 
     public void testGetDef() {
@@ -84,7 +85,7 @@ public class DefContextTest extends TestCase {
     public void testInheritance() {
         EntityDef<NodeRT> superDef = defContext.getEntityDef(new TypeReference<>() {
         });
-        Assert.assertEquals(Objects.requireNonNull(superDef.getKlass().getSuperType()).getSuperType(), StandardTypes.getEntityKlass().getType());
+        Assert.assertEquals(Objects.requireNonNull(superDef.getKlass().getSuperType()).getSuperType(), BuiltinKlasses.entity.get().getType());
     }
 
     public void testArrayFieldType() {

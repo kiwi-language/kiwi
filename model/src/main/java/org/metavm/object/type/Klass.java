@@ -7,6 +7,8 @@ import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
+import org.metavm.entity.natives.ListNative;
+import org.metavm.entity.natives.NativeBase;
 import org.metavm.expression.Var;
 import org.metavm.flow.Error;
 import org.metavm.flow.*;
@@ -143,6 +145,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private transient List<Runnable> ancestorChangeListeners = new ArrayList<>();
 
     private transient ParameterizedElementMap<List<? extends Type>, Klass> parameterizedClasses;
+
+    private transient Class<? extends NativeBase> nativeClass;
 
     public Klass(
             Long tmpId,
@@ -1852,11 +1856,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public boolean isList() {
         var t = getEffectiveTemplate();
-        return t == StandardTypes.getListKlass() || StandardTypes.getChildListKlass() == t || StandardTypes.getReadWriteListKlass() == t || StandardTypes.getValueListKlass() == t;
+//        return t == StandardTypes.getListKlass() || BuiltinKlasses.childList.get() == t || StandardTypes.getReadWriteListKlass() == t || StandardTypes.getValueListKlass() == t;
+        return t.getNativeClass() == ListNative.class;
     }
 
     public boolean isChildList() {
-        return getEffectiveTemplate() == StandardTypes.getChildListKlass();
+        return getEffectiveTemplate() == BuiltinKlasses.childList.get();
     }
 
     public Type getListElementType() {
@@ -1866,7 +1871,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Type getIterableElementType() {
         var iterableType = Objects.requireNonNull(
-                findAncestor(StandardTypes.getIterableKlass()),
+                findAncestor(BuiltinKlasses.iterable.get()),
                 () -> getTypeDesc() + " is not an Iterable class");
         return iterableType.getTypeArguments().get(0);
     }
@@ -1924,5 +1929,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return null;
     }
 
+    public Class<? extends NativeBase> getNativeClass() {
+        return nativeClass;
+    }
+
+    public void setNativeClass(Class<? extends NativeBase> nativeClass) {
+        this.nativeClass = nativeClass;
+    }
 }
 

@@ -3,7 +3,6 @@ package org.metavm.entity;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.api.Value;
-import org.slf4j.Logger;
 import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.InstanceStore;
 import org.metavm.object.instance.MockInstanceLogService;
@@ -13,6 +12,7 @@ import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.StructuralVisitor;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
+import org.slf4j.Logger;
 
 import java.util.Set;
 

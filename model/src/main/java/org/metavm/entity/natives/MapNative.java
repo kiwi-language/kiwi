@@ -1,6 +1,6 @@
 package org.metavm.entity.natives;
 
-import org.metavm.entity.StandardTypes;
+import org.metavm.entity.BuiltinKlasses;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.BooleanInstance;
 import org.metavm.object.instance.core.ClassInstance;
@@ -60,7 +60,7 @@ public class MapNative extends NativeBase {
     }
 
     public ClassInstance keySet(CallContext callContext) {
-        var keySetType = (Klass) instance.getKlass().getDependency(StandardTypes.getSetKlass());
+        var keySetType = (Klass) instance.getKlass().getDependency(BuiltinKlasses.set.get());
         ClassInstance keySet = ClassInstance.allocate(keySetType.getType());
         var setNative = (SetNative) NativeMethods.getNativeObject(keySet);
         setNative.Set(callContext);

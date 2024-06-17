@@ -20,7 +20,6 @@ import org.metavm.system.persistence.MemRegionMapper;
 import org.metavm.task.JobSchedulerStatus;
 import org.metavm.task.TaskSignal;
 
-import java.util.Collection;
 import java.util.List;
 
 public class BootstrapUtils {
@@ -47,7 +46,7 @@ public class BootstrapUtils {
         if (state != null) {
             var defContext = state.defContext();
             ModelDefRegistry.setDefContext(defContext);
-            StandardTypes.setEntityKlass(defContext.getClassType(Entity.class).resolve());
+            /*StandardTypes.setEntityKlass(defContext.getClassType(Entity.class).resolve());
             StandardTypes.setEnumKlass(defContext.getClassType(Enum.class).resolve());
             StandardTypes.setThrowableKlass(defContext.getClassType(Throwable.class).resolve());
             StandardTypes.setRuntimeExceptionKlass(defContext.getClassType(RuntimeException.class).resolve());
@@ -65,9 +64,10 @@ public class BootstrapUtils {
             StandardTypes.setExceptionKlass(defContext.getClassType(Exception.class).resolve());
             StandardTypes.setIllegalArgumentExceptionKlass(defContext.getClassType(IllegalArgumentException.class).resolve());
             StandardTypes.setIllegalStateExceptionKlass(defContext.getClassType(IllegalStateException.class).resolve());
-            StandardTypes.setNullPointerExceptionKlass(defContext.getClassType(NullPointerException.class).resolve());
+            StandardTypes.setNullPointerExceptionKlass(defContext.getClassType(NullPointerException.class).resolve());*/
             NativeFunctions.initializeFromDefContext(defContext);
             NativeFunctions.setEmailSender(MockEmailSender.INSTANCE);
+            BuiltinKlasses.initialize(defContext);
 
             var state = BootstrapUtils.state.copy();
             var instanceStore = new MemInstanceStore(

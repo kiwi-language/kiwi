@@ -2,7 +2,10 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.BuiltinKlasses;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.IndexSelectNodeParam;
@@ -24,7 +27,7 @@ public class IndexSelectNode extends NodeRT {
         var param = (IndexSelectNodeParam) nodeDTO.param();
         var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var type = new ClassType(StandardTypes.getReadWriteListKlass(), List.of(index.getDeclaringType().getType()));
+        var type = new ClassType(BuiltinKlasses.arrayList.get(), List.of(index.getDeclaringType().getType()));
         var key = IndexQueryKey.create(param.key(), context, parsingContext);
         var node = (IndexSelectNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null) {

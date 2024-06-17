@@ -3,15 +3,8 @@ package org.metavm.object.instance;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
-import org.metavm.flow.FlowExecutionService;
-import org.metavm.flow.FlowSavingContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.ModelDefRegistry;
-import org.metavm.entity.StandardTypes;
+import org.metavm.entity.*;
 import org.metavm.flow.*;
 import org.metavm.flow.rest.FlowExecutionRequest;
 import org.metavm.flow.rest.MethodParam;
@@ -35,6 +28,8 @@ import org.metavm.object.type.rest.dto.FieldRefDTO;
 import org.metavm.object.type.rest.dto.GetTypeRequest;
 import org.metavm.object.view.rest.dto.DirectMappingKey;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -466,7 +461,7 @@ public class InstanceManagerTest extends TestCase {
         var ref = new Object() {
             Id id;
         };
-        var classType = new ClassType(StandardTypes.getChildListKlass(), List.of(StandardTypes.getStringType()));
+        var classType = new ClassType(BuiltinKlasses.childList.get(), List.of(StandardTypes.getStringType()));
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
                 var klass = KlassBuilder.newBuilder("Foo", null).build();
@@ -480,7 +475,7 @@ public class InstanceManagerTest extends TestCase {
                         null,
                         new MethodRef(
                                 classType,
-                                StandardTypes.getChildListKlass().getMethodByCodeAndParamTypes("size", List.of()),
+                                BuiltinKlasses.childList.get().getMethodByCodeAndParamTypes("size", List.of()),
                                 List.of()
                         ),
                         List.of()

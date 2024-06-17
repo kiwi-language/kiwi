@@ -1,6 +1,7 @@
 package org.metavm.util;
 
 import org.metavm.asm.AssemblerFactory;
+import org.metavm.entity.BuiltinKlasses;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.MethodDTOBuilder;
 import org.metavm.flow.NodeDTOFactory;
@@ -15,7 +16,6 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.ClassInstanceBuilder;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.*;
-import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.rest.dto.*;
@@ -37,7 +37,7 @@ public class MockUtils {
         var couponStateType = KlassBuilder.newBuilder("CouponState", "CouponState")
                 .kind(ClassKind.ENUM)
                 .build();
-        var enumKlass = getEnumKlass();
+        var enumKlass = BuiltinKlasses.enum_.get();
         var subst = new SubstitutorV2(
                 enumKlass, enumKlass.getTypeParameters(), List.of(couponStateType.getType()),
                 ResolutionStage.DEFINITION

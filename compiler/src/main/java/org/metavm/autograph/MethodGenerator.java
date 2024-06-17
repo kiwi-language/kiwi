@@ -1,6 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiMethod;
+import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.StandardTypes;
 import org.metavm.entity.natives.NativeFunctions;
@@ -83,7 +84,7 @@ public class MethodGenerator {
                 scope()
         );
         FieldBuilder.newBuilder("exception", "exception", node.getKlass(),
-                        StandardTypes.getNullableThrowableKlass())
+                        StandardTypes.getNullableThrowableType())
                 .build();
         return node;
     }
@@ -366,7 +367,7 @@ public class MethodGenerator {
     }
 
     public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
-        var listType = StandardTypes.getReadWriteListKlass().getParameterized(List.of(index.getDeclaringType().getType()));
+        var listType = BuiltinKlasses.arrayList.get().getParameterized(List.of(index.getDeclaringType().getType()));
         return setNodeExprTypes(new IndexSelectNode(
                 null, nextName("IndexSelect"), null, listType.getType(),
                 scope().getLastNode(), scope(), index, key

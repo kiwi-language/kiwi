@@ -14,11 +14,11 @@ public class NativeFunctionDef {
     private final String name;
     private final String signature;
     private final boolean system;
-    private FunctionHolder functionHolder;
+    private ValueHolder<Function> functionHolder;
     private final FunctionImpl impl;
     private final List<Method> javaMethods;
 
-    public NativeFunctionDef(String signature, boolean system, List<Method> javaMethods, FunctionHolder functionHolder, FunctionImpl impl) {
+    public NativeFunctionDef(String signature, boolean system, List<Method> javaMethods, ValueHolder<Function> functionHolder, FunctionImpl impl) {
         this.signature = signature;
         this.system = system;
         this.javaMethods = new ArrayList<>(javaMethods);
@@ -73,7 +73,7 @@ public class NativeFunctionDef {
         return functionHolder.get();
     }
 
-    public void setFunctionHolder(FunctionHolder functionHolder) {
+    public void setFunctionHolder(ValueHolder functionHolder) {
         this.functionHolder = functionHolder;
     }
 

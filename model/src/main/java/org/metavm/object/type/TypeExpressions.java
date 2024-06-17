@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.StandardTypes;
+import org.metavm.entity.BuiltinKlasses;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.util.InternalException;
@@ -79,15 +79,15 @@ public class TypeExpressions {
     }
 
     public static String getListType(String elementType) {
-        return getParameterizedType(StandardTypes.getListKlass().getStringId(), elementType);
+        return getParameterizedType(BuiltinKlasses.list.get().getStringId(), elementType);
     }
 
     public static String getReadWriteListType(String elementType) {
-        return getParameterizedType(StandardTypes.getReadWriteListKlass().getStringId(), elementType);
+        return getParameterizedType(BuiltinKlasses.arrayList.get().getStringId(), elementType);
     }
 
     public static String getChildListType(String elementType) {
-        return getParameterizedType(StandardTypes.getChildListKlass().getStringId(), elementType);
+        return getParameterizedType(BuiltinKlasses.childList.get().getStringId(), elementType);
     }
 
 }

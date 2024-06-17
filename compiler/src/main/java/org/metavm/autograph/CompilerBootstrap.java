@@ -50,7 +50,7 @@ public class CompilerBootstrap {
                 if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
                     defContext.getDef(entityClass);
             }
-            defContext.initUserFunctions();
+            defContext.postProcess();
             defContext.flushAndWriteInstances();
             var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.tryGetTreeId() == null);
             if (!idNullInstances.isEmpty()) {

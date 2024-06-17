@@ -2,7 +2,7 @@ package org.metavm.object.view;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.entity.StandardTypes;
+import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.natives.NativeFunctions;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
@@ -34,7 +34,7 @@ public class ListNestedMapping extends NestedMapping {
     public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
         var targetKlass = targetType.resolve();
         var constructor = targetKlass.isEffectiveAbstract() ?
-                StandardTypes.getReadWriteListKlass(targetKlass.getListElementType()).getDefaultConstructor() :
+                BuiltinKlasses.arrayList.get().getParameterized(List.of(targetKlass.getListElementType())).getDefaultConstructor() :
                 targetKlass.getDefaultConstructor();
         var targetList = Nodes.newObject(
                 scope.nextNodeName("list"),
@@ -108,7 +108,7 @@ public class ListNestedMapping extends NestedMapping {
                             falseBranch.getScope(),
                             sourceType.isChildList() ?
                                     sourceKlass.getDefaultConstructor() :
-                                    StandardTypes.getReadWriteListKlass(sourceKlass.getListElementType()).getDefaultConstructor(),
+                                    BuiltinKlasses.arrayList.get().getParameterized(List.of(sourceKlass.getListElementType())).getDefaultConstructor(),
                             List.of(),
                             false,
                             true

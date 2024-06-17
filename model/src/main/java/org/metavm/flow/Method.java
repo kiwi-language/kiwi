@@ -3,8 +3,6 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
@@ -19,6 +17,8 @@ import org.metavm.object.type.*;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -370,7 +370,7 @@ public class Method extends Flow implements Property, GenericElement {
                 var instance = (ClassInstance) result.ret();
                 var uninitializedField = instance.findUninitializedField(declaringType);
                 if (uninitializedField != null) {
-                    var exception = ClassInstance.allocate(StandardTypes.getRuntimeExceptionKlass().getType());
+                    var exception = ClassInstance.allocate(BuiltinKlasses.runtimeException.get().getType());
                     var exceptionNative = new RuntimeExceptionNative(exception);
                     exceptionNative.RuntimeException(Instances.stringInstance(
                                     "Failed to create object " + instance.getType().getName() + "，" +

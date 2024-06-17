@@ -1,5 +1,6 @@
 package org.metavm.object.instance;
 
+import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.StandardTypes;
 import org.metavm.entity.natives.ListNative;
@@ -202,11 +203,11 @@ public class InstanceFactory {
                 if(!classType.isList())
                     throw new InternalException(classType.getTypeDesc() + " is not a list type");
                 Klass klass;
-                if(StandardTypes.getListKlass().isType(classType.getEffectiveTemplate())) {
+                if(BuiltinKlasses.list.get().isType(classType.getEffectiveTemplate())) {
                     if(listFieldValue.isElementAsChild())
-                        klass = StandardTypes.getChildListKlass().getParameterized(List.of(classType.getListElementType()));
+                        klass = BuiltinKlasses.childList.get().getParameterized(List.of(classType.getListElementType()));
                     else
-                        klass = StandardTypes.getReadWriteListKlass().getParameterized(List.of(classType.getListElementType()));
+                        klass = BuiltinKlasses.arrayList.get().getParameterized(List.of(classType.getListElementType()));
                 }
                 else
                     klass = classType.resolve();

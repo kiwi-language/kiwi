@@ -3,8 +3,8 @@ package org.metavm.entity.natives;
 import org.metavm.api.lang.EmailUtils;
 import org.metavm.api.lang.*;
 import org.metavm.common.ErrorCode;
+import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.DefContext;
-import org.metavm.entity.StandardTypes;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.core.*;
@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 public class NativeFunctions {
 
     private static EmailSender emailSender;
-    private static Supplier<FunctionHolder> functionHolderSupplier = DirectFunctionHolder::new;
+    private static Supplier<ValueHolder<Function>> functionHolderSupplier = DirectValueHolder::new;
     private static final List<NativeFunctionDef> defs = new ArrayList<>();
 
     public static final NativeFunctionDef isSourcePresent = createDef(
@@ -204,7 +204,7 @@ public class NativeFunctions {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(StandardTypes.getNullPointerExceptionKlass().getType());
+                    var npe = ClassInstance.allocate(BuiltinKlasses.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
                     nat.NullPointerException(ctx);
                     return FlowExecResult.ofException(npe);
@@ -224,7 +224,7 @@ public class NativeFunctions {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(StandardTypes.getNullPointerExceptionKlass().getType());
+                    var npe = ClassInstance.allocate(BuiltinKlasses.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
                     nat.NullPointerException(message, ctx);
                     return FlowExecResult.ofException(npe);
@@ -244,7 +244,7 @@ public class NativeFunctions {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(StandardTypes.getNullPointerExceptionKlass().getType());
+                    var npe = ClassInstance.allocate(BuiltinKlasses.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
                     var getMethod = messageSupplier.getKlass().getMethodByCodeAndParamTypes("get", List.of());
                     var getResult = getMethod.execute(messageSupplier, List.of(), ctx);
@@ -410,21 +410,21 @@ public class NativeFunctions {
                     if (id != null)
                         return FlowExecResult.of(Instances.stringInstance(id));
                 }
-                var npe = ClassInstance.allocate(StandardTypes.getNullPointerExceptionKlass().getType());
+                var npe = ClassInstance.allocate(BuiltinKlasses.nullPointerException.get().getType());
                 var nat = new NullPointerExceptionNative(npe);
                 nat.NullPointerException(Instances.stringInstance("Object has no ID"), ctx);
                 return FlowExecResult.ofException(npe);
             });
 
 
-    public static void setDirectMode() {
-        functionHolderSupplier = DirectFunctionHolder::new;
-        defs.forEach(def -> def.setFunctionHolder(new DirectFunctionHolder()));
+    public static void setDefaultMode() {
+        functionHolderSupplier = DirectValueHolder::new;
+        defs.forEach(def -> def.setFunctionHolder(new DirectValueHolder<>()));
     }
 
     public static void setThreadLocalMode() {
-        functionHolderSupplier = ThreadLocalFunctionHolder::new;
-        defs.forEach(def -> def.setFunctionHolder(new ThreadLocalFunctionHolder()));
+        functionHolderSupplier = ThreadLocalValueHolder::new;
+        defs.forEach(def -> def.setFunctionHolder(new ThreadLocalValueHolder<>()));
     }
 
     public static void setEmailSender(EmailSender emailSender) {
@@ -456,36 +456,6 @@ public class NativeFunctions {
 
     public static List<NativeFunctionDef> defs() {
         return Collections.unmodifiableList(defs);
-    }
-
-    private static class DirectFunctionHolder implements FunctionHolder {
-
-        private Function function;
-
-        @Override
-        public Function get() {
-            return function;
-        }
-
-        @Override
-        public void set(Function value) {
-            this.function = value;
-        }
-    }
-
-    private static class ThreadLocalFunctionHolder implements FunctionHolder {
-
-        private final ThreadLocal<Function> TL = new ThreadLocal<>();
-
-        @Override
-        public Function get() {
-            return TL.get();
-        }
-
-        @Override
-        public void set(Function value) {
-            TL.set(value);
-        }
     }
 
     private static NativeFunctionDef createDef(String signature, boolean system, List<Method> javaMethods, FunctionImpl impl) {

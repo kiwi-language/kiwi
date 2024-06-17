@@ -5,20 +5,16 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.ReflectionUtils;
 
+import java.lang.reflect.Type;
+
 public class DirectDef<T> extends ModelDef<T, ClassInstance> {
 
     private final TypeDef typeDef;
-    private final Class<?> nativeClass;
 
-    public DirectDef(java.lang.reflect.Type javaType, TypeDef typeDef) {
-        this(javaType, typeDef, null);
-    }
-
-    public DirectDef(java.lang.reflect.Type javaType, TypeDef typeDef, Class<?> nativeClass) {
+    public DirectDef(Type javaType, TypeDef typeDef) {
         //noinspection rawtypes,unchecked
         super((Class) ReflectionUtils.getRawClass(javaType), javaType, ClassInstance.class);
         this.typeDef = typeDef;
-        this.nativeClass = nativeClass;
     }
 
     @Override
@@ -46,7 +42,4 @@ public class DirectDef<T> extends ModelDef<T, ClassInstance> {
         throw new UnsupportedOperationException();
     }
 
-    public Class<?> getNativeClass() {
-        return nativeClass;
-    }
 }

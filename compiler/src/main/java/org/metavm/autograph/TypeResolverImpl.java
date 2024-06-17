@@ -18,8 +18,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static com.intellij.lang.jvm.types.JvmPrimitiveTypeKind.*;
@@ -70,7 +68,18 @@ public class TypeResolverImpl implements TypeResolver {
 
     private final IEntityContext context;
 
-    private static final Map<PsiClassType, Supplier<Klass>> STANDARD_CLASSES = Map.ofEntries(
+    private static final Map<PsiClassType, Supplier<Klass>> STANDARD_CLASSES;
+
+    static {
+        var map = new HashMap<PsiClassType, Supplier<Klass>>();
+        for (BuiltinKlassDef def : BuiltinKlasses.defs()) {
+            map.put(TranspileUtils.createClassType(def.getJavaClass()), def::get);
+        }
+        map.put(TranspileUtils.createClassType(LinkedList.class), BuiltinKlasses.arrayList::get);
+        STANDARD_CLASSES = Collections.unmodifiableMap(map);
+    }
+
+            /*Map.ofEntries(
             Map.entry(TranspileUtils.createClassType(Entity.class), StandardTypes::getEntityKlass),
             Map.entry(TranspileUtils.createClassType(Enum.class), StandardTypes::getEnumKlass),
             Map.entry(TranspileUtils.createClassType(Record.class), StandardTypes::getRecordKlass),
@@ -93,7 +102,7 @@ public class TypeResolverImpl implements TypeResolver {
             Map.entry(TranspileUtils.createClassType(Collection.class), StandardTypes::getCollectionKlass),
             Map.entry(TranspileUtils.createClassType(Consumer.class), StandardTypes::getConsumerKlass),
             Map.entry(TranspileUtils.createClassType(Predicate.class), StandardTypes::getPredicateKlass)
-    );
+    );*/
 
     private static final List<Class<?>> COLLECTION_CLASSES = List.of(
             IteratorImpl.class,
@@ -338,29 +347,29 @@ public class TypeResolverImpl implements TypeResolver {
             var ownerType = TranspileUtils.createType(psiClass);
             var childListType = TranspileUtils.createClassType(ChildList.class);
             if (childListType.isAssignableFrom(ownerType))
-                return StandardTypes.getChildListKlass().getTypeParameters().get(0);
+                return BuiltinKlasses.childList.get().getTypeParameters().get(0);
             var valueListType = TranspileUtils.createClassType(ValueList.class);
             if(valueListType.isAssignableFrom(ownerType))
-                return StandardTypes.getValueListKlass().getTypeParameters().get(0);
+                return BuiltinKlasses.valueList.get().getTypeParameters().get(0);
             var arrayListType = TranspileUtils.createClassType(ArrayList.class);
             var linkedListType = TranspileUtils.createClassType(LinkedList.class);
             if (arrayListType.isAssignableFrom(ownerType) || linkedListType.isAssignableFrom(ownerType))
-                return StandardTypes.getReadWriteListKlass().getTypeParameters().get(0);
+                return BuiltinKlasses.arrayList.get().getTypeParameters().get(0);
             var listType = TranspileUtils.createClassType(List.class);
             if (listType.isAssignableFrom(ownerType))
-                return StandardTypes.getListKlass().getTypeParameters().get(0);
+                return BuiltinKlasses.list.get().getTypeParameters().get(0);
             var setType = TranspileUtils.createClassType(Set.class);
             if (setType.isAssignableFrom(ownerType))
-                return StandardTypes.getSetKlass().getTypeParameters().get(0);
+                return BuiltinKlasses.set.get().getTypeParameters().get(0);
             var mapType = TranspileUtils.createClassType(Map.class);
             if (mapType.isAssignableFrom(ownerType)) {
                 int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
                         .getTypeParameterIndex(typeParameter);
-                return StandardTypes.getMapKlass().getTypeParameters().get(index);
+                return BuiltinKlasses.map.get().getTypeParameters().get(index);
             }
             var enumType = TranspileUtils.createClassType(Enum.class);
             if (ownerType.equals(enumType))
-                return StandardTypes.getEnumKlass().getTypeParameters().get(0);
+                return BuiltinKlasses.enum_.get().getTypeParameters().get(0);
         }
         return null;
     }

@@ -1,6 +1,8 @@
 package org.metavm.entity;
 
-import org.metavm.entity.natives.*;
+import org.metavm.api.ChildList;
+import org.metavm.api.ValueList;
+import org.metavm.entity.natives.NativeFunctions;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
@@ -29,23 +31,25 @@ public class StandardDefBuilder {
 
     private final DefContext defContext;
 
-    private final PrimTypeFactory primTypeFactory = new PrimTypeFactory();
+    private Klass iteratorKlass;
 
-    private static final Map<java.lang.reflect.Type, Class<?>> NATIVE_CLASS_MAP = Map.ofEntries(
-            Map.entry(MetaSet.class, SetNative.class),
-            Map.entry(ChildMetaList.class, ListNative.class),
-            Map.entry(ReadWriteMetaList.class, ListNative.class),
-            Map.entry(ValueMetaList.class, ListNative.class),
-            Map.entry(MetaList.class, ListNative.class),
-            Map.entry(MetaMap.class, MapNative.class),
-            Map.entry(IteratorImpl.class, IteratorImplNative.class),
-            Map.entry(Throwable.class, ThrowableNative.class),
-            Map.entry(Exception.class, ExceptionNative.class),
-            Map.entry(RuntimeException.class, RuntimeExceptionNative.class),
-            Map.entry(IllegalArgumentException.class, IllegalArgumentExceptionNative.class),
-            Map.entry(IllegalStateException.class, IllegalStateExceptionNative.class),
-            Map.entry(NullPointerException.class, NullPointerExceptionNative.class)
-    );
+    private Klass iteratorImplKlass;
+
+    private Klass iterableKlass;
+
+    private Klass throwableKlass;
+
+    private Klass collectionKlass;
+
+    private Klass listKlass;
+
+    public Klass setKlass;
+
+    private Klass consumerKlass;
+
+    private Klass predicateKlass;
+
+    private final PrimTypeFactory primTypeFactory = new PrimTypeFactory();
 
     public StandardDefBuilder(DefContext defContext) {
         this.defContext = defContext;
@@ -53,36 +57,36 @@ public class StandardDefBuilder {
 
     public void initRootTypes() {
         initSystemFunctions();
-        StandardTypes.setConsumerKlass(createConsumerKlass());
-        StandardTypes.setPredicateKlass(createPredicateKlass());
-        StandardTypes.setIteratorKlass(createIteratorKlass());
-        StandardTypes.setIterableKlass(createIterableKlass());
-        StandardTypes.setCollectionKlass(createCollectionType());
-        StandardTypes.setIteratorImplKlass(createIteratorImplKlass());
-        StandardTypes.setSetKlass(createSetKlass());
-        StandardTypes.setListKlass(createListKlass());
-        StandardTypes.setReadWriteListKlass(createReadWriteListKlass());
-        StandardTypes.setChildListKlass(createChildListKlass());
-        StandardTypes.setValueListKlass(createValueListKlass());
-        StandardTypes.setMapKlass(createMapKlass());
+        consumerKlass = createConsumerKlass();
+        predicateKlass = createPredicateKlass();
+        iteratorKlass = createIteratorKlass();
+        iterableKlass = createIterableKlass();
+        collectionKlass = createCollectionType();
+        iteratorImplKlass = createIteratorImplKlass();
+        setKlass = createSetKlass();
+        listKlass = createListKlass();
+        createMapKlass();
+        createReadWriteListKlass();
+        createChildListKlass();
+        createValueListKlass();
 
         ValueDef<Record> recordDef = createValueDef(
                 Record.class,
                 Record.class,
-                StandardTypes.setRecordKlass(KlassBuilder.newBuilder("Record", Record.class.getSimpleName())
+                KlassBuilder.newBuilder("Record", Record.class.getSimpleName())
                         .source(ClassSource.BUILTIN)
-                        .kind(ClassKind.VALUE).build()),
+                        .kind(ClassKind.VALUE).build(),
                 defContext
         );
         defContext.addDef(recordDef);
 
-        StandardTypes.setEntityKlass(KlassBuilder.newBuilder("Entity", Entity.class.getSimpleName())
+        var entityKlass = KlassBuilder.newBuilder("Entity", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
-                .build());
+                .build();
         EntityDef<Entity> entityDef = createEntityDef(
                 Entity.class,
                 Entity.class,
-                StandardTypes.getEntityKlass(),
+                entityKlass,
                 defContext
         );
 
@@ -90,36 +94,36 @@ public class StandardDefBuilder {
 
         var enumTypeParam = new TypeVariable(null, "EnumType", "EnumType",
                 DummyGenericDeclaration.INSTANCE);
-        StandardTypes.setEnumKlass(KlassBuilder.newBuilder("Enum", Enum.class.getSimpleName())
+        var enumKlass = KlassBuilder.newBuilder("Enum", Enum.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
-                .build());
+                .build();
 
-        enumTypeParam.setBounds(List.of(StandardTypes.getEnumKlass().getType()));
+        enumTypeParam.setBounds(List.of(enumKlass.getType()));
 
         enumDef = createValueDef(
                 Enum.class,// Enum is not a RuntimeGeneric, use the raw class
                 new TypeReference<Enum<?>>() {
                 }.getType(),
-                StandardTypes.getEnumKlass(),
+                enumKlass,
                 defContext
         );
 
         enumNameDef = createFieldDef(
                 ENUM_NAME_FIELD,
                 createField(ENUM_NAME_FIELD, true, StandardTypes.getStringType(), Access.PUBLIC,
-                        ColumnKind.STRING.getColumn(0), StandardTypes.getEnumKlass()),
+                        ColumnKind.STRING.getColumn(0), enumKlass),
                 enumDef
         );
 
         enumOrdinalDef = createFieldDef(
                 ENUM_ORDINAL_FIELD,
                 createField(ENUM_ORDINAL_FIELD, false, StandardTypes.getLongType(), Access.PRIVATE,
-                        ColumnKind.INT.getColumn(0), StandardTypes.getEnumKlass()),
+                        ColumnKind.INT.getColumn(0), enumKlass),
                 enumDef
         );
-        StandardTypes.getEnumKlass().setTitleField(enumNameDef.getField());
-        StandardTypes.getEnumKlass().setStage(ResolutionStage.DEFINITION);
+        enumKlass.setTitleField(enumNameDef.getField());
+        enumKlass.setStage(ResolutionStage.DEFINITION);
 
         var enumTypeParamDef = new TypeVariableDef(Enum.class.getTypeParameters()[0], enumTypeParam);
         defContext.preAddDef(enumTypeParamDef);
@@ -132,13 +136,13 @@ public class StandardDefBuilder {
                 defContext.afterDefInitialized(defContext.getDef(javaType))
         );
 
-        StandardTypes.setThrowableKlass(KlassBuilder.newBuilder("Predicate", Throwable.class.getSimpleName())
-                .source(ClassSource.BUILTIN).build());
-        createThrowableFlows(StandardTypes.getThrowableKlass());
+        throwableKlass = KlassBuilder.newBuilder("Throwable", Throwable.class.getSimpleName())
+                .source(ClassSource.BUILTIN).build();
+        createThrowableFlows(throwableKlass);
         var throwableDef = createValueDef(
                 Throwable.class,
                 Throwable.class,
-                StandardTypes.getThrowableKlass(),
+                throwableKlass,
                 defContext
         );
         defContext.preAddDef(throwableDef);
@@ -151,7 +155,7 @@ public class StandardDefBuilder {
                 javaMessageField,
                 createField(javaMessageField, true,
                         StandardTypes.getNullableType(StandardTypes.getStringType()), Access.PUBLIC,
-                        ColumnKind.STRING.getColumn(0), StandardTypes.getThrowableKlass()),
+                        ColumnKind.STRING.getColumn(0), throwableKlass),
                 throwableDef
         );
 
@@ -159,46 +163,46 @@ public class StandardDefBuilder {
         createFieldDef(
                 javaCauseField,
                 createField(javaCauseField, false,
-                        StandardTypes.getNullableType(StandardTypes.getThrowableKlass().getType()), Access.PUBLIC,
-                        ColumnKind.REFERENCE.getColumn(0), StandardTypes.getThrowableKlass()),
+                        StandardTypes.getNullableType(throwableKlass.getType()), Access.PUBLIC,
+                        ColumnKind.REFERENCE.getColumn(0), throwableKlass),
                 throwableDef
         );
         defContext.afterDefInitialized(throwableDef);
-        StandardTypes.setExceptionKlass(KlassBuilder.newBuilder("Exception", Exception.class.getSimpleName())
-                .superClass(StandardTypes.getThrowableKlass().getType())
-                .source(ClassSource.BUILTIN).build());
+        var exceptionKlass = KlassBuilder.newBuilder("Exception", Exception.class.getSimpleName())
+                .superClass(throwableKlass.getType())
+                .source(ClassSource.BUILTIN).build();
 
-        createExceptionFlows(StandardTypes.getExceptionKlass());
+        createExceptionFlows(exceptionKlass);
 //        defContext.addDef(createValueDef(Exception.class, Exception.class, exceptionType, defContext));
-        defContext.addDef(new DirectDef<>(Exception.class, StandardTypes.getExceptionKlass(), ExceptionNative.class));
+        defContext.addDef(new DirectDef<>(Exception.class, exceptionKlass));
 
-        StandardTypes.setRuntimeExceptionKlass(KlassBuilder.newBuilder("RuntimeException", RuntimeException.class.getSimpleName())
-                .superClass(StandardTypes.getExceptionKlass().getType())
-                .source(ClassSource.BUILTIN).build());
-        createRuntimeExceptionFlows(StandardTypes.getRuntimeExceptionKlass());
+        var runtimeExceptionKlass = KlassBuilder.newBuilder("RuntimeException", RuntimeException.class.getSimpleName())
+                .superClass(exceptionKlass.getType())
+                .source(ClassSource.BUILTIN).build();
+        createRuntimeExceptionFlows(runtimeExceptionKlass);
         defContext.addDef(new DirectDef<>(
-                RuntimeException.class, StandardTypes.getRuntimeExceptionKlass(), RuntimeExceptionNative.class));
+                RuntimeException.class, runtimeExceptionKlass));
 
-        StandardTypes.setIllegalArgumentExceptionKlass(KlassBuilder.newBuilder("IllegalArgumentException", IllegalArgumentException.class.getSimpleName())
-                .superClass(StandardTypes.getRuntimeExceptionKlass().getType())
-                .source(ClassSource.BUILTIN).build());
-        createIllegalArgumentExceptionFlows(StandardTypes.getIllegalArgumentExceptionKlass());
+        var illegalArgumentExceptionKlass =  KlassBuilder.newBuilder("IllegalArgumentException", IllegalArgumentException.class.getSimpleName())
+                .superClass(runtimeExceptionKlass.getType())
+                .source(ClassSource.BUILTIN).build();
+        createIllegalArgumentExceptionFlows(illegalArgumentExceptionKlass);
         defContext.addDef(new DirectDef<>(
-                IllegalArgumentException.class, StandardTypes.getIllegalArgumentExceptionKlass(), IllegalArgumentExceptionNative.class));
+                IllegalArgumentException.class, illegalArgumentExceptionKlass));
 
-        StandardTypes.setIllegalStateExceptionKlass(KlassBuilder.newBuilder("IllegalStateException", IllegalStateException.class.getSimpleName())
-                .superClass(StandardTypes.getRuntimeExceptionKlass().getType())
-                .source(ClassSource.BUILTIN).build());
-        createIllegalStateExceptionFlows(StandardTypes.getIllegalStateExceptionKlass());
+        var illegalStateExceptionKlass = KlassBuilder.newBuilder("IllegalStateException", IllegalStateException.class.getSimpleName())
+                .superClass(runtimeExceptionKlass.getType())
+                .source(ClassSource.BUILTIN).build();
+        createIllegalStateExceptionFlows(illegalStateExceptionKlass);
         defContext.addDef(new DirectDef<>(
-                IllegalStateException.class, StandardTypes.getIllegalStateExceptionKlass(), IllegalStateExceptionNative.class));
+                IllegalStateException.class, illegalStateExceptionKlass));
 
-        StandardTypes.setNullPointerExceptionKlass(KlassBuilder.newBuilder("NullPointerException", NullPointerException.class.getSimpleName())
-                .superClass(StandardTypes.getRuntimeExceptionKlass().getType())
-                .source(ClassSource.BUILTIN).build());
-        createNullPointerExceptionFlows(StandardTypes.getNullPointerExceptionKlass());
+        var nullPointerExceptionKlass = KlassBuilder.newBuilder("NullPointerException", NullPointerException.class.getSimpleName())
+                .superClass(runtimeExceptionKlass.getType())
+                .source(ClassSource.BUILTIN).build();
+        createNullPointerExceptionFlows(nullPointerExceptionKlass);
         defContext.addDef(new DirectDef<>(
-                NullPointerException.class, StandardTypes.getNullPointerExceptionKlass(), NullPointerException.class));
+                NullPointerException.class, nullPointerExceptionKlass));
     }
 
     private Klass createConsumerKlass() {
@@ -326,12 +330,12 @@ public class StandardDefBuilder {
         var elementType = new TypeVariable(null, "IteratorElement", "IteratorElement",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
-        primTypeFactory.putType(MetaIterator.class.getTypeParameters()[0], elementType);
+        primTypeFactory.putType(Iterator.class.getTypeParameters()[0], elementType);
         Klass iteratorType = KlassBuilder.newBuilder(name, code)
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .kind(ClassKind.INTERFACE).build();
-        primTypeFactory.putType(MetaIterator.class, iteratorType);
+        primTypeFactory.putType(Iterator.class, iteratorType);
         createIteratorFlows(iteratorType, elementType.getType());
         return iteratorType;
     }
@@ -358,13 +362,13 @@ public class StandardDefBuilder {
         var elementType = new TypeVariable(null, "Element", "T",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
-        primTypeFactory.putType(MetaIterable.class.getTypeParameters()[0], elementType);
+        primTypeFactory.putType(Iterable.class.getTypeParameters()[0], elementType);
         var iterableType = KlassBuilder.newBuilder("Iterable", "Iterable")
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .kind(ClassKind.INTERFACE)
                 .build();
-        primTypeFactory.putType(MetaIterable.class, iterableType);
+        primTypeFactory.putType(Iterable.class, iterableType);
         createIterableFlows(iterableType, elementType);
         return iterableType;
     }
@@ -374,12 +378,12 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(StandardTypes.getVoidType())
                 .parameters(new Parameter(null, "action", "action",
-                        StandardTypes.getConsumerKlass().getParameterized(
+                        consumerKlass.getParameterized(
                                 List.of(new UncertainType(elementType.getType(), StandardTypes.getNullableAnyType()))).getType())
                 )
                 .build();
 
-        var pIteratorType = StandardTypes.getIteratorKlass().getParameterized(List.of(elementType.getType()));
+        var pIteratorType = iteratorKlass.getParameterized(List.of(elementType.getType()));
         MethodBuilder.newBuilder(iterableType, "iterator", "iterator")
                 .isNative(true)
                 .returnType(pIteratorType.getType())
@@ -393,7 +397,7 @@ public class StandardDefBuilder {
         String code = getParameterizedCode("Collection");
         var elementType = new TypeVariable(null, "CollectionElement", "CollectionElement",
                 DummyGenericDeclaration.INSTANCE);
-        var pIterableType = StandardTypes.getIterableKlass().getParameterized(List.of(elementType.getType()));
+        var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(Collection.class.getTypeParameters()[0], elementType);
         Klass collectionType = KlassBuilder.newBuilder(name, code)
@@ -452,7 +456,7 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(StandardTypes.getBooleanType())
                 .parameters(new Parameter(null, "filter", "filter",
-                        StandardTypes.getPredicateKlass().getParameterized(
+                        predicateKlass.getParameterized(
                                 List.of(new UncertainType(elementType.getType(), StandardTypes.getNullableAnyType()))
                         ).getType()))
                 .build();
@@ -466,17 +470,17 @@ public class StandardDefBuilder {
         var elementType = new TypeVariable(null, "SetElement", "SetElement",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
-        primTypeFactory.putType(MetaSet.class.getTypeParameters()[0], elementType);
-        var pIterableType = StandardTypes.getIterableKlass().getParameterized(List.of(elementType.getType()));
-        var pCollectionType = StandardTypes.getCollectionKlass().getParameterized(List.of(elementType.getType()));
-        var pIteratorImplType = StandardTypes.getIteratorImplKlass().getParameterized(List.of(elementType.getType()));
+        primTypeFactory.putType(Set.class.getTypeParameters()[0], elementType);
+        var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
+        var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
+        var pIteratorImplType = iteratorImplKlass.getParameterized(List.of(elementType.getType()));
         Klass setType = KlassBuilder.newBuilder(name, code)
                 .interfaces(pCollectionType.getType())
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .dependencies(List.of(pIteratorImplType))
                 .build();
-        primTypeFactory.putType(MetaSet.class, setType);
+        primTypeFactory.putType(Set.class, setType);
         FieldBuilder.newBuilder("array", "array", setType, new ArrayType(elementType.getType(), ArrayKind.READ_WRITE))
                 .nullType(StandardTypes.getNullType())
                 .access(Access.PRIVATE)
@@ -503,9 +507,9 @@ public class StandardDefBuilder {
                 "ListElement",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
-        primTypeFactory.putType(MetaList.class.getTypeParameters()[0], elementType);
-        var pCollectionType = StandardTypes.getCollectionKlass().getParameterized(List.of(elementType.getType()));
-        var pIteratorImplType = StandardTypes.getIteratorImplKlass().getParameterized(List.of(elementType.getType()));
+        primTypeFactory.putType(List.class.getTypeParameters()[0], elementType);
+        var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
+        var pIteratorImplType = iteratorImplKlass.getParameterized(List.of(elementType.getType()));
         var listType = KlassBuilder.newBuilder("List", "List")
                 .kind(ClassKind.INTERFACE)
                 .interfaces(pCollectionType.getType())
@@ -513,7 +517,7 @@ public class StandardDefBuilder {
                 .source(ClassSource.BUILTIN)
                 .dependencies(List.of(pIteratorImplType))
                 .build();
-        primTypeFactory.putType(MetaList.class, listType);
+        primTypeFactory.putType(List.class, listType);
 
         var nullableElementType = new UnionType(Set.of(elementType.getType(), StandardTypes.getNullType()));
         MethodBuilder.newBuilder(listType, "removeAt", "removeAt")
@@ -529,7 +533,7 @@ public class StandardDefBuilder {
                 .build();
 
         var uncertainType = new UncertainType(StandardTypes.getNeverType(), elementType.getType());
-        var uncertainCollType = StandardTypes.getCollectionKlass().getParameterized(List.of(uncertainType));
+        var uncertainCollType = collectionKlass.getParameterized(List.of(uncertainType));
         MethodBuilder.newBuilder(listType, listType.getName(), listType.getCode())
                 .isConstructor(true)
                 .isNative(true)
@@ -562,15 +566,15 @@ public class StandardDefBuilder {
     }
 
     public Klass createReadWriteListKlass() {
-        return createListImplKlass("ReadWriteList", "ReadWriteList", ReadWriteMetaList.class, ClassKind.CLASS, ArrayKind.READ_WRITE);
+        return createListImplKlass("ReadWriteList", "ReadWriteList", ArrayList.class, ClassKind.CLASS, ArrayKind.READ_WRITE);
     }
 
     public Klass createChildListKlass() {
-        return createListImplKlass("ChildList", "ChildList", ChildMetaList.class, ClassKind.CLASS, ArrayKind.CHILD);
+        return createListImplKlass("ChildList", "ChildList", ChildList.class, ClassKind.CLASS, ArrayKind.CHILD);
     }
 
     public Klass createValueListKlass() {
-        return createListImplKlass("ValueList", "ValueList", ValueMetaList.class, ClassKind.VALUE, ArrayKind.VALUE);
+        return createListImplKlass("ValueList", "ValueList", ValueList.class, ClassKind.VALUE, ArrayKind.VALUE);
     }
 
     public Klass createListImplKlass(String name, String code, Class<?> javaClass, ClassKind kind, ArrayKind arrayKind) {
@@ -578,10 +582,10 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(javaClass.getTypeParameters()[0], elementType);
-        var pIterableType = StandardTypes.getIterableKlass().getParameterized(List.of(elementType.getType()));
-        var pCollectionType = StandardTypes.getCollectionKlass().getParameterized(List.of(elementType.getType()));
-        var pListType = StandardTypes.getListKlass().getParameterized(List.of(elementType.getType()));
-        var pIteratorImplType = StandardTypes.getIteratorImplKlass().getParameterized(List.of(elementType.getType()));
+        var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
+        var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
+        var pListType = listKlass.getParameterized(List.of(elementType.getType()));
+        var pIteratorImplType = iteratorImplKlass.getParameterized(List.of(elementType.getType()));
         var listImplType = KlassBuilder.newBuilder(name, code)
                 .kind(kind)
                 .interfaces(pListType.getType())
@@ -614,7 +618,7 @@ public class StandardDefBuilder {
                         new Parameter(
                                 null, "collection", "collection",
                                 new ClassType(
-                                        StandardTypes.getCollectionKlass(),
+                                        collectionKlass,
                                         List.of(new UncertainType(StandardTypes.getNeverType(), elementType.getType()))
                                 )
                         )
@@ -624,40 +628,6 @@ public class StandardDefBuilder {
         return listImplType;
     }
 
-    private void createCommonListFlows(Klass listType, TypeVariable elementType) {
-        MethodBuilder.newBuilder(listType, listType.getName(), listType.getCode())
-                .isConstructor(true)
-                .isNative(true)
-                .returnType(listType.getType())
-                .build();
-    }
-
-    private void createOrdinaryListFlows(Klass listType, TypeVariable elementType, Klass pCollectionType) {
-        createOverridingFlows(listType, pCollectionType);
-        var uncertainType = new UncertainType(StandardTypes.getNeverType(), elementType.getType());
-        var uncertainCollType = StandardTypes.getCollectionKlass().getParameterized(List.of(uncertainType));
-        MethodBuilder.newBuilder(listType, listType.getName(), listType.getCode())
-                .isConstructor(true)
-                .isNative(true)
-                .parameters(
-                        new Parameter(null, "collection", "collection", uncertainCollType.getType())
-                )
-                .returnType(listType.getType())
-                .build();
-
-        var nullableElementType = new UnionType(Set.of(elementType.getType(), StandardTypes.getNullType()));
-        MethodBuilder.newBuilder(listType, "set", "set")
-                .parameters(
-                        new Parameter(null, "index", "index", StandardTypes.getLongType()),
-                        new Parameter(null, "value", "value", elementType.getType())
-                )
-                .isNative(true)
-                .returnType(nullableElementType)
-                .build();
-
-        listType.setStage(ResolutionStage.DEFINITION);
-    }
-
     public Klass createIteratorImplKlass() {
         String name = getParameterizedName("IteratorImpl");
         String code = getParameterizedCode("IteratorImpl");
@@ -665,14 +635,14 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(IteratorImpl.class.getTypeParameters()[0], elementType);
-        var pIteratorType = StandardTypes.getIteratorKlass().getParameterized(List.of(elementType.getType()));
+        var pIteratorType = iteratorKlass.getParameterized(List.of(elementType.getType()));
         Klass iteratorImplType = KlassBuilder.newBuilder(name, code)
                 .interfaces(List.of(pIteratorType.getType()))
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .build();
         primTypeFactory.putType(IteratorImpl.class, iteratorImplType);
-        var pCollectionType = StandardTypes.getCollectionKlass().getParameterized(List.of(elementType.getType()));
+        var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
         MethodBuilder.newBuilder(iteratorImplType, "IteratorImpl", "IteratorImpl")
                 .isConstructor(true)
                 .isNative(true)
@@ -703,18 +673,18 @@ public class StandardDefBuilder {
         var keyType = new TypeVariable(null, "MapKey", "MapKey",
                 DummyGenericDeclaration.INSTANCE);
         keyType.setBounds(List.of(new AnyType()));
-        primTypeFactory.putType(MetaMap.class.getTypeParameters()[0], keyType);
+        primTypeFactory.putType(Map.class.getTypeParameters()[0], keyType);
         var valueType = new TypeVariable(null, "MapValue", "MapValue",
                 DummyGenericDeclaration.INSTANCE);
         valueType.setBounds(List.of(new AnyType()));
-        primTypeFactory.putType(MetaMap.class.getTypeParameters()[1], valueType);
-        var pSetType = StandardTypes.getSetKlass().getParameterized(List.of(keyType.getType()));
+        primTypeFactory.putType(Map.class.getTypeParameters()[1], valueType);
+        var pSetType = setKlass.getParameterized(List.of(keyType.getType()));
         Klass mapType = KlassBuilder.newBuilder(name, code)
                 .source(ClassSource.BUILTIN)
                 .dependencies(List.of(pSetType))
                 .typeParameters(keyType, valueType)
                 .build();
-        primTypeFactory.putType(MetaMap.class, mapType);
+        primTypeFactory.putType(Map.class, mapType);
         FieldBuilder
                 .newBuilder("keyArray", "keyArray", mapType, new ArrayType(keyType.getType(), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
@@ -846,7 +816,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
-                .parameters(new Parameter(null, "cause", "cause", StandardTypes.getThrowableKlass().getType()))
+                .parameters(new Parameter(null, "cause", "cause", throwableKlass.getType()))
                 .build();
 
         MethodBuilder.newBuilder(runtimeExceptionType, name, code)
@@ -855,7 +825,7 @@ public class StandardDefBuilder {
                 .returnType(runtimeExceptionType.getType())
                 .parameters(
                         new Parameter(null, "message", "message", StandardTypes.getStringType()),
-                        new Parameter(null, "cause", "cause", StandardTypes.getThrowableKlass().getType())
+                        new Parameter(null, "cause", "cause", throwableKlass.getType())
                 )
                 .build();
     }
@@ -896,7 +866,7 @@ public class StandardDefBuilder {
                 case TypeVariable typeVariable -> new TypeVariableDef(
                         (java.lang.reflect.TypeVariable<?>) javaType, typeVariable
                 );
-                default -> new DirectDef<>(javaType, typeDef, NATIVE_CLASS_MAP.get(javaType));
+                default -> new DirectDef<>(javaType, typeDef);
             };
             defMap.preAddDef(def);
             return def;
