@@ -2,7 +2,10 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import org.metavm.api.*;
-import org.metavm.entity.*;
+import org.metavm.entity.AttributeNames;
+import org.metavm.entity.BeanKinds;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.StandardTypes;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
@@ -20,7 +23,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
-import static org.metavm.autograph.TranspileUtil.*;
+import static org.metavm.autograph.TranspileUtils.*;
 
 public class Declarator extends CodeGenVisitor {
 
@@ -49,18 +52,18 @@ public class Declarator extends CodeGenVisitor {
 
     @Override
     public void visitClass(PsiClass psiClass) {
-        if (TranspileUtil.hasAnnotation(psiClass, EntityIndex.class)) {
+        if (TranspileUtils.hasAnnotation(psiClass, EntityIndex.class)) {
             Index index = NncUtils.find(currentClass().getIndices(), idx -> Objects.equals(idx.getCode(), psiClass.getName()));
             if (index == null) {
                 index = new Index(
                         currentClass(),
-                        TranspileUtil.getIndexName(psiClass),
+                        TranspileUtils.getIndexName(psiClass),
                         psiClass.getName(),
                         "",
-                        TranspileUtil.isUniqueIndex(psiClass)
+                        TranspileUtils.isUniqueIndex(psiClass)
                 );
             } else {
-                index.setName(TranspileUtil.getIndexName(psiClass));
+                index.setName(TranspileUtils.getIndexName(psiClass));
             }
             currentIndex = index;
             psiClass.putUserData(Keys.INDEX, index);
@@ -92,16 +95,16 @@ public class Declarator extends CodeGenVisitor {
             visitedMethods.add(cinitMethod);
         }
         klass.clearAttributes();
-        var componentAnno = TranspileUtil.getAnnotation(psiClass, Component.class);
+        var componentAnno = TranspileUtils.getAnnotation(psiClass, Component.class);
         PsiAnnotation configurationAnno;
         if (componentAnno != null) {
             klass.setAttribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT);
             klass.setAttribute(AttributeNames.BEAN_NAME,
-                    (String) TranspileUtil.getAnnotationAttribute(componentAnno, "value", getDefaultBeanName(klass)));
-        } else if ((configurationAnno = TranspileUtil.getAnnotation(psiClass, Configuration.class)) != null) {
+                    (String) TranspileUtils.getAnnotationAttribute(componentAnno, "value", getDefaultBeanName(klass)));
+        } else if ((configurationAnno = TranspileUtils.getAnnotation(psiClass, Configuration.class)) != null) {
             klass.setAttribute(AttributeNames.BEAN_KIND, BeanKinds.CONFIGURATION);
             klass.setAttribute(AttributeNames.BEAN_NAME,
-                    (String) TranspileUtil.getAnnotationAttribute(configurationAnno, "value", getDefaultBeanName(klass)));
+                    (String) TranspileUtils.getAnnotationAttribute(configurationAnno, "value", getDefaultBeanName(klass)));
         }
         classStack.push(klass);
         super.visitClass(psiClass);
@@ -138,23 +141,23 @@ public class Declarator extends CodeGenVisitor {
         if (CompilerConfig.isMethodBlacklisted(method))
             return;
         var psiClass = requireNonNull(method.getContainingClass());
-        if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null)
+        if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null)
             return;
-        List<PsiMethod> overriddenMethods = TranspileUtil.getOverriddenMethods(method);
+        List<PsiMethod> overriddenMethods = TranspileUtils.getOverriddenMethods(method);
         List<Method> overridden = new ArrayList<>();
         for (PsiMethod overriddenMethod : overriddenMethods) {
             var overriddenMethodCls = NncUtils.requireNonNull(overriddenMethod.getContainingClass());
             if (Object.class.getName().equals(overriddenMethodCls.getQualifiedName()))
                 continue;
-            var overriddenMethodType = TranspileUtil.createTemplateType(overriddenMethodCls);
-            overridden.add(TranspileUtil.getMethidByJavaMethod(
+            var overriddenMethodType = TranspileUtils.createTemplateType(overriddenMethodCls);
+            overridden.add(TranspileUtils.getMethidByJavaMethod(
                     Types.resolveKlass(typeResolver.resolveDeclaration(overriddenMethodType)),
                     overriddenMethod, typeResolver)
             );
         }
         List<PsiType> implicitTypeArgs = method.isConstructor() && currentClass().isEnum() ?
-                List.of(TranspileUtil.createType(String.class), TranspileUtil.createPrimitiveType(int.class)) : List.of();
-        var internalName = TranspileUtil.getInternalName(method, implicitTypeArgs);
+                List.of(TranspileUtils.createType(String.class), TranspileUtils.createPrimitiveType(int.class)) : List.of();
+        var internalName = TranspileUtils.getInternalName(method, implicitTypeArgs);
         var flow = NncUtils.find(currentClass().getMethods(), f -> f.getInternalName(null).equals(internalName));
         if (flow != null)
             method.putUserData(Keys.Method, flow);
@@ -184,9 +187,9 @@ public class Declarator extends CodeGenVisitor {
             flow.setReturnType(getReturnType(method));
         }
         flow.clearAttributes();
-        var beanAnnotation = TranspileUtil.getAnnotation(method, Bean.class);
+        var beanAnnotation = TranspileUtils.getAnnotation(method, Bean.class);
         if (beanAnnotation != null) {
-            var beanName = (String) TranspileUtil.getAnnotationAttribute(beanAnnotation, "value", flow.getCodeRequired());
+            var beanName = (String) TranspileUtils.getAnnotationAttribute(beanAnnotation, "value", flow.getCodeRequired());
             flow.setAttribute(AttributeNames.BEAN_NAME, beanName);
         }
         visitedMethods.add(flow);
@@ -218,7 +221,7 @@ public class Declarator extends CodeGenVisitor {
                 parameterList.getParameters(),
                 param -> {
                     var p = new Parameter(null, getFlowParamName(param), param.getName(), resolveParameterType(param));
-                    var beanName = (String) TranspileUtil.getAnnotationAttribute(param, Resource.class, "value");
+                    var beanName = (String) TranspileUtils.getAnnotationAttribute(param, Resource.class, "value");
                     if (beanName != null)
                         p.setAttribute(AttributeNames.BEAN_NAME, beanName);
                     return p;
@@ -228,7 +231,7 @@ public class Declarator extends CodeGenVisitor {
 
     private Type resolveParameterType(PsiParameter parameter) {
         var type = resolveType(parameter.getType());
-        if (TranspileUtil.getAnnotation(parameter, Nullable.class) != null)
+        if (TranspileUtils.getAnnotation(parameter, Nullable.class) != null)
             type = StandardTypes.getNullableType(type);
         return type;
     }
@@ -237,7 +240,7 @@ public class Declarator extends CodeGenVisitor {
     @Override
     public void visitField(PsiField psiField) {
         var psiClass = requireNonNull(((PsiMember) psiField).getContainingClass());
-        if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null) {
+        if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null) {
             var index = requireNonNull(currentIndex);
             var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), psiField.getName()));
             if (indexField == null)
@@ -245,28 +248,28 @@ public class Declarator extends CodeGenVisitor {
             return;
         }
         var type = resolveType(psiField.getType());
-        if (TranspileUtil.getAnnotation(psiField, Nullable.class) != null)
+        if (TranspileUtils.getAnnotation(psiField, Nullable.class) != null)
             type = StandardTypes.getNullableType(type);
         var klass = currentClass();
-        var field = TranspileUtil.isStatic(psiField) ?
+        var field = TranspileUtils.isStatic(psiField) ?
                 klass.findSelfStaticFieldByCode(psiField.getName())
                 : klass.findSelfFieldByCode(psiField.getName());
         if (field == null) {
             field = FieldBuilder
                     .newBuilder(getBizFieldName(psiField), psiField.getName(), currentClass(), type)
                     .access(getAccess(psiField))
-                    .unique(TranspileUtil.isUnique(psiField))
-                    .isChild(TranspileUtil.isChild(psiField))
+                    .unique(TranspileUtils.isUnique(psiField))
+                    .isChild(TranspileUtils.isChild(psiField))
                     .isStatic(requireNonNull(psiField.getModifierList()).hasModifierProperty(PsiModifier.STATIC))
                     .build();
         } else {
             field.setName(getBizFieldName(psiField));
             field.setType(type);
             field.setAccess(getAccess(psiField));
-            field.setUnique(TranspileUtil.isUnique(psiField));
+            field.setUnique(TranspileUtils.isUnique(psiField));
         }
         visitedFields.add(field);
-        if (TranspileUtil.isTitleField(psiField))
+        if (TranspileUtils.isTitleField(psiField))
             currentClass().setTitleField(field);
         psiField.putUserData(Keys.FIELD, field);
     }
@@ -291,11 +294,11 @@ public class Declarator extends CodeGenVisitor {
 
     private Type getReturnType(PsiMethod method) {
         var type = method.isConstructor() ?
-                TranspileUtil.createTemplateType(requireNonNull(method.getContainingClass())) :
+                TranspileUtils.createTemplateType(requireNonNull(method.getContainingClass())) :
                 method.getReturnType();
         var metaType = resolveType(type);
-        if (TranspileUtil.getAnnotation(method, Nullable.class) != null ||
-                method.getReturnType() != null && TranspileUtil.getAnnotation(method.getReturnType(), Nullable.class) != null)
+        if (TranspileUtils.getAnnotation(method, Nullable.class) != null ||
+                method.getReturnType() != null && TranspileUtils.getAnnotation(method.getReturnType(), Nullable.class) != null)
             metaType = StandardTypes.getNullableType(metaType);
         return metaType;
     }

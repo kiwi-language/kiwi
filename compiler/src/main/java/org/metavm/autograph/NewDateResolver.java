@@ -14,9 +14,9 @@ public class NewDateResolver implements NewResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.create(TranspileUtil.createClassType(Date.class), "Date"),
-                    MethodSignature.create(TranspileUtil.createClassType(Date.class), "Date",
-                            TranspileUtil.createPrimitiveType(long.class))
+                    MethodSignature.create(TranspileUtils.createClassType(Date.class), "Date"),
+                    MethodSignature.create(TranspileUtils.createClassType(Date.class), "Date",
+                            TranspileUtils.createPrimitiveType(long.class))
             );
 
     @Override

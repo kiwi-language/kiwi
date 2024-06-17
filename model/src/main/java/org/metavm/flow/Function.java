@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.entity.natives.FunctionImpl;
 import org.metavm.flow.rest.FunctionParam;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
@@ -15,6 +15,7 @@ import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 @EntityType
 public class Function extends Flow implements GlobalKey {
@@ -29,6 +30,8 @@ public class Function extends Flow implements GlobalKey {
 
     @SuppressWarnings({"FieldMayBeFinal", "unused"})
     private boolean allFlag = true;
+
+    private transient FunctionImpl nativeCode;
 
     public Function(Long tmpId,
                     String name,
@@ -68,8 +71,11 @@ public class Function extends Flow implements GlobalKey {
     public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
         NncUtils.requireNull(self);
         arguments = checkArguments(arguments);
-        if (isNative())
-            return NativeFunctions.invoke(this, arguments, callContext);
+        if (isNative()) {
+            return Objects.requireNonNull(
+                    nativeCode, "Native function " + this + " is not initialized"
+            ).run(this, arguments, callContext);
+        }
         else
             return new MetaFrame(this.getRootNode(), null, null,
                     arguments, callContext.instanceRepository()
@@ -113,5 +119,10 @@ public class Function extends Flow implements GlobalKey {
     @Override
     public Function getParameterized(List<? extends Type> typeArguments) {
         return (Function) super.getParameterized(typeArguments);
+    }
+
+    public void setNativeCode(FunctionImpl impl) {
+        NncUtils.requireTrue(isNative(), "Function " + this + " is not native");
+        this.nativeCode = impl;
     }
 }

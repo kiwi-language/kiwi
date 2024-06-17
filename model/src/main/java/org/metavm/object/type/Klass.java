@@ -5,8 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.expression.Var;
@@ -21,6 +19,8 @@ import org.metavm.object.type.rest.dto.TypeDTO;
 import org.metavm.object.view.MappingSaver;
 import org.metavm.object.view.ObjectMapping;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;
@@ -1844,10 +1844,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
-        if (typeArguments.isEmpty())
-            return getCodeRequired();
-        else
+        if (isParameterized())
             return requireNonNull(template).getCodeRequired() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
+        else
+            return getCodeRequired();
     }
 
     public boolean isList() {

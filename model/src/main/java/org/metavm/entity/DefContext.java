@@ -8,7 +8,6 @@ import org.metavm.flow.ScopeRT;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.Index;
 import org.metavm.object.type.*;
 import org.metavm.object.view.Mapping;
 import org.metavm.util.*;
@@ -50,6 +49,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final Set<ClassType> typeDefTypes = new HashSet<>();
     private final Set<ClassType> mappingTypes = new HashSet<>();
     private final Set<ClassType> functionTypes = new HashSet<>();
+    private final StandardDefBuilder standardDefBuilder;
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
             Map.entry(Byte.class, Long.class),
@@ -66,9 +66,9 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         super(instanceContext, null);
         this.stdIdProvider = stdIdProvider;
         this.identityContext = identityContext;
-        StandardDefBuilder stdBuilder = new StandardDefBuilder(this);
-        stdBuilder.initRootTypes();
-        enumDef = stdBuilder.getEnumDef();
+        standardDefBuilder = new StandardDefBuilder(this);
+        standardDefBuilder.initRootTypes();
+        enumDef = standardDefBuilder.getEnumDef();
         this.columnStore = columnStore;
         this.typeTagStore = typeTagStore;
         ColumnKind.columns().forEach(this::writeEntity);
@@ -821,4 +821,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     public Collection<Object> getEntities() {
         return Collections.unmodifiableSet(entities);
     }
+
+    public void initUserFunctions() {
+        standardDefBuilder.initUserFunctions();
+    }
+
 }
+

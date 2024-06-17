@@ -11,7 +11,6 @@ import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.NullInstance;
-import org.metavm.object.type.Index;
 import org.metavm.object.type.*;
 import org.metavm.object.view.MappingSaver;
 import org.metavm.util.*;
@@ -19,7 +18,6 @@ import org.metavm.util.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.metavm.object.type.ResolutionStage.*;
@@ -102,13 +100,13 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
                 defContext.getDef(javaTypeParam, INIT);
             }
         }
-        List<Type> typeArgs = new ArrayList<>();
-        if (javaType instanceof java.lang.reflect.ParameterizedType pType) {
-            for (var javaTypeArg : pType.getActualTypeArguments()) {
-                typeArgs.add(defContext.getType(javaTypeArg));
-            }
-        }
-        klass.setTypeArguments(typeArgs);
+//        List<Type> typeArgs = new ArrayList<>();
+//        if (javaType instanceof java.lang.reflect.ParameterizedType pType) {
+//            for (var javaTypeArg : pType.getActualTypeArguments()) {
+//                typeArgs.add(defContext.getType(javaTypeArg));
+//            }
+//        }
+//        klass.setTypeArguments(typeArgs);
         klass.setStage(SIGNATURE);
     }
 
@@ -125,6 +123,11 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
         saveBuiltinMapping(false);
         klass.setStage(DECLARATION);
+        NncUtils.biForEach(
+                List.of(javaClass.getTypeParameters()),
+                klass.getTypeParameters(),
+                (javaTypeVar, typeVar) -> typeVar.setBounds(NncUtils.map(javaTypeVar.getBounds(), defContext::getType))
+        );
     }
 
     @Override
@@ -263,18 +266,31 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         return ReflectionUtils.evaluateFieldType(javaType, javaField.getGenericType());
     }
 
-    protected Klass createType() {
+    protected Klass createKlass() {
         var templateDef = javaType != javaClass ? defContext.getPojoDef(javaClass, INIT) : null;
-        PojoDef<? super T> superDef = getSuperDef();
-        List<InterfaceDef<? super T>> interfaceDefs = getInterfaceDefs();
+//        PojoDef<? super T> superDef = getSuperDef();
+//        List<InterfaceDef<? super T>> interfaceDefs = getInterfaceDefs();
+        ClassType superClass;
+        if(javaClass.getSuperclass() != null && javaClass.getSuperclass() != Object.class)
+            superClass = (ClassType) defContext.getType(javaClass.getGenericSuperclass());
+        else
+            superClass = null;
         return KlassBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))
                 .kind(ClassKind.fromTypeCategory(getTypeCategory()))
                 .source(ClassSource.BUILTIN)
                 .template(NncUtils.get(templateDef, PojoDef::getKlass))
-                .superClass(NncUtils.get(superDef, PojoDef::getType))
-                .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getType))
+                .superClass(superClass)
+                .interfaces(NncUtils.map(javaClass.getGenericInterfaces(), t -> (ClassType) defContext.getType(t)))
+                .typeParameters(NncUtils.map(javaClass.getTypeParameters(), this::createTypeVariable))
                 .tag(defContext.getTypeTag(javaClass))
                 .build();
+    }
+
+    protected TypeVariable createTypeVariable(java.lang.reflect.TypeVariable<?> javaTypeVariable) {
+        return new TypeVariable(
+                null, javaTypeVariable.getName(), javaTypeVariable.getName(),
+                DummyGenericDeclaration.INSTANCE
+        );
     }
 
     private List<java.lang.reflect.Type> getTypeArguments() {

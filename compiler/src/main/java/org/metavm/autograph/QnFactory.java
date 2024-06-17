@@ -104,7 +104,7 @@ public class QnFactory {
                     className + "." + field.getName(), field.getType());
         } else {
             if (qualifier == null) {
-                var selfType = TranspileUtil.createTemplateType(requireNonNull(field.getContainingClass()));
+                var selfType = TranspileUtils.createTemplateType(requireNonNull(field.getContainingClass()));
                 return new AttributeQualifiedName(
                         new AtomicQualifiedName(className + ".this", selfType),
                         field.getName(), field.getType());

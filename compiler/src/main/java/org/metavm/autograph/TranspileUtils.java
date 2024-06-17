@@ -12,7 +12,11 @@ import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.*;
 import org.metavm.api.builtin.IndexDef;
-import org.metavm.entity.*;
+import org.metavm.entity.FlowParam;
+import org.metavm.entity.StandardTypes;
+import org.metavm.entity.natives.NativeFunctionDef;
+import org.metavm.entity.natives.NativeFunctions;
+import org.metavm.object.type.Type;
 import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -20,7 +24,8 @@ import org.metavm.util.ReflectionUtils;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -29,7 +34,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-public class TranspileUtil {
+public class TranspileUtils {
 
     private static final String DUMMY_FILE_NAME = "_Dummy_." + JavaFileType.INSTANCE.getDefaultExtension();
 
@@ -51,7 +56,7 @@ public class TranspileUtil {
 
     public static boolean isIndexDefField(PsiField psiField) {
         return requireNonNull(psiField.getModifierList()).hasModifierProperty(PsiModifier.STATIC)
-                && TranspileUtil.getRawType(psiField.getType()).equals(TranspileUtil.createClassType(IndexDef.class));
+                && TranspileUtils.getRawType(psiField.getType()).equals(TranspileUtils.createClassType(IndexDef.class));
     }
 
     public static PsiStatement getLastStatement(PsiCodeBlock codeBlock) {
@@ -91,6 +96,37 @@ public class TranspileUtil {
         return new MethodSignature(declaringClass, isStatic, method.getName(), paramClasses);
     }
 
+    public static MethodSignature getMethodSignature(Method method) {
+        return new MethodSignature(
+                createClassType(method.getDeclaringClass()),
+                Modifier.isStatic(method.getModifiers()),
+                method.getName(),
+                NncUtils.map(method.getParameters(), p -> createType(p.getParameterizedType(), p.isVarArgs()))
+        );
+    }
+
+    public static PsiType createType(java.lang.reflect.Type javaType) {
+        return createType(javaType, false);
+    }
+
+    public static PsiType createType(java.lang.reflect.Type javaType, boolean ellipsis) {
+        return switch (javaType) {
+            case Class<?> klass -> {
+                if(klass.isPrimitive())
+                    yield createPrimitiveType(klass);
+                else if(klass.isArray())
+                    yield ellipsis ? createEllipsisType(klass) : createArrayType(klass);
+                else
+                    yield createClassType(klass);
+            }
+            case ParameterizedType parameterizedType -> createParameterizedType(parameterizedType);
+            case WildcardType wildcardType  -> createWildcardType(wildcardType);
+            case TypeVariable<?> typeVariable -> createVariableType(typeVariable);
+            case GenericArrayType genericArrayType -> ellipsis ? createEllipsisType(genericArrayType) : createArrayType(genericArrayType);
+            default -> throw new IllegalStateException("Unexpected type: " + javaType);
+        };
+    }
+
     private static Class<?> getJavaClass(PsiType psiType) {
         return switch (psiType) {
             case PsiClassType psiClassType ->
@@ -102,12 +138,27 @@ public class TranspileUtil {
         };
     }
 
-    public static PsiType createExtendsWildcardType(PsiType bound) {
+    public static PsiWildcardType createWildcardType(WildcardType wildcardType) {
+        var psiManager = PsiManager.getInstance(project);
+        if((wildcardType.getUpperBounds().length == 0 ||
+                wildcardType.getUpperBounds().length == 1 && wildcardType.getUpperBounds()[0].equals(Object.class)
+                && wildcardType.getLowerBounds().length == 0
+        )) {
+            return PsiWildcardType.createUnbounded(psiManager);
+        }
+        if(wildcardType.getLowerBounds().length > 0) {
+            return PsiWildcardType.createSuper(psiManager, createType(wildcardType.getLowerBounds()[0]));
+        }
+        else
+            return PsiWildcardType.createExtends(psiManager, createType(wildcardType.getUpperBounds()[0]));
+    }
+
+    public static PsiWildcardType createExtendsWildcardType(PsiType bound) {
         var psiManager = PsiManager.getInstance(project);
         return PsiWildcardType.createExtends(psiManager, bound);
     }
 
-    public static PsiType createSuperWildcardType(PsiType bound) {
+    public static PsiWildcardType createSuperWildcardType(PsiType bound) {
         var psiManager = PsiManager.getInstance(project);
         return PsiWildcardType.createSuper(psiManager, bound);
     }
@@ -120,7 +171,7 @@ public class TranspileUtil {
                         getClassCanonicalName(klass),
                         NncUtils.map(
                                 classType.getParameters(),
-                                TranspileUtil::getCanonicalName
+                                TranspileUtils::getCanonicalName
                         )
                 );
             }
@@ -267,7 +318,7 @@ public class TranspileUtil {
         }
         var subst = PsiSubstitutor.createSubstitutor(
                 NncUtils.zip(List.of(overridden.getTypeParameters()),
-                        NncUtils.map(List.of(method.getTypeParameters()), TranspileUtil::createType))
+                        NncUtils.map(List.of(method.getTypeParameters()), TranspileUtils::createType))
         );
         for (int i = 0; i < paramCount; i++) {
             var paramType = NncUtils.requireNonNull(method.getParameterList().getParameter(i)).getType();
@@ -285,7 +336,7 @@ public class TranspileUtil {
     );
 
     public static List<PsiPrimitiveType> getPrimitiveTypes() {
-        return NncUtils.map(primitiveClasses, TranspileUtil::createPrimitiveType);
+        return NncUtils.map(primitiveClasses, TranspileUtils::createPrimitiveType);
     }
 
     public static PsiPrimitiveType createPrimitiveType(Class<?> klass) {
@@ -321,9 +372,24 @@ public class TranspileUtil {
         return elementFactory.createTypeByFQClassName(klass.getName());
     }
 
+    public static PsiClassType createParameterizedType(ParameterizedType parameterizedType) {
+        return elementFactory.createType(
+                Objects.requireNonNull(createClassType(((Class<?>) parameterizedType.getRawType())).resolve()),
+                NncUtils.mapArray(parameterizedType.getActualTypeArguments(), TranspileUtils::createType, PsiType[]::new)
+        );
+    }
+
     public static PsiArrayType createArrayType(Class<?> klass) {
         NncUtils.requireTrue(klass.isArray());
         return new PsiArrayType(createType(klass.getComponentType()));
+    }
+
+    public static PsiArrayType createArrayType(GenericArrayType genericArrayType) {
+        return new PsiArrayType(createType(genericArrayType.getGenericComponentType()));
+    }
+
+    public static PsiEllipsisType createEllipsisType(GenericArrayType genericArrayType) {
+        return new PsiEllipsisType(createType(genericArrayType.getGenericComponentType()));
     }
 
     public static PsiArrayType createEllipsisType(Class<?> klass) {
@@ -353,12 +419,21 @@ public class TranspileUtil {
         );
     }
 
-    public static PsiClassType createTypeVariableType(Class<?> rawClass, int typeParameterIndex) {
+    public static PsiClassType createVariableType(java.lang.reflect.TypeVariable<?> typeVariable) {
+        var genDecl = typeVariable.getGenericDeclaration();
+        var index = List.of(genDecl.getTypeParameters()).indexOf(typeVariable);
+        if(genDecl instanceof Class<?> klass)
+            return createVariableType(klass, index);
+        else
+            return createVariableType((Method) genDecl, index);
+    }
+
+    public static PsiClassType createVariableType(Class<?> rawClass, int typeParameterIndex) {
         var psiClass = Objects.requireNonNull(createClassType(rawClass).resolve());
         return createType(Objects.requireNonNull(psiClass.getTypeParameters())[typeParameterIndex]);
     }
 
-    public static PsiClassType createTypeVariableType(Method method, int typeParameterIndex) {
+    public static PsiClassType createVariableType(Method method, int typeParameterIndex) {
         var psiClass = requireNonNull(createClassType(method.getDeclaringClass()).resolve());
         var psiMethod = NncUtils.find(psiClass.getMethods(), m -> matchMethod(m, method));
         return createType(Objects.requireNonNull(psiMethod).getTypeParameters()[typeParameterIndex]);
@@ -445,17 +520,23 @@ public class TranspileUtil {
     }
 
     public static void init(PsiElementFactory elementFactory, Project project) {
-        TranspileUtil.elementFactory = elementFactory;
-        TranspileUtil.project = project;
+        TranspileUtils.elementFactory = elementFactory;
+        TranspileUtils.project = project;
+        nativeFunctionCallResolvers.clear();
+        for (NativeFunctionDef def : NativeFunctions.defs()) {
+            for (Method javaMethod : def.getJavaMethods()) {
+                nativeFunctionCallResolvers.add(new NativeFunctionCallResolver(getMethodSignature(javaMethod), def.get()));
+            }
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
     public static PsiExpression replaceForCondition(PsiForStatement statement, PsiExpression condition) {
         var currentCond = statement.getCondition();
         if (currentCond != null) {
-            return (PsiExpression) currentCond.replace(TranspileUtil.and(currentCond, condition));
+            return (PsiExpression) currentCond.replace(TranspileUtils.and(currentCond, condition));
         } else {
-            var semiColon = TranspileUtil.findFirstTokenRequired(statement, JavaTokenType.SEMICOLON);
+            var semiColon = TranspileUtils.findFirstTokenRequired(statement, JavaTokenType.SEMICOLON);
             return (PsiExpression) statement.addAfter(condition, semiColon);
         }
     }
@@ -984,4 +1065,13 @@ public class TranspileUtil {
         return NncUtils.filterByType(List.of(psiClass.getFields()), PsiEnumConstant.class);
     }
 
+    public static PsiClass resolvePsiClass(PsiClassType classType) {
+        return Objects.requireNonNull(classType.resolve(), () -> "Failed to resolve class " + classType.getCanonicalText());
+    }
+
+    private final static List<NativeFunctionCallResolver> nativeFunctionCallResolvers = new ArrayList<>();
+
+    public static List<NativeFunctionCallResolver> getNativeFunctionCallResolvers() {
+        return Collections.unmodifiableList(nativeFunctionCallResolvers);
+    }
 }

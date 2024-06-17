@@ -1,8 +1,7 @@
 package org.metavm.manufacturing.utils;
 
 import org.metavm.api.EntityType;
-import org.metavm.api.lang.NumberUtils;
-import org.metavm.api.lang.SystemUtils;
+import org.metavm.api.lang.Lang;
 
 import javax.annotation.Nullable;
 import java.util.Date;
@@ -18,11 +17,11 @@ public class Utils {
     }
 
     public static String randomQrCode(String prefix) {
-        return prefix + "_" + (1 + NumberUtils.random(100000000));
+        return prefix + "_" + (1 + Lang.random(100000000));
     }
 
     public static <T> T findRequired(Iterable<? extends T> iterable, Predicate<? super T> predicate) {
-        SystemUtils.print(iterable);
+        Lang.print(iterable);
         T t = find(iterable, predicate);
         if (t != null) {
             return t;

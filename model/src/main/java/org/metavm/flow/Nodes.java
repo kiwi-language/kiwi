@@ -225,7 +225,7 @@ public class Nodes {
     }
 
     public static void setSource(Value view, Value source, ScopeRT scope) {
-        var setSourceFunc = NativeFunctions.setSource();
+        var setSourceFunc = NativeFunctions.setSource.get();
         new FunctionCallNode(null, scope.nextNodeName("setSource"), null, scope.getLastNode(), scope,
                 setSourceFunc.getRef(), List.of(
                 Nodes.argument(setSourceFunc, 0, view),

@@ -2,8 +2,8 @@ package org.metavm.autograph;
 
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiNewExpression;
-import org.metavm.common.ErrorCode;
 import org.metavm.api.ChildList;
+import org.metavm.common.ErrorCode;
 import org.metavm.expression.Expression;
 import org.metavm.expression.NodeExpression;
 import org.metavm.object.type.ArrayKind;
@@ -14,32 +14,32 @@ import java.util.*;
 
 public class NewListWithInitialResolver implements NewResolver {
 
-    public static final PsiClassType CHILD_LIST_TYPE = TranspileUtil.createClassType(ChildList.class);
+    public static final PsiClassType CHILD_LIST_TYPE = TranspileUtils.createClassType(ChildList.class);
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
                     MethodSignature.create(CHILD_LIST_TYPE,
-                            "ChildList", TranspileUtil.createType(
+                            "ChildList", TranspileUtils.createType(
                                     Collection.class,
-                                    TranspileUtil.createExtendsWildcardType(
-                                            TranspileUtil.createTypeVariableType(ChildList.class, 0)
+                                    TranspileUtils.createExtendsWildcardType(
+                                            TranspileUtils.createVariableType(ChildList.class, 0)
                                     )
                             )),
-                    MethodSignature.create(TranspileUtil.createClassType(ArrayList.class),
+                    MethodSignature.create(TranspileUtils.createClassType(ArrayList.class),
                             "ArrayList",
-                            TranspileUtil.createType(
+                            TranspileUtils.createType(
                                     Collection.class,
-                                    TranspileUtil.createExtendsWildcardType(
-                                            TranspileUtil.createTypeVariableType(ArrayList.class, 0)
+                                    TranspileUtils.createExtendsWildcardType(
+                                            TranspileUtils.createVariableType(ArrayList.class, 0)
                                     )
                             )
                     ),
-                    MethodSignature.create(TranspileUtil.createClassType(LinkedList.class),
+                    MethodSignature.create(TranspileUtils.createClassType(LinkedList.class),
                             "LinkedList",
-                            TranspileUtil.createType(
+                            TranspileUtils.createType(
                                     Collection.class,
-                                    TranspileUtil.createExtendsWildcardType(
-                                            TranspileUtil.createTypeVariableType(LinkedList.class, 0)
+                                    TranspileUtils.createExtendsWildcardType(
+                                            TranspileUtils.createVariableType(LinkedList.class, 0)
                                     )
                             )
                     )

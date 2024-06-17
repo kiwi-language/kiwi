@@ -32,7 +32,6 @@ public class ListNestedMapping extends NestedMapping {
 
     @Override
     public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
-        var sourceElementType = sourceType.getListElementType();
         var targetKlass = targetType.resolve();
         var constructor = targetKlass.isEffectiveAbstract() ?
                 StandardTypes.getReadWriteListKlass(targetKlass.getListElementType()).getDefaultConstructor() :
@@ -45,7 +44,7 @@ public class ListNestedMapping extends NestedMapping {
                 false,
                 true
         );
-        var setSourceFunc = NativeFunctions.setSource();
+        var setSourceFunc = NativeFunctions.setSource.get();
         Nodes.functionCall(
                 scope.nextNodeName("setSource"),
                 scope,
@@ -85,8 +84,8 @@ public class ListNestedMapping extends NestedMapping {
 
     @Override
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
-        var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, NativeFunctions.isSourcePresent(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())));
+        var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, NativeFunctions.isSourcePresent.get(),
+                List.of(Nodes.argument(NativeFunctions.isSourcePresent.get(), 0, getView.get())));
         var branch2sourceNode = new HashMap<Branch, Value>();
         var sourceKlass = sourceType.resolve();
         var sourceFieldRef = new Object() {
@@ -99,8 +98,8 @@ public class ListNestedMapping extends NestedMapping {
                 Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.trueExpression())),
                 trueBranch -> {
                     var source = Nodes.functionCall(scope.nextNodeName("source"), trueBranch.getScope(),
-                            NativeFunctions.getSource(),
-                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())));
+                            NativeFunctions.getSource.get(),
+                            List.of(Nodes.argument(NativeFunctions.getSource.get(), 0, getView.get())));
                     branch2sourceNode.put(trueBranch, Values.node(source));
                 },
                 falseBranch -> {

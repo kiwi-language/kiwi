@@ -42,3 +42,13 @@ primitiveType
 typeList: type (',' type) *;
 
 qualifiedName: IDENTIFIER ('.' IDENTIFIER)*;
+
+functionSignature: type IDENTIFIER typeParameterList? '(' parameterList? ')';
+
+parameterList: parameter (',' parameter)*;
+
+parameter: type IDENTIFIER;
+
+typeParameterList: '<' typeParameter (',' typeParameter)* '>';
+
+typeParameter: IDENTIFIER;

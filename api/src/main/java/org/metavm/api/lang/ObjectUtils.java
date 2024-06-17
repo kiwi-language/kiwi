@@ -1,7 +1,0 @@
-package org.metavm.api.lang;
-
-public class ObjectUtils {
-
-    public static void delete(Object object) {}
-
-}

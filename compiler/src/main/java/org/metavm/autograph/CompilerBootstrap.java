@@ -1,13 +1,13 @@
 package org.metavm.autograph;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.type.*;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.metavm.util.Constants.ROOT_APP_ID;
 
@@ -50,6 +50,7 @@ public class CompilerBootstrap {
                 if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
                     defContext.getDef(entityClass);
             }
+            defContext.initUserFunctions();
             defContext.flushAndWriteInstances();
             var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.tryGetTreeId() == null);
             if (!idNullInstances.isEmpty()) {

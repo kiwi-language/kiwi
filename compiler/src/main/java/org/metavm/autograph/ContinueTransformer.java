@@ -41,7 +41,7 @@ public class ContinueTransformer extends VisitorBase {
         var block = currentBlockInfo();
         block.useContinue(loop.continueVar, label);
         String text = loop.continueVar + " = true;";
-        var assignment = TranspileUtil.getElementFactory().createStatementFromText(text, null);
+        var assignment = TranspileUtils.getElementFactory().createStatementFromText(text, null);
         replace(statement, assignment);
     }
 
@@ -84,11 +84,11 @@ public class ContinueTransformer extends VisitorBase {
                     String cond = "(" + methodCallExpr.getArgumentList().getExpressions()[0].getText()
                             + ") && (" + block.getConditionText() + ")";
                     String text = EXTRA_LOOP_TEST + "(" + cond + ");";
-                    var extraLoopTest = TranspileUtil.createStatementFromText(text);
+                    var extraLoopTest = TranspileUtils.createStatementFromText(text);
                     firstStmt.replace(extraLoopTest);
                 } else {
                     String text = EXTRA_LOOP_TEST + "(" + block.getConditionText() + ");";
-                    var extraLoopTest = TranspileUtil.createStatementFromText(text);
+                    var extraLoopTest = TranspileUtils.createStatementFromText(text);
                     prependBody(statement.getBody(), extraLoopTest);
                 }
             }
@@ -103,9 +103,9 @@ public class ContinueTransformer extends VisitorBase {
             visitLoopBody(statement.getBody(), getLabel(statement));
             var block = currentBlockInfo();
             if (block.continueUsed()) {
-                var cond = TranspileUtil.createExpressionFromText(block.getConditionText());
+                var cond = TranspileUtils.createExpressionFromText(block.getConditionText());
                 var currentCond = Objects.requireNonNull(statement.getCondition());
-                currentCond.replace(TranspileUtil.and(currentCond, cond));
+                currentCond.replace(TranspileUtils.and(currentCond, cond));
             }
         }
         exitLoop();
@@ -140,7 +140,7 @@ public class ContinueTransformer extends VisitorBase {
         var replacement = replace(body, visitBlock(body));
         if (loopInfo.continueUsed) {
             String code = "boolean " + loopInfo.continueVar + " = false;";
-            var toInsert = TranspileUtil.createStatementFromText(code);
+            var toInsert = TranspileUtils.createStatementFromText(code);
             var block = ((PsiBlockStatement) replacement).getCodeBlock();
             var firstStmt = block.getStatementCount() > 0 ? block.getStatements()[0] : null;
             if (firstStmt != null && isExtraLoopTest(firstStmt)) {
@@ -160,7 +160,7 @@ public class ContinueTransformer extends VisitorBase {
 
     private PsiElement visitBlock(PsiStatement body) {
         List<PsiStatement> statements = extractBody(body);
-        PsiBlockStatement result = (PsiBlockStatement) TranspileUtil.createStatementFromText("{}");
+        PsiBlockStatement result = (PsiBlockStatement) TranspileUtils.createStatementFromText("{}");
         PsiCodeBlock dest = result.getCodeBlock();
         for (PsiStatement stmt : statements) {
             var block = currentBlockInfo();
@@ -171,7 +171,7 @@ public class ContinueTransformer extends VisitorBase {
             stmt = (PsiStatement) getReplacement(stmt);
             if (continueUsed) {
                 String text = "if (" + cond + ") {}";
-                PsiIfStatement ifStmt = (PsiIfStatement) TranspileUtil.createStatementFromText(text);
+                PsiIfStatement ifStmt = (PsiIfStatement) TranspileUtils.createStatementFromText(text);
                 ifStmt = (PsiIfStatement) replace(stmt, ifStmt);
                 ifStmt = (PsiIfStatement) dest.add(ifStmt);
                 dest = ((PsiBlockStatement) requireNonNull(ifStmt.getThenBranch())).getCodeBlock();

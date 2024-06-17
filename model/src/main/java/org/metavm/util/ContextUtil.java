@@ -3,9 +3,12 @@ package org.metavm.util;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ContextUtil {
 
@@ -18,6 +21,7 @@ public class ContextUtil {
         long nextTmpId = 1L;
         String token;
         private Profiler profiler = new Profiler();
+        private final Map<String, Instance> userData = new HashMap<>();
         private IEntityContext entityContext;
 
         long nextTmpId() {
@@ -40,6 +44,14 @@ public class ContextUtil {
             this.appId = Constants.PLATFORM_APP_ID;
             this.userId = platformUserId;
             this.platformUserId = null;
+        }
+
+        void setUserData(String key, Instance value) {
+            userData.put(key, value);
+        }
+
+        Instance getUserData(String key) {
+            return userData.getOrDefault(key, Instances.nullInstance());
         }
 
         public IEntityContext getEntityContext() {
@@ -140,6 +152,14 @@ public class ContextUtil {
 
     public static void setEntityContext(IEntityContext entityContext) {
         getContextInfo().entityContext = entityContext;
+    }
+
+    public static void setUserData(String key, Instance value) {
+        getContextInfo().setUserData(key, value);
+    }
+
+    public static Instance getUserData(String key) {
+        return getContextInfo().getUserData(key);
     }
 
     public static IEntityContext getEntityContext() {

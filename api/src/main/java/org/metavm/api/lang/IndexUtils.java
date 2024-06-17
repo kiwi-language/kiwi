@@ -1,5 +1,6 @@
-package org.metavm.api;
+package org.metavm.api.lang;
 
+import org.metavm.api.Index;
 import org.metavm.api.builtin.IndexDef;
 
 import java.util.List;

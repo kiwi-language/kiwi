@@ -11,14 +11,14 @@ public class RecordTransformer extends VisitorBase {
             for (PsiAnnotation annotation : psiClass.getAnnotations()) {
                 classTextBuf.append(annotation.getText()).append("\n");
             }
-            if(TranspileUtil.isPublic(psiClass))
+            if(TranspileUtils.isPublic(psiClass))
                 classTextBuf.append("public ");
-            else if(TranspileUtil.isPrivate(psiClass))
+            else if(TranspileUtils.isPrivate(psiClass))
                 classTextBuf.append("private ");
-            else if(TranspileUtil.isProtected(psiClass))
+            else if(TranspileUtils.isProtected(psiClass))
                 classTextBuf.append("protected ");
             classTextBuf.append("class ").append(psiClass.getName()).append(" {}");
-            var klass = TranspileUtil.createClassFromText(classTextBuf.toString());
+            var klass = TranspileUtils.createClassFromText(classTextBuf.toString());
             super.visitClass(psiClass);
             for (PsiRecordComponent recordComponent : psiClass.getRecordComponents()) {
                 var fieldTextBuf = new StringBuilder();
@@ -26,14 +26,14 @@ public class RecordTransformer extends VisitorBase {
                     fieldTextBuf.append(annotation.getText()).append("\n");
                 }
                 fieldTextBuf.append("private final ").append(recordComponent.getType().getCanonicalText()).append(" ").append(recordComponent.getName()).append(";");
-                klass.addBefore(TranspileUtil.createFieldFromText(fieldTextBuf.toString()), null);
+                klass.addBefore(TranspileUtils.createFieldFromText(fieldTextBuf.toString()), null);
 //                klass.addBefore(
 //                        TranspileUtil.createGetter(recordComponent.getName(), recordComponent.getType()),
 //                        null);
             }
             for (PsiMethod method : psiClass.getMethods()) {
                 klass.addBefore(
-                        TranspileUtil.createMethodFromText(method.getText()), null);
+                        TranspileUtils.createMethodFromText(method.getText()), null);
             }
             for (PsiClass innerClass : psiClass.getInnerClasses()) {
                 klass.addBefore(innerClass, null);

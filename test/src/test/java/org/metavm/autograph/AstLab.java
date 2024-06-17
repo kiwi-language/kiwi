@@ -6,7 +6,7 @@ public class AstLab {
 
     public static void main(String[] args) {
         TranspileTestTools.touch();
-        var type = TranspileUtil.createArrayType(Object[].class);
+        var type = TranspileUtils.createArrayType(Object[].class);
         System.out.println(type.getCanonicalText());
 
         var file = TranspileTestTools.getPsiJavaFile(PsiArrayTypeFoo.class);

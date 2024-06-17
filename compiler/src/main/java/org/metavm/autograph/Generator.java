@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 import static java.util.Objects.requireNonNull;
-import static org.metavm.autograph.TranspileUtil.getEnumConstantName;
+import static org.metavm.autograph.TranspileUtils.getEnumConstantName;
 import static org.metavm.expression.Expressions.trueExpression;
 
 public class Generator extends CodeGenVisitor {
@@ -40,7 +40,7 @@ public class Generator extends CodeGenVisitor {
 
     @Override
     public void visitClass(PsiClass psiClass) {
-        if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null)
+        if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null)
             return;
         var klass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
         if (klass.getStage().isAfterOrAt(ResolutionStage.DEFINITION))
@@ -112,14 +112,14 @@ public class Generator extends CodeGenVisitor {
                 expr -> builder.getExpressionResolver().resolve(expr)
         ));
         var expr = builder.getExpressionResolver().newInstance(currentClass(), args,
-                List.of(TranspileUtil.createClassType(String.class), TranspileUtil.createClassType(Long.class)),
+                List.of(TranspileUtils.createClassType(String.class), TranspileUtils.createClassType(Long.class)),
                 enumConstant, new ExpressionResolver.ResolutionContext());
         builder.createUpdateStatic(currentClass(), Map.of(field, expr));
     }
 
     @Override
     public void visitField(PsiField psiField) {
-        if (TranspileUtil.isIndexDefField(psiField)) {
+        if (TranspileUtils.isIndexDefField(psiField)) {
             var initializer = (PsiMethodCallExpression) requireNonNull(psiField.getInitializer());
             var arguments = initializer.getArgumentList().getExpressions();
             var fields = new ArrayList<Field>();
@@ -333,7 +333,7 @@ public class Generator extends CodeGenVisitor {
         MethodGenerator builder = new MethodGenerator(method, typeResolver, this);
         builders.push(builder);
         builder.enterScope(method.getRootScope());
-        if (TranspileUtil.isStatic(psiMethod)) {
+        if (TranspileUtils.isStatic(psiMethod)) {
             processParameters(psiMethod.getParameterList(), method);
         } else {
             var selfNode = builder().createSelf();

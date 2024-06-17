@@ -1,6 +1,5 @@
 package org.metavm.entity;
 
-import org.metavm.flow.Value;
 import org.metavm.flow.*;
 import org.metavm.object.type.ColumnStore;
 import org.metavm.object.type.TypeCategory;
@@ -30,7 +29,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                 javaClass,
                 getJavaType(),
                 parentDef,
-                createType(),
+                createKlass(),
                 defContext
         );
     }

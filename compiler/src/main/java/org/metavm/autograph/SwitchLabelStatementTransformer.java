@@ -4,7 +4,7 @@ import com.intellij.psi.*;
 import org.metavm.util.NncUtils;
 
 import static java.util.Objects.requireNonNull;
-import static org.metavm.autograph.TranspileUtil.createStatementFromText;
+import static org.metavm.autograph.TranspileUtils.createStatementFromText;
 
 public class SwitchLabelStatementTransformer extends VisitorBase {
 
@@ -16,7 +16,7 @@ public class SwitchLabelStatementTransformer extends VisitorBase {
     @Override
     public void visitSwitchExpression(PsiSwitchExpression expression) {
         super.visitSwitchExpression(expression);
-        if(TranspileUtil.isColonSwitch(expression)) {
+        if(TranspileUtils.isColonSwitch(expression)) {
             processSwitchBody(requireNonNull(expression.getBody()));
         }
     }
@@ -24,14 +24,14 @@ public class SwitchLabelStatementTransformer extends VisitorBase {
     @Override
     public void visitSwitchStatement(PsiSwitchStatement statement) {
         super.visitSwitchStatement(statement);
-        if (TranspileUtil.isColonSwitch(statement)) {
+        if (TranspileUtils.isColonSwitch(statement)) {
             processSwitchBody(requireNonNull(statement.getBody()));
         }
     }
 
     private void processSwitchBody(PsiCodeBlock body) {
         var stmts = NncUtils.requireNonNull(body).getStatements();
-        var newBody = TranspileUtil.createCodeBlock();
+        var newBody = TranspileUtils.createCodeBlock();
         PsiCodeBlock dest = null;
         for (PsiStatement stmt : stmts) {
             if (stmt instanceof PsiSwitchLabelStatement labelStmt) {
@@ -52,7 +52,7 @@ public class SwitchLabelStatementTransformer extends VisitorBase {
 
     private boolean isRedundantBreak(PsiStatement statement) {
         if (statement instanceof PsiBreakStatement) {
-            var nextStmt = TranspileUtil.getNextStatement(statement);
+            var nextStmt = TranspileUtils.getNextStatement(statement);
             return nextStmt == null || nextStmt instanceof PsiSwitchLabelStatement;
         } else {
             return false;

@@ -17,7 +17,7 @@ public class ValueParser<T> extends PojoParser<T, ValueDef<T>> {
                 javaClass,
                 getJavaType(),
                 superDef,
-                createType(),
+                createKlass(),
                 defContext
         );
     }

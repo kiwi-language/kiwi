@@ -3,8 +3,6 @@ package org.metavm.object.view;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.NativeFunctions;
@@ -19,6 +17,8 @@ import org.metavm.object.type.rest.dto.ParameterizedTypeKey;
 import org.metavm.object.view.rest.dto.*;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -66,8 +66,8 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var input = Nodes.input(unmapper);
         var isSourcePresent = Nodes.functionCall(
                 scope.nextNodeName("isSourcePresent"), scope,
-                NativeFunctions.isSourcePresent(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, Values.inputValue(input, 0)))
+                NativeFunctions.isSourcePresent.get(),
+                List.of(Nodes.argument(NativeFunctions.isSourcePresent.get(), 0, Values.inputValue(input, 0)))
         );
         Nodes.branch(
                 scope.nextNodeName("branch"), null, scope,
@@ -76,8 +76,8 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                     var bodyScope = trueBranch.getScope();
                     var source = Nodes.functionCall(
                             scope.nextNodeName("source"), bodyScope,
-                            NativeFunctions.getSource(),
-                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, Values.inputValue(input, 0)))
+                            NativeFunctions.getSource.get(),
+                            List.of(Nodes.argument(NativeFunctions.getSource.get(), 0, Values.inputValue(input, 0)))
                     );
                     var castedSource = Nodes.cast(scope.nextNodeName("castedSource"), getSourceType(), Values.node(source), bodyScope);
                     Nodes.methodCall(

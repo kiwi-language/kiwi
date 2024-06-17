@@ -4,8 +4,8 @@ import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.flow.MethodRef;
-import org.metavm.flow.SimpleMethodRef;
+import org.metavm.entity.DummyGenericDeclaration;
+import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.antlr.TypeLexer;
 import org.metavm.util.Constants;
@@ -13,11 +13,15 @@ import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TypeParserImpl implements TypeParser {
 
     private final ParserTypeDefProvider typeDefProvider;
+
+    private final Map<String, TypeVariable> typeParameters = new HashMap<>();
 
     public TypeParserImpl(TypeDefProvider typeDefProvider) {
         this.typeDefProvider = name -> {
@@ -63,6 +67,54 @@ public class TypeParserImpl implements TypeParser {
         }
     }
 
+    public Function parseFunction(String expression) {
+        var parser = createAntlrParser(expression);
+        try {
+           return parseFunction(parser.functionSignature());
+        }
+        catch (Exception e) {
+            throw new InternalException("Failed to parse function: " + expression, e);
+        }
+    }
+
+    public String getFunctionName(String expression) {
+        var parser = createAntlrParser(expression);
+        try {
+            return parser.functionSignature().IDENTIFIER().getText();
+        }
+        catch (Exception e) {
+            throw new InternalException("Failed to parse function: " + expression, e);
+        }
+
+    }
+
+    private Function parseFunction(org.metavm.object.type.antlr.TypeParser.FunctionSignatureContext ctx) {
+        var name = ctx.IDENTIFIER().getText();
+        return FunctionBuilder.newBuilder(name, name)
+                .typeParameters(
+                        ctx.typeParameterList() != null ?
+                                NncUtils.map(ctx.typeParameterList().typeParameter(), this::parseTypeParameter) : List.of()
+                )
+                .parameters(
+                        ctx.parameterList() != null ?
+                                NncUtils.map(ctx.parameterList().parameter(), this::parseParameter) : List.of()
+                )
+                .returnType(parseType(ctx.type()))
+                .build();
+    }
+
+    private Parameter parseParameter(org.metavm.object.type.antlr.TypeParser.ParameterContext ctx) {
+        var name = ctx.IDENTIFIER().getText();
+        return new Parameter(null, name, name, parseType(ctx.type()));
+    }
+
+    private TypeVariable parseTypeParameter(org.metavm.object.type.antlr.TypeParser.TypeParameterContext ctx) {
+        var name = ctx.IDENTIFIER().getText();
+        var typeVar =  new TypeVariable(null, name, name, DummyGenericDeclaration.INSTANCE);
+        typeParameters.put(name, typeVar);
+        return typeVar;
+    }
+
     private org.metavm.object.type.antlr.TypeParser createAntlrParser(String expression) {
         var input = CharStreams.fromString(expression);
         var parser = new org.metavm.object.type.antlr.TypeParser(new CommonTokenStream(new TypeLexer(input)));
@@ -97,7 +149,7 @@ public class TypeParserImpl implements TypeParser {
     }
 
     private MethodRef parseMethodRef(org.metavm.object.type.antlr.TypeParser.MethodRefContext ctx) {
-        var classType = parseClassType(ctx.classType());
+        var classType = (ClassType) parseClassType(ctx.classType());
         var rawMethod = classType.getKlass().getMethod(Id.parse(ctx.IDENTIFIER().getText().substring(Constants.ID_PREFIX.length())));
         List<Type> typeArgs = ctx.typeArguments() != null ? parseTypeList(ctx.typeArguments().typeList()) : List.of();
         return new MethodRef(classType, rawMethod, typeArgs);
@@ -154,8 +206,11 @@ public class TypeParserImpl implements TypeParser {
         return new IntersectionType(NncUtils.mapUnique(ctx.type(), this::parseType));
     }
 
-    private ClassType parseClassType(org.metavm.object.type.antlr.TypeParser.ClassTypeContext ctx) {
+    private Type parseClassType(org.metavm.object.type.antlr.TypeParser.ClassTypeContext ctx) {
         var name = ctx.qualifiedName().getText();
+        var typeVar = typeParameters.get(name);
+        if(typeVar != null)
+            return typeVar.getType();
         var klass = (Klass) getTypeDef(name);
         if (ctx.typeArguments() != null) {
             return new ClassType(klass, NncUtils.map(ctx.typeArguments().typeList().type(), this::parseType));
@@ -190,6 +245,4 @@ public class TypeParserImpl implements TypeParser {
             return List.of();
         return NncUtils.map(ctx.type(), this::parseType);
     }
-
-
 }

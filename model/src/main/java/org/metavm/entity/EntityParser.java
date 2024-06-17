@@ -17,7 +17,7 @@ public class EntityParser<T extends Entity> extends PojoParser<T, EntityDef<T>> 
                 javaClass,
                 getJavaType(),
                 superDef,
-                createType(),
+                createKlass(),
                 defContext
         );
     }

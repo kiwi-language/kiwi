@@ -2,8 +2,8 @@ package org.metavm.api.lang;
 
 public class IdUtils {
 
-    public static long getId(Object object) {
-        return 0L;
+    public static String getId(Object object) {
+        return "";
     }
 
 }

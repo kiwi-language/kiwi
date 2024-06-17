@@ -1,6 +1,6 @@
 package capturedtypes;
 
-import org.metavm.api.lang.SystemUtils;
+import org.metavm.api.lang.Lang;
 
 import javax.annotation.Nullable;
 import java.util.function.Predicate;
@@ -9,7 +9,7 @@ public class CtUtils {
 
     public static <T> T findRequired(Iterable<? extends T> iterable, Predicate<? super T> predicate) {
         var it = iterable;
-        SystemUtils.print(iterable);
+        Lang.print(iterable);
         T t = find(iterable, predicate);
         if (t != null) {
             return t;

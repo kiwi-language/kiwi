@@ -40,7 +40,7 @@ public class ArrayNestedMapping extends NestedMapping {
                 null,
                 scope
         );
-        var setSourceFunc = NativeFunctions.setSource();
+        var setSourceFunc = NativeFunctions.setSource.get();
         Nodes.functionCall(
                 scope.nextNodeName("setSource"),
                 scope,
@@ -71,8 +71,8 @@ public class ArrayNestedMapping extends NestedMapping {
 
     @Override
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
-        var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, NativeFunctions.isSourcePresent(),
-                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, getView.get())));
+        var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, NativeFunctions.isSourcePresent.get(),
+                List.of(Nodes.argument(NativeFunctions.isSourcePresent.get(), 0, getView.get())));
         Map<Branch, Value> branch2sourceNode = new HashMap<>();
         var sourceFieldRef = new Object() {
             Field sourceField;
@@ -84,8 +84,8 @@ public class ArrayNestedMapping extends NestedMapping {
                 Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.trueExpression())),
                 trueBranch -> {
                     var source = Nodes.functionCall(scope.nextNodeName("source"), trueBranch.getScope(),
-                            NativeFunctions.getSource(),
-                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, getView.get())));
+                            NativeFunctions.getSource.get(),
+                            List.of(Nodes.argument(NativeFunctions.getSource.get(), 0, getView.get())));
                     branch2sourceNode.put(trueBranch, Values.node(source));
                 },
                 falseBranch -> {

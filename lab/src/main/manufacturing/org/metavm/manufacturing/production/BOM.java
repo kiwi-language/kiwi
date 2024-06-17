@@ -3,7 +3,7 @@ package org.metavm.manufacturing.production;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.ChildList;
 import org.metavm.api.EntityStruct;
-import org.metavm.api.lang.NumberUtils;
+import org.metavm.api.lang.Lang;
 import org.metavm.manufacturing.GeneralState;
 import org.metavm.manufacturing.material.Material;
 import org.metavm.manufacturing.material.MaterialKind;
@@ -119,7 +119,7 @@ public class BOM {
 
     public ProductionOrder createProductionOrder(Date plannedStartTime, Date plannedFinishTime, int plannedQuantity) {
         var order =  new ProductionOrder(
-                (1 + NumberUtils.random(100000000)) + "",
+                (1 + Lang.random(100000000)) + "",
                 plannedStartTime,
                 plannedFinishTime
         );

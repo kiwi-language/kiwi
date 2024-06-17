@@ -2,10 +2,10 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,7 +73,7 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
     @Override
     public void visitTryStatement(PsiTryStatement statement) {
         super.visitTryStatement(statement);
-        PsiElement entry = TranspileUtil.getTryStatementEntry(statement);
+        PsiElement entry = TranspileUtils.getTryStatementEntry(statement);
         if (entry == null) return;
         blockStatementLiveOut(statement);
         blockStatementLiveIn(statement, entry);
@@ -82,7 +82,7 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
     @Override
     public void visitCatchSection(PsiCatchSection section) {
         super.visitCatchSection(section);
-        PsiElement entry = TranspileUtil.getCatchSectionEntry(section);
+        PsiElement entry = TranspileUtils.getCatchSectionEntry(section);
         if(entry == null) return;
         blockStatementLiveOut(section);
         blockStatementLiveIn(section, entry);
@@ -98,7 +98,7 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
     @Override
     public void visitForStatement(PsiForStatement statement) {
         super.visitForStatement(statement);
-        var entry = TranspileUtil.getForStatementEntry(statement);
+        var entry = TranspileUtils.getForStatementEntry(statement);
         if (entry == null) return;
         blockStatementLiveOut(statement);
         blockStatementLiveIn(statement, entry);

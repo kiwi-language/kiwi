@@ -5,9 +5,7 @@ import org.junit.Assert;
 import org.metavm.application.ApplicationManager;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.*;
-import org.metavm.entity.natives.GlobalNativeFunctionsHolder;
 import org.metavm.entity.natives.NativeFunctions;
-import org.metavm.entity.natives.ThreadLocalNativeFunctionsHolder;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowExecutionService;
 import org.metavm.flow.FlowManager;
@@ -15,8 +13,6 @@ import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
-import org.metavm.object.type.BeanManager;
-import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.TypeDTO;
 import org.metavm.object.type.rest.dto.TypeQuery;
@@ -61,7 +57,7 @@ public abstract class CompilerTestBase extends TestCase  {
     protected void setUp() throws ExecutionException, InterruptedException {
         AUTH_CONFIG = AuthConfig.fromFile("/Users/leen/workspace/object/test/src/test/resources/auth");
         StandardTypes.setHolder(new ThreadLocalStandardTypesHolder());
-        NativeFunctions.setHolder(new ThreadLocalNativeFunctionsHolder());
+        NativeFunctions.setThreadLocalMode();
         ModelDefRegistry.setHolder(new ThreadLocalDefContextHolder());
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
@@ -121,7 +117,7 @@ public abstract class CompilerTestBase extends TestCase  {
         platformUserManager = null;
         apiClient = null;
         StandardTypes.setHolder(new GlobalStandardTypesHolder());
-        NativeFunctions.setHolder(new GlobalNativeFunctionsHolder());
+        NativeFunctions.setDirectMode();
         ModelDefRegistry.setHolder(new GlobalDefContextHolder());
     }
 

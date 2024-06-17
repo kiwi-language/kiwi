@@ -1,7 +1,6 @@
 package org.metavm.entity;
 
 import org.metavm.entity.natives.*;
-import org.metavm.flow.FunctionBuilder;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
@@ -53,8 +52,7 @@ public class StandardDefBuilder {
     }
 
     public void initRootTypes() {
-        initBuiltinFlows();
-
+        initSystemFunctions();
         StandardTypes.setConsumerKlass(createConsumerKlass());
         StandardTypes.setPredicateKlass(createPredicateKlass());
         StandardTypes.setIteratorKlass(createIteratorKlass());
@@ -239,114 +237,12 @@ public class StandardDefBuilder {
         return predicateType;
     }
 
-    private void initBuiltinFlows() {
-        var getSourceFunc = FunctionBuilder.newBuilder("getSource", "getSource")
-                .isNative()
-                .parameters(new Parameter(null, "view", "view", new AnyType()))
-                .returnType(new AnyType())
-                .build();
-        NativeFunctions.setGetSourceFunc(getSourceFunc);
-        defContext.writeEntity(getSourceFunc);
+    private void initSystemFunctions() {
+        NativeFunctions.defineSystemFunctions().forEach(defContext::writeEntity);
+    }
 
-        var setSourceFunc = new FunctionBuilder("setSource", "setSource")
-                .isNative()
-                .parameters(
-                        new Parameter(null, "view", "view", new AnyType()),
-                        new Parameter(null, "source", "source", new AnyType())
-                )
-                .returnType(StandardTypes.getVoidType())
-                .build();
-        NativeFunctions.setSetSourceFunc(setSourceFunc);
-        defContext.writeEntity(setSourceFunc);
-
-        var isSourcePresentFunc = FunctionBuilder.newBuilder("isSourcePresent", "isSourcePresent")
-                .isNative()
-                .parameters(new Parameter(null, "view", "view", new AnyType()))
-                .returnType(StandardTypes.getBooleanType())
-                .build();
-        NativeFunctions.setIsSourcePresent(isSourcePresentFunc);
-        defContext.writeEntity(isSourcePresentFunc);
-
-        var funcType = new TypeVariable(null, "FunctionType", "FunctionType", DummyGenericDeclaration.INSTANCE);
-        var function2instance = FunctionBuilder.newBuilder("functionToInstance", "functionToInstance")
-                .isNative()
-                .typeParameters(List.of(funcType))
-                .parameters(new Parameter(null, "function", "function", StandardTypes.getAnyType()))
-                .returnType(funcType.getType())
-                .build();
-        NativeFunctions.setFunctionToInstance(function2instance);
-        defContext.writeEntity(function2instance);
-
-        var sendEmail = FunctionBuilder.newBuilder("sendEmail", "sendEmail")
-                .isNative()
-                .parameters(
-                        new Parameter(null, "recipient", "recipient", StandardTypes.getStringType()),
-                        new Parameter(null, "subject", "subject", StandardTypes.getStringType()),
-                        new Parameter(null, "content", "content", StandardTypes.getStringType())
-                )
-                .returnType(StandardTypes.getVoidType())
-                .build();
-        NativeFunctions.setSendEmail(sendEmail);
-        defContext.writeEntity(sendEmail);
-
-        var getSessionEntry = FunctionBuilder.newBuilder("getSessionEntry", "getSessionEntry")
-                .isNative()
-                .parameters(
-                        new Parameter(null, "key", "key", StandardTypes.getStringType())
-                )
-                .returnType(StandardTypes.getNullableAnyType())
-                .build();
-        NativeFunctions.setGetSessionEntry(getSessionEntry);
-        defContext.writeEntity(getSessionEntry);
-
-        var setSessionEntry = FunctionBuilder.newBuilder("setSessionEntry", "setSessionEntry")
-                .isNative()
-                .parameters(
-                        new Parameter(null, "key", "key", StandardTypes.getStringType()),
-                        new Parameter(null, "value", "value", StandardTypes.getAnyType())
-                )
-                .returnType(StandardTypes.getVoidType())
-                .build();
-        NativeFunctions.setSetSessionEntry(setSessionEntry);
-        defContext.writeEntity(setSessionEntry);
-
-        var removeSessionEntry = FunctionBuilder.newBuilder("removeSessionEntry", "removeSessionEntry")
-                .isNative()
-                .parameters(
-                        new Parameter(null, "key", "key", StandardTypes.getStringType())
-                )
-                .returnType(StandardTypes.getBooleanType())
-                .build();
-        NativeFunctions.setRemoveSessionEntry(removeSessionEntry);
-        defContext.writeEntity(removeSessionEntry);
-
-        var castedType = new TypeVariable(null, "CastedType", "CastedType", DummyGenericDeclaration.INSTANCE);
-        var typeCast = FunctionBuilder.newBuilder("typeCast", "typeCast")
-                .isNative()
-                .typeParameters(List.of(castedType))
-                .parameters(
-                        new Parameter(null, "instance", "instance", StandardTypes.getNullableAnyType())
-                )
-                .returnType(castedType.getType())
-                .build();
-        NativeFunctions.setTypeCast(typeCast);
-        defContext.writeEntity(typeCast);
-
-        var print = FunctionBuilder.newBuilder("print", "print")
-                .isNative()
-                .parameters(new Parameter(null, "content", "content", StandardTypes.getNullableAnyType()))
-                .returnType(StandardTypes.getVoidType())
-                .build();
-        NativeFunctions.setPrint(print);
-        defContext.writeEntity(print);
-
-        var delete = FunctionBuilder.newBuilder("delete", "delete")
-                .isNative()
-                .parameters(new Parameter(null, "instance", "instance", StandardTypes.getAnyType()))
-                .returnType(StandardTypes.getVoidType())
-                .build();
-        NativeFunctions.setDelete(delete);
-        defContext.writeEntity(delete);
+    public void initUserFunctions() {
+        NativeFunctions.defineUserFunctions(defContext).forEach(defContext::writeEntity);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -378,11 +274,11 @@ public class StandardDefBuilder {
     }
 
     private org.metavm.object.type.Field createField(Field javaField,
-                                                      boolean asTitle,
-                                                      Type type,
-                                                      Access access,
-                                                      Column column,
-                                                      Klass declaringType) {
+                                                     boolean asTitle,
+                                                     Type type,
+                                                     Access access,
+                                                     Column column,
+                                                     Klass declaringType) {
         return FieldBuilder.newBuilder(
                         EntityUtils.getMetaFieldName(javaField),
                         javaField.getName(),

@@ -1,15 +1,15 @@
 package org.metavm.entity;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.metavm.object.instance.MetaVersionPlugin;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.InstanceContext;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Field;
 import java.util.HashSet;
@@ -60,6 +60,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
                         defContext.getDef(entityClass, stage);
                 }
             }
+            defContext.initUserFunctions();
             defContext.flushAndWriteInstances();
             ModelDefRegistry.setDefContext(defContext);
             var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && !inst.isValue() && inst.tryGetTreeId() == null);

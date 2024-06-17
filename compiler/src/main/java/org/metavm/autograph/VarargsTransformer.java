@@ -48,13 +48,13 @@ public class VarargsTransformer extends VisitorBase {
             textBuf.append(String.format("new %s[] {", varargType.getCanonicalText()))
                     .append(NncUtils.join(List.of(varargs), PsiElement::getText, ", "))
                     .append("}").append(")");
-            var dummyCallExpr = (PsiMethodCallExpression) TranspileUtil.createExpressionFromText(textBuf.toString());
+            var dummyCallExpr = (PsiMethodCallExpression) TranspileUtils.createExpressionFromText(textBuf.toString());
             replace(expression.getArgumentList(), dummyCallExpr.getArgumentList());
         }
     }
 
     private boolean isBlacklisted(PsiMethod psiMethod) {
-        return BLACKLIST.stream().anyMatch(m -> TranspileUtil.matchMethod(psiMethod, m));
+        return BLACKLIST.stream().anyMatch(m -> TranspileUtils.matchMethod(psiMethod, m));
     }
 
 }

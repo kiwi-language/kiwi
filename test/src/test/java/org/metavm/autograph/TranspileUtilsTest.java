@@ -23,10 +23,11 @@ import org.metavm.util.ReflectionUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public class TranspileUtilTest extends TestCase {
+public class TranspileUtilsTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
@@ -44,25 +45,25 @@ public class TranspileUtilTest extends TestCase {
         var method = ReflectionUtils.getMethod(List.class, "get", int.class);
         var psiClass = TranspileTestTools.getPsiClass(TypeFoo.class);
         var psiMethod = NncUtils.findRequired(psiClass.getMethods(), m -> m.getName().equals("get"));
-        NncUtils.requireTrue(TranspileUtil.matchMethod(psiMethod, method));
+        NncUtils.requireTrue(TranspileUtils.matchMethod(psiMethod, method));
     }
 
     public void testGetSignature() {
-        var listClass = Objects.requireNonNull(TranspileUtil.createClassType(List.class).resolve());
+        var listClass = Objects.requireNonNull(TranspileUtils.createClassType(List.class).resolve());
         var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("get"));
-        var signature = TranspileUtil.getSignature(getMethod, null);
+        var signature = TranspileUtils.getSignature(getMethod, null);
         Assert.assertEquals(
                 new MethodSignature(
-                        TranspileUtil.createClassType(List.class), false, "get", List.of(
-                        TranspileUtil.createPrimitiveType(int.class))),
+                        TranspileUtils.createClassType(List.class), false, "get", List.of(
+                        TranspileUtils.createPrimitiveType(int.class))),
                 signature
         );
     }
 
     public void testGetInternalName() {
-        var listClass = Objects.requireNonNull(TranspileUtil.createClassType(SignatureFoo.class).resolve());
+        var listClass = Objects.requireNonNull(TranspileUtils.createClassType(SignatureFoo.class).resolve());
         var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("add"));
-        var sig = TranspileUtil.getInternalName(getMethod);
+        var sig = TranspileUtils.getInternalName(getMethod);
 
         var fooType = KlassBuilder.newBuilder("SignatureFoo", SignatureFoo.class.getName()).build();
         var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
@@ -81,19 +82,53 @@ public class TranspileUtilTest extends TestCase {
     }
 
     public void testGetInternalNameWithImplicitTypes() {
-        var klass = Objects.requireNonNull(TranspileUtil.createClassType(SignatureFoo.class).resolve());
+        var klass = Objects.requireNonNull(TranspileUtils.createClassType(SignatureFoo.class).resolve());
         var testMethod = NncUtils.findRequired(klass.getMethods(), method -> method.getName().equals("test"));
-        var internalName = TranspileUtil.getInternalName(testMethod, List.of(
-                TranspileUtil.createType(String.class),
-                TranspileUtil.createPrimitiveType(int.class)
+        var internalName = TranspileUtils.getInternalName(testMethod, List.of(
+                TranspileUtils.createType(String.class),
+                TranspileUtils.createPrimitiveType(int.class)
         ));
         Assert.assertEquals("org.metavm.autograph.mocks.SignatureFoo.test(String,Long,Any)", internalName);
     }
 
     public void testIsStruct() {
         var file = TranspileTestTools.getPsiJavaFile(RecordFoo.class);
-        Assert.assertTrue(TranspileUtil.isStruct(file.getClasses()[0]));
+        Assert.assertTrue(TranspileUtils.isStruct(file.getClasses()[0]));
     }
+
+    public void testGetMethodSignature() {
+        var requireNonNull = ReflectionUtils.getMethod(Objects.class, "requireNonNull", Object.class, Supplier.class);
+        var signature = TranspileUtils.getMethodSignature(requireNonNull);
+        var expectedSignature = new MethodSignature(
+                TranspileUtils.createClassType(Objects.class),
+                true,
+                "requireNonNull",
+                List.of(
+                        TranspileUtils.createVariableType(requireNonNull, 0),
+                        TranspileUtils.createType(
+                                Supplier.class,
+                                TranspileUtils.createClassType(String.class)
+                        )
+                )
+        );
+        Assert.assertEquals(expectedSignature, signature);
+    }
+
+    public void testGetMethodSignatureWithVarArgs() {
+        var format = ReflectionUtils.getMethod(String.class, "format", String.class, Object[].class);
+        var signature = TranspileUtils.getMethodSignature(format);
+        var expectedSignature = new MethodSignature(
+                TranspileUtils.createClassType(String.class),
+                true,
+                "format",
+                List.of(
+                        TranspileUtils.createClassType(String.class),
+                        TranspileUtils.createEllipsisType(Object[].class)
+                )
+        );
+        Assert.assertEquals(expectedSignature, signature);
+    }
+
 
     private static class Visitor extends JavaRecursiveElementVisitor {
 
@@ -108,7 +143,7 @@ public class TranspileUtilTest extends TestCase {
         @Override
         public void visitField(PsiField field) {
             super.visitField(field);
-            templateType = TranspileUtil.createTemplateType(requireNonNull(field.getContainingClass()));
+            templateType = TranspileUtils.createTemplateType(requireNonNull(field.getContainingClass()));
             super.visitField(field);
         }
     }

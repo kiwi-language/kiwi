@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
-import static org.metavm.autograph.TranspileUtil.createStatementFromText;
+import static org.metavm.autograph.TranspileUtils.createStatementFromText;
 
 public class SwitchExpressionTransformer extends VisitorBase {
 
@@ -17,11 +17,11 @@ public class SwitchExpressionTransformer extends VisitorBase {
     @Override
     public void visitSwitchExpression(PsiSwitchExpression expression) {
         enterSwitchExpr(expression);
-        var enclosingStmt = TranspileUtil.getEnclosingStatement(expression);
+        var enclosingStmt = TranspileUtils.getEnclosingStatement(expression);
         String varDeclTest = requireNonNull(expression.getType()).getCanonicalText() + " " + currentSwitchExpr().resultVar + ";";
         insertBefore(createStatementFromText(varDeclTest), enclosingStmt);
         String switchText = "switch (" + requireNonNull(expression.getExpression()).getText() + "){}";
-        var switchStmt = (PsiSwitchStatement) TranspileUtil.createStatementFromText(switchText);
+        var switchStmt = (PsiSwitchStatement) TranspileUtils.createStatementFromText(switchText);
         switchStmt = (PsiSwitchStatement) insertBefore(switchStmt, enclosingStmt);
         var newBody = NncUtils.requireNonNull(switchStmt.getBody());
         currentSwitchExpr().newBody = newBody;
@@ -47,8 +47,8 @@ public class SwitchExpressionTransformer extends VisitorBase {
             if (psiClass.isEnum()) {
                 if (!currentSwitchExpr().defaultPresent
                         && !currentSwitchExpr().nullCovered
-                        && currentSwitchExpr().coveredEnumConstants.size() == TranspileUtil.getEnumConstants(psiClass).size()) {
-                    if (TranspileUtil.isColonSwitch(switchStmt)) {
+                        && currentSwitchExpr().coveredEnumConstants.size() == TranspileUtils.getEnumConstants(psiClass).size()) {
+                    if (TranspileUtils.isColonSwitch(switchStmt)) {
                         newBody.addBefore(
                                 createStatementFromText("case null: "),
                                 null
@@ -65,7 +65,7 @@ public class SwitchExpressionTransformer extends VisitorBase {
                 }
             }
         }
-        replace(expression, TranspileUtil.createExpressionFromText(currentSwitchExpr().resultVar));
+        replace(expression, TranspileUtils.createExpressionFromText(currentSwitchExpr().resultVar));
         exitSwitchExpr();
     }
 
@@ -85,12 +85,12 @@ public class SwitchExpressionTransformer extends VisitorBase {
     @Override
     public void visitYieldStatement(PsiYieldStatement statement) {
         super.visitYieldStatement(statement);
-        var switchElement = TranspileUtil.getParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
+        var switchElement = TranspileUtils.getParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
         if (switchElement instanceof PsiSwitchExpression switchExpr) {
             var expr = NncUtils.requireNonNull(statement.getExpression());
             var replacement = (PsiStatement) replace(statement,
                     createStatementFromText(currentSwitchExpr().resultVar + " = " + expr.getText() + ";"));
-            if (TranspileUtil.isColonSwitch(switchExpr)) {
+            if (TranspileUtils.isColonSwitch(switchExpr)) {
                 insertAfter(createStatementFromText("break;"), replacement);
             }
         }

@@ -18,7 +18,7 @@ public class BreakTransformer extends VisitorBase {
 
     private void defineBreakVar(PsiStatement statement) {
         var loop = currentLoopInfo();
-        var breakVarDecl = TranspileUtil.createStatementFromText("boolean " + loop.breakVar + " = false;");
+        var breakVarDecl = TranspileUtils.createStatementFromText("boolean " + loop.breakVar + " = false;");
         insertBefore(breakVarDecl, statement);
     }
 
@@ -31,7 +31,7 @@ public class BreakTransformer extends VisitorBase {
             if (loop.breakUsed) {
                 defineBreakVar(statement);
                 String text = EXTRA_LOOP_TEST + "(" + loop.getConditionText() + ");";
-                var noop = TranspileUtil.createStatementFromText(text);
+                var noop = TranspileUtils.createStatementFromText(text);
                 prependBody(body, noop);
             }
         }
@@ -45,9 +45,9 @@ public class BreakTransformer extends VisitorBase {
             statement.getBody().accept(this);
             if(loop.breakUsed) {
                 defineBreakVar(statement);
-                var cond = TranspileUtil.createExpressionFromText(loop.getConditionText());
+                var cond = TranspileUtils.createExpressionFromText(loop.getConditionText());
                 var currentCond = requireNonNull(statement.getCondition());
-                currentCond.replace(TranspileUtil.and(currentCond, cond));
+                currentCond.replace(TranspileUtils.and(currentCond, cond));
             }
         }
         exitLoop();
@@ -60,8 +60,8 @@ public class BreakTransformer extends VisitorBase {
             statement.getBody().accept(this);
             if(loop.breakUsed) {
                 defineBreakVar(statement);
-                var cond = TranspileUtil.createExpressionFromText(loop.getConditionText());
-                TranspileUtil.replaceForCondition(statement, cond);
+                var cond = TranspileUtils.createExpressionFromText(loop.getConditionText());
+                TranspileUtils.replaceForCondition(statement, cond);
             }
         }
         exitLoop();
@@ -95,9 +95,9 @@ public class BreakTransformer extends VisitorBase {
             requireNonNull(loop, "Can not find an enclosing loop with label '" + label + "'");
         }
         String text = loop.breakVar + " = true;";
-        var replacement = replace(statement, TranspileUtil.createStatementFromText(text));
+        var replacement = replace(statement, TranspileUtils.createStatementFromText(text));
         String continueText = "continue" + (label != null ? " " + label : "") + ";";
-        var continueStmt = TranspileUtil.createStatementFromText(continueText);
+        var continueStmt = TranspileUtils.createStatementFromText(continueText);
         insertAfter(continueStmt, (PsiStatement) replacement);
     }
 

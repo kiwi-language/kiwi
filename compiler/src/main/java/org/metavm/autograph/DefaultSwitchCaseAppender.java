@@ -21,7 +21,7 @@ public class DefaultSwitchCaseAppender extends VisitorBase {
     }
 
     private void processSwitch(PsiSwitchBlock statement) {
-        if (!TranspileUtil.isColonSwitch(statement)) {
+        if (!TranspileUtils.isColonSwitch(statement)) {
             var statements = requireNonNull(statement.getBody()).getStatements();
             boolean hasDefault = false;
             for (var stmt : statements) {
@@ -34,12 +34,12 @@ public class DefaultSwitchCaseAppender extends VisitorBase {
             if (!hasDefault) {
                 if (isAllCasesCovered(statement)) {
                     statement.getBody().addBefore(
-                            TranspileUtil.createStatementFromText("default -> throw new IllegalStateException();"),
+                            TranspileUtils.createStatementFromText("default -> throw new IllegalStateException();"),
                             null
                     );
                 } else {
                     statement.getBody().addBefore(
-                            TranspileUtil.createStatementFromText("default -> {}"),
+                            TranspileUtils.createStatementFromText("default -> {}"),
                             null
                     );
                 }
@@ -59,7 +59,7 @@ public class DefaultSwitchCaseAppender extends VisitorBase {
     }
 
     private boolean isAllEnumCasesCovered(PsiSwitchBlock statement, PsiClass psiClass) {
-        var enumConstants = new HashSet<>(TranspileUtil.getEnumConstants(psiClass));
+        var enumConstants = new HashSet<>(TranspileUtils.getEnumConstants(psiClass));
         boolean nullCovered = false;
         var stmts = requireNonNull(statement.getBody()).getStatements();
         for (var stmt : stmts) {

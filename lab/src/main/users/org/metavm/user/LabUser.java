@@ -1,12 +1,12 @@
 package org.metavm.user;
 
 import org.metavm.api.*;
-import org.metavm.application.LabApplication;
 import org.metavm.api.builtin.Password;
 import org.metavm.api.lang.IdUtils;
+import org.metavm.api.lang.Lang;
 import org.metavm.api.lang.MD5Utils;
 import org.metavm.api.lang.SessionUtils;
-import org.metavm.api.lang.SystemUtils;
+import org.metavm.application.LabApplication;
 import org.metavm.utils.LabBusinessException;
 import org.metavm.utils.LabErrorCode;
 
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static org.metavm.api.IndexUtils.*;
+import static org.metavm.api.lang.IndexUtils.*;
 
 @EntityType
 public class LabUser {
@@ -100,7 +100,7 @@ public class LabUser {
         var session = new LabSession(user, new Date(System.currentTimeMillis() + TOKEN_TTL));
         SessionUtils.setEntry("CurrentApp", application);
         SessionUtils.setEntry("LoggedInUser" + IdUtils.getId(application), user);
-        SystemUtils.print("User " + user.getName() + " logged in application " + application.getName());
+        Lang.print("User " + user.getName() + " logged in application " + application.getName());
         return new LabToken(application, session.getToken());
     }
 
@@ -149,7 +149,7 @@ public class LabUser {
     }
 
     public String getPassword() {
-        return password.getPassword();
+        return password.toString();
     }
 
     public String getName() {

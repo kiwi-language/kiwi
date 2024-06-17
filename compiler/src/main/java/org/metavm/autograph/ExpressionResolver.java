@@ -1,5 +1,6 @@
 package org.metavm.autograph;
 
+import com.google.common.collect.Streams;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import org.metavm.entity.StandardTypes;
@@ -19,8 +20,8 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
-import static org.metavm.autograph.TranspileUtil.matchClass;
-import static org.metavm.autograph.TranspileUtil.matchMethod;
+import static org.metavm.autograph.TranspileUtils.matchClass;
+import static org.metavm.autograph.TranspileUtils.matchMethod;
 import static org.metavm.util.ReflectionUtils.getMethod;
 
 public class ExpressionResolver {
@@ -57,16 +58,7 @@ public class ExpressionResolver {
     private final Map<PsiExpression, Expression> expressionMap = new IdentityHashMap<>();
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
-            new ListOfResolver(), new ObjectsToStringResolver(), new ToStringResolver(),
-            new StringReplaceFirstResolver(), new PrimitiveToStringResolver(), new GetPasswordResolver(),
-            new StringReplaceResolver(), new StringConcatResolver(),
-            new RandomUUIDResolver(), new DateBeforeResolver(), new DateAfterResolver(),
-            new IndexUtilsCallResolver(), new SystemCurrentTimeMillisResolver(),
-            new EqualsResolver(), new Md5CallResolver(), new RandomPasswordResolver(),
-            new SendEmailResolver(), new RegexMatchResolver(), new RandomNumberMatcher(),
-            new NumberFormatMatcher(), new GetSessionEntryResolver(), new SetSessionEntryResolver(),
-            new StringFormatResolver(), new GetIdResolver(), new PrintResolver(), new RemoveSessionEntryResolver(),
-            new DeleteObjectResolver(), new DateGetTimeResolver()
+            new ListOfResolver(), new IndexUtilsCallResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
@@ -244,7 +236,7 @@ public class ExpressionResolver {
                 PsiClass psiClass = requireNonNull(psiField.getContainingClass());
                 Field field;
                 if (psiField.hasModifierProperty(PsiModifier.STATIC)) {
-                    var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass))).resolve();
+                    var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass))).resolve();
                     field = Objects.requireNonNull(klass.findStaticFieldByCode(psiField.getName()));
                     return new StaticPropertyExpression(field.getRef());
                 } else {
@@ -259,20 +251,20 @@ public class ExpressionResolver {
             PsiClass psiClass = requireNonNull(psiMethod.getContainingClass());
             Method method;
             if (psiMethod.hasModifierProperty(PsiModifier.STATIC)) {
-                Klass klass = Types.resolveKlass(typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass)));
-                method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
+                Klass klass = Types.resolveKlass(typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass)));
+                method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
                 return new StaticPropertyExpression(method.getRef());
             } else {
                 if (psiReferenceExpression.getQualifierExpression() instanceof PsiReferenceExpression refExpr &&
                         refExpr.resolve() instanceof PsiClass) {
-                    var klass = Types.resolveKlass(typeResolver.resolve(TranspileUtil.createType(psiClass)));
-                    method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
+                    var klass = Types.resolveKlass(typeResolver.resolve(TranspileUtils.createType(psiClass)));
+                    method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
                     return new StaticPropertyExpression(method.getRef());
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
                     Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr));
                     typeResolver.ensureDeclared(klass);
-                    method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
+                    method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
                     return new PropertyExpression(qualifierExpr, method.getRef());
                 }
             }
@@ -429,11 +421,13 @@ public class ExpressionResolver {
         var methodExpr = methodCallExpression.getMethodExpression();
         var qualifier = methodExpr.getQualifierExpression();
         var method = (PsiMethod) Objects.requireNonNull(methodExpr.resolve());
-        var signature = TranspileUtil.getSignature(method, NncUtils.get(qualifier, q -> (PsiClassType) q.getType()));
-        return NncUtils.find(
-                methodCallResolvers,
-                resolver -> NncUtils.anyMatch(resolver.getSignatures(), s -> s.matches(signature))
-        );
+        var signature = TranspileUtils.getSignature(method, NncUtils.get(qualifier, q -> (PsiClassType) q.getType()));
+        return Streams.concat(
+                        TranspileUtils.getNativeFunctionCallResolvers().stream(),
+                        methodCallResolvers.stream()
+                )
+                .filter(resolver -> NncUtils.anyMatch(resolver.getSignatures(), s -> s.matches(signature)))
+                .findFirst().orElse(null);
     }
 
     @Nullable
@@ -441,10 +435,10 @@ public class ExpressionResolver {
         var method = (PsiMethod) newExpression.resolveConstructor();
         org.metavm.autograph.MethodSignature signature;
         if (method != null)
-            signature = TranspileUtil.getSignature(method, null);
+            signature = TranspileUtils.getSignature(method, null);
         else {
             // For default constructor
-            var rawType = (PsiClassType) TranspileUtil.getRawType(Objects.requireNonNull(newExpression.getType()));
+            var rawType = (PsiClassType) TranspileUtils.getRawType(Objects.requireNonNull(newExpression.getType()));
             signature = org.metavm.autograph.MethodSignature.create(rawType, rawType.getName());
         }
         return NncUtils.find(
@@ -488,13 +482,13 @@ public class ExpressionResolver {
         if (klassName.startsWith("org.metavm.lang.")) {
             throw new InternalException("Native method should be resolved by MethodResolver: " + klassName + "." + rawMethod.getName());
         }
-        var isStatic = TranspileUtil.isStatic(rawMethod);
+        var isStatic = TranspileUtils.isStatic(rawMethod);
         PsiExpression psiSelf = (PsiExpression) ref.getQualifier();
         var qualifier = isStatic ? null : getQualifier(psiSelf, context);
         if (psiSelf != null) {
             if (isStatic) {
                 var psiClass = (PsiClass) ((PsiReferenceExpression) psiSelf).resolve();
-                ensureTypeDeclared(TranspileUtil.createType(psiClass));
+                ensureTypeDeclared(TranspileUtils.createType(psiClass));
             } else {
                 ensureTypeDeclared(NncUtils.requireNonNull(psiSelf.getType()));
             }
@@ -506,7 +500,7 @@ public class ExpressionResolver {
         for (PsiExpression psiArg : psiArgs) {
             var arg = resolve(psiArg, context);
             var paramType = typeResolver.resolveDeclaration(substitutor.substitute(psiArg.getType()));
-            if(paramType instanceof ClassType classType) {
+            if (paramType instanceof ClassType classType) {
                 var klass = classType.resolve();
                 if (klass.isSAMInterface()
                         && arg.getType() instanceof FunctionType) {
@@ -528,7 +522,7 @@ public class ExpressionResolver {
     private void setCapturedExpressions(CallNode node, ResolutionContext context) {
         var flow = node.getFlowRef();
         var capturedTypeSet = new HashSet<CapturedType>();
-        if(flow instanceof MethodRef methodRef)
+        if (flow instanceof MethodRef methodRef)
             methodRef.getDeclaringType().getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
         flow.getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
         var capturedTypes = new ArrayList<>(capturedTypeSet);
@@ -542,7 +536,7 @@ public class ExpressionResolver {
     }
 
     private NodeRT createSAMConversion(Klass samInterface, Expression function) {
-        var func = NativeFunctions.getFunctionToInstance().getParameterized(List.of(samInterface.getType()));
+        var func = NativeFunctions.functionToInstance.get().getParameterized(List.of(samInterface.getType()));
         return methodGenerator.createFunctionCall(func, List.of(function));
     }
 
@@ -556,7 +550,7 @@ public class ExpressionResolver {
         var substitutor = methodGenerics.getSubstitutor();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var declaringType = Types.resolveKlass(typeResolver.resolveDeclaration(
-                substitutor.substitute(TranspileUtil.createTemplateType(requireNonNull(method.getContainingClass())))
+                substitutor.substitute(TranspileUtils.createTemplateType(requireNonNull(method.getContainingClass())))
         ));
         var psiParameters = NncUtils.requireNonNull(method.getParameterList()).getParameters();
         var template = declaringType.getEffectiveTemplate();
@@ -564,7 +558,7 @@ public class ExpressionResolver {
                 psiParameters,
                 param -> {
                     var t = typeResolver.resolveDeclaration(param.getType());
-                    if (TranspileUtil.getAnnotation(param, Nullable.class) != null)
+                    if (TranspileUtils.getAnnotation(param, Nullable.class) != null)
                         t = new UnionType(Set.of(t, StandardTypes.getNullType()));
                     return t;
                 }
@@ -613,7 +607,7 @@ public class ExpressionResolver {
         if (resolver != null)
             return resolver.resolve(expression, this, methodGenerator);
         var type = NncUtils.requireNonNull(expression.getType());
-        var psiMapType = TranspileUtil.createClassType(Map.class);
+        var psiMapType = TranspileUtils.createClassType(Map.class);
         if (psiMapType.isAssignableFrom(type)) {
             var mapType = Types.resolveKlass(typeResolver.resolve(type));
             var subFlow = Objects.requireNonNull(mapType.findMethodByCode("Map"));
@@ -687,7 +681,7 @@ public class ExpressionResolver {
 
     private Type resolveParameterType(PsiParameter param, PsiSubstitutor substitutor) {
         var t = typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()));
-        if (TranspileUtil.getAnnotation(param, Nullable.class) != null)
+        if (TranspileUtils.getAnnotation(param, Nullable.class) != null)
             t = new UnionType(Set.of(t, StandardTypes.getNullType()));
         return t;
     }
@@ -821,7 +815,7 @@ public class ExpressionResolver {
     }
 
     public Expression resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
-        var returnType = typeResolver.resolveDeclaration(TranspileUtil.getLambdaReturnType(expression));
+        var returnType = typeResolver.resolveDeclaration(TranspileUtils.getLambdaReturnType(expression));
         var parameters = resolveParameterList(expression.getParameterList());
         var funcInterface = Types.resolveKlass(typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType()));
         var lambdaNode = methodGenerator.createLambda(parameters, returnType, funcInterface);
@@ -895,7 +889,7 @@ public class ExpressionResolver {
 
     private Parameter resolveParameter(PsiParameter psiParameter) {
         return new Parameter(
-                null, TranspileUtil.getFlowParamName(psiParameter), psiParameter.getName(),
+                null, TranspileUtils.getFlowParamName(psiParameter), psiParameter.getName(),
                 typeResolver.resolveDeclaration(psiParameter.getType())
         );
     }

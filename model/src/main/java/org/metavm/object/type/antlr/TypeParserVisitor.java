@@ -70,4 +70,34 @@ public interface TypeParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitQualifiedName(TypeParser.QualifiedNameContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link TypeParser#functionSignature}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFunctionSignature(TypeParser.FunctionSignatureContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link TypeParser#parameterList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitParameterList(TypeParser.ParameterListContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link TypeParser#parameter}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitParameter(TypeParser.ParameterContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link TypeParser#typeParameterList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypeParameterList(TypeParser.TypeParameterListContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link TypeParser#typeParameter}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypeParameter(TypeParser.TypeParameterContext ctx);
 }

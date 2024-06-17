@@ -10,10 +10,10 @@ public class ConditionalExpressionTransformer extends VisitorBase {
 
     @Override
     public void visitConditionalExpression(PsiConditionalExpression expression) {
-        var statement = requireNonNull(TranspileUtil.getParent(expression, PsiStatement.class));
+        var statement = requireNonNull(TranspileUtils.getParent(expression, PsiStatement.class));
         var scope = requireNonNull(statement.getUserData(Keys.SCOPE));
         var varName = namer.newName("conditional", scope.getAllDefined());
-        var varDecl = (PsiDeclarationStatement) TranspileUtil.createStatementFromText(String.format("%s %s;",
+        var varDecl = (PsiDeclarationStatement) TranspileUtils.createStatementFromText(String.format("%s %s;",
                 requireNonNull(expression.getType()).getCanonicalText(), varName));
         insertBefore(varDecl, statement);
         String text = """
@@ -25,9 +25,9 @@ public class ConditionalExpressionTransformer extends VisitorBase {
                 """.formatted(expression.getCondition().getText(),
                 varName, requireNonNull(expression.getThenExpression()).getText(),
                 varName, requireNonNull(expression.getElseExpression()).getText());
-        var branch = TranspileUtil.createStatementFromText(text);
+        var branch = TranspileUtils.createStatementFromText(text);
         insertBefore(branch, statement);
-        replace(expression, TranspileUtil.createExpressionFromText(varName));
+        replace(expression, TranspileUtils.createExpressionFromText(varName));
     }
 
 }

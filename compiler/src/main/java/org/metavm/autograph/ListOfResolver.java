@@ -21,13 +21,13 @@ public class ListOfResolver implements MethodCallResolver {
     private static final List<MethodSignature> SIGNATURES;
 
     static {
-        var listType = TranspileUtil.createClassType(List.class);
+        var listType = TranspileUtils.createClassType(List.class);
         var listClass = requireNonNull(listType.resolve());
         var methods = NncUtils.filter(List.of(listClass.getMethods()),
                 m -> m.getModifierList().hasModifierProperty(PsiModifier.STATIC) && m.getName().equals("of"));
         var signatures = new ArrayList<MethodSignature>();
         for (PsiMethod method : methods) {
-            signatures.add(TranspileUtil.getSignature(method, listType));
+            signatures.add(TranspileUtils.getSignature(method, listType));
         }
         SIGNATURES = Collections.unmodifiableList(signatures);
     }

@@ -107,4 +107,54 @@ public interface TypeParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitQualifiedName(TypeParser.QualifiedNameContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TypeParser#functionSignature}.
+	 * @param ctx the parse tree
+	 */
+	void enterFunctionSignature(TypeParser.FunctionSignatureContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TypeParser#functionSignature}.
+	 * @param ctx the parse tree
+	 */
+	void exitFunctionSignature(TypeParser.FunctionSignatureContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TypeParser#parameterList}.
+	 * @param ctx the parse tree
+	 */
+	void enterParameterList(TypeParser.ParameterListContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TypeParser#parameterList}.
+	 * @param ctx the parse tree
+	 */
+	void exitParameterList(TypeParser.ParameterListContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TypeParser#parameter}.
+	 * @param ctx the parse tree
+	 */
+	void enterParameter(TypeParser.ParameterContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TypeParser#parameter}.
+	 * @param ctx the parse tree
+	 */
+	void exitParameter(TypeParser.ParameterContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TypeParser#typeParameterList}.
+	 * @param ctx the parse tree
+	 */
+	void enterTypeParameterList(TypeParser.TypeParameterListContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TypeParser#typeParameterList}.
+	 * @param ctx the parse tree
+	 */
+	void exitTypeParameterList(TypeParser.TypeParameterListContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TypeParser#typeParameter}.
+	 * @param ctx the parse tree
+	 */
+	void enterTypeParameter(TypeParser.TypeParameterContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TypeParser#typeParameter}.
+	 * @param ctx the parse tree
+	 */
+	void exitTypeParameter(TypeParser.TypeParameterContext ctx);
 }

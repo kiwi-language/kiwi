@@ -10,9 +10,9 @@ import org.metavm.entity.StandardTypes;
 import org.metavm.expression.ThisExpression;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Values;
-import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Index;
+import org.metavm.object.type.KlassBuilder;
 
 import java.util.List;
 
@@ -41,7 +41,7 @@ public class IndexDefiner extends VisitorBase {
     @Override
     public void visitMethod(PsiMethod psiMethod) {
         var psiClass = requireNonNull(psiMethod.getContainingClass());
-        if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null && psiMethod.isConstructor()) {
+        if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null && psiMethod.isConstructor()) {
             var dummyType = KlassBuilder.newBuilder("IndexDummy", "IndexDummy").build();
             var dummyMethod = MethodBuilder.newBuilder(
                             dummyType,

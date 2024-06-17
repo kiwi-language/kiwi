@@ -2,6 +2,8 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.entity.DummyGenericDeclaration;
+import org.metavm.entity.StandardTypes;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.util.Constants;
 import org.metavm.util.TestUtils;
@@ -42,6 +44,31 @@ public class TypeParserImplTest extends TestCase {
             throw new UnsupportedOperationException();
         });
         Assert.assertEquals(new FunctionType(List.of(), new UnionType(Set.of(PrimitiveType.createNull(), new AnyType()))), type);
+    }
+
+    public void testParseFunction() {
+        var functionSig = "T requireNonNull2<T>(T|null value, java.util.Supplier<string> messageSupplier)";
+        var supplierKlass = KlassBuilder.newBuilder("Supplier", "java.util.Supplier")
+                .typeParameters(new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE))
+                .build();
+        var func = new TypeParserImpl((String name) -> {
+            if(name.equals(supplierKlass.getCode()))
+                return supplierKlass;
+            else
+                throw new NullPointerException("No such class: " + name);
+        }).parseFunction(functionSig);
+        Assert.assertEquals("requireNonNull2", func.getName());
+        Assert.assertEquals("requireNonNull2", func.getCode());
+        Assert.assertEquals(1, func.getTypeParameters().size());
+        var variableType = func.getTypeParameters().get(0).getType();
+        Assert.assertEquals(variableType, func.getReturnType());
+        Assert.assertEquals(2, func.getParameters().size());
+        Assert.assertEquals("value", func.getParameter(0).getName());
+        Assert.assertEquals("value", func.getParameter(0).getCode());
+        Assert.assertEquals(new UnionType(Set.of(variableType, StandardTypes.getNullType())), func.getParameter(0).getType());
+        Assert.assertEquals("messageSupplier", func.getParameter(1).getName());
+        Assert.assertEquals("messageSupplier", func.getParameter(1).getCode());
+        Assert.assertEquals(supplierKlass.getParameterized(List.of(StandardTypes.getStringType())).getType(), func.getParameter(1).getType());
     }
 
 }

@@ -8,7 +8,7 @@ import java.util.Objects;
 
 public class StringConcatTransformer extends VisitorBase {
 
-    private final PsiClassType stringType = TranspileUtil.createClassType(String.class);
+    private final PsiClassType stringType = TranspileUtils.createClassType(String.class);
 
     @Override
     public void visitPolyadicExpression(PsiPolyadicExpression expression) {
@@ -27,7 +27,7 @@ public class StringConcatTransformer extends VisitorBase {
                 else
                     buf.append(".concat(").append(operand.getText()).append(')');
             }
-            replace(expression, TranspileUtil.createExpressionFromText(buf.toString()));
+            replace(expression, TranspileUtils.createExpressionFromText(buf.toString()));
         }
     }
 
@@ -35,17 +35,17 @@ public class StringConcatTransformer extends VisitorBase {
         var type = Objects.requireNonNull(expression.getType());
         if (type.equals(stringType))
             return expression;
-        var primitiveTypes = TranspileUtil.getPrimitiveTypes();
+        var primitiveTypes = TranspileUtils.getPrimitiveTypes();
         for (PsiPrimitiveType primitiveType : primitiveTypes) {
             if (type.equals(primitiveType)) {
-                return (PsiExpression) replace(expression, TranspileUtil.createExpressionFromText(
+                return (PsiExpression) replace(expression, TranspileUtils.createExpressionFromText(
                         String.format("%s.toString(%s)", primitiveType.getBoxedTypeName(), expression.getText())
                 ));
             }
         }
         return (PsiExpression) replace(
                 expression,
-                TranspileUtil.createExpressionFromText(
+                TranspileUtils.createExpressionFromText(
                         String.format("%s.toString()", expression.getText())
                 )
         );

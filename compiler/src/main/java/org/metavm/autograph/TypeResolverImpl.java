@@ -6,14 +6,14 @@ import org.metavm.api.ChildList;
 import org.metavm.api.ValueList;
 import org.metavm.api.ValueStruct;
 import org.metavm.api.ValueType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.api.builtin.Password;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;
@@ -28,15 +28,21 @@ import static org.metavm.object.type.ResolutionStage.*;
 
 public class TypeResolverImpl implements TypeResolver {
 
-    public static final Logger logger = LoggerFactory.getLogger(TypeResolverImpl.class);
+    private static final String API_PKG_PREFIX = "org.metavm.api.";
 
-    public static final Set<String> PRIM_CLASS_NAMES = Set.of(
+    public static final String JAVA_PKG_PREFIX = "java.";
+
+    private static final String LANG_PKG_PREFIX = "org.metavm.api.lang.";
+
+    private static final Logger logger = LoggerFactory.getLogger(TypeResolverImpl.class);
+
+    private static final Set<String> PRIM_CLASS_NAMES = Set.of(
             String.class.getName(),
             Date.class.getName()
     );
 
     @SuppressWarnings("UnstableApiUsage")
-    public static final Map<JvmPrimitiveTypeKind, Class<?>> KIND_2_PRIM_CLASS = Map.of(
+    private static final Map<JvmPrimitiveTypeKind, Class<?>> KIND_2_PRIM_CLASS = Map.of(
             INT, int.class,
             SHORT, short.class,
             BYTE, byte.class,
@@ -65,28 +71,28 @@ public class TypeResolverImpl implements TypeResolver {
     private final IEntityContext context;
 
     private static final Map<PsiClassType, Supplier<Klass>> STANDARD_CLASSES = Map.ofEntries(
-            Map.entry(TranspileUtil.createClassType(Entity.class), StandardTypes::getEntityKlass),
-            Map.entry(TranspileUtil.createClassType(Enum.class), StandardTypes::getEnumKlass),
-            Map.entry(TranspileUtil.createClassType(Record.class), StandardTypes::getRecordKlass),
-            Map.entry(TranspileUtil.createClassType(Throwable.class), StandardTypes::getThrowableKlass),
-            Map.entry(TranspileUtil.createClassType(Exception.class), StandardTypes::getExceptionKlass),
-            Map.entry(TranspileUtil.createClassType(RuntimeException.class), StandardTypes::getRuntimeExceptionKlass),
-            Map.entry(TranspileUtil.createClassType(IllegalArgumentException.class), StandardTypes::getIllegalArgumentExceptionKlass),
-            Map.entry(TranspileUtil.createClassType(IllegalStateException.class), StandardTypes::getIllegalStateExceptionKlass),
-            Map.entry(TranspileUtil.createClassType(NullPointerException.class), StandardTypes::getNullPointerExceptionKlass),
-            Map.entry(TranspileUtil.createClassType(IteratorImpl.class), StandardTypes::getIteratorImplKlass),
-            Map.entry(TranspileUtil.createClassType(Iterator.class), StandardTypes::getIteratorKlass),
-            Map.entry(TranspileUtil.createClassType(Iterable.class), StandardTypes::getIterableKlass),
-            Map.entry(TranspileUtil.createClassType(List.class), StandardTypes::getListKlass),
-            Map.entry(TranspileUtil.createClassType(ArrayList.class), StandardTypes::getReadWriteListKlass),
-            Map.entry(TranspileUtil.createClassType(LinkedList.class), StandardTypes::getReadWriteListKlass),
-            Map.entry(TranspileUtil.createClassType(org.metavm.util.LinkedList.class), StandardTypes::getReadWriteListKlass),
-            Map.entry(TranspileUtil.createClassType(ChildList.class), StandardTypes::getChildListKlass),
-            Map.entry(TranspileUtil.createClassType(ValueList.class), StandardTypes::getValueListKlass),
-            Map.entry(TranspileUtil.createClassType(Set.class), StandardTypes::getSetKlass),
-            Map.entry(TranspileUtil.createClassType(Collection.class), StandardTypes::getCollectionKlass),
-            Map.entry(TranspileUtil.createClassType(Consumer.class), StandardTypes::getConsumerKlass),
-            Map.entry(TranspileUtil.createClassType(Predicate.class), StandardTypes::getPredicateKlass)
+            Map.entry(TranspileUtils.createClassType(Entity.class), StandardTypes::getEntityKlass),
+            Map.entry(TranspileUtils.createClassType(Enum.class), StandardTypes::getEnumKlass),
+            Map.entry(TranspileUtils.createClassType(Record.class), StandardTypes::getRecordKlass),
+            Map.entry(TranspileUtils.createClassType(Throwable.class), StandardTypes::getThrowableKlass),
+            Map.entry(TranspileUtils.createClassType(Exception.class), StandardTypes::getExceptionKlass),
+            Map.entry(TranspileUtils.createClassType(RuntimeException.class), StandardTypes::getRuntimeExceptionKlass),
+            Map.entry(TranspileUtils.createClassType(IllegalArgumentException.class), StandardTypes::getIllegalArgumentExceptionKlass),
+            Map.entry(TranspileUtils.createClassType(IllegalStateException.class), StandardTypes::getIllegalStateExceptionKlass),
+            Map.entry(TranspileUtils.createClassType(NullPointerException.class), StandardTypes::getNullPointerExceptionKlass),
+            Map.entry(TranspileUtils.createClassType(IteratorImpl.class), StandardTypes::getIteratorImplKlass),
+            Map.entry(TranspileUtils.createClassType(Iterator.class), StandardTypes::getIteratorKlass),
+            Map.entry(TranspileUtils.createClassType(Iterable.class), StandardTypes::getIterableKlass),
+            Map.entry(TranspileUtils.createClassType(List.class), StandardTypes::getListKlass),
+            Map.entry(TranspileUtils.createClassType(ArrayList.class), StandardTypes::getReadWriteListKlass),
+            Map.entry(TranspileUtils.createClassType(LinkedList.class), StandardTypes::getReadWriteListKlass),
+            Map.entry(TranspileUtils.createClassType(org.metavm.util.LinkedList.class), StandardTypes::getReadWriteListKlass),
+            Map.entry(TranspileUtils.createClassType(ChildList.class), StandardTypes::getChildListKlass),
+            Map.entry(TranspileUtils.createClassType(ValueList.class), StandardTypes::getValueListKlass),
+            Map.entry(TranspileUtils.createClassType(Set.class), StandardTypes::getSetKlass),
+            Map.entry(TranspileUtils.createClassType(Collection.class), StandardTypes::getCollectionKlass),
+            Map.entry(TranspileUtils.createClassType(Consumer.class), StandardTypes::getConsumerKlass),
+            Map.entry(TranspileUtils.createClassType(Predicate.class), StandardTypes::getPredicateKlass)
     );
 
     private static final List<Class<?>> COLLECTION_CLASSES = List.of(
@@ -169,7 +175,7 @@ public class TypeResolverImpl implements TypeResolver {
         var resolved = capturedTypeMap.get(psiCapturedType);
         if (resolved != null)
             return resolved;
-        var psiMethod = Objects.requireNonNull(TranspileUtil.getParent(psiCapturedType.getContext(), PsiMethod.class));
+        var psiMethod = Objects.requireNonNull(TranspileUtils.getParent(psiCapturedType.getContext(), PsiMethod.class));
         var method = Objects.requireNonNull(psiMethod.getUserData(Keys.Method));
         var capturedTypeVar = new CapturedTypeVariable(
                 resolveWildcardType(psiCapturedType.getWildcard(), stage),
@@ -192,40 +198,37 @@ public class TypeResolverImpl implements TypeResolver {
     private Type resolveClassType(PsiClassType classType, ResolutionStage stage) {
         try (var entry = ContextUtil.getProfiler().enter("resolveClassType: " + stage)) {
             for (var collClass : COLLECTION_CLASSES) {
-                if (TranspileUtil.createClassType(collClass).isAssignableFrom(classType)) {
-                    classType = TranspileUtil.getSuperType(classType, collClass);
+                if (TranspileUtils.createClassType(collClass).isAssignableFrom(classType)) {
+                    classType = TranspileUtils.getSuperType(classType, collClass);
                     break;
                 }
             }
-            if (TranspileUtil.createClassType(Map.class).isAssignableFrom(classType)) {
-                classType = TranspileUtil.getSuperType(classType, Map.class);
+            if (TranspileUtils.createClassType(Map.class).isAssignableFrom(classType)) {
+                classType = TranspileUtils.getSuperType(classType, Map.class);
             }
             var classTypeText = classType.getCanonicalText();
             var psiClass = requireNonNull(classType.resolve(),
                     () -> "Failed to resolve class type " + classTypeText);
             if (psiClass instanceof PsiTypeParameter typeParameter)
                 return resolveTypeVariable(typeParameter);
-            else if (TranspileUtil.isObjectClass(psiClass))
+            else if (TranspileUtils.isObjectClass(psiClass))
                 return StandardTypes.getAnyType();
-            else if (TranspileUtil.matchType(classType, Password.class))
+            else if (TranspileUtils.matchType(classType, Password.class))
                 return StandardTypes.getPasswordType();
             else if (ReflectionUtils.isPrimitiveBoxClassName(psiClass.getQualifiedName())
                     || PRIM_CLASS_NAMES.contains(psiClass.getQualifiedName()))
                 return context.getType(ReflectionUtils.classForName(psiClass.getQualifiedName()));
             else {
-                Klass type;
-                var rawType = classType.rawType();
-                if (STANDARD_CLASSES.containsKey(rawType))
-                    type = STANDARD_CLASSES.get(rawType).get();
-                else
-                    type = resolvePojoClass(psiClass, stage);
+                var klass = tryResolveBuiltinClass(classType.rawType());
+                if(klass == null)
+                    klass = resolvePojoClass(psiClass, stage);
                 if (classType.getParameters().length > 0) {
                     List<Type> typeArgs = NncUtils.map(
                             classType.getParameters(), this::resolveTypeOnly
                     );
-                    return type.getParameterized(typeArgs, stage).getType();
+                    return klass.getParameterized(typeArgs, stage).getType();
                 } else {
-                    return type.getType();
+                    return klass.getType();
                 }
             }
         }
@@ -236,9 +239,9 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     public Flow resolveFlow(PsiMethod method) {
-        var klass = ((ClassType) resolveDeclaration(TranspileUtil.createType(method.getContainingClass()))).resolve();
+        var klass = ((ClassType) resolveDeclaration(TranspileUtils.createType(method.getContainingClass()))).resolve();
         return NncUtils.findRequired(klass.getMethods(), f ->
-                f.getInternalName(null).equals(TranspileUtil.getInternalName(method)));
+                f.getInternalName(null).equals(TranspileUtils.getInternalName(method)));
     }
 
     private boolean isArrayType(PsiType psiType) {
@@ -251,7 +254,7 @@ public class TypeResolverImpl implements TypeResolver {
 
     @Override
     public Field resolveField(PsiField field) {
-        PsiType declaringType = TranspileUtil.getElementFactory().createType(
+        PsiType declaringType = TranspileUtils.getElementFactory().createType(
                 requireNonNull(field.getContainingClass()));
         Klass klass = ((ClassType) resolve(declaringType)).resolve();
         return klass.findFieldByCode(field.getName());
@@ -259,28 +262,43 @@ public class TypeResolverImpl implements TypeResolver {
 
     private GenericDeclaration tryResolveGenericDeclaration(PsiTypeParameterListOwner typeParameterListOwner) {
         if (typeParameterListOwner instanceof PsiClass psiClass) {
-            var psiType = TranspileUtil.createType(psiClass);
-            var stdTypeSupplier = STANDARD_CLASSES.get(psiType);
-            if (stdTypeSupplier != null)
-                return stdTypeSupplier.get();
+            var psiType = TranspileUtils.createType(psiClass);
+            var builtinKlass = tryResolveBuiltinClass(psiType);
+            if(builtinKlass != null)
+                return builtinKlass;
             return psiClass.getUserData(Keys.MV_CLASS);
         }
         if (typeParameterListOwner instanceof PsiMethod method) {
             var psiClass = method.getContainingClass();
-            var stdTypeSupplier = STANDARD_CLASSES.get(TranspileUtil.createType(psiClass));
-            if (stdTypeSupplier != null) {
-                var classType = stdTypeSupplier.get();
-                return NncUtils.findRequired(classType.getMethods(), m ->
-                        m.getInternalName(null).equals(TranspileUtil.getInternalName(method)));
+            var builtinKlass = tryResolveBuiltinClass(TranspileUtils.createType(psiClass));
+            if (builtinKlass != null) {
+                return NncUtils.findRequired(builtinKlass.getMethods(), m ->
+                        m.getInternalName(null).equals(TranspileUtils.getInternalName(method)));
             }
             return method.getUserData(Keys.Method);
         }
         throw new InternalException("Unexpected type parameter owner: " + typeParameterListOwner);
     }
 
+    private @Nullable Klass tryResolveBuiltinClass(PsiClassType classType) {
+        var standardKlassSupplier = STANDARD_CLASSES.get(classType);
+        if(standardKlassSupplier != null)
+            return standardKlassSupplier.get();
+        var psiClass = TranspileUtils.resolvePsiClass(classType);
+        var qualifiedName = psiClass.getQualifiedName();
+        if(qualifiedName != null && (qualifiedName.startsWith(API_PKG_PREFIX) || qualifiedName.startsWith(JAVA_PKG_PREFIX))) {
+            if(qualifiedName.startsWith(LANG_PKG_PREFIX))
+                throw new IllegalArgumentException("Can not resolve class in lang package: " + qualifiedName);
+            var javaClass = ReflectionUtils.classForName(qualifiedName);
+            return ModelDefRegistry.getDefContext().getKlass(javaClass);
+        }
+        else
+            return null;
+    }
+
     private GenericDeclaration resolveGenericDeclaration(PsiTypeParameterListOwner typeParameterOwner) {
         if (typeParameterOwner instanceof PsiClass psiClass) {
-            return (GenericDeclaration) resolveTypeOnly(TranspileUtil.createType(psiClass));
+            return (GenericDeclaration) resolveTypeOnly(TranspileUtils.createType(psiClass));
         } else if (typeParameterOwner instanceof PsiMethod method) {
             return resolveFlow(method);
         } else {
@@ -317,30 +335,30 @@ public class TypeResolverImpl implements TypeResolver {
     @Nullable
     private TypeVariable tryResolveBuiltinTypeVar(PsiTypeParameter typeParameter) {
         if (typeParameter.getOwner() instanceof PsiClass psiClass) {
-            var ownerType = TranspileUtil.createType(psiClass);
-            var childListType = TranspileUtil.createClassType(ChildList.class);
+            var ownerType = TranspileUtils.createType(psiClass);
+            var childListType = TranspileUtils.createClassType(ChildList.class);
             if (childListType.isAssignableFrom(ownerType))
                 return StandardTypes.getChildListKlass().getTypeParameters().get(0);
-            var valueListType = TranspileUtil.createClassType(ValueList.class);
+            var valueListType = TranspileUtils.createClassType(ValueList.class);
             if(valueListType.isAssignableFrom(ownerType))
                 return StandardTypes.getValueListKlass().getTypeParameters().get(0);
-            var arrayListType = TranspileUtil.createClassType(ArrayList.class);
-            var linkedListType = TranspileUtil.createClassType(LinkedList.class);
+            var arrayListType = TranspileUtils.createClassType(ArrayList.class);
+            var linkedListType = TranspileUtils.createClassType(LinkedList.class);
             if (arrayListType.isAssignableFrom(ownerType) || linkedListType.isAssignableFrom(ownerType))
                 return StandardTypes.getReadWriteListKlass().getTypeParameters().get(0);
-            var listType = TranspileUtil.createClassType(List.class);
+            var listType = TranspileUtils.createClassType(List.class);
             if (listType.isAssignableFrom(ownerType))
                 return StandardTypes.getListKlass().getTypeParameters().get(0);
-            var setType = TranspileUtil.createClassType(Set.class);
+            var setType = TranspileUtils.createClassType(Set.class);
             if (setType.isAssignableFrom(ownerType))
                 return StandardTypes.getSetKlass().getTypeParameters().get(0);
-            var mapType = TranspileUtil.createClassType(Map.class);
+            var mapType = TranspileUtils.createClassType(Map.class);
             if (mapType.isAssignableFrom(ownerType)) {
                 int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
                         .getTypeParameterIndex(typeParameter);
                 return StandardTypes.getMapKlass().getTypeParameters().get(index);
             }
-            var enumType = TranspileUtil.createClassType(Enum.class);
+            var enumType = TranspileUtils.createClassType(Enum.class);
             if (ownerType.equals(enumType))
                 return StandardTypes.getEnumKlass().getTypeParameters().get(0);
         }
@@ -351,7 +369,7 @@ public class TypeResolverImpl implements TypeResolver {
         try (var ignored = ContextUtil.getProfiler().enter("createMetaClass")) {
             NncUtils.requireFalse(Objects.requireNonNull(psiClass.getQualifiedName()).startsWith("org.metavm.api."),
                     () -> new IllegalStateException("Can not create meta class for API class: " + psiClass.getQualifiedName()));
-            var name = TranspileUtil.getBizClassName(psiClass);
+            var name = TranspileUtils.getBizClassName(psiClass);
             var kind = getClassKind(psiClass);
             boolean isTemplate = psiClass.getTypeParameterList() != null
                     && psiClass.getTypeParameterList().getTypeParameters().length > 0;
@@ -369,8 +387,8 @@ public class TypeResolverImpl implements TypeResolver {
             } else {
                 klass = KlassBuilder.newBuilder(name, psiClass.getQualifiedName())
                         .kind(kind)
-                        .ephemeral(TranspileUtil.isEphemeral(psiClass))
-                        .struct(TranspileUtil.isStruct(psiClass))
+                        .ephemeral(TranspileUtils.isEphemeral(psiClass))
+                        .struct(TranspileUtils.isStruct(psiClass))
                         .isTemplate(isTemplate)
                         .isAbstract(psiClass.hasModifierProperty(PsiModifier.ABSTRACT))
                         .build();
@@ -384,11 +402,11 @@ public class TypeResolverImpl implements TypeResolver {
             }
             if (psiClass.getSuperClass() != null &&
                     !Objects.equals(psiClass.getSuperClass().getQualifiedName(), Object.class.getName())) {
-                klass.setSuperType(((ClassType) resolveTypeOnly(TranspileUtil.getSuperClassType(psiClass))));
+                klass.setSuperType(((ClassType) resolveTypeOnly(TranspileUtils.getSuperClassType(psiClass))));
             }
             klass.setInterfaces(
                     NncUtils.map(
-                            TranspileUtil.getInterfaceTypes(psiClass),
+                            TranspileUtils.getInterfaceTypes(psiClass),
                             it -> ((ClassType) resolveTypeOnly(it))
                     )
             );
@@ -398,8 +416,8 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private void updateClassType(Klass classType, PsiClass psiClass) {
-        classType.setName(TranspileUtil.getBizClassName(psiClass));
-        classType.setStruct(TranspileUtil.isStruct(psiClass));
+        classType.setName(TranspileUtils.getBizClassName(psiClass));
+        classType.setStruct(TranspileUtils.isStruct(psiClass));
         classType.setAbstract(psiClass.hasModifierProperty(PsiModifier.ABSTRACT));
     }
 

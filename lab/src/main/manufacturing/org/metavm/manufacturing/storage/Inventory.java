@@ -3,8 +3,8 @@ package org.metavm.manufacturing.storage;
 import org.metavm.api.EntityIndex;
 import org.metavm.api.EntityType;
 import org.metavm.api.Index;
-import org.metavm.api.IndexUtils;
-import org.metavm.api.lang.ObjectUtils;
+import org.metavm.api.lang.IndexUtils;
+import org.metavm.api.lang.Lang;
 import org.metavm.manufacturing.material.*;
 import org.metavm.manufacturing.utils.Utils;
 
@@ -251,7 +251,7 @@ public class Inventory {
     public static void decreaseInventory(Inventory inventory, long quantity, Unit unit, InventoryOp op) {
         inventory.decreaseQuantity(quantity, unit, op);
         if(inventory.quantity == 0)
-            ObjectUtils.delete(inventory);
+            Lang.delete(inventory);
 
     }
 

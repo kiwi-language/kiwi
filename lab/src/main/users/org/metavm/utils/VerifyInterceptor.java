@@ -1,8 +1,11 @@
 package org.metavm.utils;
 
-import org.metavm.api.*;
+import org.metavm.api.EntityType;
+import org.metavm.api.Interceptor;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
+import org.metavm.api.lang.IndexUtils;
+import org.metavm.api.lang.Lang;
 import org.metavm.user.LabSession;
 
 import javax.annotation.Nullable;
@@ -17,7 +20,7 @@ public class VerifyInterceptor implements Interceptor {
         var session = IndexUtils.selectFirst(new LabSession.TokenIndex(token));
         if(session == null)
             throw new IllegalStateException("Login required");
-        RequestUtils.setContext("user", session.getUser());
+        Lang.setContext("user", session.getUser());
     }
 
     @Override

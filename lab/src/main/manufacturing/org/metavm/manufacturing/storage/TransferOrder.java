@@ -4,7 +4,7 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.ChildList;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
-import org.metavm.api.lang.SystemUtils;
+import org.metavm.api.lang.Lang;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -83,7 +83,7 @@ public class TransferOrder {
     }
 
     public void transfer(TransferRequest request) {
-        SystemUtils.print(String.format("Receiving a transfer request with %s items", request.items().size()));
+        Lang.print(String.format("Receiving a transfer request with %s items", request.items().size()));
         for (TransferRequestItem item : request.items()) {
             for (TransferRequestSubItem subItem : item.subItems()) {
                 if(subItem.inventory().getMaterial() != item.transferOrderItem().getMaterial())

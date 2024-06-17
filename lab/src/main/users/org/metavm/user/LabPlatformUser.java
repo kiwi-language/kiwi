@@ -1,23 +1,23 @@
 package org.metavm.user;
 
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityIndex;
+import org.metavm.api.EntityType;
+import org.metavm.api.lang.IdUtils;
+import org.metavm.api.lang.IndexUtils;
+import org.metavm.api.lang.PasswordUtils;
+import org.metavm.api.lang.SessionUtils;
 import org.metavm.application.LabApplication;
 import org.metavm.application.LabApplicationState;
 import org.metavm.application.PlatformApplication;
 import org.metavm.application.UserApplication;
-import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityIndex;
-import org.metavm.api.EntityType;
-import org.metavm.api.IndexUtils;
-import org.metavm.api.lang.IdUtils;
-import org.metavm.api.lang.PasswordUtils;
-import org.metavm.api.lang.SessionUtils;
 import org.metavm.utils.LabBusinessException;
 import org.metavm.utils.LabErrorCode;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.metavm.api.IndexUtils.selectFirst;
+import static org.metavm.api.lang.IndexUtils.selectFirst;
 
 @EntityType
 public class LabPlatformUser extends LabUser {

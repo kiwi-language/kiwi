@@ -2,7 +2,7 @@ package org.metavm.application;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.api.lang.SystemUtils;
+import org.metavm.api.lang.Lang;
 import org.metavm.message.LabMessage;
 import org.metavm.message.LabMessageKind;
 import org.metavm.user.LabPlatformUser;
@@ -94,9 +94,9 @@ public class UserApplication extends LabApplication {
 
 
     public static LabAppInvitation invite(LabAppInvitationRequest request) {
-        SystemUtils.print("Current application: " + LabUser.currentApplication().getName());
-        SystemUtils.print("Current user: " + LabUser.currentUser(LabUser.currentApplication()));
-        SystemUtils.print("Current platform user: " + LabUser.currentUser(PlatformApplication.getInstance()));
+        Lang.print("Current application: " + LabUser.currentApplication().getName());
+        Lang.print("Current user: " + LabUser.currentUser(LabUser.currentApplication()));
+        Lang.print("Current platform user: " + LabUser.currentUser(PlatformApplication.getInstance()));
 
         var app = request.application();
         ensureAppAdmin(app);

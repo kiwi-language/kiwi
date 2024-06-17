@@ -11,7 +11,7 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.Keys.*;
-import static org.metavm.autograph.TranspileUtil.createTemplateType;
+import static org.metavm.autograph.TranspileUtils.createTemplateType;
 import static org.metavm.util.NncUtils.invokeIfNotNull;
 
 public class ActivityAnalyzer extends JavaRecursiveElementVisitor {

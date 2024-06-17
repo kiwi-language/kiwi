@@ -8,7 +8,7 @@ public class Password {
         this.password = password;
     }
 
-    public String getPassword() {
+    public String toString() {
         return password;
     }
 }

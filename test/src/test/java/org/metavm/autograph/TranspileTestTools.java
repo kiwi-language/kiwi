@@ -3,13 +3,13 @@ package org.metavm.autograph;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -43,7 +43,7 @@ public class TranspileTestTools {
     }
 
     public static void initTranspilerUtils() {
-        TranspileUtil.init(PROJECT.getService(PsiElementFactory.class), PROJECT);
+        TranspileUtils.init(PROJECT.getService(PsiElementFactory.class), PROJECT);
     }
 
     public static PsiJavaFile findFile(PsiDirectory directory, Class<?> klass) {
@@ -72,7 +72,7 @@ public class TranspileTestTools {
     }
 
     public static PsiClassType getPsiClassType(Class<?> klass) {
-        return TranspileUtil.getElementFactory().createType(getPsiClass(klass));
+        return TranspileUtils.getElementFactory().createType(getPsiClass(klass));
     }
 
     public static PsiJavaFile getPsiJavaFile(Class<?> klass, boolean writable) {

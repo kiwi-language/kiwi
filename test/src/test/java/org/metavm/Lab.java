@@ -1,11 +1,10 @@
 package org.metavm;
 
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 
 import java.io.IOException;
-import java.lang.reflect.Parameter;
 import java.sql.SQLException;
-import java.util.Base64;
 import java.util.List;
 
 public class Lab {
@@ -14,19 +13,14 @@ public class Lab {
 
     private static Class<?> klass = Type.class;
 
-    public void test(List<String> list, String element) {}
+    public void test(List<String> list, String element) {
+    }
 
     public native void testNative();
 
     public static void main(String[] args) throws IOException, SQLException {
-        var bytes = new byte[] {1};
-        var base64 = Base64.getEncoder().encodeToString(bytes);
-        System.out.println(base64);
-
-        var m = Lab.class.getMethods()[1];
-        for (Parameter parameter : m.getParameters()) {
-            System.out.println(parameter.getParameterizedType());
-        }
+        var id = Id.parse("02f8ab0700e801");
+        System.out.println(id.getClass().getName());
     }
 
 

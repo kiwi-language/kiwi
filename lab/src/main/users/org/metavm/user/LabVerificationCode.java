@@ -3,9 +3,9 @@ package org.metavm.user;
 import org.metavm.api.EntityIndex;
 import org.metavm.api.EntityType;
 import org.metavm.api.Index;
-import org.metavm.api.IndexUtils;
 import org.metavm.api.lang.EmailUtils;
-import org.metavm.api.lang.NumberUtils;
+import org.metavm.api.lang.IndexUtils;
+import org.metavm.api.lang.Lang;
 import org.metavm.api.lang.RegexUtils;
 import org.metavm.utils.LabBusinessException;
 import org.metavm.utils.LabErrorCode;
@@ -80,7 +80,7 @@ public class LabVerificationCode {
     public static void sendVerificationCode(String receiver, String title, String clientIP) {
         if (!RegexUtils.match(EMAIL_PTN, receiver))
             throw new LabBusinessException(LabErrorCode.INVALID_EMAIL_ADDRESS);
-        var code = NumberUtils.format("000000", NumberUtils.random(1000000));
+        var code = Lang.formatNumber("000000", Lang.random(1000000));
         var count = IndexUtils.count(
                 new IndexClientIpCreatedAt(clientIP, new Date(System.currentTimeMillis() - 15 * 60 * 1000)),
                 new IndexClientIpCreatedAt(clientIP, new Date(System.currentTimeMillis()))

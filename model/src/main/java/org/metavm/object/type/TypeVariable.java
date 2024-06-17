@@ -47,7 +47,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
 
     public void setGenericDeclaration(GenericDeclaration genericDeclaration) {
         if (this.genericDeclaration != DummyGenericDeclaration.INSTANCE)
-            throw new InternalException("Can not change generic declaration of a type variable");
+            throw new InternalException("Can not change generic declaration of type variable: " + getTypeDesc());
         this.genericDeclaration = genericDeclaration;
         genericDeclaration.addTypeParameter(this);
     }
@@ -154,7 +154,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     }
 
     public String getTypeDesc() {
-        return genericDeclaration.getTypeDesc() + "_" + name;
+        return genericDeclaration.getTypeDesc() + "." + name;
     }
 
     @Override

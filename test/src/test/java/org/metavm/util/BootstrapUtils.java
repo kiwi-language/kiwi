@@ -4,7 +4,6 @@ import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.NativeFunctions;
 import org.metavm.event.MockEventQueue;
-import org.metavm.flow.Function;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.log.InstanceLogServiceImpl;
 import org.metavm.object.instance.log.TaskHandler;
@@ -23,8 +22,6 @@ import org.metavm.task.TaskSignal;
 
 import java.util.Collection;
 import java.util.List;
-
-import static java.util.Objects.requireNonNull;
 
 public class BootstrapUtils {
 
@@ -69,39 +66,7 @@ public class BootstrapUtils {
             StandardTypes.setIllegalArgumentExceptionKlass(defContext.getClassType(IllegalArgumentException.class).resolve());
             StandardTypes.setIllegalStateExceptionKlass(defContext.getClassType(IllegalStateException.class).resolve());
             StandardTypes.setNullPointerExceptionKlass(defContext.getClassType(NullPointerException.class).resolve());
-            NativeFunctions.setIsSourcePresent(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "isSourcePresent"
-            )));
-            NativeFunctions.setSetSourceFunc(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "setSource"
-            )));
-            NativeFunctions.setGetSourceFunc(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "getSource"
-            )));
-            NativeFunctions.setFunctionToInstance(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "functionToInstance"
-            )));
-            NativeFunctions.setSendEmail(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "sendEmail"
-            )));
-            NativeFunctions.setGetSessionEntry(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "getSessionEntry"
-            )));
-            NativeFunctions.setSetSessionEntry(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "setSessionEntry"
-            )));
-            NativeFunctions.setRemoveSessionEntry(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "removeSessionEntry"
-            )));
-            NativeFunctions.setTypeCast(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "typeCast"
-            )));
-            NativeFunctions.setPrint(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "print"
-            )));
-            NativeFunctions.setDelete(requireNonNull(defContext.selectFirstByKey(
-                    Function.UNIQUE_IDX_CODE, "delete"
-            )));
+            NativeFunctions.initializeFromDefContext(defContext);
             NativeFunctions.setEmailSender(MockEmailSender.INSTANCE);
 
             var state = BootstrapUtils.state.copy();

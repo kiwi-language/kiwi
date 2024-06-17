@@ -415,7 +415,7 @@ public class MethodGenerator {
         if (operand.getType().isNullable() && !targetType.isNullable())
             targetType = new UnionType(Set.of(targetType, StandardTypes.getNullType()));
         return createFunctionCall(
-                NativeFunctions.getTypeCast().getParameterized(List.of(targetType)),
+                NativeFunctions.typeCast.get().getParameterized(List.of(targetType)),
                 List.of(operand)
         );
     }

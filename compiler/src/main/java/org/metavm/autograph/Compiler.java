@@ -4,12 +4,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.metavm.api.ChildList;
 import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
-import org.metavm.api.ChildList;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.type.Klass;
@@ -20,6 +18,8 @@ import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.object.type.rest.dto.TypeDefDTO;
 import org.metavm.system.RegionConstants;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -86,7 +86,7 @@ public class Compiler {
             throw new RuntimeException(e);
         }
         project = projectEnv.getProject();
-        TranspileUtil.init(project.getService(PsiElementFactory.class), project);
+        TranspileUtils.init(project.getService(PsiElementFactory.class), project);
     }
 
     public boolean compile(List<String> sources) {
@@ -98,14 +98,12 @@ public class Compiler {
             var psiClasses = NncUtils.flatMap(files, file -> List.of(file.getClasses()));
             psiClasses.forEach(k -> classNames.add(k.getQualifiedName()));
             var psiClassTypes = NncUtils.map(
-                    psiClasses, TranspileUtil.getElementFactory()::createType
+                    psiClasses, TranspileUtils.getElementFactory()::createType
             );
             for (ResolutionStage stage : ResolutionStage.values()) {
                 try(var ignored = profiler.enter("stage: " + stage)) {
                     psiClassTypes.forEach(t -> typeResolver.resolve(t, stage));
                 }
-                if(stage == ResolutionStage.DECLARATION)
-                    System.out.println("Caught");
             }
             var generatedTypes = typeResolver.getGeneratedTypeDefs();
             long elapsed = System.currentTimeMillis() - start;

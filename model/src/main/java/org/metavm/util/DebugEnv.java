@@ -1,10 +1,10 @@
 package org.metavm.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.flow.MethodCallNode;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.PhysicalId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ public class DebugEnv {
 
     public static volatile boolean flag = false;
 
-    public static volatile boolean saveCompileResult = false;
+    public static volatile boolean saveCompileResult = true;
 
     public static volatile DurableInstance instance;
 

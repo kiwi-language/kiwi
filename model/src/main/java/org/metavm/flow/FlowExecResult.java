@@ -10,6 +10,15 @@ public record FlowExecResult(
         @Nullable Instance ret,
         @Nullable ClassInstance exception
 ) {
+
+    public static FlowExecResult of(Instance ret) {
+        return new FlowExecResult(ret, null);
+    }
+
+    public static FlowExecResult ofException(ClassInstance exception) {
+        return new FlowExecResult(null, exception);
+    }
+
     public boolean booleanRet() {
         if(ret instanceof BooleanInstance booleanInstance)
             return booleanInstance.getValue();

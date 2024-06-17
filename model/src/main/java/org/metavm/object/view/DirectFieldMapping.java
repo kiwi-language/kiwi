@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.flow.Value;
 import org.metavm.flow.*;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.FieldRef;
@@ -20,7 +19,7 @@ import java.util.function.Supplier;
 @EntityType
 public class DirectFieldMapping extends FieldMapping implements LocalKey, GenericElement {
 
-    private Field sourceField;
+    private FieldRef sourceFieldRef;
 
     @CopyIgnore
     @Nullable
@@ -29,7 +28,7 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     public DirectFieldMapping(Long tmpId, FieldRef targetFieldRef, FieldsObjectMapping containingMapping,
                               @Nullable NestedMapping nestedMapping, Field sourceField) {
         super(tmpId, targetFieldRef, containingMapping, nestedMapping);
-        this.sourceField = sourceField;
+        this.sourceFieldRef = sourceField.getRef();
     }
 
     @Override
@@ -50,7 +49,7 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
 
     @Override
     public @NotNull Field getSourceField() {
-        return sourceField;
+        return sourceFieldRef.resolve();
     }
 
     public static boolean checkReadonly(Field sourceField, boolean readonly) {
@@ -61,12 +60,13 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
 
     @Override
     public Supplier<Value> generateReadCode0(SelfNode selfNode) {
-        return () -> Values.nodeProperty(selfNode, sourceField);
+        return () -> Values.nodeProperty(selfNode, getSourceField());
     }
 
     @Override
     protected void generateWriteCode0(SelfNode selfNode, Supplier<Value> fieldValueSupplier) {
         var scope = selfNode.getScope();
+        var sourceField = getSourceField();
         var updateNode = new UpdateObjectNode(null, "update " + sourceField.getName(),
                 NamingUtils.tryAddPrefix(sourceField.getCode(), "update"), scope.getLastNode(), scope, Values.node(selfNode), List.of());
         updateNode.setUpdateField(sourceField, UpdateOp.SET, fieldValueSupplier.get());
@@ -74,7 +74,7 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
 
     @Override
     protected Type getTargetFieldType() {
-        return sourceField.getType();
+        return getSourceField().getType();
     }
 
     @Override
@@ -84,7 +84,7 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
 
     public void update(Field sourceField, boolean readonly) {
         checkReadonly(sourceField, readonly);
-        this.sourceField = sourceField;
+        this.sourceFieldRef = sourceField.getRef();
         setReadonly(readonly);
         resetTargetFieldType();
     }

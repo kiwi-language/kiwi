@@ -2,8 +2,8 @@ package org.metavm.autograph;
 
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiNewExpression;
-import org.metavm.common.ErrorCode;
 import org.metavm.api.ChildList;
+import org.metavm.common.ErrorCode;
 import org.metavm.expression.Expression;
 import org.metavm.expression.NodeExpression;
 import org.metavm.object.type.ArrayKind;
@@ -17,13 +17,13 @@ import java.util.Objects;
 
 public class NewListResolver implements NewResolver {
 
-    public static final PsiClassType CHILD_LIST_TYPE = TranspileUtil.createClassType(ChildList.class);
+    public static final PsiClassType CHILD_LIST_TYPE = TranspileUtils.createClassType(ChildList.class);
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
                     MethodSignature.create(CHILD_LIST_TYPE, "ChildList"),
-                    MethodSignature.create(TranspileUtil.createClassType(ArrayList.class), "ArrayList"),
-                    MethodSignature.create(TranspileUtil.createClassType(LinkedList.class), "LinkedList")
+                    MethodSignature.create(TranspileUtils.createClassType(ArrayList.class), "ArrayList"),
+                    MethodSignature.create(TranspileUtils.createClassType(LinkedList.class), "LinkedList")
             );
 
     @Override

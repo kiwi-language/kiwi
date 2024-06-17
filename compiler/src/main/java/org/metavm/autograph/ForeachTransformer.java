@@ -15,21 +15,21 @@ public class ForeachTransformer extends VisitorBase {
     public void visitForeachStatement(PsiForeachStatement statement) {
         var scope = requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
         var iterated = Objects.requireNonNull(statement.getIteratedValue());
-        var lisType = TranspileUtil.createClassType(List.class);
+        var lisType = TranspileUtils.createClassType(List.class);
         var iterationParam = statement.getIterationParameter().getName();
         var isListType = lisType.isAssignableFrom(Objects.requireNonNull(iterated.getType()));
         if (isListType) {
             var listVar = namer.newName("list", scope.getAllDefined());
             var indexVar = namer.newName("i", scope.getAllDefined());
             super.visitForeachStatement(statement);
-            var listDeclStmt = TranspileUtil.createStatementFromText(
+            var listDeclStmt = TranspileUtils.createStatementFromText(
                     String.format("var %s = %s;", listVar, iterated.getText()));
-            var indexDeclStmt = TranspileUtil.createStatementFromText(
+            var indexDeclStmt = TranspileUtils.createStatementFromText(
                     String.format("int %s = 0;", indexVar)
             );
             insertBefore(indexDeclStmt, statement);
             insertBefore(listDeclStmt, statement);
-            var whileStmt = (PsiWhileStatement) TranspileUtil.createStatementFromText(
+            var whileStmt = (PsiWhileStatement) TranspileUtils.createStatementFromText(
                     String.format("while (%s < %s.size()) {}", indexVar, listVar)
             );
             if (statement.getBody() != null)
@@ -37,7 +37,7 @@ public class ForeachTransformer extends VisitorBase {
             var codeBlock = Objects.requireNonNull((PsiBlockStatement) whileStmt.getBody()).getCodeBlock();
 
             codeBlock.addAfter(
-                    TranspileUtil.createStatementFromText(
+                    TranspileUtils.createStatementFromText(
                             String.format("var %s = %s.get(%s++);", iterationParam, listVar, indexVar)),
                     null
             );

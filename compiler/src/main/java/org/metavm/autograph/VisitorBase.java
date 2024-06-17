@@ -54,7 +54,7 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
     // Do not remove, for debug
     @SuppressWarnings("unused")
     protected boolean containsDescendant(PsiElement ancestor, PsiElement descendant) {
-        return TranspileUtil.containsDescendant(ancestor, descendant);
+        return TranspileUtils.containsDescendant(ancestor, descendant);
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -194,7 +194,7 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
         if (body instanceof PsiBlockStatement blockStmt) {
             blockStatement = blockStmt;
         } else {
-            blockStatement = (PsiBlockStatement) TranspileUtil.createStatementFromText("{}");
+            blockStatement = (PsiBlockStatement) TranspileUtils.createStatementFromText("{}");
             var bodyCopy = body.copy();
             blockStatement = (PsiBlockStatement) replace(body, blockStatement);
             blockStatement.getCodeBlock().add(bodyCopy);

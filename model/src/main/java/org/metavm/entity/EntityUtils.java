@@ -2,8 +2,6 @@ package org.metavm.entity;
 
 import javassist.util.proxy.ProxyObject;
 import org.metavm.api.*;
-import org.reflections.Reflections;
-import org.reflections.util.ConfigurationBuilder;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.core.Id;
@@ -13,6 +11,8 @@ import org.metavm.object.type.Klass;
 import org.metavm.util.LinkedList;
 import org.metavm.util.Reference;
 import org.metavm.util.*;
+import org.reflections.Reflections;
+import org.reflections.util.ConfigurationBuilder;
 
 import java.lang.reflect.*;
 import java.math.BigDecimal;
@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static org.metavm.util.ReflectionUtils.*;
 
@@ -347,13 +348,15 @@ public class EntityUtils {
         }
     }
 
+    private static final Set<Class<?>> builtinModelClasses = Set.of(Supplier.class);
+
     public static Set<Class<?>> getModelClasses() {
         Reflections reflections =
                 new Reflections(new ConfigurationBuilder().forPackages("org.metavm"));
         Set<Class<? extends Entity>> entitySubTypes = reflections.getSubTypesOf(Entity.class);
         Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(EntityType.class);
         return NncUtils.filterUnique(
-                NncUtils.mergeSets(entitySubTypes, entityTypes),
+                NncUtils.mergeSets(entitySubTypes, entityTypes, builtinModelClasses),
                 klass -> !isCompiled(klass)
         );
     }
