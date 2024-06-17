@@ -2,11 +2,9 @@ package org.metavm.object.view;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.slf4j.Logger;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.EntityRepository;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.entity.StandardTypes;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
@@ -23,13 +21,14 @@ import org.metavm.object.view.mocks.MockMappingRepository;
 import org.metavm.util.Instances;
 import org.metavm.util.MockUtils;
 import org.metavm.util.TestUtils;
+import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.metavm.entity.StandardTypes.getStringType;
+import static org.metavm.object.type.Types.getStringType;
 
 public class MappingSaverTest extends TestCase {
 
@@ -150,7 +149,7 @@ public class MappingSaverTest extends TestCase {
         var barInst = ClassInstanceBuilder.newBuilder(barType.getType())
                 .data(Map.of(
                         barCodeField,
-                        new StringInstance("bar001", StandardTypes.getStringType())
+                        new StringInstance("bar001", Types.getStringType())
                 ))
                 .build();
 
@@ -160,7 +159,7 @@ public class MappingSaverTest extends TestCase {
                 .data(
                         Map.of(
                                 fooNameField,
-                                new StringInstance("foo", StandardTypes.getStringType()),
+                                new StringInstance("foo", Types.getStringType()),
                                 fooBarsField,
                                 barChildArray
                         )
@@ -379,7 +378,7 @@ public class MappingSaverTest extends TestCase {
         var flowType = KlassBuilder.newBuilder("Flow", "Flow").build();
         var scopeType = KlassBuilder.newBuilder("Scope", "Scope").build();
         var scopeArrayType = new ArrayType(scopeType.getType(), ArrayKind.CHILD);
-        var nullableScopeArrayType = new UnionType(Set.of(scopeArrayType, StandardTypes.getNullType()));
+        var nullableScopeArrayType = new UnionType(Set.of(scopeArrayType, Types.getNullType()));
         var flowScopesField = FieldBuilder.newBuilder("scopes", "scopes", flowType, nullableScopeArrayType).isChild(true).build();
         TestUtils.initEntityIds(flowType);
         var typeRepository = new MockTypeDefRepository();
@@ -469,7 +468,7 @@ public class MappingSaverTest extends TestCase {
 
         var listMapping = saver.saveBuiltinMapping(listKlass, true);
 
-        var listOfStrType = listKlass.getParameterized(List.of(StandardTypes.getStringType()), ResolutionStage.DEFINITION);
+        var listOfStrType = listKlass.getParameterized(List.of(Types.getStringType()), ResolutionStage.DEFINITION);
         TestUtils.initEntityIds(listOfStrType);
 
         var listOfStrMapping = Objects.requireNonNull(listOfStrType.getDefaultMapping());

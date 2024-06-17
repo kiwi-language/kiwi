@@ -3,14 +3,10 @@ package org.metavm.expression;
 import junit.framework.TestCase;
 import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.entity.StandardTypes;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceProvider;
-import org.metavm.object.type.IndexedTypeDefProvider;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeDef;
+import org.metavm.object.type.*;
 
 import javax.annotation.Nullable;
 
@@ -75,7 +71,7 @@ public class ExpressionParserTest extends TestCase {
                 }
         );
 
-        var expr = parser.parse(StandardTypes.getAnyType());
+        var expr = parser.parse(Types.getAnyType());
     }
 
 }

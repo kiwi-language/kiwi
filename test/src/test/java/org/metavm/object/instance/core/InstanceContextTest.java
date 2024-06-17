@@ -9,8 +9,9 @@ import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.cache.MockCache;
-import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.FieldBuilder;
+import org.metavm.object.type.KlassBuilder;
+import org.metavm.object.type.Types;
 import org.metavm.util.*;
 
 import java.util.List;
@@ -58,7 +59,7 @@ public class InstanceContextTest extends TestCase {
     public void test() {
         var fooType = KlassBuilder.newBuilder("Foo", "Foo").build();
         fooType.initId(PhysicalId.of(101L, 0L, TestUtils.mockClassType()));
-        var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
+        var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, Types.getStringType())
                 .build();
         fooNameField.initId(PhysicalId.of(111L, 0L, TestUtils.mockClassType()));
 

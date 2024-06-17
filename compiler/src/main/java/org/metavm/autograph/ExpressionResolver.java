@@ -3,7 +3,6 @@ package org.metavm.autograph;
 import com.google.common.collect.Streams;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
-import org.metavm.entity.StandardTypes;
 import org.metavm.entity.natives.NativeFunctions;
 import org.metavm.expression.*;
 import org.metavm.flow.*;
@@ -559,7 +558,7 @@ public class ExpressionResolver {
                 param -> {
                     var t = typeResolver.resolveDeclaration(param.getType());
                     if (TranspileUtils.getAnnotation(param, Nullable.class) != null)
-                        t = new UnionType(Set.of(t, StandardTypes.getNullType()));
+                        t = new UnionType(Set.of(t, Types.getNullType()));
                     return t;
                 }
         );
@@ -682,7 +681,7 @@ public class ExpressionResolver {
     private Type resolveParameterType(PsiParameter param, PsiSubstitutor substitutor) {
         var t = typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()));
         if (TranspileUtils.getAnnotation(param, Nullable.class) != null)
-            t = new UnionType(Set.of(t, StandardTypes.getNullType()));
+            t = new UnionType(Set.of(t, Types.getNullType()));
         return t;
     }
 
@@ -785,7 +784,7 @@ public class ExpressionResolver {
         methodGenerator.exitCondSection(mergeNode, List.of());
 
         var valueField = FieldBuilder
-                .newBuilder("value", "value", mergeNode.getKlass(), StandardTypes.getBooleanType())
+                .newBuilder("value", "value", mergeNode.getKlass(), Types.getBooleanType())
                 .build();
         new MergeNodeField(valueField, mergeNode, Map.of(
                 thenBranch, Values.expression(Expressions.trueExpression()),

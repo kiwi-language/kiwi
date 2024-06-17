@@ -1,11 +1,11 @@
 package org.metavm.object.instance;
 
 import org.metavm.entity.BuiltinKlasses;
-import org.metavm.entity.StandardTypes;
 import org.metavm.expression.*;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.PrimitiveKind;
+import org.metavm.object.type.Types;
 import org.metavm.system.RegionConstants;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -92,7 +92,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         }
         var array = new ArrayInstance(
                 Id.parse(instanceDTO.id()),
-                StandardTypes.getAnyArrayType(),
+                Types.getAnyArrayType(),
                 false,
                 null
         );
@@ -117,7 +117,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
     private DurableInstance createReferenceProxy(String idStr) {
         var id = Id.parse(idStr);
         if (RegionConstants.isArrayId(id)) {
-            return new ArrayInstance(id, StandardTypes.getAnyArrayType(), false, null);
+            return new ArrayInstance(id, Types.getAnyArrayType(), false, null);
         } else {
             return new ClassInstance(id, BuiltinKlasses.entity.get().getType(), false, null);
         }

@@ -3,6 +3,7 @@ package org.metavm.entity;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.object.type.ColumnStore;
 import org.metavm.object.type.TypeCategory;
+import org.metavm.object.type.Types;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
 
@@ -38,7 +39,7 @@ public class InterfaceParser<T> extends PojoParser<T, InterfaceDef<T>> {
                     continue;
                 var returnType = defContext.getType(javaMethod.getGenericReturnType());
                 if(ReflectionUtils.isAnnotatedWithNullable(javaMethod))
-                    returnType = StandardTypes.getNullableType(returnType);
+                    returnType = Types.getNullableType(returnType);
                 var method = MethodBuilder.newBuilder(get().klass, javaMethod.getName(), javaMethod.getName())
                         .parameters(NncUtils.map(javaMethod.getParameters(), this::createParameter))
                         .typeParameters(NncUtils.map(javaMethod.getTypeParameters(), this::createTypeVariable))

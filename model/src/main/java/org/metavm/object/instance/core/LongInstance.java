@@ -1,9 +1,9 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.entity.StandardTypes;
 import org.metavm.object.type.PrimitiveKind;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.Instances;
 import org.metavm.util.WireTypes;
@@ -30,7 +30,7 @@ public class LongInstance extends NumberInstance {
     }
 
     public DoubleInstance toDouble() {
-        return new DoubleInstance(value, StandardTypes.getDoubleType());
+        return new DoubleInstance(value, Types.getDoubleType());
     }
 
     @Override

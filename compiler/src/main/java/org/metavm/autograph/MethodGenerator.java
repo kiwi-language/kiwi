@@ -3,7 +3,6 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiMethod;
 import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.ModelDefRegistry;
-import org.metavm.entity.StandardTypes;
 import org.metavm.entity.natives.NativeFunctions;
 import org.metavm.expression.Expression;
 import org.metavm.expression.ExpressionTypeMap;
@@ -84,7 +83,7 @@ public class MethodGenerator {
                 scope()
         );
         FieldBuilder.newBuilder("exception", "exception", node.getKlass(),
-                        StandardTypes.getNullableThrowableType())
+                        Types.getNullableThrowableType())
                 .build();
         return node;
     }
@@ -414,7 +413,7 @@ public class MethodGenerator {
 
     NodeRT createTypeCast(Expression operand, Type targetType) {
         if (operand.getType().isNullable() && !targetType.isNullable())
-            targetType = new UnionType(Set.of(targetType, StandardTypes.getNullType()));
+            targetType = new UnionType(Set.of(targetType, Types.getNullType()));
         return createFunctionCall(
                 NativeFunctions.typeCast.get().getParameterized(List.of(targetType)),
                 List.of(operand)

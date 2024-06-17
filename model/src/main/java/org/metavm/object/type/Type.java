@@ -1,7 +1,9 @@
 package org.metavm.object.type;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.NoProxy;
+import org.metavm.entity.SerializeContext;
+import org.metavm.entity.ValueElement;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
@@ -82,7 +84,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
     }
 
     public boolean isNullable() {
-        return isAssignableFrom(StandardTypes.getNullType());
+        return isAssignableFrom(Types.getNullType());
     }
 
     public boolean isBinaryNullable() {

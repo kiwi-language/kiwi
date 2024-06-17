@@ -4,7 +4,6 @@ import com.intellij.psi.*;
 import org.metavm.api.EntityIndex;
 import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.StandardTypes;
 import org.metavm.expression.*;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
@@ -256,7 +255,7 @@ public class Generator extends CodeGenVisitor {
             exitCondSection(mergeNode, catchOutputVars);
 
             var exceptionField = FieldBuilder.newBuilder("exception", "exception",
-                    mergeNode.getKlass(), StandardTypes.getNullableThrowableType()).build();
+                    mergeNode.getKlass(), Types.getNullableThrowableType()).build();
 
             final var exceptionExprFinal = exceptionExpr;
             new MergeNodeField(
@@ -624,7 +623,7 @@ public class Generator extends CodeGenVisitor {
         var node = builder().createWhile();
         Field condField = null;
         if (condition != null) {
-            condField = builder().newTemproryField(node.getKlass(), "condition", StandardTypes.getBooleanType());
+            condField = builder().newTemproryField(node.getKlass(), "condition", Types.getBooleanType());
         }
         var bodyScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
         Set<QualifiedName> liveIn = requireNonNull(statement.getUserData(Keys.LIVE_VARS_IN));
@@ -700,7 +699,7 @@ public class Generator extends CodeGenVisitor {
             processLoop(statement, getExtraLoopTest(statement),
                     (whileNode, loopVar2Field) -> {
                         var indexField = FieldBuilder
-                                .newBuilder("index", "index", whileNode.getKlass(), StandardTypes.getLongType())
+                                .newBuilder("index", "index", whileNode.getKlass(), Types.getLongType())
                                 .build();
                         whileNode.setCondition(
                                 Values.expression(

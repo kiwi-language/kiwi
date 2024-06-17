@@ -1,7 +1,5 @@
 package org.metavm.object.type;
 
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.metavm.common.Page;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.Id;
@@ -13,6 +11,8 @@ import org.metavm.util.BusinessException;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 import org.metavm.util.Password;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -265,7 +265,7 @@ public class TableManager extends EntityContextFactoryAware {
                 type = new ArrayType(type, ArrayKind.READ_WRITE);
             }
             if (!required) {
-                type = StandardTypes.getNullableType(type);
+                type = getNullableType(type);
             }
         } else {
             throw BusinessException.invalidColumn(name, "column type required");

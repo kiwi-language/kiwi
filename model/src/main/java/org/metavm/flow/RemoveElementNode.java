@@ -2,7 +2,9 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.RemoveElementNodeParam;
@@ -10,6 +12,7 @@ import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
+import org.metavm.object.type.Types;
 import org.metavm.util.AssertUtils;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
@@ -37,7 +40,7 @@ public class RemoveElementNode extends NodeRT {
     private Value element;
 
     public RemoveElementNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Value array, Value element) {
-        super(tmpId, name, code, StandardTypes.getBooleanType(), previous, scope);
+        super(tmpId, name, code, Types.getBooleanType(), previous, scope);
         check(array, element);
         this.array = array;
         this.element = element;

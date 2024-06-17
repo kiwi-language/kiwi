@@ -1,11 +1,11 @@
 package org.metavm.expression;
 
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.StandardTypes;
 import org.metavm.entity.natives.IteratorImplNative;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
 import org.metavm.util.*;
 
 import java.text.DecimalFormat;
@@ -119,7 +119,7 @@ public class FunctionMethods {
     }
 
     public static StringInstance CONCAT(Instance str1, Instance str2) {
-        return new StringInstance(str1.getTitle() + str2.getTitle(), StandardTypes.getStringType());
+        return new StringInstance(str1.getTitle() + str2.getTitle(), Types.getStringType());
     }
 
     public static StringInstance REPLACE(StringInstance string, StringInstance target, StringInstance replacement) {
@@ -131,7 +131,7 @@ public class FunctionMethods {
     }
 
     public static LongInstance RANDOM() {
-        return new LongInstance(NncUtils.random(), StandardTypes.getLongType());
+        return new LongInstance(NncUtils.random(), Types.getLongType());
     }
 
     public static Instance IF(BooleanInstance condition, Instance value1, Instance value2) {

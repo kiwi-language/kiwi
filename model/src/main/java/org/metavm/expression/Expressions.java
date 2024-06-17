@@ -1,13 +1,9 @@
 package org.metavm.expression;
 
-import org.metavm.entity.StandardTypes;
 import org.metavm.flow.NodeRT;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.PrimitiveKind;
-import org.metavm.object.type.Property;
+import org.metavm.object.type.*;
 import org.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -184,7 +180,7 @@ public class Expressions {
                 propertyExpr(field),
                 new ArrayExpression(
                         NncUtils.map(values, ConstantExpression::new),
-                        StandardTypes.getAnyArrayType()
+                        Types.getAnyArrayType()
                 )
         );
     }

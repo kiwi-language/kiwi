@@ -177,7 +177,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
             var fieldType = defContext.getType(javaFieldType);
             var targetMapper = fieldType instanceof PrimitiveType ? null : defContext.getMapper(javaFieldType);
             if (ReflectionUtils.isAnnotatedWithNullable(javaField))
-                fieldType = StandardTypes.getNullableType(fieldType);
+                fieldType = Types.getNullableType(fieldType);
             org.metavm.object.type.Field field = createField(javaField, declaringTypeDef, fieldType);
             new FieldDef(
                     field,
@@ -239,9 +239,9 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
                 .lazy(lazy)
                 .readonly(Modifier.isFinal(javaField.getModifiers()))
                 .column(columnStore.getColumn(javaType, javaField, fieldType.getSQLType()))
-                .defaultValue(new NullInstance(StandardTypes.getNullType()))
+                .defaultValue(new NullInstance(Types.getNullType()))
                 .isChild(isChild)
-                .staticValue(new NullInstance(StandardTypes.getNullType()))
+                .staticValue(new NullInstance(Types.getNullType()))
                 .access(parseAccess(javaField.getModifiers()))
                 .build();
         if (asTitle)
@@ -310,7 +310,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
     protected Parameter createParameter(java.lang.reflect.Parameter javaParameter) {
         var type = defContext.getType(javaParameter.getParameterizedType());
         if (ReflectionUtils.isAnnotatedWithNullable(javaParameter))
-            type = StandardTypes.getNullableType(type);
+            type = Types.getNullableType(type);
         return new Parameter(
                 null,
                 javaParameter.getName(),

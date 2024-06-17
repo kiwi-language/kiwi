@@ -10,6 +10,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
+import org.metavm.object.type.Types;
 import org.metavm.object.view.rest.dto.FieldsObjectMappingParam;
 import org.metavm.object.view.rest.dto.ObjectMappingParam;
 import org.metavm.util.BusinessException;
@@ -137,7 +138,7 @@ public class FieldsObjectMapping extends ObjectMapping {
                 )
                 .existing(writeMethod)
                 .codeSource(this)
-                .returnType(StandardTypes.getVoidType())
+                .returnType(Types.getVoidType())
                 .isSynthetic(true)
                 .parameters(writeMethod != null ? writeMethod.getParameter(0) :
                         new Parameter(null, "view", "view", getTargetType()))

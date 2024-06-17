@@ -6,13 +6,13 @@ import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiRecordComponent;
 import org.metavm.api.EntityIndex;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.StandardTypes;
 import org.metavm.expression.ThisExpression;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Values;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.KlassBuilder;
+import org.metavm.object.type.Types;
 
 import java.util.List;
 
@@ -47,8 +47,8 @@ public class IndexDefiner extends VisitorBase {
                             dummyType,
                             "dummy", "dummy"
                     )
-                    .staticType(new FunctionType(List.of(dummyType.getType()), StandardTypes.getVoidType()))
-                    .type(new FunctionType(List.of(), StandardTypes.getVoidType()))
+                    .staticType(new FunctionType(List.of(dummyType.getType()), Types.getVoidType()))
+                    .type(new FunctionType(List.of(), Types.getVoidType()))
                     .build();
             builder = new MethodGenerator(dummyMethod, typeResolver, this);
             currentIndex = requireNonNull(psiClass.getUserData(Keys.INDEX));

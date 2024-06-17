@@ -2,7 +2,10 @@ package org.metavm.flow;
 
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
-import org.metavm.entity.*;
+import org.metavm.entity.EntityContextFactory;
+import org.metavm.entity.EntityContextFactoryAware;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.NodeExpression;
 import org.metavm.flow.rest.*;
@@ -64,7 +67,7 @@ public class FlowManager extends EntityContextFactoryAware {
                     KlassBuilder.newBuilder("TryEndOutput", "TryEndOutput").temporary().build(),
                     tryNode, scope);
             FieldBuilder.newBuilder("exception", "exception",
-                            tryEndNode.getType().resolve(), StandardTypes.getNullableThrowableType())
+                            tryEndNode.getType().resolve(), Types.getNullableThrowableType())
                     .build();
             context.bind(tryEndNode);
             afterFlowChange(scope.getFlow(), context);
@@ -611,7 +614,7 @@ public class FlowManager extends EntityContextFactoryAware {
             excetpionFieldDTO = outputType.resolve().getFieldByCode("exception").toDTO();
         } else {
             excetpionFieldDTO = FieldDTOBuilder
-                    .newBuilder("exception", StandardTypes.getNullableThrowableType().toExpression())
+                    .newBuilder("exception", Types.getNullableThrowableType().toExpression())
                     .readonly(true)
                     .code("exception")
                     .build();

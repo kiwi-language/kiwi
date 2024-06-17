@@ -13,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.*;
 import org.metavm.api.builtin.IndexDef;
 import org.metavm.entity.FlowParam;
-import org.metavm.entity.StandardTypes;
 import org.metavm.entity.natives.NativeFunctionDef;
 import org.metavm.entity.natives.NativeFunctions;
 import org.metavm.object.type.Type;
@@ -720,7 +719,7 @@ public class TranspileUtils {
     public static Type resolveParameterType(PsiParameter parameter, TypeResolver typeResolver) {
         var type = typeResolver.resolveTypeOnly(parameter.getType());
         if(isAnnotatedWithNullable(parameter))
-            type = StandardTypes.getNullableType(type);
+            type = Types.getNullableType(type);
         return type;
     }
 

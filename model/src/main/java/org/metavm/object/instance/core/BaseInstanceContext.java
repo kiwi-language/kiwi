@@ -1,19 +1,23 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.ContextAttributeKey;
+import org.metavm.entity.EntityUtils;
+import org.metavm.entity.InstanceIndexQuery;
+import org.metavm.entity.LockMode;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.TypeDefProvider;
+import org.metavm.object.type.Types;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.util.*;
 import org.metavm.util.profile.Profiler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
@@ -329,7 +333,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (id.isArray()) {
             return switch (id) {
                 case PhysicalId physicalId ->
-                        new ArrayInstance(physicalId, StandardTypes.getAnyArrayType(), false, this::initializeInstance);
+                        new ArrayInstance(physicalId, Types.getAnyArrayType(), false, this::initializeInstance);
                 case ViewId viewId -> allocateView(viewId);
                 default -> throw new IllegalStateException("Unexpected value: " + id);
             };

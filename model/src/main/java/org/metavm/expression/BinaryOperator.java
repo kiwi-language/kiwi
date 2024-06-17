@@ -1,10 +1,10 @@
 package org.metavm.expression;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.StandardTypes;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.query.OperatorTypes;
 import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 
@@ -70,7 +70,7 @@ public enum BinaryOperator {
     },
 
     // relational
-    GT(7, ">", 5, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    GT(7, ">", 5, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return ((NumberInstance) first).gt((NumberInstance) second);
@@ -81,7 +81,7 @@ public enum BinaryOperator {
             return LE;
         }
     },
-    GE(8, ">=", 5, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    GE(8, ">=", 5, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return ((NumberInstance) first).ge((NumberInstance) second);
@@ -92,7 +92,7 @@ public enum BinaryOperator {
             return LT;
         }
     },
-    LT(9, "<", 5, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    LT(9, "<", 5, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return ((NumberInstance) first).lt((NumberInstance) second);
@@ -103,7 +103,7 @@ public enum BinaryOperator {
             return GE;
         }
     },
-    LE(10, "<=", 5, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    LE(10, "<=", 5, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return ((NumberInstance) first).le((NumberInstance) second);
@@ -116,7 +116,7 @@ public enum BinaryOperator {
     },
 
     // equality
-    EQ(11, "=", 6, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    EQ(11, "=", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return Instances.booleanInstance(first.equals(second));
@@ -127,7 +127,7 @@ public enum BinaryOperator {
             return NE;
         }
     },
-    NE(12, "!=", 6, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    NE(12, "!=", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return Instances.booleanInstance(!first.equals(second));
@@ -138,31 +138,31 @@ public enum BinaryOperator {
             return EQ;
         }
     },
-    STARTS_WITH(13, "starts with", 6, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    STARTS_WITH(13, "starts with", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return first.toStringInstance().startsWith(second.toStringInstance());
         }
     },
-    LIKE(14, "like", 6, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    LIKE(14, "like", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return first.toStringInstance().contains(second.toStringInstance());
         }
     },
-    IN(15, "in", 6, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    IN(15, "in", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return Instances.booleanInstance(((ArrayInstance) second).contains(first));
         }
     },
-    AND(20, "and", 7, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    AND(20, "and", 7, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return ((BooleanInstance) first).and((BooleanInstance) second);
         }
     },
-    OR(21, "or", 8, OperatorTypes.BINARY, StandardTypes.getBooleanType()) {
+    OR(21, "or", 8, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return ((BooleanInstance) first).or((BooleanInstance) second);

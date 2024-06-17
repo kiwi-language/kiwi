@@ -2,7 +2,6 @@ package org.metavm.expression;
 
 import org.metavm.entity.CopyVisitor;
 import org.metavm.entity.Element;
-import org.metavm.entity.StandardTypes;
 import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
 import org.metavm.util.LinkedList;
@@ -65,7 +64,7 @@ public class ExpressionResolverV2 extends CopyVisitor {
             Type elementType = assignedElementType;
             if (elementType == null) {
                 if (types.isEmpty()) {
-                    elementType = StandardTypes.getNeverType();
+                    elementType = Types.getNeverType();
                 } else {
                     elementType = Types.getLeastUpperBound(types);
                 }
@@ -136,7 +135,7 @@ public class ExpressionResolverV2 extends CopyVisitor {
             var alias = resolvedArray instanceof AsExpression asExpression ? asExpression.getAlias() : null;
             var elementType = ((ArrayType) resolvedArray.getType()).getElementType();
             var subContext = new SubParsingContext(alias, elementType, context);
-            var condition = ExpressionResolverV2.resolve(expression.getCondition(), StandardTypes.getBooleanType(), subContext);
+            var condition = ExpressionResolverV2.resolve(expression.getCondition(), Types.getBooleanType(), subContext);
             return new AllMatchExpression(resolvedArray, condition);
         } finally {
             assignedTypeStack.pop();

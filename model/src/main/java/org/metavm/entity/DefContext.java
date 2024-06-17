@@ -89,13 +89,13 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     public org.metavm.object.type.Type getType(Type javaType) {
-        var type = StandardTypes.getPrimitiveType(javaType);
+        var type = Types.getPrimitiveType(javaType);
         if (type != null)
             return type;
         if (javaType instanceof Class<?> k && Instance.class.isAssignableFrom(k))
             return new AnyType();
         if (BiUnion.isNullable(javaType))
-            return StandardTypes.getNullableType(getType(BiUnion.getUnderlyingType(javaType)));
+            return Types.getNullableType(getType(BiUnion.getUnderlyingType(javaType)));
         if (javaType instanceof ParameterizedType pType) {
             var rawClass = (Class<?>) pType.getRawType();
             var typeArgs = pType.getActualTypeArguments();
@@ -528,7 +528,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     public Type getJavaType(org.metavm.object.type.Type type) {
-        var javaType = StandardTypes.getPrimitiveJavaType(type);
+        var javaType = Types.getPrimitiveJavaType(type);
         if (javaType != null)
             return javaType;
         if (type.isBinaryNullable())

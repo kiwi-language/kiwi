@@ -1,9 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.object.type.ClassSource;
-import org.metavm.object.type.FieldBuilder;
-import org.metavm.object.type.KlassBuilder;
-import org.metavm.object.type.TypeVariable;
+import org.metavm.object.type.*;
 import org.metavm.util.NncUtils;
 
 import java.util.List;
@@ -47,8 +44,8 @@ public class MockStandardTypesInitializer {
                 .tmpId(NncUtils.randomNonNegative())
                 .build();
         enumTypeParam.setBounds(List.of(enumType.getType()));
-        FieldBuilder.newBuilder("name", "name", enumType, StandardTypes.getStringType()).build();
-        FieldBuilder.newBuilder("ordinal", "ordinal", enumType, StandardTypes.getLongType()).build();
+        FieldBuilder.newBuilder("name", "name", enumType, Types.getStringType()).build();
+        FieldBuilder.newBuilder("ordinal", "ordinal", enumType, Types.getLongType()).build();
         BuiltinKlasses.enum_.set(enumType);
         BuiltinKlasses.entity.set(KlassBuilder.newBuilder("Entity", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)

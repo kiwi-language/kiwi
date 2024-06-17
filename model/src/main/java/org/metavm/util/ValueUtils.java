@@ -18,19 +18,19 @@ public class ValueUtils {
 
     public static Type getValueType(Object value) {
         if (value instanceof String) {
-            return StandardTypes.getStringType();
+            return Types.getStringType();
         }
         if (isFloat(value)) {
-            return StandardTypes.getDoubleType();
+            return Types.getDoubleType();
         }
         if (value instanceof Long || value instanceof Integer) {
-            return StandardTypes.getLongType();
+            return Types.getLongType();
         }
         if (isBoolean(value)) {
-            return StandardTypes.getBooleanType();
+            return Types.getBooleanType();
         }
         if (isTime(value)) {
-            return StandardTypes.getTimeType();
+            return Types.getTimeType();
         }
         if (value instanceof Instance instance) {
             return instance.getType();
@@ -172,19 +172,19 @@ public class ValueUtils {
 
     public static Type getPrimitiveType(Class<?> klass) {
         if (isBoolean(klass)) {
-            return StandardTypes.getBooleanType();
+            return Types.getBooleanType();
         }
         if (isString(klass)) {
-            return StandardTypes.getStringType();
+            return Types.getStringType();
         }
         if (isLong(klass) || isInteger(klass)) {
-            return StandardTypes.getLongType();
+            return Types.getLongType();
         }
         if (isTime(klass)) {
-            return StandardTypes.getTimeType();
+            return Types.getTimeType();
         }
         if (isFloat(klass)) {
-            return StandardTypes.getDoubleType();
+            return Types.getDoubleType();
         }
         throw new InternalException("Type " + klass.getName() + " is not a primitive type");
     }

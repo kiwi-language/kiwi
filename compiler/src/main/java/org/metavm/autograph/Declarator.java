@@ -5,7 +5,6 @@ import org.metavm.api.*;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.StandardTypes;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
@@ -211,8 +210,8 @@ public class Declarator extends CodeGenVisitor {
 
     private List<Parameter> getEnumConstructorParams() {
         return List.of(
-                new Parameter(null, "name", "__name__", StandardTypes.getStringType()),
-                new Parameter(null, "ordinal", "__ordinal__", StandardTypes.getLongType())
+                new Parameter(null, "name", "__name__", Types.getStringType()),
+                new Parameter(null, "ordinal", "__ordinal__", Types.getLongType())
         );
     }
 
@@ -232,7 +231,7 @@ public class Declarator extends CodeGenVisitor {
     private Type resolveParameterType(PsiParameter parameter) {
         var type = resolveType(parameter.getType());
         if (TranspileUtils.getAnnotation(parameter, Nullable.class) != null)
-            type = StandardTypes.getNullableType(type);
+            type = Types.getNullableType(type);
         return type;
     }
 
@@ -249,7 +248,7 @@ public class Declarator extends CodeGenVisitor {
         }
         var type = resolveType(psiField.getType());
         if (TranspileUtils.getAnnotation(psiField, Nullable.class) != null)
-            type = StandardTypes.getNullableType(type);
+            type = Types.getNullableType(type);
         var klass = currentClass();
         var field = TranspileUtils.isStatic(psiField) ?
                 klass.findSelfStaticFieldByCode(psiField.getName())
@@ -299,7 +298,7 @@ public class Declarator extends CodeGenVisitor {
         var metaType = resolveType(type);
         if (TranspileUtils.getAnnotation(method, Nullable.class) != null ||
                 method.getReturnType() != null && TranspileUtils.getAnnotation(method.getReturnType(), Nullable.class) != null)
-            metaType = StandardTypes.getNullableType(metaType);
+            metaType = Types.getNullableType(metaType);
         return metaType;
     }
 

@@ -8,15 +8,11 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.StandardTypes;
 import org.metavm.expression.antlr.MetaVMLexer;
 import org.metavm.expression.antlr.MetaVMParser;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.query.OperatorTypes;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.*;
 import org.metavm.util.Constants;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -145,7 +141,7 @@ public class ExpressionParser {
         return new ArrayExpression(
                 list.expressionList() != null ?
                         parseExpressionList(list.expressionList()) : List.of(),
-                StandardTypes.getAnyArrayType()
+                Types.getAnyArrayType()
         );
     }
 

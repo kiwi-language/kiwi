@@ -1,13 +1,6 @@
 package org.metavm.object.type;
 
 import org.metavm.beans.BeanDefinitionRegistry;
-import org.metavm.object.version.VersionManager;
-import org.metavm.object.version.Versions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.metavm.common.Page;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
@@ -22,11 +15,18 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.rest.dto.*;
+import org.metavm.object.version.VersionManager;
+import org.metavm.object.version.Versions;
 import org.metavm.task.AddFieldJobGroup;
 import org.metavm.task.TaskManager;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -347,7 +347,7 @@ public class TypeManager extends EntityContextFactoryAware {
             var upperBound = org.metavm.object.type.TypeParser.parseType(request.upperBoundId(), context);
 
             List<Klass> types;
-            if (lowerBound.equals(StandardTypes.getNeverType()) && upperBound.equals(StandardTypes.getAnyType())) {
+            if (lowerBound.equals(Types.getNeverType()) && upperBound.equals(Types.getAnyType())) {
                 types = NncUtils.filterByType(query0(
                         new TypeQuery(null, request.categories(), request.isTemplate(),
                                 request.includeParameterized(), request.includeBuiltin(), null,
@@ -357,7 +357,7 @@ public class TypeManager extends EntityContextFactoryAware {
             } else {
                 Set<TypeCategory> categories = request.categories() != null ?
                         NncUtils.mapUnique(request.categories(), TypeCategory::fromCode) : TypeCategory.pojoCategories();
-                boolean downwards = !upperBound.equals(StandardTypes.getAnyType());
+                boolean downwards = !upperBound.equals(Types.getAnyType());
                 Queue<Klass> queue = new LinkedList<>();
                 if (downwards) {
                     if (upperBound instanceof ClassType classType) {

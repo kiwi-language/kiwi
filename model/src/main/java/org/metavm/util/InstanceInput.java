@@ -1,6 +1,5 @@
 package org.metavm.util;
 
-import org.metavm.entity.StandardTypes;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 
@@ -73,13 +72,13 @@ public class InstanceInput implements Closeable {
     public Instance readInstance() {
         var wireType = read();
         return switch (wireType) {
-            case WireTypes.NULL -> new NullInstance(StandardTypes.getNullType());
-            case WireTypes.DOUBLE -> new DoubleInstance(readDouble(), StandardTypes.getDoubleType());
-            case WireTypes.STRING -> new StringInstance(readString(), StandardTypes.getStringType());
-            case WireTypes.LONG -> new LongInstance(readLong(), StandardTypes.getLongType());
-            case WireTypes.BOOLEAN -> new BooleanInstance(readBoolean(), StandardTypes.getBooleanType());
-            case WireTypes.TIME -> new TimeInstance(readLong(), StandardTypes.getTimeType());
-            case WireTypes.PASSWORD -> new PasswordInstance(readString(), StandardTypes.getPasswordType());
+            case WireTypes.NULL -> new NullInstance(Types.getNullType());
+            case WireTypes.DOUBLE -> new DoubleInstance(readDouble(), Types.getDoubleType());
+            case WireTypes.STRING -> new StringInstance(readString(), Types.getStringType());
+            case WireTypes.LONG -> new LongInstance(readLong(), Types.getLongType());
+            case WireTypes.BOOLEAN -> new BooleanInstance(readBoolean(), Types.getBooleanType());
+            case WireTypes.TIME -> new TimeInstance(readLong(), Types.getTimeType());
+            case WireTypes.PASSWORD -> new PasswordInstance(readString(), Types.getPasswordType());
             case WireTypes.REFERENCE -> resolveInstance(readId());
             case WireTypes.RECORD -> readRecord();
             case WireTypes.VALUE -> readValue();

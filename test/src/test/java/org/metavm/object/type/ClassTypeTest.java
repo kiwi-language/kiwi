@@ -3,7 +3,6 @@ package org.metavm.object.type;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.entity.StandardTypes;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.ColumnKind;
@@ -89,11 +88,11 @@ public class ClassTypeTest extends TestCase {
         var baseType = KlassBuilder.newBuilder("Base", "Base").build();
 
         MethodBuilder.newBuilder(baseType, "test", "test")
-                .parameters(new Parameter(null, "p1", "p1", StandardTypes.getStringType()))
+                .parameters(new Parameter(null, "p1", "p1", Types.getStringType()))
                 .build();
 
         var m1 = MethodBuilder.newBuilder(baseType, "test", "test")
-                .parameters(new Parameter(null, "p1", "p1", StandardTypes.getBooleanType()))
+                .parameters(new Parameter(null, "p1", "p1", Types.getBooleanType()))
                 .build();
 
         var fooType = KlassBuilder.newBuilder("Foo", "Foo")
@@ -101,20 +100,20 @@ public class ClassTypeTest extends TestCase {
                 .build();
 
         var m2 = MethodBuilder.newBuilder(fooType, "test", "test")
-                .parameters(new Parameter(null, "p1", "p1", StandardTypes.getAnyType()))
+                .parameters(new Parameter(null, "p1", "p1", Types.getAnyType()))
                 .build();
 
         var m3 = MethodBuilder.newBuilder(fooType, "test", "test")
-                .parameters(new Parameter(null, "p1", "p1", StandardTypes.getStringType()))
+                .parameters(new Parameter(null, "p1", "p1", Types.getStringType()))
                 .build();
 
         MethodBuilder.newBuilder(fooType, "test", "test")
-                .parameters(new Parameter(null, "p1", "p1", StandardTypes.getDoubleType()))
+                .parameters(new Parameter(null, "p1", "p1", Types.getDoubleType()))
                 .build();
 
-        Assert.assertSame(m1, fooType.resolveMethod("test", List.of(StandardTypes.getBooleanType()), List.of(), false));
-        Assert.assertSame(m2, fooType.resolveMethod("test", List.of(StandardTypes.getLongType()), List.of(), false));
-        Assert.assertSame(m3, fooType.resolveMethod("test", List.of(StandardTypes.getStringType()), List.of(), false));
+        Assert.assertSame(m1, fooType.resolveMethod("test", List.of(Types.getBooleanType()), List.of(), false));
+        Assert.assertSame(m2, fooType.resolveMethod("test", List.of(Types.getLongType()), List.of(), false));
+        Assert.assertSame(m3, fooType.resolveMethod("test", List.of(Types.getStringType()), List.of(), false));
     }
 
 }

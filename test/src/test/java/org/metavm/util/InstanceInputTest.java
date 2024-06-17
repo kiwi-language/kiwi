@@ -3,7 +3,6 @@ package org.metavm.util;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
-import org.metavm.entity.StandardTypes;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 
@@ -103,7 +102,7 @@ public class InstanceInputTest extends TestCase {
         quxType.initId(PhysicalId.of(10003L, 0L, TestUtils.mockClassType()));
 
         Field nameField = FieldBuilder
-                .newBuilder("name", "name", fooType, StandardTypes.getStringType()).build();
+                .newBuilder("name", "name", fooType, Types.getStringType()).build();
         nameField.initId(PhysicalId.of(10001L, 1L, TestUtils.mockClassType()));
         Field barField = FieldBuilder
                 .newBuilder("bar", "bar", fooType, barType.getType()).isChild(true).build();
@@ -112,18 +111,18 @@ public class InstanceInputTest extends TestCase {
         quxField.initId(PhysicalId.of(10001L, 3L, TestUtils.mockClassType()));
 
         Field barCodeField = FieldBuilder
-                .newBuilder("code", "code", barType, StandardTypes.getStringType()).build();
+                .newBuilder("code", "code", barType, Types.getStringType()).build();
         barCodeField.initId(PhysicalId.of(10002L, 1L, TestUtils.mockClassType()));
 
         Field quxNameField = FieldBuilder
-                .newBuilder("name", "name", quxType, StandardTypes.getStringType()).build();
+                .newBuilder("name", "name", quxType, Types.getStringType()).build();
         quxNameField.initId(PhysicalId.of(10003L, 1L, TestUtils.mockClassType()));
 
         var barInst = new ClassInstance(
                 PhysicalId.of(30001L, 1L, TestUtils.mockClassType()),
                 Map.of(
                         barCodeField,
-                        new StringInstance(barCode, StandardTypes.getStringType())
+                        new StringInstance(barCode, Types.getStringType())
                 ),
                 barType
         );
@@ -132,7 +131,7 @@ public class InstanceInputTest extends TestCase {
                 PhysicalId.of(30002L, 0L, TestUtils.mockClassType()),
                 Map.of(
                         quxNameField,
-                        new StringInstance("qux001", StandardTypes.getStringType())
+                        new StringInstance("qux001", Types.getStringType())
                 ),
                 quxType
         );
@@ -140,7 +139,7 @@ public class InstanceInputTest extends TestCase {
         var fooInst = new ClassInstance(
                 PhysicalId.of(30001L, 0L, TestUtils.mockClassType()),
                 Map.of(
-                        nameField, new StringInstance(fooName, StandardTypes.getStringType()),
+                        nameField, new StringInstance(fooName, Types.getStringType()),
                         barField, barInst,
                         quxField, quxInst
                 ),

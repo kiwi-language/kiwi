@@ -4,7 +4,10 @@ import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.BuiltinKlasses;
+import org.metavm.entity.EntityContextFactory;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.ModelDefRegistry;
 import org.metavm.flow.*;
 import org.metavm.flow.rest.FlowExecutionRequest;
 import org.metavm.flow.rest.MethodParam;
@@ -18,10 +21,7 @@ import org.metavm.object.instance.core.DefaultViewId;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.KlassBuilder;
-import org.metavm.object.type.TypeExpressions;
-import org.metavm.object.type.TypeManager;
+import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldRefDTO;
@@ -461,7 +461,7 @@ public class InstanceManagerTest extends TestCase {
         var ref = new Object() {
             Id id;
         };
-        var classType = new ClassType(BuiltinKlasses.childList.get(), List.of(StandardTypes.getStringType()));
+        var classType = new ClassType(BuiltinKlasses.childList.get(), List.of(Types.getStringType()));
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
                 var klass = KlassBuilder.newBuilder("Foo", null).build();

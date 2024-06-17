@@ -2,10 +2,7 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.entity.StandardTypes;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.ClassInstanceParam;
 import org.metavm.object.instance.rest.FieldValue;
@@ -13,6 +10,8 @@ import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
@@ -81,11 +80,11 @@ public class ClassInstanceTest extends TestCase {
     public void test_add_not_null_field() {
         Klass type = KlassBuilder.newBuilder("Lab", null).build();
         Field titleField = FieldBuilder
-                .newBuilder("title", null, type, StandardTypes.getStringType())
+                .newBuilder("title", null, type, Types.getStringType())
                 .build();
         type.setTitleField(titleField);
         Field statusField = FieldBuilder
-                .newBuilder("status", null, type, StandardTypes.getLongType())
+                .newBuilder("status", null, type, Types.getLongType())
                 .defaultValue(Instances.longInstance(0L))
                 .state(MetadataState.READY)
                 .build();
@@ -111,7 +110,7 @@ public class ClassInstanceTest extends TestCase {
     public void testEphemeral() {
         var flowType = KlassBuilder.newBuilder("Flow", "Flow").build();
         var scopeType = KlassBuilder.newBuilder("Scope", "Scope").build();
-        var nullableScopeType = new UnionType(Set.of(StandardTypes.getNullType(), scopeType.getType()));
+        var nullableScopeType = new UnionType(Set.of(Types.getNullType(), scopeType.getType()));
         var rootScopeField = FieldBuilder.newBuilder("rootScope", "rootScope", flowType, nullableScopeType)
                 .isChild(true)
                 .build();

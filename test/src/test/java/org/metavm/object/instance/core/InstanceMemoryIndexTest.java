@@ -3,11 +3,11 @@ package org.metavm.object.instance.core;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.entity.StandardTypes;
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Index;
+import org.metavm.object.type.KlassBuilder;
+import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.TestUtils;
 
@@ -26,7 +26,7 @@ public class InstanceMemoryIndexTest extends TestCase {
 
         var fooType = KlassBuilder.newBuilder("Foo", "Foo")
                         .build();
-        var nameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
+        var nameField = FieldBuilder.newBuilder("name", "name", fooType, Types.getStringType())
                         .build();
 
         var index = new Index(

@@ -1,6 +1,5 @@
 package org.metavm.flow;
 
-import org.metavm.entity.StandardTypes;
 import org.metavm.entity.natives.NativeFunctions;
 import org.metavm.expression.Expressions;
 import org.metavm.object.type.*;
@@ -50,7 +49,7 @@ public class Nodes {
         var whileOutputType = KlassBuilder.newBuilder("WhileOutput", null)
                 .temporary()
                 .build();
-        var indexField = FieldBuilder.newBuilder("index", "index", whileOutputType, StandardTypes.getLongType())
+        var indexField = FieldBuilder.newBuilder("index", "index", whileOutputType, Types.getLongType())
                 .build();
         var node = new WhileNode(
                 null, name, null, whileOutputType, scope.getLastNode(), scope,
@@ -87,7 +86,7 @@ public class Nodes {
         var whileOutputType = KlassBuilder.newBuilder("WhileOutput", null)
                 .temporary()
                 .build();
-        var indexField = FieldBuilder.newBuilder("index", "index", whileOutputType, StandardTypes.getLongType())
+        var indexField = FieldBuilder.newBuilder("index", "index", whileOutputType, Types.getLongType())
                 .build();
         var list = getArray.get();
         var listClass = ((ClassType) list.getType()).resolve();
@@ -121,7 +120,7 @@ public class Nodes {
                 )
         ));
         var bodyScope = node.getBodyScope();
-        var getMethod = listClass.getMethodByCodeAndParamTypes("get", List.of(StandardTypes.getLongType()));
+        var getMethod = listClass.getMethodByCodeAndParamTypes("get", List.of(Types.getLongType()));
         var element = new MethodCallNode(
                 null, scope.nextNodeName("getElement"), null,
                 bodyScope.getLastNode(), bodyScope,

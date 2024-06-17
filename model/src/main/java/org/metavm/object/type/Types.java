@@ -11,9 +11,9 @@ import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.instance.core.FunctionInstance;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.rest.dto.*;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
-import org.metavm.util.ReflectionUtils;
+import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
@@ -24,21 +24,9 @@ import java.util.function.Function;
 
 public class Types {
 
+    public static final Logger logger = LoggerFactory.getLogger(Types.class);
     private static final TypeFactory TYPE_FACTORY = new DefaultTypeFactory(ModelDefRegistry::getType);
-
-    /*public static String getTypeVariableCanonicalName(TypeVariable typeVariable, Function<Type, java.lang.reflect.Type> getJavaType) {
-        return getCanonicalName(typeVariable.getGenericDeclaration(), getJavaType) + "-"
-                + getJavaType.apply(typeVariable).getTypeName();
-    }*/
-
-    /*public static String getCanonicalName(org.metavm.entity.GenericDeclaration genericDeclaration,
-                                          Function<Type, java.lang.reflect.Type> getJavaType) {
-        return switch (genericDeclaration) {
-            case Klass classType -> getCanonicalName(classType, getJavaType);
-            case Method method -> getCanonicalMethodName(method, getJavaType);
-            default -> throw new IllegalStateException("Unexpected value: " + genericDeclaration);
-        };
-    }*/
+    private static final Function<java.lang.reflect.Type, Type> getType = ModelDefRegistry::getType;
 
     public static Klass resolveKlass(Type type) {
         if(type instanceof ClassType classType)
@@ -50,13 +38,6 @@ public class Types {
     public static Type getViewType(Type sourceType, UnionType viewUnionType) {
         return NncUtils.findRequired(viewUnionType.getMembers(), sourceType::isViewType);
     }
-
-    /*public static String getCanonicalMethodName(Method method, Function<Type, java.lang.reflect.Type> getJavaType) {
-        return getCanonicalName(method.getDeclaringType(), getJavaType) + "-" + method.getName()
-                + "("
-                + NncUtils.map(method.getParameters(), param -> getCanonicalName(param.getType(), getJavaType))
-                + ")";
-    }*/
 
     public static String getCanonicalName(Type type, Function<Type, java.lang.reflect.Type> getJavType) {
         return switch (type) {
@@ -71,22 +52,6 @@ public class Types {
         return getJavaType.apply(arrayType.getElementType()) + "[]";
     }
 
-    /*public static String getCanonicalName(TypeVariable typeVariable, Function<Type, java.lang.reflect.Type> getJavaType) {
-        var type = (java.lang.reflect.TypeVariable<?>) getJavaType.apply(typeVariable);
-        return type.getBounds()[0].getTypeName();
-    }*/
-
-    /*public static String getCanonicalName(Klass classType, Function<Type, java.lang.reflect.Type> getJavaType) {
-        if (classType.getTemplate() != null) {
-            return parameterizedName(
-                    getJavaType.apply(classType).getTypeName(),
-                    NncUtils.map(classType.getTypeArguments(), typeArg -> getJavaType.apply(typeArg).getTypeName())
-            );
-        } else {
-            return getJavaType.apply(classType).getTypeName();
-        }
-    }*/
-
     public static Type substitute(Type type, IEntityContext entityContext, List<TypeVariable> typeParameters, List<Type> typeArguments) {
         return substitute(List.of(type), entityContext, typeParameters, typeArguments).get(0);
     }
@@ -94,39 +59,6 @@ public class Types {
     public static List<Type> substitute(List<Type> types, IEntityContext entityContext, List<TypeVariable> typeParameters, List<Type> typeArguments) {
         return NncUtils.map(types, new Substitutor(entityContext, typeParameters, typeArguments));
     }
-
-//    public static Type getGreatestLowerBound(Type type1, Type type2) {
-//        if(type1.isAssignableFrom(type2)) {
-//            return type2;
-//        }
-//        if(type2.isAssignableFrom(type1)) {
-//            return type1;
-//        }
-//        return switch (type1) {
-//            case ClassType classType -> {
-//                var s1 = classType.findDescendant(type2::isAssignableFrom);
-//
-//            }
-//        };
-//    }
-
-//    public static Type getGreatestLowerBound(Collection<Type> types) {
-//        Type glb = StandardTypes.getObjectType();
-//        for (Type type : types) {
-//            glb = getGreatestLowerBound(glb, type);
-//        }
-//        return glb;
-//    }
-
-//    private static Type getGreatestLowerBound(Type type1, Type type2) {
-//        if (type1.isAssignableFrom(type2))
-//            return type2;
-//        if (type2.isAssignableFrom(type1))
-//            return type1;
-//        switch (type1) {
-//            case ClassType classType ->
-//        }
-//    }
 
     public static void extractCapturedType(Type formalType, Type actualType, BiConsumer<CapturedType, Type> setCaptureType) {
         // TODO: to be more rigorous
@@ -159,7 +91,7 @@ public class Types {
                 for (Type member : unionType.getMembers()) {
                     var actualMember = NncUtils.find(actualMembers, member::isAssignableFrom);
                     if(actualMember == null)
-                        actualMember = StandardTypes.getNeverType();
+                        actualMember = getNeverType();
                     extractCapturedType(member, actualMember, setCaptureType);
                     actualMembers.remove(actualMember);
                 }
@@ -243,33 +175,33 @@ public class Types {
 
     public static Type getTypeType(TypeTag tag) {
         return switch (tag) {
-            case CLASS -> StandardTypes.getClassType(Klass.class);
-            case ARRAY -> StandardTypes.getClassType(ArrayType.class);
+            case CLASS -> getClassType(Klass.class);
+            case ARRAY -> getClassType(ArrayType.class);
         };
     }
 
     public static Type getTypeType(TypeCategory typeCategory) {
         if (typeCategory.isPojo())
-            return StandardTypes.getClassType(Klass.class);
+            return getClassType(Klass.class);
         else if (typeCategory.isPrimitive())
-            return StandardTypes.getClassType(PrimitiveType.class);
+            return getClassType(PrimitiveType.class);
         else if (typeCategory.isArray())
-            return StandardTypes.getClassType(ArrayType.class);
+            return getClassType(ArrayType.class);
         else if (typeCategory.isVariable())
-            return StandardTypes.getClassType(TypeVariable.class);
+            return getClassType(TypeVariable.class);
         else if (typeCategory.isUnion())
-            return StandardTypes.getClassType(UnionType.class);
+            return getClassType(UnionType.class);
         else if (typeCategory.isUncertain())
-            return StandardTypes.getClassType(UncertainType.class);
+            return getClassType(UncertainType.class);
         else if (typeCategory.isFunction())
-            return StandardTypes.getClassType(FunctionType.class);
+            return getClassType(FunctionType.class);
         else
             throw new InternalException("Invalid type category: " + typeCategory);
 
     }
 
     public static @NotNull Type getLeastUpperBound(Collection<Type> types) {
-        Type lub = StandardTypes.getNeverType();
+        Type lub = getNeverType();
         for (Type type : types)
             lub = getLeastUpperBound(lub, type);
         return lub;
@@ -284,11 +216,11 @@ public class Types {
             case ClassType classType -> NncUtils.getOrElse(
                     classType.resolve().getClosure().find(anc -> anc.getType().isAssignableFrom(type2)),
                     Klass::getType,
-                    StandardTypes.getAnyType(type2.isNullable()));
+                    getAnyType(type2.isNullable()));
             case UnionType unionType -> getLeastUpperBound(getLeastUpperBound(unionType.getMembers()), type2);
             case IntersectionType intersectionType ->
                     getLowestType(NncUtils.map(intersectionType.getTypes(), t -> getLeastUpperBound(t, type2)));
-            default -> StandardTypes.getAnyType(type1.isNullable() || type2.isNullable());
+            default -> getAnyType(type1.isNullable() || type2.isNullable());
         };
     }
 
@@ -422,35 +354,9 @@ public class Types {
         return TYPE_FACTORY.saveCapturedTypeVariable(capturedTypeVariableDTO, stage, batch);
     }
 
-    /*public static Type saveType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        try (var ignored = ContextUtil.getProfiler().enter("Types.saveType")) {
-            var category = TypeCategory.getByCode(typeDTO.category());
-            if (typeDTO.param() instanceof PTypeDTO pTypeDTO) {
-                return TYPE_FACTORY.saveParameterized(pTypeDTO, stage, batch);
-            } else if (category.isPojo()) {
-                return TYPE_FACTORY.saveClassType(typeDTO, stage, batch);
-            } else if (typeDTO.category() == TypeCategory.VARIABLE.code()) {
-                return TYPE_FACTORY.saveTypeVariable(typeDTO, stage, batch);
-            } else if (category.isArray()) {
-                return TYPE_FACTORY.saveArrayType(typeDTO, stage, batch);
-            } else if (typeDTO.category() == TypeCategory.UNION.code()) {
-                return TYPE_FACTORY.saveUnionType(typeDTO, stage, batch);
-            } else if (typeDTO.category() == TypeCategory.UNCERTAIN.code()) {
-                return TYPE_FACTORY.saveUncertainType(typeDTO, stage, batch);
-            } else if (typeDTO.category() == TypeCategory.FUNCTION.code()) {
-                return TYPE_FACTORY.saveFunctionType(typeDTO, stage, batch);
-            } else if (typeDTO.category() == TypeCategory.CAPTURED.code()) {
-                return TYPE_FACTORY.saveCapturedType(typeDTO, stage, batch);
-            } else {
-                throw new InternalException("Invalid type category: " + typeDTO.category());
-            }
-        }
-    }
-     */
-
     public static Type getUnionType(Collection<Type> types) {
         if (types.isEmpty())
-            return StandardTypes.getNeverType();
+            return getNeverType();
         Set<Type> effectiveTypes = new HashSet<>();
         for (Type type : types) {
             if (type instanceof UnionType unionType) {
@@ -489,7 +395,7 @@ public class Types {
 
     public static Type getUnderlyingType(UnionType type) {
         NncUtils.requireTrue(type.isNullable());
-        return NncUtils.findRequired(type.getMembers(), t -> !t.equals(StandardTypes.getNullType()));
+        return NncUtils.findRequired(type.getMembers(), t -> !t.equals(getNullType()));
     }
 
     public static String getParameterizedKey(Element template, List<? extends Type> typeArguments) {
@@ -532,24 +438,6 @@ public class Types {
     public static boolean isNull(Type type) {
         return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.NULL;
     }
-
-    /* public static Klass ensureClassArray(Type type) {
-        if (type.isBinaryNullable()) {
-            type = type.getUnderlyingType();
-        }
-        if (!(type instanceof ArrayType arrayType)) {
-            throw new InternalException("array expression must has an array type");
-        }
-        Type elementType = arrayType.getElementType();
-        if (elementType.isBinaryNullable()) {
-            elementType = elementType.getUnderlyingType();
-        }
-        if (elementType instanceof Klass classType) {
-            return classType;
-        } else {
-            throw new InternalException("Only reference array is supported for AllMatchExpression right now");
-        }
-    } */
 
     public static String getMapTypeName(Type keyType, Type valueType) {
         return getParameterizedName("Map", keyType, valueType);
@@ -694,47 +582,151 @@ public class Types {
         };
     }
 
-    /*public static Klass getClassType(Type type) {
-        return switch (type) {
-            case Klass classType -> classType;
-            case TypeVariable typeVariable -> (Klass) typeVariable.getUpperBound();
-            default -> throw new IllegalStateException("Unexpected value: " + type);
-        };
-    }*/
-
-//    public static TypeArgumentMap resolveGenerics(Type type) {
-//        var visitor = new GenericResolutionVisitor();
-//        visitor.visitType(type);
-//        return visitor.getSubstitutor();
-//    }
-
     public static String getConstructorCode(Klass classType) {
         var typeCode = Objects.requireNonNull(classType.getEffectiveTemplate().getCode());
         var dotIdx = typeCode.lastIndexOf('.');
         return dotIdx >= 0 ? typeCode.substring(dotIdx + 1) : typeCode;
     }
 
-    /*private static class GenericResolutionVisitor extends MetaTypeVisitor {
+    public static Type getType(java.lang.reflect.Type javaType) {
+        return getType.apply(javaType);
+    }
 
-        private TypeArgumentMap substitutor = TypeArgumentMap.EMPTY;
-
-        @Override
-        public void visitClassType(ClassType classType) {
-            if (classType.getTemplate() != null) {
-                Map<TypeVariable, Type> map = new HashMap<>();
-                NncUtils.biForEach(
-                        classType.getTemplate().getTypeParameters(),
-                        classType.getTypeArguments(),
-                        map::put
-                );
-                substitutor = substitutor.merge(map);
-            }
-            super.visitClassType(classType);
+    public static @javax.annotation.Nullable Class<?> getPrimitiveJavaType(Type type) {
+        if (type instanceof PrimitiveType primitiveType) {
+            return switch (primitiveType.getKind()) {
+                case BOOLEAN -> Boolean.class;
+                case LONG -> Long.class;
+                case STRING -> String.class;
+                case TIME -> Date.class;
+                case NULL -> Null.class;
+                case VOID -> Void.class;
+                case PASSWORD -> Password.class;
+                case DOUBLE -> Double.class;
+            };
         }
+        if(type instanceof AnyType)
+            return Object.class;
+        if(type instanceof NeverType)
+            return Never.class;
+        return null;
+    }
 
-        public TypeArgumentMap getSubstitutor() {
-            return substitutor;
+    public static @javax.annotation.Nullable Type getPrimitiveType(java.lang.reflect.Type javaType) {
+        if (javaType instanceof Class<?> javaClass) {
+            if (javaClass == Object.class)
+                return getAnyType();
+            if (javaClass == Never.class)
+                return getNeverType();
+            if (javaClass == String.class)
+                return getStringType();
+            if (javaClass == Long.class || javaClass == long.class
+                    || javaClass == Integer.class || javaClass == int.class
+                    || javaClass == Short.class || javaClass == short.class
+                    || javaClass == Byte.class || javaClass == byte.class)
+                return getLongType();
+            if (javaClass == Boolean.class || javaClass == boolean.class)
+                return getBooleanType();
+            if (javaClass == Double.class || javaClass == double.class)
+                return getDoubleType();
+            if (javaClass == Void.class || javaClass == void.class)
+                return getVoidType();
+            if (javaClass == Password.class)
+                return getPasswordType();
+            if (javaClass == Date.class)
+                return getTimeType();
+            if (javaClass == Null.class)
+                return getNullType();
         }
-    } */
+        return null;
+    }
+
+    public static ClassType getClassType(java.lang.reflect.Type javaType) {
+        return (ClassType) getType.apply(javaType);
+    }
+
+    public static AnyType getAnyType() {
+        return new AnyType();
+    }
+
+    public static UnionType getNullableAnyType() {
+        return new UnionType(Set.of(new AnyType(), new PrimitiveType(PrimitiveKind.NULL)));
+    }
+
+    public static Type getAnyType(boolean nullable) {
+        return nullable ? getNullableAnyType() : getAnyType();
+    }
+
+    public static PrimitiveType getBooleanType() {
+        return new PrimitiveType(PrimitiveKind.BOOLEAN);
+    }
+
+    public static PrimitiveType getLongType() {
+        return new PrimitiveType(PrimitiveKind.LONG);
+    }
+
+    public static PrimitiveType getStringType() {
+        return new PrimitiveType(PrimitiveKind.STRING);
+    }
+
+    public static PrimitiveType getTimeType() {
+        return new PrimitiveType(PrimitiveKind.TIME);
+    }
+
+    public static PrimitiveType getNullType() {
+        return new PrimitiveType(PrimitiveKind.NULL);
+    }
+
+    public static PrimitiveType getVoidType() {
+        return new PrimitiveType(PrimitiveKind.VOID);
+    }
+
+    public static PrimitiveType getPasswordType() {
+        return new PrimitiveType(PrimitiveKind.PASSWORD);
+    }
+
+    public static PrimitiveType getDoubleType() {
+        return new PrimitiveType(PrimitiveKind.DOUBLE);
+    }
+
+    public static ArrayType getAnyArrayType() {
+        return new ArrayType(new AnyType(), ArrayKind.READ_WRITE);
+    }
+
+    public static ArrayType getNeverArrayType() {
+        return new ArrayType(new NeverType(), ArrayKind.READ_WRITE);
+    }
+
+    public static ArrayType getReadOnlyAnyArrayType() {
+        return new ArrayType(new AnyType(), ArrayKind.READ_ONLY);
+    }
+
+    public static ArrayType getChildAnyArrayType() {
+        return new ArrayType(new AnyType(), ArrayKind.CHILD);
+    }
+
+    public static Field getEnumNameField(Klass classType) {
+        return classType.getFieldByCode("name");
+    }
+
+    public static Field getEnumOrdinalField(Klass classType) {
+        return classType.getFieldByCode("ordinal");
+    }
+
+    public static UnionType getNullableStringType() {
+        return new UnionType(Set.of(getStringType(), getNullType()));
+    }
+
+    public static NeverType getNeverType() {
+        return new NeverType();
+    }
+
+    public static UnionType getNullableType(Type type) {
+        return new UnionType(Set.of(type, getNullType()));
+    }
+
+    public static Type getNullableThrowableType() {
+        return getNullableType(BuiltinKlasses.throwable.get().getType());
+    }
 
 }

@@ -2,7 +2,10 @@ package org.metavm.flow;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.ReadWriteArray;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.GetUniqueNodeParam;
 import org.metavm.flow.rest.NodeDTO;
@@ -10,6 +13,7 @@ import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Index;
+import org.metavm.object.type.Types;
 import org.metavm.object.type.UnionType;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
@@ -24,7 +28,7 @@ public class GetUniqueNode extends NodeRT {
         GetUniqueNodeParam param = nodeDTO.getParam();
         Index index = context.getEntity(Index.class, Id.parse(param.indexId()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var type = StandardTypes.getNullableType(index.getDeclaringType().getType());
+        var type = Types.getNullableType(index.getDeclaringType().getType());
         var values = NncUtils.map(param.values(), v -> ValueFactory.create(v, parsingContext));
         GetUniqueNode node = (GetUniqueNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node != null) {

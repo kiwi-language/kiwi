@@ -142,7 +142,7 @@ public class TypeResolverImpl implements TypeResolver {
         return switch (psiType) {
             case PsiPrimitiveType primitiveType -> {
                 if (primitiveType.getName().equals("null"))
-                    yield StandardTypes.getNullType();
+                    yield Types.getNullType();
                 var klass = ReflectionUtils.getBoxedClass(KIND_2_PRIM_CLASS.get(primitiveType.getKind()));
                 yield context.getType(klass);
             }
@@ -164,17 +164,17 @@ public class TypeResolverImpl implements TypeResolver {
         try (var entry = ContextUtil.getProfiler().enter("resolveWildcardType: " + stage)) {
             if (wildcardType.isBounded()) {
                 if (wildcardType.isExtends()) {
-                    return new UncertainType(StandardTypes.getNeverType(), resolve(wildcardType.getExtendsBound(), stage));
+                    return new UncertainType(Types.getNeverType(), resolve(wildcardType.getExtendsBound(), stage));
                 } else {
                     return new UncertainType(
                             resolve(wildcardType.getSuperBound(), stage),
-                            StandardTypes.getNullableAnyType()
+                            Types.getNullableAnyType()
                     );
                 }
             } else {
                 return new UncertainType(
-                        StandardTypes.getNeverType(),
-                        StandardTypes.getNullableAnyType()
+                        Types.getNeverType(),
+                        Types.getNullableAnyType()
                 );
             }
         }
@@ -221,9 +221,9 @@ public class TypeResolverImpl implements TypeResolver {
             if (psiClass instanceof PsiTypeParameter typeParameter)
                 return resolveTypeVariable(typeParameter);
             else if (TranspileUtils.isObjectClass(psiClass))
-                return StandardTypes.getAnyType();
+                return Types.getAnyType();
             else if (TranspileUtils.matchType(classType, Password.class))
-                return StandardTypes.getPasswordType();
+                return Types.getPasswordType();
             else if (ReflectionUtils.isPrimitiveBoxClassName(psiClass.getQualifiedName())
                     || PRIM_CLASS_NAMES.contains(psiClass.getQualifiedName()))
                 return context.getType(ReflectionUtils.classForName(psiClass.getQualifiedName()));

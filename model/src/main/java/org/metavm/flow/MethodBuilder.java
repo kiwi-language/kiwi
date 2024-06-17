@@ -1,7 +1,6 @@
 package org.metavm.flow;
 
 import org.metavm.entity.Attribute;
-import org.metavm.entity.StandardTypes;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ClassTypeParam;
@@ -169,7 +168,7 @@ public class MethodBuilder {
             if (isConstructor)
                 returnType = declaringType.getType();
             else
-                returnType = NncUtils.orElse(StandardTypes.getVoidType(), StandardTypes::getVoidType);
+                returnType = NncUtils.orElse(Types.getVoidType(), Types::getVoidType);
         }
         if (NncUtils.isNotEmpty(typeParameters))
             typeArguments = new ArrayList<>(NncUtils.map(typeParameters, TypeVariable::getType));

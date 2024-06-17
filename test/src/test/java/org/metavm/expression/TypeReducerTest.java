@@ -1,13 +1,13 @@
 package org.metavm.expression;
 
 import junit.framework.TestCase;
+import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.object.type.FieldBuilder;
+import org.metavm.object.type.KlassBuilder;
+import org.metavm.object.type.Types;
+import org.metavm.object.type.UnionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.entity.StandardTypes;
-import org.metavm.object.type.KlassBuilder;
-import org.metavm.object.type.FieldBuilder;
-import org.metavm.object.type.UnionType;
 
 import java.util.Set;
 
@@ -23,10 +23,10 @@ public class TypeReducerTest extends TestCase {
     public void test() {
         var fooType = KlassBuilder.newBuilder("Foo", "Foo").build();
         var nullableStringType = new UnionType(
-                Set.of(StandardTypes.getStringType(), StandardTypes.getNullType()));
+                Set.of(Types.getStringType(), Types.getNullType()));
         var nameField = FieldBuilder.newBuilder("code", "code", fooType, nullableStringType)
                 .build();
-        var amountField = FieldBuilder.newBuilder("amount", "amount", fooType, StandardTypes.getLongType())
+        var amountField = FieldBuilder.newBuilder("amount", "amount", fooType, Types.getLongType())
                 .build();
         assertTrue(nameField.getType().isNullable());
         var nameFieldExpr = new PropertyExpression(

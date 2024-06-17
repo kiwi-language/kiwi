@@ -1,12 +1,15 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.IndexCountNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Index;
+import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 
 import javax.annotation.Nullable;
@@ -38,7 +41,7 @@ public class IndexCountNode extends NodeRT {
 
     public IndexCountNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Index index,
                           IndexQueryKey from, IndexQueryKey to) {
-        super(tmpId, name, code, StandardTypes.getLongType(), previous, scope);
+        super(tmpId, name, code, Types.getLongType(), previous, scope);
         this.index = index;
         this.from = from;
         this.to = to;

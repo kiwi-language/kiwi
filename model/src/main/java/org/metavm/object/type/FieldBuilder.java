@@ -1,6 +1,5 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.StandardTypes;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.NullInstance;
 import org.metavm.util.Column;
@@ -123,7 +122,7 @@ public class FieldBuilder {
     }
 
     private PrimitiveType getNullType() {
-        return NncUtils.orElse(nullType, StandardTypes::getNullType);
+        return NncUtils.orElse(nullType, Types::getNullType);
     }
 
     public Field build() {
@@ -175,7 +174,7 @@ public class FieldBuilder {
     }
 
     private PrimitiveType nullType() {
-        return nullType != null ? nullType : StandardTypes.getNullType();
+        return nullType != null ? nullType : Types.getNullType();
     }
 
 }

@@ -5,7 +5,6 @@ import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StandardTypes;
 import org.metavm.entity.mocks.MockEntityRepository;
 import org.metavm.expression.NodeExpression;
 import org.metavm.expression.PropertyExpression;
@@ -120,8 +119,8 @@ public class SubstitutorV2Test extends TestCase {
                         new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE)
                 ))
                 .build();
-        var bar1 = barMethod.getParameterized(List.of(StandardTypes.getStringType()));
-        var bar2 = barMethod.getParameterized(List.of(StandardTypes.getStringType()));
+        var bar1 = barMethod.getParameterized(List.of(Types.getStringType()));
+        var bar2 = barMethod.getParameterized(List.of(Types.getStringType()));
         Assert.assertSame(bar1, bar2);
     }
 

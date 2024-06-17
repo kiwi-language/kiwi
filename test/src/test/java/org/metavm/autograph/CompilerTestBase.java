@@ -56,7 +56,6 @@ public abstract class CompilerTestBase extends TestCase  {
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
         AUTH_CONFIG = AuthConfig.fromFile("/Users/leen/workspace/object/test/src/test/resources/auth");
-        StandardTypes.setHolder(new ThreadLocalStandardTypesHolder());
         NativeFunctions.setThreadLocalMode();
         BuiltinKlasses.setThreadLocalMode();
         ModelDefRegistry.setHolder(new ThreadLocalDefContextHolder());
@@ -117,7 +116,6 @@ public abstract class CompilerTestBase extends TestCase  {
         loginService = null;
         platformUserManager = null;
         apiClient = null;
-        StandardTypes.setHolder(new GlobalStandardTypesHolder());
         NativeFunctions.setDefaultMode();
         BuiltinKlasses.setDefaultMode();;
         ModelDefRegistry.setHolder(new GlobalDefContextHolder());

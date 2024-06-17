@@ -2,7 +2,6 @@ package org.metavm.object.instance;
 
 import org.metavm.entity.BuiltinKlasses;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.StandardTypes;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
@@ -33,7 +32,7 @@ public class InstanceFactory {
     public static <T extends Instance> T allocate(Class<T> instanceType, Id id, boolean ephemeral) {
         T instance;
         if (instanceType == ArrayInstance.class)
-            instance = instanceType.cast(new ArrayInstance(id, StandardTypes.getAnyArrayType(), ephemeral, null));
+            instance = instanceType.cast(new ArrayInstance(id, Types.getAnyArrayType(), ephemeral, null));
         else
             instance = instanceType.cast(new ClassInstance(id, ClassInstance.uninitializedKlass.getType(), ephemeral, null));
 //        Method allocateMethod = getAllocateMethod(instanceType, type.getClass());
@@ -181,7 +180,7 @@ public class InstanceFactory {
                 var array = ArrayInstance.allocate((ArrayType) type);
                 var elements = NncUtils.map(
                         arrayFieldValue.getElements(),
-                        e -> resolveValue(e, StandardTypes.getAnyType(),
+                        e -> resolveValue(e, Types.getAnyType(),
                                 InstanceParentRef.ofArray(array), context)
                 );
                 array.setParentInternal(parentRef);

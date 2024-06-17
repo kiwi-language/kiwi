@@ -3,7 +3,6 @@ package org.metavm.object.type;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.entity.StandardTypes;
 
 public class ArrayTypeTest extends TestCase {
 
@@ -13,7 +12,7 @@ public class ArrayTypeTest extends TestCase {
     }
 
     public void testIsAssignable() {
-        var anyType = StandardTypes.getAnyType();
+        var anyType = Types.getAnyType();
         var fooType = KlassBuilder.newBuilder("Foo", "Foo").build().getType();
         Assert.assertTrue(anyType.isAssignableFrom(fooType));
 

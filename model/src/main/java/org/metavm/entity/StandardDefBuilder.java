@@ -111,14 +111,14 @@ public class StandardDefBuilder {
 
         enumNameDef = createFieldDef(
                 ENUM_NAME_FIELD,
-                createField(ENUM_NAME_FIELD, true, StandardTypes.getStringType(), Access.PUBLIC,
+                createField(ENUM_NAME_FIELD, true, Types.getStringType(), Access.PUBLIC,
                         ColumnKind.STRING.getColumn(0), enumKlass),
                 enumDef
         );
 
         enumOrdinalDef = createFieldDef(
                 ENUM_ORDINAL_FIELD,
-                createField(ENUM_ORDINAL_FIELD, false, StandardTypes.getLongType(), Access.PRIVATE,
+                createField(ENUM_ORDINAL_FIELD, false, Types.getLongType(), Access.PRIVATE,
                         ColumnKind.INT.getColumn(0), enumKlass),
                 enumDef
         );
@@ -154,7 +154,7 @@ public class StandardDefBuilder {
         createFieldDef(
                 javaMessageField,
                 createField(javaMessageField, true,
-                        StandardTypes.getNullableType(StandardTypes.getStringType()), Access.PUBLIC,
+                        Types.getNullableType(Types.getStringType()), Access.PUBLIC,
                         ColumnKind.STRING.getColumn(0), throwableKlass),
                 throwableDef
         );
@@ -163,7 +163,7 @@ public class StandardDefBuilder {
         createFieldDef(
                 javaCauseField,
                 createField(javaCauseField, false,
-                        StandardTypes.getNullableType(throwableKlass.getType()), Access.PUBLIC,
+                        Types.getNullableType(throwableKlass.getType()), Access.PUBLIC,
                         ColumnKind.REFERENCE.getColumn(0), throwableKlass),
                 throwableDef
         );
@@ -217,7 +217,7 @@ public class StandardDefBuilder {
                 .build();
         primTypeFactory.putType(Consumer.class, consumerType);
         MethodBuilder.newBuilder(consumerType, "accept", "accept")
-                .returnType(StandardTypes.getVoidType())
+                .returnType(Types.getVoidType())
                 .parameters(new Parameter(null, "element", "element", elementType.getType()))
                 .build();
         return consumerType;
@@ -235,7 +235,7 @@ public class StandardDefBuilder {
                 .build();
         primTypeFactory.putType(Predicate.class, predicateType);
         MethodBuilder.newBuilder(predicateType, "test", "test")
-                .returnType(StandardTypes.getBooleanType())
+                .returnType(Types.getBooleanType())
                 .parameters(new Parameter(null, "element", "element", elementType.getType()))
                 .build();
         return predicateType;
@@ -289,9 +289,9 @@ public class StandardDefBuilder {
                         declaringType, type)
                 .column(column)
                 .access(access)
-                .nullType(StandardTypes.getNullType())
-                .defaultValue(new NullInstance(StandardTypes.getNullType()))
-                .staticValue(new NullInstance(StandardTypes.getNullType()))
+                .nullType(Types.getNullType())
+                .defaultValue(new NullInstance(Types.getNullType()))
+                .staticValue(new NullInstance(Types.getNullType()))
                 .build();
     }
 
@@ -346,7 +346,7 @@ public class StandardDefBuilder {
         MethodBuilder.newBuilder(iteratorType, "hasNext", "hasNext")
                 .isNative(isNative)
                 .isAbstract(isAbstract)
-                .returnType(StandardTypes.getBooleanType())
+                .returnType(Types.getBooleanType())
                 .build();
 
         MethodBuilder.newBuilder(iteratorType, "next", "next")
@@ -376,10 +376,10 @@ public class StandardDefBuilder {
     private void createIterableFlows(Klass iterableType, TypeVariable elementType) {
         MethodBuilder.newBuilder(iterableType, "forEach", "forEach")
                 .isNative(true)
-                .returnType(StandardTypes.getVoidType())
+                .returnType(Types.getVoidType())
                 .parameters(new Parameter(null, "action", "action",
                         consumerKlass.getParameterized(
-                                List.of(new UncertainType(elementType.getType(), StandardTypes.getNullableAnyType()))).getType())
+                                List.of(new UncertainType(elementType.getType(), Types.getNullableAnyType()))).getType())
                 )
                 .build();
 
@@ -414,50 +414,50 @@ public class StandardDefBuilder {
     private void createCollectionFlows(Klass collectionType, TypeVariable elementType) {
         MethodBuilder.newBuilder(collectionType, "size", "size")
                 .isNative(true)
-                .returnType(StandardTypes.getLongType())
+                .returnType(Types.getLongType())
                 .build();
 
         MethodBuilder.newBuilder(collectionType, "isEmpty", "isEmpty")
                 .isNative(true)
-                .returnType(StandardTypes.getBooleanType())
+                .returnType(Types.getBooleanType())
                 .build();
 
         MethodBuilder.newBuilder(collectionType, "contains", "contains")
                 .isNative(true)
-                .returnType(StandardTypes.getBooleanType())
-                .parameters(new Parameter(null, "element", "element", StandardTypes.getAnyType()))
+                .returnType(Types.getBooleanType())
+                .parameters(new Parameter(null, "element", "element", Types.getAnyType()))
                 .build();
 
         MethodBuilder.newBuilder(collectionType, "add", "add")
                 .isNative(true)
-                .returnType(StandardTypes.getBooleanType())
+                .returnType(Types.getBooleanType())
                 .parameters(new Parameter(null, "element", "element", elementType.getType()))
                 .build();
 
         MethodBuilder.newBuilder(collectionType, "addAll", "addAll")
                 .isNative(true)
-                .returnType(StandardTypes.getBooleanType())
+                .returnType(Types.getBooleanType())
                 .parameters(new Parameter(null, "c", "c",
-                        collectionType.getParameterized(List.of(new UncertainType(StandardTypes.getNeverType(), elementType.getType()))).getType()))
+                        collectionType.getParameterized(List.of(new UncertainType(Types.getNeverType(), elementType.getType()))).getType()))
                 .build();
 
         MethodBuilder.newBuilder(collectionType, "remove", "remove")
                 .isNative(true)
-                .returnType(StandardTypes.getBooleanType())
-                .parameters(new Parameter(null, "element", "element", StandardTypes.getAnyType()))
+                .returnType(Types.getBooleanType())
+                .parameters(new Parameter(null, "element", "element", Types.getAnyType()))
                 .build();
 
         MethodBuilder.newBuilder(collectionType, "clear", "clear")
                 .isNative(true)
-                .returnType(StandardTypes.getVoidType())
+                .returnType(Types.getVoidType())
                 .build();
 
         MethodBuilder.newBuilder(collectionType, "removeIf", "removeIf")
                 .isNative(true)
-                .returnType(StandardTypes.getBooleanType())
+                .returnType(Types.getBooleanType())
                 .parameters(new Parameter(null, "filter", "filter",
                         predicateKlass.getParameterized(
-                                List.of(new UncertainType(elementType.getType(), StandardTypes.getNullableAnyType()))
+                                List.of(new UncertainType(elementType.getType(), Types.getNullableAnyType()))
                         ).getType()))
                 .build();
 
@@ -482,10 +482,10 @@ public class StandardDefBuilder {
                 .build();
         primTypeFactory.putType(Set.class, setType);
         FieldBuilder.newBuilder("array", "array", setType, new ArrayType(elementType.getType(), ArrayKind.READ_WRITE))
-                .nullType(StandardTypes.getNullType())
+                .nullType(Types.getNullType())
                 .access(Access.PRIVATE)
                 .isChild(true)
-                .nullType(StandardTypes.getNullType())
+                .nullType(Types.getNullType())
                 .build();
         createSetFlows(setType, pCollectionType, pIterableType);
         return setType;
@@ -519,20 +519,20 @@ public class StandardDefBuilder {
                 .build();
         primTypeFactory.putType(List.class, listType);
 
-        var nullableElementType = new UnionType(Set.of(elementType.getType(), StandardTypes.getNullType()));
+        var nullableElementType = new UnionType(Set.of(elementType.getType(), Types.getNullType()));
         MethodBuilder.newBuilder(listType, "removeAt", "removeAt")
-                .parameters(new Parameter(null, "index", "index", StandardTypes.getLongType()))
+                .parameters(new Parameter(null, "index", "index", Types.getLongType()))
                 .isNative(true)
                 .returnType(nullableElementType)
                 .build();
 
         MethodBuilder.newBuilder(listType, "get", "get")
-                .parameters(new Parameter(null, "index", "index", StandardTypes.getLongType()))
+                .parameters(new Parameter(null, "index", "index", Types.getLongType()))
                 .isNative(true)
                 .returnType(elementType.getType())
                 .build();
 
-        var uncertainType = new UncertainType(StandardTypes.getNeverType(), elementType.getType());
+        var uncertainType = new UncertainType(Types.getNeverType(), elementType.getType());
         var uncertainCollType = collectionKlass.getParameterized(List.of(uncertainType));
         MethodBuilder.newBuilder(listType, listType.getName(), listType.getCode())
                 .isConstructor(true)
@@ -545,7 +545,7 @@ public class StandardDefBuilder {
 
         MethodBuilder.newBuilder(listType, "set", "set")
                 .parameters(
-                        new Parameter(null, "index", "index", StandardTypes.getLongType()),
+                        new Parameter(null, "index", "index", Types.getLongType()),
                         new Parameter(null, "value", "value", elementType.getType())
                 )
                 .isNative(true)
@@ -596,7 +596,7 @@ public class StandardDefBuilder {
         primTypeFactory.putType(javaClass, listImplType);
         FieldBuilder.newBuilder("array", "array", listImplType,
                         new ArrayType(elementType.getType(), arrayKind))
-                .nullType(StandardTypes.getNullType())
+                .nullType(Types.getNullType())
                 .access(Access.PRIVATE)
                 .isChild(kind != ClassKind.VALUE)
                 .build();
@@ -619,7 +619,7 @@ public class StandardDefBuilder {
                                 null, "collection", "collection",
                                 new ClassType(
                                         collectionKlass,
-                                        List.of(new UncertainType(StandardTypes.getNeverType(), elementType.getType()))
+                                        List.of(new UncertainType(Types.getNeverType(), elementType.getType()))
                                 )
                         )
                 )
@@ -689,13 +689,13 @@ public class StandardDefBuilder {
                 .newBuilder("keyArray", "keyArray", mapType, new ArrayType(keyType.getType(), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
                 .isChild(true)
-                .nullType(StandardTypes.getNullType())
+                .nullType(Types.getNullType())
                 .build();
         FieldBuilder
                 .newBuilder("valueArray", "valueArray", mapType, new ArrayType(valueType.getType(), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
                 .isChild(true)
-                .nullType(StandardTypes.getNullType())
+                .nullType(Types.getNullType())
                 .build();
         createMapFlows(mapType, keyType.getType(), valueType.getType());
         return mapType;
@@ -708,7 +708,7 @@ public class StandardDefBuilder {
                 .returnType(mapType.getType())
                 .build();
 
-        var nullableValueType = new UnionType(Set.of(valueType, StandardTypes.getNullType()));
+        var nullableValueType = new UnionType(Set.of(valueType, Types.getNullType()));
 
         MethodBuilder.newBuilder(mapType, "put", "put")
                 .isNative(true)
@@ -731,12 +731,12 @@ public class StandardDefBuilder {
 
         MethodBuilder.newBuilder(mapType, "size", "size")
                 .isNative(true)
-                .returnType(StandardTypes.getLongType())
+                .returnType(Types.getLongType())
                 .build();
 
         MethodBuilder.newBuilder(mapType, "clear", "clear")
                 .isNative(true)
-                .returnType(StandardTypes.getVoidType())
+                .returnType(Types.getVoidType())
                 .build();
         mapType.setStage(ResolutionStage.DEFINITION);
     }
@@ -752,7 +752,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(throwableType.getType())
-                .parameters(new Parameter(null, "message", "message", StandardTypes.getStringType()))
+                .parameters(new Parameter(null, "message", "message", Types.getStringType()))
                 .build();
 
         MethodBuilder.newBuilder(throwableType, "Throwable", "Throwable")
@@ -767,14 +767,14 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(throwableType.getType())
                 .parameters(
-                        new Parameter(null, "message", "message", StandardTypes.getStringType()),
+                        new Parameter(null, "message", "message", Types.getStringType()),
                         new Parameter(null, "cause", "cause", throwableType.getType())
                 )
                 .build();
 
         MethodBuilder.newBuilder(throwableType, "getMessage", "getMessage")
                 .isNative(true)
-                .returnType(StandardTypes.getNullableType(StandardTypes.getStringType()))
+                .returnType(Types.getNullableType(Types.getStringType()))
                 .build();
     }
 
@@ -809,7 +809,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
-                .parameters(new Parameter(null, "message", "message", StandardTypes.getStringType()))
+                .parameters(new Parameter(null, "message", "message", Types.getStringType()))
                 .build();
 
         MethodBuilder.newBuilder(runtimeExceptionType, name, code)
@@ -824,7 +824,7 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
                 .parameters(
-                        new Parameter(null, "message", "message", StandardTypes.getStringType()),
+                        new Parameter(null, "message", "message", Types.getStringType()),
                         new Parameter(null, "cause", "cause", throwableKlass.getType())
                 )
                 .build();

@@ -1,6 +1,5 @@
 package org.metavm.entity;
 
-import org.springframework.stereotype.Component;
 import org.metavm.common.Page;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ArrayInstance;
@@ -8,7 +7,9 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.ContextTypeDefRepository;
 import org.metavm.object.type.Field;
+import org.metavm.object.type.Types;
 import org.metavm.util.NncUtils;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 
@@ -67,7 +68,7 @@ public class EntityQueryService {
             return context.getInstance(value);
         } else if (value instanceof Collection<?> coll) {
             return new ArrayInstance(
-                    StandardTypes.getAnyArrayType(),
+                    Types.getAnyArrayType(),
                     NncUtils.map(
                             coll,
                             item -> convertSingleValue(item, context)

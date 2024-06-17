@@ -3,11 +3,11 @@ package org.metavm.object.instance.query;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.entity.StandardTypes;
 import org.metavm.expression.Func;
 import org.metavm.expression.FunctionDesc;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
 import org.metavm.util.BusinessException;
 
 import java.util.List;
@@ -25,17 +25,17 @@ public class FunctionDescTest extends TestCase {
         MockStandardTypesInitializer.init();
         FunctionDesc desc = new FunctionDesc(Func.MAX$_DOUBLE);
         Type returnType = desc.getReturnType(List.of(
-                StandardTypes.getDoubleType(), StandardTypes.getDoubleType()
+                Types.getDoubleType(), Types.getDoubleType()
         ));
-        Assert.assertEquals(StandardTypes.getDoubleType(), returnType);
+        Assert.assertEquals(Types.getDoubleType(), returnType);
     }
 
     public void test_get_return_type_if() {
         FunctionDesc desc = new FunctionDesc(Func.IF);
         Type returnType = desc.getReturnType(List.of(
-                StandardTypes.getAnyType(), StandardTypes.getDoubleType()
+                Types.getAnyType(), Types.getDoubleType()
         ));
-        Assert.assertEquals(StandardTypes.getAnyType(), returnType);
+        Assert.assertEquals(Types.getAnyType(), returnType);
     }
 
     @SuppressWarnings("CatchMayIgnoreException")

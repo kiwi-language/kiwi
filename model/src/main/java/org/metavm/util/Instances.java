@@ -260,63 +260,63 @@ public class Instances {
     }
 
     public static LongInstance longInstance(long value) {
-        return new LongInstance(value, StandardTypes.getLongType());
+        return new LongInstance(value, Types.getLongType());
     }
 
     public static LongInstance longInstance(long value, Function<Class<?>, Type> getTypeFunc) {
-        return new LongInstance(value, StandardTypes.getLongType());
+        return new LongInstance(value, Types.getLongType());
     }
 
     public static BooleanInstance booleanInstance(boolean value) {
-        return new BooleanInstance(value, StandardTypes.getBooleanType());
+        return new BooleanInstance(value, Types.getBooleanType());
     }
 
     public static BooleanInstance booleanInstance(boolean value, Function<Class<?>, Type> getTypeFunc) {
-        return new BooleanInstance(value, StandardTypes.getBooleanType());
+        return new BooleanInstance(value, Types.getBooleanType());
     }
 
     public static DoubleInstance doubleInstance(double value) {
-        return new DoubleInstance(value, StandardTypes.getDoubleType());
+        return new DoubleInstance(value, Types.getDoubleType());
     }
 
     public static DoubleInstance doubleInstance(double value, Function<Class<?>, Type> getTypeFunc) {
-        return new DoubleInstance(value, StandardTypes.getDoubleType());
+        return new DoubleInstance(value, Types.getDoubleType());
     }
 
     public static TimeInstance timeInstance(long value, Function<Class<?>, Type> getTypeFunc) {
-        return new TimeInstance(value, StandardTypes.getTimeType());
+        return new TimeInstance(value, Types.getTimeType());
     }
 
     public static TimeInstance timeInstance(long value) {
-        return new TimeInstance(value, StandardTypes.getTimeType());
+        return new TimeInstance(value, Types.getTimeType());
     }
 
     public static NullInstance nullInstance() {
-        return new NullInstance(StandardTypes.getNullType());
+        return new NullInstance(Types.getNullType());
     }
 
     public static BooleanInstance trueInstance() {
-        return new BooleanInstance(true, StandardTypes.getBooleanType());
+        return new BooleanInstance(true, Types.getBooleanType());
     }
 
     public static BooleanInstance falseInstance() {
-        return new BooleanInstance(false, StandardTypes.getBooleanType());
+        return new BooleanInstance(false, Types.getBooleanType());
     }
 
     public static PasswordInstance passwordInstance(String password) {
-        return new PasswordInstance(password, StandardTypes.getPasswordType());
+        return new PasswordInstance(password, Types.getPasswordType());
     }
 
     public static PasswordInstance passwordInstance(String password, Function<Class<?>, Type> getTypeFunc) {
-        return new PasswordInstance(password, StandardTypes.getPasswordType());
+        return new PasswordInstance(password, Types.getPasswordType());
     }
 
     public static StringInstance stringInstance(String value) {
-        return new StringInstance(value, StandardTypes.getStringType());
+        return new StringInstance(value, Types.getStringType());
     }
 
     public static StringInstance stringInstance(String value, Function<Class<?>, Type> getTypeFunc) {
-        return new StringInstance(value, StandardTypes.getStringType());
+        return new StringInstance(value, Types.getStringType());
     }
 
     public static Set<DurableInstance> getAllNonValueInstances(DurableInstance root) {
@@ -365,15 +365,15 @@ public class Instances {
     }
 
     public static StringInstance createString(String value) {
-        return new StringInstance(value, StandardTypes.getStringType());
+        return new StringInstance(value, Types.getStringType());
     }
 
     public static LongInstance createLong(long value) {
-        return new LongInstance(value, StandardTypes.getLongType());
+        return new LongInstance(value, Types.getLongType());
     }
 
     public static DoubleInstance createDouble(double value) {
-        return new DoubleInstance(value, StandardTypes.getDoubleType());
+        return new DoubleInstance(value, Types.getDoubleType());
     }
 
     public static BooleanInstance createBoolean(boolean b) {
@@ -411,25 +411,25 @@ public class Instances {
     public static Type getBasicType(Class<?> javaClass, Function<Class<?>, Type> getTypeFunc) {
         javaClass = ReflectionUtils.getBoxedClass(javaClass);
         if (javaClass == Long.class || javaClass == Integer.class)
-            return StandardTypes.getLongType();
+            return Types.getLongType();
         if (javaClass == Double.class || javaClass == Float.class)
-            return StandardTypes.getDoubleType();
+            return Types.getDoubleType();
         if (javaClass == Boolean.class)
-            return StandardTypes.getBooleanType();
+            return Types.getBooleanType();
         if (javaClass == String.class)
-            return StandardTypes.getStringType();
+            return Types.getStringType();
         if (javaClass == Date.class)
-            return StandardTypes.getTimeType();
+            return Types.getTimeType();
         if (javaClass == Password.class)
-            return StandardTypes.getPasswordType();
+            return Types.getPasswordType();
         if (javaClass == Null.class)
-            return StandardTypes.getNullType();
+            return Types.getNullType();
         if (javaClass == Object.class)
-            return StandardTypes.getAnyType();
+            return Types.getAnyType();
         if (javaClass == Table.class)
-            return StandardTypes.getAnyArrayType();
+            return Types.getAnyArrayType();
         if (javaClass == ReadonlyList.class)
-            return StandardTypes.getReadOnlyAnyArrayType();
+            return Types.getReadOnlyAnyArrayType();
         return NncUtils.requireNonNull(
                 getTypeFunc.apply(javaClass),
                 "Can not find a basic type for java class '" + javaClass.getName() + "'"

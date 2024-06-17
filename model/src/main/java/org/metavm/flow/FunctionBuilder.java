@@ -1,10 +1,10 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.StandardTypes;
 import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
+import org.metavm.object.type.Types;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -29,7 +29,7 @@ public class FunctionBuilder {
     private List<Parameter> parameters = new ArrayList<>();
     @Nullable
     private Function horizontalTemplate;
-    private @NotNull Type returnType = StandardTypes.getVoidType();
+    private @NotNull Type returnType = Types.getVoidType();
     private List<TypeVariable> typeParameters = new ArrayList<>();
     private List<Type> typeArguments = new ArrayList<>();
     private CodeSource codeSource;

@@ -3,7 +3,6 @@ package org.metavm.object.type;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
-import org.metavm.entity.StandardTypes;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.util.Constants;
 import org.metavm.util.TestUtils;
@@ -65,10 +64,10 @@ public class TypeParserImplTest extends TestCase {
         Assert.assertEquals(2, func.getParameters().size());
         Assert.assertEquals("value", func.getParameter(0).getName());
         Assert.assertEquals("value", func.getParameter(0).getCode());
-        Assert.assertEquals(new UnionType(Set.of(variableType, StandardTypes.getNullType())), func.getParameter(0).getType());
+        Assert.assertEquals(new UnionType(Set.of(variableType, Types.getNullType())), func.getParameter(0).getType());
         Assert.assertEquals("messageSupplier", func.getParameter(1).getName());
         Assert.assertEquals("messageSupplier", func.getParameter(1).getCode());
-        Assert.assertEquals(supplierKlass.getParameterized(List.of(StandardTypes.getStringType())).getType(), func.getParameter(1).getType());
+        Assert.assertEquals(supplierKlass.getParameterized(List.of(Types.getStringType())).getType(), func.getParameter(1).getType());
     }
 
 }

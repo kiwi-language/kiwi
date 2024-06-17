@@ -3,12 +3,12 @@ package org.metavm.entity;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.api.Value;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -29,16 +29,16 @@ public class IdentityContextTest extends TestCase {
                 .source(ClassSource.BUILTIN)
                 .build();
 
-        var fooNameField = FieldBuilder.newBuilder("name", "name", fooKlass, StandardTypes.getStringType())
+        var fooNameField = FieldBuilder.newBuilder("name", "name", fooKlass, Types.getStringType())
                 .build();
 
         var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
         var method = MethodBuilder.newBuilder(fooKlass, "bar", "bar")
-                .returnType(StandardTypes.getVoidType())
+                .returnType(Types.getVoidType())
                 .typeParameters(List.of(typeVar))
                 .parameters(new Parameter(null, "t", "t", typeVar.getType()))
-                .type(new FunctionType(List.of(typeVar.getType()), StandardTypes.getVoidType()))
-                .staticType(new FunctionType(List.of(fooKlass.getType(), typeVar.getType()), StandardTypes.getVoidType()))
+                .type(new FunctionType(List.of(typeVar.getType()), Types.getVoidType()))
+                .staticType(new FunctionType(List.of(fooKlass.getType(), typeVar.getType()), Types.getVoidType()))
                 .build();
 
         var identities = new IdentityHashMap<Object, ModelIdentity>();
