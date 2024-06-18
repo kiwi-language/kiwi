@@ -2,8 +2,6 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
@@ -12,6 +10,8 @@ import org.metavm.object.type.Field;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.FooTypes;
 import org.metavm.util.MockUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +22,7 @@ import static org.metavm.util.TestConstants.APP_ID;
 
 public class InstanceTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(InstanceTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(InstanceTest.class);
 
     public static final String CONST_BAR_CODE = "001";
     public static final String CONST_FOO_NAME = "foo1";

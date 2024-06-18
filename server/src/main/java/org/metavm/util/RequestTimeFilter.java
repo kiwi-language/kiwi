@@ -22,7 +22,7 @@ public class RequestTimeFilter extends OncePerRequestFilter {
             "/perf"
     );
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(RequestTimeFilter.class);
+    public static final Logger logger = LoggerFactory.getLogger(RequestTimeFilter.class);
 
     public static final long LOG_PROFILE_THRESHOLD = 150L;
 
@@ -35,7 +35,7 @@ public class RequestTimeFilter extends OncePerRequestFilter {
         var result = ContextUtil.getProfiler().finish(true, true);
         String requestUri = request.getRequestURI();
         if (result.duration() >= LOG_PROFILE_THRESHOLD) {
-            LOGGER.info(result.output());
+            logger.info(result.output());
         }
     }
 }

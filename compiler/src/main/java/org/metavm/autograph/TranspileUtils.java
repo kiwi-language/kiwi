@@ -963,10 +963,19 @@ public class TranspileUtils {
         var attr = NncUtils.find(annotation.getAttributes(), a -> a.getAttributeName().equals(attributeName));
         if (attr != null) {
             JvmAnnotationConstantValue value = (JvmAnnotationConstantValue) attr.getAttributeValue();
-            return requireNonNull(value).getConstantValue();
+            var constValue = requireNonNull(value).getConstantValue();
+            if(!isNullOrBlank(constValue))
+                return constValue;
         }
-        else
-            return defaultValue;
+        return defaultValue;
+    }
+
+    private static boolean isNullOrBlank(Object value) {
+        if(value == null)
+            return true;
+        if(value instanceof String s)
+            return s.isEmpty();
+        return false;
     }
 
     private static final Map<String, String> typeNameMap = Map.ofEntries(

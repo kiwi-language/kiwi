@@ -1,15 +1,15 @@
 package org.metavm.entity;
 
+import org.metavm.object.instance.core.Id;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.metavm.object.instance.core.Id;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class StdIdProvider {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(StdIdProvider.class);
+    public static final Logger logger = LoggerFactory.getLogger(StdIdProvider.class);
 
     private final StdIdStore stdIdStore;
     private final Map<String, Id> ids;
@@ -20,7 +20,7 @@ public class StdIdProvider {
         ids = stdIdStore.load();
         qualifiedNames = new HashMap<>();
         ids.forEach((qualName, id) -> qualifiedNames.put(id, qualName));
-        LOGGER.info("loaded {} ids", ids.size());
+        logger.info("loaded {} ids", ids.size());
     }
 
     public Id getId(ModelIdentity modelIdentity) {

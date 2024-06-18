@@ -2,15 +2,15 @@ package org.metavm.autograph;
 
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.psi.PsiClass;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.IEntityContext;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.DebugEnv;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CodeGenerator {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(CodeGenerator.class);
+    public static final Logger logger = LoggerFactory.getLogger(CodeGenerator.class);
 
     private final IEntityContext context;
 
@@ -69,7 +69,7 @@ public class CodeGenerator {
                     try {
                         command.run();
                     } catch (RuntimeException e) {
-                        LOGGER.error("Fail to run compile command", e);
+                        logger.error("Fail to run compile command", e);
                         throw e;
                     }
                 },

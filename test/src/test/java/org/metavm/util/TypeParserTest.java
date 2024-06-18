@@ -2,11 +2,11 @@ package org.metavm.util;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.mocks.Foo;
 import org.metavm.object.type.Constraint;
 import org.metavm.object.type.Klass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class TypeParserTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(TypeParser.class);
+    public static final Logger logger = LoggerFactory.getLogger(TypeParser.class);
 
     public void testClass() {
         Type parsedClass = TypeParser.parse(Foo.class.getName());

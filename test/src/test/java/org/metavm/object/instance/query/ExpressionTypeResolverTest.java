@@ -19,7 +19,7 @@ import java.util.List;
 
 public class ExpressionTypeResolverTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ExpressionTypeResolverTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(ExpressionTypeResolverTest.class);
 
     private TypeDefRepository typeDefRepository;
     private InstanceProvider instanceProvider;
@@ -56,7 +56,7 @@ public class ExpressionTypeResolverTest extends TestCase {
         String str = "allmatch(visibleFields, declaringType=this.type)";
         var expression = ExpressionParser.parse(str, createTypeParsingContext(listViewType));
         Assert.assertTrue(expression instanceof AllMatchExpression);
-        LOGGER.info(expression.build(VarType.NAME));
+        logger.info(expression.build(VarType.NAME));
     }
 
     private TypeParsingContext createTypeParsingContext(Klass type) {

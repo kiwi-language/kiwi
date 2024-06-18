@@ -1,7 +1,6 @@
 package org.metavm.flow;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.natives.ThrowableNative;
@@ -14,6 +13,8 @@ import org.metavm.object.type.Type;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -64,6 +65,15 @@ public class Flows {
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
         else
             return result.ret();
+    }
+
+    public static @Nullable Instance invokeVirtual(Flow flow, @NotNull ClassInstance self, List<? extends Instance> arguments, IEntityContext context) {
+        if(flow instanceof Method method && method.isInstanceMethod()) {
+            flow = self.getKlass().resolveMethod(method);
+            return invoke(flow, self, arguments, context);
+        }
+        else
+            throw new InternalException("Can not invoke virtual method: " + flow);
     }
 
     public static Instance invokeGetter(Method getter, ClassInstance instance, IEntityContext context) {

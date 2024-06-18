@@ -11,7 +11,7 @@ public final class EntityMethodHandler<T> implements MethodHandler {
 
     private static final boolean TRACE_INITIALIZATION = false;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EntityMethodHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(EntityMethodHandler.class);
 
     public enum State {
         UNINITIALIZED,
@@ -48,8 +48,8 @@ public final class EntityMethodHandler<T> implements MethodHandler {
            return;
         }
         if(state == State.INITIALIZING) {
-//            if(LOGGER.isDebugEnabled()) {
-//                LOGGER.debug("Call method '" + ReflectUtils.getMethodQualifiedName(thisMethod) + "' while initializing proxy");
+//            if(logger.isDebugEnabled()) {
+//                logger.debug("Call method '" + ReflectUtils.getMethodQualifiedName(thisMethod) + "' while initializing proxy");
 //            }
 //            throw new InternalException(
 //                    InternalErrorCode.PROXY_CIRCULAR_REF,
@@ -58,7 +58,7 @@ public final class EntityMethodHandler<T> implements MethodHandler {
             return;
         }
         if(TRACE_INITIALIZATION) {
-            LOGGER.info("Initializing proxy instance", new Exception());
+            logger.info("Initializing proxy instance", new Exception());
         }
         state = State.INITIALIZING;
         initializer.accept(type.cast(self));

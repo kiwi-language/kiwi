@@ -224,6 +224,8 @@ public class SubstitutorV2 extends CopyVisitor {
             copy.setStage(stage);
             copy.setAbstract(method.isAbstract());
             copy.setNative(method.isNative());
+            if(method.isNative())
+                copy.setJavaMethod(method.getJavaMethod());
             copy.setConstructor(method.isConstructor());
             addCopy(method, copy);
             addCopy(method.getRootScope(), copy.getRootScope());

@@ -2,8 +2,6 @@ package org.metavm.object.instance.query;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.expression.Expression;
 import org.metavm.expression.ExpressionParser;
@@ -15,13 +13,15 @@ import org.metavm.object.type.IndexedTypeDefProvider;
 import org.metavm.object.type.mocks.MockTypeDefRepository;
 import org.metavm.util.Instances;
 import org.metavm.util.MockUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
 public class ExpressionEvaluatorTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ExpressionEvaluatorTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(ExpressionEvaluatorTest.class);
 
     private InstanceProvider instanceProvider;
     private IndexedTypeDefProvider typeDefProvider;

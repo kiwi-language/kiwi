@@ -5,15 +5,15 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.common.ErrorCode;
+import org.metavm.util.BusinessException;
+import org.metavm.util.Headers;
+import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.metavm.common.ErrorCode;
-import org.metavm.util.BusinessException;
-import org.metavm.util.Headers;
-import org.metavm.util.NncUtils;
 
 import java.io.IOException;
 import java.util.Set;
@@ -22,7 +22,7 @@ import java.util.Set;
 @Order(4)
 public class VerificationFilter extends OncePerRequestFilter {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(VerificationFilter.class);
+    public static final Logger logger = LoggerFactory.getLogger(VerificationFilter.class);
 
     private final LoginService loginService;
 

@@ -19,7 +19,7 @@ public class Lab {
     public native void testNative();
 
     public static void main(String[] args) throws IOException, SQLException {
-        var id = Id.parse("02f8ab0700e801");
+        var id = Id.parse("028cca0800be03");
         System.out.println(id.getClass().getName());
     }
 

@@ -18,7 +18,7 @@ import static java.util.Objects.requireNonNull;
 
 public class TranspileTestTools {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(TranspileTestTools.class);
+    public static final Logger logger = LoggerFactory.getLogger(TranspileTestTools.class);
 
     private static final String BASE_MOD = "/Users/leen/Library/Java/JavaVirtualMachines/openjdk-18.0.2/Contents/Home/jmods/java.base.jmod";
     private static final String TEST_SOURCE_ROOT = "/Users/leen/workspace/object/test/src/test/java/";
@@ -90,7 +90,7 @@ public class TranspileTestTools {
                     try {
                         command.run();
                     } catch (Throwable e) {
-                        LOGGER.error("fail to execute command", e);
+                        logger.error("fail to execute command", e);
                         if (e instanceof RuntimeException runtimeException) {
                             throw runtimeException;
                         } else {

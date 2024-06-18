@@ -11,7 +11,6 @@ import org.metavm.object.type.rest.dto.TypeDTO;
 import org.metavm.object.view.rest.dto.DirectMappingKey;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
-import org.metavm.util.DebugEnv;
 import org.metavm.util.TestUtils;
 
 import java.util.Arrays;
@@ -56,7 +55,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 // get QualityInspectionState.QUALIFIED constant
                 var qualified = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
                 // invoke material.setFeedQualityInspectionStates with a list containing the QUALIFIED constant
-                doInTransaction(() -> apiClient.callInstanceMethod(
+                doInTransaction(() -> apiClient.callMethod(
                         materialId, "setFeedQualityInspectionStates",
                         List.of(
                                 List.of(qualified.getIdRequired())
@@ -232,7 +231,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var adjustment = TestUtils.getEnumConstantByName(inventoryOpType, "ADJUSTMENT");
 
         // decrease the inventory by 100 and asserts that the inventory is removed
-        doInTransaction(() -> apiClient.callStaticMethod(
+        doInTransaction(() -> apiClient.callMethod(
                 Objects.requireNonNull(inventoryType.code()),
                 "decreaseQuantity",
                 Arrays.asList(
@@ -299,7 +298,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // get the ByAmountInboundRequest type
         var qcByBoundInboundRequestType = "org.metavm.manufacturing.storage.ByAmountInboundRequest";
         // invoke InboundOrderItem.inbound with the inboundRequest object
-        TestUtils.doInTransaction(() -> apiClient.callInstanceMethod(
+        TestUtils.doInTransaction(() -> apiClient.callMethod(
                 inboundOrderItemId,
                 "inbound",
                 List.of(
@@ -321,7 +320,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // inbound by spec
         var qcBySpecInboundRequestType = "org.metavm.manufacturing.storage.BySpecInboundRequest";
         // invoke InboundOrderItem.inbound with the inboundRequest object
-        doInTransaction(() -> apiClient.callInstanceMethod(
+        doInTransaction(() -> apiClient.callMethod(
                 inboundOrderItemId,
                 "inbound",
                 List.of(
@@ -395,7 +394,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 )
         ));
         // invoke TransferOrderItem.transfer with storageObjects.position2 as the target position
-        doInTransaction(() -> apiClient.callInstanceMethod(
+        doInTransaction(() -> apiClient.callMethod(
                 transferOrderId,
                 "transfer",
                 List.of(
@@ -465,7 +464,6 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 //        var processListView = reloadedRoutingView.getInstance("processes");
 //        var itemView = processListView.getElementInstance(0);
 //        var successionListView = reloadedRoutingView.getInstance("successions");
-        DebugEnv.flag = true;
         doInTransactionWithoutResult(() -> apiClient.saveInstance(
                 routingKlass.getCodeRequired(),
                 Map.of(
@@ -548,7 +546,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 //        var bomId = TestUtils.getSourceId(bomViewId);
         // create production order
         long startTime = System.currentTimeMillis();
-        var productionOrderId = (String) doInTransaction(() -> apiClient.callInstanceMethod(
+        var productionOrderId = (String) doInTransaction(() -> apiClient.callMethod(
                 bomId,
                 "createProductionOrder",
                 List.of(startTime, startTime + 3 * 24 * 60 * 60 * 1000, 10))

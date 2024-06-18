@@ -20,7 +20,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-public enum StdFunction {
+public enum StdFunction implements ValueHolderOwner<Function> {
 
     isSourcePresent(
             "boolean isSourcePresent(any view)", true, List.of(),
@@ -352,6 +352,27 @@ public enum StdFunction {
                 }
                 return FlowExecResult.of(Instances.stringInstance(String.format(format.getValue(), argsArray)));
             }),
+    substring(
+            "string substring(string s, long beginIndex)",
+            true,
+            List.of(ReflectionUtils.getMethod(String.class, "substring", int.class)),
+            (func, args, ctx) -> {
+                var str = (StringInstance) args.get(0);
+                var beginIndex =  (LongInstance) args.get(1);
+                return FlowExecResult.of(Instances.stringInstance(str.getValue().substring(beginIndex.getValue().intValue())));
+            }
+    ),
+    substring1(
+            "string substring1(string s, long beginIndex, long endIndex)",
+            true,
+            List.of(ReflectionUtils.getMethod(String.class, "substring", int.class, int.class)),
+            (func, args, ctx) -> {
+                var str = (StringInstance) args.get(0);
+                var beginIndex =  ((LongInstance) args.get(1)).getValue().intValue();
+                var endIndex = ((LongInstance) args.get(2)).getValue().intValue();
+                return FlowExecResult.of(Instances.stringInstance(str.getValue().substring(beginIndex, endIndex)));
+            }
+    ),
     getId(
             "string getId(any obj)",
             true,
@@ -399,18 +420,6 @@ public enum StdFunction {
             throw new NullPointerException("defContext is null");
         });
         this.name = typeParser.getFunctionName(signature);
-    }
-
-    public static void setDefaultMode() {
-        for (StdFunction value : values()) {
-            value.setFunctionHolder(new DirectValueHolder<>());
-        }
-    }
-
-    public static void setThreadLocalMode() {
-        for (StdFunction value : values()) {
-            value.setFunctionHolder(new ThreadLocalValueHolder<>());
-        }
     }
 
     public static void setEmailSender(EmailSender emailSender) {
@@ -483,7 +492,7 @@ public enum StdFunction {
         return functionHolder.get();
     }
 
-    public void setFunctionHolder(ValueHolder<Function> functionHolder) {
+    public void setValueHolder(ValueHolder<Function> functionHolder) {
         this.functionHolder = functionHolder;
     }
 

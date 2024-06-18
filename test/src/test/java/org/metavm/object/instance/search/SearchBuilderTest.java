@@ -1,18 +1,18 @@
 package org.metavm.object.instance.search;
 
 import junit.framework.TestCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.expression.Expressions;
 import org.metavm.util.Constants;
 import org.metavm.util.MockUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
 public class SearchBuilderTest extends TestCase {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SearchBuilderTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(SearchBuilderTest.class);
 
     @Override
     protected void setUp() throws Exception {
@@ -42,7 +42,7 @@ public class SearchBuilderTest extends TestCase {
         );
 
         var queryString = SearchBuilder.buildQueryString(query);
-        LOGGER.info(queryString);
+        logger.info(queryString);
     }
 
 }

@@ -1,7 +1,5 @@
 package org.metavm.object.type;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.ChildArray;
 import org.metavm.entity.ModelIdentity;
 import org.metavm.entity.ReadWriteArray;
@@ -11,6 +9,8 @@ import org.metavm.object.instance.core.TypeId;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.ParameterizedType;
@@ -24,7 +24,7 @@ import static org.metavm.util.ReflectionUtils.getFieldQualifiedName;
 
 public class StdAllocators {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StdAllocators.class);
+    private static final Logger logger = LoggerFactory.getLogger(StdAllocators.class);
 
     private static final long NUM_IDS_PER_ALLOCATOR = 10000L;
 

@@ -26,4 +26,5 @@ public class EntityParser<T extends Entity> extends PojoParser<T, EntityDef<T>> 
     protected TypeCategory getTypeCategory() {
         return TypeCategory.CLASS;
     }
+
 }

@@ -2,9 +2,9 @@ package org.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.api.Interceptor;
 import org.metavm.api.Value;
 import org.metavm.event.MockEventQueue;
+import org.metavm.http.HttpRequestImpl;
 import org.metavm.object.instance.InstanceStore;
 import org.metavm.object.instance.MockInstanceLogService;
 import org.metavm.object.instance.cache.MockCache;
@@ -15,6 +15,8 @@ import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Set;
 
 import static org.metavm.util.TestUtils.doInTransactionWithoutResult;
@@ -65,16 +67,20 @@ public class BootstrapTest extends TestCase {
     }
 
     public void _testTmp() {
-        {
-            ContextUtil.resetProfiler();
-            var profiler = ContextUtil.getProfiler();
-            var bootstrap = newBootstrap();
-            var result = bootstrap.boot();
-            Assert.assertTrue(result.numInstancesWithNullIds() > 0);
-            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
-            logger.info("id in store: {}", stdIdStore.get(Klass.class.getName() + "." + Interceptor.class.getName()));
-            logger.info("id in context: {}", ModelDefRegistry.getDefContext().getKlass(Interceptor.class).getId());
-            logger.info(profiler.finish(false, true).toString());
+        var bootstrap = newBootstrap();
+        var result = bootstrap.boot();
+        Assert.assertTrue(result.numInstancesWithNullIds() > 0);
+        TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+
+        var defContext = ModelDefRegistry.getDefContext();
+        var klass = defContext.getKlass(HttpRequestImpl.class);
+        for (Method javaMethod : HttpRequestImpl.class.getDeclaredMethods()) {
+            if(Modifier.isPublic(javaMethod.getModifiers()) && !Modifier.isStatic(javaMethod.getModifiers())) {
+                var method = klass.findMethodByCode(javaMethod.getName());
+                Assert.assertNotNull("Method " + javaMethod.getName() + " does not exist", method);
+                Assert.assertTrue(method.isNative());
+                Assert.assertEquals(javaMethod, method.getJavaMethod());
+            }
         }
     }
 

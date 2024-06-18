@@ -11,7 +11,9 @@ import org.metavm.entity.natives.RuntimeExceptionNative;
 import org.metavm.flow.rest.FlowParam;
 import org.metavm.flow.rest.FlowSummaryDTO;
 import org.metavm.flow.rest.MethodParam;
+import org.metavm.object.instance.DefaultObjectInstanceMap;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.SubstitutorV2;
@@ -60,6 +62,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     private final boolean parameterized;
 
+    private transient @Nullable java.lang.reflect.Method javaMethod;
 
     public Method(Long tmpId,
                   @NotNull Klass declaringType,
@@ -352,8 +355,12 @@ public class Method extends Flow implements Property, GenericElement {
                 Objects.requireNonNull(self);
             arguments = checkArguments(arguments);
             FlowExecResult result;
-            if (isNative())
-                result = NativeMethods.invoke(this, self, arguments, callContext);
+            if (isNative()) {
+                if(javaMethod != null && self != null && self.getMappedEntity() != null)
+                    result = invokeNative(self, arguments, callContext);
+                else
+                    result = NativeMethods.invoke(this, self, arguments, callContext);
+            }
             else {
                 if (!isRootScopePresent())
                     throw new InternalException("fail to invoke method: " + getQualifiedName() + ". root scope not present");
@@ -380,6 +387,29 @@ public class Method extends Flow implements Property, GenericElement {
                 }
             }
             return result;
+        }
+    }
+
+    private @NotNull FlowExecResult invokeNative(DurableInstance self, List<? extends Instance> arguments, CallContext callContext) {
+        assert javaMethod != null;
+        var map = new DefaultObjectInstanceMap(ContextUtil.getEntityContext());
+        var nativeSelf = Objects.requireNonNull(self.getMappedEntity());
+        var nativeArgs = NncUtils.biMap(List.of(javaMethod.getParameterTypes()), arguments, map::getEntity);
+        try {
+            var r = ReflectionUtils.invoke(nativeSelf, javaMethod, nativeArgs.toArray());
+            if (javaMethod.getReturnType() == void.class)
+                return FlowExecResult.of(null);
+            else
+                return FlowExecResult.of(map.getInstance(r));
+        }
+        catch (Throwable e) {
+            var exception = ClassInstance.allocate(StdKlass.runtimeException.type());
+            var nat = new RuntimeExceptionNative(exception);
+            if(e.getMessage() != null)
+                nat.RuntimeException(Instances.stringInstance(e.getMessage()), callContext);
+            else
+                nat.RuntimeException(callContext);
+            return FlowExecResult.ofException(exception);
         }
     }
 
@@ -478,4 +508,13 @@ public class Method extends Flow implements Property, GenericElement {
         return code != null && SETTER_PTN.matcher(code).matches() && getParameters().size() == 1;
     }
 
+    @Nullable
+    public java.lang.reflect.Method getJavaMethod() {
+        return javaMethod;
+    }
+
+    public void setJavaMethod(@Nullable java.lang.reflect.Method javaMethod) {
+        NncUtils.requireTrue(isNative());
+        this.javaMethod = javaMethod;
+    }
 }

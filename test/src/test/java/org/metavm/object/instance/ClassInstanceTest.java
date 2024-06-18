@@ -21,7 +21,7 @@ import java.util.Set;
 
 public class ClassInstanceTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ClassInstanceTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(ClassInstanceTest.class);
 
     @Override
     protected void setUp() throws Exception {
@@ -58,7 +58,7 @@ public class ClassInstanceTest extends TestCase {
         Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
         ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
         Assert.assertEquals(foo.getKlass().getReadyFields().size(), paramDTO.fields().size());
-        TestUtils.logJSON(LOGGER, instanceDTO);
+        TestUtils.logJSON(logger, instanceDTO);
     }
 
     public void testIsChild() {

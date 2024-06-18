@@ -35,7 +35,7 @@ public class ShoppingCompilingTest extends CompilerTestBase {
                             "product", productId
                     )
             ));
-            var orderId = (String) doInTransaction(() -> apiClient.callInstanceMethod(
+            var orderId = (String) doInTransaction(() -> apiClient.callMethod(
                     productId,
                     "buy",
                     List.of(1, List.of(couponId))

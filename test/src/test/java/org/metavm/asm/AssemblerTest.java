@@ -1,21 +1,21 @@
 package org.metavm.asm;
 
 import junit.framework.TestCase;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.TestConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.util.BootstrapUtils;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class AssemblerTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(AssemblerTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(AssemblerTest.class);
 
     @Override
     protected void setUp() throws Exception {

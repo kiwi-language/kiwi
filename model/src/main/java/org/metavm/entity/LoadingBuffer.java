@@ -1,7 +1,5 @@
 package org.metavm.entity;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.object.instance.TreeNotFoundException;
 import org.metavm.object.instance.TreeSource;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -10,6 +8,8 @@ import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.TypeOrTypeKey;
 import org.metavm.util.NncUtils;
 import org.metavm.util.StreamVisitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
@@ -18,7 +18,7 @@ import static java.util.Objects.requireNonNull;
 
 public class LoadingBuffer {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(LoadingBuffer.class);
+    public static final Logger logger = LoggerFactory.getLogger(LoadingBuffer.class);
 
     private final List<Long> bufferedIds = new ArrayList<>();
     private final Set<Long> visited = new HashSet<>();

@@ -662,10 +662,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         //        NncUtils.requireFalse(instance.isEphemeral(), "Can not bind an ephemeral instance");
 //        NncUtils.requireFalse(instance.isValue(), "Can not bind a value instance");
         NncUtils.requireNull(instance.getContext(), "Instance already bound");
-        NncUtils.requireNull(instance.tryGetTreeId(), "Can not bind a persisted instance");
+        NncUtils.requireNull(instance.tryGetTreeId(),
+                () -> {throw new InternalException("Can not bind a persisted instance: " + instance);});
         NncUtils.requireFalse(instance.isRemoved(),
-                () -> new InternalException("Can not bind instance " + instance + " because it's already removed. " +
-                        "See issue 0001"));
+                () -> new InternalException("Can not bind instance " + instance + " because it's already removed"));
     }
 
     protected void craw() {

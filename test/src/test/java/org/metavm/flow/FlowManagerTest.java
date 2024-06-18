@@ -1,13 +1,11 @@
 package org.metavm.flow;
 
 import junit.framework.TestCase;
-import org.metavm.object.type.BeanManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.EntityQueryService;
 import org.metavm.flow.rest.*;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.TmpId;
+import org.metavm.object.type.BeanManager;
 import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
@@ -16,12 +14,14 @@ import org.metavm.util.BootstrapUtils;
 import org.metavm.util.MockTransactionOperations;
 import org.metavm.util.NncUtils;
 import org.metavm.util.TestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class FlowManagerTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(FlowManagerTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(FlowManagerTest.class);
 
     private FlowManager flowManager;
 

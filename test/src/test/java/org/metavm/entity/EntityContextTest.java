@@ -1,16 +1,16 @@
 package org.metavm.entity;
 
 import junit.framework.TestCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.mocks.EntityFoo;
 import org.metavm.util.BootstrapUtils;
 import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EntityContextTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(EntityContextTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(EntityContextTest.class);
 
     private EntityContextFactory entityContextFactory;
 

@@ -2,11 +2,9 @@ package org.metavm.autograph;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.api.Interceptor;
 import org.metavm.application.ApplicationManager;
 import org.metavm.common.MockEmailService;
-import org.metavm.entity.*;
-import org.metavm.entity.natives.StdFunction;
+import org.metavm.entity.EntityQueryService;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowExecutionService;
 import org.metavm.flow.FlowManager;
@@ -62,9 +60,7 @@ public abstract class CompilerTestBase extends TestCase  {
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
         AUTH_CONFIG = AuthConfig.fromFile("/Users/leen/workspace/object/test/src/test/resources/auth");
-        StdFunction.setThreadLocalMode();
-        StdKlass.setThreadLocalMode();
-        ModelDefRegistry.setHolder(new ThreadLocalDefContextHolder());
+        SystemConfig.setThreadLocalMode();
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
         var bootResult = submit(() -> {
@@ -104,8 +100,6 @@ public abstract class CompilerTestBase extends TestCase  {
         var apiService = new ApiService(bootResult.entityContextFactory());
         apiClient = new ApiClient(apiService);
         ContextUtil.resetProfiler();
-        logger.info("id in store: {}", bootResult.stdIdStore().get(Klass.class.getName() + "." + Interceptor.class.getName()));
-        logger.info("id in context: {}", bootResult.defContext().getKlass(Interceptor.class).getId());
     }
 
     @Override
@@ -124,9 +118,7 @@ public abstract class CompilerTestBase extends TestCase  {
         loginService = null;
         platformUserManager = null;
         apiClient = null;
-        StdFunction.setDefaultMode();
-        StdKlass.setDefaultMode();;
-        ModelDefRegistry.setHolder(new GlobalDefContextHolder());
+        SystemConfig.setDefaultMode();
     }
 
     protected void submit(Runnable task) {

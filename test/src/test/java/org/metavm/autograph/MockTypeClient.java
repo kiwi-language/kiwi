@@ -1,9 +1,5 @@
 package org.metavm.autograph;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionOperations;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.rest.GetTreesRequest;
@@ -16,6 +12,10 @@ import org.metavm.object.type.rest.dto.TypeTreeQuery;
 import org.metavm.system.BlockManager;
 import org.metavm.system.rest.dto.BlockDTO;
 import org.metavm.util.ContextUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionOperations;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService;
 
 public class MockTypeClient implements TypeClient {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(MockTypeClient.class);
+    public static final Logger logger = LoggerFactory.getLogger(MockTypeClient.class);
 
     private final TypeManager typeManager;
     private final BlockManager blockManager;
@@ -104,7 +104,7 @@ public class MockTypeClient implements TypeClient {
                 } finally {
                     var result = ContextUtil.getProfiler().finish(false, true);
                     if(result.duration() > 1000000L)
-                        LOGGER.info(result.output());
+                        logger.info(result.output());
                 }
             }).get();
         } catch (InterruptedException | ExecutionException e) {

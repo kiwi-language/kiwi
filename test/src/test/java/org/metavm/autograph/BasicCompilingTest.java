@@ -1,20 +1,19 @@
 package org.metavm.autograph;
 
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorDTO;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.type.ClassKind;
-import org.metavm.util.DebugEnv;
 import org.metavm.util.TestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
-public class BasicCompileTest extends CompilerTestBase {
+public class BasicCompilingTest extends CompilerTestBase {
 
-    public static final Logger logger = LoggerFactory.getLogger(BasicCompileTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(BasicCompilingTest.class);
 
     public static final String SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/basics";
 
@@ -25,6 +24,7 @@ public class BasicCompileTest extends CompilerTestBase {
             processCapturedType();
             processGenericOverride();
             processValueTypes();
+            processInterceptor();
         });
     }
 
@@ -50,7 +50,7 @@ public class BasicCompileTest extends CompilerTestBase {
         var foos = lab.getInstance("foos");
         Assert.assertEquals(3, foos.getElements().size());
         var foo002 = ((InstanceFieldValue) foos.getElements().get(1)).getInstance();
-        var foundFooId = TestUtils.doInTransaction(() -> apiClient.callInstanceMethod(
+        var foundFooId = TestUtils.doInTransaction(() -> apiClient.callMethod(
                 labId,
                 "getFooByName",
                 List.of("foo002"))
@@ -61,8 +61,7 @@ public class BasicCompileTest extends CompilerTestBase {
     private void processGenericOverride() {
         var subType = getClassTypeByCode("genericoverride.Sub");
         var subId = TestUtils.doInTransaction(() -> apiClient.saveInstance(subType.getCodeRequired(), Map.of()));
-        DebugEnv.flag = true;
-        var result = TestUtils.doInTransaction(() -> apiClient.callInstanceMethod(
+        var result = TestUtils.doInTransaction(() -> apiClient.callMethod(
                 subId,
                 "containsAny<string>",
                 List.of(
@@ -133,6 +132,15 @@ public class BasicCompileTest extends CompilerTestBase {
         var webPrice = webChannelPrice.getInstance("price");
         Assert.assertEquals(95.0, webPrice.getPrimitiveValue("quantity"));
         Assert.assertEquals(currencyKindYuan.id(), webPrice.getReferenceId("kind"));
+    }
+
+    private void processInterceptor() {
+        //noinspection unchecked
+        var user = (Map<String, Object>) TestUtils.doInTransaction(
+                () -> apiClient.callMethod("userService", "getUserByName", List.of("leen"))
+        );
+        var tel = (String) user.get("telephone");
+        Assert.assertEquals("123******12", tel);
     }
 
 }

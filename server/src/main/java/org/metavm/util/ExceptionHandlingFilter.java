@@ -4,13 +4,13 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.metavm.common.ErrorCode;
+import org.metavm.common.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.metavm.common.ErrorCode;
-import org.metavm.common.Result;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
 @Order(1)
 public class ExceptionHandlingFilter extends OncePerRequestFilter {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ExceptionHandlingFilter.class);
+    public static final Logger logger = LoggerFactory.getLogger(ExceptionHandlingFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -36,7 +36,7 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
                 response.setHeader("content-type","application/json;charset=UTF-8");
                 response.setCharacterEncoding("UTF-8");
                 response.getOutputStream().write(NncUtils.toJSONString(failureResult).getBytes(StandardCharsets.UTF_8));
-                LOGGER.info("business exception", bizExp);
+                logger.info("business exception", bizExp);
             }
             else {
                 throw e;

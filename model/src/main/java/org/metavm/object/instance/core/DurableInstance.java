@@ -1,8 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.Tree;
 import org.metavm.object.type.Field;
@@ -11,6 +9,8 @@ import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.object.view.rest.dto.MappingKey;
 import org.metavm.system.RegionConstants;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -20,7 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 public abstract class DurableInstance extends Instance {
 
-    public static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(DurableInstance.class);
+    public static final Logger logger = LoggerFactory.getLogger(DurableInstance.class);
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 

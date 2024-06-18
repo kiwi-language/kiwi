@@ -5,10 +5,7 @@ import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.EntityContextFactoryAware;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.StdKlass;
+import org.metavm.entity.*;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.flow.FlowExecResult;
@@ -53,14 +50,48 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional
-    public Object handleInstanceMethodCall(String id, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
+    public Object handleMethodCall(String qualifier, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
-            var self = (ClassInstance) context.getInstanceContext().get(Id.parse(id));
-            var r = resolveMethod(self.getKlass(), methodCode, rawArguments, false, false, context);
-            var inst = execute(r.method, self, r.arguments, request, response, context);
+            Instance result;
+            if (Id.isId(qualifier)) {
+                var self = (ClassInstance) context.getInstanceContext().get(Id.parse(qualifier));
+                result = executeInstanceMethod(self, methodCode, rawArguments, request, response, context);
+            }
+            else {
+                var registry = BeanDefinitionRegistry.getInstance(context);
+                var bean = registry.tryGetBean(qualifier);
+                if(bean != null)
+                    result = executeInstanceMethod(bean, methodCode, rawArguments, request, response, context);
+                else {
+                    var klass = getKlass(qualifier, context);
+                    var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
+                    result = execute(r.method, null, r.arguments, request, response, context);
+                }
+            }
             context.finish();
-            return formatInstance(inst, false);
+            return formatInstance(result, false);
         }
+    }
+
+    @Transactional
+    public Object handleBeanMethodCall(String beanName, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
+        try(var context = newContext()) {
+            var registry = BeanDefinitionRegistry.getInstance(context);
+            var bean = registry.getBean(beanName);
+            var result = executeInstanceMethod(bean, methodCode, rawArguments, request, response, context);
+            context.finish();
+            return formatInstance(result, false);
+        }
+    }
+
+    private Instance executeInstanceMethod(ClassInstance self,
+                                           String methodCode,
+                                           List<Object> rawArguments,
+                                           HttpRequest request,
+                                           HttpResponse response,
+                                           IEntityContext context) {
+        var r = resolveMethod(self.getKlass(), methodCode, rawArguments, false, false, context);
+        return execute(r.method, self, r.arguments, request, response, context);
     }
 
     @Transactional
@@ -90,18 +121,17 @@ public class ApiService extends EntityContextFactoryAware {
 
     private Instance doIntercepted(Supplier<Instance> action, HttpRequest request, HttpResponse response, IEntityContext context) {
         var registry = BeanDefinitionRegistry.getInstance(context);
-        var interceptorKlass = StdKlass.interceptor.get();
-        var beforeMethod = interceptorKlass.getMethodByCode("before");
-        var afterMethod = interceptorKlass.getMethodByCode("after");
-        var interceptors = registry.getBeansOfType(interceptorKlass.getType());
+        var beforeMethod = StdMethod.interceptorBefore.get();
+        var afterMethod = StdMethod.interceptorAfter.get();
+        var interceptors = registry.getInterceptors();
         var reqInst = context.getInstance(request);
         var respInst = context.getInstance(response);
         for (ClassInstance interceptor : interceptors) {
-            ensureSuccessful(Flows.execute(beforeMethod, interceptor, List.of(reqInst, respInst), context));
+            Flows.invokeVirtual(beforeMethod, interceptor, List.of(reqInst, respInst), context);
         }
         var result = action.get();
         for (ClassInstance interceptor : interceptors) {
-            result = handleExecutionResult(Flows.execute(afterMethod, interceptor, List.of(reqInst, respInst, result), context));
+            result = Objects.requireNonNull(Flows.invokeVirtual(afterMethod, interceptor, List.of(reqInst, respInst, result), context));
         }
         return result;
     }

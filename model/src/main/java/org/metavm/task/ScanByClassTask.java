@@ -1,15 +1,15 @@
 package org.metavm.task;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.ClassType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class ScanByClassTask extends ScanByTypeTask {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ScanByClassTask.class);
+    public static final Logger logger = LoggerFactory.getLogger(ScanByClassTask.class);
 
     protected ScanByClassTask(String title, ClassType type) {
         super(title, type);
@@ -20,7 +20,7 @@ public abstract class ScanByClassTask extends ScanByTypeTask {
         if (instance instanceof ClassInstance classInstance) {
             processClassInstance(classInstance);
         } else {
-            LOGGER.error("Not a class instance: " + instance);
+            logger.error("Not a class instance: " + instance);
         }
     }
 

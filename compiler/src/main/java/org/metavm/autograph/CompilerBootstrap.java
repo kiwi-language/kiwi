@@ -13,7 +13,7 @@ import static org.metavm.util.Constants.ROOT_APP_ID;
 
 public class CompilerBootstrap {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(CompilerBootstrap.class);
+    public static final Logger logger = LoggerFactory.getLogger(CompilerBootstrap.class);
 
     private final CompilerInstanceContextFactory contextFactory;
     private final StdAllocators stdAllocators;
@@ -54,10 +54,10 @@ public class CompilerBootstrap {
             defContext.flushAndWriteInstances();
             var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.tryGetTreeId() == null);
             if (!idNullInstances.isEmpty()) {
-                LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
+                logger.warn(idNullInstances.size() + " instances have null ids. Save is required");
                 var inst = idNullInstances.get(0);
                 if(inst.getMappedEntity() != null)
-                    LOGGER.warn("First instance with null id: " + inst.getMappedEntity().getClass().getName());
+                    logger.warn("First instance with null id: " + inst.getMappedEntity().getClass().getName());
             }
             ContextUtil.resetLoginInfo();
         }

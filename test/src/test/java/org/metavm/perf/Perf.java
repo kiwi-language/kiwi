@@ -1,13 +1,13 @@
 package org.metavm.perf;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.Result;
 import org.metavm.flow.rest.FlowExecutionRequest;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.util.HttpUtils;
 import org.metavm.util.TestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -15,7 +15,7 @@ import java.net.http.HttpClient;
 
 public class Perf {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(Perf.class);
+    public static final Logger logger = LoggerFactory.getLogger(Perf.class);
 
     private static HttpClient client;
     private static FlowExecutionRequest request;
@@ -37,7 +37,7 @@ public class Perf {
                         HttpUtils.post(client, uri, request, new TypeReference<Result<InstanceDTO>>() {
                         });
                     } catch (Exception e) {
-                        LOGGER.error("Request error", e);
+                        logger.error("Request error", e);
                     }
                 }
             });

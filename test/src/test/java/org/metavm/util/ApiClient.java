@@ -32,26 +32,26 @@ public class ApiClient {
         return rs;
     }
 
-    public @Nullable Object callInstanceMethod(String id, String methodName, List<Object> arguments) {
+    public @Nullable Object callMethod(String id, String methodName, List<Object> arguments) {
         var uri = "/api/" + id + "/" + methodName;
         var req = makeRequest("POST", uri);
         var resp = new HttpResponseImpl();
-        var rs = apiService.handleInstanceMethodCall(id, methodName, arguments, req, resp);
+        var rs = apiService.handleMethodCall(id, methodName, arguments, req, resp);
         processResponse(resp);
         return rs;
     }
 
-    public @Nullable Object callStaticMethod(String className, String methodName, List<Object> arguments) {
-        var uri = "/api/" + className.replace('.', '/') + "/" + methodName;
-        var req = makeRequest("POST", uri);
-        var resp = new HttpResponseImpl();
-        var rs =  apiService.handleStaticMethodCall(className, methodName, arguments, req, resp);
-        processResponse(resp);
-        return rs;
-    }
+//    public @Nullable Object callMethod(String className, String methodName, List<Object> arguments) {
+//        var uri = "/api/class/" + className.replace('.', '/') + "/" + methodName;
+//        var req = makeRequest("POST", uri);
+//        var resp = new HttpResponseImpl();
+//        var rs =  apiService.handleStaticMethodCall(className, methodName, arguments, req, resp);
+//        processResponse(resp);
+//        return rs;
+//    }
 
     public @Nullable String newInstance(String className, List<Object> arguments) {
-        var uri = "/api/" + className.replace('.', '/') + "/new";
+        var uri = "/api/class/" + className.replace('.', '/') + "/new";
         var req = makeRequest("POST", uri);
         var resp = new HttpResponseImpl();
         var rs = apiService.handleNewInstance(className, arguments, req, resp);

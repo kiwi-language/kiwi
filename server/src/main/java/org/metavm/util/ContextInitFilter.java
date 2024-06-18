@@ -16,7 +16,7 @@ import java.io.IOException;
 @Order(1)
 public class ContextInitFilter extends OncePerRequestFilter {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ContextInitFilter.class);
+    public static final Logger logger = LoggerFactory.getLogger(ContextInitFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {

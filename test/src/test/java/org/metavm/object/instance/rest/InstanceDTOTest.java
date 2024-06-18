@@ -2,17 +2,17 @@ package org.metavm.object.instance.rest;
 
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.util.MockUtils;
 import org.metavm.util.NncUtils;
 import org.metavm.util.PojoMatcher;
 import org.metavm.util.TestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class InstanceDTOTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(InstanceDTOTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(InstanceDTOTest.class);
 
     @Override
     protected void setUp() throws Exception {

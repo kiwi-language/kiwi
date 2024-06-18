@@ -3,7 +3,6 @@ package org.metavm.entity;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.type.Index;
 import org.metavm.object.type.*;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.RuntimeGeneric;

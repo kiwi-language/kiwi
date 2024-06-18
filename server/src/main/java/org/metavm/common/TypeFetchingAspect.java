@@ -4,17 +4,17 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.object.version.VersionManager;
+import org.metavm.util.ContextUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.metavm.object.version.VersionManager;
-import org.metavm.util.ContextUtil;
 
 @Aspect
 @Component
 public class TypeFetchingAspect {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(TypeFetchingAspect.class);
+    public static final Logger logger = LoggerFactory.getLogger(TypeFetchingAspect.class);
 
     private final VersionManager versionManager;
 

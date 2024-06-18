@@ -1,11 +1,11 @@
 package org.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.object.type.ResolutionStage;
 import org.metavm.util.InternalException;
 import org.metavm.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class IdentityContext {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(IdentityContext.class);
+    private static final Logger logger = LoggerFactory.getLogger(IdentityContext.class);
 
     private final Map<Object, ModelIdentity> model2identity = new IdentityHashMap<>();
     private final Map<ModelIdentity, Object> identity2model = new HashMap<>();
@@ -55,7 +55,7 @@ public class IdentityContext {
                     else if (entity instanceof LocalKey localKey && localKey.isValidLocalKey()) {
                         fieldName = localKey.getLocalKey(buildKeyContext);
                     } else {
-//                        LOGGER.warn("Entity " + entity + " is in a list but does not have a key");
+//                        logger.warn("Entity " + entity + " is in a list but does not have a key");
                         fieldName = Integer.toString(((ChildArray<?>) parent).identityIndexOf(entity));
                     }
                     identity = new ModelIdentity(type, parentId.name() + "." + fieldName, parentId.relative());

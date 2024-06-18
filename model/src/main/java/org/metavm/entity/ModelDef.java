@@ -1,7 +1,5 @@
 package org.metavm.entity;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.DurableInstance;
@@ -10,6 +8,8 @@ import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.Map;
 
 public abstract class ModelDef<T, I extends DurableInstance> implements Mapper<T, I> {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ModelDef.class);
+    public static final Logger logger = LoggerFactory.getLogger(ModelDef.class);
 
     protected final Class<T> javaClass;
     protected final java.lang.reflect.Type javaType;

@@ -1,6 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import org.metavm.expression.Expression;
 import org.metavm.expression.Expressions;
@@ -9,6 +10,7 @@ import org.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class NativeFunctionCallResolver implements MethodCallResolver {
 
@@ -27,8 +29,18 @@ public class NativeFunctionCallResolver implements MethodCallResolver {
 
     @Override
     public Expression resolve(PsiMethodCallExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
+        var function = this.function;
+        if (function.isTemplate()) {
+            var methodGenerics = methodCallExpression.resolveMethodGenerics();
+            var subst = methodGenerics.getSubstitutor();
+            var method = (PsiMethod) Objects.requireNonNull(methodGenerics.getElement());
+            var typeArgs = NncUtils.map(method.getTypeParameters(),
+                    tp -> methodGenerator.getTypeResolver().resolve(subst.substitute(tp))
+            );
+            function = function.getParameterized(typeArgs);
+        }
         var arguments = new ArrayList<Expression>();
-        if(!signature.isStatic())
+        if (!signature.isStatic())
             arguments.add(expressionResolver.resolve(methodCallExpression.getMethodExpression().getQualifierExpression()));
         for (PsiExpression expression : methodCallExpression.getArgumentList().getExpressions()) {
             arguments.add(expressionResolver.resolve(expression));

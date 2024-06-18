@@ -17,7 +17,7 @@ import java.io.IOException;
 @Order(3)
 public class ClientInfoFilter extends OncePerRequestFilter {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ClientInfoFilter.class);
+    public static final Logger logger = LoggerFactory.getLogger(ClientInfoFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

@@ -7,6 +7,9 @@ import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.entity.natives.*;
+import org.metavm.http.HttpRequestImpl;
+import org.metavm.http.HttpResponseImpl;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.IteratorImpl;
 
@@ -16,7 +19,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public enum StdKlass {
+public enum StdKlass implements ValueHolderOwner<Klass> {
 
     entity(Entity.class),
     enum_(Enum.class),
@@ -34,6 +37,8 @@ public enum StdKlass {
     interceptor(Interceptor.class),
     httpRequest(HttpRequest.class),
     httpResponse(HttpResponse.class),
+    httpRequestImpl(HttpRequestImpl.class),
+    httpResponseImpl(HttpResponseImpl.class),
     httpCookie(HttpCookie.class),
     throwable(Throwable.class),
     exception(Exception.class, false, ExceptionNative.class),
@@ -66,18 +71,6 @@ public enum StdKlass {
         }
     }
 
-    public static void setDefaultMode() {
-        for (StdKlass def : values()) {
-            def.setKlassHolder(new DirectValueHolder<>());
-        }
-    }
-
-    public static void setThreadLocalMode() {
-        for (StdKlass def : values()) {
-            def.setKlassHolder(new ThreadLocalValueHolder<>());
-        }
-    }
-
     public Class<?> getJavaClass() {
         return javaClass;
     }
@@ -95,12 +88,16 @@ public enum StdKlass {
         return Objects.requireNonNull(klassHolder.get(), () -> "Builtin klass not initialized: " + javaClass.getName());
     }
 
+    public ClassType type() {
+        return get().getType();
+    }
+
     void set(Klass klass) {
         klass.setNativeClass(nativeClass);
         klassHolder.set(klass);
     }
 
-    void setKlassHolder(ValueHolder<Klass> klassHolder) {
+    public void setValueHolder(ValueHolder<Klass> klassHolder) {
         this.klassHolder = klassHolder;
     }
 

@@ -15,7 +15,7 @@ import java.util.List;
 
 public class IdentityContextTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(IdentityContextTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(IdentityContextTest.class);
 
     @Override
     protected void setUp() throws Exception {

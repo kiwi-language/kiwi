@@ -3,24 +3,23 @@ package org.metavm.object.instance.rest;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.metavm.common.ErrorCode;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
+import org.metavm.common.ErrorCode;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
-import org.metavm.object.instance.core.Id;
 import org.metavm.user.LoginService;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Headers;
 import org.metavm.util.ValueUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,19 +50,29 @@ public class ApiController {
         var path = servletRequest.getRequestURI().substring(5);
         var result = switch (method) {
             case "POST" -> {
-                var idx = path.indexOf('/');
+                var idx = path.lastIndexOf('/');
                 if (idx == -1)
                     throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
                 var methodCode = path.substring(idx + 1);
                 var qualifier = path.substring(0, idx).replace('/', '.');
                 //noinspection unchecked
                 var arguments = (List<Object>) requestBody;
-                if (Id.isId(qualifier))
-                    yield apiService.handleInstanceMethodCall(qualifier, methodCode, arguments, request, response);
-                else if (methodCode.equals("new"))
-                    yield apiService.handleNewInstance(qualifier, arguments, request, response);
-                else
-                    yield apiService.handleStaticMethodCall(qualifier, methodCode, arguments, request, response);
+                yield apiService.handleMethodCall(qualifier, methodCode, arguments, request, response);
+//                switch (kind) {
+//                    case "instance" -> {
+//                        yield apiService.handleMethodCall(qualifier, methodCode, arguments, request, response);
+//                    }
+//                    case "class" -> {
+//                        if (methodCode.equals("new"))
+//                            yield apiService.handleNewInstance(qualifier, arguments, request, response);
+//                        else
+//                            yield apiService.handleStaticMethodCall(qualifier, methodCode, arguments, request, response);
+//                    }
+//                    case "bean" -> {
+//                        yield apiService.handleBeanMethodCall(qualifier, methodCode, arguments, request, response);
+//                    }
+//                    default -> throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
+//                }
             }
             case "GET" -> apiService.getInstance(path);
             case "PUT" -> {

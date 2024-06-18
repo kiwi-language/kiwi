@@ -2,12 +2,12 @@ package org.metavm.util;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.EntityUtils;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.mocks.Foo;
 import org.metavm.object.type.Constraint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
@@ -18,7 +18,7 @@ import java.util.Set;
 
 public class ReflectionUtilsTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ReflectionUtilsTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(ReflectionUtilsTest.class);
 
     @Override
     protected void setUp() throws Exception {
@@ -37,7 +37,7 @@ public class ReflectionUtilsTest extends TestCase {
     public void testExtractReferences() {
         Foo foo = MockUtils.getFoo();
         List<Reference> references = EntityUtils.extractReferences(List.of(foo), t -> true);
-        LOGGER.info(references.toString());
+        logger.info(references.toString());
     }
 
     public void testResolveGenerics() {

@@ -3,8 +3,6 @@ package org.metavm.object.type;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
@@ -15,12 +13,14 @@ import org.metavm.object.instance.rest.InstanceFieldDTO;
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class TypeManagerTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(TypeManagerTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(TypeManagerTest.class);
 
     private MemInstanceSearchServiceV2 instanceSearchService;
     private TypeManager typeManager;
@@ -63,8 +63,8 @@ public class TypeManagerTest extends TestCase {
 
         TestUtils.doInTransactionWithoutResult(() -> typeManager.saveType(updatedTypeDTO));
         loadedTypeDTO = typeManager.getType(new GetTypeRequest(savedTypeDTO.id(), true)).type();
-        TestUtils.logJSON(LOGGER, loadedTypeDTO);
-        TestUtils.logJSON(LOGGER, updatedTypeDTO);
+        TestUtils.logJSON(logger, loadedTypeDTO);
+        TestUtils.logJSON(logger, updatedTypeDTO);
         Assert.assertEquals(loadedTypeDTO.name(), updatedTypeDTO.name());
     }
 

@@ -1,8 +1,5 @@
 package org.metavm.expression;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.IEntityContext;
@@ -15,13 +12,16 @@ import org.metavm.object.instance.rest.ExpressionFieldValue;
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.util.BusinessException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
 public class ExpressionService extends EntityContextFactoryAware {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ExpressionService.class);
+    public static final Logger logger = LoggerFactory.getLogger(ExpressionService.class);
 
     public ExpressionService(EntityContextFactory entityContextFactory) {
         super(entityContextFactory);
@@ -38,7 +38,7 @@ public class ExpressionService extends EntityContextFactoryAware {
             }
             return new BoolExprDTO(parseConditionGroups(expression));
         } catch (ExpressionParsingException e) {
-            LOGGER.warn("fail to parse expression: " + request.value(), e);
+            logger.warn("fail to parse expression: " + request.value(), e);
             throw BusinessException.invalidConditionExpr(NncUtils.toJSONString(request.value()));
         }
     }

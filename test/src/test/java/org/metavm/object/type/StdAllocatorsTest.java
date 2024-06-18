@@ -2,13 +2,13 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.util.ParameterizedTypeImpl;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.TestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -16,7 +16,7 @@ import java.util.Set;
 
 public class StdAllocatorsTest extends TestCase {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(StdAllocatorTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(StdAllocatorTest.class);
 
     private StdAllocators allocators;
     private AllocatorStore allocatorStore;
@@ -35,10 +35,10 @@ public class StdAllocatorsTest extends TestCase {
         allocators.putId(klassNameField, PhysicalId.of(class2ids.get(Field.class).get(0), 0L, TestUtils.mockClassType()));
 
         var fieldClassId = allocators.getId(Field.class);
-        LOGGER.info("Field id: " + fieldClassId);
+        logger.info("Field id: " + fieldClassId);
 
         var typeNameFieldId = allocators.getId(klassNameField);
-        LOGGER.info("Type.name id: " + typeNameFieldId);
+        logger.info("Type.name id: " + typeNameFieldId);
     }
 
     public void testGetTypeId() {

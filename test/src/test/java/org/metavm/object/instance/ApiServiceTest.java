@@ -58,7 +58,7 @@ public class ApiServiceTest extends TestCase {
             "quantity", 100L
         )));
         // decrease quantity
-        TestUtils.doInTransaction(() -> apiClient.callInstanceMethod(
+        TestUtils.doInTransaction(() -> apiClient.callMethod(
                 skuId,
                 "decQuantity",
                 List.of(1)
@@ -75,7 +75,7 @@ public class ApiServiceTest extends TestCase {
                 List.of("10 Yuan off", 10)
         ));
         // buy
-        var orderId = (String) TestUtils.doInTransaction(() -> apiClient.callInstanceMethod(
+        var orderId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod(
                 skuId,
                 "buy",
                 List.of(1, List.of(coupon1Id, coupon2Id))

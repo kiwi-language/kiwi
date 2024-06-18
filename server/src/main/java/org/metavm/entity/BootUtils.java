@@ -5,6 +5,6 @@ import org.slf4j.LoggerFactory;
 
 public class BootUtils {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(BootUtils.class);
+    public static final Logger logger = LoggerFactory.getLogger(BootUtils.class);
 
 }

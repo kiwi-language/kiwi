@@ -19,4 +19,6 @@ public @interface EntityType {
 
     boolean systemAPI() default false;
 
+    boolean isNative() default false;
+
 }

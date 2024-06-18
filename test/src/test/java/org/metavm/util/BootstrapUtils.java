@@ -49,7 +49,7 @@ public class BootstrapUtils {
             StdFunction.initializeFromDefContext(defContext);
             StdFunction.setEmailSender(MockEmailSender.INSTANCE);
             StdKlass.initialize(defContext);
-
+            StdMethod.initialize(defContext);
             var state = BootstrapUtils.state.copy();
             var instanceStore = new MemInstanceStore(
                     state.instanceMapper(),

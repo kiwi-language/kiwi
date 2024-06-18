@@ -12,6 +12,7 @@ import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -24,6 +25,9 @@ public class BeanDefinitionRegistry extends Entity {
     private final boolean allFlags = true;
 
     @ChildEntity
+    private final ReadWriteArray<BeanDefinition> interceptorDefinitions = addChild(new ReadWriteArray<>(BeanDefinition.class), "interceptorDefinitions");
+
+    @ChildEntity
     private final ChildArray<BeanDefinition> beanDefinitions = addChild(new ChildArray<>(BeanDefinition.class), "beanDefinitions");
 
     public static BeanDefinitionRegistry getInstance(IEntityContext context) {
@@ -34,6 +38,12 @@ public class BeanDefinitionRegistry extends Entity {
         if(NncUtils.exists(beanDefinitions, b -> b.getName().equals(beanDefinition.getName())))
             throw new IllegalStateException("BeanDefinition with name " + beanDefinition.getName() + " already exists");
         beanDefinitions.addChild(beanDefinition);
+        if(StdKlass.interceptor.type().isAssignableFrom(beanDefinition.getBeanType()))
+            interceptorDefinitions.add(beanDefinition);
+    }
+
+    public @Nullable BeanDefinition tryGetBeanDefinition(String name) {
+        return NncUtils.find(beanDefinitions, b -> b.getName().equals(name));
     }
 
     public BeanDefinition getBeanDefinition(String name) {
@@ -45,8 +55,17 @@ public class BeanDefinitionRegistry extends Entity {
         return getBeanDefinition(name).getBean();
     }
 
+    public @Nullable ClassInstance tryGetBean(String name) {
+        var def = tryGetBeanDefinition(name);
+        return def != null ? def.getBean() : null;
+    }
+
     public void removeBeanDefinition(String name) {
-        beanDefinitions.removeIf(b -> b.getName().equals(name));
+        var beanDef = NncUtils.findRequired(beanDefinitions, bean -> bean.getName().equals(name),
+                "BeanDefinition with name " + name + " not found");
+        beanDefinitions.remove(beanDef);
+        if(StdKlass.interceptor.type().isAssignableFrom(beanDef.getBeanType()))
+            interceptorDefinitions.remove(beanDef);
     }
 
     public List<BeanDefinition> getBeanDefinitionsByType(ClassType type) {
@@ -88,6 +107,10 @@ public class BeanDefinitionRegistry extends Entity {
             }
         }
         return arguments;
+    }
+
+    public List<ClassInstance> getInterceptors() {
+        return NncUtils.map(interceptorDefinitions, BeanDefinition::getBean);
     }
 
     public List<BeanDefinition> getFlowDependencies(Flow flow) {

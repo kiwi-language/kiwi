@@ -57,7 +57,7 @@ public class DefContextTest extends TestCase {
         var instance = (DurableInstance) objectInstanceMap.getInstance(type);
 //                typeDef.createInstance(type, objectInstanceMap, null);
 //        InstanceDTO instanceDTO = instance.toDTO();
-//        TestUtils.logJSON(LOGGER, "instance", instanceDTO);
+//        TestUtils.logJSON(logger, "instance", instanceDTO);
         Assert.assertEquals(type.tryGetId(), instance.tryGetId());
     }
 
