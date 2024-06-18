@@ -2,6 +2,7 @@ package org.metavm.autograph;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.api.Interceptor;
 import org.metavm.application.ApplicationManager;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.*;
@@ -25,6 +26,8 @@ import org.metavm.user.PlatformUserManager;
 import org.metavm.user.RoleManager;
 import org.metavm.user.VerificationCodeService;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
@@ -34,6 +37,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public abstract class CompilerTestBase extends TestCase  {
+
+    private static final Logger logger = LoggerFactory.getLogger(CompilerTestBase.class);
+
     protected AuthConfig AUTH_CONFIG;
     protected long APP_ID = 100L;
 
@@ -98,6 +104,8 @@ public abstract class CompilerTestBase extends TestCase  {
         var apiService = new ApiService(bootResult.entityContextFactory());
         apiClient = new ApiClient(apiService);
         ContextUtil.resetProfiler();
+        logger.info("id in store: {}", bootResult.stdIdStore().get(Klass.class.getName() + "." + Interceptor.class.getName()));
+        logger.info("id in context: {}", bootResult.defContext().getKlass(Interceptor.class).getId());
     }
 
     @Override

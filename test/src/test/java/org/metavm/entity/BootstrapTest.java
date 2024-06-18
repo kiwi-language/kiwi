@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.api.Interceptor;
 import org.metavm.api.Value;
 import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.InstanceStore;
@@ -20,11 +21,11 @@ import static org.metavm.util.TestUtils.doInTransactionWithoutResult;
 
 public class BootstrapTest extends TestCase {
 
-    public static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(BootstrapTest.class);
+    public static final Logger logger = org.slf4j.LoggerFactory.getLogger(BootstrapTest.class);
 
     private ColumnStore columnStore;
     private TypeTagStore typeTagStore;
-    private StdIdStore stdIdStore;
+    private MemoryStdIdStore stdIdStore;
     private MemAllocatorStore allocatorStore;
     private InstanceStore instanceStore;
     private EntityIdProvider idProvider;
@@ -63,6 +64,20 @@ public class BootstrapTest extends TestCase {
         return new Bootstrap(entityContextFactory, stdAllocators, columnStore, typeTagStore, stdIdStore);
     }
 
+    public void _testTmp() {
+        {
+            ContextUtil.resetProfiler();
+            var profiler = ContextUtil.getProfiler();
+            var bootstrap = newBootstrap();
+            var result = bootstrap.boot();
+            Assert.assertTrue(result.numInstancesWithNullIds() > 0);
+            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+            logger.info("id in store: {}", stdIdStore.get(Klass.class.getName() + "." + Interceptor.class.getName()));
+            logger.info("id in context: {}", ModelDefRegistry.getDefContext().getKlass(Interceptor.class).getId());
+            logger.info(profiler.finish(false, true).toString());
+        }
+    }
+
     public void test() {
         {
             ContextUtil.resetProfiler();
@@ -71,7 +86,7 @@ public class BootstrapTest extends TestCase {
             var result = bootstrap.boot();
             Assert.assertTrue(result.numInstancesWithNullIds() > 0);
             TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
-            LOGGER.info(profiler.finish(false, true).toString());
+            logger.info(profiler.finish(false, true).toString());
         }
 //        allocatorStore.dump();
 //        DebugEnv.bootstrapVerbose = true;
@@ -82,7 +97,7 @@ public class BootstrapTest extends TestCase {
             var result = bootstrap.boot();
             Assert.assertEquals(0, result.numInstancesWithNullIds());
             TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
-            LOGGER.info(profiler.finish(false, true).toString());
+            logger.info(profiler.finish(false, true).toString());
         }
         // test remove field
         {
@@ -93,7 +108,8 @@ public class BootstrapTest extends TestCase {
             var result = bootstrap.boot();
             Assert.assertEquals(0, result.numInstancesWithNullIds());
             TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
-            LOGGER.info(profiler.finish(false, true).toString());
+            logger.info(profiler.finish(false, true).toString());
+
         }
         {
             ContextUtil.resetProfiler();
@@ -116,7 +132,7 @@ public class BootstrapTest extends TestCase {
                                     defContext.getInstance(defContext.getIdentityContext().getModel(modelId)).tryGetId()
                     )
             );
-            LOGGER.info(profiler.finish(false, true).toString());
+            logger.info(profiler.finish(false, true).toString());
         }
     }
 
@@ -126,7 +142,7 @@ public class BootstrapTest extends TestCase {
             var profiler = ContextUtil.getProfiler();
             var bootstrap = newBootstrap();
             bootstrap.boot();
-            LOGGER.info(profiler.finish().toString());
+            logger.info(profiler.finish().toString());
         }
     }
 

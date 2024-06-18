@@ -28,7 +28,7 @@ public class DebugEnv {
 
     public static volatile boolean flag = false;
 
-    public static volatile boolean saveCompileResult = true;
+    public static volatile boolean saveCompileResult = false;
 
     public static volatile DurableInstance instance;
 

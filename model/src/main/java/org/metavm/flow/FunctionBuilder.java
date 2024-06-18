@@ -51,6 +51,11 @@ public class FunctionBuilder {
         return this;
     }
 
+    public FunctionBuilder isNative(boolean isNative) {
+        this.isNative = isNative;
+        return this;
+    }
+
     public FunctionBuilder isSynthetic(boolean isSynthetic) {
         this.isSynthetic = isSynthetic;
         return this;

@@ -162,12 +162,12 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     private String getKlassId(String typeExpression) {
         var typeKey = TypeKey.fromExpression(typeExpression);
-        if(typeKey instanceof ClassTypeKey ctKey)
-            return ctKey.id().toString();
-        else if(typeKey instanceof ParameterizedTypeKey ptKey)
-            return ptKey.templateId().toString();
-        else
-            throw new InternalException("Can not get klass id from type: " + typeExpression);
+        return switch (typeKey) {
+            case ClassTypeKey ctKey -> ctKey.id().toString();
+            case TaggedClassTypeKey tctKey -> tctKey.id().toString();
+            case ParameterizedTypeKey ptKey -> ptKey.templateId().toString();
+            case null, default -> throw new InternalException("Unexpected type key: " + typeKey);
+        };
     }
 
     private static class Sorter {

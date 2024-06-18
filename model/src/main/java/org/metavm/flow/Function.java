@@ -31,7 +31,7 @@ public class Function extends Flow implements GlobalKey {
     @SuppressWarnings({"FieldMayBeFinal", "unused"})
     private boolean allFlag = true;
 
-    private transient FunctionImpl nativeCode;
+    private transient @Nullable FunctionImpl nativeCode;
 
     public Function(Long tmpId,
                     String name,
@@ -124,5 +124,9 @@ public class Function extends Flow implements GlobalKey {
     public void setNativeCode(FunctionImpl impl) {
         NncUtils.requireTrue(isNative(), "Function " + this + " is not native");
         this.nativeCode = impl;
+    }
+
+    public @Nullable FunctionImpl getNativeCode() {
+        return nativeCode;
     }
 }

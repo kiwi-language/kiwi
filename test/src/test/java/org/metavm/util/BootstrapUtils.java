@@ -46,25 +46,6 @@ public class BootstrapUtils {
         if (state != null) {
             var defContext = state.defContext();
             ModelDefRegistry.setDefContext(defContext);
-            /*StandardTypes.setEntityKlass(defContext.getClassType(Entity.class).resolve());
-            StandardTypes.setEnumKlass(defContext.getClassType(Enum.class).resolve());
-            StandardTypes.setThrowableKlass(defContext.getClassType(Throwable.class).resolve());
-            StandardTypes.setRuntimeExceptionKlass(defContext.getClassType(RuntimeException.class).resolve());
-            StandardTypes.setCollectionKlass(defContext.getClassType(Collection.class).resolve());
-            StandardTypes.setListKlass(defContext.getClassType(MetaList.class).resolve());
-            StandardTypes.setReadWriteListKlass(defContext.getClassType(ReadWriteMetaList.class).resolve());
-            StandardTypes.setChildListKlass(defContext.getClassType(ChildMetaList.class).resolve());
-            StandardTypes.setValueListKlass(defContext.getClassType(ValueMetaList.class).resolve());
-            StandardTypes.setSetKlass(defContext.getClassType(MetaSet.class).resolve());
-            StandardTypes.setMapKlass(defContext.getClassType(MetaMap.class).resolve());
-            StandardTypes.setIteratorImplKlass(defContext.getClassType(IteratorImpl.class).resolve());
-            StandardTypes.setIteratorKlass(defContext.getClassType(MetaIterator.class).resolve());
-            StandardTypes.setIterableKlass(defContext.getClassType(MetaIterable.class).resolve());
-            StandardTypes.setRecordKlass(defContext.getClassType(Record.class).resolve());
-            StandardTypes.setExceptionKlass(defContext.getClassType(Exception.class).resolve());
-            StandardTypes.setIllegalArgumentExceptionKlass(defContext.getClassType(IllegalArgumentException.class).resolve());
-            StandardTypes.setIllegalStateExceptionKlass(defContext.getClassType(IllegalStateException.class).resolve());
-            StandardTypes.setNullPointerExceptionKlass(defContext.getClassType(NullPointerException.class).resolve());*/
             StdFunction.initializeFromDefContext(defContext);
             StdFunction.setEmailSender(MockEmailSender.INSTANCE);
             StdKlass.initialize(defContext);
@@ -93,6 +74,7 @@ public class BootstrapUtils {
                 }
             });
             return new BootstrapResult(
+                    defContext,
                     entityContextFactory,
                     idProvider,
                     state.blockMapper(),
@@ -101,6 +83,7 @@ public class BootstrapUtils {
                     instanceSearchService,
                     state.allocatorStore(),
                     state.columnStore(),
+                    state.stdIdStore(),
                     state.typeTagStore()
             );
         } else {
@@ -153,6 +136,7 @@ public class BootstrapUtils {
                 }
             });
             return new BootstrapResult(
+                    ModelDefRegistry.getDefContext(),
                     entityContextFactory,
                     idProvider,
                     blockMapper,
@@ -161,6 +145,7 @@ public class BootstrapUtils {
                     instanceSearchService,
                     allocatorStore,
                     columnStore,
+                    stdIdStore,
                     typeTagStore
             );
         }

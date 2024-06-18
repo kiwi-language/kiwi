@@ -1,7 +1,5 @@
 package org.metavm.object.type.generic;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.*;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
@@ -13,6 +11,8 @@ import org.metavm.object.view.ObjectMapping;
 import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -219,8 +219,6 @@ public class SubstitutorV2 extends CopyVisitor {
                         .typeArguments(typeArgs)
                         .build();
                 copy.setStrictEphemeral(true);
-                if (method.isEphemeralEntity() || NncUtils.anyMatch(typeArgs, Entity::isEphemeralEntity))
-                    copy.setEphemeralEntity(true);
                 method.addParameterized(copy);
             }
             copy.setStage(stage);
@@ -258,12 +256,12 @@ public class SubstitutorV2 extends CopyVisitor {
                         .isSynthetic(function.isSynthetic())
                         .build();
                 copy.setStrictEphemeral(true);
-                if (function.isEphemeralEntity() || NncUtils.anyMatch(typeArgs, Entity::isEphemeralEntity))
-                    copy.setEphemeralEntity(true);
                 function.addParameterized(copy);
             }
             copy.setStage(stage);
             copy.setNative(function.isNative());
+            if(copy.isNative())
+                copy.setNativeCode(function.getNativeCode());
             addCopy(function, copy);
             if (function.isRootScopePresent())
                 addCopy(function.getRootScope(), copy.getRootScope());
@@ -391,8 +389,6 @@ public class SubstitutorV2 extends CopyVisitor {
                         .tmpId(getCopyTmpId(template))
                         .build();
                 copy.setStrictEphemeral(true);
-                if (klass.isEphemeralEntity() || NncUtils.anyMatch(typeArguments, Entity::isEphemeralEntity))
-                    copy.setEphemeralEntity(true);
                 klass.addParameterized(copy);
             } else {
                 copy.setName(name);
