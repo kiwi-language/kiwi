@@ -3,3 +3,14 @@ GET https://metavm.tech/rest/instance/1000600045
 
 <> 2023-02-22T151012.200.json
 <> 2023-02-22T150945.401.json
+###
+PUT https://metavm.tech/api/product
+Content-Type: application/json
+X-App-ID: 1001300027
+Cookie: name=leen
+
+{
+  "title": "Shoes",
+  "price": 100.0,
+  "quantity": 100
+}

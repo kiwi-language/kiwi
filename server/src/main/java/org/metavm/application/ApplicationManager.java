@@ -152,6 +152,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
         // initIdManually will bind application to context
         platformContext.initIdManually(application, Constants.getAppId(appId));
         platformUserManager.joinApplication(owner, application, platformContext);
+        setupApplication(appId);
         return application;
     }
 
