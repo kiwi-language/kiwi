@@ -112,5 +112,56 @@ public class NamingUtils {
         }
     }
 
+    public static String pathToName(String path) {
+        var splits = path.split("/");
+        var buf = new StringBuilder();
+        for (int i = 0; i < splits.length - 1; i++) {
+            buf.append(hyphenToCamel(splits[i], false)).append('.');
+        }
+        buf.append(hyphenToCamel(splits[splits.length - 1], splits.length > 1));
+        return buf.toString();
+    }
 
+    public static String nameToPath(String name) {
+        var splits = name.split("\\.");
+        var sb = new StringBuilder();
+        sb.append(camelToHyphen(splits[0]));
+        for (int i = 1; i < splits.length; i++) {
+            sb.append('/').append(camelToHyphen(splits[i]));
+        }
+        return sb.toString();
+    }
+
+    public static String camelToHyphen(String str) {
+        var sb = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            var ch = str.charAt(i);
+            if (Character.isUpperCase(ch)) {
+                if (i > 0)
+                    sb.append('-');
+                sb.append(Character.toLowerCase(ch));
+            } else {
+                sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String hyphenToCamel(String str) {
+        return hyphenToCamel(str, false);
+    }
+
+    public static String hyphenToCamel(String str, boolean firstUpper) {
+        var sb = new StringBuilder();
+        var upper = firstUpper;
+        for (var ch : str.toCharArray()) {
+            if (ch == '-') {
+                upper = true;
+            } else {
+                sb.append(upper ? Character.toUpperCase(ch) : ch);
+                upper = false;
+            }
+        }
+        return sb.toString();
+    }
 }

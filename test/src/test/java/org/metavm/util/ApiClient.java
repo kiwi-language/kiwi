@@ -24,7 +24,7 @@ public class ApiClient {
     }
 
     public String saveInstance(String className, Map<String, Object> map) {
-        var uri = "/api/" + className.replace('.', '/');
+        var uri = "/api/" + NamingUtils.nameToPath(className);
         var req = makeRequest("PUT", uri);
         var resp = new HttpResponseImpl();
         var rs = apiService.saveInstance(className, map, req, resp);
@@ -32,26 +32,17 @@ public class ApiClient {
         return rs;
     }
 
-    public @Nullable Object callMethod(String id, String methodName, List<Object> arguments) {
-        var uri = "/api/" + id + "/" + methodName;
+    public @Nullable Object callMethod(String qualifier, String methodName, List<Object> arguments) {
+        var uri = "/api/" + NamingUtils.nameToPath(qualifier) + "/" + NamingUtils.camelToHyphen(methodName);
         var req = makeRequest("POST", uri);
         var resp = new HttpResponseImpl();
-        var rs = apiService.handleMethodCall(id, methodName, arguments, req, resp);
+        var rs = apiService.handleMethodCall(qualifier, methodName, arguments, req, resp);
         processResponse(resp);
         return rs;
     }
 
-//    public @Nullable Object callMethod(String className, String methodName, List<Object> arguments) {
-//        var uri = "/api/class/" + className.replace('.', '/') + "/" + methodName;
-//        var req = makeRequest("POST", uri);
-//        var resp = new HttpResponseImpl();
-//        var rs =  apiService.handleStaticMethodCall(className, methodName, arguments, req, resp);
-//        processResponse(resp);
-//        return rs;
-//    }
-
     public @Nullable String newInstance(String className, List<Object> arguments) {
-        var uri = "/api/class/" + className.replace('.', '/') + "/new";
+        var uri = "/api/class/" + NamingUtils.nameToPath(className) + "/new";
         var req = makeRequest("POST", uri);
         var resp = new HttpResponseImpl();
         var rs = apiService.handleNewInstance(className, arguments, req, resp);

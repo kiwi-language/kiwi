@@ -63,7 +63,8 @@ public class ApiService extends EntityContextFactoryAware {
                 if(bean != null)
                     result = executeInstanceMethod(bean, methodCode, rawArguments, request, response, context);
                 else {
-                    var klass = getKlass(qualifier, context);
+                    var klassName = qualifier.contains(".") ? qualifier : NamingUtils.firstCharToUpperCase(qualifier);
+                    var klass = getKlass(klassName, context);
                     var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
                     result = execute(r.method, null, r.arguments, request, response, context);
                 }

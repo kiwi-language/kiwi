@@ -12,10 +12,7 @@ import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
 import org.metavm.user.LoginService;
-import org.metavm.util.BusinessException;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.Headers;
-import org.metavm.util.ValueUtils;
+import org.metavm.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,30 +50,18 @@ public class ApiController {
                 var idx = path.lastIndexOf('/');
                 if (idx == -1)
                     throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-                var methodCode = path.substring(idx + 1);
-                var qualifier = path.substring(0, idx).replace('/', '.');
+                var qualifier = NamingUtils.pathToName(path.substring(0, idx));
+                var methodCode = NamingUtils.hyphenToCamel(path.substring(idx + 1));
                 //noinspection unchecked
                 var arguments = (List<Object>) requestBody;
-                yield apiService.handleMethodCall(qualifier, methodCode, arguments, request, response);
-//                switch (kind) {
-//                    case "instance" -> {
-//                        yield apiService.handleMethodCall(qualifier, methodCode, arguments, request, response);
-//                    }
-//                    case "class" -> {
-//                        if (methodCode.equals("new"))
-//                            yield apiService.handleNewInstance(qualifier, arguments, request, response);
-//                        else
-//                            yield apiService.handleStaticMethodCall(qualifier, methodCode, arguments, request, response);
-//                    }
-//                    case "bean" -> {
-//                        yield apiService.handleBeanMethodCall(qualifier, methodCode, arguments, request, response);
-//                    }
-//                    default -> throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-//                }
+                if (methodCode.equals("new"))
+                    yield apiService.handleNewInstance(qualifier, arguments, request, response);
+                else
+                    yield apiService.handleMethodCall(qualifier, methodCode, arguments, request, response);
             }
             case "GET" -> apiService.getInstance(path);
             case "PUT" -> {
-                var klassName = path.replace('/', '.');
+                var klassName = NamingUtils.pathToName(path);
                 //noinspection unchecked
                 yield apiService.saveInstance(klassName, (Map<String, Object>) requestBody, request, response);
             }

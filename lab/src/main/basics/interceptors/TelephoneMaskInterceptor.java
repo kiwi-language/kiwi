@@ -16,7 +16,7 @@ public class TelephoneMaskInterceptor implements Interceptor {
 
     @Override
     public @Nullable Object after(HttpRequest request, HttpResponse response, @Nullable Object result) {
-        if(request.getRequestURI().equals("/api/userService/getUserByName")) {
+        if(request.getRequestURI().equals("/api/user-service/get-user-by-name")) {
             var user = (UserDTO) Objects.requireNonNull(result);
             var tel = user.telephone();
             return new UserDTO(user.name(), tel.substring(0, 3) + "******" + tel.substring(9));
