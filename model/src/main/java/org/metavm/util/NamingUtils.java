@@ -113,12 +113,16 @@ public class NamingUtils {
     }
 
     public static String pathToName(String path) {
+        return pathToName(path, false);
+    }
+
+    public static String pathToName(String path, boolean className) {
         var splits = path.split("/");
         var buf = new StringBuilder();
         for (int i = 0; i < splits.length - 1; i++) {
             buf.append(hyphenToCamel(splits[i], false)).append('.');
         }
-        buf.append(hyphenToCamel(splits[splits.length - 1], splits.length > 1));
+        buf.append(hyphenToCamel(splits[splits.length - 1], className || splits.length > 1));
         return buf.toString();
     }
 

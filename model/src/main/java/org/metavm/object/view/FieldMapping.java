@@ -79,7 +79,7 @@ public abstract class FieldMapping extends Element {
                 getType().toExpression(),
                 isChild(),
                 isReadonly(),
-                NncUtils.get(getSourceField(), serializeContext::getStringId),
+                NncUtils.get(getSourceField(), f -> f.getRef().toDTO(serializeContext)),
                 targetFieldRef.toDTO(serializeContext),
                 nestedMapping instanceof ObjectNestedMapping classCodeGenerator ? classCodeGenerator.getMapping().getStringId() : null,
                 getParam(serializeContext)

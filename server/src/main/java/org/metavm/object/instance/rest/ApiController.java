@@ -47,6 +47,8 @@ public class ApiController {
         var path = servletRequest.getRequestURI().substring(5);
         var result = switch (method) {
             case "POST" -> {
+                if(!(requestBody instanceof List<?>))
+                    throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
                 var idx = path.lastIndexOf('/');
                 if (idx == -1)
                     throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
@@ -61,9 +63,13 @@ public class ApiController {
             }
             case "GET" -> apiService.getInstance(path);
             case "PUT" -> {
-                var klassName = NamingUtils.pathToName(path);
-                //noinspection unchecked
-                yield apiService.saveInstance(klassName, (Map<String, Object>) requestBody, request, response);
+                if(requestBody instanceof Map<?,?>) {
+                    var klassName = NamingUtils.pathToName(path, true);
+                    //noinspection unchecked
+                    yield apiService.saveInstance(klassName, (Map<String, Object>) requestBody, request, response);
+                }
+                else
+                    throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
             }
             case "DELETE" -> {
                 apiService.deleteInstance(path);

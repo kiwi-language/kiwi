@@ -23,6 +23,10 @@ public class NamingUtilsTest extends TestCase {
             Assert.assertEquals("userService", NamingUtils.pathToName(path));
         }
         {
+            var path = "user-service";
+            Assert.assertEquals("UserService", NamingUtils.pathToName(path, true));
+        }
+        {
             var path = "org/metavm/lab/user-service";
             var name = NamingUtils.pathToName(path);
             Assert.assertEquals("org.metavm.lab.UserService", name);

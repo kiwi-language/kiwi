@@ -734,3 +734,27 @@ X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
     ]
   }
 ]
+
+###
+PUT http://localhost:8080/api/product
+Content-Type: application/json
+X-App-ID: 1843416869
+
+{
+  "title": "Shoes",
+  "price": 100.0,
+  "quantity": 100
+}
+
+###
+GET http://localhost:8080/api/01d2a2f6dd0d00
+X-App-ID: 1843416869
+
+###
+POST http://localhost:8080/api/01d2a2f6dd0d00/dec-quantity
+Content-Type: application/json
+X-App-ID: 1843416869
+
+[
+  1
+]

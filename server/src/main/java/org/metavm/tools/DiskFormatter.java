@@ -13,10 +13,10 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,7 +68,7 @@ public class DiskFormatter {
             CONFIG_REBOOT, true
     );
 
-    public static final Map<String, Object> CONFIG = DEV_CONFIG;
+    public static final Map<String, Object> CONFIG = LOCAL_CONFIG;
 
 //    public static final String HOST = "localhost";
 

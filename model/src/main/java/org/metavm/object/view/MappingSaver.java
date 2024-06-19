@@ -116,7 +116,7 @@ public class MappingSaver {
         if (fieldMapping == null) {
             return switch (fieldMappingDTO.param()) {
                 case DirectFieldMappingParam directParam -> {
-                    var sourceField = sourceType.getField(Id.parse(requireNonNull(fieldMappingDTO.sourceFieldId())));
+                    var sourceField = FieldRef.create(requireNonNull(fieldMappingDTO.sourceFieldRef()), entityRepository).resolve();
                     yield new DirectFieldMapping(
                             fieldMappingDTO.tmpId(),
                             createTargetField(
@@ -180,7 +180,7 @@ public class MappingSaver {
             var param = fieldMappingDTO.param();
             switch (fieldMapping) {
                 case DirectFieldMapping directFieldMapping -> directFieldMapping.update(
-                        sourceType.getField(Id.parse(requireNonNull(fieldMappingDTO.sourceFieldId()))),
+                        FieldRef.create(requireNonNull(fieldMappingDTO.sourceFieldRef()), entityRepository).resolve(),
                         fieldMappingDTO.readonly());
                 case FlowFieldMapping flowFieldMapping -> {
                     var flowParam = (FlowFieldMappingParam) param;

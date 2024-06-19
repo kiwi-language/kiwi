@@ -12,7 +12,7 @@ public record FieldMappingDTO(
         String type,
         boolean isChild,
         boolean readonly,
-        @Nullable String sourceFieldId,
+        @Nullable FieldRefDTO sourceFieldRef,
         FieldRefDTO targetFieldRef,
         @Nullable String nestedMappingId,
         FieldMappingParam param
