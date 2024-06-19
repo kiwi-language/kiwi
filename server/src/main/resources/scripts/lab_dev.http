@@ -14,3 +14,13 @@ Cookie: name=leen
   "price": 100.0,
   "quantity": 100
 }
+
+###
+POST https://metavm.tech/api/user-service/get-user-by-name
+Content-Type: application/json
+X-App-ID: 1001300028
+Cookie: name=leen
+
+[
+  "leen"
+]

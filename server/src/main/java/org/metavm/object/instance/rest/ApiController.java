@@ -102,8 +102,10 @@ public class ApiController {
             headers.add(new HttpHeader(name, servletRequest.getHeader(name)));
         }
         var cookies = new ArrayList<HttpCookie>();
-        for (Cookie cookie : servletRequest.getCookies()) {
-            cookies.add(new HttpCookie(cookie.getName(), cookie.getValue()));
+        if(servletRequest.getCookies() != null) {
+            for (Cookie cookie : servletRequest.getCookies()) {
+                cookies.add(new HttpCookie(cookie.getName(), cookie.getValue()));
+            }
         }
         return new HttpRequestImpl(
                 servletRequest.getMethod(),

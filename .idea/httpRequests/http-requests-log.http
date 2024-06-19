@@ -1,3 +1,47 @@
+POST http://localhost:7004/bootstrap?saveIds=false
+Content-Length: 0
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_2__=e56ebaf2-2300-4ea4-9b1d-59e20ea1a67f
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2024-06-19T172959.200.json
+
+###
+
+POST https://metavm.tech/api/user-service/get-user-by-name
+Content-Type: application/json
+X-App-ID: 1001300028
+Content-Length: 12
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: name=leen
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[
+  "leen"
+]
+
+<> 2024-06-19T170111.200.json
+
+###
+
+POST https://metavm.tech/api/user-service/get-user-by-name
+Content-Type: application/json
+X-App-ID: 1001300028
+Content-Length: 12
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[
+  "leen"
+]
+
+<> 2024-06-19T170036.500.json
+
+###
+
 PUT https://metavm.tech/api/product
 Content-Type: application/json
 X-App-ID: 1001300027
@@ -797,39 +841,6 @@ Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_18428
 Accept-Encoding: br,deflate,gzip,x-gzip
 
 <> 2024-06-10T230006.200.json
-
-###
-
-POST http://localhost:7004/bootstrap/save?saveIds=false
-Content-Length: 0
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842416849__=9f74eafa-4768-48bc-be7c-31ab7d9f544f; __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_2__=26ab923b-fe6e-43c8-a330-e085a52cbe05
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-06-09T180450.200.json
-
-###
-
-POST http://localhost:8080/bootstrap/save?saveids=false
-Content-Length: 0
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842216845__=aed8a7d8-b09c-463f-ab11-3f57b915bff4; __token_1842416849__=9f74eafa-4768-48bc-be7c-31ab7d9f544f; __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_2__=26ab923b-fe6e-43c8-a330-e085a52cbe05
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-06-09T165632.200.json
-
-###
-
-POST http://localhost:8080/bootstrap/save?saveids=false
-Content-Length: 0
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842216845__=aed8a7d8-b09c-463f-ab11-3f57b915bff4; __token_1842416849__=9f74eafa-4768-48bc-be7c-31ab7d9f544f; __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_2__=26ab923b-fe6e-43c8-a330-e085a52cbe05
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-06-09T162220.200.json
 
 ###
 
