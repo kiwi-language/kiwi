@@ -194,7 +194,7 @@ public class InstanceFactory {
                 listNative.clear();
                 NncUtils.forEach(
                         listFieldValue.getElements(),
-                        e -> listNative.add(resolveValue(e, list.getKlass().getListElementType(), null, context))
+                        e -> listNative.add(resolveValue(e, list.getKlass().getFirstTypeArgument(), null, context))
                 );
                 return list;
             } else {
@@ -204,9 +204,9 @@ public class InstanceFactory {
                 Klass klass;
                 if(StdKlass.list.get().isType(classType.getEffectiveTemplate())) {
                     if(listFieldValue.isElementAsChild())
-                        klass = StdKlass.childList.get().getParameterized(List.of(classType.getListElementType()));
+                        klass = StdKlass.childList.get().getParameterized(List.of(classType.getFirstTypeArgument()));
                     else
-                        klass = StdKlass.arrayList.get().getParameterized(List.of(classType.getListElementType()));
+                        klass = StdKlass.arrayList.get().getParameterized(List.of(classType.getFirstTypeArgument()));
                 }
                 else
                     klass = classType.resolve();
@@ -215,7 +215,7 @@ public class InstanceFactory {
                 listNative.List();
                 NncUtils.forEach(
                         listFieldValue.getElements(),
-                        e -> listNative.add(resolveValue(e, list.getType().getListElementType(), null, context))
+                        e -> listNative.add(resolveValue(e, list.getType().getFirstTypeArgument(), null, context))
                 );
                 list.setParentInternal(parentRef);
                 return list;

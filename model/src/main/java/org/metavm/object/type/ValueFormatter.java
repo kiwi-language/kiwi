@@ -1,7 +1,5 @@
 package org.metavm.object.type;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.*;
@@ -10,6 +8,8 @@ import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.text.DateFormat;
@@ -44,7 +44,7 @@ public class ValueFormatter {
                 }
                 for (FieldValue element : param.elements()) {
                     listNative.add(
-                            parseOne(element, classType.getListElementType(),
+                            parseOne(element, classType.getFirstTypeArgument(),
                                     null, context));
                 }
                 return list;

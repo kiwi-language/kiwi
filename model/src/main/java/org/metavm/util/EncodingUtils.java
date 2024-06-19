@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import javax.annotation.Nullable;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -84,6 +85,13 @@ public class EncodingUtils {
         return encodeBase64(BigInteger.valueOf(l).toByteArray());
     }
 
+    public static String secureRandom(int len) {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] bytes = new byte[len];
+        secureRandom.nextBytes(bytes);
+        return encodeBase64(bytes);
+    }
+
     public static String encodeBase64(byte[] bytes) {
         try(var ignored = ContextUtil.getProfiler().enter("encodeBase64")) {
             return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -120,14 +128,12 @@ public class EncodingUtils {
         return bytes;
     }
 
-    public static String[] secureHash(String value) {
-        var secureRandom = new SecureRandom();
-        var salt = new byte[16];
-        secureRandom.nextBytes(salt);
+    public static String secureHash(String value, @Nullable String salt) {
         var digest = getMessageDigest("SHA-256");
-        digest.update(salt);
+        if(salt != null)
+            digest.update(decodeBase64(salt));
         var hashedBytes = digest.digest(decodeBase64(value));
-        return new String[]{encodeBase64(salt), encodeBase64(hashedBytes)};
+        return encodeBase64(hashedBytes);
     }
 
     public static boolean verifySecureHash(String value, String salt, String hashedValue) {

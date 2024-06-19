@@ -21,9 +21,12 @@ import java.util.Objects;
 import static org.metavm.util.TestUtils.doInTransaction;
 import static org.metavm.util.TestUtils.doInTransactionWithoutResult;
 
-public class ManufacturingCompileTest extends CompilerTestBase {
+public class ManufacturingCompilingTest extends CompilerTestBase {
 
     public static final String SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/manufacturing";
+
+    public static final String USER_NAME = "leen";
+    public static final String PASSWORD = "123456";
 
     public void test() {
         compileTwice(SOURCE_ROOT);
@@ -31,6 +34,8 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         submit(() -> {
             var profiler = ContextUtil.getProfiler();
             try (var ignored = profiler.enter("submit")) {
+                signup();
+                login();
                 var roundingRuleType = getClassTypeByCode("org.metavm.manufacturing.material.RoundingRule");
                 var roundHalfUp = TestUtils.getEnumConstantByName(roundingRuleType, "ROUND_HALF_UP");
                 var unitType = getClassTypeByCode("org.metavm.manufacturing.material.Unit");
@@ -46,9 +51,28 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 
                 // create a material
                 var materialType = getClassTypeByCode("org.metavm.manufacturing.material.Material");
-                var materialId = doInTransaction(() -> apiClient.newInstance(
-                        materialType.getCodeRequired(),
-                        Arrays.asList("sheet metal", "sheet metal", normal.getIdRequired(), unitId, 1, year.getIdRequired())
+//                var materialId = doInTransaction(() -> apiClient.newInstance(
+//                        materialType.getCodeRequired(),
+//                        Arrays.asList("sheet metal",
+//                                "sheet metal",
+//                                normal.getIdRequired(),
+//                                unitId,
+//                                1,
+//                                year.getIdRequired())
+//                ));
+                var materialId = (String) doInTransaction(() -> apiClient.callMethod(
+                        "materialService",
+                        "save",
+                        List.of(
+                                Map.of(
+                                        "code", "sheet metal",
+                                        "name", "sheet metal",
+                                        "kind", normal.getIdRequired(),
+                                        "unit", unitId,
+                                        "storageValidPeriod", 1,
+                                        "storageValidPeriodUnit", year.getIdRequired()
+                                )
+                        )
                 ));
                 // get QualityInspectionState type
                 var qualityInspectionStateType = getClassTypeByCode("org.metavm.manufacturing.material.QualityInspectionState");
@@ -138,6 +162,18 @@ public class ManufacturingCompileTest extends CompilerTestBase {
             }
             System.out.println(profiler.finish(false, true).output());
         });
+    }
+
+    private void signup() {
+        TestUtils.doInTransaction(() -> apiClient.callMethod("userService", "signup",
+                List.of(USER_NAME, PASSWORD)));
+    }
+
+    private void login() {
+        TestUtils.doInTransaction(() -> apiClient.callMethod(
+                "userService", "login",
+                List.of(USER_NAME, PASSWORD)
+        ));
     }
 
     private StorageObjects createPosition() {

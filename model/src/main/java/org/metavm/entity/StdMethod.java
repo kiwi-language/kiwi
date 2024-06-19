@@ -11,6 +11,8 @@ import org.metavm.util.BiUnion;
 import org.metavm.util.NncUtils;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public enum StdMethod implements ValueHolderOwner<Method> {
@@ -19,6 +21,8 @@ public enum StdMethod implements ValueHolderOwner<Method> {
     interceptorAfter(Interceptor.class, "after", List.of(HttpRequest.class, HttpResponse.class, BiUnion.createNullableType(Object.class))),
     httpRequestGetMethod(HttpRequest.class, "getMethod", List.of()),
     httpRequestGetCookie(HttpRequest.class, "getCookie", List.of(String.class)),
+    arrayListAdd(ArrayList.class, "add", List.of(ArrayList.class.getTypeParameters()[0])),
+    hashSetAdd(HashSet.class, "add", List.of(HashSet.class.getTypeParameters()[0])),
 
     ;
 

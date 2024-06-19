@@ -509,7 +509,7 @@ public class Instances {
 
     public static ClassInstance createList(ClassType listType, List<? extends Instance> elements) {
        if(listType.isList()) {
-           var elementType = listType.getListElementType();
+           var elementType = listType.getFirstTypeArgument();
            if(listType.getKlass() == StdKlass.list.get()) {
                listType = StdKlass.arrayList.get().getParameterized(List.of(elementType)).getType();
            }

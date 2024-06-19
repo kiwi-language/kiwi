@@ -2,7 +2,6 @@ package org.metavm.user;
 
 import org.metavm.api.*;
 import org.metavm.api.builtin.Password;
-import org.metavm.api.lang.IdUtils;
 import org.metavm.api.lang.Lang;
 import org.metavm.api.lang.MD5Utils;
 import org.metavm.api.lang.SessionUtils;
@@ -15,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static org.metavm.api.lang.IndexUtils.*;
+import static org.metavm.api.lang.Indices.*;
 
 @EntityType
 public class LabUser {
@@ -99,7 +98,7 @@ public class LabUser {
     public static LabToken directLogin(LabApplication application, LabUser user) {
         var session = new LabSession(user, new Date(System.currentTimeMillis() + TOKEN_TTL));
         SessionUtils.setEntry("CurrentApp", application);
-        SessionUtils.setEntry("LoggedInUser" + IdUtils.getId(application), user);
+        SessionUtils.setEntry("LoggedInUser" + Lang.getId(application), user);
         Lang.print("User " + user.getName() + " logged in application " + application.getName());
         return new LabToken(application, session.getToken());
     }
@@ -116,7 +115,7 @@ public class LabUser {
     }
 
     public static LabUser currentUser(LabApplication application) {
-        var user = (LabUser) SessionUtils.getEntry("LoggedInUser" + IdUtils.getId(application));
+        var user = (LabUser) SessionUtils.getEntry("LoggedInUser" + Lang.getId(application));
         if (user != null)
             return user;
         throw new LabBusinessException(LabErrorCode.USER_NOT_LOGGED_IN);

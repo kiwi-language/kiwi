@@ -443,14 +443,14 @@ public class MethodGenerator {
         return node;
     }
 
-    NewObjectNode createNew(Method method, List<Expression> arguments, boolean ephemeral) {
+    NewObjectNode createNew(Method method, List<Expression> arguments, boolean ephemeral, boolean unbound) {
         var methodRef = method.getRef();
         List<Argument> args = NncUtils.biMap(
                 methodRef.getRawFlow().getParameters(), arguments,
                 (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
         );
         return setNodeExprTypes(new NewObjectNode(null, nextName(methodRef.resolve().getName()), null, methodRef, args,
-                scope().getLastNode(), scope(), null, ephemeral, false));
+                scope().getLastNode(), scope(), null, ephemeral, unbound));
     }
 
     ExpressionResolver getExpressionResolver() {

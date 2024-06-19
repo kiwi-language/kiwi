@@ -3,8 +3,8 @@ package org.metavm.user;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityIndex;
 import org.metavm.api.EntityType;
-import org.metavm.api.lang.IdUtils;
-import org.metavm.api.lang.IndexUtils;
+import org.metavm.api.lang.Indices;
+import org.metavm.api.lang.Lang;
 import org.metavm.api.lang.PasswordUtils;
 import org.metavm.api.lang.SessionUtils;
 import org.metavm.application.LabApplication;
@@ -17,7 +17,7 @@ import org.metavm.utils.LabErrorCode;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.metavm.api.lang.IndexUtils.selectFirst;
+import static org.metavm.api.lang.Indices.selectFirst;
 
 @EntityType
 public class LabPlatformUser extends LabUser {
@@ -102,7 +102,7 @@ public class LabPlatformUser extends LabUser {
             var user = selectFirst(new IndexAppPlatformUser(app, platformUser));
             if (user != null) {
                 user.setState(LabUserState.DETACHED);
-                var sessions = IndexUtils.select(new LabSession.UserStateIndex(user, LabSessionState.ACTIVE));
+                var sessions = Indices.select(new LabSession.UserStateIndex(user, LabSessionState.ACTIVE));
                 sessions.forEach(LabSession::close);
             }
         }
@@ -146,9 +146,9 @@ public class LabPlatformUser extends LabUser {
     public static void logout() {
         var user = currentPlatformUser();
         SessionUtils.removeEntry("CurrentApp");
-        IndexUtils.select(new LabSession.UserStateIndex(user, LabSessionState.ACTIVE)).forEach(s -> {
+        Indices.select(new LabSession.UserStateIndex(user, LabSessionState.ACTIVE)).forEach(s -> {
             s.close();
-            SessionUtils.removeEntry("LoggedInUser" + IdUtils.getId(s.getUser().getApplication()));
+            SessionUtils.removeEntry("LoggedInUser" + Lang.getId(s.getUser().getApplication()));
         });
     }
 

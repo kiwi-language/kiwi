@@ -53,7 +53,7 @@ public class ApiService extends EntityContextFactoryAware {
     public Object handleMethodCall(String qualifier, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             Instance result;
-            if (Id.isId(qualifier)) {
+            if (qualifier.startsWith("0")) {
                 var self = (ClassInstance) context.getInstanceContext().get(Id.parse(qualifier));
                 result = executeInstanceMethod(self, methodCode, rawArguments, request, response, context);
             }
@@ -403,7 +403,7 @@ public class ApiService extends EntityContextFactoryAware {
         var elements = new ArrayList<Instance>();
         var actualType = listNative.getInstance().getType();
         var isChildList = actualType.resolve().isChildList();
-        var elementType = actualType.getListElementType();
+        var elementType = actualType.getFirstTypeArgument();
         for (Object o : list) {
             var r = tryResolveValue(o, elementType, isChildList, null, context);
             if (r.successful())
@@ -430,9 +430,11 @@ public class ApiService extends EntityContextFactoryAware {
         if (rawValue == null)
             return Instances.nullInstance();
         if (rawValue instanceof String str) {
-            var id = Id.tryParse(str);
-            if (id != null)
-                return context.getInstanceContext().get(id);
+            if(str.startsWith("0")) {
+                var id = Id.tryParse(str);
+                if (id != null)
+                    return context.getInstanceContext().get(id);
+            }
             return Instances.stringInstance(str);
         }
         if (ValueUtils.isInteger(rawValue))

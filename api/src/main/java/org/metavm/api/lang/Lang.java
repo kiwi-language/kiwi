@@ -14,7 +14,7 @@ public class Lang {
         context.put(key, value);
     }
 
-    public static Object getContext(String key) {
+    public static @Nullable Object getContext(String key) {
         return context.get(key);
     }
 
@@ -30,5 +30,17 @@ public class Lang {
 
     public static String formatNumber(String format, long value) {
         return new DecimalFormat(format).format(value);
+    }
+
+    public static String secureRandom(int length) {
+        return "";
+    }
+
+    public static String secureHash(String value, @Nullable String salt) {
+        return value;
+    }
+
+    public static String getId(Object object) {
+        return "";
     }
 }

@@ -5,6 +5,7 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiModifier;
 import org.metavm.entity.StdKlass;
+import org.metavm.entity.StdMethod;
 import org.metavm.expression.Expression;
 import org.metavm.expression.Expressions;
 import org.metavm.object.type.ClassType;
@@ -45,15 +46,15 @@ public class ListOfResolver implements MethodCallResolver {
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var listType = (ClassType) expressionResolver.getTypeResolver().resolve(
                 methodGenerics.getSubstitutor().substitute(method.getReturnType()));
-        var readWriteListType = StdKlass.arrayList.get().getParameterized(List.of(listType.getListElementType()));
+        var arrayListKlass = StdKlass.arrayList.get().getParameterized(List.of(listType.getFirstTypeArgument()));
         var list = methodGenerator.createNew(
-                readWriteListType.getDefaultConstructor(),
+                arrayListKlass.getDefaultConstructor(),
                 List.of(),
-                true
-        );
+                false,
+                true);
+        var addMethod = arrayListKlass.getMethod(m -> m.getEffectiveVerticalTemplate() == StdMethod.arrayListAdd.get());
         for (PsiExpression expression : methodCallExpression.getArgumentList().getExpressions()) {
             var value = expressionResolver.resolve(expression);
-            var addMethod = readWriteListType.getMethodByCodeAndParamTypes("add", List.of(listType.getListElementType()));
             methodGenerator.createMethodCall(
                     Expressions.node(list),
                     addMethod,

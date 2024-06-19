@@ -3,7 +3,7 @@ package org.metavm.manufacturing.storage;
 import org.metavm.api.EntityIndex;
 import org.metavm.api.EntityType;
 import org.metavm.api.Index;
-import org.metavm.api.lang.IndexUtils;
+import org.metavm.api.lang.Indices;
 import org.metavm.api.lang.Lang;
 import org.metavm.manufacturing.material.*;
 import org.metavm.manufacturing.utils.Utils;
@@ -211,7 +211,7 @@ public class Inventory {
         arrivalDate = Utils.toDaysNullable(arrivalDate);
         productionDate = Utils.toDaysNullable(productionDate);
         expirationDate = Utils.toDaysNullable(expirationDate);
-        var existing = IndexUtils.selectFirst(new Key(
+        var existing = Indices.selectFirst(new Key(
                 material,
                 position,
                 batch,
@@ -274,7 +274,7 @@ public class Inventory {
         arrivalDate = Utils.toDaysNullable(arrivalDate);
         productionDate = Utils.toDaysNullable(productionDate);
         expirationDate = Utils.toDaysNullable(expirationDate);
-        var existing = IndexUtils.selectFirst(new Key(
+        var existing = Indices.selectFirst(new Key(
                 material,
                 position,
                 batch,

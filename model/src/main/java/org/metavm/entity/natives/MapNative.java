@@ -9,12 +9,12 @@ import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -49,21 +49,19 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public Instance Map(CallContext callContext) {
-        keyArray = new ArrayInstance(
-                (ArrayType) keyArrayField.getType(), new InstanceParentRef(instance, keyArrayField)
-        );
-        valueArray = new ArrayInstance(
-                (ArrayType) valueArrayField.getType(), new InstanceParentRef(instance, valueArrayField)
-        );
+    public Instance HashMap(CallContext callContext) {
+        keyArray = new ArrayInstance((ArrayType) keyArrayField.getType());
+        valueArray = new ArrayInstance((ArrayType) valueArrayField.getType());
+        instance.initField(keyArrayField, keyArray);
+        instance.initField(valueArrayField, valueArray);
         return instance;
     }
 
     public ClassInstance keySet(CallContext callContext) {
-        var keySetType = (Klass) instance.getKlass().getDependency(StdKlass.set.get());
-        ClassInstance keySet = ClassInstance.allocate(keySetType.getType());
+        var keySetKlass = StdKlass.hashSet.get().getParameterized(List.of(instance.getKlass().getFirstTypeArgument()));
+        ClassInstance keySet = ClassInstance.allocate(keySetKlass.getType());
         var setNative = (SetNative) NativeMethods.getNativeObject(keySet);
-        setNative.Set(callContext);
+        setNative.HashSet(callContext);
         for (Instance key : keyArray) {
             setNative.add(key, callContext);
         }

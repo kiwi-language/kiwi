@@ -1,14 +1,16 @@
 package org.metavm.http;
 
-import org.metavm.api.*;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpResponse;
-import org.metavm.entity.*;
+import org.metavm.entity.Entity;
+import org.metavm.entity.ReadWriteArray;
 
 import java.util.List;
 
-@EntityType(ephemeral = true)
+@EntityType(ephemeral = true, isNative = true)
 public class HttpResponseImpl extends Entity implements HttpResponse {
 
     @ChildEntity

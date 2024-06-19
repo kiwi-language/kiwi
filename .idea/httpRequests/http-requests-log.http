@@ -1,3 +1,203 @@
+GET http://localhost:8080/api/01e8da8ede0d00
+X-App-ID: 1843616873
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_1843616873__=60504f92-b65d-4702-ae02-9cf160d12926; __token_2__=db3bca42-3f77-45a8-b44e-23b0103200f4; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2024-06-19T230032.200.json
+
+###
+
+POST http://localhost:8080/api/material-service/save
+Content-Type: application/json
+X-App-ID: 1843616873
+Content-Length: 201
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_1843616873__=60504f92-b65d-4702-ae02-9cf160d12926; __token_2__=db3bca42-3f77-45a8-b44e-23b0103200f4; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[
+  {
+    "name": "sheet metal",
+    "code": "sheet metal",
+    "kind": "019ed98ede0d00",
+    "unit": "01cada8ede0d00",
+    "storageValidPeriod": 1,
+    "storageValidPeriodUnit": "01bad98ede0d00"
+  }
+]
+
+<> 2024-06-19T225959.200.txt
+
+###
+
+POST http://localhost:8080/api/material-service/save
+Content-Type: application/json
+X-App-ID: 1843616873
+Content-Length: 171
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_1843616873__=60504f92-b65d-4702-ae02-9cf160d12926; __token_2__=db3bca42-3f77-45a8-b44e-23b0103200f4; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[
+  {
+    "name": "sheet metal",
+    "code": "sheet metal",
+    "unit": "01cada8ede0d00",
+    "storageValidPeriod": 1,
+    "storageValidPeriodUnit": "01bad98ede0d00"
+  }
+]
+
+<> 2024-06-19T225826.500.json
+
+###
+
+PUT http://localhost:8080/api/org/metavm/manufacturing/material/unit
+Content-Type: application/json
+X-App-ID: 1843616873
+Content-Length: 94
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_1843616873__=60504f92-b65d-4702-ae02-9cf160d12926; __token_2__=db3bca42-3f77-45a8-b44e-23b0103200f4; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "code": "meter",
+  "name": "meter",
+  "roundingRule": "01c4d98ede0d00",
+  "precision": 2
+}
+
+<> 2024-06-19T225811.200.txt
+
+###
+
+POST http://localhost:8080/api/user-service/login
+Content-Type: application/json
+X-App-ID: 1843616873
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_1843616873__=60504f92-b65d-4702-ae02-9cf160d12926; __token_2__=db3bca42-3f77-45a8-b44e-23b0103200f4
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[
+  "leen", "123456"
+]
+
+###
+
+POST http://localhost:8080/api/user-service/login
+Content-Type: application/json
+X-App-ID: 1843616873
+Content-Length: 23
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_1843616873__=60504f92-b65d-4702-ae02-9cf160d12926; __token_2__=db3bca42-3f77-45a8-b44e-23b0103200f4
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[
+  "leen", "1234567"
+]
+
+<> 2024-06-19T225453.200.json
+
+###
+
+POST http://localhost:8080/api/user-service/login
+Content-Type: application/json
+X-App-ID: 1843616873
+Content-Length: 23
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_1843616873__=60504f92-b65d-4702-ae02-9cf160d12926; __token_2__=db3bca42-3f77-45a8-b44e-23b0103200f4
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[
+  "leen", "1234567"
+]
+
+<> 2024-06-19T225339.500.json
+
+###
+
+POST http://localhost:8080/api/user-service/signup
+Content-Type: application/json
+X-App-ID: 1843616873
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_1843616873__=60504f92-b65d-4702-ae02-9cf160d12926; __token_2__=db3bca42-3f77-45a8-b44e-23b0103200f4
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[
+  "leen", "123456"
+]
+
+<> 2024-06-19T225317.200.txt
+
+###
+
+POST http://localhost:8080/system/init-test
+Content-Length: 0
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_2__=e56ebaf2-2300-4ea4-9b1d-59e20ea1a67f
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2024-06-19T224921.200.json
+
+###
+
+POST https://metavm.tech/api/user-service/get-user-by-name
+Content-Type: application/json
+X-App-ID: 1001500031
+Content-Length: 12
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[
+  "leen"
+]
+
+<> 2024-06-19T173544.200.json
+
+###
+
+PUT https://metavm.tech/api/product
+Content-Type: application/json
+X-App-ID: 1001500031
+Content-Length: 59
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "title": "Shoes",
+  "price": 100.0,
+  "quantity": 100
+}
+
+<> 2024-06-19T173542.200.txt
+
+###
+
+POST http://localhost:7004/bootstrap?saveIds=false
+Content-Length: 0
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1843416869__=e4f6ebff-32bd-43a5-badc-b0b5c2b85464; __token_2__=e56ebaf2-2300-4ea4-9b1d-59e20ea1a67f
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2024-06-19T173254.200.json
+
+###
+
 POST http://localhost:7004/bootstrap?saveIds=false
 Content-Length: 0
 Connection: Keep-Alive
@@ -587,260 +787,6 @@ Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_18428
 Accept-Encoding: br,deflate,gzip,x-gzip
 
 <> 2024-06-11T001700.200.json
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Material/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
-Content-Length: 89
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "m1",
-  "m1",
-  "$$01feb9c5dd0d00",
-  "$$01b6bac5dd0d00",
-  1,
-  "$$0196bac5dd0d00"
-]
-
-<> 2024-06-10T232924.200.txt
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
-Content-Length: 59
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "meter",
-  "meter",
-  "$$01d0b9c5dd0d00",
-  2,
-  null
-]
-
-<> 2024-06-10T232255.200.txt
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21AX
-Content-Length: 59
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "meter",
-  "meter",
-  "$$01d0b9c5dd0d00",
-  2,
-  null
-]
-
-<> 2024-06-10T232252.200.json
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21AX
-Content-Length: 59
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "meter",
-  "meter",
-  "$$01d0b9c5dd0d00",
-  2,
-  null
-]
-
-<> 2024-06-10T232208.200.json
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
-Content-Length: 59
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "meter",
-  "meter",
-  "$$01d0b9c5dd0d00",
-  2,
-  null
-]
-
-<> 2024-06-10T232116.200.txt
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
-Content-Length: 59
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "meter",
-  "meter",
-  "$$01d0b9c5dd0d00",
-  2,
-  null
-]
-
-<> 2024-06-10T232114.500.json
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
-Content-Length: 59
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "meter",
-  "meter",
-  "$$01d0b9c5dd0d00",
-  2,
-  null
-]
-
-<> 2024-06-10T231957.500.json
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
-Content-Length: 59
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "meter",
-  "meter",
-  "$$01d0b9c5dd0d00",
-  2,
-  null
-]
-
-<> 2024-06-10T231846.200.json
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
-Content-Length: 59
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "meter",
-  "meter",
-  "$$01d0b9c5dd0d00",
-  2,
-  null
-]
-
-<> 2024-06-10T231735.200.json
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
-Content-Length: 59
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "meter",
-  "meter",
-  "$$01d0b9c5dd0d00",
-  2,
-  null
-]
-
-<> 2024-06-10T231656.200.json
-
-###
-
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
-Content-Type: application/json
-AppId: 1843016862
-X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
-Content-Length: 59
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_1843016861__=3aed537e-f77a-4f9e-b61b-299bc366bea9; __token_2__=a76e56d0-9ebb-4b34-a43a-5f922d8174aa
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-[
-  "meter",
-  "meter",
-  "$$01d0b9c5dd0d00",
-  2,
-  null
-]
-
-<> 2024-06-10T231505.200.json
-
-###
-
-POST http://localhost:8080/system/init-test
-Content-Length: 0
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1842616853__=2b20a205-0feb-4cdc-aae4-874862c00a20; __token_1842816857__=92ddeb0f-25d0-45b4-b1fc-80b10d94ff0b; __token_2__=26ab923b-fe6e-43c8-a330-e085a52cbe05
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-06-10T230006.200.json
 
 ###
 

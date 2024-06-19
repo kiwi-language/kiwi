@@ -5,8 +5,10 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.ChildList;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
+import org.metavm.manufacturing.common.OwnedEntity;
 import org.metavm.manufacturing.storage.Position;
 import org.metavm.manufacturing.storage.Warehouse;
+import org.metavm.manufacturing.user.User;
 import org.metavm.manufacturing.utils.Utils;
 
 import javax.annotation.Nullable;
@@ -14,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @EntityType
-public class Material {
+public class Material extends OwnedEntity {
 
     private final @NotNull String code;
 
@@ -63,7 +65,8 @@ public class Material {
     private @Nullable Position defaultPosition;
 
     public Material(@NotNull String code, @NotNull String name, @NotNull  MaterialKind kind,
-                    @NotNull Unit unit, int storageValidityPeriod, @NotNull TimeUnit storageValidityPeriodUnit) {
+                    @NotNull Unit unit, int storageValidityPeriod, @NotNull TimeUnit storageValidityPeriodUnit, User owner) {
+        super(owner);
         this.code = code;
         this.name = name;
         this.kind = kind;

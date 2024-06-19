@@ -6,8 +6,7 @@ GET https://metavm.tech/rest/instance/1000600045
 ###
 PUT https://metavm.tech/api/product
 Content-Type: application/json
-X-App-ID: 1001300027
-Cookie: name=leen
+X-App-ID: 1001500031
 
 {
   "title": "Shoes",
@@ -18,8 +17,7 @@ Cookie: name=leen
 ###
 POST https://metavm.tech/api/user-service/get-user-by-name
 Content-Type: application/json
-X-App-ID: 1001300028
-Cookie: name=leen
+X-App-ID: 1001500031
 
 [
   "leen"

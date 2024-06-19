@@ -6,7 +6,7 @@ import org.metavm.api.builtin.IndexDef;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class IndexUtils {
+public class Indices {
 
     public static <R, I extends Index<R>> long count(I from, I to) {
         return 0L;

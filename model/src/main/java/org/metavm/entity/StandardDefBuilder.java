@@ -45,6 +45,8 @@ public class StandardDefBuilder {
 
     public Klass setKlass;
 
+    public Klass mapKlass;
+
     private Klass consumerKlass;
 
     private Klass predicateKlass;
@@ -61,14 +63,16 @@ public class StandardDefBuilder {
         predicateKlass = createPredicateKlass();
         iteratorKlass = createIteratorKlass();
         iterableKlass = createIterableKlass();
-        collectionKlass = createCollectionType();
+        collectionKlass = createCollectionKlass();
         iteratorImplKlass = createIteratorImplKlass();
         setKlass = createSetKlass();
         listKlass = createListKlass();
-        createMapKlass();
+        mapKlass = createMapKlass();
         createReadWriteListKlass();
         createChildListKlass();
         createValueListKlass();
+        createHashSetKlass();
+        createHashMapKlass();
 
         ValueDef<Record> recordDef = createValueDef(
                 Record.class,
@@ -289,7 +293,6 @@ public class StandardDefBuilder {
                         declaringType, type)
                 .column(column)
                 .access(access)
-                .nullType(Types.getNullType())
                 .defaultValue(new NullInstance(Types.getNullType()))
                 .staticValue(new NullInstance(Types.getNullType()))
                 .build();
@@ -392,10 +395,10 @@ public class StandardDefBuilder {
         iterableType.setStage(ResolutionStage.DEFINITION);
     }
 
-    public Klass createCollectionType() {
+    public Klass createCollectionKlass() {
         String name = getParameterizedName("Collection");
         String code = getParameterizedCode("Collection");
-        var elementType = new TypeVariable(null, "CollectionElement", "CollectionElement",
+        var elementType = new TypeVariable(null, "E", "E",
                 DummyGenericDeclaration.INSTANCE);
         var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
         elementType.setBounds(List.of(new AnyType()));
@@ -467,80 +470,61 @@ public class StandardDefBuilder {
     public Klass createSetKlass() {
         String name = getParameterizedName("Set");
         String code = getParameterizedCode("Set");
-        var elementType = new TypeVariable(null, "SetElement", "SetElement",
+        var elementType = new TypeVariable(null, "E", "E",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(Set.class.getTypeParameters()[0], elementType);
         var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
         var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
-        var pIteratorImplType = iteratorImplKlass.getParameterized(List.of(elementType.getType()));
         Klass setType = KlassBuilder.newBuilder(name, code)
+                .kind(ClassKind.INTERFACE)
                 .interfaces(pCollectionType.getType())
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
-                .dependencies(List.of(pIteratorImplType))
                 .build();
         primTypeFactory.putType(Set.class, setType);
         FieldBuilder.newBuilder("array", "array", setType, new ArrayType(elementType.getType(), ArrayKind.READ_WRITE))
-                .nullType(Types.getNullType())
                 .access(Access.PRIVATE)
                 .isChild(true)
-                .nullType(Types.getNullType())
                 .build();
         createSetFlows(setType, pCollectionType, pIterableType);
         return setType;
     }
 
     private void createSetFlows(Klass setType, /*ClassType pSetType, */Klass collectionType, Klass iterableType) {
-        MethodBuilder.newBuilder(setType, "Set", "Set")
-                .isConstructor(true)
-                .isNative(true)
-                .returnType(setType.getType())
-                .build();
-        createOverridingFlows(setType, collectionType);
-        createOverridingFlows(setType, iterableType);
-        setType.setStage(ResolutionStage.DEFINITION);
+//        MethodBuilder.newBuilder(setType, "Set", "Set")
+//                .isConstructor(true)
+//                .isNative(true)
+//                .returnType(setType.getType())
+//                .build();
+//        createOverridingFlows(setType, collectionType);
+//        createOverridingFlows(setType, iterableType);
+//        setType.setStage(ResolutionStage.DEFINITION);
     }
 
     public Klass createListKlass() {
-        var elementType = new TypeVariable(null, "ListElement",
-                "ListElement",
+        var elementType = new TypeVariable(null, "E", "E",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(List.class.getTypeParameters()[0], elementType);
         var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
-        var pIteratorImplType = iteratorImplKlass.getParameterized(List.of(elementType.getType()));
         var listType = KlassBuilder.newBuilder("List", "List")
                 .kind(ClassKind.INTERFACE)
                 .interfaces(pCollectionType.getType())
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
-                .dependencies(List.of(pIteratorImplType))
                 .build();
         primTypeFactory.putType(List.class, listType);
 
         var nullableElementType = new UnionType(Set.of(elementType.getType(), Types.getNullType()));
         MethodBuilder.newBuilder(listType, "removeAt", "removeAt")
                 .parameters(new Parameter(null, "index", "index", Types.getLongType()))
-                .isNative(true)
                 .returnType(nullableElementType)
                 .build();
 
         MethodBuilder.newBuilder(listType, "get", "get")
                 .parameters(new Parameter(null, "index", "index", Types.getLongType()))
-                .isNative(true)
                 .returnType(elementType.getType())
-                .build();
-
-        var uncertainType = new UncertainType(Types.getNeverType(), elementType.getType());
-        var uncertainCollType = collectionKlass.getParameterized(List.of(uncertainType));
-        MethodBuilder.newBuilder(listType, listType.getName(), listType.getCode())
-                .isConstructor(true)
-                .isNative(true)
-                .parameters(
-                        new Parameter(null, "collection", "collection", uncertainCollType.getType())
-                )
-                .returnType(listType.getType())
                 .build();
 
         MethodBuilder.newBuilder(listType, "set", "set")
@@ -548,7 +532,6 @@ public class StandardDefBuilder {
                         new Parameter(null, "index", "index", Types.getLongType()),
                         new Parameter(null, "value", "value", elementType.getType())
                 )
-                .isNative(true)
                 .returnType(nullableElementType)
                 .build();
 
@@ -578,25 +561,22 @@ public class StandardDefBuilder {
     }
 
     public Klass createListImplKlass(String name, String code, Class<?> javaClass, ClassKind kind, ArrayKind arrayKind) {
-        var elementType = new TypeVariable(null, name + "Element", code + "Element",
+        var elementType = new TypeVariable(null, "E", "E",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(javaClass.getTypeParameters()[0], elementType);
         var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
         var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
         var pListType = listKlass.getParameterized(List.of(elementType.getType()));
-        var pIteratorImplType = iteratorImplKlass.getParameterized(List.of(elementType.getType()));
         var listImplType = KlassBuilder.newBuilder(name, code)
                 .kind(kind)
                 .interfaces(pListType.getType())
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
-                .dependencies(List.of(pIteratorImplType))
                 .build();
         primTypeFactory.putType(javaClass, listImplType);
         FieldBuilder.newBuilder("array", "array", listImplType,
                         new ArrayType(elementType.getType(), arrayKind))
-                .nullType(Types.getNullType())
                 .access(Access.PRIVATE)
                 .isChild(kind != ClassKind.VALUE)
                 .build();
@@ -609,7 +589,6 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(listImplType.getType())
                 .build();
-
 
         MethodBuilder.newBuilder(listImplType, listImplType.getName(), listImplType.getCode())
                 .isConstructor(true)
@@ -626,6 +605,58 @@ public class StandardDefBuilder {
                 .returnType(listImplType.getType())
                 .build();
         return listImplType;
+    }
+
+    public Klass createHashSetKlass() {
+        return createSetImplKlass(HashSet.class, ClassKind.CLASS, ArrayKind.READ_WRITE);
+    }
+
+    public Klass createSetImplKlass(Class<?> javaClass, ClassKind kind, ArrayKind arrayKind) {
+        var elementType = new TypeVariable(null, "E", "E",
+                DummyGenericDeclaration.INSTANCE);
+        elementType.setBounds(List.of(new AnyType()));
+        primTypeFactory.putType(javaClass.getTypeParameters()[0], elementType);
+        var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
+        var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
+        var pSetKlass = setKlass.getParameterized(List.of(elementType.getType()));
+        var setImplKlass = KlassBuilder.newBuilder(javaClass.getSimpleName(), javaClass.getName())
+                .kind(kind)
+                .interfaces(pSetKlass.getType())
+                .typeParameters(elementType)
+                .source(ClassSource.BUILTIN)
+                .build();
+        primTypeFactory.putType(javaClass, setImplKlass);
+        FieldBuilder.newBuilder("array", "array", setImplKlass,
+                        new ArrayType(elementType.getType(), arrayKind))
+                .access(Access.PRIVATE)
+                .isChild(kind != ClassKind.VALUE)
+                .build();
+        createOverridingFlows(setImplKlass, pIterableType);
+        createOverridingFlows(setImplKlass, pCollectionType);
+        createOverridingFlows(setImplKlass, pSetKlass);
+
+        var constructorName = javaClass.getSimpleName();
+        MethodBuilder.newBuilder(setImplKlass, constructorName, constructorName)
+                .isConstructor(true)
+                .isNative(true)
+                .returnType(setImplKlass.getType())
+                .build();
+
+        MethodBuilder.newBuilder(setImplKlass, constructorName, constructorName)
+                .isConstructor(true)
+                .isNative(true)
+                .parameters(
+                        new Parameter(
+                                null, "collection", "collection",
+                                new ClassType(
+                                        collectionKlass,
+                                        List.of(new UncertainType(Types.getNeverType(), elementType.getType()))
+                                )
+                        )
+                )
+                .returnType(setImplKlass.getType())
+                .build();
+        return setImplKlass;
     }
 
     public Klass createIteratorImplKlass() {
@@ -670,72 +701,90 @@ public class StandardDefBuilder {
     public Klass createMapKlass() {
         String name = getParameterizedName("Map");
         String code = getParameterizedName("Map");
-        var keyType = new TypeVariable(null, "MapKey", "MapKey",
+        var keyType = new TypeVariable(null, "K", "K",
                 DummyGenericDeclaration.INSTANCE);
         keyType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(Map.class.getTypeParameters()[0], keyType);
-        var valueType = new TypeVariable(null, "MapValue", "MapValue",
+        var valueType = new TypeVariable(null, "V", "V",
                 DummyGenericDeclaration.INSTANCE);
         valueType.setBounds(List.of(new AnyType()));
         primTypeFactory.putType(Map.class.getTypeParameters()[1], valueType);
-        var pSetType = setKlass.getParameterized(List.of(keyType.getType()));
         Klass mapType = KlassBuilder.newBuilder(name, code)
                 .source(ClassSource.BUILTIN)
-                .dependencies(List.of(pSetType))
+                .kind(ClassKind.INTERFACE)
                 .typeParameters(keyType, valueType)
                 .build();
         primTypeFactory.putType(Map.class, mapType);
-        FieldBuilder
-                .newBuilder("keyArray", "keyArray", mapType, new ArrayType(keyType.getType(), ArrayKind.READ_WRITE))
-                .access(Access.PRIVATE)
-                .isChild(true)
-                .nullType(Types.getNullType())
-                .build();
-        FieldBuilder
-                .newBuilder("valueArray", "valueArray", mapType, new ArrayType(valueType.getType(), ArrayKind.READ_WRITE))
-                .access(Access.PRIVATE)
-                .isChild(true)
-                .nullType(Types.getNullType())
-                .build();
         createMapFlows(mapType, keyType.getType(), valueType.getType());
         return mapType;
     }
 
-    private void createMapFlows(Klass mapType, Type keyType, Type valueType) {
-        MethodBuilder.newBuilder(mapType, "Map", "Map")
+    private Klass createHashMapKlass() {
+        return createMapImplKlass(HashMap.class, ClassKind.CLASS, ArrayKind.READ_WRITE);
+    }
+
+    private Klass createMapImplKlass(Class<?> javaClass, ClassKind kind, ArrayKind valueArrayKind) {
+        var keyTypeVar = new TypeVariable(null, "E", "E",
+                DummyGenericDeclaration.INSTANCE);
+        var valueTypeVar = new TypeVariable(null, "V", "V",
+                DummyGenericDeclaration.INSTANCE);
+        keyTypeVar.setBounds(List.of(new AnyType()));
+        primTypeFactory.putType(javaClass.getTypeParameters()[0], keyTypeVar);
+        primTypeFactory.putType(javaClass.getTypeParameters()[1], valueTypeVar);
+        var pMapKlass = mapKlass.getParameterized(List.of(keyTypeVar.getType(), valueTypeVar.getType()));
+        var mapImplKlass = KlassBuilder.newBuilder(javaClass.getSimpleName(), javaClass.getName())
+                .kind(kind)
+                .interfaces(pMapKlass.getType())
+                .typeParameters(keyTypeVar, valueTypeVar)
+                .source(ClassSource.BUILTIN)
+                .build();
+        primTypeFactory.putType(javaClass, mapImplKlass);
+        FieldBuilder.newBuilder("keyArray", "keyArray", mapImplKlass,
+                        new ArrayType(keyTypeVar.getType(), ArrayKind.READ_WRITE))
+                .access(Access.PRIVATE)
+                .isChild(kind != ClassKind.VALUE)
+                .build();
+        FieldBuilder.newBuilder("valueArray", "valueArray", mapImplKlass,
+                        new ArrayType(valueTypeVar.getType(), valueArrayKind))
+                .access(Access.PRIVATE)
+                .isChild(kind != ClassKind.VALUE)
+                .build();
+        createOverridingFlows(mapImplKlass, pMapKlass);
+
+        var constructorName = javaClass.getSimpleName();
+        MethodBuilder.newBuilder(mapImplKlass, constructorName, constructorName)
                 .isConstructor(true)
                 .isNative(true)
-                .returnType(mapType.getType())
+                .returnType(mapImplKlass.getType())
                 .build();
 
+        return mapImplKlass;
+    }
+
+    private void createMapFlows(Klass mapType, Type keyType, Type valueType) {
         var nullableValueType = new UnionType(Set.of(valueType, Types.getNullType()));
 
         MethodBuilder.newBuilder(mapType, "put", "put")
-                .isNative(true)
                 .returnType(nullableValueType)
                 .parameters(new Parameter(null, "key", "key", keyType),
                         new Parameter(null, "value", "value", valueType))
                 .build();
 
         MethodBuilder.newBuilder(mapType, "get", "get")
-                .isNative(true)
                 .returnType(nullableValueType)
                 .parameters(new Parameter(null, "key", "key", keyType))
                 .build();
 
         MethodBuilder.newBuilder(mapType, "remove", "remove")
-                .isNative(true)
                 .returnType(nullableValueType)
                 .parameters(new Parameter(null, "key", "key", keyType))
                 .build();
 
         MethodBuilder.newBuilder(mapType, "size", "size")
-                .isNative(true)
                 .returnType(Types.getLongType())
                 .build();
 
         MethodBuilder.newBuilder(mapType, "clear", "clear")
-                .isNative(true)
                 .returnType(Types.getVoidType())
                 .build();
         mapType.setStage(ResolutionStage.DEFINITION);

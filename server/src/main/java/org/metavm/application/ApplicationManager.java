@@ -1,9 +1,7 @@
 package org.metavm.application;
 
-import org.metavm.beans.BeanDefinitionRegistry;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.metavm.application.rest.dto.*;
+import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
 import org.metavm.entity.*;
@@ -16,8 +14,9 @@ import org.metavm.task.TaskSignal;
 import org.metavm.user.*;
 import org.metavm.user.rest.dto.*;
 import org.metavm.util.*;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -137,8 +136,9 @@ public class ApplicationManager extends EntityContextFactoryAware {
             verificationCodeService.checkVerificationCode(user.getLoginName(), verificationCode, context);
             var app = context.getEntity(Application.class, Constants.getAppId(appId));
             var secret = generateSecret();
-            var h = EncodingUtils.secureHash(secret);
-            app.setSecret(new HashedValue(h[0], h[1]));
+            var s = EncodingUtils.secureRandom(16);
+            var h = EncodingUtils.secureHash(secret, s);
+            app.setSecret(new HashedValue(s, h));
             context.finish();
             return secret;
         }
@@ -316,10 +316,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
     }
 
     private String generateSecret() {
-        SecureRandom secureRandom = new SecureRandom();
-        byte[] secretBytes = new byte[APP_SECRET_LEN];
-        secureRandom.nextBytes(secretBytes);
-        return EncodingUtils.encodeBase64(secretBytes);
+        return EncodingUtils.secureRandom(APP_SECRET_LEN);
     }
 
     public void ensureAppAdmin(Application application) {

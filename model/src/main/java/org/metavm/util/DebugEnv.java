@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.flow.Method;
 import org.metavm.flow.MethodCallNode;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.PhysicalId;
@@ -33,6 +34,8 @@ public class DebugEnv {
     public static volatile DurableInstance instance;
 
     public static boolean gettingBufferedTrees;
+
+    public static Method method;
 
     public static final Logger logger = LoggerFactory.getLogger("Debug");
 

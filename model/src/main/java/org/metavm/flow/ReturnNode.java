@@ -1,8 +1,8 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
@@ -10,6 +10,7 @@ import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.ReturnNodeParam;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
+import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -55,7 +56,7 @@ public class ReturnNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var retValue = getType().isVoid() ? null : Objects.requireNonNull(value).evaluate(frame);
+        var retValue = getType().isVoid() ? Instances.nullInstance() : Objects.requireNonNull(value).evaluate(frame);
         return NodeExecResult.ret(retValue);
     }
 

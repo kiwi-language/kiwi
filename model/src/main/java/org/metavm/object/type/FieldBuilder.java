@@ -1,9 +1,8 @@
 package org.metavm.object.type;
 
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.NullInstance;
 import org.metavm.util.Column;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Instances;
 
 import javax.annotation.Nullable;
 
@@ -22,7 +21,6 @@ public class FieldBuilder {
     private Long tmpId;
     private Access access = Access.PUBLIC;
     private boolean unique = false;
-    private PrimitiveType nullType;
     private Instance defaultValue;
     private boolean isChild;
     private boolean isStatic = false;
@@ -43,11 +41,6 @@ public class FieldBuilder {
 
     public FieldBuilder tmpId(Long tmpId) {
         this.tmpId = tmpId;
-        return this;
-    }
-
-    public FieldBuilder nullType(PrimitiveType nullType) {
-        this.nullType = nullType;
         return this;
     }
 
@@ -121,17 +114,13 @@ public class FieldBuilder {
         return this;
     }
 
-    private PrimitiveType getNullType() {
-        return NncUtils.orElse(nullType, Types::getNullType);
-    }
-
     public Field build() {
         Field field;
         if (existing == null) {
             if(defaultValue == null)
-                defaultValue = new NullInstance(getNullType());
+                defaultValue = Instances.nullInstance();
             if(staticValue == null)
-                staticValue = new NullInstance(getNullType());
+                staticValue = Instances.nullInstance();
             if (state == null)
                 state = defaultValue.isNotNull() ? MetadataState.INITIALIZING : MetadataState.READY;
             field = new Field(
@@ -171,10 +160,6 @@ public class FieldBuilder {
         if(asTitle)
             declaringType.setTitleField(field);
         return field;
-    }
-
-    private PrimitiveType nullType() {
-        return nullType != null ? nullType : Types.getNullType();
     }
 
 }

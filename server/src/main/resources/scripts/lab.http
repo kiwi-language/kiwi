@@ -758,3 +758,53 @@ X-App-ID: 1843416869
 [
   1
 ]
+
+###
+POST http://localhost:8080/api/user-service/signup
+Content-Type: application/json
+X-App-ID: 1843616873
+
+[
+  "leen", "123456"
+]
+
+###
+POST http://localhost:8080/api/user-service/login
+Content-Type: application/json
+X-App-ID: 1843616873
+
+[
+  "leen", "123456"
+]
+
+###
+PUT http://localhost:8080/api/org/metavm/manufacturing/material/unit
+Content-Type: application/json
+X-App-ID: 1843616873
+
+{
+  "code": "meter",
+  "name": "meter",
+  "roundingRule": "01c4d98ede0d00",
+  "precision": 2
+}
+
+###
+POST http://localhost:8080/api/material-service/save
+Content-Type: application/json
+X-App-ID: 1843616873
+
+[
+  {
+    "name": "sheet metal",
+    "code": "sheet metal",
+    "kind": "019ed98ede0d00",
+    "unit": "01cada8ede0d00",
+    "storageValidPeriod": 1,
+    "storageValidPeriodUnit": "01bad98ede0d00"
+  }
+]
+
+###
+GET http://localhost:8080/api/01e8da8ede0d00
+X-App-ID: 1843616873

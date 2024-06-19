@@ -30,7 +30,6 @@ public record ClassTypeParam(
         @Nullable List<TypeVariableDTO> typeParameters,
         String templateId,
         List<String> typeArguments,
-        List<String> dependencyIds,
         boolean hasSubTypes,
         boolean struct,
         List<ErrorDTO> errors

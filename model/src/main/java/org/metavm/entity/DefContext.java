@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Value;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
+import org.metavm.flow.Method;
 import org.metavm.flow.ScopeRT;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.InstanceFactory;
@@ -561,8 +562,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     public DurableInstance getInstance(Object model, ModelDef<?, ?> def) {
         if (model instanceof DurableInstance d)
             return d;
-        if (pendingModels.contains(model))
+        if(model instanceof Method method && method.getDeclaringType().getName().equals("HashSet") && DebugEnv.method == null)
+            DebugEnv.method = method;
+        if (pendingModels.contains(model)) {
             generateInstance(model, def);
+        }
 //        assert isInstanceGenerated(model);
         return super.getInstance(model);
     }

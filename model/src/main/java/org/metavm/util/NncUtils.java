@@ -1154,20 +1154,20 @@ public class NncUtils {
     }
 
     public static <T> T findRequired(Iterable<T> iterable, Predicate<T> filter) {
-        return findRequired(iterable, filter, NullPointerException::new);
+        return findRequired(iterable, filter, "value not found");
     }
 
     public static <T> T findRequired(Iterable<T> iterable, Predicate<T> filter, String message) {
-        return findRequired(iterable, filter, () -> new InternalException(message));
+        return findRequired(iterable, filter, () -> message);
     }
 
     public static <T> T findRequired(Iterable<T> iterable, Predicate<T> filter,
-                                     Supplier<RuntimeException> exceptionSupplier) {
+                                     Supplier<String> messageSupplier) {
         if (iterable == null) {
-            throw exceptionSupplier.get();
+            throw new NullPointerException(messageSupplier.get());
         }
         return streamOf(iterable).filter(filter).findAny()
-                .orElseThrow(exceptionSupplier);
+                .orElseThrow(() -> new NullPointerException(messageSupplier.get()));
     }
 
     private static <T> Stream<T> streamOf(Iterable<T> iterable) {
@@ -1527,7 +1527,7 @@ public class NncUtils {
     @Nullable
     public static <T> T requireNull(@Nullable T value) {
         if (value != null)
-            throw new InternalException("value must be null");
+            throw new InternalException("value should be null, but it's actually " + value);
         else
             return null;
     }

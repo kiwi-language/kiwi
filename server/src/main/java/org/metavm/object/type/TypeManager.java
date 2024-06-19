@@ -246,8 +246,8 @@ public class TypeManager extends EntityContextFactoryAware {
         return type;
     }
 
-    private void initClass(Klass classType, IEntityContext context) {
-        var classInit = classType.findMethodByCode("<cinit>");
+    private void initClass(Klass klass, IEntityContext context) {
+        var classInit = klass.findMethodByCode("<cinit>");
         if (classInit != null) {
             flowExecutionService.executeInternal(
                     classInit, null,

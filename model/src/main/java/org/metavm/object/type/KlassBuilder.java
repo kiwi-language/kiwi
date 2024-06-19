@@ -205,9 +205,6 @@ public class KlassBuilder {
             existing.setTypeArguments(typeArguments);
             existing.setStruct(struct);
         }
-        if (dependencies != null) {
-            klass.setDependencies(dependencies);
-        }
         klass.setAttributes(attributes);
         return klass;
     }

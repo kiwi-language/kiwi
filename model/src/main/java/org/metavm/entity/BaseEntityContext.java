@@ -1,7 +1,5 @@
 package org.metavm.entity;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.event.EventQueue;
 import org.metavm.flow.Flow;
 import org.metavm.flow.NodeRT;
@@ -11,10 +9,11 @@ import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.Index;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.metavm.util.profile.Profiler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -690,7 +689,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     entity is new, use addBinding instead.
      */
     protected void addMapping(Object model, DurableInstance instance) {
-        NncUtils.requireNull(instance.getMappedEntity());
+        if(instance.getMappedEntity() != null)
+            throw new IllegalStateException("Entity " + model + " is already mapped");
         model2instance.put(model, instance);
         instance.setMappedEntity(model);
         if (model instanceof Entity entity && entity.getTmpId() != null)

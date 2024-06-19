@@ -10,9 +10,6 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.hamcrest.MatcherAssert;
-import org.metavm.object.type.BeanManager;
-import org.metavm.object.type.TypeManager;
-import org.slf4j.Logger;
 import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowExecutionService;
@@ -36,6 +33,7 @@ import org.metavm.object.type.rest.dto.TypeDTO;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
 import org.metavm.task.TaskManager;
+import org.slf4j.Logger;
 
 import javax.sql.DataSource;
 import java.io.*;
@@ -421,7 +419,7 @@ public class TestUtils {
                 f -> code.equals(f.code()) &&
                         ((MethodParam) f.param()).isStatic() &&
                         paramTypeList.equals(NncUtils.map(f.parameters(), ParameterDTO::type)),
-                () -> new InternalException("Can not find static method " + code + "(" + String.join(",", paramTypeList) + ") in type " + typeDTO.name())
+                () -> "Can not find static method " + code + "(" + String.join(",", paramTypeList) + ") in type " + typeDTO.name()
         ).id();
     }
 

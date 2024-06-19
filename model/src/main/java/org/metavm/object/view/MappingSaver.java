@@ -1,7 +1,5 @@
 package org.metavm.object.view;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.EntityRepository;
@@ -16,6 +14,8 @@ import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.view.rest.dto.*;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -448,12 +448,12 @@ public class MappingSaver {
             case ClassType classType -> {
                 if (classType.isList()) {
                     if (underlyingType instanceof ClassType underlyingClassType && underlyingClassType.isList()) {
-                        var underlyingElementType = underlyingClassType.getListElementType();
+                        var underlyingElementType = underlyingClassType.getFirstTypeArgument();
                         var elementNestedMapping = underlyingClassType.isChildList() ?
-                                getNestedMapping(underlyingClassType.getListElementType(), underlyingElementType) :
-                                new IdentityNestedMapping(classType.getListElementType());
+                                getNestedMapping(underlyingClassType.getFirstTypeArgument(), underlyingElementType) :
+                                new IdentityNestedMapping(classType.getFirstTypeArgument());
                         var targetType = (ClassType) underlyingClassType.accept(new TypeSubstitutor(
-                                List.of(underlyingClassType.getListElementType()),
+                                List.of(underlyingClassType.getFirstTypeArgument()),
                                 List.of(elementNestedMapping.getTargetType())
                         ));
                         yield new ListNestedMapping(classType, targetType, elementNestedMapping);

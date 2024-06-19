@@ -1,9 +1,7 @@
 package org.metavm.object.type;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.ValueArray;
 import org.metavm.flow.Flow;
@@ -16,6 +14,8 @@ import org.metavm.util.Constants;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -70,8 +70,8 @@ public class ClassType extends Type implements ISubstitutor {
         return klass.getType();
     }
 
-    public Type getListElementType() {
-        return resolve().getListElementType();
+    public Type getFirstTypeArgument() {
+        return resolve().getFirstTypeArgument();
     }
 
     public Type getIterableElementType() {

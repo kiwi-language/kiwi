@@ -52,7 +52,6 @@ public class ClassTypeDTOBuilder {
     private List<String> typeArgumentIds = new ArrayList<>();
     private List<TypeVariableDTO> typeParameters = new ArrayList<>();
     private List<String> typeParameterIds = new ArrayList<>();
-    private List<String> dependencyIds = new ArrayList<>();
     private boolean hasSubTypes;
     private boolean struct;
     private List<InstanceDTO> enumConstants = new ArrayList<>();
@@ -218,11 +217,6 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder dependencyIds(List<String> dependencyIds) {
-        this.dependencyIds = new ArrayList<>(dependencyIds);
-        return this;
-    }
-
     public ClassTypeDTOBuilder sourceMappingId(String sourceMappingId) {
         return this;
     }
@@ -268,7 +262,6 @@ public class ClassTypeDTOBuilder {
                 typeParameters,
                 templateId,
                 typeArgumentIds,
-                dependencyIds,
                 hasSubTypes,
                 struct,
                 errors

@@ -104,8 +104,6 @@ public abstract class TypeFactory {
                 klass.setInterfaces(NncUtils.map(param.interfaces(), t -> (ClassType) TypeParser.parseType(t, batch)));
                 if (!klass.isTemplate())
                     klass.setTypeArguments(NncUtils.map(param.typeArguments(), t -> TypeParser.parseType(t, batch)));
-                if (param.dependencyIds() != null)
-                    klass.setDependencies(NncUtils.map(param.dependencyIds(), id -> context.getKlass(Id.parse(id))));
                 klass.setStage(ResolutionStage.SIGNATURE);
             }
             if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION)) {

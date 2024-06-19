@@ -281,8 +281,10 @@ public class TypeResolverImpl implements TypeResolver {
             var psiClass = method.getContainingClass();
             var builtinKlass = tryResolveBuiltinClass(TranspileUtils.createType(psiClass));
             if (builtinKlass != null) {
+                var internalName = TranspileUtils.getInternalName(method);
                 return NncUtils.findRequired(builtinKlass.getMethods(), m ->
-                        m.getInternalName(null).equals(TranspileUtils.getInternalName(method)));
+                        m.getInternalName(null).equals(internalName),
+                        () -> "Can not find method " + internalName + " in class " + builtinKlass.getTypeDesc());
             }
             return method.getUserData(Keys.Method);
         }

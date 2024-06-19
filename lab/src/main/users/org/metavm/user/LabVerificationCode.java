@@ -4,7 +4,7 @@ import org.metavm.api.EntityIndex;
 import org.metavm.api.EntityType;
 import org.metavm.api.Index;
 import org.metavm.api.lang.EmailUtils;
-import org.metavm.api.lang.IndexUtils;
+import org.metavm.api.lang.Indices;
 import org.metavm.api.lang.Lang;
 import org.metavm.api.lang.RegexUtils;
 import org.metavm.utils.LabBusinessException;
@@ -81,7 +81,7 @@ public class LabVerificationCode {
         if (!RegexUtils.match(EMAIL_PTN, receiver))
             throw new LabBusinessException(LabErrorCode.INVALID_EMAIL_ADDRESS);
         var code = Lang.formatNumber("000000", Lang.random(1000000));
-        var count = IndexUtils.count(
+        var count = Indices.count(
                 new IndexClientIpCreatedAt(clientIP, new Date(System.currentTimeMillis() - 15 * 60 * 1000)),
                 new IndexClientIpCreatedAt(clientIP, new Date(System.currentTimeMillis()))
         );
@@ -92,7 +92,7 @@ public class LabVerificationCode {
     }
 
     public static void checkVerificationCode(String receiver, String code) {
-        var valid = IndexUtils.count(
+        var valid = Indices.count(
                 new IndexReceiverCodeExpiredAt(receiver, code, new Date()),
                 new IndexReceiverCodeExpiredAt(receiver, code, new Date(System.currentTimeMillis() + 10 * DEFAULT_EXPIRE_IN_MILLIS))
         ) > 0L;

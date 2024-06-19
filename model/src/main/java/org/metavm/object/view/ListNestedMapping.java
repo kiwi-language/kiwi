@@ -34,7 +34,7 @@ public class ListNestedMapping extends NestedMapping {
     public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
         var targetKlass = targetType.resolve();
         var constructor = targetKlass.isEffectiveAbstract() ?
-                StdKlass.arrayList.get().getParameterized(List.of(targetKlass.getListElementType())).getDefaultConstructor() :
+                StdKlass.arrayList.get().getParameterized(List.of(targetKlass.getFirstTypeArgument())).getDefaultConstructor() :
                 targetKlass.getDefaultConstructor();
         var targetList = Nodes.newObject(
                 scope.nextNodeName("list"),
@@ -61,7 +61,7 @@ public class ListNestedMapping extends NestedMapping {
                     var getTargetElement = elementNestedMapping.generateMappingCode(getElement,
                             bodyScope);
                     var addMethod = targetKlass.getMethodByCodeAndParamTypes("add", List.of(
-                            targetType.getListElementType()
+                            targetType.getFirstTypeArgument()
                     ));
                     Nodes.methodCall(
                             scope.nextNodeName("add"),
@@ -108,7 +108,7 @@ public class ListNestedMapping extends NestedMapping {
                             falseBranch.getScope(),
                             sourceType.isChildList() ?
                                     sourceKlass.getDefaultConstructor() :
-                                    StdKlass.arrayList.get().getParameterized(List.of(sourceKlass.getListElementType())).getDefaultConstructor(),
+                                    StdKlass.arrayList.get().getParameterized(List.of(sourceKlass.getFirstTypeArgument())).getDefaultConstructor(),
                             List.of(),
                             false,
                             true
@@ -135,7 +135,7 @@ public class ListNestedMapping extends NestedMapping {
                 scope.nextNodeName("iterate"), getView,
                 (bodyScope, getElement, getIndex) -> {
                     var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
-                    var addMethod = sourceKlass.getMethodByCodeAndParamTypes("add", List.of(sourceType.getListElementType()));
+                    var addMethod = sourceKlass.getMethodByCodeAndParamTypes("add", List.of(sourceType.getFirstTypeArgument()));
                     Nodes.methodCall(
                             scope.nextNodeName("addElement"),
                             bodyScope,

@@ -41,9 +41,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public static final IndexDef<Klass> IDX_NAME = IndexDef.create(Klass.class, "name");
 
-    public static final IndexDef<Klass> IDX_PARAMETERIZED_TYPE_KEY =
-            IndexDef.createUnique(Klass.class, "parameterizedTypeKey");
-
     public static final IndexDef<Klass> UNIQUE_CODE = IndexDef.createUnique(Klass.class, "code");
 
     public static final IndexDef<Klass> TEMPLATE_IDX = IndexDef.create(Klass.class, "template");
@@ -90,12 +87,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
     @ChildEntity
     private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
-
-    // TODO (Important!) not scalable, must be optimized before going to production
-    @ChildEntity
-    private final ReadWriteArray<Klass> dependencies = addChild(new ReadWriteArray<>(Klass.class), "dependencies");
-    @Nullable
-    private String parameterizedTypeKey;
     @ChildEntity
     private final ChildArray<Error> errors = addChild(new ChildArray<>(Error.class), "errors");
 
@@ -1233,7 +1224,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.map(typeParameters, tv -> tv.toDTO(serContext)),
                 NncUtils.get(template, serContext::getStringId),
                 NncUtils.map(typeArguments, t -> t.toExpression(serContext)),
-                NncUtils.map(dependencies, serContext::getStringId),
                 !subTypes.isEmpty(),
                 struct,
                 NncUtils.map(errors, Error::toDTO)
@@ -1548,7 +1538,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (isTemplate() && !NncUtils.iterableEquals(NncUtils.map(typeParameters, TypeVariable::getType), typeArguments))
             throw new InternalException("Type arguments must equal to type parameters for a template type. Actual type arguments: " + typeArguments);
         this.typeArguments.reset(typeArguments);
-        parameterizedTypeKey = null;
     }
 
     private void addAncestorChangeListener(Runnable listener) {
@@ -1626,25 +1615,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         rank = 0;
     }
 
-    public void addDependency(Klass dependency) {
-        NncUtils.requireFalse(dependencies.contains(dependency),
-                "Dependency " + dependency + " already exists in type " + getName());
-        dependencies.add(dependency);
-    }
-
-    public void setDependencies(List<Klass> dependencies) {
-        this.dependencies.clear();
-        this.dependencies.addAll(dependencies);
-    }
-
-    public List<Klass> getDependencies() {
-        return dependencies.toList();
-    }
-
-    public Klass getDependency(Klass template) {
-        return NncUtils.findRequired(dependencies, dep -> Objects.equals(dep.getTemplate(), template));
-    }
-
     public void clearTypeParameters() {
         this.typeParameters.clear();
     }
@@ -1710,16 +1680,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         requireTrue(allMatch(methods, f -> f.getDeclaringType() == this));
         this.methods.resetChildren(methods);
         rebuildMethodTable();
-    }
-
-    @Override
-    public boolean afterContextInitIds() {
-        if (template != null || isTemplate()) {
-            if (parameterizedTypeKey == null) {
-                parameterizedTypeKey = Types.getParameterizedKey(getEffectiveTemplate(), typeArguments.toList());
-            }
-        }
-        return true;
     }
 
     public boolean isParameterized() {
@@ -1864,8 +1824,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return getEffectiveTemplate() == StdKlass.childList.get();
     }
 
-    public Type getListElementType() {
-        NncUtils.requireTrue(isList());
+    public Type getFirstTypeArgument() {
         return getTypeArguments().get(0);
     }
 

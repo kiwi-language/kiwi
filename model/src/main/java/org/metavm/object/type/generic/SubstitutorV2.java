@@ -401,7 +401,6 @@ public class SubstitutorV2 extends CopyVisitor {
                 if (klass.getSuperType() != null)
                     copy.setSuperType((ClassType) substituteType(klass.getSuperType()));
                 copy.setInterfaces(NncUtils.map(klass.getInterfaces(), t -> (ClassType) substituteType(t)));
-                copy.setDependencies(NncUtils.map(klass.getDependencies(), this::substituteClass));
             }
             enterElement(copy);
             if (stage.isAfterOrAt(DECLARATION) && curStage.isBefore(DEFINITION)) {

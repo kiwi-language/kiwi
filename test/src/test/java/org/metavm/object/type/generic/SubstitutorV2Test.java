@@ -37,7 +37,6 @@ public class SubstitutorV2Test extends TestCase {
                 .build();
 
         var valueField = FieldBuilder.newBuilder("value", "value", foo, typeVar.getType())
-                .nullType(nullType)
                 .build();
         {
             var getValueFlow = MethodBuilder.newBuilder(foo, "getValue", "getValue")
@@ -71,7 +70,6 @@ public class SubstitutorV2Test extends TestCase {
                     .anonymous(true)
                     .build();
             var inputValueField = FieldBuilder.newBuilder("value", "value", inputType, typeVar.getType())
-                    .nullType(nullType)
                     .build();
             var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getRootScope());
             var updateNode = new UpdateObjectNode(null, "update", null, inputNode, flow.getRootScope(),

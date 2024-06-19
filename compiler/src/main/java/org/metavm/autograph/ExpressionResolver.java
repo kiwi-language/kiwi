@@ -57,7 +57,7 @@ public class ExpressionResolver {
     private final Map<PsiExpression, Expression> expressionMap = new IdentityHashMap<>();
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
-            new ListOfResolver(), new IndexUtilsCallResolver()
+            new ListOfResolver(), new SetOfResolver(), new IndexUtilsCallResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
@@ -612,7 +612,7 @@ public class ExpressionResolver {
             var subFlow = Objects.requireNonNull(mapType.findMethodByCode("Map"));
             var newNode = methodGenerator.createNew(subFlow,
                     resolveExpressionList(requireNonNull(expression.getArgumentList()), context),
-                    true);
+                    true, false);
             return createNodeExpression(newNode);
         }
         if (expression.getType() instanceof PsiClassType psiClassType) {
@@ -657,7 +657,7 @@ public class ExpressionResolver {
         NewObjectNode node;
         if (methodGenerics.getElement() == null) {
             var flow = declaringType.getDefaultConstructor();
-            node = methodGenerator.createNew(flow, arguments, false);
+            node = methodGenerator.createNew(flow, arguments, false, false);
 
         } else {
             var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
@@ -672,7 +672,7 @@ public class ExpressionResolver {
             );
             paramTypes = NncUtils.union(prefixParamTypes, paramTypes);
             var flow = declaringType.getMethodByCodeAndParamTypes(Types.getConstructorCode(declaringType), paramTypes);
-            node = methodGenerator.createNew(flow, arguments, false);
+            node = methodGenerator.createNew(flow, arguments, false, false);
         }
         setCapturedExpressions(node, context);
         return new NodeExpression(node);

@@ -90,10 +90,10 @@ public class BeanDefinitionRegistry extends Entity {
             }
             if (parameter.getType() instanceof ClassType paramType) {
                 if (paramType.isList()) {
-                    if(paramType.getListElementType() instanceof ClassType beanType)
+                    if(paramType.getFirstTypeArgument() instanceof ClassType beanType)
                         arguments.add(Instances.createList(paramType, getBeansOfType(beanType)));
                     else
-                        throw new InternalException("Unsupported list element type " + paramType.getListElementType() + " in bean factory method " + method.getName());
+                        throw new InternalException("Unsupported list element type " + paramType.getFirstTypeArgument() + " in bean factory method " + method.getName());
                 } else {
                     var beans = getBeansOfType(paramType);
                     if (beans.isEmpty())
@@ -121,7 +121,7 @@ public class BeanDefinitionRegistry extends Entity {
             var type = parameter.getType();
             if(type instanceof ClassType classType) {
                 if (classType.isList()) {
-                    if(classType.getListElementType() instanceof ClassType elementType)
+                    if(classType.getFirstTypeArgument() instanceof ClassType elementType)
                         return getBeanDefinitionsByType(elementType);
                     else
                         return List.of();
