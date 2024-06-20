@@ -34,7 +34,7 @@ public record PrimitiveTypeKey(int kind) implements TypeKey {
 
     @Override
     public PrimitiveType toType(TypeDefProvider typeDefProvider) {
-        return new PrimitiveType(PrimitiveKind.fromCode(kind));
+        return PrimitiveKind.fromCode(kind).getType();
     }
 
     @Override

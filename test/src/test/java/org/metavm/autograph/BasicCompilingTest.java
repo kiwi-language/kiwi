@@ -36,7 +36,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(0, utilsType.getClassParam().errors().size());
         var labType = getClassTypeByCode("capturedtypes.CtLab");
         var labId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
-                        labType.getCodeRequired(),
+                        labType.getCodeNotNull(),
                         Map.of(
                                 "foos", List.of(
                                         Map.of("name", "foo001"),
@@ -60,7 +60,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processGenericOverride() {
         var subType = getClassTypeByCode("genericoverride.Sub");
-        var subId = TestUtils.doInTransaction(() -> apiClient.saveInstance(subType.getCodeRequired(), Map.of()));
+        var subId = TestUtils.doInTransaction(() -> apiClient.saveInstance(subType.getCodeNotNull(), Map.of()));
         var result = TestUtils.doInTransaction(() -> apiClient.callMethod(
                 subId,
                 "containsAny<string>",
@@ -79,27 +79,27 @@ public class BasicCompilingTest extends CompilerTestBase {
         var currencyKindKlass = getClassTypeByCode("valuetypes.CurrencyKind");
         var currencyKindYuan = TestUtils.getEnumConstantByName(currencyKindKlass, "YUAN");
         var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
-                productKlass.getCodeRequired(),
+                productKlass.getCodeNotNull(),
                 Map.of(
                         "name", "Shoes",
                         "price", Map.of(
                                 "defaultPrice", Map.of(
                                         "quantity", 100,
-                                        "kind", currencyKindYuan.getIdRequired()
+                                        "kind", currencyKindYuan.getIdNotNull()
                                 ),
                                 "channelPrices", List.of(
                                         Map.of(
                                                 "channel", "mobile",
                                                 "price", Map.of(
                                                         "quantity", 80,
-                                                        "kind", currencyKindYuan.getIdRequired()
+                                                        "kind", currencyKindYuan.getIdNotNull()
                                                 )
                                         ),
                                         Map.of(
                                                 "channel", "web",
                                                 "price", Map.of(
                                                         "quantity", 95,
-                                                        "kind", currencyKindYuan.getIdRequired()
+                                                        "kind", currencyKindYuan.getIdNotNull()
                                                 )
                                         )
                                 )

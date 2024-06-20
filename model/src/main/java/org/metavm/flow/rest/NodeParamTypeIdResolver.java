@@ -19,7 +19,7 @@ public class NodeParamTypeIdResolver implements TypeIdResolver {
 
     @Override
     public String idFromValue(Object value) {
-        return NodeKind.getByParamClassRequired(value.getClass()).code() + "";
+        return NodeKind.fromParamClass(value.getClass()).code() + "";
     }
 
     @Override
@@ -35,7 +35,7 @@ public class NodeParamTypeIdResolver implements TypeIdResolver {
     @Override
     public JavaType typeFromId(DatabindContext context, String id) throws IOException {
         int code = Integer.parseInt(id);
-        NodeKind type = NodeKind.getByCodeRequired(code);
+        NodeKind type = NodeKind.fromCode(code);
         return context.resolveSubType(baseType, type.getParamKlass().getName());
     }
 

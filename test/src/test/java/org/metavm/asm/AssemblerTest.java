@@ -24,7 +24,7 @@ public class AssemblerTest extends TestCase {
 
     public void testParentChild() {
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm");
-}
+    }
 
     public void testMyList() {
 //        assemble(List.of(source));
@@ -32,6 +32,8 @@ public class AssemblerTest extends TestCase {
     }
 
     public void testShopping() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm");
+        // redeploy
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm");
     }
 
@@ -51,11 +53,6 @@ public class AssemblerTest extends TestCase {
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm");
     }
 
-    private void assemble(String source) {
-        var assembler = AssemblerFactory.createWithStandardTypes();
-        assemble(List.of(source), assembler);
-    }
-
     private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {
         assembler.assemble(sources);
         var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
@@ -67,11 +64,13 @@ public class AssemblerTest extends TestCase {
         var bootResult = BootstrapUtils.bootstrap();
         var typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
         FlowSavingContext.initConfig();
-        var assembler = AssemblerFactory.createWithStandardTypes();
-        var request = assemble(List.of(source), assembler);
+        try(var context = bootResult.entityContextFactory().newContext(TestConstants.APP_ID)) {
+            var assembler = AssemblerFactory.createWithStandardTypes(context);
+            var request = assemble(List.of(source), assembler);
 //        DebugEnv.DEBUG_ON = true;
-        ContextUtil.setAppId(TestConstants.APP_ID);
-        TestUtils.doInTransaction(() -> typeManager.batchSave(request));
+            ContextUtil.setAppId(TestConstants.APP_ID);
+            TestUtils.doInTransaction(() -> typeManager.batchSave(request));
+        }
     }
 
 }

@@ -17,15 +17,15 @@ import java.util.function.Predicate;
 public class Instances {
 
     public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.of(
-            Integer.class, new PrimitiveType(PrimitiveKind.LONG),
-            Long.class, new PrimitiveType(PrimitiveKind.LONG),
-            Double.class, new PrimitiveType(PrimitiveKind.DOUBLE),
-            Boolean.class, new PrimitiveType(PrimitiveKind.BOOLEAN),
-            String.class, new PrimitiveType(PrimitiveKind.STRING),
-            Date.class, new PrimitiveType(PrimitiveKind.TIME),
-            Password.class, new PrimitiveType(PrimitiveKind.PASSWORD),
-            Null.class, new PrimitiveType(PrimitiveKind.NULL),
-            Object.class, new AnyType()
+            Integer.class, PrimitiveType.longType,
+            Long.class, PrimitiveType.longType,
+            Double.class, PrimitiveType.doubleType,
+            Boolean.class, PrimitiveType.booleanType,
+            String.class, PrimitiveType.stringType,
+            Date.class, PrimitiveType.timeType,
+            Password.class, PrimitiveType.passwordType,
+            Null.class, PrimitiveType.nullType,
+            Object.class, AnyType.instance
     );
 
     public static final Map<Type, Class<?>> BASIC_TYPE_JAVA_CLASS;
@@ -381,7 +381,7 @@ public class Instances {
     }
 
     private static ArrayType getAnyArrayType() {
-        return new ArrayType(new AnyType(), ArrayKind.READ_WRITE);
+        return new ArrayType(AnyType.instance, ArrayKind.READ_WRITE);
     }
 
     public static ArrayInstance createArray() {

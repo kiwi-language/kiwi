@@ -126,9 +126,9 @@ public class TypeParserImpl implements TypeParser {
         if (ctx.primitiveType() != null)
             return parsePrimitiveType(ctx.primitiveType());
         if (ctx.ANY() != null)
-            return new AnyType();
+            return AnyType.instance;
         if (ctx.NEVER() != null)
-            return new NeverType();
+            return NeverType.instance;
         if (ctx.LPAREN() != null)
             return parseFunctionType(ctx);
         if (ctx.elementType != null)
@@ -168,21 +168,21 @@ public class TypeParserImpl implements TypeParser {
 
     private PrimitiveType parsePrimitiveType(org.metavm.object.type.antlr.TypeParser.PrimitiveTypeContext ctx) {
         if (ctx.BOOLEAN() != null)
-            return new PrimitiveType(PrimitiveKind.BOOLEAN);
+            return PrimitiveType.booleanType;
         if (ctx.STRING() != null)
-            return new PrimitiveType(PrimitiveKind.STRING);
+            return PrimitiveType.stringType;
         if (ctx.LONG() != null)
-            return new PrimitiveType(PrimitiveKind.LONG);
+            return PrimitiveType.longType;
         if (ctx.DOUBLE() != null)
-            return new PrimitiveType(PrimitiveKind.DOUBLE);
+            return PrimitiveType.doubleType;
         if (ctx.VOID() != null)
-            return new PrimitiveType(PrimitiveKind.VOID);
+            return PrimitiveType.voidType;
         if (ctx.TIME() != null)
-            return new PrimitiveType(PrimitiveKind.TIME);
+            return PrimitiveType.timeType;
         if (ctx.PASSWORD() != null)
-            return new PrimitiveType(PrimitiveKind.PASSWORD);
+            return PrimitiveType.passwordType;
         if (ctx.NULL() != null)
-            return new PrimitiveType(PrimitiveKind.NULL);
+            return PrimitiveType.nullType;
         throw new IllegalArgumentException("Unknown primitive type: " + ctx.getText());
     }
 

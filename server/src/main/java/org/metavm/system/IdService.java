@@ -1,7 +1,5 @@
 package org.metavm.system;
 
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.metavm.entity.EntityIdProvider;
 import org.metavm.object.instance.core.TypeId;
 import org.metavm.object.type.ClassType;
@@ -11,6 +9,8 @@ import org.metavm.system.persistence.BlockMapper;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -28,7 +28,7 @@ public class IdService extends BaseIdService implements EntityIdProvider {
         this.regionManager = regionManager;
     }
 
-    private Map<TypeId, BlockRT> getActiveBlockMap(long appId, Collection<Type> types) {
+    private Map<TypeId, BlockRT> getActiveBlockMap(long appId, Collection<? extends Type> types) {
         try (var ignored = ContextUtil.getProfiler().enter("IdService.getActiveBlockMap")) {
             List<BlockRT> blocks = blockSource.getActive(NncUtils.map(types, t -> ((ClassType) t).resolve().getTreeId()));
             Map<TypeId, BlockRT> result = NncUtils.toMap(blocks, BlockRT::getTypeId);
@@ -92,11 +92,11 @@ public class IdService extends BaseIdService implements EntityIdProvider {
     }
 
     @Transactional
-    public Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count) {
+    public Map<Type, List<Long>> allocate(long appId, Map<? extends Type, Integer> typeId2count) {
         return allocate0(appId, typeId2count, 0);
     }
 
-    private Map<Type, List<Long>> allocate0(long appId, Map<Type, Integer> typeId2count, int depth) {
+    private Map<Type, List<Long>> allocate0(long appId, Map<? extends Type, Integer> typeId2count, int depth) {
         if (depth > MAX_ALLOCATION_RECURSION_DEPTH) {
             throw new InternalException("Allocation recursion depth exceeds maximum: "
                     + MAX_ALLOCATION_RECURSION_DEPTH);

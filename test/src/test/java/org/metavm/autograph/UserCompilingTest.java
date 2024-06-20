@@ -58,7 +58,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 var roleReadWriteListType = TypeExpressionBuilder.fromKlassId(roleType.id()).readWriteList().build();
                 var roleNameFieldId = getFieldIdByCode(roleType, "name");
                 var roleId = doInTransaction(() -> apiClient.newInstance(
-                        roleType.getCodeRequired(),
+                        roleType.getCodeNotNull(),
                         List.of("admin")
                 ));
                 var role = instanceManager.get(roleId, 2).instance();
@@ -83,7 +83,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 var verificationCode = getLastSentEmailContent();
                 var registerRequestType = queryClassType("LabRegisterRequest");
                 var platformUserId = (String) doInTransaction(() -> apiClient.callMethod(
-                        platformUserType.getCodeRequired(),
+                        platformUserType.getCodeNotNull(),
                         "register",
                         List.of(
                                 Map.of(
@@ -138,9 +138,9 @@ public class UserCompilingTest extends CompilerTestBase {
                 // create an UserApplication by invoking the UserApplication.create method
                 var userApplicationType = queryClassType("UserApplication");
                 var applicationId = (String) doInTransaction(() -> apiClient.callMethod(
-                        userApplicationType.getCodeRequired(),
+                        userApplicationType.getCodeNotNull(),
                         "create",
-                        List.of("lab", platformUser.getIdRequired())
+                        List.of("lab", platformUser.getIdNotNull())
                 ));
                 var application = instanceManager.get(applicationId, 2).instance();
                 var reloadedPlatformUser = instanceManager.get(platformUser.id(), 1).instance();
@@ -151,7 +151,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 // get PlatformApplication
                 var platformApplicationType = queryClassType("PlatformApplication");
                 var platformApplicationId = (String) doInTransaction(() -> apiClient.callMethod(
-                        platformApplicationType.getCodeRequired(), "getInstance", List.of()
+                        platformApplicationType.getCodeNotNull(), "getInstance", List.of()
                 ));
                 var platformApplication = instanceManager.get(platformApplicationId, 2).instance();
                 var loginResultType = queryClassType("LabLoginResult");
@@ -165,8 +165,8 @@ public class UserCompilingTest extends CompilerTestBase {
                 // enter application
                 // noinspection unchecked
                 var loginResult = (Map<String, Object>) doInTransaction(() -> apiClient.callMethod(
-                        platformUserType.getCodeRequired(),
-                        "enterApp", List.of(platformUser.getIdRequired(), application.getIdRequired())
+                        platformUserType.getCodeNotNull(),
+                        "enterApp", List.of(platformUser.getIdNotNull(), application.getIdNotNull())
                 ));
                 token = (String) loginResult.get("token");
                 Assert.assertNotNull(token);
@@ -179,9 +179,9 @@ public class UserCompilingTest extends CompilerTestBase {
 
                 try {
                     doInTransaction(() -> apiClient.callMethod(
-                            platformUserType.getCodeRequired(),
+                            platformUserType.getCodeNotNull(),
                             "leaveApp",
-                            List.of(List.of(platformUser.getIdRequired()), application.getIdRequired())
+                            List.of(List.of(platformUser.getIdNotNull()), application.getIdNotNull())
                     ));
                     Assert.fail("Owner can leave the application");
                 } catch (Exception e) {
@@ -190,19 +190,19 @@ public class UserCompilingTest extends CompilerTestBase {
 
                 // create a platform user to join the application and then leave
                 var anotherPlatformUserId = (String) doInTransaction(() -> apiClient.newInstance(
-                        platformUserType.getCodeRequired(),
-                        List.of("lyq2", "123456", "lyq2", List.of(role.getIdRequired()))
+                        platformUserType.getCodeNotNull(),
+                        List.of("lyq2", "123456", "lyq2", List.of(role.getIdNotNull()))
                 ));
                 var platformUser2 = instanceManager.get(anotherPlatformUserId, 2).instance();
 
                 // send invitation
 //                var appInvitationRequestType = queryClassType("LabAppInvitationRequest");
                 doInTransaction(() -> apiClient.callMethod(
-                        userApplicationType.getCodeRequired(), "invite",
+                        userApplicationType.getCodeNotNull(), "invite",
                         List.of(
                                 Map.of(
-                                        "application", application.getIdRequired(),
-                                        "user", platformUser2.getIdRequired(),
+                                        "application", application.getIdNotNull(),
+                                        "user", platformUser2.getIdNotNull(),
                                         "isAdmin", true
                                 )
                         )
@@ -233,13 +233,13 @@ public class UserCompilingTest extends CompilerTestBase {
                 Assert.assertFalse((boolean) ((PrimitiveFieldValue) message.getFieldValue(messageReadFieldId)).getValue());
                 // read the message
                 doInTransaction(() -> apiClient.callMethod(
-                        messageType.getCodeRequired(), "read", List.of(message.getIdRequired())
+                        messageType.getCodeNotNull(), "read", List.of(message.getIdNotNull())
                 ));
                 // get invitationId from the message
                 var messageTargetFieldId = getFieldIdByCode(messageType, "target");
                 // accept invitation
                 doInTransaction(() -> apiClient.callMethod(
-                        userApplicationType.getCodeRequired(), "acceptInvitation",
+                        userApplicationType.getCodeNotNull(), "acceptInvitation",
                         List.of(message.getFieldValue(messageTargetFieldId).toJson())
                 ));
                 // assert that the user has joined the application
@@ -248,9 +248,9 @@ public class UserCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(1, anotherJoinedApplications.getListSize());
                 //noinspection unchecked
                 loginResult = (Map<String, Object>) doInTransaction(() -> apiClient.callMethod(
-                        platformUserType.getCodeRequired(),
+                        platformUserType.getCodeNotNull(),
                         "enterApp",
-                        List.of(platformUser2.getIdRequired(), application.getIdRequired())
+                        List.of(platformUser2.getIdNotNull(), application.getIdNotNull())
                 ));
                 loginResultType = queryClassType("LabLoginResult");
 //                token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
@@ -259,8 +259,8 @@ public class UserCompilingTest extends CompilerTestBase {
 
                 // test leaving the application
                 doInTransaction(() -> apiClient.callMethod(
-                        platformUserType.getCodeRequired(), "leaveApp",
-                        List.of(List.of(platformUser2.getIdRequired()), application.getIdRequired())
+                        platformUserType.getCodeNotNull(), "leaveApp",
+                        List.of(List.of(platformUser2.getIdNotNull()), application.getIdNotNull())
                 ));
                 // assert that the user has left the application
                 var reloadedAnotherPlatformUser2 = instanceManager.get(platformUser2.id(), 1).instance();
@@ -268,8 +268,8 @@ public class UserCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(0, anotherJoinedApplications2.getListSize());
                 try {
                     doInTransaction(() -> apiClient.callMethod(
-                            platformUserType.getCodeRequired(), "enterApp",
-                            List.of(platformUser2.getIdRequired(), application.getIdRequired())
+                            platformUserType.getCodeNotNull(), "enterApp",
+                            List.of(platformUser2.getIdNotNull(), application.getIdNotNull())
                     ));
                     Assert.fail("Users that are not member of the application should not be able to enter it");
                 } catch (Exception e) {
@@ -307,8 +307,8 @@ public class UserCompilingTest extends CompilerTestBase {
 
                 // create an ordinary user
                 var userId = doInTransaction(() -> apiClient.newInstance(
-                        userType.getCodeRequired(),
-                        List.of("leen", "123456", "leen", List.of(role.getIdRequired()), application.getIdRequired())
+                        userType.getCodeNotNull(),
+                        List.of("leen", "123456", "leen", List.of(role.getIdNotNull()), application.getIdNotNull())
                 ));
                 var user = instanceManager.get(userId, 1).instance();
                 Assert.assertEquals(
@@ -351,9 +351,9 @@ public class UserCompilingTest extends CompilerTestBase {
                 // test logout
                 var tokenF = token;
                 doInTransaction(() -> apiClient.callMethod(
-                        userType.getCodeRequired(), "logout",
+                        userType.getCodeNotNull(), "logout",
                         List.of(List.of(Map.of(
-                                "application", application.getIdRequired(),
+                                "application", application.getIdNotNull(),
                                 "token", tokenF
                         )))
                 ));
@@ -373,7 +373,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 // test changePassword
                 sendVerificationCode(verificationCodeType, email);
                 doInTransaction(() -> apiClient.callMethod(
-                        platformUserType.getCodeRequired(), "changePassword",
+                        platformUserType.getCodeNotNull(), "changePassword",
                         List.of(Map.of(
                                 "verificationCode", getLastSentEmailContent(),
                                 "loginName", email,
@@ -390,7 +390,7 @@ public class UserCompilingTest extends CompilerTestBase {
 
     private void sendVerificationCode(TypeDTO verificationCodeType, String email) {
         doInTransaction(() -> apiClient.callMethod(
-                verificationCodeType.getCodeRequired(), "sendVerificationCode",
+                verificationCodeType.getCodeNotNull(), "sendVerificationCode",
                 List.of(email, "MetaVM Verification Code", "127.0.0.1")
         ));
     }
@@ -401,7 +401,7 @@ public class UserCompilingTest extends CompilerTestBase {
 
     private void logout(TypeDTO platformUserType) {
         doInTransaction(() -> apiClient.callMethod(
-                platformUserType.getCodeRequired(), "logout", List.of()
+                platformUserType.getCodeNotNull(), "logout", List.of()
         ));
     }
 
@@ -413,7 +413,7 @@ public class UserCompilingTest extends CompilerTestBase {
     private Map<String, Object> verify(TypeDTO userType, Map<String, Object> tokenValue) {
         //noinspection unchecked
         return (Map<String, Object>) doInTransaction(() -> apiClient.callMethod(
-                userType.getCodeRequired(), "verify", List.of(tokenValue)
+                userType.getCodeNotNull(), "verify", List.of(tokenValue)
         ));
     }
 
@@ -424,8 +424,8 @@ public class UserCompilingTest extends CompilerTestBase {
     private String login(TypeDTO userType, InstanceDTO platformApplication, String loginName, String password, String clientIP, boolean checkToken) {
         //noinspection unchecked
         var loginResult = (Map<String, Object>) doInTransaction(() -> apiClient.callMethod(
-                userType.getCodeRequired(), "login",
-                List.of(platformApplication.getIdRequired(), loginName, password, clientIP)
+                userType.getCodeNotNull(), "login",
+                List.of(platformApplication.getIdNotNull(), loginName, password, clientIP)
         ));
         var token = (String) loginResult.get("token");
         if (checkToken)
@@ -435,7 +435,7 @@ public class UserCompilingTest extends CompilerTestBase {
 
     private Map<String, Object> createTokenValue(InstanceDTO application, String token) {
         return Map.of(
-                "application", application.getIdRequired(),
+                "application", application.getIdNotNull(),
                 "token", token
         );
     }

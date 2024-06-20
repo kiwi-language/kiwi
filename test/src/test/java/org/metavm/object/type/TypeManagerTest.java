@@ -3,6 +3,7 @@ package org.metavm.object.type;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
+import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
@@ -25,6 +26,7 @@ public class TypeManagerTest extends TestCase {
     private MemInstanceSearchServiceV2 instanceSearchService;
     private TypeManager typeManager;
     private InstanceManager instanceManager;
+    private EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws Exception {
@@ -33,6 +35,7 @@ public class TypeManagerTest extends TestCase {
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
         instanceManager = managers.instanceManager();
+        entityContextFactory = bootResult.entityContextFactory();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -41,6 +44,7 @@ public class TypeManagerTest extends TestCase {
         typeManager = null;
         instanceSearchService = null;
         instanceManager = null;
+        entityContextFactory = null;
     }
 
     public void test() {
@@ -83,7 +87,7 @@ public class TypeManagerTest extends TestCase {
     }
 
     public void testShopping() {
-        var typeIds = MockUtils.createShoppingTypes(typeManager);
+        var typeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
         var productTypeDTO = typeManager.getType(new GetTypeRequest(typeIds.productTypeId(), false)).type();
         Assert.assertEquals(2, productTypeDTO.getClassParam().fields().size());
         var couponStateType = typeManager.getType(new GetTypeRequest(typeIds.couponStateTypeId(), false)).type();
@@ -100,7 +104,7 @@ public class TypeManagerTest extends TestCase {
 
     public void testAddFieldWithDefaultValueToTemplate() {
 //        var nodeTypeIds = MockUtils.createNodeTypes(typeManager);
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Node.masm", typeManager);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Node.masm", typeManager, entityContextFactory);
         var nodeType = typeManager.getTypeByCode("Node").type();
 //        var nodeType = typeManager.getType(new GetTypeRequest(nodeTypeIds.nodeTypeId(), false)).type();
         var pNodeType = TypeExpressions.getParameterizedType(nodeType.id(), "string");
@@ -204,6 +208,10 @@ public class TypeManagerTest extends TestCase {
         var reloadedProductViewType = TestUtils.getViewKlass(productType, typeManager);
         var reloadedProductViewSkuField = TestUtils.getFieldByName(reloadedProductViewType, "sku");
         Assert.assertEquals(skuViewChildArrayType, reloadedProductViewSkuField.type());
+    }
+
+    public void testDDL() {
+
     }
 
 }

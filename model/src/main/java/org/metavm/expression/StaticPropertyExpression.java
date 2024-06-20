@@ -1,8 +1,8 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.FlowInstance;
@@ -34,7 +34,7 @@ public class StaticPropertyExpression extends Expression {
             return switch (symbolType) {
                 case NAME -> property.getDeclaringType().getName() + "." + property.getName();
                 case ID -> idVarName(property.getDeclaringType().getId()) + "." +
-                        idVarName(property.getIdRequired());
+                        idVarName(property.getIdNotNull());
             };
         }
     }

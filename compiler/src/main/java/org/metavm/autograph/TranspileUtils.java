@@ -677,7 +677,7 @@ public class TranspileUtils {
         return current;
     }
 
-    public static PsiElement getParentRequired(PsiElement element, Set<Class<?>> parentClasses) {
+    public static PsiElement getParentNotNull(PsiElement element, Set<Class<?>> parentClasses) {
         return requireNonNull(getParent(element, parentClasses));
     }
 

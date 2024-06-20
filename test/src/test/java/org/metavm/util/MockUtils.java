@@ -1,6 +1,7 @@
 package org.metavm.util;
 
 import org.metavm.asm.AssemblerFactory;
+import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.MethodDTOBuilder;
@@ -369,8 +370,8 @@ public class MockUtils {
 
     public static final String PROJECT_ROOT = "/Users/leen/workspace/object";
 
-    public static ListTypeIds createListType(TypeManager typeManager) {
-        saveListTypes(typeManager);
+    public static ListTypeIds createListType(TypeManager typeManager, EntityContextFactory entityContextFactory) {
+        saveListTypes(typeManager, entityContextFactory);
         var listType = typeManager.getTypeByCode("MyList").type();
         return new ListTypeIds(
                 listType.id(),
@@ -381,13 +382,8 @@ public class MockUtils {
         );
     }
 
-    public static NodeTypeIds createNodeTypes(TypeManager typeManager) {
-        saveListTypes(typeManager);
-        return getNodeTypeIds(typeManager);
-    }
-
-    private static void saveListTypes(TypeManager typeManager) {
-        assemble(PROJECT_ROOT + "/test/src/test/resources/asm/List.masm", typeManager);
+    private static void saveListTypes(TypeManager typeManager, EntityContextFactory entityContextFactory) {
+        assemble(PROJECT_ROOT + "/test/src/test/resources/asm/List.masm", typeManager, entityContextFactory);
     }
 
     private static NodeTypeIds getNodeTypeIds(TypeManager typeManager) {
@@ -422,15 +418,15 @@ public class MockUtils {
         ));
     }
 
-    public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm", typeManager);
+    public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, EntityContextFactory entityContextFactory) {
+        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm", typeManager, entityContextFactory);
         var productType = typeManager.getTypeByCode("Product").type();
         var skuType = typeManager.getTypeByCode("SKU").type();
         var couponType = typeManager.getTypeByCode("Coupon").type();
         var couponStateType = typeManager.getTypeByCode("CouponState").type();
         var orderType = typeManager.getTypeByCode("Order").type();
         var skuChildListType = TypeExpressions.getChildListType(TypeExpressions.getClassType(skuType.id()));
-        var couponListType =  TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(couponType.id()));
+        var couponListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(couponType.id()));
         return new ShoppingTypeIds(
                 productType.id(),
                 skuType.id(),
@@ -460,8 +456,8 @@ public class MockUtils {
         );
     }
 
-    public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm", typeManager);
+    public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager, EntityContextFactory entityContextFactory) {
+        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm", typeManager, entityContextFactory);
         var livingBeingType = typeManager.getTypeByCode("LivingBeing").type();
         var animalType = typeManager.getTypeByCode("Animal").type();
         var humanType = typeManager.getTypeByCode("Human").type();
@@ -486,21 +482,13 @@ public class MockUtils {
         );
     }
 
-    public static UtilsTypeIds createUtilsTypes(TypeManager typeManager) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm", typeManager);
-        var utilsType = typeManager.getTypeByCode("Utils").type();
-        return new UtilsTypeIds(
-                utilsType.id(),
-                TestUtils.getStaticMethodIdByCode(utilsType, "containsAny"),
-                TestUtils.getStaticMethodIdByCode(utilsType, "test")
-        );
-    }
-
-    public static void assemble(String source, TypeManager typeManager) {
-        var assembler = AssemblerFactory.createWithStandardTypes();
-        assembler.assemble(List.of(source));
-        FlowSavingContext.initConfig();
-        TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(),  true)));
+    public static void assemble(String source, TypeManager typeManager, EntityContextFactory entityContextFactory) {
+        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var assembler = AssemblerFactory.createWithStandardTypes(context);
+            assembler.assemble(List.of(source));
+            FlowSavingContext.initConfig();
+            TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true)));
+        }
     }
 
     public static FooTypes createFooTypes() {

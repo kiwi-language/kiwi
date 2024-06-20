@@ -129,7 +129,7 @@ public class Declarator extends CodeGenVisitor {
     }
 
     private String getDefaultBeanName(Klass klass) {
-        var klassName = klass.getCodeRequired();
+        var klassName = klass.getCodeNotNull();
         var idx = klassName.lastIndexOf('.');
         var simpleName = idx == -1 ? klassName : klassName.substring(idx + 1);
         return NamingUtils.firstCharToLowerCase(simpleName);
@@ -188,7 +188,7 @@ public class Declarator extends CodeGenVisitor {
         flow.clearAttributes();
         var beanAnnotation = TranspileUtils.getAnnotation(method, Bean.class);
         if (beanAnnotation != null) {
-            var beanName = (String) TranspileUtils.getAnnotationAttribute(beanAnnotation, "value", flow.getCodeRequired());
+            var beanName = (String) TranspileUtils.getAnnotationAttribute(beanAnnotation, "value", flow.getCodeNotNull());
             flow.setAttribute(AttributeNames.BEAN_NAME, beanName);
         }
         visitedMethods.add(flow);

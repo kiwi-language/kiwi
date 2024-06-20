@@ -52,7 +52,7 @@ public abstract class NodeRT extends Element implements LocalKey {
         this.code = NncUtils.get(code, NamingUtils::ensureValidCode);
         this.scope = scope;
         this.outputType = outputType;
-        this.kind = NodeKind.getByNodeClass(this.getClass());
+        this.kind = NodeKind.fromNodeClass(this.getClass());
         if (previous != null) {
             previous.insertAfter(this);
             setExpressionTypes(previous.getExpressionTypes());

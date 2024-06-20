@@ -14,7 +14,7 @@ public class InstanceMapper<I extends DurableInstance> implements Mapper<I, I> {
 
     protected InstanceMapper(Class<I> instanceClass) {
         this.instanceClass = instanceClass;
-        this.type = new AnyType();
+        this.type = AnyType.instance;
     }
 
     @Override

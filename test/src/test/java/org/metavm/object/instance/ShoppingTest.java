@@ -2,6 +2,7 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.flow.FlowExecutionService;
 import org.metavm.flow.rest.FlowExecutionRequest;
@@ -19,6 +20,7 @@ public class ShoppingTest extends TestCase {
     private TypeManager typeManager;
     private InstanceManager instanceManager;
     private FlowExecutionService flowExecutionService;
+    private EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws Exception {
@@ -28,6 +30,7 @@ public class ShoppingTest extends TestCase {
         typeManager = managers.typeManager();
         instanceManager = managers.instanceManager();
         flowExecutionService = managers.flowExecutionService();
+        entityContextFactory = bootResult.entityContextFactory();
     }
 
     @Override
@@ -35,10 +38,11 @@ public class ShoppingTest extends TestCase {
         typeManager = null;
         instanceManager = null;
         flowExecutionService = null;
+        entityContextFactory = null;
     }
 
     public void testDecAmount() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
         var productDTO = MockUtils.createProductDTO(shoppingTypeIds);
         var productId = TestUtils.doInTransaction(() -> instanceManager.create(productDTO));
         var loadedProductDTO = instanceManager.get(productId, 1).instance();
@@ -70,7 +74,7 @@ public class ShoppingTest extends TestCase {
     }
 
     public void testBuy() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
         var productDTO = MockUtils.createProductDTO(instanceManager, shoppingTypeIds);
         var couponsDTOs = MockUtils.createCouponDTOs(instanceManager, shoppingTypeIds);
         var firstSkuDTO = productDTO.getFieldValue(shoppingTypeIds.productSkuListFieldId()).underlyingInstance()

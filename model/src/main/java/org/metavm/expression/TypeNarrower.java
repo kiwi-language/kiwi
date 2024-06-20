@@ -191,7 +191,7 @@ public class TypeNarrower {
 
     private static Type createTypeFromSet(Set<Type> set) {
         if (set.isEmpty()) {
-            return new NeverType();
+            return NeverType.instance;
         }
         if (set.size() == 1) {
             return set.iterator().next();

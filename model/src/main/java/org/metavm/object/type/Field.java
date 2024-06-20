@@ -375,7 +375,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return getCodeRequired();
+        return getCodeNotNull();
     }
 
     public GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {

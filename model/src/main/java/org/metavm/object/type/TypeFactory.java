@@ -48,10 +48,7 @@ public abstract class TypeFactory {
             var context = batch.getContext();
             var type = context.getCapturedTypeVariable(capturedTypeVariableDTO.id());
             if (type == null) {
-                type = new CapturedTypeVariable(
-                        new UncertainType(new NeverType(), new AnyType()),
-                        DummyCapturedTypeScope.INSTANCE
-                );
+                type = new CapturedTypeVariable(UncertainType.asterisk, DummyCapturedTypeScope.INSTANCE);
                 if (capturedTypeVariableDTO.tmpId() != null)
                     type.setTmpId(capturedTypeVariableDTO.tmpId());
                 context.bind(type);

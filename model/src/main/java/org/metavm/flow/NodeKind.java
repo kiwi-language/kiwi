@@ -64,7 +64,7 @@ public enum NodeKind {
         this.outputTypeAsChild = outputTypeAsChild;
     }
 
-    public static NodeKind getByCodeRequired(int code) {
+    public static NodeKind fromCode(int code) {
         return Arrays.stream(values())
                 .filter(type -> type.code == code)
                 .findAny()
@@ -72,14 +72,14 @@ public enum NodeKind {
     }
 
 
-    public static NodeKind getByParamClassRequired(Class<?> paramClass) {
+    public static NodeKind fromParamClass(Class<?> paramClass) {
         return Arrays.stream(values())
                 .filter(kind -> Objects.equals(kind.getParamKlass(), paramClass))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("NodeKind not found for param class: " + paramClass.getName()));
     }
 
-    public static NodeKind getByNodeClass(Class<? extends NodeRT> klass) {
+    public static NodeKind fromNodeClass(Class<? extends NodeRT> klass) {
         return NncUtils.findRequired(values(), kind -> kind.getNodeClass().equals(klass));
     }
 

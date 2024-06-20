@@ -18,7 +18,7 @@ public record AnyTypeKey() implements TypeKey {
 
     @Override
     public AnyType toType(TypeDefProvider typeDefProvider) {
-        return new AnyType();
+        return AnyType.instance;
     }
 
     @Override

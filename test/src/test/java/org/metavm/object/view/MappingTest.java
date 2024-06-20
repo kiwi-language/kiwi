@@ -3,10 +3,7 @@ package org.metavm.object.view;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
-import org.metavm.object.type.BeanManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionOperations;
+import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityQueryService;
 import org.metavm.flow.FlowExecutionService;
 import org.metavm.flow.FlowManager;
@@ -16,6 +13,7 @@ import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.DefaultViewId;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.rest.*;
+import org.metavm.object.type.BeanManager;
 import org.metavm.object.type.TypeExpressions;
 import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.rest.dto.ClassTypeKey;
@@ -25,6 +23,9 @@ import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 import org.metavm.task.TaskManager;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionOperations;
 
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,7 @@ public class MappingTest extends TestCase {
     private TypeManager typeManager;
     private FlowManager flowManager;
     private InstanceManager instanceManager;
+    private EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws Exception {
@@ -58,6 +60,7 @@ public class MappingTest extends TestCase {
         typeManager.setFlowManager(flowManager);
         var flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());
         typeManager.setFlowExecutionService(flowExecutionService);
+        entityContextFactory = bootResult.entityContextFactory();
         FlowSavingContext.initConfig();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
@@ -68,6 +71,7 @@ public class MappingTest extends TestCase {
         typeManager = null;
         flowManager = null;
         instanceManager = null;
+        entityContextFactory = null;
     }
 
     private TypeDTO getType(String id) {
@@ -81,7 +85,7 @@ public class MappingTest extends TestCase {
 
     public void test() {
 //        DebugEnv.printMapping = true;
-        var typeIds = MockUtils.createShoppingTypes(typeManager);
+        var typeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
         var productTypeDTO = getType(typeIds.productTypeId());
         var skuTypeDTO = getType(typeIds.skuTypeId());
         var productDefaultMapping = NncUtils.findRequired(productTypeDTO.getClassParam().mappings(),
@@ -297,7 +301,7 @@ public class MappingTest extends TestCase {
     }
 
     public void testOrderQuery() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
         var skuId = TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
                 null, TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()), null, null, null,
                 new ClassInstanceParam(
@@ -375,7 +379,7 @@ public class MappingTest extends TestCase {
     }
 
     public void testNewRootView() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
         var skuTypeDTO = getType(shoppingTypeIds.skuTypeId());
         var skuDefaultMapping = NncUtils.findRequired(
                 skuTypeDTO.getClassParam().mappings(),
@@ -410,7 +414,7 @@ public class MappingTest extends TestCase {
     }
 
 public void testGeneric() {
-        var listTypeIds = MockUtils.createListType(typeManager);
+        var listTypeIds = MockUtils.createListType(typeManager, entityContextFactory);
         var nodeTypeIds = listTypeIds.nodeTypeIds();
         var listKlass = typeManager.getType(new GetTypeRequest(listTypeIds.listTypeId(), false)).type();
         var nodeKlass = typeManager.getType(new GetTypeRequest(nodeTypeIds.nodeTypeId(), false)).type();

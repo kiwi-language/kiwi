@@ -2,8 +2,8 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
@@ -17,15 +17,21 @@ import java.util.function.Function;
 @EntityType
 public class PrimitiveType extends Type {
 
-    public static PrimitiveType createNull() {
-        return new PrimitiveType(PrimitiveKind.NULL);
-    }
+    public static final PrimitiveType nullType = new PrimitiveType(PrimitiveKind.NULL);
+    public static final PrimitiveType doubleType = new PrimitiveType(PrimitiveKind.DOUBLE);
+    public static final PrimitiveType longType = new PrimitiveType(PrimitiveKind.LONG);
+    public static final PrimitiveType booleanType = new PrimitiveType(PrimitiveKind.BOOLEAN);
+    public static final PrimitiveType stringType = new PrimitiveType(PrimitiveKind.STRING);
+    public static final PrimitiveType timeType = new PrimitiveType(PrimitiveKind.TIME);
+    public static final PrimitiveType voidType = new PrimitiveType(PrimitiveKind.VOID);
+    public static final PrimitiveType passwordType = new PrimitiveType(PrimitiveKind.PASSWORD);
 
     private final PrimitiveKind kind;
 
-    public PrimitiveType(PrimitiveKind kind) {
+    private PrimitiveType(PrimitiveKind kind) {
         super();
         this.kind = kind;
+        kind.setType(this);
     }
 
     @Override

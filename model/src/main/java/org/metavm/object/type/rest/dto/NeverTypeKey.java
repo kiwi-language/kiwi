@@ -17,7 +17,7 @@ public record NeverTypeKey() implements TypeKey {
 
     @Override
     public NeverType toType(TypeDefProvider typeDefProvider) {
-        return new NeverType();
+        return NeverType.instance;
     }
 
     @Override

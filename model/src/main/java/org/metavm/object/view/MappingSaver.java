@@ -311,7 +311,7 @@ public class MappingSaver {
 
     private Method getCanonicalConstructor(Klass klass) {
         var fields = NncUtils.merge(
-                NncUtils.map(getVisibleFields(klass), f -> new NameAndType(f.getCodeRequired(), f.getType())),
+                NncUtils.map(getVisibleFields(klass), f -> new NameAndType(f.getCodeNotNull(), f.getType())),
                 NncUtils.map(getAccessors(klass), a -> new NameAndType(requireNonNull(a.code), a.getter.getReturnType()))
         );
         var fieldTypes = NncUtils.toMap(fields, f -> f.name, f -> f.type);

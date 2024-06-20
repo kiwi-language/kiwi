@@ -234,7 +234,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (template == null) {
 //            java.lang.reflect.Type javaType = Objects.requireNonNull(
 //                    context.getJavaType(this), () -> "Can not get java type for type '" + this + "'");
-            return getCodeRequired();
+            return getCodeNotNull();
         } else {
             return context.getModelName(template, this) + "<"
                     + NncUtils.join(typeArguments, object -> context.getModelName(object, this))
@@ -242,7 +242,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         }
     }
 
-    public String getCodeRequired() {
+    public String getCodeNotNull() {
         return Objects.requireNonNull(code);
     }
 
@@ -862,7 +862,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public Property getStaticPropertyByVar(Var var) {
         return Objects.requireNonNull(
                 findStaticPropertyByVar(var),
-                () -> "Can not find property for var " + var + " in type " + name
+                () -> "Can not find property for " + var + " in type " + name
         );
     }
 
@@ -1052,7 +1052,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         }
     }
 
-    public Field getFieldNyNameRequired(String fieldName) {
+    public Field getFieldNyName(String fieldName) {
         return NncUtils.requireNonNull(
                 tryGetFieldByName(fieldName), "field not found: " + fieldName
         );
@@ -1809,9 +1809,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
         if (isParameterized())
-            return requireNonNull(template).getCodeRequired() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
+            return requireNonNull(template).getCodeNotNull() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
         else
-            return getCodeRequired();
+            return getCodeNotNull();
     }
 
     public boolean isList() {

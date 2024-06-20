@@ -154,7 +154,7 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testUtils() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm", typeManager);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm", typeManager, entityContextFactory);
         var utilsType = typeManager.getTypeByCode("Utils").type();
         var contains = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
@@ -206,7 +206,7 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testGenericOverloading() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/GenericOverloading.masm", typeManager);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/GenericOverloading.masm", typeManager, entityContextFactory);
         var baseType = typeManager.getTypeByCode("Base").type();
         var subType = typeManager.getTypeByCode("Sub").type();
         var testMethodId = TestUtils.getMethodByCode(baseType, "test").id();
@@ -231,7 +231,7 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testLambda() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm", typeManager);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm", typeManager, entityContextFactory);
         var utilsType = typeManager.getTypeByCode("Utils").type();
         var result = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
@@ -255,7 +255,7 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testLivingBeing() {
-        var typeIds = MockUtils.createLivingBeingTypes(typeManager);
+        var typeIds = MockUtils.createLivingBeingTypes(typeManager, entityContextFactory);
         var human = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
                         new MethodRefDTO(TypeExpressions.getClassType(typeIds.humanTypeId()), typeIds.humanConstructorId(), List.of()),
@@ -412,7 +412,7 @@ public class InstanceManagerTest extends TestCase {
 
     public void testRemoveNonPersistedChild() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
-        MockUtils.assemble(parentChildMasm, typeManager);
+        MockUtils.assemble(parentChildMasm, typeManager, entityContextFactory);
         var parentType = typeManager.getTypeByCode("Parent").type();
         var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                 TestUtils.getMethodRefByCode(parentType, "Parent"),
@@ -443,7 +443,7 @@ public class InstanceManagerTest extends TestCase {
 
     public void testRemoveRoot() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
-        MockUtils.assemble(parentChildMasm, typeManager);
+        MockUtils.assemble(parentChildMasm, typeManager, entityContextFactory);
         var parentType = typeManager.getTypeByCode("Parent").type();
         var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                 TestUtils.getMethodRefByCode(parentType, "Parent"),

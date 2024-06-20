@@ -6,6 +6,7 @@ import org.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 public interface GenericDeclaration {
 
@@ -25,6 +26,10 @@ public interface GenericDeclaration {
     String getName();
 
     @Nullable String getCode();
+
+    default String getCodeNotNull() {
+        return Objects.requireNonNull(getCode(), () -> "Code is not set for " + this);
+    }
 
     String getTypeDesc();
 

@@ -274,7 +274,7 @@ public class TestUtils {
             r.forEachDescendant(e -> {
                 if(!e.hasPhysicalId()) {
                     var type =
-                            ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(e) : new AnyType();
+                            ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(e) : AnyType.instance;
                     e.initId(PhysicalId.of(treeId, nextNodeIdRef.value++, type));
                 }
             });

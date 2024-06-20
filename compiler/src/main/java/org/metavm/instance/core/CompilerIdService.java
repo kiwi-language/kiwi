@@ -14,7 +14,7 @@ public class CompilerIdService extends BaseIdService {
     }
 
     @Override
-    public Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count) {
+    public Map<Type, List<Long>> allocate(long appId, Map<? extends Type, Integer> typeId2count) {
         throw new UnsupportedOperationException();
     }
 }

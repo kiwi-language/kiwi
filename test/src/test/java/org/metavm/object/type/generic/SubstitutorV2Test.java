@@ -28,8 +28,8 @@ public class SubstitutorV2Test extends TestCase {
     }
 
     public void test() {
-        var nullType = new PrimitiveType(PrimitiveKind.NULL);
-        var voidType = new PrimitiveType(PrimitiveKind.VOID);
+        var nullType = PrimitiveType.nullType;
+        var voidType = PrimitiveType.voidType;
 
         var typeVar = new TypeVariable(null, "E", "E", DummyGenericDeclaration.INSTANCE);
         Klass foo = KlassBuilder.newBuilder("Foo", "Foo")
@@ -81,7 +81,7 @@ public class SubstitutorV2Test extends TestCase {
             new ReturnNode(null, "return", null, updateNode, flow.getRootScope(), null);
         }
 
-        var stringType = new PrimitiveType(PrimitiveKind.STRING);
+        var stringType = PrimitiveType.stringType;
 
         var typeFactory = new DefaultTypeFactory(t -> {
             if (t == Null.class)

@@ -60,7 +60,7 @@ public class Function extends Flow implements GlobalKey {
 
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return getCodeRequired();
+        return getCodeNotNull();
     }
 
     protected String toString0() {
@@ -101,7 +101,7 @@ public class Function extends Flow implements GlobalKey {
     public String getInternalName(@Nullable Flow current) {
         if (current == this)
             return "this";
-        return getCodeRequired() + "(" +
+        return getCodeNotNull() + "(" +
                 NncUtils.join(getParameterTypes(), t -> t.getInternalName(this), ",") + ")";
     }
 

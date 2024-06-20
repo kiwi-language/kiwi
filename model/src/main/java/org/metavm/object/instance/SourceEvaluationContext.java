@@ -20,7 +20,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
     public Instance evaluate(Expression expression) {
         var thisPropertyExpr = getThisPropertyExpression(expression);
         if (thisPropertyExpr != null) {
-            var fieldId = thisPropertyExpr.getProperty().getIdRequired();
+            var fieldId = thisPropertyExpr.getProperty().getIdNotNull();
             return getSourceField(source, fieldId);
         }
         var equalityExpr = getEqualityExpression(expression);

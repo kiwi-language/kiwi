@@ -203,7 +203,7 @@ public enum TypeCategory {
         return closurePrecedence;
     }
 
-    public static TypeCategory getByParamClassRequired(Class<?> paramKlass) {
+    public static TypeCategory fromParamClass(Class<?> paramKlass) {
         return Arrays.stream(values())
                 .filter(type -> Objects.equals(type.getParamClass(), paramKlass))
                 .findAny()

@@ -14,8 +14,8 @@ public interface Property extends ClassMember, LocalKey {
 
     @Nullable Id tryGetId();
 
-    default Id getIdRequired() {
-        return requireNonNull(tryGetId());
+    default Id getIdNotNull() {
+        return requireNonNull(tryGetId(), () -> "Id is not set for " + this);
     }
 
     String getName();
@@ -31,8 +31,8 @@ public interface Property extends ClassMember, LocalKey {
 
     void setCode(@Nullable String code);
 
-    default String getCodeRequired() {
-        return NncUtils.requireNonNull(getCode(), "code is null for property " + getName());
+    default String getCodeNotNull() {
+        return NncUtils.requireNonNull(getCode(), "Code is not set for " + this);
     }
 
     Type getType();

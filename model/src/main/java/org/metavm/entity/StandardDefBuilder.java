@@ -212,7 +212,7 @@ public class StandardDefBuilder {
     private Klass createConsumerKlass() {
         var elementType = new TypeVariable(null, "Element", "T",
                 DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(new AnyType()));
+        elementType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(Consumer.class.getTypeParameters()[0], elementType);
         var consumerType = KlassBuilder.newBuilder("Consumer", "Consumer")
                 .typeParameters(elementType)
@@ -230,7 +230,7 @@ public class StandardDefBuilder {
     private Klass createPredicateKlass() {
         var elementType = new TypeVariable(null, "Element", "T",
                 DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(new AnyType()));
+        elementType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(Predicate.class.getTypeParameters()[0], elementType);
         var predicateType = KlassBuilder.newBuilder("Predicate", "Predicate")
                 .typeParameters(elementType)
@@ -332,7 +332,7 @@ public class StandardDefBuilder {
         String code = getParameterizedCode("Iterator");
         var elementType = new TypeVariable(null, "IteratorElement", "IteratorElement",
                 DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(new AnyType()));
+        elementType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(Iterator.class.getTypeParameters()[0], elementType);
         Klass iteratorType = KlassBuilder.newBuilder(name, code)
                 .typeParameters(elementType)
@@ -364,7 +364,7 @@ public class StandardDefBuilder {
     public Klass createIterableKlass() {
         var elementType = new TypeVariable(null, "Element", "T",
                 DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(new AnyType()));
+        elementType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(Iterable.class.getTypeParameters()[0], elementType);
         var iterableType = KlassBuilder.newBuilder("Iterable", "Iterable")
                 .typeParameters(elementType)
@@ -382,7 +382,7 @@ public class StandardDefBuilder {
                 .returnType(Types.getVoidType())
                 .parameters(new Parameter(null, "action", "action",
                         consumerKlass.getParameterized(
-                                List.of(new UncertainType(elementType.getType(), Types.getNullableAnyType()))).getType())
+                                List.of(UncertainType.createLowerBounded(elementType.getType()))).getType())
                 )
                 .build();
 
@@ -401,7 +401,7 @@ public class StandardDefBuilder {
         var elementType = new TypeVariable(null, "E", "E",
                 DummyGenericDeclaration.INSTANCE);
         var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
-        elementType.setBounds(List.of(new AnyType()));
+        elementType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(Collection.class.getTypeParameters()[0], elementType);
         Klass collectionType = KlassBuilder.newBuilder(name, code)
                 .typeParameters(elementType)
@@ -441,7 +441,7 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(Types.getBooleanType())
                 .parameters(new Parameter(null, "c", "c",
-                        collectionType.getParameterized(List.of(new UncertainType(Types.getNeverType(), elementType.getType()))).getType()))
+                        collectionType.getParameterized(List.of(UncertainType.createUpperBounded(elementType.getType()))).getType()))
                 .build();
 
         MethodBuilder.newBuilder(collectionType, "remove", "remove")
@@ -460,7 +460,7 @@ public class StandardDefBuilder {
                 .returnType(Types.getBooleanType())
                 .parameters(new Parameter(null, "filter", "filter",
                         predicateKlass.getParameterized(
-                                List.of(new UncertainType(elementType.getType(), Types.getNullableAnyType()))
+                                List.of(UncertainType.createLowerBounded(elementType.getType()))
                         ).getType()))
                 .build();
 
@@ -472,7 +472,7 @@ public class StandardDefBuilder {
         String code = getParameterizedCode("Set");
         var elementType = new TypeVariable(null, "E", "E",
                 DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(new AnyType()));
+        elementType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(Set.class.getTypeParameters()[0], elementType);
         var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
         var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
@@ -505,7 +505,7 @@ public class StandardDefBuilder {
     public Klass createListKlass() {
         var elementType = new TypeVariable(null, "E", "E",
                 DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(new AnyType()));
+        elementType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(List.class.getTypeParameters()[0], elementType);
         var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
         var listType = KlassBuilder.newBuilder("List", "List")
@@ -563,7 +563,7 @@ public class StandardDefBuilder {
     public Klass createListImplKlass(String name, String code, Class<?> javaClass, ClassKind kind, ArrayKind arrayKind) {
         var elementType = new TypeVariable(null, "E", "E",
                 DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(new AnyType()));
+        elementType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(javaClass.getTypeParameters()[0], elementType);
         var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
         var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
@@ -598,7 +598,7 @@ public class StandardDefBuilder {
                                 null, "collection", "collection",
                                 new ClassType(
                                         collectionKlass,
-                                        List.of(new UncertainType(Types.getNeverType(), elementType.getType()))
+                                        List.of(UncertainType.createUpperBounded(elementType.getType()))
                                 )
                         )
                 )
@@ -614,7 +614,7 @@ public class StandardDefBuilder {
     public Klass createSetImplKlass(Class<?> javaClass, ClassKind kind, ArrayKind arrayKind) {
         var elementType = new TypeVariable(null, "E", "E",
                 DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(new AnyType()));
+        elementType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(javaClass.getTypeParameters()[0], elementType);
         var pIterableType = iterableKlass.getParameterized(List.of(elementType.getType()));
         var pCollectionType = collectionKlass.getParameterized(List.of(elementType.getType()));
@@ -650,7 +650,7 @@ public class StandardDefBuilder {
                                 null, "collection", "collection",
                                 new ClassType(
                                         collectionKlass,
-                                        List.of(new UncertainType(Types.getNeverType(), elementType.getType()))
+                                        List.of(UncertainType.createUpperBounded(elementType.getType()))
                                 )
                         )
                 )
@@ -664,7 +664,7 @@ public class StandardDefBuilder {
         String code = getParameterizedCode("IteratorImpl");
         var elementType = new TypeVariable(null, "IteratorImplElement", "IteratorImplElement",
                 DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(new AnyType()));
+        elementType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(IteratorImpl.class.getTypeParameters()[0], elementType);
         var pIteratorType = iteratorKlass.getParameterized(List.of(elementType.getType()));
         Klass iteratorImplType = KlassBuilder.newBuilder(name, code)
@@ -703,11 +703,11 @@ public class StandardDefBuilder {
         String code = getParameterizedName("Map");
         var keyType = new TypeVariable(null, "K", "K",
                 DummyGenericDeclaration.INSTANCE);
-        keyType.setBounds(List.of(new AnyType()));
+        keyType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(Map.class.getTypeParameters()[0], keyType);
         var valueType = new TypeVariable(null, "V", "V",
                 DummyGenericDeclaration.INSTANCE);
-        valueType.setBounds(List.of(new AnyType()));
+        valueType.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(Map.class.getTypeParameters()[1], valueType);
         Klass mapType = KlassBuilder.newBuilder(name, code)
                 .source(ClassSource.BUILTIN)
@@ -728,7 +728,7 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         var valueTypeVar = new TypeVariable(null, "V", "V",
                 DummyGenericDeclaration.INSTANCE);
-        keyTypeVar.setBounds(List.of(new AnyType()));
+        keyTypeVar.setBounds(List.of(AnyType.instance));
         primTypeFactory.putType(javaClass.getTypeParameters()[0], keyTypeVar);
         primTypeFactory.putType(javaClass.getTypeParameters()[1], valueTypeVar);
         var pMapKlass = mapKlass.getParameterized(List.of(keyTypeVar.getType(), valueTypeVar.getType()));

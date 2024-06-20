@@ -25,6 +25,8 @@ public enum PrimitiveKind {
     private final Class<?> javaClass;
     private final Class<? extends Instance> instanceClass;
     private final TypeCategory typeCategory;
+    private final String typeCode;
+    private PrimitiveType type;
 
     PrimitiveKind(int code, String name, Class<?> javaClass, Class<? extends Instance> instanceClass, TypeCategory typeCategory) {
         this.code = code;
@@ -32,6 +34,7 @@ public enum PrimitiveKind {
         this.javaClass = javaClass;
         this.instanceClass = instanceClass;
         this.typeCategory = typeCategory;
+        this.typeCode = NamingUtils.firstCharToUpperCase(this.name().toLowerCase());
     }
 
     public String getName() {
@@ -59,7 +62,7 @@ public enum PrimitiveKind {
     }
 
     public String getTypeCode() {
-        return NamingUtils.firstCharToUpperCase(this.name().toLowerCase());
+        return typeCode;
     }
 
     public int code() {
@@ -70,4 +73,11 @@ public enum PrimitiveKind {
         return NncUtils.findRequired(values(), v -> v.code == code);
     }
 
+    public PrimitiveType getType() {
+        return type;
+    }
+
+    void setType(PrimitiveType type) {
+        this.type = type;
+    }
 }

@@ -16,7 +16,7 @@ public class ForTransformer extends VisitorBase {
 
     @Override
     public void visitForStatement(PsiForStatement statement) {
-        var parent = TranspileUtils.getParentRequired(statement, Set.of(PsiMethod.class, PsiStatement.class));
+        var parent = TranspileUtils.getParentNotNull(statement, Set.of(PsiMethod.class, PsiStatement.class));
         var scope = TranspileUtils.getBodyScope(parent);
         var init = statement.getInitialization();
         var curVariableMap = new HashMap<String, String>();

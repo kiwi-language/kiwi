@@ -17,7 +17,6 @@ import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.TypeVariable;
-import org.metavm.object.type.Types;
 import org.metavm.object.type.UncertainType;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
@@ -73,7 +72,7 @@ public class TranspileUtilsTest extends TestCase {
                 .typeParameters(List.of(typeVar))
                 .parameters(
                         new Parameter(null, "list", "list",
-                                StdKlass.list.get().getParameterized(List.of(new UncertainType(typeVar.getType(), Types.getNullableAnyType()))).getType()
+                                StdKlass.list.get().getParameterized(List.of(UncertainType.createLowerBounded(typeVar.getType()))).getType()
                         ),
                         new Parameter(null, "element", "element", typeVar.getType())
                 )

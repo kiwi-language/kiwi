@@ -2,7 +2,6 @@ package org.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.common.BaseDTO;
-import org.metavm.util.BusinessException;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -36,12 +35,6 @@ public record FlowDTO(
         return new FlowSignatureDTO(
                 name, NncUtils.map(parameters, ParameterDTO::type)
         );
-    }
-
-    public void requiredId() {
-        if (id == null) {
-            throw BusinessException.invalidParams("objectId is required");
-        }
     }
 
     @JsonIgnore

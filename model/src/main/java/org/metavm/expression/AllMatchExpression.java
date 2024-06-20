@@ -1,13 +1,12 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.PrimitiveKind;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
@@ -55,7 +54,7 @@ public class AllMatchExpression extends Expression {
 
     @Override
     public Type getType() {
-        return new PrimitiveType(PrimitiveKind.BOOLEAN);
+        return PrimitiveType.booleanType;
     }
 
     public @Nullable CursorExpression createCursor() {

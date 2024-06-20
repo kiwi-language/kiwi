@@ -352,12 +352,12 @@ typeType
     | NEVER
     | typeType ('|' typeType)+
     | typeType ('&' typeType)+
-    | typeType '[' arrayKind ']'
+    | typeType arrayKind
     | '(' (typeType (',' typeType)*)? ')' '->' typeType
     | '[' typeType ',' typeType ']'
     ;
 
-arrayKind: R | RW | C;
+arrayKind: R | RW | C | V;
 
 classOrInterfaceType: qualifiedName typeArguments?;
 

@@ -19,7 +19,7 @@ public class TypeParamTypeIdResolver implements TypeIdResolver {
 
     @Override
     public String idFromValue(Object value) {
-        return TypeCategory.getByParamClassRequired(value.getClass()).code() + "";
+        return TypeCategory.fromParamClass(value.getClass()).code() + "";
     }
 
     @Override

@@ -1417,7 +1417,7 @@ public class NncUtils {
         return object == null ? "" : object.toString();
     }
 
-    public static <T> List<T> exclude(Iterable<T> iterable, Predicate<T> filter) {
+    public static <T> List<T> exclude(Iterable<? extends T> iterable, Predicate<T> filter) {
         if (iterable == null) {
             return List.of();
         }
@@ -1634,10 +1634,9 @@ public class NncUtils {
             throw new InternalException(message);
     }
 
-    public static void requireEquals(Object first, Object second, Supplier<? extends
-            RuntimeException> exceptionSupplier) {
+    public static void requireEquals(Object first, Object second, Supplier<String> messageSupplier) {
         if (!Objects.equals(first, second))
-            throw exceptionSupplier.get();
+            throw new IllegalStateException(messageSupplier.get());
     }
 
     @NotNull

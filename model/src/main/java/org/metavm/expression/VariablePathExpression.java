@@ -1,8 +1,8 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.AnyType;
 import org.metavm.object.type.Type;
@@ -41,7 +41,7 @@ public class VariablePathExpression extends Expression {
 
     @Override
     public Type getType() {
-        return new AnyType();
+        return AnyType.instance;
     }
 
     @Override

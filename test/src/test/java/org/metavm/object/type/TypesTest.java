@@ -66,7 +66,7 @@ public class TypesTest extends TestCase {
                 .superClass(c1.getType()).build();
         var nullable_c3 = new UnionType(Set.of(Types.getNullType(), c3.getType()));
         var cst = Types.getLeastUpperBound(List.of(c2.getType(), nullable_c3));
-        Assert.assertEquals(Types.getNullableAnyType(), cst);
+        Assert.assertEquals(UnionType.nullableAnyType, cst);
     }
 
 }

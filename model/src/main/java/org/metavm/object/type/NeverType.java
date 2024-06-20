@@ -2,8 +2,8 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
@@ -17,13 +17,15 @@ import java.util.function.Function;
 @EntityType
 public class NeverType extends Type {
 
-    public NeverType() {
+    public static final NeverType instance = new NeverType();
+
+    private NeverType() {
         super();
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitNothingType(this);
+        return visitor.visitNeverType(this);
     }
 
     @Override

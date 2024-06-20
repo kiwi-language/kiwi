@@ -2,6 +2,7 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.ApiClient;
 import org.metavm.util.BootstrapUtils;
@@ -15,6 +16,7 @@ public class ApiServiceTest extends TestCase {
 
     private TypeManager typeManager;
     private InstanceManager instanceManager;
+    private EntityContextFactory entityContextFactory;
     private ApiClient apiClient;
 
     @Override
@@ -24,6 +26,7 @@ public class ApiServiceTest extends TestCase {
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
         instanceManager = managers.instanceManager();
+        entityContextFactory = bootResult.entityContextFactory();
     }
 
     @Override
@@ -31,10 +34,11 @@ public class ApiServiceTest extends TestCase {
         apiClient = null;
         instanceManager = null;
         typeManager = null;
+        entityContextFactory = null;
     }
 
     public void testNewInstance() {
-        MockUtils.createShoppingTypes(typeManager);
+        MockUtils.createShoppingTypes(typeManager, entityContextFactory);
         var title = "Shoes-40";
         var price = 100.0;
         var quantity = 100L;
@@ -48,7 +52,7 @@ public class ApiServiceTest extends TestCase {
     }
 
     public void testHandleInstanceMethodCall() {
-        MockUtils.createShoppingTypes(typeManager);
+        MockUtils.createShoppingTypes(typeManager, entityContextFactory);
 //        var skuId = (String) TestUtils.doInTransaction(() -> apiService.handleNewInstance(
 //                "SKU", List.of("Shoes-40", 100.0, 100L)
 //        ));

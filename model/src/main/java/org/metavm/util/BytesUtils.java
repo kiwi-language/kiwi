@@ -58,7 +58,7 @@ public class BytesUtils {
         private final Id id;
 
         public MockDurableInstance(Id id) {
-            super(new AnyType());
+            super(AnyType.instance);
             this.id = id;
         }
 

@@ -468,7 +468,7 @@ public class FlowManager extends EntityContextFactoryAware {
         AddObjectNodeParam param = nodeDTO.getParam();
         if (param.getBodyScope() != null) {
             for (NodeDTO childNodeDTO : param.getBodyScope().nodes()) {
-                NodeKind kind = NodeKind.getByCodeRequired(childNodeDTO.kind());
+                NodeKind kind = NodeKind.fromCode(childNodeDTO.kind());
                 AssertUtils.assertTrue(NodeKind.CREATING_KINDS.contains(kind),
                         ErrorCode.INVALID_ADD_OBJECT_CHILD, childNodeDTO.name());
             }
@@ -518,7 +518,7 @@ public class FlowManager extends EntityContextFactoryAware {
         try (var ignored = context.getProfiler().enter("FlowManager.beforeNodeChange")) {
             if (!FlowSavingContext.skipPreprocessing())
                 nodeDTO = preprocess(nodeDTO, node, scope, context);
-            NodeKind kind = NodeKind.getByCodeRequired(nodeDTO.kind());
+            NodeKind kind = NodeKind.fromCode(nodeDTO.kind());
             if (kind.isOutputTypeAsChild()) {
                 typeManager.saveTypeWithContent(nodeDTO.outputKlass(), context);
             }

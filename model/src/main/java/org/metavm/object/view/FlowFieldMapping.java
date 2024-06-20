@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.flow.Value;
 import org.metavm.flow.*;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.FieldRef;
@@ -141,7 +140,7 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return getter.getCodeRequired();
+        return getter.getCodeNotNull();
     }
 
 }

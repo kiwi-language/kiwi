@@ -1,8 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.NoProxy;
@@ -16,6 +14,8 @@ import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -318,7 +318,7 @@ public class ClassInstance extends DurableInstance {
         ensureLoaded();
         int idx = fieldPath.indexOf('.');
         if (idx == -1) {
-            return getField(klass.getFieldNyNameRequired(fieldPath));
+            return getField(klass.getFieldNyName(fieldPath));
         } else {
             String fieldName = fieldPath.substring(0, idx);
             String subPath = fieldPath.substring(idx + 1);

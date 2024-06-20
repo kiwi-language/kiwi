@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
@@ -18,6 +18,16 @@ import java.util.function.Function;
 
 @EntityType
 public class UncertainType extends CompositeType {
+
+    public static final UncertainType asterisk = new UncertainType(NeverType.instance, UnionType.nullableAnyType);
+
+    public static UncertainType createLowerBounded(Type lowerBound) {
+        return new UncertainType(lowerBound, UnionType.nullableAnyType);
+    }
+
+    public static UncertainType createUpperBounded(Type upperBound) {
+        return new UncertainType(NeverType.instance, upperBound);
+    }
 
     private Type upperBound;
     private Type lowerBound;

@@ -119,12 +119,23 @@ public class Method extends Flow implements Property, GenericElement {
     public void onBind(IEntityContext context) {
         for (var overriddenFlowRef : overridden) {
             var overriddenFlow = overriddenFlowRef.resolve();
-            NncUtils.requireEquals(
-                    NncUtils.map(getParameters(), Parameter::getType),
-                    overriddenFlow.getParameterTypes()
-            );
-            NncUtils.requireTrue(overriddenFlow.getReturnType() == getReturnType() ||
-                    overriddenFlow.getReturnType().isAssignableFrom(getReturnType()));
+            NncUtils.requireEquals(getParameters().size(), overriddenFlow.getParameters().size());
+            NncUtils.requireEquals(getTypeParameters().size(), overriddenFlow.getTypeParameters().size());
+            for (int i = 0; i < getParameters().size(); i++) {
+                var t1 = getParameter(i).getType();
+                var t2 = overriddenFlow.getParameter(i).getType();
+                if(!t1.equals(t2)) {
+                    if(t1 instanceof VariableType vt1 && t2 instanceof VariableType vt2) {
+                        var v1 = vt1.getVariable();
+                        var v2 = vt2.getVariable();
+                        if(v1.getGenericDeclaration() == this && v2.getGenericDeclaration() == overriddenFlow
+                                && v1.getIndex() == v2.getIndex())
+                            continue;
+                    }
+                    throw new IllegalStateException("Method " + getQualifiedName() + " has different parameter types with overridden method " + overriddenFlow.getQualifiedName());
+                }
+            }
+            NncUtils.requireTrue(overriddenFlow.getReturnType().isAssignableFrom(getReturnType()));
         }
     }
 
@@ -138,7 +149,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return getCodeRequired() + "("
+        return getCodeNotNull() + "("
                 + NncUtils.join(getParameterTypes(),
                 t -> t.toExpression(typeDef -> context.getModelName(typeDef, this)))
                 + ")";
@@ -432,7 +443,7 @@ public class Method extends Flow implements Property, GenericElement {
     public String getInternalName(@Nullable Flow current) {
         if (current == this)
             return "this";
-        return declaringType.getInternalName(null) + "." + getCodeRequired() + "(" +
+        return declaringType.getInternalName(null) + "." + getCodeNotNull() + "(" +
                 NncUtils.join(getParameterTypes(), type -> type.getInternalName(this)) + ")";
     }
 

@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.NeverType;
 import org.metavm.object.type.Type;
@@ -27,7 +27,7 @@ public class ExpressionPlaceholder extends Expression {
 
     @Override
     public Type getType() {
-        return new NeverType();
+        return NeverType.instance;
     }
 
     @Override

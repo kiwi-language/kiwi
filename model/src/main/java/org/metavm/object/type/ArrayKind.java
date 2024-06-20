@@ -3,7 +3,10 @@ package org.metavm.object.type;
 import org.metavm.api.ChildList;
 import org.metavm.api.ReadonlyList;
 import org.metavm.api.ValueList;
-import org.metavm.entity.*;
+import org.metavm.entity.ChildArray;
+import org.metavm.entity.ReadWriteArray;
+import org.metavm.entity.ReadonlyArray;
+import org.metavm.entity.ValueArray;
 import org.metavm.flow.Flow;
 import org.metavm.util.NncUtils;
 
@@ -19,8 +22,8 @@ public enum ArrayKind {
         }
 
         @Override
-        public String getInternalName(Type elementType, @Nullable Flow current) {
-            return List.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        public String getInternalName(String elementInternalName) {
+            return List.class.getName() + "<" + elementInternalName + ">";
         }
 
     },
@@ -31,8 +34,8 @@ public enum ArrayKind {
         }
 
         @Override
-        public String getInternalName(Type elementType, @Nullable Flow current) {
-            return ReadonlyList.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        public String getInternalName(String elementInternalName) {
+            return ReadonlyList.class.getName() + "<" + elementInternalName + ">";
         }
     },
     CHILD(3, TypeCategory.CHILD_ARRAY, TypeTags.CHILD_ARRAY, ChildArray.class, "[C]") {
@@ -42,8 +45,8 @@ public enum ArrayKind {
         }
 
         @Override
-        public String getInternalName(Type elementType, @Nullable Flow current) {
-            return ChildList.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        public String getInternalName(String elementInternalName) {
+            return ChildList.class.getName() + "<" + elementInternalName + ">";
         }
     },
     VALUE(4, TypeCategory.VALUE_ARRAY, TypeTags.VALUE_ARRAY, ValueArray.class, "[V]") {
@@ -53,8 +56,8 @@ public enum ArrayKind {
         }
 
         @Override
-        public String getInternalName(Type elementType, @Nullable Flow current) {
-            return ValueList.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        public String getInternalName(String elementInternalName) {
+            return ValueList.class.getName() + "<" + elementInternalName + ">";
         }
     },
     ;
@@ -95,8 +98,12 @@ public enum ArrayKind {
 
     public abstract boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType);
 
-    public abstract String getInternalName(Type elementType, @Nullable Flow current);
+    public abstract String getInternalName(String elementInternalName);
 
+    public String getInternalName(Type elementType, @Nullable Flow current) {
+        return getInternalName(elementType.getInternalName(current));
+    }
+    
     @SuppressWarnings("rawtypes")
     public Class<? extends ReadonlyArray> getEntityClass() {
         //noinspection unchecked

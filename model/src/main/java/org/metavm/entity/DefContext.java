@@ -94,7 +94,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         if (type != null)
             return type;
         if (javaType instanceof Class<?> k && Instance.class.isAssignableFrom(k))
-            return new AnyType();
+            return AnyType.instance;
         if (BiUnion.isNullable(javaType))
             return Types.getNullableType(getType(BiUnion.getUnderlyingType(javaType)));
         if (javaType instanceof ParameterizedType pType) {

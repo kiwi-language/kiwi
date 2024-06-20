@@ -17,7 +17,7 @@ public class MockIdProvider implements EntityIdProvider {
     private final Map<TypeCategory, Long> nextIdMap = new HashMap<>();
 
     @Override
-    public Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count) {
+    public Map<Type, List<Long>> allocate(long appId, Map<? extends Type, Integer> typeId2count) {
         Map<Type, List<Long>> result = new HashMap<>();
         typeId2count.forEach((type, count) -> {
             List<Long> ids = new ArrayList<>();

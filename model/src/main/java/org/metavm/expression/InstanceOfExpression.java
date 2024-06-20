@@ -1,11 +1,10 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.instance.core.BooleanInstance;
-import org.metavm.object.type.PrimitiveKind;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
@@ -39,7 +38,7 @@ public class InstanceOfExpression extends Expression {
 
     @Override
     public Type getType() {
-        return new PrimitiveType(PrimitiveKind.BOOLEAN);
+        return PrimitiveType.booleanType;
     }
 
     @Override

@@ -4,7 +4,9 @@ import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Predicate;
 
 public interface Callable {
 
@@ -14,6 +16,10 @@ public interface Callable {
 
     default Parameter getParameter(int index) {
         return getParameters().get(index);
+    }
+
+    default @Nullable Parameter findParameter(Predicate<Parameter> predicate) {
+        return NncUtils.find(getParameters(), predicate);
     }
 
     void setParameters(List<Parameter> parameters);

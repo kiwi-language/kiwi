@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface EntityIdProvider {
 
-    Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count);
+    Map<Type, List<Long>> allocate(long appId, Map<? extends Type, Integer> typeId2count);
 
     default Long allocateOne(long appId, Type type) {
         return allocate(appId, Map.of(type, 1)).values().iterator().next().get(0);

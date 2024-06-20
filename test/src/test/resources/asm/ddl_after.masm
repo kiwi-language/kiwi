@@ -1,0 +1,42 @@
+class Product {
+    private string name;
+    private double price;
+    private int quantity;
+    private int version;
+
+    public Product(string name, double price, int quantity) {
+        this.name = name;
+        this.price = price;
+        this.quantity = quantity;
+        this.version = 0;
+    }
+
+    public string getName() {
+        return this.name;
+    }
+
+    public void setName(string name) {
+        this.name = name;
+    }
+
+    public double getPrice() {
+        return this.price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public int getQuantity() {
+        return this.quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    private int __version__() {
+        return 0;
+    }
+
+}

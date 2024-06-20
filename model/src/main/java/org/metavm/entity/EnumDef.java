@@ -1,12 +1,15 @@
 package org.metavm.entity;
 
 import org.metavm.api.EntityType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.*;
+import org.metavm.object.type.EnumConstantRT;
+import org.metavm.object.type.FieldBuilder;
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -112,12 +115,12 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
                 klass.getFieldByCode("name"),
                 new StringInstance(
                         EntityUtils.getMetaEnumConstantName(value),
-                        new PrimitiveType(PrimitiveKind.STRING)
+                        PrimitiveType.stringType
                 )
         );
         var enumConstant = new EnumConstantRT(instance);
         FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), klass, klass.getType())
-                .defaultValue(new NullInstance(new PrimitiveType(PrimitiveKind.NULL)))
+                .defaultValue(new NullInstance(PrimitiveType.nullType))
                 .isChild(true)
                 .isStatic(true)
                 .staticValue(instance)

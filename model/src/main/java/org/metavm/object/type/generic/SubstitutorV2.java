@@ -351,6 +351,21 @@ public class SubstitutorV2 extends CopyVisitor {
     }
 
     @Override
+    public Element visitPrimitiveType(PrimitiveType type) {
+        return type;
+    }
+
+    @Override
+    public Element visitAnyType(AnyType type) {
+        return type;
+    }
+
+    @Override
+    public Element visitNeverType(NeverType type) {
+        return type;
+    }
+
+    @Override
     public Type visitType(Type type) {
         var mapped = typeSubstitutor.getVariableMap().get(type);
         if (mapped != null)

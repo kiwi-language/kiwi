@@ -31,8 +31,8 @@ public record TypeDTO(
     }
 
     @JsonIgnore
-    public String getCodeRequired() {
-        return Objects.requireNonNull(code);
+    public String getCodeNotNull() {
+        return Objects.requireNonNull(code, "Code is not set for " + this);
     }
 
     @JsonIgnore

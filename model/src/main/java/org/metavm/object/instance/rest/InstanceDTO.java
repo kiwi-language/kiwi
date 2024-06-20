@@ -129,8 +129,8 @@ public record InstanceDTO(
     }
 
     @JsonIgnore
-    public String getIdRequired() {
-        return Objects.requireNonNull(id);
+    public String getIdNotNull() {
+        return Objects.requireNonNull(id, () -> "Id is not set for " + this);
     }
 
     @JsonIgnore

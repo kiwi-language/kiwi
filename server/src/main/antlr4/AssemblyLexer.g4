@@ -133,9 +133,10 @@ TEXT_BLOCK:         '"""' [ \t]* [\r\n] (. | EscapeSequence)*? '"""';
 
 // array kinds
 
-R: 'r';
-RW: 'rw';
-C:  'c';
+R: '[r]';
+RW: '[rw]';
+C:  '[c]';
+V: '[v]';
 
 // Identifiers
 

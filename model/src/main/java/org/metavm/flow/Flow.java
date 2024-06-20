@@ -4,8 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
@@ -18,6 +16,8 @@ import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -346,13 +346,13 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     @SuppressWarnings("unused")
-    public NodeRT getNodeByNameRequired(String nodeName) {
+    public NodeRT getNodeByName(String nodeName) {
         return NncUtils.filterOneRequired(nodes(), n -> n.getName().equals(nodeName),
                 "Node '" + nodeName + "' does not exist");
     }
 
     @SuppressWarnings("unused")
-    public NodeRT getNodeByName(String nodeName) {
+    public NodeRT findNodeByName(String nodeName) {
         return NncUtils.find(nodes(), n -> n.getName().equals(nodeName));
     }
 
@@ -413,7 +413,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
 
-    public String getCodeRequired() {
+    public String getCodeNotNull() {
         return Objects.requireNonNull(code);
     }
 

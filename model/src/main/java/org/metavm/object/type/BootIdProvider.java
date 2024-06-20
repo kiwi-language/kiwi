@@ -27,7 +27,7 @@ public class BootIdProvider implements EntityIdProvider {
     }
 
     @Override
-    public Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count) {
+    public Map<Type, List<Long>> allocate(long appId, Map<? extends Type, Integer> typeId2count) {
         Map<java.lang.reflect.Type, Integer> javaType2count = new HashMap<>();
         Map<java.lang.reflect.Type, Type> javaType2type = new HashMap<>();
         typeId2count.forEach((type, count) -> {

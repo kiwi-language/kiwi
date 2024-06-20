@@ -305,14 +305,14 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
             case TypeKeyCodes.PARAMETERIZED -> ClassType.readParameterized(input, typeDefProvider);
             case TypeKeyCodes.VARIABLE -> VariableType.read(input, typeDefProvider);
             case TypeKeyCodes.CAPTURED -> CapturedType.read(input, typeDefProvider);
-            case TypeKeyCodes.LONG -> new PrimitiveType(PrimitiveKind.LONG);
-            case TypeKeyCodes.DOUBLE -> new PrimitiveType(PrimitiveKind.DOUBLE);
-            case TypeKeyCodes.NULL -> new PrimitiveType(PrimitiveKind.NULL);
-            case TypeKeyCodes.VOID -> new PrimitiveType(PrimitiveKind.VOID);
-            case TypeKeyCodes.TIME -> new PrimitiveType(PrimitiveKind.TIME);
-            case TypeKeyCodes.PASSWORD -> new PrimitiveType(PrimitiveKind.PASSWORD);
-            case TypeKeyCodes.STRING -> new PrimitiveType(PrimitiveKind.STRING);
-            case TypeKeyCodes.BOOLEAN -> new PrimitiveType(PrimitiveKind.BOOLEAN);
+            case TypeKeyCodes.LONG -> PrimitiveType.longType;
+            case TypeKeyCodes.DOUBLE -> PrimitiveType.doubleType;
+            case TypeKeyCodes.NULL -> PrimitiveType.nullType;
+            case TypeKeyCodes.VOID -> PrimitiveType.voidType;
+            case TypeKeyCodes.TIME -> PrimitiveType.timeType;
+            case TypeKeyCodes.PASSWORD -> PrimitiveType.passwordType;
+            case TypeKeyCodes.STRING -> PrimitiveType.stringType;
+            case TypeKeyCodes.BOOLEAN -> PrimitiveType.booleanType;
             case TypeKeyCodes.FUNCTION -> FunctionType.read(input, typeDefProvider);
             case TypeKeyCodes.UNCERTAIN -> UncertainType.read(input, typeDefProvider);
             case TypeKeyCodes.UNION -> UnionType.read(input, typeDefProvider);
@@ -321,8 +321,8 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
             case TypeKeyCodes.READ_WRITE_ARRAY -> ArrayType.read(input, ArrayKind.READ_WRITE, typeDefProvider);
             case TypeKeyCodes.CHILD_ARRAY -> ArrayType.read(input, ArrayKind.CHILD, typeDefProvider);
             case TypeKeyCodes.VALUE_ARRAY -> ArrayType.read(input, ArrayKind.VALUE, typeDefProvider);
-            case TypeKeyCodes.NEVER -> new NeverType();
-            case TypeKeyCodes.ANY -> new AnyType();
+            case TypeKeyCodes.NEVER -> NeverType.instance;
+            case TypeKeyCodes.ANY -> AnyType.instance;
             default -> throw new InternalException("Invalid type key code: " + code);
         };
     }

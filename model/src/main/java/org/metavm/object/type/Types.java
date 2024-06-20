@@ -646,63 +646,63 @@ public class Types {
     }
 
     public static AnyType getAnyType() {
-        return new AnyType();
+        return AnyType.instance;
     }
 
     public static UnionType getNullableAnyType() {
-        return new UnionType(Set.of(new AnyType(), new PrimitiveType(PrimitiveKind.NULL)));
+        return new UnionType(Set.of(AnyType.instance, PrimitiveType.nullType));
     }
 
     public static Type getAnyType(boolean nullable) {
-        return nullable ? getNullableAnyType() : getAnyType();
+        return nullable ? UnionType.nullableAnyType : getAnyType();
     }
 
     public static PrimitiveType getBooleanType() {
-        return new PrimitiveType(PrimitiveKind.BOOLEAN);
+        return PrimitiveType.booleanType;
     }
 
     public static PrimitiveType getLongType() {
-        return new PrimitiveType(PrimitiveKind.LONG);
+        return PrimitiveType.longType;
     }
 
     public static PrimitiveType getStringType() {
-        return new PrimitiveType(PrimitiveKind.STRING);
+        return PrimitiveType.stringType;
     }
 
     public static PrimitiveType getTimeType() {
-        return new PrimitiveType(PrimitiveKind.TIME);
+        return PrimitiveType.timeType;
     }
 
     public static PrimitiveType getNullType() {
-        return new PrimitiveType(PrimitiveKind.NULL);
+        return PrimitiveType.nullType;
     }
 
     public static PrimitiveType getVoidType() {
-        return new PrimitiveType(PrimitiveKind.VOID);
+        return PrimitiveType.voidType;
     }
 
     public static PrimitiveType getPasswordType() {
-        return new PrimitiveType(PrimitiveKind.PASSWORD);
+        return PrimitiveType.passwordType;
     }
 
     public static PrimitiveType getDoubleType() {
-        return new PrimitiveType(PrimitiveKind.DOUBLE);
+        return PrimitiveType.doubleType;
     }
 
     public static ArrayType getAnyArrayType() {
-        return new ArrayType(new AnyType(), ArrayKind.READ_WRITE);
+        return new ArrayType(AnyType.instance, ArrayKind.READ_WRITE);
     }
 
     public static ArrayType getNeverArrayType() {
-        return new ArrayType(new NeverType(), ArrayKind.READ_WRITE);
+        return new ArrayType(NeverType.instance, ArrayKind.READ_WRITE);
     }
 
     public static ArrayType getReadOnlyAnyArrayType() {
-        return new ArrayType(new AnyType(), ArrayKind.READ_ONLY);
+        return new ArrayType(AnyType.instance, ArrayKind.READ_ONLY);
     }
 
     public static ArrayType getChildAnyArrayType() {
-        return new ArrayType(new AnyType(), ArrayKind.CHILD);
+        return new ArrayType(AnyType.instance, ArrayKind.CHILD);
     }
 
     public static Field getEnumNameField(Klass classType) {
@@ -718,7 +718,7 @@ public class Types {
     }
 
     public static NeverType getNeverType() {
-        return new NeverType();
+        return NeverType.instance;
     }
 
     public static UnionType getNullableType(Type type) {

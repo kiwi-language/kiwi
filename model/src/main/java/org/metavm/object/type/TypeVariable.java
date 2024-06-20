@@ -73,8 +73,8 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
         this.code = code;
     }
 
-    public String getCodeRequired() {
-        return Objects.requireNonNull(code);
+    public String getCodeNotNull() {
+        return Objects.requireNonNull(code, () -> "Code is not set for " + this);
     }
 
     public void setBounds(List<Type> bounds) {
@@ -100,7 +100,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
             return bounds.get(0);
         if (bound != null)
             return bound;
-        return bound = bounds.isEmpty() ? new AnyType() : new IntersectionType(new HashSet<>(bounds.toList()));
+        return bound = bounds.isEmpty() ? AnyType.instance : new IntersectionType(new HashSet<>(bounds.toList()));
     }
 
     @Override
@@ -123,7 +123,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     }
 
     public String getInternalName(@Nullable Flow current) {
-        return genericDeclaration.getInternalName(current) + "." + getCodeRequired();
+        return genericDeclaration.getInternalName(current) + "." + getCodeNotNull();
     }
 
     public TypeVariable copy() {
@@ -169,7 +169,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return getCodeRequired();
+        return getCodeNotNull();
     }
 
     public @NotNull VariableType getType() {

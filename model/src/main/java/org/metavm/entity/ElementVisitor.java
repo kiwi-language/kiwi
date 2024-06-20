@@ -1,9 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.expression.*;
-import org.metavm.flow.Value;
 import org.metavm.flow.*;
-import org.metavm.object.type.Index;
 import org.metavm.object.type.*;
 import org.metavm.object.view.*;
 
@@ -305,20 +303,20 @@ public abstract class ElementVisitor<R> {
         return visitExpression(expression);
     }
 
-    public R visitFunctionType(FunctionType functionType) {
-        return visitCompositeType(functionType);
+    public R visitFunctionType(FunctionType type) {
+        return visitCompositeType(type);
     }
 
-    public R visitNothingType(NeverType neverType) {
-        return visitType(neverType);
+    public R visitNeverType(NeverType type) {
+        return visitType(type);
     }
 
-    public R visitObjectType(AnyType anyType) {
-        return visitType(anyType);
+    public R visitAnyType(AnyType type) {
+        return visitType(type);
     }
 
-    public R visitUncertainType(UncertainType uncertainType) {
-        return visitCompositeType(uncertainType);
+    public R visitUncertainType(UncertainType type) {
+        return visitCompositeType(type);
     }
 
     public R visitArgument(Argument argument) {

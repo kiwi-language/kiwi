@@ -155,28 +155,18 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private ArrayType resolveArrayType(PsiArrayType psiArrayType, ResolutionStage stage) {
-        try (var entry = ContextUtil.getProfiler().enter("resolveArrayType: " + stage)) {
-            return new ArrayType(resolve(psiArrayType.getComponentType(), stage), ArrayKind.READ_WRITE);
-        }
+        return new ArrayType(resolve(psiArrayType.getComponentType(), stage), ArrayKind.READ_WRITE);
     }
 
     private UncertainType resolveWildcardType(PsiWildcardType wildcardType, ResolutionStage stage) {
-        try (var entry = ContextUtil.getProfiler().enter("resolveWildcardType: " + stage)) {
-            if (wildcardType.isBounded()) {
-                if (wildcardType.isExtends()) {
-                    return new UncertainType(Types.getNeverType(), resolve(wildcardType.getExtendsBound(), stage));
-                } else {
-                    return new UncertainType(
-                            resolve(wildcardType.getSuperBound(), stage),
-                            Types.getNullableAnyType()
-                    );
-                }
+        if (wildcardType.isBounded()) {
+            if (wildcardType.isExtends()) {
+                return UncertainType.createUpperBounded(resolve(wildcardType.getExtendsBound(), stage));
             } else {
-                return new UncertainType(
-                        Types.getNeverType(),
-                        Types.getNullableAnyType()
-                );
+                return UncertainType.createLowerBounded(resolve(wildcardType.getSuperBound(), stage));
             }
+        } else {
+            return UncertainType.asterisk;
         }
     }
 
@@ -229,7 +219,7 @@ public class TypeResolverImpl implements TypeResolver {
                 return context.getType(ReflectionUtils.classForName(psiClass.getQualifiedName()));
             else {
                 var klass = tryResolveBuiltinClass(classType.rawType());
-                if(klass == null)
+                if (klass == null)
                     klass = resolvePojoClass(psiClass, stage);
                 if (classType.getParameters().length > 0) {
                     List<Type> typeArgs = NncUtils.map(
@@ -273,7 +263,7 @@ public class TypeResolverImpl implements TypeResolver {
         if (typeParameterListOwner instanceof PsiClass psiClass) {
             var psiType = TranspileUtils.createType(psiClass);
             var builtinKlass = tryResolveBuiltinClass(psiType);
-            if(builtinKlass != null)
+            if (builtinKlass != null)
                 return builtinKlass;
             return psiClass.getUserData(Keys.MV_CLASS);
         }
@@ -283,7 +273,7 @@ public class TypeResolverImpl implements TypeResolver {
             if (builtinKlass != null) {
                 var internalName = TranspileUtils.getInternalName(method);
                 return NncUtils.findRequired(builtinKlass.getMethods(), m ->
-                        m.getInternalName(null).equals(internalName),
+                                m.getInternalName(null).equals(internalName),
                         () -> "Can not find method " + internalName + " in class " + builtinKlass.getTypeDesc());
             }
             return method.getUserData(Keys.Method);
@@ -293,17 +283,16 @@ public class TypeResolverImpl implements TypeResolver {
 
     private @Nullable Klass tryResolveBuiltinClass(PsiClassType classType) {
         var standardKlassSupplier = STANDARD_CLASSES.get(classType);
-        if(standardKlassSupplier != null)
+        if (standardKlassSupplier != null)
             return standardKlassSupplier.get();
         var psiClass = TranspileUtils.resolvePsiClass(classType);
         var qualifiedName = psiClass.getQualifiedName();
-        if(qualifiedName != null && (qualifiedName.startsWith(API_PKG_PREFIX) || qualifiedName.startsWith(JAVA_PKG_PREFIX))) {
-            if(qualifiedName.startsWith(LANG_PKG_PREFIX))
+        if (qualifiedName != null && (qualifiedName.startsWith(API_PKG_PREFIX) || qualifiedName.startsWith(JAVA_PKG_PREFIX))) {
+            if (qualifiedName.startsWith(LANG_PKG_PREFIX))
                 throw new IllegalArgumentException("Can not resolve class in lang package: " + qualifiedName);
             var javaClass = ReflectionUtils.classForName(qualifiedName);
             return ModelDefRegistry.getDefContext().getKlass(javaClass);
-        }
-        else
+        } else
             return null;
     }
 
@@ -351,7 +340,7 @@ public class TypeResolverImpl implements TypeResolver {
             if (childListType.isAssignableFrom(ownerType))
                 return StdKlass.childList.get().getTypeParameters().get(0);
             var valueListType = TranspileUtils.createClassType(ValueList.class);
-            if(valueListType.isAssignableFrom(ownerType))
+            if (valueListType.isAssignableFrom(ownerType))
                 return StdKlass.valueList.get().getTypeParameters().get(0);
             var arrayListType = TranspileUtils.createClassType(ArrayList.class);
             var linkedListType = TranspileUtils.createClassType(LinkedList.class);
@@ -433,11 +422,11 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private ClassKind getClassKind(PsiClass psiClass) {
-        if(psiClass.isEnum())
+        if (psiClass.isEnum())
             return ClassKind.ENUM;
-        if(psiClass.isInterface())
+        if (psiClass.isInterface())
             return ClassKind.INTERFACE;
-        if(psiClass.hasAnnotation(ValueType.class.getName()) || psiClass.hasAnnotation(ValueStruct.class.getName()))
+        if (psiClass.hasAnnotation(ValueType.class.getName()) || psiClass.hasAnnotation(ValueStruct.class.getName()))
             return ClassKind.VALUE;
         return ClassKind.CLASS;
     }
