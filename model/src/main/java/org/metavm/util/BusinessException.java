@@ -1,7 +1,5 @@
 package org.metavm.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.ErrorCode;
 import org.metavm.expression.Func;
 import org.metavm.object.instance.core.ClassInstance;
@@ -10,6 +8,8 @@ import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.FieldDTO;
 import org.metavm.object.type.rest.dto.TypeDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -39,7 +39,7 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException deleteNClassError(Klass nClass, String reason) {
-        return new BusinessException(ErrorCode.DELETE_N_CLASS_ERROR, nClass.getName(), reason);
+        return new BusinessException(ErrorCode.FAILED_TO_DELETE_KLASS, nClass.getName(), reason);
     }
 
     public static BusinessException invalidField(FieldDTO field, String reason) {

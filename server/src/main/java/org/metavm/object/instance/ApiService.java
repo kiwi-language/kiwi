@@ -56,11 +56,10 @@ public class ApiService extends EntityContextFactoryAware {
             if (qualifier.startsWith("0")) {
                 var self = (ClassInstance) context.getInstanceContext().get(Id.parse(qualifier));
                 result = executeInstanceMethod(self, methodCode, rawArguments, request, response, context);
-            }
-            else {
+            } else {
                 var registry = BeanDefinitionRegistry.getInstance(context);
                 var bean = registry.tryGetBean(qualifier);
-                if(bean != null)
+                if (bean != null)
                     result = executeInstanceMethod(bean, methodCode, rawArguments, request, response, context);
                 else {
                     var klassName = qualifier.contains(".") ? qualifier : NamingUtils.firstCharToUpperCase(qualifier);
@@ -76,7 +75,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     @Transactional
     public Object handleBeanMethodCall(String beanName, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             var registry = BeanDefinitionRegistry.getInstance(context);
             var bean = registry.getBean(beanName);
             var result = executeInstanceMethod(bean, methodCode, rawArguments, request, response, context);
@@ -149,9 +148,10 @@ public class ApiService extends EntityContextFactoryAware {
         return klass;
     }
 
-    public Object getInstance(String id) {
+    public Map<String, Object> getInstance(String id) {
         try (var context = newContext()) {
-            return formatInstance(context.getInstanceContext().get(Id.parse(id)), true);
+            //noinspection unchecked
+            return (Map<String, Object>) formatInstance(context.getInstanceContext().get(Id.parse(id)), true);
         }
     }
 
@@ -170,14 +170,13 @@ public class ApiService extends EntityContextFactoryAware {
             var klass = getKlass(classCode, context);
             var inst = (ClassInstance) doIntercepted(() -> {
                 var r = tryResolveValue(object, klass.getType(), true, null, context);
-                if(r.successful()) {
+                if (r.successful()) {
                     var i = (DurableInstance) r.resolved();
                     var instanceContext = context.getInstanceContext();
                     if (!instanceContext.containsInstance(i))
                         instanceContext.bind(i);
                     return i;
-                }
-                else
+                } else
                     return null;
             }, request, response, context);
             if (inst != null) {
@@ -430,7 +429,7 @@ public class ApiService extends EntityContextFactoryAware {
         if (rawValue == null)
             return Instances.nullInstance();
         if (rawValue instanceof String str) {
-            if(str.startsWith("0")) {
+            if (str.startsWith("0")) {
                 var id = Id.tryParse(str);
                 if (id != null)
                     return context.getInstanceContext().get(id);

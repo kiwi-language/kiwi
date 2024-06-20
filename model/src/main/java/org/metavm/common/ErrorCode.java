@@ -8,12 +8,12 @@ public enum ErrorCode {
     INVALID_PARAMETERS(103, "Request parameters error: {}"),
 
     // metadata
-    INVALID_TYPE(201, "Object '{}' configuration error, reason: {}"),
-    INVALID_FIELD(202, "Attribute '{}' configuration error, reason: {}"),
-    DELETE_N_CLASS_ERROR(203, "Object '{}' deletion failed, reason: {}"),
-    INVALID_DEFAULT_VALUE(204, "Attribute default value error: {}"),
+    INVALID_TYPE(201, "Failed to save class '{}': {}"),
+    INVALID_FIELD(202, "Failed to save field '{}': {}"),
+    FAILED_TO_DELETE_KLASS(203, "Failed to delete class '{}': {}"),
+    INVALID_DEFAULT_VALUE(204, "Invalid field default value: {}"),
     PROPERTY_NOT_FOUND(205, "Attribute {} does not exist"),
-    MULTIPLE_TITLE_FIELDS(206, "At most one title attribute can be set"),
+    MULTIPLE_TITLE_FIELDS(206, "At most one title field can be set"),
     INVALID_SYMBOL_NAME(207, "Name '{}' does not meet naming requirements"),
     DUPLICATE_CHOICE_OPTION(208, "Option repeated, ID: {}, Name: {}, Serial number: {}"),
     DUPLICATE_CHOICE_OPTION_PROP(209, "Option {} repeated: {}"),

@@ -447,12 +447,15 @@ public class Assembler {
             var klass = ((ClassInfo) scope).klass;
             var field = klass.findField(f -> f.getCodeNotNull().equals(name));
             if (field == null) {
+                logger.info("creating field {} in {}", name, klass.getName());
                 field = FieldBuilder.newBuilder(name, name, klass, type)
                         .tmpId(NncUtils.randomNonNegative())
                         .isChild(mods.contains(Modifiers.CHILD))
                         .build();
-            } else
+            } else {
+                logger.info("updating field {} in {}", name, klass.getName());
                 field.setType(type);
+            }
             field.setAccess(getAccess(mods));
             field.setReadonly(mods.contains(Modifiers.READONLY));
             field.setStatic(mods.contains(Modifiers.STATIC));
@@ -491,8 +494,7 @@ public class Assembler {
             Set<String> typeParamNames = typeParameters != null ?
                     NncUtils.mapUnique(typeParameters.typeParameter(), tv -> tv.IDENTIFIER().getText()) : Set.of();
             var internalName = klass.getCodeNotNull() + "." + name + "(" +
-                    NncUtils.join(params, p -> getInternalName(p.typeType(), typeParamNames, scope) + ")");
-
+                    NncUtils.join(params, p -> getInternalName(p.typeType(), typeParamNames, scope)) + ")";
             var method = klass.findMethod(m -> m.getInternalName(null).equals(internalName));
             if (method != null)
                 method.clearNodes();

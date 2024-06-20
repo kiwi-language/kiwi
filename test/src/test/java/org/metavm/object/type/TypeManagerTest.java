@@ -210,8 +210,4 @@ public class TypeManagerTest extends TestCase {
         Assert.assertEquals(skuViewChildArrayType, reloadedProductViewSkuField.type());
     }
 
-    public void testDDL() {
-
-    }
-
 }

@@ -23,6 +23,10 @@ public class ApiClient {
         this.apiService = apiService;
     }
 
+    public Map<String, Object> getInstance(String id) {
+        return apiService.getInstance(id);
+    }
+
     public String saveInstance(String className, Map<String, Object> map) {
         var uri = "/api/" + NamingUtils.nameToPath(className);
         var req = makeRequest("PUT", uri);
