@@ -226,7 +226,7 @@ public class FlowManager extends EntityContextFactoryAware {
 
     public void createOverridingFlows(Method overridden, IEntityContext context) {
         NncUtils.requireTrue(overridden.isAbstract());
-        for (Klass subType : overridden.getDeclaringType().getSubTypes()) {
+        for (Klass subType : overridden.getDeclaringType().getSubKlasses()) {
             createOverridingFlows(overridden, subType, context);
         }
     }
@@ -239,7 +239,7 @@ public class FlowManager extends EntityContextFactoryAware {
     public void createOverridingFlows(Method overridden, Klass type, IEntityContext context) {
         NncUtils.requireTrue(overridden.isAbstract());
         if (type.isEffectiveAbstract()) {
-            for (Klass subType : type.getSubTypes()) {
+            for (Klass subType : type.getSubKlasses()) {
                 createOverridingFlows(overridden, subType, context);
             }
         } else {
@@ -369,7 +369,7 @@ public class FlowManager extends EntityContextFactoryAware {
     public void remove(Flow flow, IEntityContext context) {
         removeTransformedFlowsIfRequired(flow, context);
         if (flow instanceof Method method) {
-            for (Klass subType : method.getDeclaringType().getSubTypes())
+            for (Klass subType : method.getDeclaringType().getSubKlasses())
                 detachOverrideMethods(method, subType);
             method.getDeclaringType().removeMethod(method);
         } else
@@ -377,7 +377,7 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     private void detachOverrideMethods(Method method) {
-        for (Klass subType : method.getDeclaringType().getSubTypes()) {
+        for (Klass subType : method.getDeclaringType().getSubKlasses()) {
             detachOverrideMethods(method, subType);
         }
     }
@@ -388,7 +388,7 @@ public class FlowManager extends EntityContextFactoryAware {
             override.removeOverridden(method);
             override.addOverridden(method.getOverridden());
         } else {
-            for (Klass subType : type.getSubTypes()) {
+            for (Klass subType : type.getSubKlasses()) {
                 detachOverrideMethods(method, subType);
             }
         }

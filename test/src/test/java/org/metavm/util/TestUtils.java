@@ -32,10 +32,7 @@ import org.metavm.object.type.rest.dto.GetTypeRequest;
 import org.metavm.object.type.rest.dto.TypeDTO;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
-import org.metavm.task.Executor;
-import org.metavm.task.Scheduler;
-import org.metavm.task.Task;
-import org.metavm.task.TaskManager;
+import org.metavm.task.*;
 import org.slf4j.Logger;
 
 import javax.sql.DataSource;
@@ -472,6 +469,8 @@ public class TestUtils {
         var flowExecutionService = new FlowExecutionService(entityContextFactory);
         var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService);
         var flowManager = new FlowManager(entityContextFactory, transactionOps);
+        var scheduler = new Scheduler(entityContextFactory, transactionOps);
+        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowExecutionService(flowExecutionService);
         typeManager.setVersionManager(new VersionManager(entityContextFactory));
@@ -481,7 +480,9 @@ public class TestUtils {
                 typeManager,
                 flowManager,
                 instanceManager,
-                flowExecutionService
+                flowExecutionService,
+                scheduler,
+                worker
         );
     }
 
@@ -489,11 +490,11 @@ public class TestUtils {
         return ((DefaultViewId) Id.parse(viewId)).getSourceId().toString();
     }
 
-    public static void runTask(Scheduler scheduler, Executor executor, Predicate<Task> predicate) {
+    public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate) {
         scheduler.sendHeartbeat();
-        executor.sendHeartbeat();
+        worker.sendHeartbeat();
         scheduler.schedule();
-        executor.waitFor(predicate);
+        worker.waitFor(predicate);
     }
 
 }

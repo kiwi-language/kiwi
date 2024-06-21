@@ -16,12 +16,12 @@ import java.util.concurrent.Future;
 import java.util.function.Predicate;
 
 @Component
-public class Executor extends EntityContextFactoryAware {
+public class Worker extends EntityContextFactoryAware {
 
     private final TransactionOperations transactionOperations;
     private final TaskRunner taskRunner;
 
-    public Executor(EntityContextFactory entityContextFactory, TransactionOperations transactionOperations, TaskRunner taskRunner) {
+    public Worker(EntityContextFactory entityContextFactory, TransactionOperations transactionOperations, TaskRunner taskRunner) {
         super(entityContextFactory);
         this.transactionOperations = transactionOperations;
         this.taskRunner = taskRunner;
@@ -31,7 +31,7 @@ public class Executor extends EntityContextFactoryAware {
     public void sendHeartbeat() {
         transactionOperations.executeWithoutResult(s -> {
             try (var context = newPlatformContext()) {
-                var executorData = context.selectFirstByKey(ExecutorData.IDX_AVAIlABLE, NetworkUtils.localIP);
+                var executorData = context.selectFirstByKey(ExecutorData.IDX_IP, NetworkUtils.localIP);
                 if (executorData == null) {
                     executorData = new ExecutorData(NetworkUtils.localIP);
                     context.bind(executorData);

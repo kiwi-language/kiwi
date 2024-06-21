@@ -13,7 +13,7 @@ public abstract class SubTypesVisitor<R> extends ElementVisitor<R> {
 
     @Override
     public R visitKlass(Klass klass) {
-        for (Klass subType : klass.getSubTypes()) {
+        for (Klass subType : klass.getSubKlasses()) {
             subType.accept(this);
         }
         return super.visitKlass(klass);

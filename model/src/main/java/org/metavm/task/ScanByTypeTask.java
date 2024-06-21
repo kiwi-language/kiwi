@@ -28,9 +28,9 @@ public abstract class ScanByTypeTask extends ScanTask {
     @Override
     protected final void process(List<DurableInstance> batch, IEntityContext context) {
         for (Instance instance : batch) {
-            processInstance(instance, context.getInstanceContext());
+            processInstance(instance, context);
         }
     }
 
-    protected abstract void processInstance(Instance instance, IInstanceContext context);
+    protected abstract void processInstance(Instance instance, IEntityContext context);
 }

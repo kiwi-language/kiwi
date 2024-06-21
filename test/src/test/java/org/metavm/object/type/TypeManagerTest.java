@@ -13,6 +13,9 @@ import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.instance.rest.InstanceFieldDTO;
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.object.type.rest.dto.*;
+import org.metavm.task.AddFieldTask;
+import org.metavm.task.Scheduler;
+import org.metavm.task.Worker;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +30,8 @@ public class TypeManagerTest extends TestCase {
     private TypeManager typeManager;
     private InstanceManager instanceManager;
     private EntityContextFactory entityContextFactory;
+    private Scheduler scheduler;
+    private Worker worker;
 
     @Override
     protected void setUp() throws Exception {
@@ -36,6 +41,8 @@ public class TypeManagerTest extends TestCase {
         typeManager = managers.typeManager();
         instanceManager = managers.instanceManager();
         entityContextFactory = bootResult.entityContextFactory();
+        scheduler = managers.scheduler();
+        worker = managers.worker();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -45,6 +52,8 @@ public class TypeManagerTest extends TestCase {
         instanceSearchService = null;
         instanceManager = null;
         entityContextFactory = null;
+        scheduler = null;
+        worker = null;
     }
 
     public void test() {
@@ -190,21 +199,23 @@ public class TypeManagerTest extends TestCase {
                         .isChild(true)
                         .build()
         ));
-
+        TestUtils.waitForTaskDone(scheduler, worker, t ->
+                t instanceof AddFieldTask addFieldTask && addFieldTask.getField().getName().equals("sku")
+        );
         var skuViewType = TestUtils.getViewKlass(skuType, typeManager);
         var productViewType = TestUtils.getViewKlass(productType, typeManager);
         var skuViewChildArrayType = TypeExpressions.getChildArrayType(TypeExpressions.getClassType(skuViewType.id()));
-
         var productViewSkuField = TestUtils.getFieldByName(productViewType, "sku");
         Assert.assertEquals(skuViewChildArrayType, productViewSkuField.type());
-
         TestUtils.doInTransaction(() -> typeManager.saveField(
                 FieldDTOBuilder.newBuilder("desc", "string")
                         .id(TmpId.random().toString())
                         .declaringTypeId(productType.id())
                         .build()
         ));
-
+        TestUtils.waitForTaskDone(scheduler, worker, t ->
+                t instanceof AddFieldTask addFieldTask && addFieldTask.getField().getName().equals("desc")
+        );
         var reloadedProductViewType = TestUtils.getViewKlass(productType, typeManager);
         var reloadedProductViewSkuField = TestUtils.getFieldByName(reloadedProductViewType, "sku");
         Assert.assertEquals(skuViewChildArrayType, reloadedProductViewSkuField.type());

@@ -16,6 +16,7 @@ import org.metavm.object.type.rest.dto.CapturedTypeVariableDTO;
 import org.metavm.object.type.rest.dto.FieldDTO;
 import org.metavm.object.type.rest.dto.TypeDTO;
 import org.metavm.object.type.rest.dto.TypeVariableDTO;
+import org.metavm.task.AddFieldTaskGroup;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Instances;
@@ -156,7 +157,10 @@ public abstract class TypeFactory {
                     .isChild(fieldDTO.isChild())
                     .isStatic(fieldDTO.isStatic())
                     .staticValue(Instances.nullInstance())
+                    .state(context.isNewEntity(declaringType) ? MetadataState.READY : MetadataState.INITIALIZING)
                     .build();
+            if(!field.isReady())
+                context.bind(new AddFieldTaskGroup(field));
             context.bind(field);
         } else {
             field.setName(fieldDTO.name());

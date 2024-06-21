@@ -1,7 +1,7 @@
 package org.metavm.task;
 
+import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.ClassType;
 import org.slf4j.Logger;
@@ -16,13 +16,13 @@ public abstract class ScanByClassTask extends ScanByTypeTask {
     }
 
     @Override
-    protected final void processInstance(Instance instance, IInstanceContext context) {
+    protected final void processInstance(Instance instance, IEntityContext context) {
         if (instance instanceof ClassInstance classInstance) {
-            processClassInstance(classInstance);
+            processClassInstance(classInstance, context);
         } else {
             logger.error("Not a class instance: " + instance);
         }
     }
 
-    protected abstract void processClassInstance(ClassInstance instance);
+    protected abstract void processClassInstance(ClassInstance instance, IEntityContext context);
 }

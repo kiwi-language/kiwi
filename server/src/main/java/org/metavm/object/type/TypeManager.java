@@ -17,7 +17,7 @@ import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.version.Versions;
-import org.metavm.task.AddFieldJobGroup;
+import org.metavm.task.AddFieldTaskGroup;
 import org.metavm.task.TaskManager;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
@@ -397,7 +397,7 @@ public class TypeManager extends EntityContextFactoryAware {
                             }
                         }
                         if (downwards) {
-                            queue.addAll(t.getSubTypes());
+                            queue.addAll(t.getSubKlasses());
                         } else
                             t.forEachSuper(queue::add);
                     }
@@ -566,9 +566,9 @@ public class TypeManager extends EntityContextFactoryAware {
                 fieldDTO,
                 context
         );
-        if (fieldDTO.defaultValue() != null || fieldDTO.isChild() && type.isArray()) {
-            context.bind(new AddFieldJobGroup(field));
-        }
+//        if (fieldDTO.defaultValue() != null || fieldDTO.isChild() && type.isArray()) {
+        context.bind(new AddFieldTaskGroup(field));
+//        }
         return field;
     }
 

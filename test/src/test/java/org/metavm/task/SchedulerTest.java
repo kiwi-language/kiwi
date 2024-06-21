@@ -15,7 +15,7 @@ public class SchedulerTest extends TestCase {
 
     private EntityContextFactory entityContextFactory;
     private Scheduler scheduler;
-    private Executor executor;
+    private Worker worker;
     private MemInstanceStore instanceStore;
 
     @Override
@@ -25,7 +25,7 @@ public class SchedulerTest extends TestCase {
         entityContextFactory = bootResult.entityContextFactory();
         TransactionOperations transactionOperations = new MockTransactionOperations();
         scheduler = new Scheduler(entityContextFactory, transactionOperations);
-        executor = new Executor(entityContextFactory, transactionOperations, new DirectTaskRunner());
+        worker = new Worker(entityContextFactory, transactionOperations, new DirectTaskRunner());
         ContextUtil.setAppId(APP_ID);
     }
 
@@ -33,7 +33,7 @@ public class SchedulerTest extends TestCase {
     protected void tearDown() throws Exception {
         entityContextFactory = null;
         scheduler = null;
-        executor = null;
+        worker = null;
         instanceStore = null;
     }
 
@@ -56,7 +56,7 @@ public class SchedulerTest extends TestCase {
             var registry = SchedulerRegistry.getInstance(context);
             Assert.assertEquals(NetworkUtils.localIP, registry.getIp());
         }
-        executor.sendHeartbeat();
+        worker.sendHeartbeat();
         try(var context = newPlatformContext()) {
             var executorData = context.selectFirstByKey(ExecutorData.IDX_IP, NetworkUtils.localIP);
             Assert.assertNotNull("Executor not registered", executorData);
@@ -67,7 +67,7 @@ public class SchedulerTest extends TestCase {
             var tasks = context.selectByKey(ShadowTask.IDX_EXECUTOR_IP, NetworkUtils.localIP);
             Assert.assertEquals(1, tasks.size());
         }
-        executor.waitFor(t -> t.idEquals(ref.task.getId()));
+        worker.waitFor(t -> t.idEquals(ref.task.getId()));
         Assert.assertNull(instanceStore.get(TestConstants.APP_ID, ref.task.getId().getTreeId()));
     }
 

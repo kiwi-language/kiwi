@@ -58,7 +58,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private final ReadWriteArray<ClassType> interfaces = addChild(new ReadWriteArray<>(ClassType.class), "interfaces");
     private ClassSource source;
     @ChildEntity
-    private final ReadWriteArray<Klass> subTypes = addChild(new ReadWriteArray<>(Klass.class), "subTypes");
+    private final ReadWriteArray<Klass> subKlasses = addChild(new ReadWriteArray<>(Klass.class), "subKlasses");
     @Nullable
     private String desc;
     @ChildEntity
@@ -190,13 +190,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     void addSubType(@NotNull Klass subType) {
-        if (subTypes.contains(subType))
+        if (subKlasses.contains(subType))
             throw new InternalException("Subtype '" + subType + "' is already added to this type");
-        subTypes.add(subType);
+        subKlasses.add(subType);
     }
 
     void removeSubType(Klass subType) {
-        subTypes.remove(subType);
+        subKlasses.remove(subType);
     }
 
     protected void setTemplateFlag(boolean templateFlag) {
@@ -305,8 +305,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return new Closure(this);
     }
 
-    public List<Klass> getSubTypes() {
-        return subTypes.toList();
+    public List<Klass> getSubKlasses() {
+        return subKlasses.toList();
     }
 
     public List<Klass> getDescendantTypes() {
@@ -317,7 +317,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void visitDescendantTypes(Consumer<Klass> action) {
         action.accept(this);
-        for (Klass subType : subTypes) {
+        for (Klass subType : subKlasses) {
             subType.visitDescendantTypes(action);
         }
     }
@@ -350,7 +350,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             @Override
             public Void visitKlass(Klass klass) {
                 typeIds.add(klass.getId());
-                for (Klass subType : klass.subTypes)
+                for (Klass subType : klass.subKlasses)
                     subType.accept(this);
                 return super.visitKlass(klass);
             }
@@ -1047,7 +1047,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private void getFieldsDownwardInHierarchy0(List<Field> results) {
         listAddAll(results, fields);
-        for (Klass subType : subTypes) {
+        for (Klass subType : subKlasses) {
             subType.getFieldsDownwardInHierarchy0(results);
         }
     }
@@ -1224,7 +1224,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.map(typeParameters, tv -> tv.toDTO(serContext)),
                 NncUtils.get(template, serContext::getStringId),
                 NncUtils.map(typeArguments, t -> t.toExpression(serContext)),
-                !subTypes.isEmpty(),
+                !subKlasses.isEmpty(),
                 struct,
                 NncUtils.map(errors, Error::toDTO)
         );
