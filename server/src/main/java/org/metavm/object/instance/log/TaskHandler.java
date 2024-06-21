@@ -1,13 +1,12 @@
 package org.metavm.object.instance.log;
 
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionOperations;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.IEntityContext;
+import org.metavm.task.ShadowTask;
 import org.metavm.task.Task;
-import org.metavm.task.TaskSignal;
-import org.metavm.util.NncUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionOperations;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -31,9 +30,8 @@ public class TaskHandler extends EntityContextFactoryAware implements LogHandler
     public void process(List<Task> created, @Nullable String clientId, IEntityContext context) {
         transactionOperations.executeWithoutResult(s -> {
             try (var platformContext = newPlatformContext()) {
-                TaskSignal signal = NncUtils.requireNonNull(platformContext.selectFirstByKey(TaskSignal.IDX_APP_ID, context.getAppId()));
-                signal.setUnfinishedCount(signal.getUnfinishedCount() + created.size());
-                signal.setLastTaskCreatedAt(System.currentTimeMillis());
+                for (Task task : created)
+                    platformContext.bind(new ShadowTask(context.getAppId(), task.getStringId()));
                 platformContext.finish();
             }
         });

@@ -1,7 +1,7 @@
 package org.metavm.task;
 
-import org.metavm.entity.Entity;
 import org.metavm.api.EntityType;
+import org.metavm.entity.Entity;
 import org.metavm.entity.IndexDef;
 
 @EntityType
@@ -52,7 +52,7 @@ public class TaskSignal extends Entity {
         this.lastRunTaskId = lastRunTaskId;
     }
 
-    public boolean decreaseUnfinishedJobCount() {
+    public boolean decreaseUnfinishedTaskCount() {
         unfinishedCount--;
         return unfinishedCount <= 0;
     }

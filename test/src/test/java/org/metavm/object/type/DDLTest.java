@@ -4,6 +4,10 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.instance.ApiService;
+import org.metavm.task.AddFieldTask;
+import org.metavm.task.DirectTaskRunner;
+import org.metavm.task.Executor;
+import org.metavm.task.Scheduler;
 import org.metavm.util.*;
 
 import java.util.Map;
@@ -13,6 +17,8 @@ public class DDLTest extends TestCase {
     private TypeManager typeManager;
     private EntityContextFactory entityContextFactory;
     private ApiClient apiClient;
+    private Scheduler scheduler;
+    private Executor executor;
 
     @Override
     protected void setUp() throws Exception {
@@ -21,6 +27,9 @@ public class DDLTest extends TestCase {
         typeManager = commonManagers.typeManager();
         entityContextFactory = bootResult.entityContextFactory();
         apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory()));
+        var transactionOps = new MockTransactionOperations();
+        scheduler = new Scheduler(entityContextFactory, transactionOps);
+        executor = new Executor(entityContextFactory, transactionOps, new DirectTaskRunner());
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -40,6 +49,12 @@ public class DDLTest extends TestCase {
         )));
         var product = apiClient.getInstance(id);
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, entityContextFactory);
+        TestUtils.runTask(scheduler, executor, t -> {
+            if(t instanceof AddFieldTask addFieldTask)
+                return addFieldTask.getField().getName().equals("version");
+            else
+                return false;
+        });
         Assert.assertEquals(0, product.get("version"));
     }
 

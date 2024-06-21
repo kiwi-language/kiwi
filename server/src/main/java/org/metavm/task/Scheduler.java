@@ -1,263 +1,163 @@
 package org.metavm.task;
 
+import org.metavm.entity.EntityContextFactory;
+import org.metavm.entity.EntityContextFactoryAware;
+import org.metavm.entity.EntityIndexKey;
+import org.metavm.entity.EntityIndexQuery;
+import org.metavm.util.NetworkUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
-import org.metavm.entity.*;
-import org.metavm.util.NncUtils;
-import org.metavm.util.TransactionUtils;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 
 @Component
 public class Scheduler extends EntityContextFactoryAware {
-    public static int THREAD_POOL_SIZE = 1;
-    private final NavigableMap<Long, TaskSignal> activeSignalMap = new ConcurrentSkipListMap<>();
-    private final TransactionOperations transactionOperations;
-    private TaskSignal lastScheduledSignal;
-    private long lastSignalPollAt;
-    private long version;
-    private volatile boolean running;
-    private final Map<String, Object> monitorMap = new ConcurrentSkipListMap<>();
-    private final ThreadPoolExecutor executor;
-    private final Executor scheduleExecutor = Executors.newSingleThreadExecutor(
-            r -> new Thread(r, "scheduler-worker-1")
-    );
 
-    private final Set<String> runningTaskIds = new ConcurrentSkipListSet<>();
+    public static final Logger logger = LoggerFactory.getLogger(Scheduler.class);
+    public static final long timeout = 30000;
+
+    private final TransactionOperations transactionOperations;
+
+    public volatile boolean running;
+
+    public volatile String nextExecutorIP;
 
     public Scheduler(EntityContextFactory entityContextFactory, TransactionOperations transactionOperations) {
         super(entityContextFactory);
         this.transactionOperations = transactionOperations;
-        executor = new ThreadPoolExecutor(
-                THREAD_POOL_SIZE, THREAD_POOL_SIZE, 0L, TimeUnit.SECONDS, new LinkedBlockingDeque<>()
-        );
-    }
-
-    @Transactional
-    public void createSchedulerStatus() {
-        try (var platformContext = newPlatformContext()) {
-            List<JobSchedulerStatus> existing = platformContext.selectByKey(JobSchedulerStatus.IDX_ALL_FLAG, true);
-            if (NncUtils.isNotEmpty(existing))
-                return;
-            platformContext.bind(new JobSchedulerStatus());
-            platformContext.finish();
-        }
     }
 
     @Scheduled(fixedDelay = 100)
     public void schedule() {
-        if (!running) {
-            return;
-        }
-        for (int i = 0; i < THREAD_POOL_SIZE; i++) {
-            if (activeSignalMap.isEmpty() || !hasIdleWorkers())
-                break;
-            executor.execute(this::scheduleOne);
+        if (running) {
+            transactionOperations.executeWithoutResult(s -> schedule0());
         }
     }
 
-    private void scheduleOne() {
-        try (var platformContext = newPlatformContext()) {
-            TaskSignal signal = selectSignalForScheduling(platformContext);
-            if (signal != null) {
-                if (signal.hasUnfinishedTasks())
-                    runTaskForApplication(signal.getAppId());
-                else
-                    removeSignal(signal);
+    private void schedule0() {
+        try (var context = newPlatformContext()) {
+            var registry = SchedulerRegistry.getInstance(context);
+            if (!NetworkUtils.localIP.equals(registry.getIp())) {
+                running = false;
+                return;
             }
+            var nulls = new ArrayList<>();
+            nulls.add(null);
+            var tasks = context.query(new EntityIndexQuery<>(
+                    ShadowTask.IDX_EXECUTOR_IP,
+                    new EntityIndexKey(nulls),
+                    new EntityIndexKey(nulls),
+                    false,
+                    200
+            ));
+            if (tasks.isEmpty())
+                return;
+            var executors = context.query(new EntityIndexQuery<>(
+                    ExecutorData.IDX_AVAIlABLE,
+                    new EntityIndexKey(List.of(true)),
+                    new EntityIndexKey(List.of(true)),
+                    false,
+                    200
+            ));
+            var now = System.currentTimeMillis();
+            var it = executors.listIterator();
+            while (it.hasNext()) {
+                var executor = it.next();
+                if (now - executor.getLastHeartbeat() > timeout) {
+                    executor.setAvailable(false);
+                    it.remove();
+                }
+            }
+            if (executors.isEmpty()) {
+                logger.warn("No executor available");
+                return;
+            }
+            executors = executors.stream().sorted(Comparator.comparing(ExecutorData::getIp)).toList();
+            var i = 0;
+            if (nextExecutorIP != null) {
+                while (i < executors.size() && executors.get(i).getIp().compareTo(nextExecutorIP) < 0)
+                    i++;
+            }
+            for (ShadowTask task : tasks) {
+                task.setExecutorIP(executors.get((i++) % executors.size()).getIp());
+            }
+            nextExecutorIP = executors.get(i % executors.size()).getIp();
+            context.finish();
         }
     }
 
-    @Scheduled(fixedDelay = 1000)
-    public void pollSignals() {
-        if (!running)
-            return;
-        long current = System.currentTimeMillis();
-        try (var platformContext = newPlatformContext()) {
-            List<TaskSignal> signals = platformContext.query(
-                    TaskSignal.IDX_LAST_TASK_CREATED_AT.newQueryBuilder()
-                            .from(new EntityIndexKey(List.of(lastSignalPollAt - 60000L)))
-                            .limit(512)
-                            .build()
+    @Scheduled(fixedDelay = 50000)
+    public void processTimeoutTasks() {
+        if (running) {
+            transactionOperations.executeWithoutResult(s -> processTimeoutTasks0());
+        }
+    }
+
+    private void processTimeoutTasks0() {
+        try (var context = newPlatformContext()) {
+            var registry = SchedulerRegistry.getInstance(context);
+            if (!NetworkUtils.localIP.equals(registry.getIp())) {
+                running = false;
+                return;
+            }
+            var now = System.currentTimeMillis();
+            var timeoutTasks = context.query(
+                    new EntityIndexQuery<>(
+                            ShadowTask.IDX_RUN_AT,
+                            new EntityIndexKey(List.of(1)),
+                            new EntityIndexKey(List.of(now - timeout)),
+                            false,
+                            500
+                    )
             );
-            activeSignalMap.putAll(NncUtils.toMap(signals, TaskSignal::getAppId));
-            lastSignalPollAt = current;
+            for (ShadowTask task : timeoutTasks) {
+                task.setExecutorIP(null);
+            }
+            context.finish();
         }
     }
 
     @Scheduled(fixedDelay = 10000)
     @Transactional
     public void sendHeartbeat() {
-        long now = System.currentTimeMillis();
-        try (var platformContext = newPlatformContext()) {
-            JobSchedulerStatus schedulerStatus =
-                    platformContext.selectFirstByKey(JobSchedulerStatus.IDX_ALL_FLAG, true);
-            NncUtils.requireNonNull(schedulerStatus, "JobSchedulerStatus is not present");
-            if (schedulerStatus.getVersion() == version || schedulerStatus.isHeartbeatTimeout()) {
-                schedulerStatus.setLastHeartbeat(now);
-                this.version = schedulerStatus.getVersion();
-                platformContext.finish();
-                running = true;
-            } else
-                running = false;
-        }
-    }
-
-    private boolean hasIdleWorkers() {
-        return executor.getActiveCount() < THREAD_POOL_SIZE;
-    }
-
-    private void runTaskForApplication(long appId) {
-        var taskIds = NncUtils.requireNonNull(transactionOperations.execute(s -> takeTask(appId)));
-        for (var taskId : taskIds) {
-            transactionOperations.executeWithoutResult(s -> runTask(appId, taskId));
-        }
-    }
-
-    private List<String> takeTask(long appId) {
-        try (var context = newContext(appId)) {
-            Objects.requireNonNull(context.getInstanceContext()).setLockMode(LockMode.EXCLUSIVE);
-            List<Task> runnableTasks = context.query(
-                    Task.IDX_STATE_LAST_RUN_AT.newQueryBuilder()
-                            .from(new EntityIndexKey(List.of(TaskState.RUNNABLE, 0L)))
-                            .to(new EntityIndexKey(List.of(TaskState.RUNNABLE, System.currentTimeMillis())))
-                            .limit(10)
-                            .build()
-            );
-            List<Task> expiredRunningTasks = context.query(
-                    Task.IDX_STATE_LAST_RUN_AT.newQueryBuilder()
-                            .from(new EntityIndexKey(List.of(TaskState.RUNNING, 0L)))
-                            .to(new EntityIndexKey(List.of(TaskState.RUNNING, System.currentTimeMillis() - 10000L)))
-                            .limit(10)
-                            .build()
-            );
-            List<Task> tasks = NncUtils.merge(List.of(runnableTasks, expiredRunningTasks));
-            if (!tasks.isEmpty()) {
-                for (Task task : tasks) {
-                    task.setState(TaskState.RUNNING);
-                    task.setLastRunAt(System.currentTimeMillis());
-                }
+        transactionOperations.executeWithoutResult(s -> {
+            try (var context = newPlatformContext()) {
+                var registry = SchedulerRegistry.getInstance(context);
+                var now = System.currentTimeMillis();
+                if (Objects.equals(NetworkUtils.localIP, registry.getIp())) {
+                    registry.setLastHeartbeat(now);
+                    running = true;
+                } else if (registry.getIp() == null || now - registry.getLastHeartbeat() > timeout) {
+                    registry.setIp(NetworkUtils.localIP);
+                    registry.setLastHeartbeat(now);
+                    running = true;
+                } else
+                    running = false;
                 context.finish();
             }
-            return NncUtils.map(tasks, Entity::getStringId);
-        }
+        });
     }
 
-    private void onTaskDone(long appId, String taskId) {
-        TaskSignal signal = activeSignalMap.get(appId);
-        if (signal != null) {
-            try (var platformContext = newPlatformContext()) {
-                signal = NncUtils.requireNonNull(platformContext.selectFirstByKey(TaskSignal.IDX_APP_ID, appId));
-                if (signal.decreaseUnfinishedJobCount())
-                    removeSignal(signal);
-                else
-                    addSignal(signal);
-                platformContext.finish();
-            }
-        }
-        notifyWaitingThreads(taskId);
-    }
-
-    private void notifyWaitingThreads(String taskId) {
-        TransactionUtils.afterCommit(() -> {
-            Object monitor = monitorMap.get(taskId);
-            if (monitor != null) {
-                synchronized (monitor) {
-                    monitor.notifyAll();
-                }
-                monitorMap.remove(taskId);
+    public void createSchedulerRegistry() {
+        transactionOperations.executeWithoutResult(s -> {
+            try (var context = newPlatformContext()) {
+                var existing = context.selectFirstByKey(SchedulerRegistry.IDX_ALL_FLAG, true);
+                if (existing != null)
+                    throw new IllegalStateException("SchedulerRegistry already exists");
+                context.bind(new SchedulerRegistry());
+                context.finish();
             }
         });
     }
 
-    private void runTask(long appId, String taskId) {
-        if (!runningTaskIds.add(taskId))
-            return;
-        try {
-            try (var context = newContext(appId)) {
-                Objects.requireNonNull(context.getInstanceContext()).setLockMode(LockMode.EXCLUSIVE);
-                Task task = context.getEntity(Task.class, taskId);
-                if (task.isRunning()) {
-                    task.run(context);
-                    if (task.isFinished())
-                        tryRemoveTask(task, context);
-                    context.finish();
-                    if (task.isFinished())
-                        onTaskDone(appId, taskId);
-                }
-            }
-        } finally {
-            runningTaskIds.remove(taskId);
-        }
+    public boolean isRunning() {
+        return running;
     }
-
-    private void tryRemoveTask(Task task, IEntityContext context) {
-        if (task instanceof ReferenceCleanupTask)
-            return;
-        NncUtils.requireTrue(task.isFinished());
-        var group = task.getGroup();
-        if (group == null)
-            context.remove(task);
-        else if (group.isDone())
-            context.remove(group);
-    }
-
-    private TaskSignal selectSignalForScheduling(IEntityContext rootEntityCtx) {
-        TaskSignal start = nextSignal(lastScheduledSignal);
-        TaskSignal signal = start;
-        while (signal != null && !signal.hasUnfinishedTasks()) {
-            signal = nextSignal(signal);
-            if (signal == start) {
-                signal = null;
-                break;
-            }
-        }
-        if (signal != null) {
-            signal = rootEntityCtx.getEntity(TaskSignal.class, signal.getId());
-            addSignal(signal);
-        }
-        return lastScheduledSignal = signal;
-    }
-
-    private TaskSignal nextSignal(TaskSignal signal) {
-        if (signal == null)
-            return NncUtils.get(activeSignalMap.firstEntry(), Map.Entry::getValue);
-        TaskSignal next = NncUtils.get(activeSignalMap.higherEntry(signal.getAppId()), Map.Entry::getValue);
-        if (next == null)
-            next = NncUtils.get(activeSignalMap.firstEntry(), Map.Entry::getValue);
-        return next;
-    }
-
-
-    private void addSignal(TaskSignal signal) {
-        activeSignalMap.put(signal.getAppId(), signal);
-    }
-
-    private void removeSignal(TaskSignal signal) {
-        activeSignalMap.remove(signal.getAppId());
-    }
-
-    public void waitForJobDone(Task task, int maxSchedules) {
-        NncUtils.requireNonNull(task.tryGetId());
-        Object monitor = monitorMap.computeIfAbsent(task.getStringId(), k -> new Object());
-        scheduleExecutor.execute(() -> {
-            for (int i = 0; i < maxSchedules; i++) {
-                schedule();
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException ignore) {
-                }
-            }
-        });
-        synchronized (monitor) {
-            try {
-                monitor.wait();
-            } catch (InterruptedException ignored) {
-            }
-        }
-    }
-
 }

@@ -5,11 +5,11 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.task.Task;
 
 @EntityType
-public class TestJob extends Task {
+public class TestTask extends Task {
 
     private int count = 0;
 
-    public TestJob() {
+    public TestTask() {
         super("Test Job");
     }
 

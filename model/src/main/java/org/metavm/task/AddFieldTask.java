@@ -29,4 +29,7 @@ public class AddFieldTask extends ScanByClassTask {
             instance.initField(field, fieldValue);
     }
 
+    public Field getField() {
+        return field;
+    }
 }

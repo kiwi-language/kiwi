@@ -1,9 +1,5 @@
 package org.metavm.system.rest;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.metavm.application.ApplicationManager;
 import org.metavm.common.Result;
 import org.metavm.entity.Bootstrap;
@@ -11,6 +7,10 @@ import org.metavm.system.RegionManager;
 import org.metavm.task.IndexRebuildGlobalTask;
 import org.metavm.task.Scheduler;
 import org.metavm.task.TaskManager;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/bootstrap")
@@ -18,18 +18,18 @@ public class BootstrapController {
 
     private final Bootstrap bootstrap;
     private final RegionManager regionManager;
-    private final Scheduler jobScheduler;
+    private final Scheduler scheduler;
     private final TaskManager jobManager;
     private final ApplicationManager applicationManager;
 
     public BootstrapController(Bootstrap bootstrap,
                                RegionManager regionManager,
-                               Scheduler jobScheduler,
+                               Scheduler scheduler,
                                TaskManager jobManager,
                                ApplicationManager applicationManager) {
         this.bootstrap = bootstrap;
         this.regionManager = regionManager;
-        this.jobScheduler = jobScheduler;
+        this.scheduler = scheduler;
         this.jobManager = jobManager;
         this.applicationManager = applicationManager;
     }
@@ -57,7 +57,7 @@ public class BootstrapController {
 
     @PostMapping("/scheduler")
     public Result<Void> initScheduler() {
-        jobScheduler.createSchedulerStatus();
+        scheduler.createSchedulerRegistry();
         return Result.success(null);
     }
 

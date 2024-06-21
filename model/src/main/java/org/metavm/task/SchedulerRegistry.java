@@ -1,22 +1,28 @@
 package org.metavm.task;
 
-import org.metavm.entity.Entity;
 import org.metavm.api.EntityType;
+import org.metavm.entity.Entity;
+import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 @EntityType
-public class JobSchedulerStatus extends Entity {
+public class SchedulerRegistry extends Entity {
 
-    public static final IndexDef<JobSchedulerStatus> IDX_ALL_FLAG = IndexDef.create(JobSchedulerStatus.class, "allFlag");
+    public static final IndexDef<SchedulerRegistry> IDX_ALL_FLAG = IndexDef.create(SchedulerRegistry.class, "allFlag");
 
     public static final long HEARTBEAT_TIMEOUT = 20000000000L;
+
+    public static SchedulerRegistry getInstance(IEntityContext context) {
+        return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAG, true), "SchedulerRegistry not initialized");
+    }
 
     private long version;
     private long lastHeartbeat;
     @Nullable
-    private String nodeIP;
+    private String ip;
     private final boolean allFlag = true;
 
     public long getVersion() {
@@ -35,12 +41,13 @@ public class JobSchedulerStatus extends Entity {
         this.lastHeartbeat = lastHeartbeat;
     }
 
-    public String getNodeIP() {
-        return nodeIP;
+    @Nullable
+    public String getIp() {
+        return ip;
     }
 
-    public void setNodeIP(String nodeIP) {
-        this.nodeIP = nodeIP;
+    public void setIp(@Nullable String ip) {
+        this.ip = ip;
     }
 
     public boolean isHeartbeatTimeout() {

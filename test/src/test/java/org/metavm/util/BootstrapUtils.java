@@ -17,7 +17,7 @@ import org.metavm.system.IdService;
 import org.metavm.system.RegionManager;
 import org.metavm.system.persistence.MemBlockMapper;
 import org.metavm.system.persistence.MemRegionMapper;
-import org.metavm.task.JobSchedulerStatus;
+import org.metavm.task.SchedulerRegistry;
 import org.metavm.task.TaskSignal;
 
 import java.util.List;
@@ -62,7 +62,7 @@ public class BootstrapUtils {
             entityContextFactory.setDefContext(defContext);
             TestUtils.doInTransactionWithoutResult(() -> {
                 try (var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                    context.bind(new JobSchedulerStatus());
+                    context.bind(new SchedulerRegistry());
                     context.bind(new TaskSignal(TestConstants.APP_ID));
                     context.finish();
                 }
@@ -124,7 +124,7 @@ public class BootstrapUtils {
             );
             TestUtils.doInTransactionWithoutResult(() -> {
                 try (var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                    context.bind(new JobSchedulerStatus());
+                    context.bind(new SchedulerRegistry());
                     context.bind(new TaskSignal(TestConstants.APP_ID));
                     context.finish();
                 }

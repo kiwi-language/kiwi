@@ -32,6 +32,9 @@ import org.metavm.object.type.rest.dto.GetTypeRequest;
 import org.metavm.object.type.rest.dto.TypeDTO;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
+import org.metavm.task.Executor;
+import org.metavm.task.Scheduler;
+import org.metavm.task.Task;
 import org.metavm.task.TaskManager;
 import org.slf4j.Logger;
 
@@ -39,6 +42,7 @@ import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class TestUtils {
@@ -484,4 +488,12 @@ public class TestUtils {
     public static String getSourceId(String viewId) {
         return ((DefaultViewId) Id.parse(viewId)).getSourceId().toString();
     }
+
+    public static void runTask(Scheduler scheduler, Executor executor, Predicate<Task> predicate) {
+        scheduler.sendHeartbeat();
+        executor.sendHeartbeat();
+        scheduler.schedule();
+        executor.waitFor(predicate);
+    }
+
 }
