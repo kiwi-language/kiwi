@@ -14,7 +14,7 @@ import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.CapturedTypeVariableDTO;
 import org.metavm.object.type.rest.dto.FieldDTO;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.TypeVariableDTO;
 import org.metavm.task.AddFieldTaskGroup;
 import org.metavm.util.BusinessException;
@@ -61,36 +61,35 @@ public abstract class TypeFactory {
         }
     }
 
-    public Klass saveKlass(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
+    public Klass saveKlass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveClassType")) {
-            var param = typeDTO.getClassParam();
-            var klass = batch.getContext().getKlass(typeDTO.id());
+            var klass = batch.getContext().getKlass(klassDTO.id());
             var context = batch.getContext();
             if (klass == null) {
-                klass = KlassBuilder.newBuilder(typeDTO.name(), typeDTO.code())
-                        .tmpId(typeDTO.tmpId())
-                        .kind(ClassKind.fromCode(typeDTO.kind()))
-                        .ephemeral(typeDTO.ephemeral())
-                        .anonymous(typeDTO.anonymous())
-                        .typeParameters(NncUtils.map(param.typeParameterIds(), batch::getTypeVariable))
-                        .isTemplate(param.isTemplate())
-                        .isAbstract(param.isAbstract())
-                        .struct(param.struct())
-                        .desc(param.desc())
-                        .source(ClassSource.getByCode(param.source()))
-                        .tmpId(typeDTO.tmpId())
+                klass = KlassBuilder.newBuilder(klassDTO.name(), klassDTO.code())
+                        .tmpId(klassDTO.tmpId())
+                        .kind(ClassKind.fromCode(klassDTO.kind()))
+                        .ephemeral(klassDTO.ephemeral())
+                        .anonymous(klassDTO.anonymous())
+                        .typeParameters(NncUtils.map(klassDTO.typeParameterIds(), batch::getTypeVariable))
+                        .isTemplate(klassDTO.isTemplate())
+                        .isAbstract(klassDTO.isAbstract())
+                        .struct(klassDTO.struct())
+                        .desc(klassDTO.desc())
+                        .source(ClassSource.getByCode(klassDTO.source()))
+                        .tmpId(klassDTO.tmpId())
                         .build();
                 context.bind(klass);
             } else if (klass.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
-                klass.setCode(typeDTO.code());
-                klass.setName(typeDTO.name());
-                klass.setDesc(param.desc());
-                klass.setStruct(param.struct());
-                klass.setAbstract(param.isAbstract());
+                klass.setCode(klassDTO.code());
+                klass.setName(klassDTO.name());
+                klass.setDesc(klassDTO.desc());
+                klass.setStruct(klassDTO.struct());
+                klass.setAbstract(klassDTO.isAbstract());
                 batch.getContext().update(klass);
             }
-            if(typeDTO.attributes() != null)
-                klass.setAttributes(Attribute.fromMap(typeDTO.attributes()));
+            if(klassDTO.attributes() != null)
+                klass.setAttributes(Attribute.fromMap(klassDTO.attributes()));
             var curStage = klass.setStage(stage);
             if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {
                 if (klass.isEnum()) {
@@ -98,35 +97,35 @@ public abstract class TypeFactory {
                     var enumSuperClass = StdKlass.enum_.get().getParameterized(List.of(klass.getType()));
                     klass.setSuperType(enumSuperClass.getType());
                 } else
-                    klass.setSuperType(NncUtils.get(param.superType(), t -> (ClassType) TypeParser.parseType(t, batch)));
-                klass.setInterfaces(NncUtils.map(param.interfaces(), t -> (ClassType) TypeParser.parseType(t, batch)));
+                    klass.setSuperType(NncUtils.get(klassDTO.superType(), t -> (ClassType) TypeParser.parseType(t, batch)));
+                klass.setInterfaces(NncUtils.map(klassDTO.interfaces(), t -> (ClassType) TypeParser.parseType(t, batch)));
                 if (!klass.isTemplate())
-                    klass.setTypeArguments(NncUtils.map(param.typeArguments(), t -> TypeParser.parseType(t, batch)));
+                    klass.setTypeArguments(NncUtils.map(klassDTO.typeArguments(), t -> TypeParser.parseType(t, batch)));
                 klass.setStage(ResolutionStage.SIGNATURE);
             }
             if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION)) {
                 var declaringType = klass;
-                if (param.fields() != null)
-                    klass.setFields(NncUtils.map(param.fields(), f -> saveField(declaringType, f, context)));
-                if (param.staticFields() != null)
-                    klass.setStaticFields(NncUtils.map(param.staticFields(), f -> saveField(declaringType, f, context)));
-                if (param.constraints() != null)
-                    klass.setConstraints(NncUtils.map(param.constraints(), c -> ConstraintFactory.save(c, context)));
-                if (param.flows() != null) {
-                    var methods = NncUtils.filterAndMap(param.flows(), f -> !f.synthetic(), f -> saveMethod(f, stage, batch));
+                if (klassDTO.fields() != null)
+                    klass.setFields(NncUtils.map(klassDTO.fields(), f -> saveField(declaringType, f, context)));
+                if (klassDTO.staticFields() != null)
+                    klass.setStaticFields(NncUtils.map(klassDTO.staticFields(), f -> saveField(declaringType, f, context)));
+                if (klassDTO.constraints() != null)
+                    klass.setConstraints(NncUtils.map(klassDTO.constraints(), c -> ConstraintFactory.save(c, context)));
+                if (klassDTO.flows() != null) {
+                    var methods = NncUtils.filterAndMap(klassDTO.flows(), f -> !f.synthetic(), f -> saveMethod(f, stage, batch));
                     klass.getMethods().forEach(m -> {
                         if(m.isSynthetic())
                             methods.add(m);
                     });
                     klass.setMethods(methods);
                 }
-                if (param.titleFieldId() != null)
-                    klass.setTitleField(NncUtils.find(klass.getFields(), f -> f.getStringId().equals(param.titleFieldId())));
+                if (klassDTO.titleFieldId() != null)
+                    klass.setTitleField(NncUtils.find(klass.getFields(), f -> f.getStringId().equals(klassDTO.titleFieldId())));
                 klass.setStage(ResolutionStage.DECLARATION);
             }
             if (stage.isAfterOrAt(ResolutionStage.DEFINITION) && curStage.isBefore(ResolutionStage.DEFINITION)) {
-                if (param.flows() != null) {
-                    for (FlowDTO flowDTO : param.flows()) {
+                if (klassDTO.flows() != null) {
+                    for (FlowDTO flowDTO : klassDTO.flows()) {
                         setCapturedFlows(flowDTO, context);
                     }
                 }

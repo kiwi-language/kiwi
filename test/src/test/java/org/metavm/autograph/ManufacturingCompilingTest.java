@@ -7,7 +7,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.TypeExpressions;
 import org.metavm.object.type.rest.dto.GetTypeRequest;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.view.rest.dto.DirectMappingKey;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
@@ -125,12 +125,12 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 var targetTypeId = TypeExpressions.extractKlassId(defaultMapping.targetType());
                 var inventoryAttrViewType = typeManager.getType(new GetTypeRequest(targetTypeId, false)).type();
                 // assert that the view type and the source type have the same number of fields
-                Assert.assertEquals(inventoryAttributesType.getClassParam().fields().size(),
-                        inventoryAttrViewType.getClassParam().fields().size());
+                Assert.assertEquals(inventoryAttributesType.fields().size(),
+                        inventoryAttrViewType.fields().size());
 
                 // get Utils type
                 var utilsType = getClassTypeByCode("org.metavm.manufacturing.utils.Utils");
-                Assert.assertEquals(0, utilsType.getClassParam().errors().size());
+                Assert.assertEquals(0, utilsType.errors().size());
 
                 var storageObjects = createPosition();
                 var unit = instanceManager.get(unitId, 2).instance();
@@ -330,7 +330,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         // get the InboundRequest type
         var inboundRequestType = getClassTypeByCode("org.metavm.manufacturing.storage.InboundRequest");
         // assert that the InboundRequest type is abstract
-        Assert.assertTrue(inboundRequestType.getClassParam().isAbstract());
+        Assert.assertTrue(inboundRequestType.isAbstract());
         // get the ByAmountInboundRequest type
         var qcByBoundInboundRequestType = "org.metavm.manufacturing.storage.ByAmountInboundRequest";
         // invoke InboundOrderItem.inbound with the inboundRequest object
@@ -534,7 +534,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
     }
 
     private void processBOM(InstanceDTO material, InstanceDTO unit, InstanceDTO routing, InstanceDTO routingProcess,
-                            TypeDTO feedTypeType, TypeDTO pickMethodType, TypeDTO generalStateType, TypeDTO qualityInspectionStateType) {
+                            KlassDTO feedTypeType, KlassDTO pickMethodType, KlassDTO generalStateType, KlassDTO qualityInspectionStateType) {
         var bomKlass = getClassTypeByCode("org.metavm.manufacturing.production.BOM");
 //        var bomViewKlass = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultViewKlassId(bomKlass), false)).type();
         var directFeedType = TestUtils.getEnumConstantByName(feedTypeType, "DIRECT");

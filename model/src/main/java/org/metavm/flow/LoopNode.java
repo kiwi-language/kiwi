@@ -3,12 +3,15 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ChildArray;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.ReadonlyArray;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.Expressions;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.LoopFieldDTO;
-import org.metavm.flow.rest.LoopParamDTO;
+import org.metavm.flow.rest.LoopNodeParam;
 import org.metavm.object.instance.core.BooleanInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
@@ -16,7 +19,7 @@ import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -41,7 +44,7 @@ public abstract class LoopNode extends ScopeNode {
         this.condition = condition;
     }
 
-    public void setLoopParam(LoopParamDTO param, IEntityContext context) {
+    public void setLoopParam(LoopNodeParam param, IEntityContext context) {
         var parsingContext = getParsingContext(context);
         List<LoopField> fields = new ArrayList<>();
         for (LoopFieldDTO loopFieldDTO : param.getFields()) {
@@ -150,7 +153,7 @@ public abstract class LoopNode extends ScopeNode {
     }
 
     @Override
-    protected TypeDTO getOutputKlassDTO(SerializeContext serializeContext) {
+    protected KlassDTO getOutputKlassDTO(SerializeContext serializeContext) {
         return klass.toDTO(serializeContext);
     }
 

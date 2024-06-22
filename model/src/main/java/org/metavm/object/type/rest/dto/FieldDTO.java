@@ -1,7 +1,7 @@
 package org.metavm.object.type.rest.dto;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.common.BaseDTO;
+import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceDTO;
 

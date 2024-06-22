@@ -1,6 +1,6 @@
 package org.metavm.flow.rest;
 
-import org.metavm.common.BaseDTO;
+import org.metavm.common.rest.dto.BaseDTO;
 
 public record BranchDTO(
         String id,

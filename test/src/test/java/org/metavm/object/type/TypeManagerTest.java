@@ -57,50 +57,50 @@ public class TypeManagerTest extends TestCase {
     }
 
     public void test() {
-        TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
+        KlassDTO klassDTO = ClassTypeDTOBuilder.newBuilder("Bat")
                 .tmpId(NncUtils.randomNonNegative())
                 .addField(
                         FieldDTOBuilder.newBuilder("name", "string")
                                 .build()
                 )
                 .build();
-        TypeDTO savedTypeDTO = TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
-        TypeDTO loadedTypeDTO = typeManager.getType(new GetTypeRequest(savedTypeDTO.id(), true)).type();
-        MatcherAssert.assertThat(loadedTypeDTO, PojoMatcher.of(savedTypeDTO));
-        TypeDTO updatedTypeDTO = ClassTypeDTOBuilder.newBuilder("Bat Update")
-                .id(savedTypeDTO.id())
+        KlassDTO savedKlassDTO = TestUtils.doInTransaction(() -> typeManager.saveType(klassDTO));
+        KlassDTO loadedKlassDTO = typeManager.getType(new GetTypeRequest(savedKlassDTO.id(), true)).type();
+        MatcherAssert.assertThat(loadedKlassDTO, PojoMatcher.of(savedKlassDTO));
+        KlassDTO updatedKlassDTO = ClassTypeDTOBuilder.newBuilder("Bat Update")
+                .id(savedKlassDTO.id())
                 .fields(null)
                 .methods(null)
                 .mappings(null)
                 .build();
 
-        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveType(updatedTypeDTO));
-        loadedTypeDTO = typeManager.getType(new GetTypeRequest(savedTypeDTO.id(), true)).type();
-        TestUtils.logJSON(logger, loadedTypeDTO);
-        TestUtils.logJSON(logger, updatedTypeDTO);
-        Assert.assertEquals(loadedTypeDTO.name(), updatedTypeDTO.name());
+        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveType(updatedKlassDTO));
+        loadedKlassDTO = typeManager.getType(new GetTypeRequest(savedKlassDTO.id(), true)).type();
+        TestUtils.logJSON(logger, loadedKlassDTO);
+        TestUtils.logJSON(logger, updatedKlassDTO);
+        Assert.assertEquals(loadedKlassDTO.name(), updatedKlassDTO.name());
     }
 
     public void testRemove() {
-        TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
+        KlassDTO klassDTO = ClassTypeDTOBuilder.newBuilder("Bat")
                 .tmpId(NncUtils.randomNonNegative())
                 .addField(
                         FieldDTOBuilder.newBuilder("name", "string")
                                 .build()
                 )
                 .build();
-        TypeDTO savedTypeDTO = TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
-        Assert.assertTrue(instanceSearchService.contains(TestUtils.getTypeId(savedTypeDTO)));
-        TestUtils.doInTransactionWithoutResult(() -> typeManager.remove(savedTypeDTO.id()));
-        Assert.assertFalse(instanceSearchService.contains(TestUtils.getTypeId(savedTypeDTO)));
+        KlassDTO savedKlassDTO = TestUtils.doInTransaction(() -> typeManager.saveType(klassDTO));
+        Assert.assertTrue(instanceSearchService.contains(TestUtils.getTypeId(savedKlassDTO)));
+        TestUtils.doInTransactionWithoutResult(() -> typeManager.remove(savedKlassDTO.id()));
+        Assert.assertFalse(instanceSearchService.contains(TestUtils.getTypeId(savedKlassDTO)));
     }
 
     public void testShopping() {
         var typeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
         var productTypeDTO = typeManager.getType(new GetTypeRequest(typeIds.productTypeId(), false)).type();
-        Assert.assertEquals(2, productTypeDTO.getClassParam().fields().size());
+        Assert.assertEquals(2, productTypeDTO.fields().size());
         var couponStateType = typeManager.getType(new GetTypeRequest(typeIds.couponStateTypeId(), false)).type();
-        Assert.assertEquals(2, couponStateType.getClassParam().enumConstants().size());
+        Assert.assertEquals(2, couponStateType.enumConstants().size());
         FlowSavingContext.initConfig();
         TestUtils.doInTransaction(() -> typeManager.batchSave(
                 new BatchSaveRequest(
@@ -149,13 +149,13 @@ public class TypeManagerTest extends TestCase {
                 .build();
         var savedTypeDTO = TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
         var updatedFieldDTO = FieldDTOBuilder.newBuilder("name", "string")
-                .id(savedTypeDTO.getClassParam().fields().get(0).id())
+                .id(savedTypeDTO.fields().get(0).id())
                 .declaringTypeId(savedTypeDTO.id())
                 .code("name")
                 .build();
         TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(updatedFieldDTO));
         var loadedTypeDTO = typeManager.getType(new GetTypeRequest(savedTypeDTO.id(), true)).type();
-        Assert.assertEquals("name", loadedTypeDTO.getClassParam().fields().get(0).code());
+        Assert.assertEquals("name", loadedTypeDTO.fields().get(0).code());
     }
 
     public void testAddField() {

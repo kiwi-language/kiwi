@@ -43,13 +43,13 @@ public class TableManager extends EntityContextFactoryAware {
     @Transactional
     public TableDTO save(TableDTO table) {
         IEntityContext context = newContext();
-        TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder(table.name())
+        KlassDTO klassDTO = ClassTypeDTOBuilder.newBuilder(table.name())
                 .id(table.id())
                 .code(table.code())
                 .ephemeral(table.ephemeral())
                 .anonymous(table.anonymous())
                 .build();
-        var klass = typeManager.saveType(typeDTO, context);
+        var klass = typeManager.saveType(klassDTO, context);
         context.initIds();
         NncUtils.map(table.fields(), column -> saveField(column, klass, context));
         saveTitleField(table.titleField(), klass, context);
@@ -287,7 +287,7 @@ public class TableManager extends EntityContextFactoryAware {
                     List.of(),
                     page, pageSize
             );
-            Page<TypeDTO> typePage = typeManager.query(request);
+            Page<KlassDTO> typePage = typeManager.query(request);
             return new Page<>(
                     NncUtils.map(typePage.data(), t -> convertToTable(t, context)),
                     typePage.total()
@@ -295,20 +295,19 @@ public class TableManager extends EntityContextFactoryAware {
         }
     }
 
-    private TableDTO convertToTable(TypeDTO typeDTO, IEntityContext context) {
-        ClassTypeParam param = (ClassTypeParam) typeDTO.param();
-        FieldDTO titleField = param.titleFieldId() != null ?
-                NncUtils.find(param.fields(), f -> f.id().equals(param.titleFieldId())) : null;
+    private TableDTO convertToTable(KlassDTO klassDTO, IEntityContext context) {
+        FieldDTO titleField = klassDTO.titleFieldId() != null ?
+                NncUtils.find(klassDTO.fields(), f -> f.id().equals(klassDTO.titleFieldId())) : null;
         return new TableDTO(
-                typeDTO.id(),
-                typeDTO.name(),
-                typeDTO.code(),
-                param.desc(),
-                typeDTO.ephemeral(),
-                typeDTO.anonymous(),
+                klassDTO.id(),
+                klassDTO.name(),
+                klassDTO.code(),
+                klassDTO.desc(),
+                klassDTO.ephemeral(),
+                klassDTO.anonymous(),
                 NncUtils.get(titleField, f -> convertToTitleField(f, context)),
                 NncUtils.filterAndMap(
-                        param.fields(),
+                        klassDTO.fields(),
                         f -> isVisible(f, context),
                         f -> convertToColumnDTO(f, org.metavm.object.type.TypeParser.parseType(f.type(), context))
                 )

@@ -11,7 +11,7 @@ import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.NamingUtils;
 import org.metavm.util.NncUtils;
 
@@ -204,7 +204,7 @@ public abstract class NodeRT extends Element implements LocalKey {
         );
     }
 
-    protected TypeDTO getOutputKlassDTO(SerializeContext serializeContext) {
+    protected KlassDTO getOutputKlassDTO(SerializeContext serializeContext) {
         return null;
     }
 

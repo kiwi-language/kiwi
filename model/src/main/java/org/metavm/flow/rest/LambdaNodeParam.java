@@ -3,7 +3,7 @@ package org.metavm.flow.rest;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class LambdaNodeParam extends ScopeNodeParamDTO {
+public class LambdaNodeParam extends ScopeNodeParam {
 
     private final List<ParameterDTO> parameters;
     private final String returnType;

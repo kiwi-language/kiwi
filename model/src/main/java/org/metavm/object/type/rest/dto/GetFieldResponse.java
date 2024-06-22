@@ -4,6 +4,6 @@ import java.util.List;
 
 public record GetFieldResponse(
         FieldDTO field,
-        List<TypeDTO> contextTypes
+        List<KlassDTO> contextTypes
 ) {
 }

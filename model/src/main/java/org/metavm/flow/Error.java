@@ -1,7 +1,7 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.common.ErrorDTO;
+import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.entity.*;
 
 @EntityType

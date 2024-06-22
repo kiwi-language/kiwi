@@ -29,7 +29,7 @@ import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.FieldDTO;
 import org.metavm.object.type.rest.dto.GetTypeRequest;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
 import org.metavm.task.*;
@@ -182,8 +182,8 @@ public class TestUtils {
         }
     }
 
-    public static Id getTypeId(TypeDTO typeDTO) {
-        return Id.parse(typeDTO.id());
+    public static Id getTypeId(KlassDTO klassDTO) {
+        return Id.parse(klassDTO.id());
     }
 
     public static String getId(FieldValue fieldValue) {
@@ -352,43 +352,43 @@ public class TestUtils {
         }
     }
 
-    public static String getFieldIdByCode(TypeDTO typeDTO, String fieldCode) {
-        return NncUtils.findRequired(typeDTO.getClassParam().fields(), f -> fieldCode.equals(f.code())).id();
+    public static String getFieldIdByCode(KlassDTO klassDTO, String fieldCode) {
+        return NncUtils.findRequired(klassDTO.fields(), f -> fieldCode.equals(f.code())).id();
     }
 
-    public static FieldDTO getFieldByName(TypeDTO typeDTO, String name) {
-        return NncUtils.findRequired(typeDTO.getClassParam().fields(), f -> name.equals(f.name()));
+    public static FieldDTO getFieldByName(KlassDTO klassDTO, String name) {
+        return NncUtils.findRequired(klassDTO.fields(), f -> name.equals(f.name()));
     }
 
-    public static TypeDTO getViewKlass(TypeDTO type, TypeManager typeManager) {
+    public static KlassDTO getViewKlass(KlassDTO type, TypeManager typeManager) {
         var defaultMapping = getDefaultMapping(type);
         var targetKlassId = TypeExpressions.extractKlassId(defaultMapping.targetType());
         return typeManager.getType(new GetTypeRequest(targetKlassId, false)).type();
     }
 
-    public static ObjectMappingDTO getDefaultMapping(TypeDTO typeDTO) {
+    public static ObjectMappingDTO getDefaultMapping(KlassDTO klassDTO) {
         return NncUtils.findRequired(
-                typeDTO.getClassParam().mappings(),
-                m -> m.id().equals(typeDTO.getClassParam().defaultMappingId())
+                klassDTO.mappings(),
+                m -> m.id().equals(klassDTO.defaultMappingId())
         );
     }
 
-    public static String getDefaultViewType(TypeDTO typeDTO) {
-        return getDefaultMapping(typeDTO).targetType();
+    public static String getDefaultViewType(KlassDTO klassDTO) {
+        return getDefaultMapping(klassDTO).targetType();
     }
 
-    public static String getDefaultViewKlassId(TypeDTO typeDTO) {
-        return TypeExpressions.extractKlassId(getDefaultViewType(typeDTO));
+    public static String getDefaultViewKlassId(KlassDTO klassDTO) {
+        return TypeExpressions.extractKlassId(getDefaultViewType(klassDTO));
     }
 
-    public static String getMethodIdByCode(TypeDTO typeDTO, String methodCode) {
-        return NncUtils.findRequired(typeDTO.getClassParam().flows(), f -> methodCode.equals(f.code())).id();
+    public static String getMethodIdByCode(KlassDTO klassDTO, String methodCode) {
+        return NncUtils.findRequired(klassDTO.flows(), f -> methodCode.equals(f.code())).id();
     }
 
-    public static MethodRefDTO getMethodRefByCode(TypeDTO typeDTO, String methodCode) {
+    public static MethodRefDTO getMethodRefByCode(KlassDTO klassDTO, String methodCode) {
         return new MethodRefDTO(
-                TypeExpressions.getClassType(typeDTO.id()),
-                getMethodIdByCode(typeDTO, methodCode),
+                TypeExpressions.getClassType(klassDTO.id()),
+                getMethodIdByCode(klassDTO, methodCode),
                 List.of()
         );
     }
@@ -397,56 +397,56 @@ public class TestUtils {
         return new MethodRefDTO(TypeExpressions.getClassType(klassId), methodId, List.of());
     }
 
-    public static FlowDTO getMethodByCode(TypeDTO typeDTO, String methodCode) {
-        return NncUtils.findRequired(typeDTO.getClassParam().flows(), f -> methodCode.equals(f.code()));
+    public static FlowDTO getMethodByCode(KlassDTO klassDTO, String methodCode) {
+        return NncUtils.findRequired(klassDTO.flows(), f -> methodCode.equals(f.code()));
     }
 
-    public static String getStaticMethodIdByCode(TypeDTO typeDTO, String methodCode) {
-        return NncUtils.findRequired(typeDTO.getClassParam().flows(),
+    public static String getStaticMethodIdByCode(KlassDTO klassDTO, String methodCode) {
+        return NncUtils.findRequired(klassDTO.flows(),
                 f -> methodCode.equals(f.code()) && ((MethodParam) f.param()).isStatic()
         ).id();
     }
 
-    public static MethodRefDTO getStaticMethodRefByCode(TypeDTO typeDTO, String methodCode) {
-        var method = NncUtils.findRequired(typeDTO.getClassParam().flows(),
+    public static MethodRefDTO getStaticMethodRefByCode(KlassDTO klassDTO, String methodCode) {
+        var method = NncUtils.findRequired(klassDTO.flows(),
                 f -> methodCode.equals(f.code()) && ((MethodParam) f.param()).isStatic()
         );
-        return createMethodRef(typeDTO.id(), method.id());
+        return createMethodRef(klassDTO.id(), method.id());
     }
 
-    public static String getStaticMethod(TypeDTO typeDTO, String code, String... parameterTypes) {
+    public static String getStaticMethod(KlassDTO klassDTO, String code, String... parameterTypes) {
         var paramTypeList = List.of(parameterTypes);
-        return NncUtils.findRequired(typeDTO.getClassParam().flows(),
+        return NncUtils.findRequired(klassDTO.flows(),
                 f -> code.equals(f.code()) &&
                         ((MethodParam) f.param()).isStatic() &&
                         paramTypeList.equals(NncUtils.map(f.parameters(), ParameterDTO::type)),
-                () -> "Can not find static method " + code + "(" + String.join(",", paramTypeList) + ") in type " + typeDTO.name()
+                () -> "Can not find static method " + code + "(" + String.join(",", paramTypeList) + ") in type " + klassDTO.name()
         ).id();
     }
 
-    public static MethodRefDTO getStaticMethodRef(TypeDTO typeDTO, String code, String... parameterTypes) {
-        return new MethodRefDTO(TypeExpressions.getClassType(typeDTO.id()), getStaticMethod(typeDTO, code, parameterTypes), List.of());
+    public static MethodRefDTO getStaticMethodRef(KlassDTO klassDTO, String code, String... parameterTypes) {
+        return new MethodRefDTO(TypeExpressions.getClassType(klassDTO.id()), getStaticMethod(klassDTO, code, parameterTypes), List.of());
     }
 
-    public static String getMethodId(TypeDTO typeDTO, String code, String... parameterTypeIds) {
+    public static String getMethodId(KlassDTO klassDTO, String code, String... parameterTypeIds) {
         var paramTypeidList = List.of(parameterTypeIds);
-        return NncUtils.findRequired(typeDTO.getClassParam().flows(),
+        return NncUtils.findRequired(klassDTO.flows(),
                 f -> code.equals(f.code()) && paramTypeidList.equals(
                         NncUtils.map(f.parameters(), ParameterDTO::type)
                 )
         ).id();
     }
 
-    public static MethodRefDTO getMethodRef(TypeDTO typeDTO, String code, String... parameterTypeIds) {
-        return new MethodRefDTO(TypeExpressions.getClassType(typeDTO.id()), getMethodId(typeDTO, code, parameterTypeIds), List.of());
+    public static MethodRefDTO getMethodRef(KlassDTO klassDTO, String code, String... parameterTypeIds) {
+        return new MethodRefDTO(TypeExpressions.getClassType(klassDTO.id()), getMethodId(klassDTO, code, parameterTypeIds), List.of());
     }
 
-    public static String getEnumConstantIdByName(TypeDTO typeDTO, String name) {
-        return NncUtils.findRequired(typeDTO.getClassParam().enumConstants(), f -> name.equals(f.title())).id();
+    public static String getEnumConstantIdByName(KlassDTO klassDTO, String name) {
+        return NncUtils.findRequired(klassDTO.enumConstants(), f -> name.equals(f.title())).id();
     }
 
-    public static InstanceDTO getEnumConstantByName(TypeDTO typeDTO, String name) {
-        return NncUtils.findRequired(typeDTO.getClassParam().enumConstants(), f -> name.equals(f.title()));
+    public static InstanceDTO getEnumConstantByName(KlassDTO klassDTO, String name) {
+        return NncUtils.findRequired(klassDTO.enumConstants(), f -> name.equals(f.title()));
     }
 
     private static final Klass mockKlass = KlassBuilder.newBuilder("TestUtilsMock", "TestUtilsMock").build();

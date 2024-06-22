@@ -406,15 +406,15 @@ public class MockUtils {
                 .build();
     }
 
-    private static TypeDTO saveType(TypeManager typeManager, TypeDTO typeDTO) {
+    private static KlassDTO saveType(TypeManager typeManager, KlassDTO klassDTO) {
         FlowSavingContext.initConfig();
-        return TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
+        return TestUtils.doInTransaction(() -> typeManager.saveType(klassDTO));
     }
 
-    private static List<String> batchSaveTypes(TypeManager typeManager, List<TypeDTO> typeDTOs) {
+    private static List<String> batchSaveTypes(TypeManager typeManager, List<KlassDTO> klassDTOS) {
         FlowSavingContext.initConfig();
         return TestUtils.doInTransaction(() -> typeManager.batchSave(
-                new BatchSaveRequest(typeDTOs, List.of(), false)
+                new BatchSaveRequest(klassDTOS, List.of(), false)
         ));
     }
 

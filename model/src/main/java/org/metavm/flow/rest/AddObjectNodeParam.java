@@ -3,7 +3,7 @@ package org.metavm.flow.rest;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public final class AddObjectNodeParam extends ScopeNodeParamDTO implements NewParam<AddObjectNodeParam> {
+public final class AddObjectNodeParam extends ScopeNodeParam implements NewParam<AddObjectNodeParam> {
     private final String type;
     private final Boolean initializeArrayChildren;
     private final List<FieldParamDTO> fieldParams;

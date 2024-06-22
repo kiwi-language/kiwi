@@ -3,9 +3,8 @@ package org.metavm.flow;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.ClassTypeParam;
 import org.metavm.object.type.rest.dto.FieldDTO;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -219,13 +218,12 @@ public class MethodBuilder {
         return method;
     }
 
-    public static Map<String, Long> getFieldTmpIds(@Nullable TypeDTO typeDTO) {
-        if (typeDTO == null) {
+    public static Map<String, Long> getFieldTmpIds(@Nullable KlassDTO klassDTO) {
+        if (klassDTO == null) {
             return Map.of();
         }
-        var param = (ClassTypeParam) typeDTO.param();
         Map<String, Long> code2tmpId = new HashMap<>();
-        for (FieldDTO field : param.fields()) {
+        for (FieldDTO field : klassDTO.fields()) {
             if (field.code() != null) {
                 code2tmpId.put(field.code(), field.tmpId());
             }

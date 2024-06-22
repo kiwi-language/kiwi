@@ -1,7 +1,7 @@
 package org.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.metavm.common.BaseDTO;
+import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;

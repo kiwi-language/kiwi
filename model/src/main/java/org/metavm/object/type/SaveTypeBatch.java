@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.common.BaseDTO;
+import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.entity.IEntityContext;
 import org.metavm.flow.Method;
 import org.metavm.flow.rest.FlowDTO;
@@ -37,10 +37,9 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
         this.context = context;
         for (var typeDefDTO : typeDefDTOs) {
             typeDefMap.put(typeDefDTO.id(), typeDefDTO);
-            if (typeDefDTO instanceof TypeDTO typeDTO) {
-                var classParam = typeDTO.getClassParam();
-                if (classParam.flows() != null) {
-                    for (FlowDTO flowDTO : classParam.flows())
+            if (typeDefDTO instanceof KlassDTO klassDTO) {
+                if (klassDTO.flows() != null) {
+                    for (FlowDTO flowDTO : klassDTO.flows())
                         flowMap.put(flowDTO.id(), flowDTO);
                 }
             }
@@ -130,8 +129,8 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
         return (CapturedTypeVariable) getTypeDef(id);
     }
 
-    public List<TypeDTO> getTypeDTOs() {
-        return NncUtils.filterByType(typeDefMap.values(), TypeDTO.class);
+    public List<KlassDTO> getTypeDTOs() {
+        return NncUtils.filterByType(typeDefMap.values(), KlassDTO.class);
     }
 
     public Set<String> noDependencies(TypeDefDTO typeDefDTO) {
@@ -140,22 +139,20 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public Set<String> initDependencies(TypeDefDTO typeDefDTO) {
         var dependencies = new HashSet<String>();
-        if (Objects.requireNonNull(typeDefDTO) instanceof TypeDTO typeDTO) {
-            var classTypeParam = typeDTO.getClassParam();
-            if (classTypeParam.typeParameterIds() != null)
-                dependencies.addAll(classTypeParam.typeParameterIds());
+        if (Objects.requireNonNull(typeDefDTO) instanceof KlassDTO klassDTO) {
+            if (klassDTO.typeParameterIds() != null)
+                dependencies.addAll(klassDTO.typeParameterIds());
         }
         return dependencies;
     }
 
     private Set<String> declarationDependencies(TypeDefDTO typeDefDTO) {
         var dependencies = new HashSet<String>();
-        if (typeDefDTO instanceof TypeDTO typeDTO) {
-            var classParam = typeDTO.getClassParam();
-            if (classParam.superType() != null)
-                dependencies.add(getKlassId(classParam.superType()));
-            if (classParam.interfaces() != null)
-                classParam.interfaces().forEach(t -> dependencies.add(getKlassId(t)));
+        if (typeDefDTO instanceof KlassDTO klassDTO) {
+            if (klassDTO.superType() != null)
+                dependencies.add(getKlassId(klassDTO.superType()));
+            if (klassDTO.interfaces() != null)
+                klassDTO.interfaces().forEach(t -> dependencies.add(getKlassId(t)));
         }
         return dependencies;
     }
@@ -253,19 +250,19 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
         if (typeDTO == null)
             return null;
         else
-            return NncUtils.find(typeDTO.getClassParam().mappings(), m -> m.name().equals(mapping.getName()));
+            return NncUtils.find(typeDTO.mappings(), m -> m.name().equals(mapping.getName()));
     }
 
     @Override
-    public @Nullable TypeDTO getTypeDTO(String id) {
-        return (TypeDTO) getTypeDefDTO(id);
+    public @Nullable KlassDTO getTypeDTO(String id) {
+        return (KlassDTO) getTypeDefDTO(id);
     }
 
     public TypeDefDTO getTypeDefDTO(String id) {
         return typeDefMap.get(id);
     }
 
-    public TypeDTO getTypeDTONotNull(String id) {
+    public KlassDTO getTypeDTONotNull(String id) {
         return Objects.requireNonNull(getTypeDTO(id), () -> "Can not find typeDTO with id '" + id + "'");
     }
 

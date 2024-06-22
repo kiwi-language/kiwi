@@ -3,6 +3,7 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.IEntityContext;
+import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.expression.Expression;
 import org.metavm.object.instance.core.ClassInstance;
@@ -50,9 +51,13 @@ public class Flows {
     }
 
     public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Instance> arguments, IEntityContext context) {
+        ContextUtil.setEntityContext(context);
+        return execute(flow, self, arguments, context.getInstanceContext());
+    }
+
+    public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
         try {
-            ContextUtil.setEntityContext(context);
-            return flow.execute(self, arguments, context.getInstanceContext());
+            return flow.execute(self, arguments, callContext);
         }
         finally {
             ContextUtil.setEntityContext(null);
@@ -60,7 +65,12 @@ public class Flows {
     }
 
     public static @Nullable Instance invoke(Flow flow, ClassInstance self, List<? extends Instance> arguments, IEntityContext context) {
-        var result = execute(flow, self, arguments, context);
+        ContextUtil.setEntityContext(context);
+        return invoke(flow, self, arguments, context.getInstanceContext());
+    }
+
+    public static @Nullable Instance invoke(Flow flow, ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
+        var result = execute(flow, self, arguments, callContext);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
         else

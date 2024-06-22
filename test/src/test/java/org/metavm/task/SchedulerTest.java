@@ -51,7 +51,7 @@ public class SchedulerTest extends TestCase {
         Assert.assertNotNull(instanceStore.get(TestConstants.APP_ID, ref.task.getId().getTreeId()));
         TestUtils.doInTransactionWithoutResult(() -> scheduler.sendHeartbeat());
         scheduler.sendHeartbeat();
-        Assert.assertTrue(scheduler.isRunning());
+        Assert.assertTrue(scheduler.isActive());
         try(var context = newPlatformContext()) {
             var registry = SchedulerRegistry.getInstance(context);
             Assert.assertEquals(NetworkUtils.localIP, registry.getIp());

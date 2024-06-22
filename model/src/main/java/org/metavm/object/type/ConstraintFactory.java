@@ -6,6 +6,8 @@ import org.metavm.expression.TypeParsingContext;
 import org.metavm.flow.Value;
 import org.metavm.flow.ValueFactory;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.type.rest.dto.CheckConstraintParam;
+import org.metavm.object.type.rest.dto.IndexParam;
 import org.metavm.object.type.rest.dto.ConstraintDTO;
 import org.metavm.object.type.rest.dto.IndexFieldDTO;
 import org.metavm.util.InternalException;

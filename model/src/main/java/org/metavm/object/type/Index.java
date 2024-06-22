@@ -10,6 +10,7 @@ import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.type.rest.dto.IndexParam;
 import org.metavm.object.type.rest.dto.IndexFieldDTO;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;

@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.common.BaseDTO;
+import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.InternalException;

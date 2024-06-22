@@ -16,7 +16,7 @@ import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.TypeDefDTO;
 import org.metavm.object.type.rest.dto.TypeVariableDTO;
 import org.metavm.util.DebugEnv;
@@ -44,7 +44,7 @@ public class Assembler {
     private final char[] buf = new char[1024 * 1024];
 
     private final Map<String, List<ClassType>> superTypes = new HashMap<>();
-    private final List<TypeDTO> types = new ArrayList<>();
+    private final List<KlassDTO> types = new ArrayList<>();
     private final Map<String, Klass> code2klass = new HashMap<>();
     private final List<TypeVariableDTO> typeVariables = new ArrayList<>();
     private final Map<ParserRuleContext, Map<AsmAttributeKey<?>, Object>> attributes = new HashMap<>();
@@ -155,7 +155,7 @@ public class Assembler {
             throw new IllegalArgumentException("Unrecognized type: " + typeType.getText());
     }
 
-    public List<TypeDTO> getTypes() {
+    public List<KlassDTO> getTypes() {
         return Collections.unmodifiableList(types);
     }
 
@@ -447,13 +447,11 @@ public class Assembler {
             var klass = ((ClassInfo) scope).klass;
             var field = klass.findField(f -> f.getCodeNotNull().equals(name));
             if (field == null) {
-                logger.info("creating field {} in {}", name, klass.getName());
                 field = FieldBuilder.newBuilder(name, name, klass, type)
                         .tmpId(NncUtils.randomNonNegative())
                         .isChild(mods.contains(Modifiers.CHILD))
                         .build();
             } else {
-                logger.info("updating field {} in {}", name, klass.getName());
                 field.setType(type);
             }
             field.setAccess(getAccess(mods));
@@ -752,7 +750,6 @@ public class Assembler {
                             } else
                                 return false;
                         });
-                        logger.info("overridden of {}: {}", method.getQualifiedName(), NncUtils.get(overridden, Method::getQualifiedName));
                         if (overridden != null)
                             method.addOverridden(overridden);
                         else
@@ -946,7 +943,6 @@ public class Assembler {
                         if (targetKlass != null) {
                             type = new ClassType(targetKlass, List.of());
                             self = null;
-                            logger.info("Detecting static method call: " + methodCall.getText());
                         } else {
                             self = parseValue(methodCall.expression(), parsingContext);
                             type = (ClassType) self.getType();

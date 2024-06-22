@@ -16,8 +16,7 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.generic.SubstitutorV2;
-import org.metavm.object.type.rest.dto.ClassTypeParam;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.view.MappingSaver;
 import org.metavm.object.view.ObjectMapping;
 import org.metavm.util.*;
@@ -179,10 +178,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 "Inheritance depth of class " + name + "  exceeds limit: " + Constants.MAX_INHERITANCE_DEPTH);
     }
 
-    public void update(TypeDTO typeDTO) {
-        this.name = typeDTO.name();
-        ClassTypeParam param = (ClassTypeParam) typeDTO.param();
-        setDesc(param.desc());
+    public void update(KlassDTO klassDTO) {
+        this.name = klassDTO.name();
+        setDesc(klassDTO.desc());
     }
 
     public void setDesc(@Nullable String desc) {
@@ -250,6 +248,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (superType != null)
             superType.resolve().forEachField(action);
         this.fields.stream().filter(Field::isReady).forEach(action);
+    }
+
+    public void forEachUnreadyField(Consumer<Field> action) {
+        if(superType != null)
+            superType.resolve().forEachField(action);
+        this.fields.stream().filter(f -> !f.isReady()).forEach(action);
     }
 
     public boolean allFieldsMatch(Predicate<Field> predicate) {
@@ -1071,7 +1075,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             return true;
         }
         if (template != null) {
-            var s = that.findAncestor(template);
+            var s = that.findAncestorByTemplate(template);
             if (s != null)
                 return NncUtils.biAllMatch(typeArguments, s.typeArguments, Type::contains);
             else
@@ -1174,21 +1178,24 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public Klass getAncestorType(Klass targetType) {
-        return NncUtils.requireNonNull(findAncestor(targetType));
+        return NncUtils.requireNonNull(findAncestorByTemplate(targetType));
     }
 
-    public Klass findAncestor(Klass targetType) {
-        return getClosure().find(t -> t.templateEquals(targetType));
+    public Klass findAncestorByTemplate(Klass template) {
+        return getClosure().find(t -> t.templateEquals(template));
     }
 
-    public TypeDTO toDTO() {
+    public KlassDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
             return toDTO(serContext);
         }
     }
 
-    public TypeDTO toDTO(SerializeContext serializeContext) {
-        return new TypeDTO(
+    public KlassDTO toDTO(SerializeContext serializeContext) {
+        typeParameters.forEach(serializeContext::writeTypeDef);
+        if (template != null)
+            serializeContext.writeTypeDef(template);
+        return new KlassDTO(
                 serializeContext.getStringId(this),
                 name,
                 code,
@@ -1196,34 +1203,25 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 ephemeral,
                 anonymous,
                 getAttributesMap(),
-                getParam(serializeContext)
-        );
-    }
-
-    protected ClassTypeParam getParam(SerializeContext serContext) {
-        typeParameters.forEach(serContext::writeTypeDef);
-        if (template != null)
-            serContext.writeTypeDef(template);
-        return new ClassTypeParam(
-                NncUtils.get(superType, t -> t.toExpression(serContext)),
-                NncUtils.map(interfaces, t -> t.toExpression(serContext)),
+                NncUtils.get(superType, t -> t.toExpression(serializeContext)),
+                NncUtils.map(interfaces, t -> t.toExpression(serializeContext)),
                 source.code(),
                 NncUtils.map(fields, Field::toDTO),
                 NncUtils.map(staticFields, Field::toDTO),
-                NncUtils.get(titleField, serContext::getStringId),
+                NncUtils.get(titleField, serializeContext::getStringId),
                 NncUtils.map(constraints, Constraint::toDTO),
-                NncUtils.map(methods, f -> f.toDTO(serContext.shouldWriteCode(this), serContext)),
-                NncUtils.map(mappings, m -> m.toDTO(serContext)),
-                NncUtils.get(defaultMapping, serContext::getStringId),
+                NncUtils.map(methods, f -> f.toDTO(serializeContext.shouldWriteCode(this), serializeContext)),
+                NncUtils.map(mappings, m -> m.toDTO(serializeContext)),
+                NncUtils.get(defaultMapping, serializeContext::getStringId),
                 desc,
                 getExtra(),
                 isEnum() ? NncUtils.map(getEnumConstants(), Instance::toDTO) : List.of(),
                 isAbstract,
                 isTemplate(),
-                NncUtils.map(typeParameters, serContext::getStringId),
-                NncUtils.map(typeParameters, tv -> tv.toDTO(serContext)),
-                NncUtils.get(template, serContext::getStringId),
-                NncUtils.map(typeArguments, t -> t.toExpression(serContext)),
+                NncUtils.map(typeParameters, serializeContext::getStringId),
+                NncUtils.map(typeParameters, tv -> tv.toDTO(serializeContext)),
+                NncUtils.get(template, serializeContext::getStringId),
+                NncUtils.map(typeArguments, t -> t.toExpression(serializeContext)),
                 !subKlasses.isEmpty(),
                 struct,
                 NncUtils.map(errors, Error::toDTO)
@@ -1830,7 +1828,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Type getIterableElementType() {
         var iterableType = Objects.requireNonNull(
-                findAncestor(StdKlass.iterable.get()),
+                findAncestorByTemplate(StdKlass.iterable.get()),
                 () -> getTypeDesc() + " is not an Iterable class");
         return iterableType.getTypeArguments().get(0);
     }

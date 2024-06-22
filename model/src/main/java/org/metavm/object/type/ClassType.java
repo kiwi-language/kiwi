@@ -79,7 +79,7 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public @Nullable ClassType findAncestorType(Klass rawKlass) {
-        return NncUtils.get(resolve().findAncestor(rawKlass), Klass::getType);
+        return NncUtils.get(resolve().findAncestorByTemplate(rawKlass), Klass::getType);
     }
 
     public List<Type> getTypeArguments() {
@@ -132,7 +132,7 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public @Nullable ClassType findAncestor(Klass template) {
-        return resolve().findAncestor(template).getType();
+        return resolve().findAncestorByTemplate(template).getType();
     }
 
     @Override

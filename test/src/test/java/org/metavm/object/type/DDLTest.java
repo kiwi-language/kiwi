@@ -48,6 +48,16 @@ public class DDLTest extends TestCase {
               "price", 100
         )));
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, entityContextFactory);
+//        DebugEnv.flag = true;
+//        var hatId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+//                "name", "Hat",
+//                "quantity", 100,
+//                "price", 20
+//        )));
+//        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+//            var hat = (ClassInstance) context.getInstanceContext().get(Id.parse(hatId));
+//            Assert.assertEquals(Instances.longInstance(0L), hat.getField("version"));
+//        }
         TestUtils.waitForTaskDone(scheduler, worker, t -> {
             if(t instanceof AddFieldTask addFieldTask)
                 return addFieldTask.getField().getName().equals("version");

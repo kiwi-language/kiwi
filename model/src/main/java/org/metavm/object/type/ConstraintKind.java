@@ -1,5 +1,7 @@
 package org.metavm.object.type;
 
+import org.metavm.object.type.rest.dto.CheckConstraintParam;
+import org.metavm.object.type.rest.dto.IndexParam;
 import org.metavm.object.type.rest.dto.ConstraintKindCodes;
 import org.metavm.util.NncUtils;
 

@@ -1,6 +1,6 @@
 package org.metavm.object.type.rest.dto;
 
-import org.metavm.common.BaseDTO;
+import org.metavm.common.rest.dto.BaseDTO;
 
 import javax.annotation.Nullable;
 

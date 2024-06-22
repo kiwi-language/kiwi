@@ -1,11 +1,11 @@
 package org.metavm.object.type;
 
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 
 import javax.annotation.Nullable;
 
 public interface DTOProvider {
 
     @Nullable
-    TypeDTO getTypeDTO(String ref);
+    KlassDTO getTypeDTO(String ref);
 }

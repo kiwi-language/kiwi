@@ -1,16 +1,26 @@
 package org.metavm.object.type.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.metavm.api.Value;
 import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.flow.rest.FlowDTO;
-import org.metavm.flow.rest.FlowSignatureDTO;
+import org.metavm.flow.rest.GenericDeclarationDTO;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
-import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-public record ClassTypeParam(
+public record KlassDTO(
+        String id,
+        String name,
+        @Nullable String code,
+        int kind,
+        boolean ephemeral,
+        boolean anonymous,
+        Map<String, String> attributes,
         String superType,
         List<String> interfaces,
         int source,
@@ -33,22 +43,15 @@ public record ClassTypeParam(
         boolean hasSubTypes,
         boolean struct,
         List<ErrorDTO> errors
-) implements TypeParam {
+) implements TypeDefDTO, GenericDeclarationDTO, Value {
+
+    @JsonIgnore
+    public String getCodeNotNull() {
+        return Objects.requireNonNull(code, "Code is not set for " + this);
+    }
 
     @Override
-    public int getType() {
+    public int getDefKind() {
         return 1;
     }
-
-    public FieldDTO findFieldByName(String name) {
-        var field = NncUtils.find(fields, f -> f.name().equals(name));
-        if(field != null)
-            return field;
-        return NncUtils.find(staticFields, f -> f.name().equals(name));
-    }
-
-    public FlowDTO findFlowBySignature(FlowSignatureDTO signature) {
-        return NncUtils.find(flows, f -> f.signature().equals(signature));
-    }
-
 }

@@ -1,6 +1,7 @@
 package org.metavm.common;
 
 import junit.framework.TestCase;
+import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.util.NncUtils;
 
 public class BaseDTOTest extends TestCase {

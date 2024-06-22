@@ -5,6 +5,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.ReadWriteArray;
+import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Flows;
@@ -567,21 +568,20 @@ public class ClassInstance extends DurableInstance {
 
     @Override
     public Object toJson(IEntityContext context) {
-        if(isList()) {
+        if (isList()) {
             var listNative = new ListNative(this);
             var array = listNative.toArray();
             var list = new ArrayList<>();
-            array.forEach(e -> list.add(e.toJson( context)));
+            array.forEach(e -> list.add(e.toJson(context)));
             return list;
-        }
-        else {
+        } else {
             var map = new HashMap<String, Object>();
             forEachField((f, v) -> {
-                if(f.isPublic())
+                if (f.isPublic())
                     map.put(f.getCode(), v.toJson(context));
             });
             getKlass().forEachMethod(m -> {
-                if(m.isGetter())
+                if (m.isGetter())
                     map.put(m.getPropertyName(), Flows.invokeGetter(m, this, context));
             });
             return map;
@@ -619,5 +619,12 @@ public class ClassInstance extends DurableInstance {
     @Override
     public boolean isMutable() {
         return getKlass().getKind() != ClassKind.VALUE;
+    }
+
+    public void initializeUnreadyFields(CallContext context) {
+        ensureLoaded();
+        klass.forEachUnreadyField(f ->
+                initField(f, Instances.computeFieldInitialValue(this, f, context))
+        );
     }
 }

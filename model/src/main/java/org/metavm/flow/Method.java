@@ -386,6 +386,7 @@ public class Method extends Flow implements Property, GenericElement {
             }
             if (isConstructor && result.ret() != null) {
                 var instance = (ClassInstance) result.ret();
+//                instance.initializeUnreadyFields(callContext);
                 var uninitializedField = instance.findUninitializedField(declaringType);
                 if (uninitializedField != null) {
                     var exception = ClassInstance.allocate(StdKlass.runtimeException.get().getType());

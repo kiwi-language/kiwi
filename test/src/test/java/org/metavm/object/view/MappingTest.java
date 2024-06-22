@@ -18,7 +18,7 @@ import org.metavm.object.type.TypeExpressions;
 import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.rest.dto.ClassTypeKey;
 import org.metavm.object.type.rest.dto.GetTypeRequest;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 import org.metavm.task.TaskManager;
@@ -74,11 +74,11 @@ public class MappingTest extends TestCase {
         entityContextFactory = null;
     }
 
-    private TypeDTO getType(String id) {
+    private KlassDTO getType(String id) {
         return typeManager.getType(new GetTypeRequest(id, false)).type();
     }
 
-    private TypeDTO getTypeFromExpr(String expr) {
+    private KlassDTO getTypeFromExpr(String expr) {
         var typeKey = (ClassTypeKey) TypeKey.fromExpression(expr);
         return getType(typeKey.id().toString());
     }
@@ -88,14 +88,14 @@ public class MappingTest extends TestCase {
         var typeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
         var productTypeDTO = getType(typeIds.productTypeId());
         var skuTypeDTO = getType(typeIds.skuTypeId());
-        var productDefaultMapping = NncUtils.findRequired(productTypeDTO.getClassParam().mappings(),
-                m -> Objects.equals(m.id(), productTypeDTO.getClassParam().defaultMappingId()));
+        var productDefaultMapping = NncUtils.findRequired(productTypeDTO.mappings(),
+                m -> Objects.equals(m.id(), productTypeDTO.defaultMappingId()));
         var productViewTypeDTO = getTypeFromExpr(productDefaultMapping.targetType());
         var productViewTitleFieldId = TestUtils.getFieldIdByCode(productViewTypeDTO, "name");
         var productViewSkuListFieldId = TestUtils.getFieldIdByCode(productViewTypeDTO, "skuList");
         var skuDefaultMapping = NncUtils.findRequired(
-                skuTypeDTO.getClassParam().mappings(),
-                m -> Objects.equals(skuTypeDTO.getClassParam().defaultMappingId(), m.id()));
+                skuTypeDTO.mappings(),
+                m -> Objects.equals(skuTypeDTO.defaultMappingId(), m.id()));
         var skuViewTypeDTO = getTypeFromExpr(skuDefaultMapping.targetType());
         var skuViewTitleFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "name");
         var skuViewPriceFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "price");
@@ -382,8 +382,8 @@ public class MappingTest extends TestCase {
         var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
         var skuTypeDTO = getType(shoppingTypeIds.skuTypeId());
         var skuDefaultMapping = NncUtils.findRequired(
-                skuTypeDTO.getClassParam().mappings(),
-                m -> Objects.equals(skuTypeDTO.getClassParam().defaultMappingId(), m.id()));
+                skuTypeDTO.mappings(),
+                m -> Objects.equals(skuTypeDTO.defaultMappingId(), m.id()));
         var skuViewTypeDTO = getType(TypeExpressions.extractKlassId(skuDefaultMapping.targetType()));
         var skuViewId = saveInstance(
                 new InstanceDTO(

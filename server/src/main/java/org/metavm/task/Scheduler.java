@@ -25,9 +25,8 @@ public class Scheduler extends EntityContextFactoryAware {
 
     private final TransactionOperations transactionOperations;
 
-    public volatile boolean running;
-
-    public volatile String nextExecutorIP;
+    public volatile boolean active;
+    public volatile String nextWorkerIP;
 
     public Scheduler(EntityContextFactory entityContextFactory, TransactionOperations transactionOperations) {
         super(entityContextFactory);
@@ -36,7 +35,7 @@ public class Scheduler extends EntityContextFactoryAware {
 
     @Scheduled(fixedDelay = 100)
     public void schedule() {
-        if (running) {
+        if (active) {
             transactionOperations.executeWithoutResult(s -> schedule0());
         }
     }
@@ -45,7 +44,7 @@ public class Scheduler extends EntityContextFactoryAware {
         try (var context = newPlatformContext()) {
             var registry = SchedulerRegistry.getInstance(context);
             if (!NetworkUtils.localIP.equals(registry.getIp())) {
-                running = false;
+                active = false;
                 return;
             }
             var nulls = new ArrayList<>();
@@ -81,21 +80,21 @@ public class Scheduler extends EntityContextFactoryAware {
             }
             executors = executors.stream().sorted(Comparator.comparing(ExecutorData::getIp)).toList();
             var i = 0;
-            if (nextExecutorIP != null) {
-                while (i < executors.size() && executors.get(i).getIp().compareTo(nextExecutorIP) < 0)
+            if (nextWorkerIP != null) {
+                while (i < executors.size() && executors.get(i).getIp().compareTo(nextWorkerIP) < 0)
                     i++;
             }
             for (ShadowTask task : tasks) {
                 task.setExecutorIP(executors.get((i++) % executors.size()).getIp());
             }
-            nextExecutorIP = executors.get(i % executors.size()).getIp();
+            nextWorkerIP = executors.get(i % executors.size()).getIp();
             context.finish();
         }
     }
 
     @Scheduled(fixedDelay = 50000)
     public void processTimeoutTasks() {
-        if (running) {
+        if (active) {
             transactionOperations.executeWithoutResult(s -> processTimeoutTasks0());
         }
     }
@@ -104,7 +103,7 @@ public class Scheduler extends EntityContextFactoryAware {
         try (var context = newPlatformContext()) {
             var registry = SchedulerRegistry.getInstance(context);
             if (!NetworkUtils.localIP.equals(registry.getIp())) {
-                running = false;
+                active = false;
                 return;
             }
             var now = System.currentTimeMillis();
@@ -133,13 +132,13 @@ public class Scheduler extends EntityContextFactoryAware {
                 var now = System.currentTimeMillis();
                 if (Objects.equals(NetworkUtils.localIP, registry.getIp())) {
                     registry.setLastHeartbeat(now);
-                    running = true;
+                    active = true;
                 } else if (registry.getIp() == null || now - registry.getLastHeartbeat() > timeout) {
                     registry.setIp(NetworkUtils.localIP);
                     registry.setLastHeartbeat(now);
-                    running = true;
+                    active = true;
                 } else
-                    running = false;
+                    active = false;
                 context.finish();
             }
         });
@@ -157,7 +156,7 @@ public class Scheduler extends EntityContextFactoryAware {
         });
     }
 
-    public boolean isRunning() {
-        return running;
+    public boolean isActive() {
+        return active;
     }
 }

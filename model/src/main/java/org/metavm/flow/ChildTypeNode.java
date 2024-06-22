@@ -6,7 +6,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 
 import javax.annotation.Nullable;
 
@@ -32,7 +32,7 @@ public abstract class ChildTypeNode extends NodeRT {
     }
 
     @Override
-    protected TypeDTO getOutputKlassDTO(SerializeContext serializeContext) {
+    protected KlassDTO getOutputKlassDTO(SerializeContext serializeContext) {
         return klass.toDTO(serializeContext);
     }
 }

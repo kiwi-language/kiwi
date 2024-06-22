@@ -114,7 +114,7 @@ public class TypeManager extends EntityContextFactoryAware {
         return typeInstance.toTree().toDTO();
     }
 
-    public Page<TypeDTO> query(TypeQuery request) {
+    public Page<KlassDTO> query(TypeQuery request) {
         try (IEntityContext context = newContext()) {
             return query(request, context);
         }
@@ -132,8 +132,8 @@ public class TypeManager extends EntityContextFactoryAware {
         }
     }
 
-    private Page<TypeDTO> query(TypeQuery query,
-                                IEntityContext context) {
+    private Page<KlassDTO> query(TypeQuery query,
+                                 IEntityContext context) {
         var typePage = query0(query, context);
         return new Page<>(
                 NncUtils.map(typePage.data(), Klass::toDTO),
@@ -202,9 +202,9 @@ public class TypeManager extends EntityContextFactoryAware {
     }
 
     @Transactional
-    public TypeDTO saveType(TypeDTO typeDTO) {
+    public KlassDTO saveType(KlassDTO klassDTO) {
         try (IEntityContext context = newContext()) {
-            Klass type = saveTypeWithContent(typeDTO, context);
+            Klass type = saveTypeWithContent(klassDTO, context);
             context.finish();
             try (var serContext = SerializeContext.enter()) {
                 return type.toDTO(serContext);
@@ -212,33 +212,31 @@ public class TypeManager extends EntityContextFactoryAware {
         }
     }
 
-    public Klass saveType(TypeDTO typeDTO, IEntityContext context) {
-        var type = context.getKlass(typeDTO.id());
+    public Klass saveType(KlassDTO klassDTO, IEntityContext context) {
+        var type = context.getKlass(klassDTO.id());
         if (type == null)
-            return createType(typeDTO, context);
+            return createType(klassDTO, context);
         else
-            return updateType(typeDTO, type, context);
+            return updateType(klassDTO, type, context);
     }
 
-    public Klass saveTypeWithContent(TypeDTO typeDTO, IEntityContext context) {
-        Klass type = context.getEntity(Klass.class, typeDTO.id());
-        return saveTypeWithContent(typeDTO, type, context);
+    public Klass saveTypeWithContent(KlassDTO klassDTO, IEntityContext context) {
+        Klass type = context.getEntity(Klass.class, klassDTO.id());
+        return saveTypeWithContent(klassDTO, type, context);
     }
 
-    public Klass saveTypeWithContent(TypeDTO typeDTO, Klass type, IEntityContext context) {
+    public Klass saveTypeWithContent(KlassDTO klassDTO, Klass type, IEntityContext context) {
         boolean isCreate;
         if (type == null) {
             isCreate = true;
-            type = createType(typeDTO, context);
+            type = createType(klassDTO, context);
         } else {
             isCreate = false;
-            updateType(typeDTO, type, context);
+            updateType(klassDTO, type, context);
         }
-        if (typeDTO.param() instanceof ClassTypeParam param) {
-            List<FlowDTO> flows = param.flows();
-            if (flows != null) {
-                saveFlows(type, flows, context);
-            }
+        List<FlowDTO> flows = klassDTO.flows();
+        if (flows != null) {
+            saveFlows(type, flows, context);
         }
         if (isCreate) {
             initClass(type, context);
@@ -276,7 +274,7 @@ public class TypeManager extends EntityContextFactoryAware {
         try (var context = newContext()) {
             batchSave(typeDefDTOs, request.functions(), context);
             List<Klass> newClasses = NncUtils.filterAndMap(
-                    typeDefDTOs, t -> t instanceof TypeDTO && !Id.isPersistedId(t.id()),
+                    typeDefDTOs, t -> t instanceof KlassDTO && !Id.isPersistedId(t.id()),
                     t -> context.getKlass(t.id())
             );
             for (Klass newClass : newClasses) {
@@ -296,10 +294,9 @@ public class TypeManager extends EntityContextFactoryAware {
                                    List<FlowDTO> functions,
                                    IEntityContext context) {
         var batch = SaveTypeBatch.create(context, typeDefDTOs, functions);
-        for (TypeDTO typeDTO : batch.getTypeDTOs()) {
-            ClassTypeParam param = typeDTO.getClassParam();
-            if (param.flows() != null) {
-                for (FlowDTO flowDTO : param.flows()) {
+        for (KlassDTO klassDTO : batch.getTypeDTOs()) {
+            if (klassDTO.flows() != null) {
+                for (FlowDTO flowDTO : klassDTO.flows()) {
                     var flow = context.getMethod(Id.parse(flowDTO.id()));
                     if (!flow.isSynthetic())
                         flowManager.saveContent(flowDTO, context.getMethod(Id.parse(flowDTO.id())), context);
@@ -310,8 +307,8 @@ public class TypeManager extends EntityContextFactoryAware {
             flowManager.saveContent(function, context.getFunction(Id.parse(function.id())), context);
         }
         var klasses = new ArrayList<Klass>();
-        for (TypeDTO typeDTO : batch.getTypeDTOs()) {
-            var klass = context.getKlass(Id.parse(typeDTO.id()));
+        for (KlassDTO klassDTO : batch.getTypeDTOs()) {
+            var klass = context.getKlass(Id.parse(klassDTO.id()));
             klasses.add(klass);
             createOverridingFlows(klass, context);
         }
@@ -477,11 +474,11 @@ public class TypeManager extends EntityContextFactoryAware {
         }
     }
 
-    public Klass createType(TypeDTO classDTO, IEntityContext context) {
+    public Klass createType(KlassDTO classDTO, IEntityContext context) {
         return createType(classDTO, true, context);
     }
 
-    public Klass createType(TypeDTO classDTO, boolean withContent, IEntityContext context) {
+    public Klass createType(KlassDTO classDTO, boolean withContent, IEntityContext context) {
         NncUtils.requireNonNull(classDTO.name(), "class name required");
         ensureClassNameAvailable(classDTO, context);
         var stage = withContent ? ResolutionStage.DECLARATION : ResolutionStage.INIT;
@@ -491,19 +488,19 @@ public class TypeManager extends EntityContextFactoryAware {
         return type;
     }
 
-    public Klass updateType(TypeDTO typeDTO, Klass type, IEntityContext context) {
-        NncUtils.requireNonNull(typeDTO.name(), "class name required");
-        var batch = SaveTypeBatch.create(context, List.of(typeDTO), List.of());
-        Types.saveClasType(typeDTO, ResolutionStage.DECLARATION, batch);
+    public Klass updateType(KlassDTO klassDTO, Klass type, IEntityContext context) {
+        NncUtils.requireNonNull(klassDTO.name(), "class name required");
+        var batch = SaveTypeBatch.create(context, List.of(klassDTO), List.of());
+        Types.saveClasType(klassDTO, ResolutionStage.DECLARATION, batch);
         createOverridingFlows(type, context);
         return type;
     }
 
-    private void ensureClassNameAvailable(TypeDTO typeDTO, IEntityContext context) {
-        if (!typeDTO.anonymous()) {
-            var classWithSameName = context.selectFirstByKey(Klass.IDX_NAME, typeDTO.name());
+    private void ensureClassNameAvailable(KlassDTO klassDTO, IEntityContext context) {
+        if (!klassDTO.anonymous()) {
+            var classWithSameName = context.selectFirstByKey(Klass.IDX_NAME, klassDTO.name());
             if (classWithSameName != null && !classWithSameName.isAnonymous()) {
-                throw BusinessException.invalidType(typeDTO, "class name already used");
+                throw BusinessException.invalidType(klassDTO, "class name already used");
             }
         }
     }

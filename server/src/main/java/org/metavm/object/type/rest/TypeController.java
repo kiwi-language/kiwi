@@ -1,6 +1,5 @@
 package org.metavm.object.type.rest;
 
-import org.springframework.web.bind.annotation.*;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
 import org.metavm.common.Result;
@@ -8,6 +7,7 @@ import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.object.version.VersionManager;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -26,7 +26,7 @@ public class TypeController {
     }
 
     @PostMapping("/query")
-    public Result<Page<TypeDTO>> query(@RequestBody TypeQuery request) {
+    public Result<Page<KlassDTO>> query(@RequestBody TypeQuery request) {
         return Result.success(typeManager.query(request));
     }
 
@@ -77,8 +77,8 @@ public class TypeController {
     }
 
     @PostMapping
-    public Result<String> save(@RequestBody TypeDTO typeDTO) {
-        return Result.success(typeManager.saveType(typeDTO).id());
+    public Result<String> save(@RequestBody KlassDTO klassDTO) {
+        return Result.success(typeManager.saveType(klassDTO).id());
     }
 
     @PostMapping("/batch")

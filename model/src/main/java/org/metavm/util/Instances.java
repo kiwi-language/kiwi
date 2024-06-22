@@ -2,7 +2,9 @@ package org.metavm.util;
 
 import org.metavm.api.ReadonlyList;
 import org.metavm.entity.*;
+import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ListNative;
+import org.metavm.flow.Flows;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.StructuralVisitor;
 import org.metavm.object.instance.core.*;
@@ -525,4 +527,13 @@ public class Instances {
            throw new IllegalArgumentException(listType + " is not a List type");
     }
 
+    public static Instance computeFieldInitialValue(ClassInstance instance, Field field, CallContext callContext) {
+        var klass = field.getDeclaringType();
+        var initMethodName = "__" + field.getCodeNotNull() + "__";
+        var initMethod = klass.findMethodByCodeAndParamTypes(initMethodName, List.of());
+        if(initMethod != null)
+            return Flows.invoke(initMethod, instance, List.of(), callContext);
+        else
+            return Objects.requireNonNull(field.getDefaultValue());
+    }
 }

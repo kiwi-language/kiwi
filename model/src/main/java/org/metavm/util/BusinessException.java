@@ -7,7 +7,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.FieldDTO;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +34,8 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, target.getQualifiedTitle(), source.getQualifiedTitle());
     }
 
-    public static BusinessException invalidType(TypeDTO typeDTO, String reason) {
-        return new BusinessException(ErrorCode.INVALID_TYPE, typeDTO.name(), reason);
+    public static BusinessException invalidType(KlassDTO klassDTO, String reason) {
+        return new BusinessException(ErrorCode.INVALID_TYPE, klassDTO.name(), reason);
     }
 
     public static BusinessException deleteNClassError(Klass nClass, String reason) {

@@ -1,12 +1,12 @@
 package org.metavm.flow;
 
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.flow.rest.WhileNodeParam;
+import org.metavm.flow.rest.WhileNodeNodeParam;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeParser;
@@ -35,8 +35,8 @@ public class WhileNode extends LoopNode {
     }
 
     @Override
-    protected WhileNodeParam getParam(SerializeContext serializeContext) {
-        return new WhileNodeParam(
+    protected WhileNodeNodeParam getParam(SerializeContext serializeContext) {
+        return new WhileNodeNodeParam(
                 getCondition().toDTO(),
                 getBodyScope().toDTO(true, serializeContext),
                 NncUtils.map(getFields(), LoopField::toDTO)

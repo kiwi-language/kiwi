@@ -2,11 +2,14 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.ModelDefRegistry;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.Expressions;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.ParsingContext;
-import org.metavm.flow.rest.ForeachNodeParam;
+import org.metavm.flow.rest.ForeachNodeNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
@@ -25,7 +28,7 @@ public class ForeachNode extends LoopNode {
     public static ForeachNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var outputType = ((ClassType) TypeParser.parseType(nodeDTO.outputType(), context)).resolve();
         ParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
-        ForeachNodeParam param = nodeDTO.getParam();
+        ForeachNodeNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.getArray(), parsingContext);
         Value condition = Values.expression(Expressions.trueExpression());
         if (outputType.findFieldByCode("array") == null) {
@@ -54,8 +57,8 @@ public class ForeachNode extends LoopNode {
     }
 
     @Override
-    protected ForeachNodeParam getParam(SerializeContext serializeContext) {
-        return new ForeachNodeParam(
+    protected ForeachNodeNodeParam getParam(SerializeContext serializeContext) {
+        return new ForeachNodeNodeParam(
                 array.toDTO(),
                 NncUtils.get(getCondition(), Value::toDTO),
                 NncUtils.map(getFields(), LoopField::toDTO),

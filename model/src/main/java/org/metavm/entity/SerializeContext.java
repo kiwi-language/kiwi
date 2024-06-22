@@ -4,7 +4,7 @@ import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.TypeDefDTO;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.IdentitySet;
@@ -221,12 +221,12 @@ public class SerializeContext implements Closeable {
         return this;
     }
 
-    public List<TypeDTO> getTypes() {
+    public List<KlassDTO> getTypes() {
         return getTypes(t -> true);
     }
 
-    public List<TypeDTO> getTypes(Predicate<Klass> filter) {
-        return NncUtils.filterAndMap(types.entrySet(), e -> e.getKey() instanceof Klass klass && filter.test(klass), e -> (TypeDTO) e.getValue());
+    public List<KlassDTO> getTypes(Predicate<Klass> filter) {
+        return NncUtils.filterAndMap(types.entrySet(), e -> e.getKey() instanceof Klass klass && filter.test(klass), e -> (KlassDTO) e.getValue());
     }
 
     public List<TypeDefDTO> getTypeDefs() {
@@ -241,26 +241,26 @@ public class SerializeContext implements Closeable {
         types.keySet().stream().filter(filter).forEach(action);
     }
 
-    public List<TypeDTO> getTypesExclude(Klass klass) {
-        var result = new ArrayList<TypeDTO>();
+    public List<KlassDTO> getTypesExclude(Klass klass) {
+        var result = new ArrayList<KlassDTO>();
         types.values().forEach(t -> {
-            if (t instanceof TypeDTO typeDTO && !Objects.equals(typeDTO.id(), getStringId(klass)))
-                result.add(typeDTO);
+            if (t instanceof KlassDTO klassDTO && !Objects.equals(klassDTO.id(), getStringId(klass)))
+                result.add(klassDTO);
         });
         return result;
     }
 
-    public List<TypeDTO> getTypesExclude(Type type) {
-        var result = new ArrayList<TypeDTO>();
+    public List<KlassDTO> getTypesExclude(Type type) {
+        var result = new ArrayList<KlassDTO>();
         types.values().forEach(t -> {
-            if (t instanceof TypeDTO typeDTO && !Objects.equals(typeDTO.id(), getStringId(type)))
-                result.add(typeDTO);
+            if (t instanceof KlassDTO klassDTO && !Objects.equals(klassDTO.id(), getStringId(type)))
+                result.add(klassDTO);
         });
         return result;
     }
 
-    public TypeDTO getType(Id id) {
-        return (TypeDTO) NncUtils.requireNonNull(typeMap.get(id));
+    public KlassDTO getType(Id id) {
+        return (KlassDTO) NncUtils.requireNonNull(typeMap.get(id));
     }
 
     @Override

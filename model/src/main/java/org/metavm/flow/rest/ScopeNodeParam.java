@@ -1,9 +1,9 @@
 package org.metavm.flow.rest;
 
-public abstract class ScopeNodeParamDTO{
+public abstract class ScopeNodeParam {
     private final ScopeDTO bodyScope;
 
-    protected ScopeNodeParamDTO(ScopeDTO bodyScope) {
+    protected ScopeNodeParam(ScopeDTO bodyScope) {
         this.bodyScope = bodyScope;
     }
 

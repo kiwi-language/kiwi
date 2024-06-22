@@ -12,7 +12,7 @@ import org.metavm.object.type.PrimitiveKind;
 import org.metavm.object.type.TypeExpressionBuilder;
 import org.metavm.object.type.TypeExpressions;
 import org.metavm.object.type.rest.dto.GetTypeRequest;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -303,7 +303,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 var tokenType = queryClassType("LabToken");
                 var tokenReadWriteListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(tokenType.id()));
                 Assert.assertTrue(tokenType.ephemeral());
-                Assert.assertEquals(2, tokenType.getClassParam().fields().size());
+                Assert.assertEquals(2, tokenType.fields().size());
 
                 // create an ordinary user
                 var userId = doInTransaction(() -> apiClient.newInstance(
@@ -323,7 +323,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 var userRoles = ((InstanceFieldValue) user.getFieldValue(userRolesFieldId)).getInstance();
                 Assert.assertEquals(1, userRoles.getListSize());
                 Assert.assertEquals(role.id(), userRoles.getElement(0).referenceId());
-                Assert.assertEquals(2, userType.getClassParam().constraints().size());
+                Assert.assertEquals(2, userType.constraints().size());
 
                 // test login
                 token = login(userType, application, "leen", "123456");
@@ -388,7 +388,7 @@ public class UserCompilingTest extends CompilerTestBase {
         });
     }
 
-    private void sendVerificationCode(TypeDTO verificationCodeType, String email) {
+    private void sendVerificationCode(KlassDTO verificationCodeType, String email) {
         doInTransaction(() -> apiClient.callMethod(
                 verificationCodeType.getCodeNotNull(), "sendVerificationCode",
                 List.of(email, "MetaVM Verification Code", "127.0.0.1")
@@ -399,29 +399,29 @@ public class UserCompilingTest extends CompilerTestBase {
         return Objects.requireNonNull(MockEmailSender.INSTANCE.getLastSentEmail()).content();
     }
 
-    private void logout(TypeDTO platformUserType) {
+    private void logout(KlassDTO platformUserType) {
         doInTransaction(() -> apiClient.callMethod(
                 platformUserType.getCodeNotNull(), "logout", List.of()
         ));
     }
 
-    private void assertTokenInvalidated(TypeDTO userType, Map<String, Object> tokenValue) {
+    private void assertTokenInvalidated(KlassDTO userType, Map<String, Object> tokenValue) {
         var loginInfo = verify(userType, tokenValue);
         Assert.assertNull(loginInfo.get("application"));
     }
 
-    private Map<String, Object> verify(TypeDTO userType, Map<String, Object> tokenValue) {
+    private Map<String, Object> verify(KlassDTO userType, Map<String, Object> tokenValue) {
         //noinspection unchecked
         return (Map<String, Object>) doInTransaction(() -> apiClient.callMethod(
                 userType.getCodeNotNull(), "verify", List.of(tokenValue)
         ));
     }
 
-    private String login(TypeDTO userType, InstanceDTO platformApplication, String loginName, @SuppressWarnings("SameParameterValue") String password) {
+    private String login(KlassDTO userType, InstanceDTO platformApplication, String loginName, @SuppressWarnings("SameParameterValue") String password) {
         return login(userType, platformApplication, loginName, password, "127.0.0.1", true);
     }
 
-    private String login(TypeDTO userType, InstanceDTO platformApplication, String loginName, String password, String clientIP, boolean checkToken) {
+    private String login(KlassDTO userType, InstanceDTO platformApplication, String loginName, String password, String clientIP, boolean checkToken) {
         //noinspection unchecked
         var loginResult = (Map<String, Object>) doInTransaction(() -> apiClient.callMethod(
                 userType.getCodeNotNull(), "login",

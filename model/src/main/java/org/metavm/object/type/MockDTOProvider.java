@@ -1,13 +1,13 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.Nullable;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 
 public class MockDTOProvider implements DTOProvider {
 
     @Nullable
     @Override
-    public TypeDTO getTypeDTO(String ref) {
+    public KlassDTO getTypeDTO(String ref) {
         return null;
     }
 }

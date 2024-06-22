@@ -2,10 +2,10 @@ package org.metavm.flow.rest;
 
 import java.util.List;
 
-public final class ForeachNodeParam extends LoopParamDTO {
+public final class ForeachNodeNodeParam extends LoopNodeParam {
     private final ValueDTO array;
 
-    public ForeachNodeParam(
+    public ForeachNodeNodeParam(
             ValueDTO array,
             ValueDTO condition,
             List<LoopFieldDTO> fields,

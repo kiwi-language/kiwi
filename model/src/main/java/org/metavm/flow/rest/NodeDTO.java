@@ -2,8 +2,8 @@ package org.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
-import org.metavm.common.BaseDTO;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.common.rest.dto.BaseDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -21,7 +21,7 @@ public record NodeDTO(
         @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
         @JsonTypeIdResolver(NodeParamTypeIdResolver.class)
         Object param,
-        TypeDTO outputKlass,
+        KlassDTO outputKlass,
         String scopeId,
         @Nullable String error
 ) implements BaseDTO {
@@ -57,7 +57,7 @@ public record NodeDTO(
         );
     }
 
-    public NodeDTO copyWithType(TypeDTO type) {
+    public NodeDTO copyWithType(KlassDTO type) {
         return new NodeDTO(
                 id,
                 flowId,
@@ -73,7 +73,7 @@ public record NodeDTO(
         );
     }
 
-    public NodeDTO copyWithParamAndType(Object param, TypeDTO type) {
+    public NodeDTO copyWithParamAndType(Object param, KlassDTO type) {
         return new NodeDTO(
                 id,
                 flowId,

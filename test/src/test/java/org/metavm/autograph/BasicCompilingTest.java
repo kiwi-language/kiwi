@@ -1,7 +1,7 @@
 package org.metavm.autograph;
 
 import org.junit.Assert;
-import org.metavm.common.ErrorDTO;
+import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.type.ClassKind;
 import org.metavm.util.TestUtils;
@@ -30,10 +30,10 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processCapturedType() {
         var utilsType = getClassTypeByCode("capturedtypes.CtUtils");
-        for (ErrorDTO error : utilsType.getClassParam().errors()) {
+        for (ErrorDTO error : utilsType.errors()) {
             logger.info("Utils error: {}", error.message());
         }
-        Assert.assertEquals(0, utilsType.getClassParam().errors().size());
+        Assert.assertEquals(0, utilsType.errors().size());
         var labType = getClassTypeByCode("capturedtypes.CtLab");
         var labId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                         labType.getCodeNotNull(),

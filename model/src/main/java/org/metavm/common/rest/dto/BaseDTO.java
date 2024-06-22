@@ -1,4 +1,4 @@
-package org.metavm.common;
+package org.metavm.common.rest.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.metavm.object.instance.core.Id;

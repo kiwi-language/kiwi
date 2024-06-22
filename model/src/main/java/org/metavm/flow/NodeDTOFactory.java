@@ -88,7 +88,7 @@ public class NodeDTOFactory {
                 NodeKind.WHILE.code(),
                 null,
                 TmpId.of(NncUtils.randomNonNegative()).toString(),
-                new WhileNodeParam(condition, new ScopeDTO(null, setPrevId(nodes)), fields),
+                new WhileNodeNodeParam(condition, new ScopeDTO(null, setPrevId(nodes)), fields),
                 null,
                 null,
                 null

@@ -5,6 +5,6 @@ import java.util.Map;
 
 public record LoadByPathsResponse(
         Map<String, String> path2typeId,
-        List<TypeDTO> types
+        List<KlassDTO> types
 ) {
 }

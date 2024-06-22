@@ -18,7 +18,7 @@ import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldDTO;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -582,7 +582,7 @@ public class FlowManager extends EntityContextFactoryAware {
         var inputFields = initializeFieldRefs(inputParam.fields());
         var currentKlassId = NncUtils.get(node, n -> n.getKlass().getStringId());
         List<FieldDTO> fields = NncUtils.map(inputFields, inputField -> inputField.toFieldDTO(currentKlassId));
-        TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder(
+        KlassDTO klassDTO = ClassTypeDTOBuilder.newBuilder(
                         NncUtils.getOrElse(node, n -> n.getKlass().getName(), "input" + NncUtils.randomNonNegative())
                 )
                 .id(currentKlassId)
@@ -592,7 +592,7 @@ public class FlowManager extends EntityContextFactoryAware {
                 .build();
         return nodeDTO.copyWithParamAndType(
                 new InputNodeParam(inputFields),
-                typeDTO);
+                klassDTO);
     }
 
     private NodeDTO preprocessMergeNode(NodeDTO nodeDTO, MergeNode node) {
@@ -626,13 +626,13 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     private NodeDTO preprocessWhileNode(NodeDTO nodeDTO, WhileNode node) {
-        WhileNodeParam param = nodeDTO.getParam();
+        WhileNodeNodeParam param = nodeDTO.getParam();
         var loopFields = initializeFieldRefs(param.getFields());
         List<FieldDTO> fields = new ArrayList<>(NncUtils.map(loopFields, LoopFieldDTO::toFieldDTO));
         var outputType = createNodeTypeDTO("WhileOutput",
                 NncUtils.get(node, WhileNode::getKlass), fields);
         return nodeDTO.copyWithParamAndType(
-                new WhileNodeParam(param.getCondition(), param.getBodyScope(), loopFields),
+                new WhileNodeNodeParam(param.getCondition(), param.getBodyScope(), loopFields),
                 outputType);
     }
 
@@ -647,7 +647,7 @@ public class FlowManager extends EntityContextFactoryAware {
         );
     }
 
-    private TypeDTO createNodeTypeDTO(String namePrefix, @Nullable Klass currentType, List<FieldDTO> fields) {
+    private KlassDTO createNodeTypeDTO(String namePrefix, @Nullable Klass currentType, List<FieldDTO> fields) {
         var id = NncUtils.get(currentType, Klass::getStringId);
         String name = NncUtils.get(currentType, Klass::getName);
 //        String code = NncUtils.get(currentType, Type::getCode);
@@ -677,7 +677,7 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     private NodeDTO preprocessForeachNode(NodeDTO nodeDTO, @Nullable NodeRT node, ScopeRT scope, IEntityContext context) {
-        ForeachNodeParam param = nodeDTO.getParam();
+        ForeachNodeNodeParam param = nodeDTO.getParam();
         @Nullable var currentType = (ClassType) NncUtils.get(node, NodeRT::getType);
         var currentKlass = NncUtils.get(currentType, ClassType::resolve);
         var loopFields = initializeFieldRefs(param.getFields());
@@ -708,7 +708,7 @@ public class FlowManager extends EntityContextFactoryAware {
                             .build()
             );
         }
-        TypeDTO type = createNodeTypeDTO("ForeachOutput", currentKlass, fields);
+        KlassDTO type = createNodeTypeDTO("ForeachOutput", currentKlass, fields);
         ScopeDTO loopScope;
         if (param.getBodyScope() == null) {
             var elementType = ((ArrayType) context.getType(arrayValue.getType().getId())).getElementType();
@@ -738,7 +738,7 @@ public class FlowManager extends EntityContextFactoryAware {
         }
 
         return nodeDTO.copyWithParamAndType(
-                new ForeachNodeParam(param.getArray(), param.getCondition(), loopFields, loopScope),
+                new ForeachNodeNodeParam(param.getArray(), param.getCondition(), loopFields, loopScope),
                 type
         );
     }
@@ -797,7 +797,7 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     private void saveScopeNodeContent(NodeDTO nodeDTO, ScopeNode scopeNode, IEntityContext context) {
-        ScopeNodeParamDTO param = nodeDTO.getParam();
+        ScopeNodeParam param = nodeDTO.getParam();
         if (param.getBodyScope() != null && param.getBodyScope().nodes() != null) {
             scopeNode.getBodyScope().setNodes(
                     NncUtils.map(

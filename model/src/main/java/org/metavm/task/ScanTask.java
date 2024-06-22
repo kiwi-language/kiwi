@@ -4,6 +4,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.util.ContextUtil;
 import org.metavm.util.NncUtils;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public abstract class ScanTask extends Task {
 
     @Override
     protected boolean run0(IEntityContext context) {
+        ContextUtil.setEntityContext(context);
         var batch = scan(context.getInstanceContext(), cursor, BATCH_SIZE);
         if(NncUtils.isEmpty(batch)) {
             onScanOver();

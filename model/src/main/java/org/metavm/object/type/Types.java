@@ -335,15 +335,15 @@ public class Types {
 
     public static TypeDef saveTypeDef(TypeDefDTO typeDefDTO, ResolutionStage stage, SaveTypeBatch batch) {
         return switch(typeDefDTO) {
-            case TypeDTO typeDTO -> saveClass(typeDTO, stage, batch);
+            case KlassDTO klassDTO -> saveClass(klassDTO, stage, batch);
             case TypeVariableDTO typeVariableDTO -> saveTypeVariable(typeVariableDTO, stage, batch);
             case CapturedTypeVariableDTO capturedTypeVariableDTO -> saveCapturedTypeVariable(capturedTypeVariableDTO, stage, batch);
             default -> throw new InternalException("Invalid TypeDefDTO: " + typeDefDTO);
         };
     }
 
-    public static Klass saveClass(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        return TYPE_FACTORY.saveKlass(typeDTO, stage, batch);
+    public static Klass saveClass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        return TYPE_FACTORY.saveKlass(klassDTO, stage, batch);
     }
 
     public static TypeVariable saveTypeVariable(TypeVariableDTO typeVariableDTO, ResolutionStage stage, SaveTypeBatch batch) {
@@ -377,7 +377,7 @@ public class Types {
         return members.size() == 1 ? members.iterator().next() : new UnionType(members);
     }
 
-    public static Klass saveClasType(TypeDTO classDTO, ResolutionStage stage, SaveTypeBatch batch) {
+    public static Klass saveClasType(KlassDTO classDTO, ResolutionStage stage, SaveTypeBatch batch) {
         return TYPE_FACTORY.saveKlass(classDTO, stage, batch);
     }
 

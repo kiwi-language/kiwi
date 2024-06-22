@@ -1,7 +1,7 @@
 package org.metavm.object.type.rest.dto;
 
-import org.metavm.common.BaseDTO;
-import org.metavm.common.ErrorDTO;
+import org.metavm.common.rest.dto.BaseDTO;
+import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.InstanceDTO;
@@ -241,8 +241,17 @@ public class ClassTypeDTOBuilder {
         return name;
     }
 
-    private ClassTypeParam buildClassTypeParam() {
-        return new ClassTypeParam(
+    public KlassDTO build() {
+        if(id == null && tmpId != null)
+            id = TmpId.of(tmpId).toString();
+        return new KlassDTO(
+                id,
+                name,
+                code,
+                kind,
+                ephemeral,
+                anonymous,
+                Map.of(),
                 superClassId,
                 interfaceIds,
                 source,
@@ -265,21 +274,6 @@ public class ClassTypeDTOBuilder {
                 hasSubTypes,
                 struct,
                 errors
-        );
-    }
-
-    public TypeDTO build() {
-        if(id == null && tmpId != null)
-            id = TmpId.of(tmpId).toString();
-        return new TypeDTO(
-                id,
-                name,
-                code,
-                kind,
-                ephemeral,
-                anonymous,
-                Map.of(),
-                buildClassTypeParam()
         );
     }
 }

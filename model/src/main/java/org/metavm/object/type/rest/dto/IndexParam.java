@@ -1,8 +1,7 @@
-package org.metavm.object.type;
+package org.metavm.object.type.rest.dto;
 
 import org.metavm.flow.rest.ValueDTO;
-import org.metavm.object.type.rest.dto.ConstraintParam;
-import org.metavm.object.type.rest.dto.IndexFieldDTO;
+import org.metavm.object.type.ConstraintKind;
 
 import java.util.List;
 

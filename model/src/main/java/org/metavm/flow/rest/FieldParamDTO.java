@@ -1,6 +1,6 @@
 package org.metavm.flow.rest;
 
-import org.metavm.common.BaseDTO;
+import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.object.type.rest.dto.FieldRefDTO;
 
 public record FieldParamDTO (

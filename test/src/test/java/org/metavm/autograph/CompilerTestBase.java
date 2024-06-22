@@ -13,7 +13,7 @@ import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.TypeDTO;
+import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.TypeQuery;
 import org.metavm.object.version.VersionManager;
 import org.metavm.system.BlockManager;
@@ -144,15 +144,15 @@ public abstract class CompilerTestBase extends TestCase  {
     }
 
 
-    protected TypeDTO queryClassType(String name) {
+    protected KlassDTO queryClassType(String name) {
         return queryClassType(name, List.of(ClassKind.CLASS.code(), ClassKind.ENUM.code(), ClassKind.INTERFACE.code(), ClassKind.VALUE.code()));
     }
 
-    protected void assertNoError(TypeDTO typeDTO) {
-        Assert.assertEquals(0, typeDTO.getClassParam().errors().size());
+    protected void assertNoError(KlassDTO klassDTO) {
+        Assert.assertEquals(0, klassDTO.errors().size());
     }
 
-    protected TypeDTO queryClassType(String name, List<Integer> categories) {
+    protected KlassDTO queryClassType(String name, List<Integer> categories) {
         var types = typeManager.query(new TypeQuery(
                 name,
                 categories,
@@ -168,7 +168,7 @@ public abstract class CompilerTestBase extends TestCase  {
         return types.get(0);
     }
 
-    protected TypeDTO getClassTypeByCode(String code) {
+    protected KlassDTO getClassTypeByCode(String code) {
         return typeManager.getTypeByCode(code).type();
     }
 

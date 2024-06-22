@@ -1,8 +1,8 @@
 package org.metavm.object.type;
 
+import org.metavm.api.EntityType;
 import org.metavm.entity.ConstraintDef;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.expression.BinaryExpression;
 import org.metavm.expression.InstanceEvaluationContext;
@@ -11,6 +11,7 @@ import org.metavm.expression.UnaryExpression;
 import org.metavm.flow.Value;
 import org.metavm.flow.ValueFactory;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.type.rest.dto.CheckConstraintParam;
 import org.metavm.util.Instances;
 
 import javax.annotation.Nullable;
