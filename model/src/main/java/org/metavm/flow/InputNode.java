@@ -1,8 +1,8 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.InputFieldDTO;
@@ -17,6 +17,8 @@ import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeParser;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -24,6 +26,8 @@ import java.util.Map;
 
 @EntityType
 public class InputNode extends ChildTypeNode {
+
+    public static final Logger logger = LoggerFactory.getLogger(InputNode.class);
 
     public static InputNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var node = (InputNode) context.getNode(Id.parse(nodeDTO.id()));

@@ -43,7 +43,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         if (parent != null && parent.contains(id))
             parent.buffer(id);
         else {
-            if(id.tryGetTreeId() != null)
+            if (id.tryGetTreeId() != null)
                 loadingBuffer.buffer(id.getTreeId());
         }
     }
@@ -60,8 +60,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
             onTreeLoaded(tree);
             var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
             readInstance(input);
-        }
-        catch (TreeNotFoundException e) {
+        } catch (TreeNotFoundException e) {
             throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getId());
         }
     }
@@ -71,10 +70,10 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     private DurableInstance readInstance(InstanceInput input) {
 //        try (var entry = getProfiler().enter("readInstance")) {
-            var instance = input.readMessage();
+        var instance = input.readMessage();
 //            entry.addMessage("id", instance.getPhysicalId());
-            onInstanceInitialized(instance);
-            return instance;
+        onInstanceInitialized(instance);
+        return instance;
 //        }
     }
 

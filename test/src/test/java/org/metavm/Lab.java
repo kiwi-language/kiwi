@@ -1,10 +1,10 @@
 package org.metavm;
 
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
 
 public class Lab {
@@ -19,17 +19,7 @@ public class Lab {
     public native void testNative();
 
     public static void main(String[] args) throws IOException, SQLException {
-        var map = new HashMap<String, Object>();
-        map.computeIfAbsent("name", (k) -> {
-            System.out.println("Initializing");
-            return null;
-        });
-        System.out.println(map.containsKey("name"));
-        map.computeIfAbsent("name", (k) -> {
-            System.out.println("Initializing");
-            return null;
-        });
-
+        System.out.println(Id.parse("0292a8d6b90780078201").getClass());
     }
 
 

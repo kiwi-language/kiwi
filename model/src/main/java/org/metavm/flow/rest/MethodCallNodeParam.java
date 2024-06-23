@@ -1,11 +1,14 @@
 package org.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.metavm.common.CopyContext;
+import org.metavm.common.rest.dto.Copyable;
+import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class MethodCallNodeParam extends CallNodeParam {
+public class MethodCallNodeParam extends CallNodeParam implements Copyable<MethodCallNodeParam> {
 
     private final ValueDTO self;
 
@@ -37,5 +40,20 @@ public class MethodCallNodeParam extends CallNodeParam {
     @Override
     public int getCallKind() {
         return 2;
+    }
+
+    @Override
+    public MethodCallNodeParam copy(CopyContext context) {
+        return new MethodCallNodeParam(
+                context.copy(self),
+                context.copy(getFlowRef()),
+                getFlowCode(),
+                getTypeArguments(),
+                getType(),
+                NncUtils.map(getArguments(), context::copy),
+                NncUtils.map(getArgumentValues(), context::copy),
+                getCapturedExpressionTypes(),
+                getCapturedExpressions()
+        );
     }
 }

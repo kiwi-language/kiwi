@@ -2,7 +2,9 @@ package org.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import org.metavm.common.CopyContext;
 import org.metavm.common.rest.dto.BaseDTO;
+import org.metavm.common.rest.dto.Copyable;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
@@ -24,7 +26,7 @@ public record NodeDTO(
         KlassDTO outputKlass,
         String scopeId,
         @Nullable String error
-) implements BaseDTO {
+) implements BaseDTO, Copyable<NodeDTO> {
 
     public static NodeDTO create(String name, int kind) {
         return new NodeDTO(null, null, name, null, kind, null, null, null, null, null, null);
@@ -116,6 +118,22 @@ public record NodeDTO(
         return (T) param;
     }
 
+    @Override
+    public NodeDTO copy(CopyContext context) {
+        return new NodeDTO(
+                context.mapId(id),
+                context.mapId(flowId),
+                name,
+                code,
+                kind,
+                context.mapId(prevId),
+                outputType,
+                context.copy(param),
+                context.copy(outputKlass),
+                context.mapId(scopeId),
+                error
+        );
+    }
 }
 
 

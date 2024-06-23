@@ -70,6 +70,7 @@ public class AssemblerTest extends TestCase {
 //        DebugEnv.DEBUG_ON = true;
             ContextUtil.setAppId(TestConstants.APP_ID);
             TestUtils.doInTransaction(() -> typeManager.batchSave(request));
+            TestUtils.waitForDDLDone(bootResult.entityContextFactory());
         }
     }
 

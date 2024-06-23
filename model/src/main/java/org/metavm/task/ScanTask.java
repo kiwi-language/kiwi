@@ -29,7 +29,7 @@ public abstract class ScanTask extends Task {
         ContextUtil.setEntityContext(context);
         var batch = scan(context.getInstanceContext(), cursor, BATCH_SIZE);
         if(NncUtils.isEmpty(batch)) {
-            onScanOver();
+            onScanOver(context);
             return true;
         }
         process(batch, context);
@@ -38,12 +38,12 @@ public abstract class ScanTask extends Task {
             return false;
         }
         else {
-            onScanOver();
+            onScanOver(context);
             return true;
         }
     }
 
-    protected void onScanOver() {}
+    protected void onScanOver(IEntityContext context) {}
 
     protected abstract List<DurableInstance> scan(IInstanceContext context,
                                                   long cursor,

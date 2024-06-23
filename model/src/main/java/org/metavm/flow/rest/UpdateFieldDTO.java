@@ -1,6 +1,8 @@
 package org.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.metavm.common.CopyContext;
+import org.metavm.common.rest.dto.Copyable;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -14,7 +16,7 @@ public record UpdateFieldDTO(
         @Nullable String fieldName,
         int opCode,
         ValueDTO value
-) {
+) implements Copyable<UpdateFieldDTO> {
 
     @JsonIgnore
     public Field getField(Klass type) {
@@ -40,4 +42,8 @@ public record UpdateFieldDTO(
     }
 
 
+    @Override
+    public UpdateFieldDTO copy(CopyContext context) {
+        return new UpdateFieldDTO(context.copy(fieldRef), fieldName, opCode, context.copy(value));
+    }
 }

@@ -19,7 +19,10 @@ import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.SubstitutorV2;
-import org.metavm.object.type.rest.dto.*;
+import org.metavm.object.type.rest.dto.BatchSaveRequest;
+import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
+import org.metavm.object.type.rest.dto.FieldDTOBuilder;
+import org.metavm.object.type.rest.dto.KlassDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -488,6 +491,7 @@ public class MockUtils {
             assembler.assemble(List.of(source));
             FlowSavingContext.initConfig();
             TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true)));
+            TestUtils.waitForDDLDone(entityContextFactory);
         }
     }
 
@@ -677,7 +681,7 @@ public class MockUtils {
         return foo;
     }
 
-    public static UserTypeIds createUserTypes(TypeManager typeManager) {
+    public static UserTypeIds createUserTypes(TypeManager typeManager, EntityContextFactory entityContextFactory) {
         var platformUserTypeDTO = ClassTypeDTOBuilder.newBuilder("PlatformUser")
                 .code("PlatformUser")
                 .tmpId(NncUtils.randomNonNegative())
@@ -727,17 +731,18 @@ public class MockUtils {
                         ))
                         .build())
                 .build();
-        var typeIds = TestUtils.doInTransaction(() -> typeManager.batchSave(
+        TestUtils.doInTransaction(() -> typeManager.batchSave(
                 new BatchSaveRequest(List.of(platformUserTypeDTO, applicationTypeDTO), List.of(), false)
         ));
-        var applicationType = typeManager.getType(new GetTypeRequest(typeIds.get(1), false)).type();
+        TestUtils.waitForDDLDone(entityContextFactory);
+        var applicationType = typeManager.getTypeByCode(applicationTypeDTO.code()).type();
         var applicationNameFieldId = TestUtils.getFieldIdByCode(applicationType, "name");
         var applicationOwnerFieldId = TestUtils.getFieldIdByCode(applicationType, "owner");
         // get the longName field id and password field id of the platform user type
-        var platformUserType = typeManager.getType(new GetTypeRequest(typeIds.get(0), false)).type();
+        var platformUserType = typeManager.getTypeByCode(platformUserTypeDTO.code()).type();
         var platformUserLoginNameFieldId = TestUtils.getFieldIdByCode(platformUserType, "loginName");
         var platformUserPasswordFieldId = TestUtils.getFieldIdByCode(platformUserType, "password");
-        return new UserTypeIds(typeIds.get(0), typeIds.get(1), applicationNameFieldId, applicationOwnerFieldId, platformUserLoginNameFieldId,
+        return new UserTypeIds(platformUserType.id(), applicationType.id(), applicationNameFieldId, applicationOwnerFieldId, platformUserLoginNameFieldId,
                 platformUserPasswordFieldId);
     }
 

@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.flow.InputNode;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodCallNode;
 import org.metavm.object.instance.core.DurableInstance;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DebugEnv {
 
@@ -48,6 +50,8 @@ public class DebugEnv {
     public static volatile PhysicalId id;
 
     public static final LinkedList<String> path = new LinkedList<>();
+
+    public static final List<InputNode> nodes = new CopyOnWriteArrayList<>();
 
     public static void enterPathItem(String pathItem) {
         path.addLast(pathItem);

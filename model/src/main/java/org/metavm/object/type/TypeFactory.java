@@ -1,6 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.common.ErrorCode;
+import org.metavm.ddl.Commit;
 import org.metavm.entity.Attribute;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.IEntityContext;
@@ -16,7 +17,6 @@ import org.metavm.object.type.rest.dto.CapturedTypeVariableDTO;
 import org.metavm.object.type.rest.dto.FieldDTO;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.TypeVariableDTO;
-import org.metavm.task.AddFieldTaskGroup;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Instances;
@@ -25,6 +25,11 @@ import org.metavm.util.NncUtils;
 import java.util.List;
 
 public abstract class TypeFactory {
+
+
+    public void submitCommit(Commit commit) {
+
+    }
 
     public TypeVariable saveTypeVariable(TypeVariableDTO typeVariableDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveTypeVariable")) {
@@ -58,6 +63,34 @@ public abstract class TypeFactory {
             if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION))
                 type.setUncertainType((UncertainType) TypeParser.parseType(capturedTypeVariableDTO.uncertainType(), context));
             return type;
+        }
+    }
+
+    public void prepareKlass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        assert batch.isPreparing();
+        var context = batch.getContext();
+        var klass = context.getKlass(klassDTO.id());
+        if(klass == null)
+            return;
+        var curStage = klass.setStage(stage);
+        if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION)) {
+            if (klassDTO.fields() != null) {
+                for (FieldDTO fieldDTO : klassDTO.fields()) {
+                    saveField(klass, fieldDTO, context);
+                }
+            }
+            if (klassDTO.staticFields() != null) {
+                for (FieldDTO fieldDTO : klassDTO.staticFields()) {
+                    if(batch.isWhiteListed(fieldDTO.id()))
+                        saveField(klass, fieldDTO, context);
+                }
+            }
+            if (klassDTO.flows() != null) {
+                for (FlowDTO methodDTO : klassDTO.flows()) {
+                    if(batch.isWhiteListed(methodDTO.id()))
+                        saveMethod(methodDTO, stage, batch);
+                }
+            }
         }
     }
 
@@ -158,8 +191,8 @@ public abstract class TypeFactory {
                     .staticValue(Instances.nullInstance())
                     .state(context.isNewEntity(declaringType) ? MetadataState.READY : MetadataState.INITIALIZING)
                     .build();
-            if(!field.isReady())
-                context.bind(new AddFieldTaskGroup(field));
+//            if (!field.isReady())
+//                context.bind(new AddFieldTaskGroup(field));
             context.bind(field);
         } else {
             field.setName(fieldDTO.name());
@@ -185,12 +218,12 @@ public abstract class TypeFactory {
                     .build();
             context.bind(method);
         } else {
-            if(method.isSynthetic())
+            if (method.isSynthetic())
                 throw new BusinessException(ErrorCode.MODIFYING_SYNTHETIC_FLOW, method.getQualifiedName());
             method.setName(flowDTO.name());
             method.setCode(flowDTO.code());
         }
-        if(flowDTO.attributes() != null)
+        if (flowDTO.attributes() != null)
             method.setAttributes(Attribute.fromMap(flowDTO.attributes()));
         method.setNative(flowDTO.isNative());
         method.setAbstract(param.isAbstract());
@@ -239,7 +272,7 @@ public abstract class TypeFactory {
             param.setName(parameterDTO.name());
             param.setCode(parameterDTO.code());
         }
-        if(parameterDTO.attributes() != null)
+        if (parameterDTO.attributes() != null)
             param.setAttributes(Attribute.fromMap(parameterDTO.attributes()));
         return param;
     }

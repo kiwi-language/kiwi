@@ -490,6 +490,13 @@ public class TestUtils {
         return ((DefaultViewId) Id.parse(viewId)).getSourceId().toString();
     }
 
+    public static void waitForDDLDone(EntityContextFactory entityContextFactory) {
+        var transactionOps = new MockTransactionOperations();
+        var scheduler = new Scheduler(entityContextFactory, transactionOps);
+        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
+        waitForTaskDone(scheduler, worker, t -> t instanceof DDLTask);
+    }
+
     public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate) {
         scheduler.sendHeartbeat();
         worker.sendHeartbeat();

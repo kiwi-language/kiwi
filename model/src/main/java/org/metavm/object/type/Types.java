@@ -2,6 +2,7 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.metavm.ddl.Commit;
 import org.metavm.entity.*;
 import org.metavm.expression.Expressions;
 import org.metavm.expression.NodeExpression;
@@ -27,6 +28,11 @@ public class Types {
     public static final Logger logger = LoggerFactory.getLogger(Types.class);
     private static final TypeFactory TYPE_FACTORY = new DefaultTypeFactory(ModelDefRegistry::getType);
     private static final Function<java.lang.reflect.Type, Type> getType = ModelDefRegistry::getType;
+    private static BiConsumer<BatchSaveRequest, IEntityContext> commitAction;
+
+    public static void setCommitAction(BiConsumer<BatchSaveRequest, IEntityContext> commitAction) {
+        Types.commitAction = commitAction;
+    }
 
     public static Klass resolveKlass(Type type) {
         if(type instanceof ClassType classType)
@@ -333,6 +339,10 @@ public class Types {
         throw new InternalException("type " + type + " is not an array type");
     }
 
+    public static void prepareKlass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        TYPE_FACTORY.prepareKlass(klassDTO, stage, batch);
+    }
+
     public static TypeDef saveTypeDef(TypeDefDTO typeDefDTO, ResolutionStage stage, SaveTypeBatch batch) {
         return switch(typeDefDTO) {
             case KlassDTO klassDTO -> saveClass(klassDTO, stage, batch);
@@ -340,6 +350,10 @@ public class Types {
             case CapturedTypeVariableDTO capturedTypeVariableDTO -> saveCapturedTypeVariable(capturedTypeVariableDTO, stage, batch);
             default -> throw new InternalException("Invalid TypeDefDTO: " + typeDefDTO);
         };
+    }
+
+    public static void submitCommit(Commit commit, IEntityContext context) {
+        commitAction.accept(commit.getRequest(), context);
     }
 
     public static Klass saveClass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {
@@ -375,10 +389,6 @@ public class Types {
             members.add(effectiveType);
         }
         return members.size() == 1 ? members.iterator().next() : new UnionType(members);
-    }
-
-    public static Klass saveClasType(KlassDTO classDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        return TYPE_FACTORY.saveKlass(classDTO, stage, batch);
     }
 
     public static Flow saveFlow(FlowDTO flowDTO, SaveTypeBatch batch) {

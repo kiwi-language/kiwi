@@ -4,10 +4,6 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.instance.ApiService;
-import org.metavm.task.AddFieldTask;
-import org.metavm.task.DirectTaskRunner;
-import org.metavm.task.Scheduler;
-import org.metavm.task.Worker;
 import org.metavm.util.*;
 
 import java.util.Map;
@@ -17,8 +13,6 @@ public class DDLTest extends TestCase {
     private TypeManager typeManager;
     private EntityContextFactory entityContextFactory;
     private ApiClient apiClient;
-    private Scheduler scheduler;
-    private Worker worker;
 
     @Override
     protected void setUp() throws Exception {
@@ -27,9 +21,6 @@ public class DDLTest extends TestCase {
         typeManager = commonManagers.typeManager();
         entityContextFactory = bootResult.entityContextFactory();
         apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory()));
-        var transactionOps = new MockTransactionOperations();
-        scheduler = new Scheduler(entityContextFactory, transactionOps);
-        worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -48,7 +39,6 @@ public class DDLTest extends TestCase {
               "price", 100
         )));
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, entityContextFactory);
-//        DebugEnv.flag = true;
 //        var hatId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
 //                "name", "Hat",
 //                "quantity", 100,
@@ -58,12 +48,6 @@ public class DDLTest extends TestCase {
 //            var hat = (ClassInstance) context.getInstanceContext().get(Id.parse(hatId));
 //            Assert.assertEquals(Instances.longInstance(0L), hat.getField("version"));
 //        }
-        TestUtils.waitForTaskDone(scheduler, worker, t -> {
-            if(t instanceof AddFieldTask addFieldTask)
-                return addFieldTask.getField().getName().equals("version");
-            else
-                return false;
-        });
         var product = apiClient.getInstance(id);
         Assert.assertEquals(0L, product.get("version"));
     }

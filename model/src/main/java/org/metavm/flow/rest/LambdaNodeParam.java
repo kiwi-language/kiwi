@@ -1,9 +1,13 @@
 package org.metavm.flow.rest;
 
+import org.metavm.common.CopyContext;
+import org.metavm.common.rest.dto.Copyable;
+import org.metavm.util.NncUtils;
+
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class LambdaNodeParam extends ScopeNodeParam {
+public class LambdaNodeParam extends ScopeNodeParam implements Copyable<LambdaNodeParam> {
 
     private final List<ParameterDTO> parameters;
     private final String returnType;
@@ -29,5 +33,15 @@ public class LambdaNodeParam extends ScopeNodeParam {
     @Nullable
     public String getFunctionalInterface() {
         return functionalInterface;
+    }
+
+    @Override
+    public LambdaNodeParam copy(CopyContext context) {
+        return new LambdaNodeParam(
+                context.copy(getBodyScope()),
+                NncUtils.map(getParameters(), context::copy),
+                returnType,
+                functionalInterface
+        );
     }
 }

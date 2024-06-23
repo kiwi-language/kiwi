@@ -28,9 +28,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    public static final IndexDef<Flow> IDX_PARAMETERIZED_KEY =
-            IndexDef.createUnique(Flow.class, "parameterizedKey");
-
     public static final IndexDef<Flow> IDX_HORIZONTAL_TEMPLATE =
             IndexDef.create(Flow.class, "horizontalTemplate");
 
@@ -58,9 +55,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
     private @NotNull MetadataState state;
     private @NotNull FunctionType type;
-    @Nullable
-    @CopyIgnore
-    private String parameterizedKey;
     @Nullable
     private final CodeSource codeSource;
     @ChildEntity
@@ -124,15 +118,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public ScopeRT getScope(long id) {
         return scopes().get(Entity::tryGetId, id);
-    }
-
-    @Override
-    public boolean afterContextInitIds() {
-        if (horizontalTemplate != null || isTemplate()) {
-            if (parameterizedKey == null)
-                parameterizedKey = Types.getParameterizedKey(getEffectiveHorizontalTemplate(), typeArguments.toList());
-        }
-        return true;
     }
 
     @Override
@@ -446,7 +431,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         if (isTemplate() && !NncUtils.iterableEquals(NncUtils.map(this.typeParameters, TypeVariable::getType), typeArguments))
             throw new InternalException("Type arguments must equal to type parameters for a template flow. Actual type arguments: " + typeArguments);
         this.typeArguments.reset(typeArguments);
-        this.parameterizedKey = null;
     }
 
     public boolean isTemplate() {

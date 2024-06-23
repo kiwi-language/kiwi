@@ -22,6 +22,8 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -46,6 +48,8 @@ public class NncUtils {
     public static final ObjectMapper INDENT_OBJECT_MAPPER = new ObjectMapper();
 
     public static final Pattern DIGITS_PTN = Pattern.compile("\\d+");
+
+    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH::mm:ss");
 
     static {
         OBJECT_MAPPER.registerModule(new Jdk8Module());
@@ -1833,6 +1837,20 @@ public class NncUtils {
         while (e.getCause() != null)
             e = e.getCause();
         return e;
+    }
+
+    public static String formatDate(Date date){
+        return dateFormat.format(date);
+    }
+
+    public static <T> int findIndex(List<T> list, Predicate<T> predicate) {
+        int i = 0;
+        for (T t : list) {
+            if(predicate.test(t))
+                return i;
+            i++;
+        }
+        return -1;
     }
 
 }

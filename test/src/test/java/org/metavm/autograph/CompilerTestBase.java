@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.application.ApplicationManager;
 import org.metavm.common.MockEmailService;
+import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityQueryService;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowExecutionService;
@@ -56,6 +57,7 @@ public abstract class CompilerTestBase extends TestCase  {
     protected LoginService loginService;
     protected PlatformUserManager platformUserManager;
     protected ApiClient apiClient;
+    protected EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
@@ -70,34 +72,34 @@ public abstract class CompilerTestBase extends TestCase  {
         allocatorStore = bootResult.allocatorStore();
         columnStore = bootResult.columnStore();
         typeTagStore = bootResult.typeTagStore();
+        entityContextFactory = bootResult.entityContextFactory();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         typeManager = new TypeManager(
                 bootResult.entityContextFactory(),
                 new EntityQueryService(instanceQueryService),
-                new TaskManager(bootResult.entityContextFactory(), new MockTransactionOperations()),
+                new TaskManager(entityContextFactory, new MockTransactionOperations()),
                 new BeanManager());
-        instanceManager = new InstanceManager(bootResult.entityContextFactory(),
+        instanceManager = new InstanceManager(entityContextFactory,
                 bootResult.instanceStore(), instanceQueryService);
         typeManager.setInstanceManager(instanceManager);
-        flowManager = new FlowManager(bootResult.entityContextFactory(), new MockTransactionOperations());
+        flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
-        flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());
+        flowExecutionService = new FlowExecutionService(entityContextFactory);
         typeManager.setFlowExecutionService(flowExecutionService);
         var blockManager = new BlockManager(bootResult.blockMapper());
         typeClient = new MockTypeClient(typeManager, blockManager, instanceManager, executor, new MockTransactionOperations());
         FlowSavingContext.initConfig();
-        typeManager.setVersionManager(new VersionManager(bootResult.entityContextFactory()));
-
+        typeManager.setVersionManager(new VersionManager(entityContextFactory));
         var entityQueryService = new EntityQueryService(instanceQueryService);
-        var roleManager = new RoleManager(bootResult.entityContextFactory(), entityQueryService);
+        var roleManager = new RoleManager(entityContextFactory, entityQueryService);
         loginService = new LoginService(bootResult.entityContextFactory());
-        var verificationCodeService = new VerificationCodeService(bootResult.entityContextFactory(), new MockEmailService());
-        platformUserManager = new PlatformUserManager(bootResult.entityContextFactory(),
+        var verificationCodeService = new VerificationCodeService(entityContextFactory, new MockEmailService());
+        platformUserManager = new PlatformUserManager(entityContextFactory,
                 loginService, entityQueryService, new MockEventQueue(), verificationCodeService);
-        applicationManager = new ApplicationManager(bootResult.entityContextFactory(), roleManager, platformUserManager,
+        applicationManager = new ApplicationManager(entityContextFactory, roleManager, platformUserManager,
                 verificationCodeService, (IdService) bootResult.idProvider(), entityQueryService);
-        var apiService = new ApiService(bootResult.entityContextFactory());
+        var apiService = new ApiService(entityContextFactory);
         apiClient = new ApiClient(apiService);
         ContextUtil.resetProfiler();
     }
@@ -105,6 +107,7 @@ public abstract class CompilerTestBase extends TestCase  {
     @Override
     protected void tearDown() throws Exception {
         executor.close();
+        entityContextFactory = null;
         typeClient = null;
         executor = null;
         typeManager = null;
@@ -179,9 +182,10 @@ public abstract class CompilerTestBase extends TestCase  {
 //        DebugEnv.buildPatchLog = false;
     }
 
-    protected List<String> compile(String sourceRoot) {
+    protected void compile(String sourceRoot) {
         ContextUtil.resetProfiler();
-        return new Main(HOME, sourceRoot, APP_ID, "__fake_token__", typeClient, allocatorStore, columnStore, typeTagStore).run();
+        new Main(HOME, sourceRoot, APP_ID, "__fake_token__", typeClient, allocatorStore, columnStore, typeTagStore).run();
+        submit(() -> TestUtils.waitForDDLDone(entityContextFactory));
     }
 
 

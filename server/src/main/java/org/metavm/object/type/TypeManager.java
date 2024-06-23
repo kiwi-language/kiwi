@@ -57,6 +57,7 @@ public class TypeManager extends EntityContextFactoryAware {
         this.entityQueryService = entityQueryService;
         this.taskManager = taskManager;
         this.beanManager = beanManager;
+        Types.setCommitAction(this::commit);
     }
 
     public Map<Integer, String> getPrimitiveMap() {
@@ -269,51 +270,99 @@ public class TypeManager extends EntityContextFactoryAware {
 
     @Transactional
     public List<String> batchSave(BatchSaveRequest request) {
+        return prepare(request);
+    }
+
+    private List<String> prepare(BatchSaveRequest request) {
         var typeDefDTOs = request.typeDefs();
         FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
+        SaveTypeBatch batch;
         try (var context = newContext()) {
-            batchSave(typeDefDTOs, request.functions(), context);
-            List<Klass> newClasses = NncUtils.filterAndMap(
-                    typeDefDTOs, t -> t instanceof KlassDTO && !Id.isPersistedId(t.id()),
-                    t -> context.getKlass(t.id())
-            );
-            for (Klass newClass : newClasses) {
-                if (!newClass.isInterface()) {
-//                    context.initIds();
-                    initClass(newClass, context);
-                }
-            }
+            batch = batchSave(typeDefDTOs, request.functions(), true, context);
+            context.initIds();
+            batch.createDDLTask();
             context.finish();
-            return NncUtils.map(typeDefDTOs, t -> Objects.requireNonNull(context.getTypeDef(t.id()),
-                    "Type '" + t.id() + "' not saved").getStringId());
+            return typeDefDTOs.stream()
+                    .map(t -> context.getTypeDef(t.id()))
+                    .filter(Objects::nonNull)
+                    .map(Entity::getStringId)
+                    .toList();
         }
     }
 
-    @SuppressWarnings("UnusedReturnValue")
-    public List<TypeDef> batchSave(List<? extends TypeDefDTO> typeDefDTOs,
+    public void commit(BatchSaveRequest request, IEntityContext context) {
+        var typeDefDTOs = request.typeDefs();
+        FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
+        batchSave(typeDefDTOs, request.functions(), false, context);
+        List<Klass> newClasses = NncUtils.filterAndMap(
+                typeDefDTOs, t -> t instanceof KlassDTO && !Id.isPersistedId(t.id()),
+                t -> context.getKlass(t.id())
+        );
+        for (Klass newClass : newClasses) {
+            if (!newClass.isInterface()) {
+                initClass(newClass, context);
+            }
+        }
+    }
+
+//    public List<String> batchSave(BatchSaveRequest request, boolean preparing) {
+//        var typeDefDTOs = request.typeDefs();
+//        FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
+//        SaveTypeBatch batch;
+//        try (var context = newContext()) {
+//            batch = batchSave(typeDefDTOs, request.functions(), preparing, context);
+//            if (!preparing) {
+//                List<Klass> newClasses = NncUtils.filterAndMap(
+//                        typeDefDTOs, t -> t instanceof KlassDTO && !Id.isPersistedId(t.id()),
+//                        t -> context.getKlass(t.id())
+//                );
+//                for (Klass newClass : newClasses) {
+//                    if (!newClass.isInterface()) {
+//                        initClass(newClass, context);
+//                    }
+//                }
+//            }
+//            context.initIds();
+//            if (preparing)
+//                batch.createDDLTask();
+//            context.finish();
+//            return typeDefDTOs.stream()
+//                    .map(t -> context.getTypeDef(t.id()))
+//                    .filter(Objects::nonNull)
+//                    .map(Entity::getStringId)
+//                    .toList();
+//        }
+//    }
+
+    public SaveTypeBatch batchSave(List<? extends TypeDefDTO> typeDefDTOs,
                                    List<FlowDTO> functions,
+                                   boolean preparing,
                                    IEntityContext context) {
-        var batch = SaveTypeBatch.create(context, typeDefDTOs, functions);
+        var batch = SaveTypeBatch.create(context, typeDefDTOs, functions, preparing);
         for (KlassDTO klassDTO : batch.getTypeDTOs()) {
             if (klassDTO.flows() != null) {
                 for (FlowDTO flowDTO : klassDTO.flows()) {
-                    var flow = context.getMethod(Id.parse(flowDTO.id()));
-                    if (!flow.isSynthetic())
-                        flowManager.saveContent(flowDTO, context.getMethod(Id.parse(flowDTO.id())), context);
+                    if (batch.isWhiteListed(flowDTO.id())) {
+                        var flow = context.getMethod(Id.parse(flowDTO.id()));
+                        if (!flow.isSynthetic())
+                            flowManager.saveContent(flowDTO, context.getMethod(Id.parse(flowDTO.id())), context);
+                    }
                 }
             }
         }
-        for (FlowDTO function : functions) {
-            flowManager.saveContent(function, context.getFunction(Id.parse(function.id())), context);
+        if (!preparing) {
+            for (FlowDTO function : functions) {
+                flowManager.saveContent(function, context.getFunction(Id.parse(function.id())), context);
+            }
+            var klasses = new ArrayList<Klass>();
+            for (KlassDTO klassDTO : batch.getTypeDTOs()) {
+                var klass = context.getKlass(Id.parse(klassDTO.id()));
+                klasses.add(klass);
+                createOverridingFlows(klass, context);
+            }
+            beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
         }
-        var klasses = new ArrayList<Klass>();
-        for (KlassDTO klassDTO : batch.getTypeDTOs()) {
-            var klass = context.getKlass(Id.parse(klassDTO.id()));
-            klasses.add(klass);
-            createOverridingFlows(klass, context);
-        }
-        beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
-        return batch.getTypes();
+        return batch;
     }
 
     private void createOverridingFlows(Klass type, IEntityContext context) {
@@ -482,16 +531,16 @@ public class TypeManager extends EntityContextFactoryAware {
         NncUtils.requireNonNull(classDTO.name(), "class name required");
         ensureClassNameAvailable(classDTO, context);
         var stage = withContent ? ResolutionStage.DECLARATION : ResolutionStage.INIT;
-        var batch = SaveTypeBatch.create(context, List.of(classDTO), List.of());
-        var type = Types.saveClasType(classDTO, stage, batch);
+        var batch = SaveTypeBatch.create(context, List.of(classDTO), List.of(), false);
+        var type = Types.saveClass(classDTO, stage, batch);
         createOverridingFlows(type, context);
         return type;
     }
 
     public Klass updateType(KlassDTO klassDTO, Klass type, IEntityContext context) {
         NncUtils.requireNonNull(klassDTO.name(), "class name required");
-        var batch = SaveTypeBatch.create(context, List.of(klassDTO), List.of());
-        Types.saveClasType(klassDTO, ResolutionStage.DECLARATION, batch);
+        var batch = SaveTypeBatch.create(context, List.of(klassDTO), List.of(), false);
+        Types.saveClass(klassDTO, ResolutionStage.DECLARATION, batch);
         createOverridingFlows(type, context);
         return type;
     }
@@ -557,7 +606,7 @@ public class TypeManager extends EntityContextFactoryAware {
     }
 
     private Field createField(FieldDTO fieldDTO, Klass declaringType, IEntityContext context) {
-        var type = TypeParser.parseType(fieldDTO.type(), context);
+//        var type = TypeParser.parseType(fieldDTO.type(), context);
         var field = Types.createFieldAndBind(
                 declaringType,
                 fieldDTO,

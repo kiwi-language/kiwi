@@ -493,7 +493,7 @@ public void testGeneric() {
     }
 
     public void testUser() {
-        var userTypeIds = MockUtils.createUserTypes(typeManager);
+        var userTypeIds = MockUtils.createUserTypes(typeManager, entityContextFactory);
         // save user instance
         var userId = TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
                 null, TypeExpressions.getClassType(userTypeIds.platformUserTypeId()), null, null, null,

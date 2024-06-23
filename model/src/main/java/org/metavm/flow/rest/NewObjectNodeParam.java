@@ -1,10 +1,14 @@
 package org.metavm.flow.rest;
 
+import org.metavm.common.CopyContext;
+import org.metavm.common.rest.dto.Copyable;
+import org.metavm.util.NncUtils;
+
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObjectNodeParam> {
+public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObjectNodeParam>, Copyable<NewObjectNodeParam> {
 
     @Nullable
     private final ParentRefDTO parent;
@@ -61,5 +65,22 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
     @Override
     public int getCallKind() {
         return 3;
+    }
+
+    @Override
+    public NewObjectNodeParam copy(CopyContext context) {
+        return new NewObjectNodeParam(
+                context.copy(getFlowRef()),
+                getFlowCode(),
+                getTypeArguments(),
+                getType(),
+                NncUtils.map(getArguments(), context::copy),
+                NncUtils.map(getArgumentValues(), context::copy),
+                context.copy(parent),
+                ephemeral,
+                unbound,
+                getCapturedExpressionTypes(),
+                getCapturedExpressions()
+        );
     }
 }
