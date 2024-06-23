@@ -1,7 +1,10 @@
 package org.metavm.object.type;
 
 import org.metavm.beans.BeanDefinitionRegistry;
+import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
+import org.metavm.ddl.Commit;
+import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.flow.FlowExecutionService;
@@ -18,6 +21,7 @@ import org.metavm.object.type.rest.dto.*;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.version.Versions;
 import org.metavm.task.AddFieldTaskGroup;
+import org.metavm.task.DDL;
 import org.metavm.task.TaskManager;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
@@ -269,24 +273,24 @@ public class TypeManager extends EntityContextFactoryAware {
     }
 
     @Transactional
-    public List<String> batchSave(BatchSaveRequest request) {
+    public String batchSave(BatchSaveRequest request) {
         return prepare(request);
     }
 
-    private List<String> prepare(BatchSaveRequest request) {
+    private String prepare(BatchSaveRequest request) {
         var typeDefDTOs = request.typeDefs();
         FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
         SaveTypeBatch batch;
         try (var context = newContext()) {
+            var runningCommit = context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
+            if(runningCommit != null)
+                throw new BusinessException(ErrorCode.COMMIT_RUNNING);
             batch = batchSave(typeDefDTOs, request.functions(), true, context);
             context.initIds();
-            batch.createDDLTask();
+            var commit = batch.buildCommit();
+            context.bind(DDL.create(commit, context));
             context.finish();
-            return typeDefDTOs.stream()
-                    .map(t -> context.getTypeDef(t.id()))
-                    .filter(Objects::nonNull)
-                    .map(Entity::getStringId)
-                    .toList();
+            return commit.getStringId();
         }
     }
 
@@ -304,35 +308,6 @@ public class TypeManager extends EntityContextFactoryAware {
             }
         }
     }
-
-//    public List<String> batchSave(BatchSaveRequest request, boolean preparing) {
-//        var typeDefDTOs = request.typeDefs();
-//        FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
-//        SaveTypeBatch batch;
-//        try (var context = newContext()) {
-//            batch = batchSave(typeDefDTOs, request.functions(), preparing, context);
-//            if (!preparing) {
-//                List<Klass> newClasses = NncUtils.filterAndMap(
-//                        typeDefDTOs, t -> t instanceof KlassDTO && !Id.isPersistedId(t.id()),
-//                        t -> context.getKlass(t.id())
-//                );
-//                for (Klass newClass : newClasses) {
-//                    if (!newClass.isInterface()) {
-//                        initClass(newClass, context);
-//                    }
-//                }
-//            }
-//            context.initIds();
-//            if (preparing)
-//                batch.createDDLTask();
-//            context.finish();
-//            return typeDefDTOs.stream()
-//                    .map(t -> context.getTypeDef(t.id()))
-//                    .filter(Objects::nonNull)
-//                    .map(Entity::getStringId)
-//                    .toList();
-//        }
-//    }
 
     public SaveTypeBatch batchSave(List<? extends TypeDefDTO> typeDefDTOs,
                                    List<FlowDTO> functions,

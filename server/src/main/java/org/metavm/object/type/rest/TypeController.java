@@ -82,8 +82,9 @@ public class TypeController {
     }
 
     @PostMapping("/batch")
-    public Result<List<String>> batchSave(@RequestBody BatchSaveRequest request) {
-        return Result.success(typeManager.batchSave(request));
+    public Result<Void> batchSave(@RequestBody BatchSaveRequest request) {
+        typeManager.batchSave(request);
+        return Result.voidSuccess();
     }
 
     @PostMapping("/batch-delete")

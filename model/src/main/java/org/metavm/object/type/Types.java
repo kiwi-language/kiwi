@@ -353,7 +353,7 @@ public class Types {
     }
 
     public static void submitCommit(Commit commit, IEntityContext context) {
-        commitAction.accept(commit.getRequest(), context);
+        commitAction.accept(commit.getCommitRequest(), context);
     }
 
     public static Klass saveClass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {

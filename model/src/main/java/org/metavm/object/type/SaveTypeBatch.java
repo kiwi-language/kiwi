@@ -1,6 +1,5 @@
 package org.metavm.object.type;
 
-import org.metavm.common.CopyContext;
 import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.Entity;
@@ -12,7 +11,6 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.object.view.FieldsObjectMapping;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
-import org.metavm.task.DDLTask;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -305,24 +303,21 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
         return isCommitting() || preparingSet.contains(id);
     }
 
-    public void createDDLTask() {
+    public Commit buildCommit() {
         assert preparing;
-        var newFields = new ArrayList<Field>();
-        var idMap = new HashMap<String, String>();
+        var fieldIdMap = new HashMap<String, String>();
         preparingSet.forEach(id -> {
             var entity = context.getEntity(Entity.class, id);
-            idMap.put(id, entity.getStringId());
-            if(entity instanceof Field field)
-                newFields.add(field);
+            fieldIdMap.put(id, entity.getStringId());
         });
-        var copyContext = CopyContext.create(idMap);
-        context.bind(new DDLTask(newFields, new Commit(
+        return new Commit(
                 new BatchSaveRequest(
-                        NncUtils.map(typeDefMap.values(), copyContext::copy),
-                        NncUtils.map(functionMap.values(), copyContext::copy),
+                        new ArrayList<>(typeDefMap.values()),
+                        new ArrayList<>(functionMap.values()),
                         true
-                )
-        )));
+                ),
+                fieldIdMap
+        );
     }
 
     public static SaveTypeBatch empty(IEntityContext context) {

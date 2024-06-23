@@ -494,7 +494,7 @@ public class TestUtils {
         var transactionOps = new MockTransactionOperations();
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
         var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
-        waitForTaskDone(scheduler, worker, t -> t instanceof DDLTask);
+        waitForTaskDone(scheduler, worker, t -> t instanceof DDL);
     }
 
     public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate) {

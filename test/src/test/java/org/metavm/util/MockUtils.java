@@ -22,7 +22,6 @@ import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
-import org.metavm.object.type.rest.dto.KlassDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -409,18 +408,6 @@ public class MockUtils {
                 .build();
     }
 
-    private static KlassDTO saveType(TypeManager typeManager, KlassDTO klassDTO) {
-        FlowSavingContext.initConfig();
-        return TestUtils.doInTransaction(() -> typeManager.saveType(klassDTO));
-    }
-
-    private static List<String> batchSaveTypes(TypeManager typeManager, List<KlassDTO> klassDTOS) {
-        FlowSavingContext.initConfig();
-        return TestUtils.doInTransaction(() -> typeManager.batchSave(
-                new BatchSaveRequest(klassDTOS, List.of(), false)
-        ));
-    }
-
     public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, EntityContextFactory entityContextFactory) {
         assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm", typeManager, entityContextFactory);
         var productType = typeManager.getTypeByCode("Product").type();
@@ -489,14 +476,15 @@ public class MockUtils {
         assemble(source, typeManager, true, entityContextFactory);
     }
 
-    public static void assemble(String source, TypeManager typeManager, boolean waitForDDLDone, EntityContextFactory entityContextFactory) {
+    public static String assemble(String source, TypeManager typeManager, boolean waitForDDLDone, EntityContextFactory entityContextFactory) {
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             assembler.assemble(List.of(source));
             FlowSavingContext.initConfig();
-            TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true)));
-            if(waitForDDLDone)
+            var commitId = TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true)));
+            if (waitForDDLDone)
                 TestUtils.waitForDDLDone(entityContextFactory);
+            return commitId;
         }
     }
 

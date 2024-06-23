@@ -173,6 +173,8 @@ public enum ErrorCode {
     INVALID_REQUEST_METHOD(1501, "Invalid request method"),
     INVALID_REQUEST_PATH(1502, "Invalid request path"),
 
+    // DDL
+    COMMIT_RUNNING(1601, "Commit is running"),
 
     ;
 
