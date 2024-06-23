@@ -16,7 +16,7 @@ public class ListFieldValue extends FieldValue {
     public ListFieldValue(@JsonProperty("id") String id,
                           @JsonProperty("elementAsChild") boolean elementAsChild,
                           @JsonProperty("elements") List<FieldValue> elements) {
-        super(FieldValueKind.LIST.code(), "");
+        super("");
         this.id = id;
         this.elementAsChild = elementAsChild;
         this.elements = elements;
@@ -32,6 +32,11 @@ public class ListFieldValue extends FieldValue {
 
     public String getId() {
         return id;
+    }
+
+    @Override
+    public int getKind() {
+        return FieldValueKind.LIST.code();
     }
 
     @Override

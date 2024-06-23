@@ -16,7 +16,7 @@ public class ArrayFieldValue extends FieldValue {
     public ArrayFieldValue(@JsonProperty("id") String id,
                            @JsonProperty("elementAsChild") boolean elementAsChild,
                            @JsonProperty("elements") List<FieldValue> elements) {
-        super(FieldValueKind.ARRAY.code(), "");
+        super("");
         this.id = id;
         this.elementAsChild = elementAsChild;
         this.elements = elements;
@@ -32,6 +32,11 @@ public class ArrayFieldValue extends FieldValue {
 
     public String getId() {
         return id;
+    }
+
+    @Override
+    public int getKind() {
+        return FieldValueKind.ARRAY.code();
     }
 
     @Override
@@ -63,4 +68,5 @@ public class ArrayFieldValue extends FieldValue {
     public Object toJson() {
         return NncUtils.map(elements, FieldValue::toJson);
     }
+
 }

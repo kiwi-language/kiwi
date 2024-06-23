@@ -1,13 +1,10 @@
 package org.metavm.flow.rest;
 
 import org.jetbrains.annotations.Nullable;
-import org.metavm.common.CopyContext;
-import org.metavm.common.rest.dto.Copyable;
-import org.metavm.util.NncUtils;
 
 import java.util.List;
 
-public class FunctionCallNodeParam extends CallNodeParam implements Copyable<FunctionCallNodeParam> {
+public class FunctionCallNodeParam extends CallNodeParam {
     public FunctionCallNodeParam(@Nullable FunctionRefDTO flowRef,
                                  @Nullable String type,
                                  List<ArgumentDTO> arguments,
@@ -27,14 +24,4 @@ public class FunctionCallNodeParam extends CallNodeParam implements Copyable<Fun
         return 1;
     }
 
-    @Override
-    public FunctionCallNodeParam copy(CopyContext context) {
-        return new FunctionCallNodeParam(
-                context.copy(getFlowRef()),
-                getType(),
-                NncUtils.map(getArguments(), context::copy),
-                getCapturedExpressionTypes(),
-                getCapturedExpressions()
-        );
-    }
 }

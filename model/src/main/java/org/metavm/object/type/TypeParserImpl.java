@@ -163,7 +163,7 @@ public class TypeParserImpl implements TypeParser {
     }
 
     private VariableType parseVariableType(org.metavm.object.type.antlr.TypeParser.VariableTypeContext ctx) {
-        return new VariableType((TypeVariable) getTypeDef(ctx.IDENTIFIER().getText()));
+        return new VariableType((TypeVariable) getTypeDef(ctx.qualifiedName().getText()));
     }
 
     private PrimitiveType parsePrimitiveType(org.metavm.object.type.antlr.TypeParser.PrimitiveTypeContext ctx) {

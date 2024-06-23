@@ -24,7 +24,7 @@ arrayKind: R | C | V;
 
 classType: qualifiedName typeArguments? (':' DECIMAL_LITERAL)?;
 
-variableType: '?' IDENTIFIER;
+variableType: '?' qualifiedName;
 
 typeArguments: '<' typeList '>';
 

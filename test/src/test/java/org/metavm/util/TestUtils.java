@@ -2,7 +2,9 @@ package org.metavm.util;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -48,7 +50,9 @@ public class TestUtils {
 
     public static final String TEST_RESOURCE_TARGET_ROOT = "/Users/leen/workspace/object/target/test-classes";
 
-    public static final ObjectMapper INDENT_OBJECT_MAPPER = new ObjectMapper();
+    public static final ObjectMapper INDENT_OBJECT_MAPPER = new ObjectMapper()
+            .enable(JsonGenerator.Feature.IGNORE_UNKNOWN)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     static {
         SimpleModule module = new SimpleModule();

@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.atn.ParserATNSimulator;
 import org.antlr.v4.runtime.atn.PredictionContextCache;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
+import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.List;
@@ -181,6 +182,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitPrimary(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitPrimary(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -406,6 +412,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitExpression(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitExpression(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -940,6 +951,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitAllMatch(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitAllMatch(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final AllMatchContext allMatch() throws RecognitionException {
@@ -991,6 +1007,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitList(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitList(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1059,6 +1080,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitPattern(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitPattern(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1135,6 +1161,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitVariableModifier(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitVariableModifier(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1213,6 +1244,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitInnerCreator(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitInnerCreator(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final InnerCreatorContext innerCreator() throws RecognitionException {
@@ -1274,6 +1310,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitCreator(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitCreator(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1377,6 +1418,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitNonWildcardTypeArgumentsOrDiamond(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitNonWildcardTypeArgumentsOrDiamond(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final NonWildcardTypeArgumentsOrDiamondContext nonWildcardTypeArgumentsOrDiamond() throws RecognitionException {
@@ -1435,6 +1481,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitExplicitGenericInvocation(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitExplicitGenericInvocation(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ExplicitGenericInvocationContext explicitGenericInvocation() throws RecognitionException {
@@ -1476,6 +1527,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitClassCreatorRest(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitClassCreatorRest(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1530,6 +1586,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitArrayCreatorRest(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitArrayCreatorRest(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1707,6 +1768,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitArrayInitializer(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitArrayInitializer(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ArrayInitializerContext arrayInitializer() throws RecognitionException {
@@ -1791,6 +1857,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitVariableInitializer(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitVariableInitializer(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1912,6 +1983,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitCreatedName(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitCreatedName(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final CreatedNameContext createdName() throws RecognitionException {
@@ -2028,6 +2104,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitTypeArgumentsOrDiamond(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitTypeArgumentsOrDiamond(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final TypeArgumentsOrDiamondContext typeArgumentsOrDiamond() throws RecognitionException {
@@ -2089,6 +2170,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitMethodCall(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitMethodCall(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2217,6 +2303,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitExpressionList(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitExpressionList(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ExpressionListContext expressionList() throws RecognitionException {
@@ -2280,6 +2371,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitExplicitGenericInvocationSuffix(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitExplicitGenericInvocationSuffix(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2362,6 +2458,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitSuperSuffix(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitSuperSuffix(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final SuperSuffixContext superSuffix() throws RecognitionException {
@@ -2442,6 +2543,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitArguments(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitArguments(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ArgumentsContext arguments() throws RecognitionException {
@@ -2503,6 +2609,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitElementValueArrayInitializer(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitElementValueArrayInitializer(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2593,6 +2704,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitLiteral(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitLiteral(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2689,6 +2805,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitIntegerLiteral(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitIntegerLiteral(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final IntegerLiteralContext integerLiteral() throws RecognitionException {
@@ -2736,6 +2857,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitFloatLiteral(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitFloatLiteral(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2799,6 +2925,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitIdentifier(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitIdentifier(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final IdentifierContext identifier() throws RecognitionException {
@@ -2859,6 +2990,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitTypeIdentifier(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitTypeIdentifier(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final TypeIdentifierContext typeIdentifier() throws RecognitionException {
@@ -2908,6 +3044,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitTypeTypeOrVoid(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitTypeTypeOrVoid(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2995,6 +3136,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitElementValuePairs(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitElementValuePairs(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ElementValuePairsContext elementValuePairs() throws RecognitionException {
@@ -3056,6 +3202,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitElementValuePair(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitElementValuePair(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ElementValuePairContext elementValuePair() throws RecognitionException {
@@ -3105,6 +3256,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitElementValue(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitElementValue(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3173,6 +3329,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitQualifiedName(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitQualifiedName(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final QualifiedNameContext qualifiedName() throws RecognitionException {
@@ -3237,6 +3398,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitAltAnnotationQualifiedName(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitAltAnnotationQualifiedName(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3308,6 +3474,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitAnnotation(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitAnnotation(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3402,6 +3573,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitTypeArgument(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitTypeArgument(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3500,6 +3676,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitTypeArguments(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitTypeArguments(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final TypeArgumentsContext typeArguments() throws RecognitionException {
@@ -3576,6 +3757,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitClassOrInterfaceType(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitClassOrInterfaceType(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3673,6 +3859,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitTypeType(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitTypeType(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3807,6 +3998,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitPrimitiveType(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitPrimitiveType(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final PrimitiveTypeContext primitiveType() throws RecognitionException {
@@ -3858,6 +4054,11 @@ public class MetaVMParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitNonWildcardTypeArguments(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitNonWildcardTypeArguments(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final NonWildcardTypeArgumentsContext nonWildcardTypeArguments() throws RecognitionException {
@@ -3908,6 +4109,11 @@ public class MetaVMParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof MetaVMParserListener ) ((MetaVMParserListener)listener).exitTypeList(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof MetaVMParserVisitor ) return ((MetaVMParserVisitor<? extends T>)visitor).visitTypeList(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 

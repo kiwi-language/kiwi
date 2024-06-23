@@ -15,7 +15,7 @@ public class InstanceFieldValue extends FieldValue {
 
     public InstanceFieldValue(@JsonProperty("displayValue") String displayValue,
                               @JsonProperty("instance") InstanceDTO instance) {
-        super(FieldValueKind.INSTANCE_DTO.code(), displayValue);
+        super(displayValue);
         this.instance = instance;
     }
 
@@ -31,6 +31,11 @@ public class InstanceFieldValue extends FieldValue {
     @Override
     public Object toJson() {
         return instance.toJson();
+    }
+
+    @Override
+    public int getKind() {
+        return FieldValueKind.INSTANCE_DTO.code();
     }
 
     @Override
@@ -54,4 +59,5 @@ public class InstanceFieldValue extends FieldValue {
         else
             return false;
     }
+
 }

@@ -76,7 +76,7 @@ public interface TypeKey extends TypeOrTypeKey {
                 return new ClassTypeKey(id);
         }
         if(ctx.variableType() != null)
-            return new VariableTypeKey(Id.parse(ctx.variableType().IDENTIFIER().getText().substring(Constants.ID_PREFIX.length())));
+            return new VariableTypeKey(Id.parse(ctx.variableType().qualifiedName().getText().substring(Constants.ID_PREFIX.length())));
         if (ctx.elementType != null) {
             var kind = ctx.arrayKind();
             return new ArrayTypeKey(parseArrayKind(kind).code(), fromTypeContext(ctx.elementType));

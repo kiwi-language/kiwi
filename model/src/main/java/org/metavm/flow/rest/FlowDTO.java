@@ -1,9 +1,7 @@
 package org.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.metavm.common.CopyContext;
 import org.metavm.common.rest.dto.BaseDTO;
-import org.metavm.common.rest.dto.Copyable;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -30,31 +28,7 @@ public record FlowDTO(
         Map<String, String> attributes,
         int state,
         FlowParam param
-) implements BaseDTO, GenericDeclarationDTO, Copyable<FlowDTO> {
-
-    public FlowDTO copy(CopyContext context) {
-        return new FlowDTO(
-                context.mapId(id),
-                name,
-                code,
-                isNative,
-                synthetic,
-                context.copy(rootScope),
-                returnType,
-                NncUtils.map(parameters, context::copy),
-                type,
-                typeParameterIds,
-                horizontalTemplateId,
-                typeArguments,
-                capturedTypeIds,
-                capturedCompositeTypeIds,
-                capturedFlowIds,
-                isTemplate,
-                attributes,
-                state,
-                context.copy(param)
-        );
-    }
+) implements BaseDTO, GenericDeclarationDTO {
 
     @JsonIgnore
     public FlowSignatureDTO signature() {

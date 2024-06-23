@@ -10,8 +10,13 @@ public class ExpressionFieldValue extends FieldValue {
     private final String expression;
 
     public ExpressionFieldValue(@JsonProperty("expression") String expression) {
-        super(FieldValueKind.EXPRESSION.code(),"");
+        super("");
         this.expression = expression;
+    }
+
+    @Override
+    public int getKind() {
+        return FieldValueKind.EXPRESSION.code();
     }
 
     public String getExpression() {

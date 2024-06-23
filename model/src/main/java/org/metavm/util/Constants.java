@@ -57,4 +57,12 @@ public class Constants {
         return str.substring(ID_PREFIX.length());
     }
 
+    public static String addIdPrefix(String id) {
+        return ID_PREFIX + id;
+    }
+
+    public static boolean isIdPrefixed(String str) {
+        return str.startsWith(ID_PREFIX);
+    }
+
 }

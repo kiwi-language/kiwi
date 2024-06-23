@@ -1,13 +1,9 @@
 package org.metavm.flow.rest;
 
-import org.metavm.common.CopyContext;
-import org.metavm.common.rest.dto.Copyable;
-import org.metavm.util.NncUtils;
-
 import javax.annotation.Nullable;
 import java.util.List;
 
-public final class AddObjectNodeParam extends ScopeNodeParam implements NewParam<AddObjectNodeParam>, Copyable<AddObjectNodeParam> {
+public final class AddObjectNodeParam extends ScopeNodeParam implements NewParam<AddObjectNodeParam> {
     private final String type;
     private final Boolean initializeArrayChildren;
     private final List<FieldParamDTO> fieldParams;
@@ -57,15 +53,4 @@ public final class AddObjectNodeParam extends ScopeNodeParam implements NewParam
         return new AddObjectNodeParam(type, initializeArrayChildren, ephemeral, fieldParams, parentRef, getBodyScope());
     }
 
-    @Override
-    public AddObjectNodeParam copy(CopyContext context) {
-        return new AddObjectNodeParam(
-                type,
-                initializeArrayChildren,
-                ephemeral,
-                NncUtils.map(fieldParams, context::copy),
-                context.copy(parentRef),
-                context.copy(getBodyScope())
-        );
-    }
 }

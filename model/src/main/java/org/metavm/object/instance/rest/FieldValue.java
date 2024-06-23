@@ -17,20 +17,15 @@ import java.util.Set;
                 @JsonSubTypes.Type(value = ListFieldValue.class, name = "7"),
         }
 )
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class FieldValue {
-    private final int type;
     private final String displayValue;
 
-    public FieldValue(@JsonProperty("type") int type,
-                      @JsonProperty("displayValue") String displayValue) {
-        this.type = type;
+    public FieldValue(@JsonProperty("displayValue") String displayValue) {
         this.displayValue = displayValue;
     }
 
-    public int getType() {
-        return type;
-    }
+    public abstract int getKind();
 
     public String getDisplayValue() {
         return displayValue;

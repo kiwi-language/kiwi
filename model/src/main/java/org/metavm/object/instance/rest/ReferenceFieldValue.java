@@ -21,22 +21,27 @@ public class ReferenceFieldValue extends FieldValue {
     }
 
     private final String id;
-    private final String typeId;
+    private final String type;
 
     public ReferenceFieldValue(@JsonProperty("displayValue") String displayValue,
                                @JsonProperty("id") String id,
-                               @JsonProperty("typeId") @Nullable String typeId) {
-        super(FieldValueKind.REFERENCE.code(), displayValue);
+                               @JsonProperty("type") @Nullable String type) {
+        super(displayValue);
         this.id = id;
-        this.typeId = typeId;
+        this.type = type;
     }
 
     public String getId() {
         return id;
     }
 
-    public String getTypeId() {
-        return typeId;
+    public String getType() {
+        return type;
+    }
+
+    @Override
+    public int getKind() {
+        return FieldValueKind.REFERENCE.code();
     }
 
     @Override
@@ -70,4 +75,5 @@ public class ReferenceFieldValue extends FieldValue {
         } else
             return false;
     }
+
 }

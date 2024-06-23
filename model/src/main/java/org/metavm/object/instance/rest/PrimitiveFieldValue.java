@@ -27,7 +27,7 @@ public class PrimitiveFieldValue extends FieldValue {
             @JsonProperty("displayValue") String displayValue,
             @JsonProperty("primitiveKind") int primitiveKind,
             @JsonProperty("value") Object value) {
-        super(FieldValueKind.PRIMITIVE.code(), displayValue);
+        super(displayValue);
         this.primitiveKind = primitiveKind;
         this.value = value;
     }
@@ -66,6 +66,11 @@ public class PrimitiveFieldValue extends FieldValue {
 
     public int getPrimitiveKind() {
         return primitiveKind;
+    }
+
+    @Override
+    public int getKind() {
+        return FieldValueKind.PRIMITIVE.code();
     }
 
     @Override
