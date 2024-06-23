@@ -386,13 +386,13 @@ public class Method extends Flow implements Property, GenericElement {
             }
             if (isConstructor && result.ret() != null) {
                 var instance = (ClassInstance) result.ret();
-//                instance.initializeUnreadyFields(callContext);
+                instance.initializeUnreadyFields(callContext);
                 var uninitializedField = instance.findUninitializedField(declaringType);
                 if (uninitializedField != null) {
                     var exception = ClassInstance.allocate(StdKlass.runtimeException.get().getType());
                     var exceptionNative = new RuntimeExceptionNative(exception);
                     exceptionNative.RuntimeException(Instances.stringInstance(
-                                    "Failed to create object " + instance.getType().getName() + "，" +
+                                    "Failed to instantiate " + instance.getType().getTypeDesc() + "，" +
                                             "field " + uninitializedField.getName() + " was not initialized"),
                             callContext);
                     return new FlowExecResult(null, exception);

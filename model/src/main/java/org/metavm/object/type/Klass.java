@@ -247,13 +247,19 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void forEachField(Consumer<Field> action) {
         if (superType != null)
             superType.resolve().forEachField(action);
-        this.fields.stream().filter(Field::isReady).forEach(action);
+        for (Field field : fields) {
+            if(field.isReady())
+                action.accept(field);
+        }
     }
 
     public void forEachUnreadyField(Consumer<Field> action) {
         if(superType != null)
-            superType.resolve().forEachField(action);
-        this.fields.stream().filter(f -> !f.isReady()).forEach(action);
+            superType.resolve().forEachUnreadyField(action);
+        for (Field field : this.fields) {
+            if(!field.isReady())
+                action.accept(field);
+        }
     }
 
     public boolean allFieldsMatch(Predicate<Field> predicate) {
@@ -419,28 +425,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.state = state;
     }
 
-    public List<Field> getSortedFields() {
-        if (sortedFields == null) {
-            synchronized (this) {
-                if (sortedFields == null) {
-                    var sf = new ArrayList<Field>();
-                    forEachField(f -> {
-                        if (f.isTagNotNull())
-                            sf.add(f);
-                    });
-                    sf.sort((f1, f2) -> {
-                        if (f1.getDeclaringType() == f2.getDeclaringType())
-                            return f1.getDeclaringType().getId().compareTo(f2.getDeclaringType().getId());
-                        else
-                            return Long.compare(f1.getId().getNodeId(), f2.getId().getNodeId());
-                    });
-                    sortedFields = sf;
-                }
-            }
-        }
-        return sortedFields;
-    }
-
     public List<List<Field>> getSortedKlassAndFields() {
         if (sortedKlassAndFields == null) {
             synchronized (this) {
@@ -448,7 +432,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                     var fields = new ArrayList<Field>();
                     Klass k = this;
                     while (true) {
-                        fields.addAll(k.readyFields());
+                        fields.addAll(k.getFields());
                         if (k.getSuperType() != null)
                             k = k.getSuperType().resolve();
                         else

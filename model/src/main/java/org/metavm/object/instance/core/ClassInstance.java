@@ -270,8 +270,10 @@ public class ClassInstance extends DurableInstance {
             var groupTag = input.readLong();
             int cmp = 1;
             while (j < sortedFields.size() && (cmp = Long.compare(sortedFields.get(j).get(0).getRecordGroupTag(), groupTag)) < 0) {
-                for (var field : sortedFields.get(j))
-                    instFields.add(new InstanceField(this, field, Instances.nullInstance(), false));
+                for (var field : sortedFields.get(j)) {
+                    if(field.isReady())
+                        instFields.add(new InstanceField(this, field, Instances.nullInstance(), false));
+                }
                 j++;
             }
             if (cmp == 0) {
@@ -280,11 +282,12 @@ public class ClassInstance extends DurableInstance {
                 int numFields = input.readInt();
                 for (int l = 0; l < numFields; l++) {
                     var fieldTag = input.readLong();
-                    while (m < fields.size() && fields.get(m).getRecordTag() < fieldTag) {
-                        instFields.add(new InstanceField(this, fields.get(m), Instances.nullInstance(), false));
+                    Field field;
+                    while (m < fields.size() && (field = fields.get(m)).getRecordTag() < fieldTag) {
+                        if(field.isReady())
+                            instFields.add(new InstanceField(this, field, Instances.nullInstance(), false));
                         m++;
                     }
-                    Field field;
                     if (m < fields.size() && (field = fields.get(m)).getRecordTag() == fieldTag) {
                         input.setParent(this, field);
                         var value = input.readInstance();
@@ -294,8 +297,11 @@ public class ClassInstance extends DurableInstance {
                         input.skipInstance();
                 }
                 input.setParent(getParent(), getParentField());
-                for (; m < fields.size(); m++)
-                    instFields.add(new InstanceField(this, fields.get(m), Instances.nullInstance(), false));
+                for (; m < fields.size(); m++) {
+                    var field = fields.get(m);
+                    if(field.isReady())
+                        instFields.add(new InstanceField(this, field, Instances.nullInstance(), false));
+                }
             } else {
                 int numFields = input.readInt();
                 for (int k = 0; k < numFields; k++) {
@@ -305,8 +311,10 @@ public class ClassInstance extends DurableInstance {
             }
         }
         for (; j < sortedFields.size(); j++) {
-            for (Field field : sortedFields.get(j))
-                instFields.add(new InstanceField(this, field, Instances.nullInstance(), false));
+            for (Field field : sortedFields.get(j)) {
+                if(field.isReady())
+                    instFields.add(new InstanceField(this, field, Instances.nullInstance(), false));
+            }
         }
     }
 

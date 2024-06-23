@@ -486,12 +486,17 @@ public class MockUtils {
     }
 
     public static void assemble(String source, TypeManager typeManager, EntityContextFactory entityContextFactory) {
+        assemble(source, typeManager, true, entityContextFactory);
+    }
+
+    public static void assemble(String source, TypeManager typeManager, boolean waitForDDLDone, EntityContextFactory entityContextFactory) {
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             assembler.assemble(List.of(source));
             FlowSavingContext.initConfig();
             TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true)));
-            TestUtils.waitForDDLDone(entityContextFactory);
+            if(waitForDDLDone)
+                TestUtils.waitForDDLDone(entityContextFactory);
         }
     }
 

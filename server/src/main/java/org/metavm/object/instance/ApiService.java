@@ -454,8 +454,8 @@ public class ApiService extends EntityContextFactoryAware {
         context.getInstanceContext().bind(self);
         var result = Flows.execute(r.method, self, r.arguments, context);
         if (result.exception() != null)
-            throw new InternalException("Failed to create object of " + type.getTypeDesc() + " with value " + map
-                    + ", message: " + ThrowableNative.getMessage(result.exception()));
+            throw new InternalException("Failed to instantiate " + type.getTypeDesc() + " with value " + map
+                    + ": " + ThrowableNative.getMessage(result.exception()));
         var updateMap = new HashMap<String, Object>();
         map.forEach((k, v) -> {
             if (k instanceof String s)
