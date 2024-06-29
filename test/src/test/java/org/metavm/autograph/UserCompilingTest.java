@@ -142,6 +142,7 @@ public class UserCompilingTest extends CompilerTestBase {
                         "create",
                         List.of("lab", platformUser.getIdNotNull())
                 ));
+                DebugEnv.applicationId = applicationId;
                 var application = instanceManager.get(applicationId, 2).instance();
                 var reloadedPlatformUser = instanceManager.get(platformUser.id(), 1).instance();
                 var joinedApplications = ((InstanceFieldValue) reloadedPlatformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();

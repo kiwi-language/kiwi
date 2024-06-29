@@ -1,7 +1,5 @@
 package org.metavm.object.instance;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.EntityChange;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -10,13 +8,17 @@ import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.PersistenceUtils;
 import org.metavm.object.instance.persistence.VersionRT;
-import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.type.IndexProvider;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ChangeList;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.function.Function;
 
 import static org.metavm.entity.DifferenceAttributeKey.NEW_INDEX_ITEMS;
@@ -28,12 +30,12 @@ public class IndexConstraintPlugin implements ContextPlugin {
 
     public static final int BATCH_SIZE = 2000;
 
-    private final IndexEntryMapper indexEntryMapper;
+    private final IInstanceStore instanceStore;
 
     private final IndexProvider indexProvider;
 
-    public IndexConstraintPlugin(IndexEntryMapper indexEntryMapper, IndexProvider indexProvider) {
-        this.indexEntryMapper = indexEntryMapper;
+    public IndexConstraintPlugin(IInstanceStore instanceStore, IndexProvider indexProvider) {
+        this.instanceStore = instanceStore;
         this.indexProvider = indexProvider;
     }
 
@@ -56,19 +58,19 @@ public class IndexConstraintPlugin implements ContextPlugin {
                         });
             }
         });
-        var oldIds = new HashSet<Id>();
-        var oldIdBytes = new ArrayList<byte[]>();
+        var oldIdSet = new HashSet<Id>();
+        var oldIds = new ArrayList<Id>();
         change.forEachUpdateOrDelete(v -> {
+            oldIdSet.add(v.id());
             oldIds.add(v.id());
-            oldIdBytes.add(v.id().toBytes());
         });
         var oldEntries = new ArrayList<IndexEntryPO>();
-        NncUtils.doInBatch(oldIdBytes,
-                ids -> oldEntries.addAll(indexEntryMapper.selectByInstanceIds(context.getAppId(), ids)));
+        NncUtils.doInBatch(oldIds,
+                ids -> oldEntries.addAll(instanceStore.getIndexEntriesByInstanceIds(ids, context)));
         NncUtils.doInBatch(new ArrayList<>(currentUniqueKeys),
-                keys -> indexEntryMapper.selectByKeys(context.getAppId(), keys).forEach(entry -> {
+                keys -> instanceStore.getIndexEntriesByKeys( keys, context).forEach(entry -> {
                     var id = entry.getId();
-                    if (!oldIds.contains(id)) {
+                    if (!oldIdSet.contains(id)) {
                         var currentEntry = NncUtils.findRequired(currentEntries, e -> e.getKey().equals(entry.getKey()));
                         var index = indexProvider.getIndex(Id.fromBytes(entry.getIndexId()));
                         throw BusinessException.constraintCheckFailed(instanceMap.get(currentEntry.getId()), index);
@@ -79,35 +81,18 @@ public class IndexConstraintPlugin implements ContextPlugin {
         return false;
     }
 
-    private List<IndexEntryPO> selectByKeys(long appId, List<IndexKeyPO> keys) {
-        List<IndexEntryPO> result = new ArrayList<>();
-        for (int i = 0; i < 20 && (i + 1) * BATCH_SIZE < keys.size(); i++) {
-            var batch = keys.subList(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
-            result.addAll(indexEntryMapper.selectByKeys(appId, batch));
-        }
-        return result;
-    }
-
-    private List<IndexEntryPO> selectByInstanceIds(long appId, List<byte[]> instanceIds) {
-        List<IndexEntryPO> result = new ArrayList<>();
-        for (int i = 0; i < 20 && (i + 1) * BATCH_SIZE < instanceIds.size(); i++) {
-            var batch = instanceIds.subList(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
-            result.addAll(indexEntryMapper.selectByInstanceIds(appId, batch));
-        }
-        return result;
-    }
-
     @Override
     public void afterSaving(EntityChange<VersionRT> change, IInstanceContext context) {
         Collection<IndexEntryPO> oldItems = change.getAttribute(OLD_INDEX_ITEMS);
         Collection<IndexEntryPO> currentItems = change.getAttribute(NEW_INDEX_ITEMS);
         ChangeList<IndexEntryPO> changeList = ChangeList.build(oldItems, currentItems, Function.identity());
-        if (NncUtils.isNotEmpty(changeList.inserts())) {
-            NncUtils.doInBatch(changeList.inserts(), indexEntryMapper::batchInsert);
-        }
-        if (NncUtils.isNotEmpty(changeList.deletes())) {
-            NncUtils.doInBatch(changeList.deletes(), indexEntryMapper::batchDelete);
-        }
+        instanceStore.saveIndexEntries(changeList);
+//        if (NncUtils.isNotEmpty(changeList.inserts())) {
+//            NncUtils.doInBatch(changeList.inserts(), instanceStore::batchInsert);
+//        }
+//        if (NncUtils.isNotEmpty(changeList.deletes())) {
+//            NncUtils.doInBatch(changeList.deletes(), instanceStore::batchDelete);
+//        }
     }
 
 

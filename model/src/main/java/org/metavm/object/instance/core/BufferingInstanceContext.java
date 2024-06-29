@@ -34,7 +34,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
                                     boolean readonly) {
         super(appId, parent, readonly, indexSource, typeDefProvider, mappingProvider);
         this.idInitializer = idInitializer;
-        this.loadingBuffer = new LoadingBuffer(this, treeSources, versionSource);
+        this.loadingBuffer = new LoadingBuffer(this, treeSources);
     }
 
 

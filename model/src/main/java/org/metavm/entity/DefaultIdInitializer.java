@@ -1,16 +1,15 @@
 package org.metavm.entity;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.StructuralVisitor;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -47,7 +46,7 @@ public class DefaultIdInitializer implements IdInitializer {
                 }
             });
         }
-        var klassType = ModelDefRegistry.getType(Klass.class);
+        var klassType = StdKlass.entity.type();
         var countMap = Map.of(klassType, (int) NncUtils.count(instancesToInitId, DurableInstance::isRoot));
         var ids = new LinkedList<>(idProvider.allocate(appId, countMap).get(klassType));
         var typeDefInstance = new HashMap<TypeDef, DurableInstance>();

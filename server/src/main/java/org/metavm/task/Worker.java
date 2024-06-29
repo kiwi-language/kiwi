@@ -2,6 +2,7 @@ package org.metavm.task;
 
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
+import org.metavm.entity.IEntityContext;
 import org.metavm.util.InternalException;
 import org.metavm.util.NetworkUtils;
 import org.metavm.util.NncUtils;
@@ -53,7 +54,7 @@ public class Worker extends EntityContextFactoryAware {
     public void waitFor(Predicate<Task> predicate) {
         for (int i = 0; i < MAX_RUNS; i++) {
             var tasks = run0();
-            if(NncUtils.anyMatch(tasks, t -> t.isFinished() && predicate.test(t)))
+            if (NncUtils.anyMatch(tasks, t -> t.isFinished() && predicate.test(t)))
                 return;
         }
         throw new IllegalStateException("Condition not met after " + MAX_RUNS + " runs");
@@ -82,8 +83,15 @@ public class Worker extends EntityContextFactoryAware {
         return transactionOperations.execute(s -> {
             try (var appContext = newContext(shadowTask.getAppId())) {
                 var appTask = appContext.getEntity(Task.class, shadowTask.getAppTaskId());
-                appTask.run(appContext);
-                if (appTask.isFinished()) {
+                boolean done;
+                if (appTask instanceof WalTask walTask) {
+                    try (var walContext = entityContextFactory.newLoadedContext(shadowTask.getAppId(), walTask.getWAL())) {
+                        done = runTask0(appTask, walContext);
+                        walContext.finish();
+                    }
+                } else
+                    done = runTask0(appTask, appContext);
+                if (done) {
                     var group = appTask.getGroup();
                     if (group != null) {
                         if (group.isDone())
@@ -99,6 +107,11 @@ public class Worker extends EntityContextFactoryAware {
                 return appTask;
             }
         });
+    }
+
+    private boolean runTask0(Task appTask, IEntityContext appContext) {
+        appTask.run(appContext);
+        return appTask.isFinished();
     }
 
 }

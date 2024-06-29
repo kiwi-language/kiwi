@@ -84,7 +84,7 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException tooManyFields() {
-        throw new BusinessException(ErrorCode.TOO_MAY_FIELDS);
+        throw new BusinessException(ErrorCode.TOO_MANY_FIELDS);
     }
 
     public static BusinessException instanceNotFound(long id) {

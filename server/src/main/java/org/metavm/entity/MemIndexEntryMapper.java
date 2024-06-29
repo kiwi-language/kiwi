@@ -8,11 +8,15 @@ import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
 public class MemIndexEntryMapper implements IndexEntryMapper {
+
+    public static final Logger logger = LoggerFactory.getLogger(MemIndexEntryMapper.class);
 
     private final Map<GlobalKey, List<IndexEntryPO>> key2items = new HashMap<>();
     private final NavigableSet<IndexEntryPO> entries = new TreeSet<>();
@@ -110,8 +114,9 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
         for (IndexEntryPO entry : entries) {
             getItems(new GlobalKey(entry.getAppId(), entry.getKey())).add(entry);
             getItemsByInstanceId(entry.getId()).add(entry);
-            if(!this.entries.add(entry))
+            if(!this.entries.add(entry)) {
                 throw new InternalException("Duplicate index entry: " + entry);
+            }
         }
     }
 

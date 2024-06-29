@@ -1,7 +1,6 @@
 package org.metavm.object.instance;
 
 import org.metavm.entity.StoreLoadRequest;
-import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.persistence.InstancePO;
 

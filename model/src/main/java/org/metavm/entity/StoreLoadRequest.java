@@ -7,18 +7,6 @@ import java.util.function.Predicate;
 
 public class StoreLoadRequest {
 
-    public static StoreLoadRequest fromLoadRequests(List<LoadRequest> loadRequests) {
-        if (NncUtils.isEmpty(loadRequests)) {
-            return new StoreLoadRequest(List.of());
-        }
-        Class<?> entityType = null;
-        List<Long> ids = new ArrayList<>();
-        for (LoadRequest loadRequest : loadRequests) {
-            ids.add(loadRequest.id());
-        }
-        return create(ids);
-    }
-
     public static StoreLoadRequest create(Long id) {
         return create(List.of(id));
     }

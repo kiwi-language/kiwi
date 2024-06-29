@@ -1,15 +1,12 @@
 package org.metavm.task;
 
-import org.metavm.api.ChildEntity;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.Field;
-import org.metavm.object.type.MetadataState;
-import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -17,26 +14,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class DDL extends ScanTask {
-
-    public static DDL create(Commit commit, IEntityContext context) {
-        var fields = NncUtils.mapAndFilterByType(
-                commit.getNewElementIds(),
-                id -> context.getEntity(Object.class, id),
-                Field.class
-        );
-        return new DDL(fields, commit);
-    }
+public class DDL extends ScanTask implements WalTask {
 
     private static final Logger logger = LoggerFactory.getLogger(DDL.class);
 
-    @ChildEntity
-    private final ReadWriteArray<Field> fields = addChild(new ReadWriteArray<>(Field.class), "fields");
     private final Commit commit;
 
-    public DDL(List<Field> fields, Commit commit) {
+    public DDL(Commit commit) {
         super("DDL " + NncUtils.formatDate(commit.getTime()));
-        this.fields.addAll(fields);
         this.commit = commit;
     }
 
@@ -54,6 +39,7 @@ public class DDL extends ScanTask {
     }
 
     private void processOne(ClassInstance instance, IEntityContext context) {
+        var fields = NncUtils.map(commit.getFieldIds(), context::getField);
         for (Field field : fields) {
             if (field.getDeclaringType().getType().isInstance(instance))
                 initializeField(instance, field, context);
@@ -62,17 +48,23 @@ public class DDL extends ScanTask {
 
     private void initializeField(ClassInstance instance, Field field, IEntityContext context) {
         var initialValue = Instances.computeFieldInitialValue(instance, field, context.getInstanceContext());
-        if (!instance.isFieldInitialized(field))
-            instance.initField(field, initialValue);
+//        if (!instance.isFieldInitialized(field))
+        instance.setField(field, initialValue);
     }
 
     @Override
     protected void onScanOver(IEntityContext context) {
-        for (Field field : fields) {
-            field.setState(MetadataState.READY);
+        try {
+            commit.finish();
+        } catch (Throwable e) {
+            logger.info("Failed to commit wal: {}", commit.getWal().getStringId());
+            throw e;
         }
-        Types.submitCommit(commit, context);
-        commit.finish();
+
     }
 
+    @Override
+    public WAL getWAL() {
+        return commit.getWal();
+    }
 }

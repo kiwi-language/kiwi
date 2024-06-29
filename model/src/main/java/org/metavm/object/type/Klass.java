@@ -208,7 +208,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public List<Field> getReadyFields() {
-        return readyFields();
+        return fields.toList();
     }
 
     public List<Field> getFields() {
@@ -217,9 +217,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public List<Field> getAllFields() {
         if (superType != null)
-            return NncUtils.union(superType.resolve().getAllFields(), readyFields());
+            return NncUtils.union(superType.resolve().getAllFields(), fields.toList());
         else
-            return readyFields();
+            return fields.toList();
     }
 
     @Override
@@ -248,24 +248,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (superType != null)
             superType.resolve().forEachField(action);
         for (Field field : fields) {
-            if(field.isReady())
-                action.accept(field);
-        }
-    }
-
-    public void forEachUnreadyField(Consumer<Field> action) {
-        if(superType != null)
-            superType.resolve().forEachUnreadyField(action);
-        for (Field field : this.fields) {
-            if(!field.isReady())
-                action.accept(field);
+            action.accept(field);
         }
     }
 
     public boolean allFieldsMatch(Predicate<Field> predicate) {
         if (superType != null && !superType.resolve().allFieldsMatch(predicate))
             return false;
-        return this.fields.stream().filter(Field::isReady).allMatch(predicate);
+        return this.fields.stream().allMatch(predicate);
     }
 
     @NoProxy
@@ -799,10 +789,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             superType.resolve().forEachStaticField(action);
     }
 
-    public List<Field> readyFields() {
-        return fields.filter(Field::isReady, true);
-    }
-
     public boolean containsField(long fieldId) {
         return fields.get(Entity::tryGetId, fieldId) != null || superType != null && superType.resolve().containsField(fieldId);
     }
@@ -895,7 +881,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (superType != null && superType.resolve().containsStaticField(id))
             return superType.resolve().getStaticField(id);
         Field field = staticFields.get(Entity::tryGetId, id);
-        if (field != null && field.isReady())
+        if (field != null)
             return field;
         throw new InternalException("Field '" + id + "' does not exist or is not ready");
     }

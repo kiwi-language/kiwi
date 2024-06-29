@@ -356,6 +356,10 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     public void finish() {
+        for (Object o : model2instance.keySet()) {
+            if(o instanceof ContextFinishWare c)
+                c.onContextFinish(this);
+        }
         instanceContext.finish();
     }
 

@@ -1,11 +1,12 @@
 package org.metavm.object.instance;
 
-import org.springframework.stereotype.Component;
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.entity.StoreLoadRequest;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TreeVersion;
+import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.*;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.instance.persistence.mappers.InstanceMapper;
@@ -15,6 +16,7 @@ import org.metavm.util.ChangeList;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.NncUtils;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 
@@ -31,6 +33,11 @@ public class InstanceStore extends BaseInstanceStore {
         this.instanceMapper = instanceMapper;
         this.indexEntryMapper = indexEntryMapper;
         this.referenceMapper = referenceMapper;
+        WAL.setCommitHook(wal -> {
+            save(wal.getInstanceChanges());
+            saveReferences(wal.getReferenceChanges());
+            saveIndexEntries(wal.getIndexEntryChanges());
+        });
     }
 
     @Override
@@ -61,6 +68,16 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
+    public List<IndexEntryPO> getIndexEntriesByKeys(List<IndexKeyPO> keys, IInstanceContext context) {
+        return indexEntryMapper.selectByKeys(context.getAppId(), keys);
+    }
+
+    @Override
+    public List<IndexEntryPO> getIndexEntriesByInstanceIds(Collection<Id> instanceIds, IInstanceContext context) {
+        return indexEntryMapper.selectByInstanceIds(context.getAppId(), NncUtils.map(instanceIds, Id::toBytes));
+    }
+
+    @Override
     public void saveReferences(ChangeList<ReferencePO> refChanges) {
         try (var entry = ContextUtil.getProfiler().enter("InstanceStore.saveReferences")) {
             entry.addMessage("numChanges", refChanges.inserts().size() + refChanges.updates().size() + refChanges.deletes().size());
@@ -70,6 +87,17 @@ public class InstanceStore extends BaseInstanceStore {
                     referenceMapper::batchDelete
             );
         }
+    }
+
+    @Override
+    public void saveIndexEntries(ChangeList<IndexEntryPO> changes) {
+        indexEntryMapper.batchInsert(changes.inserts());
+        indexEntryMapper.batchDelete(changes.deletes());
+    }
+
+    @Override
+    public void saveInstanceLogs(List<InstanceLog> instanceLogs) {
+
     }
 
     @Override
@@ -102,11 +130,13 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public List<Id> query(InstanceIndexQuery query, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.query")) {
-            return NncUtils.map(
-                    indexEntryMapper.query(PersistenceUtils.toIndexQueryPO(query, context.getAppId(), context.getLockMode().code())),
-                    IndexEntryPO::getId
-            );
+            return NncUtils.map(queryEntries(query, context), IndexEntryPO::getId);
         }
+    }
+
+    @Override
+    public List<IndexEntryPO> queryEntries(InstanceIndexQuery query, IInstanceContext context) {
+        return indexEntryMapper.query(PersistenceUtils.toIndexQueryPO(query, context.getAppId(), context.getLockMode().code()));
     }
 
     @Override
@@ -184,7 +214,7 @@ public class InstanceStore extends BaseInstanceStore {
         }
     }
 
-//    @Override
+    //    @Override
 //    public Set<Id> getAliveInstanceIds(long appId, Set<Id> instanceIds) {
 //        if (NncUtils.isEmpty(instanceIds))
 //            return Set.of();

@@ -1,16 +1,22 @@
 package org.metavm.util;
 
+import org.metavm.object.instance.ChangeType;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.log.InstanceLog;
+import org.metavm.object.instance.persistence.IndexEntryPO;
+import org.metavm.object.instance.persistence.IndexKeyPO;
+import org.metavm.object.instance.persistence.InstancePO;
+import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.type.*;
 
 import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class InstanceInput implements Closeable {
 
@@ -121,6 +127,13 @@ public class InstanceInput implements Closeable {
         skipper.visit();
     }
 
+    public byte[] readInstanceBytes() {
+        var bout = new ByteArrayOutputStream();
+        var copyVisitor = new StreamCopier(inputStream, bout);
+        copyVisitor.visit();
+        return bout.toByteArray();
+    }
+
     public String readString() {
         int len = readInt();
         byte[] bytes = new byte[len];
@@ -192,6 +205,36 @@ public class InstanceInput implements Closeable {
         return loadedFromCache;
     }
 
+    public InstancePO readInstancePO(long appId) {
+        var id = readLong();
+        var data = new byte[readInt()];
+        read(data);
+        return new InstancePO(appId, id, data, 0L, 0L, readLong());
+    }
+
+    public IndexEntryPO readIndexEntryPO(long appId) {
+        return new IndexEntryPO(appId, readIndexKeyPO(), readId().toBytes());
+    }
+
+    public IndexKeyPO readIndexKeyPO() {
+        var indexId = readId().toBytes();
+        var columns = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
+        for (int i = 0; i < columns.length; i++) {
+            columns[i] = new byte[readInt()];
+            read(columns[i]);
+        }
+        return new IndexKeyPO(indexId, columns);
+    }
+
+    public <T> List<T> readList(Supplier<T> read) {
+        var size = readInt();
+        var list = new ArrayList<T>(size);
+        for (int i = 0; i < size; i++) {
+            list.add(read.get());
+        }
+        return list;
+    }
+
     public void setLoadedFromCache(boolean loadedFromCache) {
         this.loadedFromCache = loadedFromCache;
     }
@@ -203,5 +246,13 @@ public class InstanceInput implements Closeable {
 
     public long getTreeId() {
         return treeId;
+    }
+
+    public ReferencePO readReferencePO(long appId) {
+        return new ReferencePO(appId, readLong(), readId().toBytes(), readInt());
+    }
+
+    public InstanceLog readInstanceLog(long appId) {
+        return new InstanceLog(appId, readId(), ChangeType.values()[readInt()], readLong());
     }
 }

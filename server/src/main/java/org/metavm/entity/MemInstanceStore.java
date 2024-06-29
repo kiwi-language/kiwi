@@ -26,7 +26,8 @@ public class MemInstanceStore extends InstanceStore {
 
     public MemInstanceStore(InstanceMapper instanceMapper,
                             IndexEntryMapper indexEntryMapper,
-                            ReferenceMapper referenceMapper) {
+                            ReferenceMapper referenceMapper
+                            ) {
         super(instanceMapper,
                 indexEntryMapper, referenceMapper);
         this.indexEntryMapper = indexEntryMapper;

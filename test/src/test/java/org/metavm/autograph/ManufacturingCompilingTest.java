@@ -292,7 +292,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
             instanceManager.get(inventoryId, 1);
             Assert.fail("Inventory should be removed");
         } catch (BusinessException e) {
-            Assert.assertEquals(String.format("Object '%s' does not exist", inventoryId), e.getMessage());
+            Assert.assertEquals(String.format("Object '%s' not found", inventoryId), e.getMessage());
         }
     }
 

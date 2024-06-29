@@ -1,12 +1,15 @@
 package org.metavm.entity;
 
 import org.metavm.event.EventQueue;
+import org.metavm.object.instance.BufferedInstanceStore;
+import org.metavm.object.instance.CachingInstanceStore;
 import org.metavm.object.instance.ContextPlugin;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.InstanceContext;
+import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
 
@@ -14,8 +17,10 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 
 public class InstanceContextBuilder {
+
 
     public static InstanceContextBuilder newBuilder(long appId,
                                                     IInstanceStore instanceStore,
@@ -39,6 +44,9 @@ public class InstanceContextBuilder {
     private Cache cache;
     private EventQueue eventQueue;
     private boolean readonly;
+    private @Nullable WAL readWAL;
+    private @Nullable WAL writeWAL;
+    private boolean skipPostprocessing;
 
     public InstanceContextBuilder(long appId,
                                   IInstanceStore instanceStore,
@@ -60,6 +68,10 @@ public class InstanceContextBuilder {
 
     public InstanceContextBuilder plugins(ContextPlugin...plugins) {
         return plugins(List.of(plugins));
+    }
+
+    public InstanceContextBuilder plugins(Function<IInstanceStore, List<ContextPlugin>> pluginsSupplier) {
+       return plugins(pluginsSupplier.apply(instanceStore));
     }
 
     public InstanceContextBuilder plugins(List<ContextPlugin> plugins) {
@@ -112,6 +124,22 @@ public class InstanceContextBuilder {
         return this;
     }
 
+    public InstanceContextBuilder readWAL(WAL wal) {
+        readWAL = wal;
+        if(wal != null)
+            instanceStore = new CachingInstanceStore(instanceStore, wal);
+        return this;
+    }
+
+    public InstanceContextBuilder writeWAL(WAL wal) {
+        writeWAL = wal;
+        if(wal != null) {
+            instanceStore = new BufferedInstanceStore(instanceStore, wal);
+            skipPostprocessing = true;
+        }
+        return this;
+    }
+
     public IInstanceContext build() {
         if (executor == null)
             executor = Executors.newSingleThreadExecutor();
@@ -120,7 +148,7 @@ public class InstanceContextBuilder {
                 appId, instanceStore, idInitializer, executor, asyncPostProcess,
                 plugins, parent, typeDefProvider, mappingProvider,
                 childLazyLoading, cache,
-                eventQueue, readonly);
+                eventQueue, readonly, skipPostprocessing);
     }
 
 }

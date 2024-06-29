@@ -1,34 +1,34 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.entity.Entity;
-import org.metavm.object.type.Klass;
-import org.metavm.util.Column;
+import org.metavm.util.InstanceOutput;
 
-public class UnknownField extends Entity {
+public class UnknownField implements IInstanceField {
 
-    private final Klass declaringType;
-    private final Column column;
-    private Instance value;
+    private final long recordGroupTag;
+    private final long recordTag;
+    private final byte[] valueBytes;
 
-    public UnknownField(Klass declaringType, Column column, Instance value) {
-        this.declaringType = declaringType;
-        this.column = column;
-        this.value = value;
+    public UnknownField(long recordGroupTag, long recordTag, byte[] valueBytes) {
+        this.recordGroupTag = recordGroupTag;
+        this.recordTag = recordTag;
+        this.valueBytes = valueBytes;
     }
 
-    public Klass getDeclaringType() {
-        return declaringType;
+    public long getRecordGroupTag() {
+        return recordGroupTag;
     }
 
-    public Column getColumn() {
-        return column;
+    public long getRecordTag() {
+        return recordTag;
     }
 
-    public Instance getValue() {
-        return value;
+    @Override
+    public boolean shouldSkipWrite() {
+        return false;
     }
 
-    public void setValue(Instance value) {
-        this.value = value;
+    @Override
+    public void writeValue(InstanceOutput output) {
+        output.write(valueBytes);
     }
 }

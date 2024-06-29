@@ -1,9 +1,5 @@
 package org.metavm.object.instance.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.event.EventQueue;
@@ -20,6 +16,10 @@ import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.util.LinkedList;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -40,6 +40,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private final EventQueue eventQueue;
     private final IInstanceStore instanceStore;
     private final Cache cache;
+    private final boolean skipPostprocessing;
 
     public InstanceContext(long appId,
                            IInstanceStore instanceStore,
@@ -53,7 +54,8 @@ public class InstanceContext extends BufferingInstanceContext {
                            boolean childrenLazyLoading,
                            Cache cache,
                            @Nullable EventQueue eventQueue,
-                           boolean readonly
+                           boolean readonly,
+                           boolean skipPostprocessing
     ) {
         super(appId,
                 List.of(/*new CacheTreeSource(cache),*/new StoreTreeSource(instanceStore)),
@@ -73,6 +75,7 @@ public class InstanceContext extends BufferingInstanceContext {
 //                defContext
 //        );
         this.cache = cache;
+        this.skipPostprocessing = skipPostprocessing;
     }
 
     @Override
@@ -353,11 +356,11 @@ public class InstanceContext extends BufferingInstanceContext {
                                 visit(fieldValue);
                                 path.removeLast();
                             });
-                            classInstance.forEachUnknownField((fieldValue) -> {
-                                path.addLast("<unknown>");
-                                visit(fieldValue);
-                                path.removeLast();
-                            });
+//                            classInstance.forEachUnknownField((fieldValue) -> {
+//                                path.addLast("<unknown>");
+//                                visit(fieldValue);
+//                                path.removeLast();
+//                            });
                         }
                         return null;
                     } finally {
@@ -425,6 +428,8 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void registerTransactionSynchronization() {
+        if(skipPostprocessing)
+            return;
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
                     @Override
@@ -436,6 +441,8 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void postProcess() {
+        if(skipPostprocessing)
+            return;
         if (asyncPostProcessing) {
             executor.execute(this::postProcess0);
         } else {
@@ -499,7 +506,10 @@ public class InstanceContext extends BufferingInstanceContext {
                 getMappingProvider(),
                 childrenLazyLoading,
                 cache,
-                eventQueue, isReadonly());
+                eventQueue,
+                isReadonly(),
+                skipPostprocessing
+        );
     }
 
     @Override

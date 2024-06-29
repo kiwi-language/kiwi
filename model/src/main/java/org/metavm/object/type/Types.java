@@ -2,7 +2,6 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.metavm.ddl.Commit;
 import org.metavm.entity.*;
 import org.metavm.expression.Expressions;
 import org.metavm.expression.NodeExpression;
@@ -28,11 +27,6 @@ public class Types {
     public static final Logger logger = LoggerFactory.getLogger(Types.class);
     private static final TypeFactory TYPE_FACTORY = new DefaultTypeFactory(ModelDefRegistry::getType);
     private static final Function<java.lang.reflect.Type, Type> getType = ModelDefRegistry::getType;
-    private static BiConsumer<BatchSaveRequest, IEntityContext> commitAction;
-
-    public static void setCommitAction(BiConsumer<BatchSaveRequest, IEntityContext> commitAction) {
-        Types.commitAction = commitAction;
-    }
 
     public static Klass resolveKlass(Type type) {
         if(type instanceof ClassType classType)
@@ -339,10 +333,6 @@ public class Types {
         throw new InternalException("type " + type + " is not an array type");
     }
 
-    public static void prepareKlass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        TYPE_FACTORY.prepareKlass(klassDTO, stage, batch);
-    }
-
     public static TypeDef saveTypeDef(TypeDefDTO typeDefDTO, ResolutionStage stage, SaveTypeBatch batch) {
         return switch(typeDefDTO) {
             case KlassDTO klassDTO -> saveClass(klassDTO, stage, batch);
@@ -350,10 +340,6 @@ public class Types {
             case CapturedTypeVariableDTO capturedTypeVariableDTO -> saveCapturedTypeVariable(capturedTypeVariableDTO, stage, batch);
             default -> throw new InternalException("Invalid TypeDefDTO: " + typeDefDTO);
         };
-    }
-
-    public static void submitCommit(Commit commit, IEntityContext context) {
-        commitAction.accept(commit.getCommitRequest(), context);
     }
 
     public static Klass saveClass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {
@@ -477,8 +463,8 @@ public class Types {
         return getParameterizedName(templateName, List.of(typeArguments));
     }
 
-    public static String getParameterizedName(String templateName, List<Type> typeArguments) {
-        if (typeArguments.isEmpty()) {
+    public static String getParameterizedName(String templateName, @Nullable List<Type> typeArguments) {
+        if (typeArguments == null || typeArguments.isEmpty()) {
             return templateName;
         }
         return parameterizedName(templateName, NncUtils.map(typeArguments, Types::getTypeArgumentName));

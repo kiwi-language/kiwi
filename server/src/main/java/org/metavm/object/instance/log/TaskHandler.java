@@ -27,7 +27,7 @@ public class TaskHandler extends EntityContextFactoryAware implements LogHandler
     }
 
     @Override
-    public void process(List<Task> created, @Nullable String clientId, IEntityContext context) {
+    public void process(List<Task> created, @Nullable String clientId, IEntityContext context, EntityContextFactory entityContextFactory) {
         transactionOperations.executeWithoutResult(s -> {
             try (var platformContext = newPlatformContext()) {
                 for (Task task : created)

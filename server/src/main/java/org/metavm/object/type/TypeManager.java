@@ -16,6 +16,7 @@ import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
+import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.object.version.VersionManager;
@@ -61,7 +62,6 @@ public class TypeManager extends EntityContextFactoryAware {
         this.entityQueryService = entityQueryService;
         this.taskManager = taskManager;
         this.beanManager = beanManager;
-        Types.setCommitAction(this::commit);
     }
 
     public Map<Integer, String> getPrimitiveMap() {
@@ -274,68 +274,55 @@ public class TypeManager extends EntityContextFactoryAware {
 
     @Transactional
     public String batchSave(BatchSaveRequest request) {
-        return prepare(request);
-    }
-
-    private String prepare(BatchSaveRequest request) {
         var typeDefDTOs = request.typeDefs();
         FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
         SaveTypeBatch batch;
         try (var context = newContext()) {
-            var runningCommit = context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
-            if(runningCommit != null)
-                throw new BusinessException(ErrorCode.COMMIT_RUNNING);
-            batch = batchSave(typeDefDTOs, request.functions(), true, context);
-            context.initIds();
-            var commit = batch.buildCommit();
-            context.bind(DDL.create(commit, context));
+            var wal = context.bind(new WAL());
+            try (var bufferingContext = entityContextFactory.newBufferingContext(wal)) {
+                var runningCommit = bufferingContext.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
+                if (runningCommit != null)
+                    throw new BusinessException(ErrorCode.COMMIT_RUNNING);
+                batch = batchSave(typeDefDTOs, request.functions(), bufferingContext);
+                bufferingContext.finish();
+            }
+            var commit = context.bind(batch.buildCommit(wal));
+            context.bind(new DDL(commit));
             context.finish();
             return commit.getStringId();
         }
     }
 
-    public void commit(BatchSaveRequest request, IEntityContext context) {
-        var typeDefDTOs = request.typeDefs();
-        FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
-        batchSave(typeDefDTOs, request.functions(), false, context);
+    public SaveTypeBatch batchSave(List<? extends TypeDefDTO> typeDefDTOs,
+                                   List<FlowDTO> functions,
+                                   IEntityContext context) {
+        var batch = SaveTypeBatch.create(context, typeDefDTOs, functions);
+        for (KlassDTO klassDTO : batch.getTypeDTOs()) {
+            if (klassDTO.flows() != null) {
+                for (FlowDTO flowDTO : klassDTO.flows()) {
+                    var flow = context.getMethod(Id.parse(flowDTO.id()));
+                    if (!flow.isSynthetic())
+                        flowManager.saveContent(flowDTO, context.getMethod(Id.parse(flowDTO.id())), context);
+                }
+            }
+        }
+        for (FlowDTO function : functions) {
+            flowManager.saveContent(function, context.getFunction(Id.parse(function.id())), context);
+        }
+        var klasses = new ArrayList<Klass>();
+        for (KlassDTO klassDTO : batch.getTypeDTOs()) {
+            var klass = context.getKlass(Id.parse(klassDTO.id()));
+            klasses.add(klass);
+            createOverridingFlows(klass, context);
+        }
+        beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
         List<Klass> newClasses = NncUtils.filterAndMap(
                 typeDefDTOs, t -> t instanceof KlassDTO && !Id.isPersistedId(t.id()),
                 t -> context.getKlass(t.id())
         );
         for (Klass newClass : newClasses) {
-            if (!newClass.isInterface()) {
+            if (!newClass.isInterface())
                 initClass(newClass, context);
-            }
-        }
-    }
-
-    public SaveTypeBatch batchSave(List<? extends TypeDefDTO> typeDefDTOs,
-                                   List<FlowDTO> functions,
-                                   boolean preparing,
-                                   IEntityContext context) {
-        var batch = SaveTypeBatch.create(context, typeDefDTOs, functions, preparing);
-        for (KlassDTO klassDTO : batch.getTypeDTOs()) {
-            if (klassDTO.flows() != null) {
-                for (FlowDTO flowDTO : klassDTO.flows()) {
-                    if (batch.isWhiteListed(flowDTO.id())) {
-                        var flow = context.getMethod(Id.parse(flowDTO.id()));
-                        if (!flow.isSynthetic())
-                            flowManager.saveContent(flowDTO, context.getMethod(Id.parse(flowDTO.id())), context);
-                    }
-                }
-            }
-        }
-        if (!preparing) {
-            for (FlowDTO function : functions) {
-                flowManager.saveContent(function, context.getFunction(Id.parse(function.id())), context);
-            }
-            var klasses = new ArrayList<Klass>();
-            for (KlassDTO klassDTO : batch.getTypeDTOs()) {
-                var klass = context.getKlass(Id.parse(klassDTO.id()));
-                klasses.add(klass);
-                createOverridingFlows(klass, context);
-            }
-            beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
         }
         return batch;
     }
@@ -506,7 +493,7 @@ public class TypeManager extends EntityContextFactoryAware {
         NncUtils.requireNonNull(classDTO.name(), "class name required");
         ensureClassNameAvailable(classDTO, context);
         var stage = withContent ? ResolutionStage.DECLARATION : ResolutionStage.INIT;
-        var batch = SaveTypeBatch.create(context, List.of(classDTO), List.of(), false);
+        var batch = SaveTypeBatch.create(context, List.of(classDTO), List.of());
         var type = Types.saveClass(classDTO, stage, batch);
         createOverridingFlows(type, context);
         return type;
@@ -514,7 +501,7 @@ public class TypeManager extends EntityContextFactoryAware {
 
     public Klass updateType(KlassDTO klassDTO, Klass type, IEntityContext context) {
         NncUtils.requireNonNull(klassDTO.name(), "class name required");
-        var batch = SaveTypeBatch.create(context, List.of(klassDTO), List.of(), false);
+        var batch = SaveTypeBatch.create(context, List.of(klassDTO), List.of());
         Types.saveClass(klassDTO, ResolutionStage.DECLARATION, batch);
         createOverridingFlows(type, context);
         return type;

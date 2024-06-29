@@ -133,4 +133,7 @@ public class StreamCopier extends StreamVisitor {
         output.write(WireTypes.NULL);
     }
 
+    public InstanceOutput getOutput() {
+        return output;
+    }
 }

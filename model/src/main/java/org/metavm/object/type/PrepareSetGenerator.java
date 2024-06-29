@@ -37,14 +37,20 @@ public class PrepareSetGenerator {
         var klass = context.getKlass(klassDTO.id());
         if(klass == null || context.isNewEntity(klass))
             return;
-        for (FieldDTO fieldDTO : klassDTO.fields()) {
-            processField(fieldDTO);
+        if(klassDTO.fields() != null) {
+            for (FieldDTO fieldDTO : klassDTO.fields()) {
+                processField(fieldDTO);
+            }
         }
-        for (FieldDTO fieldDTO : klassDTO.staticFields()) {
-            processField(fieldDTO);
+        if(klassDTO.staticFields() != null){
+            for (FieldDTO fieldDTO : klassDTO.staticFields()) {
+                processField(fieldDTO);
+            }
         }
-        for (FlowDTO methodDTO : klassDTO.flows()) {
-            processMethod(methodDTO);
+        if(klassDTO.flows() != null) {
+            for (FlowDTO methodDTO : klassDTO.flows()) {
+                processMethod(methodDTO);
+            }
         }
     }
 

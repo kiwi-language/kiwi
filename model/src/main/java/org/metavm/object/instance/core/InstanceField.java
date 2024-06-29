@@ -5,9 +5,10 @@ import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.rest.InstanceFieldDTO;
 import org.metavm.object.type.Field;
 import org.metavm.util.BusinessException;
+import org.metavm.util.InstanceOutput;
 import org.metavm.util.InternalException;
 
-public class InstanceField {
+public class InstanceField implements IInstanceField {
 
     private final ClassInstance owner;
     private final Field field;
@@ -20,7 +21,7 @@ public class InstanceField {
     InstanceField(ClassInstance owner, Field field, Instance value, boolean check) {
         this.field = field;
         this.owner = owner;
-        if(field.isChild() && value.isNotNull())
+        if (field.isChild() && value.isNotNull())
             ((DurableInstance) value).setParent(this.owner, this.field);
         if (value instanceof DurableInstance d)
             new ReferenceRT(owner, d, field);
@@ -39,6 +40,19 @@ public class InstanceField {
         return field.getRecordTag();
     }
 
+    @Override
+    public boolean shouldSkipWrite() {
+        return value.shouldSkipWrite();
+    }
+
+    @Override
+    public void writeValue(InstanceOutput output) {
+        if (value.isValue() || value instanceof DurableInstance d && d.isInitialized() && d.getParent() == owner)
+            output.writeRecord(value);
+        else
+            output.writeInstance(value);
+    }
+
     public Id getTag() {
         return field.getTag();
     }
@@ -55,7 +69,7 @@ public class InstanceField {
 
     void setValue(Instance value) {
         value = checkValue(value);
-        if(field.isChild() && value.isNotNull())
+        if (field.isChild() && value.isNotNull())
             ((DurableInstance) value).setParent(this.owner, this.field);
         if (this.value.isNotPrimitive())
             owner.getOutgoingReference(this.value, field).clear();
@@ -68,26 +82,17 @@ public class InstanceField {
         if (field.getType().isInstance(value)) {
             return value;
         } else {
-            if(value.isNull() && !field.isReady())
-                return value;
-            else {
-                try {
-                    return value.convert(field.getType());
-                }
-                catch (BusinessException e) {
-                    throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
-                            field.getQualifiedName(), e.getMessage());
-                }
+            try {
+                return value.convert(field.getType());
+            } catch (BusinessException e) {
+                throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
+                        field.getQualifiedName(), e.getMessage());
             }
         }
     }
 
     public @NotNull Instance getValue() {
         return value;
-    }
-
-    public boolean shouldSkipWrite() {
-        return value.isNull() || value.shouldSkipWrite();
     }
 
     @SuppressWarnings("unused")

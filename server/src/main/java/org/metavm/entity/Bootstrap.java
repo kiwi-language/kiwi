@@ -45,7 +45,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
             var bridge = new EntityInstanceContextBridge();
             var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
                     ROOT_APP_ID, false, null, null,
-                    idInitializer, bridge);
+                    idInitializer, bridge, null, null);
             var defContext = new DefContext(
                     new StdIdProvider(stdIdStore),
                     standardInstanceContext, columnStore, typeTagStore, identityContext);

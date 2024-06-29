@@ -41,4 +41,9 @@ public class NullInstance extends PrimitiveInstance {
     public PrimitiveFieldValue toFieldValueDTO() {
         return PrimitiveFieldValue.NULL;
     }
+
+    @Override
+    public boolean shouldSkipWrite() {
+        return true;
+    }
 }

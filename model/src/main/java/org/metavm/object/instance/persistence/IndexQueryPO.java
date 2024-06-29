@@ -10,4 +10,8 @@ public record IndexQueryPO(long appId,
                            Long limit,
                            int lockMode) {
 
+    public boolean match(IndexKeyPO key) {
+        return (from == null || from.compareTo(key) <= 0) && (to == null || to.compareTo(key) >= 0);
+    }
+
 }

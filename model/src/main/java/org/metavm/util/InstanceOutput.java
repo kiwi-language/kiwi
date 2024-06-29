@@ -5,11 +5,18 @@ import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.IdTag;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.log.InstanceLog;
+import org.metavm.object.instance.persistence.IndexEntryPO;
+import org.metavm.object.instance.persistence.IndexKeyPO;
+import org.metavm.object.instance.persistence.InstancePO;
+import org.metavm.object.instance.persistence.ReferencePO;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.function.Consumer;
 
 public class InstanceOutput extends OutputStream {
 
@@ -102,4 +109,45 @@ public class InstanceOutput extends OutputStream {
         write(idTag.maskedCode(isArray));
     }
 
+    public <T> void writeList(Collection<? extends T> list, Consumer<T> write) {
+        writeInt(list.size());
+        list.forEach(write);
+    }
+
+    public void writeInstancePO(InstancePO instancePO) {
+        writeLong(instancePO.getId());
+        writeInt(instancePO.getData().length);
+        write(instancePO.getData());
+        writeLong(instancePO.getNextNodeId());
+    }
+
+    public void writeIndexEntryPO(IndexEntryPO entry) {
+        writeIndexKeyPO(entry.getKey());
+        write(entry.getInstanceId());
+    }
+
+    public void writeIndexKeyPO(IndexKeyPO indexKeyPO) {
+        write(indexKeyPO.getIndexId());
+        for (int i = 0; i < IndexKeyPO.MAX_KEY_COLUMNS; i++) {
+            var col = indexKeyPO.getColumn(i);
+            writeInt(col.length);
+            write(col);
+        }
+    }
+
+    public void writeReferencePO(ReferencePO referencePO) {
+        writeLong(referencePO.getSourceTreeId());
+        write(referencePO.getTargetId());
+        writeInt(referencePO.getKind());
+    }
+
+    public void writeInstanceLog(InstanceLog instanceLog) {
+        writeId(instanceLog.getId());
+        writeInt(instanceLog.getChangeType().ordinal());
+        writeLong(instanceLog.getVersion());
+    }
+
+    public OutputStream getOutputStream() {
+        return outputStream;
+    }
 }

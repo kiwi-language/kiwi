@@ -753,7 +753,7 @@ public class NncUtils {
         return merged;
     }
 
-    public static <T> List<T> merge(List<T> list1, List<T> list2) {
+    public static <T> List<T> merge(List<? extends T> list1, List<? extends T> list2) {
         List<T> merged = new ArrayList<>(list1);
         merged.addAll(list2);
         return merged;
@@ -1839,14 +1839,14 @@ public class NncUtils {
         return e;
     }
 
-    public static String formatDate(Date date){
+    public static String formatDate(Date date) {
         return dateFormat.format(date);
     }
 
     public static <T> int findIndex(List<T> list, Predicate<T> predicate) {
         int i = 0;
         for (T t : list) {
-            if(predicate.test(t))
+            if (predicate.test(t))
                 return i;
             i++;
         }

@@ -2,15 +2,21 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.ddl.Commit;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class DDLTest extends TestCase {
+
+    public static final Logger logger = LoggerFactory.getLogger(DDLTest.class);
 
     private TypeManager typeManager;
     private EntityContextFactory entityContextFactory;
@@ -36,9 +42,9 @@ public class DDLTest extends TestCase {
     public void testDDL() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
         var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
-              "name", "Shoes",
-              "quantity", 100,
-              "price", 100
+                "name", "Shoes",
+                "quantity", 100,
+                "price", 100
         )));
         var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
         var hatId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
@@ -46,10 +52,16 @@ public class DDLTest extends TestCase {
                 "quantity", 100,
                 "price", 20
         )));
-        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var hat = (ClassInstance) context.getInstanceContext().get(Id.parse(hatId));
-            Assert.assertEquals(Instances.longInstance(0L), hat.getField("version"));
+        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var commit = context.getEntity(Commit.class, commitId);
+            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "Product"));
+            Assert.assertNull(klass.findFieldByCode("version"));
+            try (var cachingContext = entityContextFactory.newLoadedContext(TestConstants.APP_ID, commit.getWal())) {
+                var hat = (ClassInstance) cachingContext.getInstanceContext().get(Id.parse(hatId));
+                Assert.assertEquals(Instances.longInstance(0L), hat.getField("version"));
+            }
         }
+        DebugEnv.context = entityContextFactory.newContext(TestConstants.APP_ID);
         TestUtils.waitForDDLDone(entityContextFactory);
         var shoes = apiClient.getInstance(shoesId);
         var hat = apiClient.getInstance(hatId);

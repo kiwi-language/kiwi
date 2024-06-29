@@ -1,11 +1,12 @@
 package org.metavm.object.instance.log;
 
-import org.springframework.stereotype.Component;
+import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
 import org.metavm.event.EventQueue;
 import org.metavm.event.rest.dto.FunctionChangeEvent;
 import org.metavm.event.rest.dto.TypeChangeEvent;
 import org.metavm.object.version.Version;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public class VersionHandler implements LogHandler<Version> {
     }
 
     @Override
-    public void process(List<Version> created, @Nullable String clientId, IEntityContext context) {
+    public void process(List<Version> created, @Nullable String clientId, IEntityContext context, EntityContextFactory entityContextFactory) {
         if (!created.isEmpty()) {
             long maxVersion = 0L;
             Set<String> typeIds = new HashSet<>();

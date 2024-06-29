@@ -26,12 +26,10 @@ public class LoadingBuffer {
     private final Map<Long, List<Id>> index = new HashMap<>();
     private final Map<Id, Tree> invertedIndex = new HashMap<>();
     private final List<TreeSource> treeSources;
-    private final VersionSource versionSource;
 
-    public LoadingBuffer(IInstanceContext context, List<TreeSource> treeSources, VersionSource versionSource) {
+    public LoadingBuffer(IInstanceContext context, List<TreeSource> treeSources) {
         this.context = context;
-        this.treeSources = treeSources;
-        this.versionSource = versionSource;
+        this.treeSources = new ArrayList<>(treeSources);
     }
 
     public boolean buffer(Long id) {
@@ -52,7 +50,6 @@ public class LoadingBuffer {
         return NncUtils.requireNonNull(
                 tryGetTree(id),
                 TreeNotFoundException::new
-//                () -> new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id)
         );
     }
 
@@ -85,8 +82,6 @@ public class LoadingBuffer {
 
     private void loadForest(List<Long> treeIds) {
         try(var ignored = context.getProfiler().enter("LoadingBuffer.loadForest")) {
-//            var rootVersions = versionSource.getVersions(treeIds, context);
-//            Map<Long, Long> versionMap = NncUtils.toMap(rootVersions, TreeVersion::id, TreeVersion::version);
             Set<Long> misses = new HashSet<>(treeIds);
             List<TreeSource> prevSources = new ArrayList<>();
             for (TreeSource treeSource : treeSources) {

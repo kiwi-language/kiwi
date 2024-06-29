@@ -1,5 +1,7 @@
 package org.metavm.object.instance.persistence;
 
+import org.metavm.entity.Tree;
+
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -19,7 +21,8 @@ public class InstancePO {
                       byte[] data,
                       long version,
                       long syncVersion,
-                      long nextNodeId) {
+                      long nextNodeId
+                      ) {
         this.appId = appId;
         this.id = id;
         this.data = data;
@@ -82,6 +85,10 @@ public class InstancePO {
         this.id = id;
     }
 
+    public Tree toTree() {
+        return new Tree(id, version, nextNodeId, data);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -106,7 +113,7 @@ public class InstancePO {
     }
 
     public InstancePO copy() {
-        return new InstancePO(appId, id, data, /*typeId, title, , parentId, parentFieldId, rootId, */version, syncVersion, nextNodeId);
+        return new InstancePO(appId, id, data, version, syncVersion, nextNodeId);
     }
 
 }

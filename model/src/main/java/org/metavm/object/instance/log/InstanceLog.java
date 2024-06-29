@@ -43,8 +43,12 @@ public class InstanceLog {
         return changeType;
     }
 
-    public VersionPO getVersion() {
+    public VersionPO toVersionPO() {
         return new VersionPO(appId, id.getTreeId(), version);
+    }
+
+    public long getVersion() {
+        return version;
     }
 
     public boolean isInsert() {

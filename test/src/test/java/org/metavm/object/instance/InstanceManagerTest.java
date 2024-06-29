@@ -406,7 +406,7 @@ public class InstanceManagerTest extends TestCase {
             ));
             Assert.fail("Should not be able to delete child in use");
         } catch (BusinessException e) {
-            Assert.assertEquals(String.format("Object is referenced by other objects, cannot be deleted: %s-%s", childType.name(), child.title()), e.getMessage());
+            Assert.assertEquals(String.format("Object is referenced by others and cannot be deleted: %s-%s", childType.name(), child.title()), e.getMessage());
         }
     }
 

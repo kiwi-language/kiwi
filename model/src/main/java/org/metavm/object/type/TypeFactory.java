@@ -66,34 +66,6 @@ public abstract class TypeFactory {
         }
     }
 
-    public void prepareKlass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        assert batch.isPreparing();
-        var context = batch.getContext();
-        var klass = context.getKlass(klassDTO.id());
-        if(klass == null)
-            return;
-        var curStage = klass.setStage(stage);
-        if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION)) {
-            if (klassDTO.fields() != null) {
-                for (FieldDTO fieldDTO : klassDTO.fields()) {
-                    saveField(klass, fieldDTO, context);
-                }
-            }
-            if (klassDTO.staticFields() != null) {
-                for (FieldDTO fieldDTO : klassDTO.staticFields()) {
-                    if(batch.isWhiteListed(fieldDTO.id()))
-                        saveField(klass, fieldDTO, context);
-                }
-            }
-            if (klassDTO.flows() != null) {
-                for (FlowDTO methodDTO : klassDTO.flows()) {
-                    if(batch.isWhiteListed(methodDTO.id()))
-                        saveMethod(methodDTO, stage, batch);
-                }
-            }
-        }
-    }
-
     public Klass saveKlass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveClassType")) {
             var klass = batch.getContext().getKlass(klassDTO.id());

@@ -47,10 +47,6 @@ public interface Property extends ClassMember, LocalKey {
 
     MetadataState getState();
 
-    default boolean isReady() {
-        return getState() == MetadataState.READY;
-    }
-
     void setState(MetadataState state);
 
     default boolean isPublic() {

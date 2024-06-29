@@ -8,6 +8,7 @@ import org.metavm.flow.Method;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.flow.rest.MethodParam;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.object.view.FieldsObjectMapping;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
@@ -27,9 +28,8 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public static SaveTypeBatch create(IEntityContext context,
                                        List<? extends TypeDefDTO> typeDefDTOs,
-                                       List<FlowDTO> functions,
-                                       boolean preparing) {
-        var batch = new SaveTypeBatch(context, typeDefDTOs, functions, preparing);
+                                       List<FlowDTO> functions) {
+        var batch = new SaveTypeBatch(context, typeDefDTOs, functions);
         batch.execute();
         return batch;
     }
@@ -40,11 +40,9 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     private final Map<String, FlowDTO> functionMap = new HashMap<>();
     private final Map<String, FlowDTO> flowMap = new HashMap<>();
     private final Set<String> preparingSet = new HashSet<>();
-    private final boolean preparing;
 
-    private SaveTypeBatch(IEntityContext context, List<? extends TypeDefDTO> typeDefDTOs, List<FlowDTO> functions, boolean preparing) {
+    private SaveTypeBatch(IEntityContext context, List<? extends TypeDefDTO> typeDefDTOs, List<FlowDTO> functions) {
         this.context = context;
-        this.preparing = preparing;
         for (var typeDefDTO : typeDefDTOs) {
             typeDefMap.put(typeDefDTO.id(), typeDefDTO);
             if (typeDefDTO instanceof KlassDTO klassDTO) {
@@ -56,9 +54,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
         }
         for (FlowDTO function : functions)
             functionMap.put(function.id(), function);
-        if(preparing) {
-            preparingSet.addAll(PrepareSetGenerator.generate(NncUtils.filterByType(typeDefDTOs, KlassDTO.class), context));
-        }
+        preparingSet.addAll(PrepareSetGenerator.generate(NncUtils.filterByType(typeDefDTOs, KlassDTO.class), context));
     }
 
     private record SaveStage(ResolutionStage stage, Function<TypeDefDTO, Set<String>> getDependencies) {
@@ -75,21 +71,11 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                 new SaveStage(ResolutionStage.DEFINITION, this::noDependencies),
                 new SaveStage(ResolutionStage.MAPPING_DEFINITION, this::noDependencies)
         );
-        if(preparing) {
-            for (SaveStage stage : stages) {
-                for (TypeDefDTO typeDefDTO : typeDefMap.values()) {
-                    if(typeDefDTO instanceof KlassDTO klassDTO)
-                        Types.prepareKlass(klassDTO, stage.stage, this);
-                }
-            }
-        }
-        else {
-            for (var stage : stages) {
-                for (var typeDTO : stage.sort(typeDefMap.values()))
-                    stage.stage.saveTypeDef(typeDTO, this);
-                for (var function : functionMap.values())
-                    stage.stage.saveFunction(function, this);
-            }
+        for (var stage : stages) {
+            for (var typeDTO : stage.sort(typeDefMap.values()))
+                stage.stage.saveTypeDef(typeDTO, this);
+            for (var function : functionMap.values())
+                stage.stage.saveFunction(function, this);
         }
     }
 
@@ -122,8 +108,6 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
         var existing = context.getTypeDef(id);
         if (existing != null)
             return existing;
-        if(preparing)
-            throw new IllegalStateException("Can not create new TypeDefs during preparation: " + id);
         var typeDefDTO = NncUtils.requireNonNull(typeDefMap.get(id.toString()),
                 "TypeDef '" + id + "' not available");
         return Types.saveTypeDef(typeDefDTO, ResolutionStage.INIT, this);
@@ -291,37 +275,27 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
         return Objects.requireNonNull(getTypeDTO(id), () -> "Can not find typeDTO with id '" + id + "'");
     }
 
-    public boolean isPreparing() {
-        return preparing;
-    }
-
-    public boolean isCommitting() {
-        return !isPreparing();
-    }
-
-    public boolean isWhiteListed(String id) {
-        return isCommitting() || preparingSet.contains(id);
-    }
-
-    public Commit buildCommit() {
-        assert preparing;
-        var fieldIdMap = new HashMap<String, String>();
+    public Commit buildCommit(WAL wal) {
+        var fieldIds = new ArrayList<String>();
         preparingSet.forEach(id -> {
             var entity = context.getEntity(Entity.class, id);
-            fieldIdMap.put(id, entity.getStringId());
+            var physicalId = entity.getStringId();
+            if (entity instanceof Field)
+                fieldIds.add(physicalId);
         });
         return new Commit(
+                wal,
                 new BatchSaveRequest(
                         new ArrayList<>(typeDefMap.values()),
                         new ArrayList<>(functionMap.values()),
                         true
                 ),
-                fieldIdMap
+                fieldIds
         );
     }
 
     public static SaveTypeBatch empty(IEntityContext context) {
-        return new SaveTypeBatch(context, List.of(), List.of(), false);
+        return new SaveTypeBatch(context, List.of(), List.of());
     }
 
 }

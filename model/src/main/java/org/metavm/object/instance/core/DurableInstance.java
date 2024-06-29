@@ -160,6 +160,8 @@ public abstract class DurableInstance extends Instance {
 
     @NoProxy
     public void setRemoved() {
+        if(DebugEnv.applicationId != null && Objects.equals(getStringId(), DebugEnv.applicationId))
+            System.out.println("Caught");
         if (removed)
             throw new InternalException(String.format("Instance %s is already removed", this));
         removed = true;

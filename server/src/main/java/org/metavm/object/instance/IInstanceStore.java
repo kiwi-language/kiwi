@@ -5,11 +5,10 @@ import org.metavm.entity.StoreLoadRequest;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TreeVersion;
-import org.metavm.object.instance.persistence.IndexKeyPO;
-import org.metavm.object.instance.persistence.InstancePO;
-import org.metavm.object.instance.persistence.ReferencePO;
-import org.metavm.object.instance.persistence.VersionPO;
+import org.metavm.object.instance.log.InstanceLog;
+import org.metavm.object.instance.persistence.*;
 import org.metavm.util.ChangeList;
+import org.metavm.util.NncUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -23,7 +22,13 @@ public interface IInstanceStore {
 
     List<TreeVersion> getVersions(List<Long> ids, IInstanceContext context);
 
+    List<IndexEntryPO> getIndexEntriesByKeys(List<IndexKeyPO> keys, IInstanceContext context);
+
     void saveReferences(ChangeList<ReferencePO> refChanges);
+
+    void saveIndexEntries(ChangeList<IndexEntryPO> changes);
+
+    void saveInstanceLogs(List<InstanceLog> instanceLogs);
 
     ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds);
 
@@ -33,7 +38,9 @@ public interface IInstanceStore {
 
     long indexCount(IndexKeyPO from, IndexKeyPO to, IInstanceContext context);
 
-    List<Id> query(InstanceIndexQuery query, IInstanceContext context);
+    default List<Id> query(InstanceIndexQuery query, IInstanceContext context) {
+        return NncUtils.map(queryEntries(query, context), IndexEntryPO::getId);
+    }
 
     long count(InstanceIndexQuery query, IInstanceContext context);
 
@@ -57,6 +64,10 @@ public interface IInstanceStore {
     List<Long> scan(long appId, long startId, long limit);
 
     void updateSyncVersion(List<VersionPO> versions);
+
+    List<IndexEntryPO> queryEntries(InstanceIndexQuery query, IInstanceContext context);
+
+    List<IndexEntryPO> getIndexEntriesByInstanceIds(Collection<Id> instanceIds, IInstanceContext context);
 
 //    Set<Id> getAliveInstanceIds(long appId, Set<Id> instanceIds);
 

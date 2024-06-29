@@ -1,30 +1,28 @@
 package org.metavm.object.instance;
 
-import org.metavm.object.instance.log.InstanceLogService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 import org.metavm.entity.EntityChange;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.log.InstanceLog;
+import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.metavm.entity.ContextAttributeKey.CHANGE_LOGS;
 
-@Component
-@Order(100)
 public class ChangeLogPlugin implements ContextPlugin {
 
     public static final Logger logger = LoggerFactory.getLogger(ChangeLogPlugin.class);
 
+    private final IInstanceStore instanceStore;
     private final InstanceLogService instanceLogService;
 
-    public ChangeLogPlugin(InstanceLogService instanceLogService) {
+    public ChangeLogPlugin(IInstanceStore instanceStore, InstanceLogService instanceLogService) {
+        this.instanceStore = instanceStore;
         this.instanceLogService = instanceLogService;
     }
 
@@ -46,14 +44,14 @@ public class ChangeLogPlugin implements ContextPlugin {
 
     @Override
     public void afterSaving(EntityChange<VersionRT> change, IInstanceContext context) {
-        // TODO save change logs
+        instanceStore.saveInstanceLogs(context.getAttribute(CHANGE_LOGS));
     }
-
 
     @Override
     public void postProcess(IInstanceContext context) {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
         if (NncUtils.isNotEmpty(logs)) {
+            instanceStore.saveInstanceLogs(logs);
             instanceLogService.process(logs, context.getClientId());
         }
     }

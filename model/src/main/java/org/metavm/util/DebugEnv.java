@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.entity.IEntityContext;
 import org.metavm.flow.InputNode;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodCallNode;
@@ -33,6 +34,8 @@ public class DebugEnv {
 
     public static volatile boolean saveCompileResult = false;
 
+    public static volatile String applicationId;
+
     public static volatile DurableInstance instance;
 
     public static boolean gettingBufferedTrees;
@@ -52,6 +55,8 @@ public class DebugEnv {
     public static final LinkedList<String> path = new LinkedList<>();
 
     public static final List<InputNode> nodes = new CopyOnWriteArrayList<>();
+
+    public static volatile IEntityContext context;
 
     public static void enterPathItem(String pathItem) {
         path.addLast(pathItem);

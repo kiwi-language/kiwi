@@ -53,7 +53,7 @@ public class InstanceContextTest extends TestCase {
                 entityRepository,
                 false,
                 cache,
-                eventQueue, false);
+                eventQueue, false, false);
     }
 
     public void test() {

@@ -30,7 +30,7 @@ public class ClassType extends Type implements ISubstitutor {
     public static final Logger logger = LoggerFactory.getLogger(ClassType.class);
 
     private final Klass klass;
-    private final ValueArray<Type> typeArguments;
+    private final @Nullable ValueArray<Type> typeArguments;
     private transient TypeSubstitutor substitutor;
     private transient Klass resolved;
 
@@ -40,7 +40,7 @@ public class ClassType extends Type implements ISubstitutor {
 //        if(typeArguments.equals(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType)))
 //            throw new InternalException("Trying to create an raw class type using type arguments for klass: " + klass.getTypeDesc());
         this.klass = klass;
-        this.typeArguments = new ValueArray<>(Type.class, typeArguments);
+        this.typeArguments = typeArguments.isEmpty() ? null : new ValueArray<>(Type.class, typeArguments);
     }
 
     @Override
@@ -50,7 +50,7 @@ public class ClassType extends Type implements ISubstitutor {
 
     @Override
     public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
-        return typeArguments.isEmpty() ?
+        return typeArguments == null ?
                 (klass.getTag() > 0 ?
                         new TaggedClassTypeKey(getTypeDefId.apply(klass), klass.getTag()) :
                         new ClassTypeKey(getTypeDefId.apply(klass))
@@ -84,18 +84,18 @@ public class ClassType extends Type implements ISubstitutor {
 
     public List<Type> getTypeArguments() {
         // the type arguments should be the list of type parameters for a raw ClassType
-        return isParameterized() ? typeArguments.toList() : klass.getTypeArguments();
+        return typeArguments != null ? typeArguments.toList() : klass.getTypeArguments();
     }
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
         if (that instanceof ClassType thatClassType) {
-            if (typeArguments.isEmpty() && thatClassType.typeArguments.isEmpty() && klass == thatClassType.klass)
+            if (typeArguments == null && thatClassType.typeArguments == null && klass == thatClassType.klass)
                 return true;
-            if (!typeArguments.isEmpty()) {
+            if (typeArguments != null) {
                 var thatAncestor = thatClassType.findAncestor(klass);
                 if (thatAncestor != null)
-                    return NncUtils.biAllMatch(typeArguments, thatAncestor.typeArguments, Type::contains);
+                    return NncUtils.biAllMatch(typeArguments, thatAncestor.getTypeArguments(), Type::contains);
                 else
                     return false;
             } else {
@@ -137,7 +137,7 @@ public class ClassType extends Type implements ISubstitutor {
 
     @Override
     public Type substitute(Type type) {
-        if (!typeArguments.isEmpty()) {
+        if (typeArguments != null) {
             if (substitutor == null)
                 substitutor = new TypeSubstitutor(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType), typeArguments.toList());
             return type.accept(substitutor);
@@ -149,7 +149,7 @@ public class ClassType extends Type implements ISubstitutor {
         if (resolved != null) {
             return resolved;
         }
-        if (typeArguments.isEmpty()) {
+        if (typeArguments == null) {
             resolved = klass;
             return klass;
         } else {
@@ -159,7 +159,7 @@ public class ClassType extends Type implements ISubstitutor {
 
     @Override
     protected boolean equals0(Object obj) {
-        return obj instanceof ClassType that && klass == that.klass && typeArguments.equals(that.typeArguments);
+        return obj instanceof ClassType that && klass == that.klass && Objects.equals(typeArguments, that.typeArguments);
     }
 
     @Override
@@ -179,13 +179,19 @@ public class ClassType extends Type implements ISubstitutor {
 
     @Override
     public String getName() {
-        return Types.getParameterizedName(klass.getName(), typeArguments.toList());
+        if (typeArguments == null)
+            return klass.getName();
+        else
+            return Types.getParameterizedName(klass.getName(), typeArguments.toList());
     }
 
     @Nullable
     @Override
     public String getCode() {
-        return Types.getParameterizedCode(klass.getCode(), typeArguments.toList());
+        if (typeArguments == null)
+            return klass.getCode();
+        else
+            return Types.getParameterizedCode(klass.getCode(), typeArguments.toList());
     }
 
     @Override
@@ -205,25 +211,25 @@ public class ClassType extends Type implements ISubstitutor {
 
     @Override
     public boolean isCaptured() {
-        return NncUtils.anyMatch(typeArguments, Type::isCaptured);
+        return typeArguments != null && NncUtils.anyMatch(typeArguments, Type::isCaptured);
     }
 
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
         var id = getTypeDefExpr == null ? Constants.ID_PREFIX + serializeContext.getStringId(klass) : getTypeDefExpr.apply(klass);
         var tag = klass.getTag();
-        return typeArguments.isEmpty() ? (tag == 0 ? id : id + ":" + tag)
+        return typeArguments == null ? (tag == 0 ? id : id + ":" + tag)
                 : id + "<" + NncUtils.join(typeArguments, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ">";
     }
 
     @Override
     public int getTypeKeyCode() {
-        return typeArguments.isEmpty() ? (klass.getTag() == 0 ? TypeKeyCodes.CLASS : TypeKeyCodes.TAGGED_CLASS) : TypeKeyCodes.PARAMETERIZED;
+        return typeArguments == null ? (klass.getTag() == 0 ? TypeKeyCodes.CLASS : TypeKeyCodes.TAGGED_CLASS) : TypeKeyCodes.PARAMETERIZED;
     }
 
     @Override
     public void write(InstanceOutput output) {
-        if (typeArguments.isEmpty()) {
+        if (typeArguments == null) {
             var tag = klass.getTag();
             if (tag == 0) {
                 output.write(TypeKeyCodes.CLASS);
@@ -261,7 +267,7 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public boolean isParameterized() {
-        return !typeArguments.isEmpty();
+        return typeArguments != null;
     }
 
     public boolean isList() {
@@ -274,13 +280,15 @@ public class ClassType extends Type implements ISubstitutor {
 
     @Override
     public <S> void acceptComponents(TypeVisitor<?, S> visitor, S s) {
-        typeArguments.forEach(t -> t.accept(visitor, s));
+        if (typeArguments != null)
+            typeArguments.forEach(t -> t.accept(visitor, s));
     }
 
     @Override
     public void forEachTypeDef(Consumer<TypeDef> action) {
         action.accept(klass);
-        typeArguments.forEach(t -> t.forEachTypeDef(action));
+        if (typeArguments != null)
+            typeArguments.forEach(t -> t.forEachTypeDef(action));
     }
 
     @Override
