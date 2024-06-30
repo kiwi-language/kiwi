@@ -11,6 +11,7 @@ import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.view.rest.dto.DirectMappingKey;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.TestUtils;
 
 import java.util.Arrays;
@@ -243,6 +244,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                         100
                 )
         ));
+        DebugEnv.stringId = inventoryId;
         // query the inventory object by condition
         var queryResp = instanceManager.query(
                 new InstanceQueryDTO(

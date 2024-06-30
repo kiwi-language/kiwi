@@ -16,12 +16,16 @@ import org.metavm.util.ChangeList;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 @Component
 public class InstanceStore extends BaseInstanceStore {
+
+    public static final Logger logger = LoggerFactory.getLogger(InstanceStore.class);
 
     protected final InstanceMapper instanceMapper;
     private final IndexEntryMapper indexEntryMapper;

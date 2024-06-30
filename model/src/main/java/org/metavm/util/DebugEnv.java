@@ -1,10 +1,10 @@
 package org.metavm.util;
 
-import org.metavm.entity.IEntityContext;
 import org.metavm.flow.InputNode;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodCallNode;
 import org.metavm.object.instance.core.DurableInstance;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.PhysicalId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,7 @@ public class DebugEnv {
 
     public static volatile boolean saveCompileResult = false;
 
-    public static volatile String applicationId;
+    public static volatile String stringId;
 
     public static volatile DurableInstance instance;
 
@@ -56,7 +56,7 @@ public class DebugEnv {
 
     public static final List<InputNode> nodes = new CopyOnWriteArrayList<>();
 
-    public static volatile IEntityContext context;
+    public static volatile IInstanceContext context;
 
     public static void enterPathItem(String pathItem) {
         path.addLast(pathItem);

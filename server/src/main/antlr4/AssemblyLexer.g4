@@ -9,6 +9,7 @@ DEFAULT:            'default';
 CATCH:              'catch';
 STRING:             'string';
 CLASS:              'class';
+RECORD:             'record';
 STRUCT:             'struct';
 TIME:               'time';
 NULL:               'null';

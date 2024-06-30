@@ -58,15 +58,17 @@ public class DDLTest extends TestCase {
             Assert.assertNull(klass.findFieldByCode("version"));
             try (var cachingContext = entityContextFactory.newLoadedContext(TestConstants.APP_ID, commit.getWal())) {
                 var hat = (ClassInstance) cachingContext.getInstanceContext().get(Id.parse(hatId));
-                Assert.assertEquals(Instances.longInstance(0L), hat.getField("version"));
+                var ver = (ClassInstance) hat.getField("version");
+                Assert.assertEquals(Instances.longInstance(0L), ver.getField("majorVersion"));
             }
         }
-        DebugEnv.context = entityContextFactory.newContext(TestConstants.APP_ID);
         TestUtils.waitForDDLDone(entityContextFactory);
         var shoes = apiClient.getInstance(shoesId);
         var hat = apiClient.getInstance(hatId);
-        Assert.assertEquals(0L, shoes.get("version"));
-        Assert.assertEquals(0L, hat.get("version"));
+        //noinspection unchecked
+        Assert.assertEquals(0L, ((Map<String, Object>) shoes.get("version")).get("majorVersion"));
+        //noinspection unchecked
+        Assert.assertEquals(0L, ((Map<String, Object>) hat.get("version")).get("majorVersion"));
         var commitState = apiClient.getInstance((String) apiClient.getInstance(commitId).get("state"));
         Assert.assertEquals("FINISHED", commitState.get("name"));
     }

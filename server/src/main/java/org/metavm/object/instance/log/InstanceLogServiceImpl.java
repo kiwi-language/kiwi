@@ -42,11 +42,11 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         this.instanceSearchService = instanceSearchService;
         this.instanceStore = instanceStore;
         this.handlers = handlers;
-        WAL.setPostProcessHook(logs -> process(logs, null));
+        WAL.setPostProcessHook(logs -> process(logs, instanceStore, null));
     }
 
     @Override
-    public void process(List<InstanceLog> logs, @Nullable String clientId) {
+    public void process(List<InstanceLog> logs, IInstanceStore instanceStore, @Nullable String clientId) {
         if (NncUtils.isEmpty(logs)) {
             return;
         }
@@ -54,7 +54,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         List<Id> idsToLoad = NncUtils.filterAndMap(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getId);
         var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
         handleDDL(appId, newInstanceIds);
-        try (var context = newContext(appId)) {
+        try (var context = newContextWithStore(appId, instanceStore)) {
             var instanceContext = context.getInstanceContext();
             List<ClassInstance> changed = NncUtils.filterByType(instanceContext.batchGet(idsToLoad), ClassInstance.class);
             List<ClassInstance> created = NncUtils.filter(changed, c -> newInstanceIds.contains(c.getId()));
@@ -67,7 +67,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                     instanceSearchService.bulk(appId, changed, removed);
                 }
             }
-            instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
+            this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
         }
     }
 

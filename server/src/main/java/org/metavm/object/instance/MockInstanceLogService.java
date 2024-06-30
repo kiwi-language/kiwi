@@ -12,7 +12,7 @@ public class MockInstanceLogService implements InstanceLogService {
     private final List<InstanceLog> logs = new ArrayList<>();
 
     @Override
-    public void process(List<InstanceLog> logs, @Nullable String clientId) {
+    public void process(List<InstanceLog> logs, IInstanceStore instanceStore, @Nullable String clientId) {
         this.logs.addAll(logs);
     }
 

@@ -1,9 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.ChangeLogPlugin;
-import org.metavm.object.instance.CheckConstraintPlugin;
-import org.metavm.object.instance.IndexConstraintPlugin;
-import org.metavm.object.instance.MetaVersionPlugin;
+import org.metavm.object.instance.*;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.WAL;
@@ -39,7 +36,7 @@ public class EntityContextFactory {
 
 
     public IEntityContext newContext(boolean asyncLogProcess) {
-        return newContext(ContextUtil.getAppId(), defContext, null, asyncLogProcess, null, null);
+        return newContext(ContextUtil.getAppId(), defContext, null, asyncLogProcess, null, null, null);
     }
 
     public IEntityContext newContext(long appId, IdInitializer idProvider) {
@@ -51,7 +48,7 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newLoadedContext(long appId, WAL cachingWAL) {
-        return newContext(appId, defContext, null, defaultAsyncLogProcess, cachingWAL, null);
+        return newContext(appId, defContext, null, defaultAsyncLogProcess, cachingWAL, null, null);
     }
 
     public IEntityContext newBufferingContext(WAL bufferingWAL) {
@@ -59,7 +56,7 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newBufferingContext(long appId, WAL bufferingWAL) {
-        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, bufferingWAL);
+        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, bufferingWAL, null);
     }
 
     public IEntityContext newContext(long appId) {
@@ -71,38 +68,51 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider) {
-        return newContext(appId, parent, idProvider, defaultAsyncLogProcess, null, null);
+        return newContext(appId, parent, idProvider, defaultAsyncLogProcess, null, null, null);
     }
 
-    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider,
-                                     boolean asyncLogProcessing, @Nullable WAL cachingWAL, @Nullable WAL bufferingWAL) {
+    public IEntityContext newContext(long appId,
+                                     @Nullable IEntityContext parent,
+                                     @Nullable IdInitializer idProvider,
+                                     boolean asyncLogProcessing,
+                                     @Nullable WAL cachingWAL,
+                                     @Nullable WAL bufferingWAL,
+                                     @Nullable IInstanceStore store) {
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(), asyncLogProcessing,
-                NncUtils.get(parent, IEntityContext::getInstanceContext), idProvider, bridge, cachingWAL, bufferingWAL);
+                NncUtils.get(parent, IEntityContext::getInstanceContext), idProvider, bridge, cachingWAL, bufferingWAL, store);
         var context = new EntityContext(instanceContext, parent, defContext);
         bridge.setEntityContext(context);
         return context;
     }
 
+    public IEntityContext newContextWithStore(long appId, IInstanceStore instanceStore) {
+        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, null, instanceStore);
+    }
     public IInstanceContext newBridgedInstanceContext(long appId,
                                                       boolean readonly,
                                                       @Nullable Boolean asyncLogProcessing,
                                                       @Nullable IInstanceContext parent,
                                                       @Nullable IdInitializer idProvider,
-                                                      EntityInstanceContextBridge bridge, @Nullable WAL cachingWAL, @Nullable WAL bufferingWAL) {
+                                                      EntityInstanceContextBridge bridge,
+                                                      @Nullable WAL cachingWAL,
+                                                      @Nullable WAL bufferingWAL,
+                                                      @Nullable IInstanceStore store) {
         var builder = instanceContextFactory.newBuilder(appId, bridge, bridge)
                 .readonly(readonly)
                 .asyncPostProcess(NncUtils.orElse(asyncLogProcessing, defaultAsyncLogProcess))
                 .parent(parent)
                 .readWAL(cachingWAL)
-                .writeWAL(bufferingWAL)
-                .plugins(
-                        store -> List.of(
-                                new MetaVersionPlugin(bridge, bridge),
-                                new CheckConstraintPlugin(),
-                                new IndexConstraintPlugin(store, bridge),
-                                new ChangeLogPlugin(store, instanceLogService)
-                        ));
+                .writeWAL(bufferingWAL);
+        if (store != null)
+            builder.instanceStore(store);
+        builder.plugins(
+                currentStore -> List.of(
+                        new MetaVersionPlugin(bridge, bridge),
+                        new CheckConstraintPlugin(),
+                        new IndexConstraintPlugin(currentStore, bridge),
+                        new ChangeLogPlugin(currentStore, instanceLogService)
+                ));
         if (idProvider != null)
             builder.idInitializer(idProvider);
         return builder.build();
@@ -129,4 +139,5 @@ public class EntityContextFactory {
     public void setDefContext(DefContext defContext) {
         this.defContext = defContext;
     }
+
 }

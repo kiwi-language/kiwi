@@ -1,6 +1,8 @@
 package org.metavm.entity;
 
+import org.metavm.object.instance.IInstanceStore;
 import org.metavm.util.Constants;
+import org.metavm.util.ContextUtil;
 
 public class EntityContextFactoryAware {
 
@@ -16,6 +18,14 @@ public class EntityContextFactoryAware {
 
     public IEntityContext newContext(long appId) {
         return entityContextFactory.newContext(appId);
+    }
+
+    public IEntityContext newContextWithStore(long appId, IInstanceStore instanceStore) {
+        return entityContextFactory.newContextWithStore(appId, instanceStore);
+    }
+
+    public IEntityContext newContextWithStore(IInstanceStore instanceStore) {
+        return entityContextFactory.newContextWithStore(ContextUtil.getAppId(), instanceStore);
     }
 
     public IEntityContext newPlatformContext() {

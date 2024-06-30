@@ -2,13 +2,14 @@ class Product {
     private string name;
     private double price;
     private int quantity;
-    private int version;
+    private Version version;
 
     public Product(string name, double price, int quantity) {
         this.name = name;
         this.price = price;
         this.quantity = quantity;
-        this.version = 0;
+        ver: new Version(0, 0);
+        this.version = ver;
     }
 
     public string getName() {
@@ -35,8 +36,36 @@ class Product {
         this.quantity = quantity;
     }
 
-    private int __version__() {
-        return 0;
+    public Version getVersion() {
+        return this.version;
+    }
+
+    public void setVersion(Version version) {
+        this.version = version;
+    }
+
+    private Version __version__() {
+        ver: new Version(0, 0);
+        return ver;
+    }
+
+}
+
+record Version {
+    private readonly int majorVersion;
+    private readonly int minorVersion;
+
+    public Version(int majorVersion, int minorVersion) {
+        this.majorVersion = majorVersion;
+        this.minorVersion = minorVersion;
+    }
+
+    public int getMajorVersion() {
+        return this.majorVersion;
+    }
+
+    public int getMinorVersion() {
+        return this.minorVersion;
     }
 
 }

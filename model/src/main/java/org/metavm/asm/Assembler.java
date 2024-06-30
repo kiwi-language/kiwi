@@ -292,8 +292,14 @@ public class Assembler {
 
         @Override
         public Void visitClassDeclaration(AssemblyParser.ClassDeclarationContext ctx) {
-            visitTypeDef(ctx.IDENTIFIER().getText(), TypeCategory.CLASS, ctx.STRUCT() != null,
-                    ctx.typeType(), ctx.typeList(), ctx.typeParameters(), ctx, () -> super.visitClassDeclaration(ctx));
+            visitTypeDef(ctx.IDENTIFIER().getText(),
+                    ctx.RECORD() != null ? TypeCategory.VALUE : TypeCategory.CLASS,
+                    ctx.STRUCT() != null,
+                    ctx.typeType(),
+                    ctx.typeList(),
+                    ctx.typeParameters(),
+                    ctx,
+                    () -> super.visitClassDeclaration(ctx));
             return null;
         }
 

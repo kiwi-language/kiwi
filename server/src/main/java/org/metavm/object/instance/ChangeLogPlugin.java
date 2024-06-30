@@ -52,7 +52,7 @@ public class ChangeLogPlugin implements ContextPlugin {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
         if (NncUtils.isNotEmpty(logs)) {
             instanceStore.saveInstanceLogs(logs);
-            instanceLogService.process(logs, context.getClientId());
+            instanceLogService.process(logs, instanceStore, context.getClientId());
         }
     }
 

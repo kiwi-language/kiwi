@@ -13,7 +13,7 @@ typeDeclaration
     ;
 
 classDeclaration
-    : (CLASS | STRUCT) IDENTIFIER typeParameters?
+    : (CLASS | STRUCT | RECORD) IDENTIFIER typeParameters?
       (EXTENDS typeType)?
       (IMPLEMENTS typeList)?
       classBody
