@@ -10,14 +10,15 @@ import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.type.rest.dto.IndexParam;
 import org.metavm.object.type.rest.dto.IndexFieldDTO;
+import org.metavm.object.type.rest.dto.IndexParam;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 @EntityType
 public class Index extends Constraint implements LocalKey {
@@ -49,6 +50,10 @@ public class Index extends Constraint implements LocalKey {
                 fields.get(Entity::tryGetId, id),
                 "Can not find index item for id " + id
         );
+    }
+
+    public @Nullable IndexField findField(Predicate<IndexField> predicate) {
+        return NncUtils.find(fields, predicate);
     }
 
     public IndexField getFieldByTypeField(Field field) {

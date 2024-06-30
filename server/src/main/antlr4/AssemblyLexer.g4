@@ -10,6 +10,8 @@ CATCH:              'catch';
 STRING:             'string';
 CLASS:              'class';
 RECORD:             'record';
+INDEX:              'index';
+UNIQUE:             'unique';
 STRUCT:             'struct';
 TIME:               'time';
 NULL:               'null';
@@ -47,6 +49,8 @@ VOID:               'void';
 WHILE:              'while';
 ANY:                'any';
 NEVER:              'never';
+SELECT:             'select';
+SELECT_FIRST:       'selectFirst';
 
 // Operators
 

@@ -1,4 +1,14 @@
 class Product {
+
+    index IdxName {
+        name: this.name;
+    }
+
+    public static Product|null findByName(string name) {
+        found: selectFirst(Product.IdxName, name);
+        return found;
+    }
+
     private string name;
     private double price;
     private int quantity;

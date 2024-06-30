@@ -967,6 +967,15 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return staticFields.get(Field::getCode, code);
     }
 
+    @Nullable
+    public Index findIndex(Predicate<Index> predicate) {
+        for (Constraint constraint : constraints) {
+            if(constraint instanceof Index index && predicate.test(index))
+                return index;
+        }
+        return null;
+    }
+
     public ClassSource getSource() {
         return source;
     }

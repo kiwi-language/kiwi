@@ -65,6 +65,7 @@ public class Assembler {
         var units = NncUtils.map(sourcePaths, path -> parse(getSource(path)));
         visit(units, new AsmInit());
         visit(units, new AsmDeclarator());
+        visit(units, new IndexDefiner());
         visit(units, new Preprocessor());
         visit(units, new AsmGenerator());
         visit(units, new KlassInitializer());
@@ -98,6 +99,13 @@ public class Assembler {
                 name,
                 type
         );
+    }
+
+    private Expression parseExpression(String expression, ParsingContext parsingContext) {
+        var replaced = expression.replace("==", "=")
+                .replace("&&", "and")
+                .replace("||", "or");
+        return ExpressionParser.parse(replaced, parsingContext);
     }
 
     private <T> T getAttribute(ParserRuleContext ctx, AsmAttributeKey<T> key) {
@@ -553,6 +561,18 @@ public class Assembler {
             return super.visitTypeParameter(ctx);
         }
 
+        @Override
+        public Void visitIndexDeclaration(AssemblyParser.IndexDeclarationContext ctx) {
+            var klass = ((ClassInfo) scope).klass;
+            var name = ctx.IDENTIFIER().getText();
+            var index = klass.findIndex(idx -> idx.getName().equals(name));
+            var mods = currentMods();
+            if (index == null)
+                index = new Index(klass, name, name, null, mods.contains("unique"));
+            setAttribute(ctx, AsmAttributeKey.index, index);
+            return null;
+        }
+
         private Set<String> currentMods() {
             return requireNonNull(modsStack.peek());
         }
@@ -565,6 +585,45 @@ public class Assembler {
             if (mods.contains(Modifiers.PROTECTED))
                 return Access.PROTECTED;
             return Access.PACKAGE;
+        }
+
+    }
+
+    private class IndexDefiner extends VisitorBase {
+
+        @Override
+        public Void visitIndexDeclaration(AssemblyParser.IndexDeclarationContext ctx) {
+            var index = getAttribute(ctx, AsmAttributeKey.index);
+            index.setFields(NncUtils.map(ctx.indexField(), f -> parseIndexField(f, index)));
+            return null;
+        }
+
+        private IndexField parseIndexField(AssemblyParser.IndexFieldContext ctx, Index index) {
+            var name = ctx.IDENTIFIER().getText();
+            var field = index.findField(f -> f.getName().equals(name));
+            var expression = parseExpression(ctx.expression().getText(), new TypeParsingContext(
+                    id -> {
+                        throw new UnsupportedOperationException();
+                    },
+                    new IndexedTypeDefProvider() {
+                        @Nullable
+                        @Override
+                        public Klass findKlassByName(String name) {
+                            return klassProvider.apply(name);
+                        }
+
+                        @Override
+                        public TypeDef getTypeDef(Id id) {
+                            throw new UnsupportedOperationException();
+                        }
+                    },
+                    index.getDeclaringType())
+            );
+            if (field == null)
+                field = new IndexField(index, name, name, Values.expression(expression));
+            else
+                field.setValue(Values.expression(expression));
+            return field;
         }
 
     }
@@ -1122,6 +1181,45 @@ public class Assembler {
                     }
                     return lambdaNode;
                 }
+                if (statement.select() != null) {
+                    var select = statement.select();
+                    var klass = getKlass(select.qualifiedName().getText());
+                    var indexName = select.IDENTIFIER().getText();
+                    var index = Objects.requireNonNull(klass.findIndex(i -> i.getName().equals(indexName)),
+                            () -> "Cannot find index with name " + indexName + " class " + klass.getTypeDesc());
+                    var fieldValues = NncUtils.map(
+                            select.expression(),
+                            e -> Values.expression(parseExpression(e.getText(), parsingContext))
+                    );
+                    var key = new IndexQueryKey(
+                            index,
+                            NncUtils.biMap(
+                                    index.getFields(), fieldValues,
+                                    IndexQueryKeyItem::new
+                            )
+                    );
+                    if (select.SELECT() != null) {
+                        return new IndexSelectNode(
+                                null,
+                                name,
+                                null,
+                                index.getDeclaringType().getType(),
+                                prevNode, scope,
+                                index,
+                                key
+                        );
+                    } else {
+                        return new IndexSelectFirstNode(
+                                null,
+                                name,
+                                null,
+                                prevNode,
+                                scope,
+                                index,
+                                key
+                        );
+                    }
+                }
                 throw new InternalException("Unknown statement: " + statement.getText());
             } catch (Exception e) {
                 throw new InternalException("Fail to process statement: " + statement.getText(), e);
@@ -1151,13 +1249,6 @@ public class Assembler {
 
         private Value parseValue(String expression, ParsingContext parsingContext) {
             return Values.expression(parseExpression(expression, parsingContext));
-        }
-
-        private Expression parseExpression(String expression, ParsingContext parsingContext) {
-            var replaced = expression.replace("==", "=")
-                    .replace("&&", "and")
-                    .replace("||", "or");
-            return ExpressionParser.parse(replaced, parsingContext);
         }
 
     }
@@ -1316,6 +1407,8 @@ public class Assembler {
         public static final AsmAttributeKey<MethodInfo> methodInfo = new AsmAttributeKey<>("methodInfo", MethodInfo.class);
 
         public static final AsmAttributeKey<Field> field = new AsmAttributeKey<>("field", Field.class);
+
+        public static final AsmAttributeKey<Index> index = new AsmAttributeKey<>("index", Index.class);
 
         T cast(Object value) {
             return klass.cast(value);

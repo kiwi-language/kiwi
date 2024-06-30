@@ -11,6 +11,7 @@ import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -69,6 +70,11 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(0L, ((Map<String, Object>) shoes.get("version")).get("majorVersion"));
         //noinspection unchecked
         Assert.assertEquals(0L, ((Map<String, Object>) hat.get("version")).get("majorVersion"));
+        // check that index entries have been generated
+        var foundId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Shoes")));
+        Assert.assertEquals(shoesId, foundId);
+        var foundId2 = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Hat")));
+        Assert.assertEquals(hatId, foundId2);
         var commitState = apiClient.getInstance((String) apiClient.getInstance(commitId).get("state"));
         Assert.assertEquals("FINISHED", commitState.get("name"));
     }

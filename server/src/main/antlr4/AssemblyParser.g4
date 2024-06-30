@@ -89,6 +89,7 @@ memberDeclaration
 //    | genericMethodDeclaration
     | fieldDeclaration
     | constructorDeclaration
+    | indexDeclaration
 //    | genericConstructorDeclaration
     ;
 
@@ -167,11 +168,14 @@ statement
     | methodCall ';'
     | functionCall ';'
     | (NEW | UNEW | ENEW) creator ';'
+    | select ';'
     | (THIS | IDENTIFIER) '.' IDENTIFIER
       bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
       expression ';'
     | lambda
     ;
+
+select: (SELECT | SELECT_FIRST) '(' qualifiedName '.' IDENTIFIER (',' expression)* ')';
 
 forControl
     : loopVariableDeclarators? ';' expression? ';' forUpdate=loopVariableUpdates?
@@ -382,6 +386,7 @@ modifier
     | READONLY
     | CHILD
     | TITLE
+    | UNIQUE
     ;
 
 classOrInterfaceModifier
@@ -405,3 +410,7 @@ lambdaParameters
 lambdaBody
     : block
     ;
+
+indexDeclaration: INDEX IDENTIFIER '{' indexField* '}';
+
+indexField: IDENTIFIER ':' expression ';';

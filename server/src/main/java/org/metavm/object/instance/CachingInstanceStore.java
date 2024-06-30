@@ -89,7 +89,7 @@ public class CachingInstanceStore implements IInstanceStore {
                 query.from(),
                 query.to(),
                 query.desc(),
-                query.limit() + walResult.removed().size()
+                query.limit() != null ? query.limit() + walResult.removed().size() : null
         );
         var wrappedRs = wrapped.queryEntries(newQuery, context);
         for (var e : wrappedRs) {
@@ -100,7 +100,10 @@ public class CachingInstanceStore implements IInstanceStore {
             result.sort((e1, e2) -> -e1.compareTo(e2));
         else
             result.sort(IndexEntryPO::compareTo);
-        return result.subList(0, Math.min(result.size(), query.limit().intValue()));
+        if(query.limit() != null && query.limit() < result.size())
+            return result.subList(0, query.limit().intValue());
+        else
+            return result;
     }
 
     @Override

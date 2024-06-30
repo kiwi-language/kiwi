@@ -13,6 +13,7 @@ import org.metavm.mocks.Foo;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.type.FieldBuilder;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
@@ -98,7 +99,6 @@ public class WALTest extends TestCase {
         }
     }
 
-
     public void testDDL() {
         var ids = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
@@ -157,7 +157,7 @@ public class WALTest extends TestCase {
             }
         });
         TestUtils.doInTransactionWithoutResult(() -> {
-            try(var context = newContext()) {
+            try (var context = newContext()) {
                 var inst = context.getInstanceContext().get(instanceId2);
                 inst.ensureLoaded();
                 context.finish();
@@ -176,6 +176,49 @@ public class WALTest extends TestCase {
             var inst = (ClassInstance) context.getInstanceContext().get(instId);
             Assert.assertEquals(Instances.longInstance(0L), inst.getField("version"));
         }
+    }
+
+    public void testIndexQuery() {
+        final var className = "IndexFoo";
+        var walId = TestUtils.doInTransaction(() -> {
+            try (var context = newContext()) {
+                var wal = context.bind(new WAL());
+                try (var bufContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
+                    bufContext.bind(KlassBuilder.newBuilder(className, className).build());
+                    bufContext.finish();
+                }
+                context.finish();
+                return wal.getId();
+            }
+        });
+        try (var context = newContext()) {
+            var wal = context.getEntity(WAL.class, walId);
+            try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
+                var klass = loadedContext.selectFirstByKey(Klass.UNIQUE_CODE, className);
+                Assert.assertNotNull(klass);
+            }
+        }
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var wal = context.getEntity(WAL.class, walId);
+                wal.commit();
+            }
+        });
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = newContext()) {
+                var klass = context.selectFirstByKey(Klass.UNIQUE_CODE, className);
+                Assert.assertNotNull(klass);
+                var wal = context.bind(new WAL());
+                try (var bufContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
+                    bufContext.remove(bufContext.getEntity(Klass.class, klass.getId()));
+                    bufContext.finish();
+                }
+                try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
+                    Assert.assertNull(loadedContext.selectFirstByKey(Klass.UNIQUE_CODE, className));
+                }
+                context.finish();
+            }
+        });
     }
 
     private IEntityContext newContext() {

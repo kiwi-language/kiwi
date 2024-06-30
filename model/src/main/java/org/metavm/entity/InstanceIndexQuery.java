@@ -13,7 +13,7 @@ public record InstanceIndexQuery(
         @Nullable InstanceIndexKey from,
         @Nullable InstanceIndexKey to,
         boolean desc,
-        Long limit) {
+        @Nullable Long limit) {
 
     @Override
     public boolean equals(Object obj) {

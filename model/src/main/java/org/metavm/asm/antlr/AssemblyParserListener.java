@@ -338,6 +338,16 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 */
 	void exitStatement(AssemblyParser.StatementContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#select}.
+	 * @param ctx the parse tree
+	 */
+	void enterSelect(AssemblyParser.SelectContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#select}.
+	 * @param ctx the parse tree
+	 */
+	void exitSelect(AssemblyParser.SelectContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#forControl}.
 	 * @param ctx the parse tree
 	 */
@@ -767,4 +777,24 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitLambdaBody(AssemblyParser.LambdaBodyContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#indexDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterIndexDeclaration(AssemblyParser.IndexDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#indexDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitIndexDeclaration(AssemblyParser.IndexDeclarationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#indexField}.
+	 * @param ctx the parse tree
+	 */
+	void enterIndexField(AssemblyParser.IndexFieldContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#indexField}.
+	 * @param ctx the parse tree
+	 */
+	void exitIndexField(AssemblyParser.IndexFieldContext ctx);
 }
