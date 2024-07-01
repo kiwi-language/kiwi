@@ -3,8 +3,12 @@ parser grammar AssemblyParser;
 options {tokenVocab=AssemblyLexer;}
 
 compilationUnit
-    : typeDeclaration+
+    : packageDeclaration? importDeclaration* typeDeclaration+
     ;
+
+packageDeclaration: PACKAGE qualifiedName ';';
+
+importDeclaration: IMPORT qualifiedName ';';
 
 typeDeclaration
     : classOrInterfaceModifier*

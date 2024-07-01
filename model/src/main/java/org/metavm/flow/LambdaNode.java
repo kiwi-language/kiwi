@@ -152,7 +152,7 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
     }
 
     @Override
-    public void onLoad(IEntityContext context) {
+    public void onLoad() {
         createSAMImpl();
     }
 

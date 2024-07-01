@@ -1,3 +1,6 @@
+import java.util.List;
+import java.util.ArrayList;
+import org.metavm.api.ChildList;
 
 struct Node<T> {
     private string label;
@@ -34,7 +37,7 @@ struct MyList<T> {
     }
 
     public List<Node<T>> getNodes() {
-        nodes: unew ReadWriteList<Node<T>>(this.nodes);
+        nodes: unew ArrayList<Node<T>>(this.nodes);
         return nodes;
     }
 

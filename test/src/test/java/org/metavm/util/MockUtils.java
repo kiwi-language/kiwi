@@ -30,12 +30,12 @@ import java.util.Set;
 public class MockUtils {
 
     public static ShoppingTypes createShoppingTypes() {
-        var productType = KlassBuilder.newBuilder("Product", "Product").build();
-        var skuType = KlassBuilder.newBuilder("SKU", "SKU").build();
-        var couponType = KlassBuilder.newBuilder("Coupon", "Coupon").build();
+        var productType = TestUtils.newKlassBuilder("Product", "Product").build();
+        var skuType = TestUtils.newKlassBuilder("SKU", "SKU").build();
+        var couponType = TestUtils.newKlassBuilder("Coupon", "Coupon").build();
         var couponArrayType = new ArrayType(couponType.getType(), ArrayKind.READ_WRITE);
-        var orderType = KlassBuilder.newBuilder("Order", "Order").build();
-        var couponStateType = KlassBuilder.newBuilder("CouponState", "CouponState")
+        var orderType = TestUtils.newKlassBuilder("Order", "Order").build();
+        var couponStateType = TestUtils.newKlassBuilder("CouponState", "CouponState")
                 .kind(ClassKind.ENUM)
                 .build();
         var enumKlass = StdKlass.enum_.get();
@@ -477,6 +477,7 @@ public class MockUtils {
     }
 
     public static String assemble(String source, TypeManager typeManager, boolean waitForDDLDone, EntityContextFactory entityContextFactory) {
+        ContextUtil.setAppId(TestConstants.APP_ID);
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             assembler.assemble(List.of(source));
@@ -493,12 +494,12 @@ public class MockUtils {
     }
 
     public static FooTypes createFooTypes(boolean initIds) {
-        var fooType = KlassBuilder.newBuilder("Foo", "Foo").build();
+        var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, Types.getStringType())
                 .asTitle().build();
         var fooCodeField = FieldBuilder.newBuilder("code", "code", fooType, Types.getNullableStringType())
                 .build();
-        var barType = KlassBuilder.newBuilder("Bar", "Bar").build();
+        var barType = TestUtils.newKlassBuilder("Bar", "Bar").build();
         var barCodeField = FieldBuilder.newBuilder("code", "code", barType, Types.getStringType())
                 .asTitle().build();
         var barChildArrayType = new ArrayType(barType.getType(), ArrayKind.CHILD);
@@ -506,11 +507,11 @@ public class MockUtils {
 //        var nullableBarType = new UnionType(null, Set.of(barType, getNullType()));
         var fooBarsField = FieldBuilder.newBuilder("bars", "bars", fooType, barChildArrayType)
                 .isChild(true).build();
-        var bazType = KlassBuilder.newBuilder("Baz", "Baz").build();
+        var bazType = TestUtils.newKlassBuilder("Baz", "Baz").build();
         var bazArrayType = new ArrayType(bazType.getType(), ArrayKind.READ_WRITE);
         var bazBarsField = FieldBuilder.newBuilder("bars", "bars", bazType, barArrayType).build();
         var fooBazListField = FieldBuilder.newBuilder("bazList", "bazList", fooType, bazArrayType).build();
-        var quxType = KlassBuilder.newBuilder("Qux", "Qux").build();
+        var quxType = TestUtils.newKlassBuilder("Qux", "Qux").build();
         var quxAmountField = FieldBuilder.newBuilder("amount", "amount", quxType, Types.getLongType()).build();
         var nullableQuxType = new UnionType(Set.of(quxType.getType(), Types.getNullType()));
         var fooQuxField = FieldBuilder.newBuilder("qux", "qux", fooType, nullableQuxType).build();
@@ -521,7 +522,7 @@ public class MockUtils {
     }
 
     public static LivingBeingTypes createLivingBeingTypes(boolean initIds) {
-        var livingBeingType = KlassBuilder.newBuilder("LivingBeing", "LivingBeing").build();
+        var livingBeingType = TestUtils.newKlassBuilder("LivingBeing", "LivingBeing").build();
         var livingBeingAgeField = FieldBuilder.newBuilder("age", "age", livingBeingType, Types.getLongType())
                 .build();
         var livingBeingExtraInfoField = FieldBuilder.newBuilder("extraInfo", "extraInfo", livingBeingType, Types.getAnyType())
@@ -533,13 +534,13 @@ public class MockUtils {
         var livingBeingAncestorsField = FieldBuilder.newBuilder("ancestors", "ancestors", livingBeingType, livingBeingArrayType)
                 .isChild(true)
                 .build();
-        var animalType = KlassBuilder.newBuilder("Animal", "Animal")
-                .superClass(livingBeingType.getType())
+        var animalType = TestUtils.newKlassBuilder("Animal", "Animal")
+                .superType(livingBeingType.getType())
                 .build();
         var animalIntelligenceField = FieldBuilder.newBuilder("intelligence", "intelligence", animalType, Types.getLongType())
                 .build();
-        var humanType = KlassBuilder.newBuilder("Human", "Human")
-                .superClass(animalType.getType())
+        var humanType = TestUtils.newKlassBuilder("Human", "Human")
+                .superType(animalType.getType())
                 .build();
         var humanOccupationField = FieldBuilder.newBuilder("occupation", "occupation", humanType, Types.getStringType())
                 .build();

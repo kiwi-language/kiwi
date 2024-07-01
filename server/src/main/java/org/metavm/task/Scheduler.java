@@ -144,18 +144,6 @@ public class Scheduler extends EntityContextFactoryAware {
         });
     }
 
-    public void createSchedulerRegistry() {
-        transactionOperations.executeWithoutResult(s -> {
-            try (var context = newPlatformContext()) {
-                var existing = context.selectFirstByKey(SchedulerRegistry.IDX_ALL_FLAG, true);
-                if (existing != null)
-                    throw new IllegalStateException("SchedulerRegistry already exists");
-                context.bind(new SchedulerRegistry());
-                context.finish();
-            }
-        });
-    }
-
     public boolean isActive() {
         return active;
     }

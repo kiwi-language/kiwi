@@ -117,7 +117,7 @@ public class InstanceInput implements Closeable {
     private Instance readValue() {
         var type = Type.readType(this, typeDefProvider);
         var instance = type instanceof ArrayType arrayType ?
-                new ArrayInstance(arrayType) : ClassInstance.allocate((ClassType) type);
+                new ArrayInstance(arrayType) : ClassInstance.allocateEmpty((ClassType) type);
         instance.readFrom(this);
         addValue.accept(instance);
         return instance;

@@ -1,3 +1,8 @@
+import java.util.List;
+import java.util.ArrayList;
+import java.lang.RuntimeException;
+import org.metavm.api.ChildList;
+
 struct Product {
     private title string name;
     private readonly child ChildList<SKU> skuList;
@@ -17,7 +22,7 @@ struct Product {
     }
 
     public List<SKU> getSkuList() {
-        skuList: unew ReadWriteList<SKU>(this.skuList);
+        skuList: unew ArrayList<SKU>(this.skuList);
         return skuList;
     }
 
@@ -142,7 +147,7 @@ class Order {
         this.quantity = quantity;
         this.price = price;
         this.sku = sku;
-        couponsCopy: new ReadWriteList<Coupon>(coupons);
+        couponsCopy: new ArrayList<Coupon>(coupons);
         this.coupons = couponsCopy;
         this.orderTime = NOW();
     }
@@ -168,7 +173,7 @@ class Order {
     }
 
     public List<Coupon> getCoupons() {
-        coupons: unew ReadWriteList<Coupon>(this.coupons);
+        coupons: unew ArrayList<Coupon>(this.coupons);
         return coupons;
     }
 

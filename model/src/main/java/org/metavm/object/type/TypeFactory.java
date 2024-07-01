@@ -1,7 +1,6 @@
 package org.metavm.object.type;
 
 import org.metavm.common.ErrorCode;
-import org.metavm.ddl.Commit;
 import org.metavm.entity.Attribute;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.IEntityContext;
@@ -26,10 +25,6 @@ import java.util.List;
 
 public abstract class TypeFactory {
 
-
-    public void submitCommit(Commit commit) {
-
-    }
 
     public TypeVariable saveTypeVariable(TypeVariableDTO typeVariableDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveTypeVariable")) {
@@ -83,6 +78,7 @@ public abstract class TypeFactory {
                         .desc(klassDTO.desc())
                         .source(ClassSource.getByCode(klassDTO.source()))
                         .tmpId(klassDTO.tmpId())
+                        .tag(KlassTagAssigner.getInstance(context).next())
                         .build();
                 context.bind(klass);
             } else if (klass.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
@@ -161,6 +157,7 @@ public abstract class TypeFactory {
                     .isChild(fieldDTO.isChild())
                     .isStatic(fieldDTO.isStatic())
                     .staticValue(Instances.nullInstance())
+                    .tag(declaringType.nextFieldTag())
                     .state(context.isNewEntity(declaringType) ? MetadataState.READY : MetadataState.INITIALIZING)
                     .build();
 //            if (!field.isReady())
@@ -170,7 +167,10 @@ public abstract class TypeFactory {
             field.setName(fieldDTO.name());
             field.setCode(fieldDTO.code());
             field.setUnique(fieldDTO.unique());
-            field.setType(fieldType);
+            if(!fieldType.equals(field.getType())) {
+                field.setType(fieldType);
+                field.setTag(declaringType.nextFieldTag());
+            }
             field.setDefaultValue(defaultValue);
             field.setAccess(access);
         }

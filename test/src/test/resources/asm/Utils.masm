@@ -1,3 +1,7 @@
+import java.util.List;
+import java.util.ArrayList;
+import java.lang.Iterable;
+
 class Utils {
 
     public static boolean test(List<string> list, List<string> tests) {
@@ -30,7 +34,7 @@ class Utils {
     }
 
     public static <T> boolean containsAny(Iterable<[never, T]> iterable, T value1, T value2) {
-        list: unew ReadWriteList<T>();
+        list: unew ArrayList<T>();
         list.add(value1);
         list.add(value2);
         contains: Utils.<T>containsAny(iterable, list);

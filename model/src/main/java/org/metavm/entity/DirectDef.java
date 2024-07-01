@@ -7,13 +7,13 @@ import org.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Type;
 
-public class DirectDef<T> extends ModelDef<T, ClassInstance> {
+public class DirectDef<T> extends ModelDef<T> {
 
     private final TypeDef typeDef;
 
     public DirectDef(Type javaType, TypeDef typeDef) {
         //noinspection rawtypes,unchecked
-        super((Class) ReflectionUtils.getRawClass(javaType), javaType, ClassInstance.class);
+        super((Class) ReflectionUtils.getRawClass(javaType), javaType);
         this.typeDef = typeDef;
     }
 

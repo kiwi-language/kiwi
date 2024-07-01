@@ -14,7 +14,6 @@ import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Klass;
-import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.task.DDL;
@@ -58,7 +57,7 @@ public class WALTest extends TestCase {
         );
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
-                var wal = new WAL();
+                var wal = new WAL(context.getAppId());
                 context.bind(wal);
                 wal.saveInstances(ChangeList.inserts(List.of(instancePO)));
                 context.finish();
@@ -76,7 +75,7 @@ public class WALTest extends TestCase {
         final var fooName = "foo";
         var ids = TestUtils.doInTransaction(() -> {
             try (var outerContext = newContext()) {
-                var wal = outerContext.bind(new WAL());
+                var wal = outerContext.bind(new WAL(outerContext.getAppId()));
                 Id fooId;
                 try (var context = entityContextFactory.newBufferingContext(APP_ID, wal)) {
                     var foo = new Foo(fooName, new Bar("bar001"));
@@ -102,7 +101,7 @@ public class WALTest extends TestCase {
     public void testDDL() {
         var ids = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
-                var klass = KlassBuilder.newBuilder("Foo", "Foo").build();
+                var klass = TestUtils.newKlassBuilder("Foo", "Foo").build();
                 context.bind(klass);
                 var inst = ClassInstance.create(Map.of(), klass.getType());
                 context.getInstanceContext().bind(inst);
@@ -114,7 +113,7 @@ public class WALTest extends TestCase {
         var instId = ids[1];
         var walId = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
-                var wal = context.bind(new WAL());
+                var wal = context.bind(new WAL(context.getAppId()));
                 String fieldId;
                 try (var walContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
                     var klass = walContext.getKlass(klassId);
@@ -182,9 +181,9 @@ public class WALTest extends TestCase {
         final var className = "IndexFoo";
         var walId = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
-                var wal = context.bind(new WAL());
+                var wal = context.bind(new WAL(context.getAppId()));
                 try (var bufContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
-                    bufContext.bind(KlassBuilder.newBuilder(className, className).build());
+                    bufContext.bind(TestUtils.newKlassBuilder(className, className).build());
                     bufContext.finish();
                 }
                 context.finish();
@@ -208,7 +207,7 @@ public class WALTest extends TestCase {
             try (var context = newContext()) {
                 var klass = context.selectFirstByKey(Klass.UNIQUE_CODE, className);
                 Assert.assertNotNull(klass);
-                var wal = context.bind(new WAL());
+                var wal = context.bind(new WAL(context.getAppId()));
                 try (var bufContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
                     bufContext.remove(bufContext.getEntity(Klass.class, klass.getId()));
                     bufContext.finish();

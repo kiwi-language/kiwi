@@ -9,11 +9,11 @@ import org.metavm.object.instance.core.LongInstance;
 import org.metavm.object.instance.core.StringInstance;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Klass;
-import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.Types;
 import org.metavm.util.BootstrapUtils;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.TestConstants;
+import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ public class TreeSizeTest extends TestCase {
 
     public void test() {
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var klass = KlassBuilder.newBuilder("Foo", "Foo").build();
+            var klass = TestUtils.newKlassBuilder("Foo", "Foo").build();
             var nameField = FieldBuilder.newBuilder("name", "name", klass, Types.getStringType()).build();
             var numField = FieldBuilder.newBuilder("num", "num", klass, Types.getLongType()).build();
             context.bind(klass);

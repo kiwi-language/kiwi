@@ -32,7 +32,7 @@ import java.util.function.Predicate;
 import static org.metavm.util.NncUtils.*;
 
 @EntityType
-public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity, GlobalKey, LoadAware {
+public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity, GlobalKey, LoadAware, CopyAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
@@ -100,9 +100,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @CopyIgnore
     private @Nullable Klass copySource;
 
+    private int nextFieldTag;
+
     private ClassTypeState state = ClassTypeState.INIT;
 
-    private final transient int tag;
+    private final long tag;
+
+    private transient final int typeTag;
 
     @SuppressWarnings("unused")
     private boolean templateFlag = false;
@@ -121,9 +125,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private transient List<Klass> supers;
 
-    private transient volatile List<Field> sortedFields;
+    private transient List<Klass> sortedKlasses = new ArrayList<>();
 
-    private transient volatile List<List<Field>> sortedKlassAndFields;
+    private transient List<Field> sortedFields = new ArrayList<>();
 
     private transient Closure closure;
 
@@ -155,7 +159,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             boolean isTemplate,
             List<TypeVariable> typeParameters,
             List<Type> typeArguments,
-            int tag) {
+            long tag) {
         this.name = name;
         this.code = code;
         this.kind = kind;
@@ -170,10 +174,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.source = source;
         this.desc = desc;
         this.tag = tag;
+        this.typeTag = tag < 1000000 ? (int) tag : 0;
         setTypeParameters(typeParameters);
         setTypeArguments(typeArguments);
         getMethodTable().rebuild();
         setTemplateFlag(isTemplate);
+        resetSortedClasses();
         NncUtils.requireTrue(getAncestorClasses().size() <= Constants.MAX_INHERITANCE_DEPTH,
                 "Inheritance depth of class " + name + "  exceeds limit: " + Constants.MAX_INHERITANCE_DEPTH);
     }
@@ -191,6 +197,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (subKlasses.contains(subType))
             throw new InternalException("Subtype '" + subType + "' is already added to this type");
         subKlasses.add(subType);
+    }
+
+    void resetSortedClasses() {
+        sortedKlasses.clear();
+        forEachSuperClass(sortedKlasses::add);
+        sortedKlasses.sort(Comparator.comparingLong(Klass::getTag));
     }
 
     void removeSubType(Klass subType) {
@@ -258,9 +270,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return this.fields.stream().allMatch(predicate);
     }
 
-    @NoProxy
-    public int getTag() {
+    public long getTag() {
         return tag;
+    }
+
+    @NoProxy
+    public int getTypeTag() {
+       return typeTag;
     }
 
     public void setTitleField(@Nullable Field titleField) {
@@ -415,44 +431,18 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.state = state;
     }
 
-    public List<List<Field>> getSortedKlassAndFields() {
-        if (sortedKlassAndFields == null) {
-            synchronized (this) {
-                if (sortedKlassAndFields == null) {
-                    var fields = new ArrayList<Field>();
-                    Klass k = this;
-                    while (true) {
-                        fields.addAll(k.getFields());
-                        if (k.getSuperType() != null)
-                            k = k.getSuperType().resolve();
-                        else
-                            break;
-                    }
-                    fields.sort(Comparator.comparingLong(Field::getRecordGroupTag).thenComparingLong(Field::getRecordTag));
-                    var sf = new ArrayList<List<Field>>();
-                    var lastGroupTag = -1L;
-                    List<Field> group = null;
-                    for (Field field : fields) {
-                        var groupTag = field.getRecordGroupTag();
-                        if (lastGroupTag != groupTag) {
-                            lastGroupTag = groupTag;
-                            group = new ArrayList<>();
-                            group.add(field);
-                            sf.add(group);
-                        } else {
-                            assert group != null;
-                            group.add(field);
-                        }
-                    }
-                    sortedKlassAndFields = sf;
-                }
-            }
-        }
-        return sortedKlassAndFields;
+    public List<Klass> getSortedKlasses() {
+        return sortedKlasses;
+    }
+
+    public List<Field> getSortedFields() {
+        return sortedFields;
     }
 
     void resetFieldsMemoryDataStructures() {
-        this.sortedFields = null;
+        this.sortedFields.clear();
+        sortedFields.addAll(this.fields.toList());
+        sortedFields.sort(Comparator.comparingLong(Field::getTag));
     }
 
     public void moveMethod(Method method, int index) {
@@ -647,8 +637,26 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     @Override
-    public void onLoad(IEntityContext context) {
+    public void onLoad() {
         stage = ResolutionStage.INIT;
+        initTransients();
+    }
+
+    @Override
+    public void onCopy() {
+        initTransients();
+    }
+
+    private void initTransients() {
+        sortedFields = new ArrayList<>(fields.toList());
+        sortedFields.sort(Comparator.comparingLong(Field::getTag));
+        sortedKlasses = new ArrayList<>();
+        var k = this;
+        do {
+            sortedKlasses.add(k);
+            k = k.getSuperClass();
+        } while (k != null);
+        sortedKlasses.sort(Comparator.comparingLong(Klass::getTag));
     }
 
     public List<Index> getFieldIndices(Field field) {
@@ -1082,7 +1090,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void addParameterized(Klass parameterized) {
         NncUtils.requireTrue(parameterized.getTemplate() == this);
         NncUtils.requireNull(parameterizedClasses().put(parameterized.typeArguments.secretlyGetTable(), parameterized),
-                () -> new InternalException("Parameterized klass " + parameterized.getTypeDesc() + " already exists"));
+                () -> "Parameterized klass " + parameterized.getTypeDesc() + " already exists");
     }
 
     public Klass getExistingParameterized(List<? extends Type> typeArguments) {
@@ -1124,6 +1132,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return superType;
     }
 
+    public @Nullable Klass getSuperClass() {
+        return superType != null ? superType.resolve() : null;
+    }
+
     public Klass asSuper(Klass template) {
         NncUtils.requireTrue(template.isTemplate());
         Klass sup = accept(new ElementVisitor<>() {
@@ -1154,6 +1166,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (superType != null)
             action.accept(superType.resolve());
         interfaces.forEach(it -> action.accept(it.resolve()));
+    }
+
+    public void forEachSuperClass(Consumer<Klass> action) {
+        action.accept(this);
+        if(superType != null)
+            superType.resolve().forEachSuperClass(action);
     }
 
     public Klass getAncestorType(Klass targetType) {
@@ -1415,10 +1433,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.template = copySource = (Klass) template;
     }
 
-    public long getRecordTag() {
-        return getEffectiveTemplate().getId().getTreeId();
-    }
-
     public Klass getEffectiveTemplate() {
         return template != null ? template : this;
     }
@@ -1533,6 +1547,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         }
         onAncestorChanged();
         resetSuperTypeListeners();
+        resetSortedClasses();
     }
 
     private void resetSuperTypeListeners() {
@@ -1626,6 +1641,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void setFields(List<Field> fields) {
         requireTrue(allMatch(fields, f -> f.getDeclaringType() == this));
         this.fields.resetChildren(fields);
+        resetFieldsMemoryDataStructures();
     }
 
     public void moveField(Field field, int index) {
@@ -1865,6 +1881,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return null;
     }
 
+    public int nextFieldTag() {
+        return nextFieldTag++;
+    }
+
     public Class<? extends NativeBase> getNativeClass() {
         return nativeClass;
     }
@@ -1872,5 +1892,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void setNativeClass(Class<? extends NativeBase> nativeClass) {
         this.nativeClass = nativeClass;
     }
+
 }
 

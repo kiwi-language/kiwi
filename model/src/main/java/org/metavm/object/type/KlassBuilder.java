@@ -35,7 +35,7 @@ public class KlassBuilder {
     private Klass template;
     private List<Klass> dependencies;
     private List<TypeVariable> typeParameters = List.of();
-    private int tag = TypeTags.DEFAULT;
+    private long tag = TypeTags.DEFAULT;
     private final List<Attribute> attributes = new ArrayList<>();
 
     private KlassBuilder(String name, @Nullable String code) {
@@ -43,7 +43,7 @@ public class KlassBuilder {
         this.code = code;
     }
 
-    public KlassBuilder superClass(ClassType superType) {
+    public KlassBuilder superType(ClassType superType) {
         this.superType = superType;
         return this;
     }
@@ -141,7 +141,7 @@ public class KlassBuilder {
         return this;
     }
 
-    public KlassBuilder tag(int tag) {
+    public KlassBuilder tag(long tag) {
         this.tag = tag;
         return this;
     }

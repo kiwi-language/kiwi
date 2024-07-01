@@ -7,6 +7,7 @@ import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.*;
+import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,7 @@ public class IdentityContextTest extends TestCase {
 
     public void test() {
         IdentityContext identityContext = new IdentityContext();
-        var fooKlass = KlassBuilder.newBuilder("Foo", "org.metavm.Foo")
+        var fooKlass = TestUtils.newKlassBuilder("Foo", "org.metavm.Foo")
                 .source(ClassSource.BUILTIN)
                 .build();
 

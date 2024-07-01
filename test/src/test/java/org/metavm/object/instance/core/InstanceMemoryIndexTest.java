@@ -6,7 +6,6 @@ import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Index;
-import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.TestUtils;
@@ -24,7 +23,7 @@ public class InstanceMemoryIndexTest extends TestCase {
     public void test() {
         var memIndex = new InstanceMemoryIndex();
 
-        var fooType = KlassBuilder.newBuilder("Foo", "Foo")
+        var fooType = TestUtils.newKlassBuilder("Foo", "Foo")
                         .build();
         var nameField = FieldBuilder.newBuilder("name", "name", fooType, Types.getStringType())
                         .build();

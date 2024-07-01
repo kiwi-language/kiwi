@@ -38,7 +38,7 @@ public class BootstrapController {
     public Result<Void> boot(@RequestParam(value = "saveIds", defaultValue = "true") boolean saveIds) {
         initRegions();
         save(saveIds);
-        initScheduler();
+        initSystemEntities();
         initBuiltinApplications();
         return Result.success(null);
     }
@@ -55,9 +55,9 @@ public class BootstrapController {
         return Result.success(null);
     }
 
-    @PostMapping("/scheduler")
-    public Result<Void> initScheduler() {
-        scheduler.createSchedulerRegistry();
+    @PostMapping("/init-system-entities")
+    public Result<Void> initSystemEntities() {
+        bootstrap.initSystemEntities();
         return Result.success(null);
     }
 

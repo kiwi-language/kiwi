@@ -54,6 +54,7 @@ public class TestUtils {
     public static final ObjectMapper INDENT_OBJECT_MAPPER = new ObjectMapper()
             .enable(JsonGenerator.Feature.IGNORE_UNKNOWN)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static long nextKlassTag = 1000000;
 
     static {
         SimpleModule module = new SimpleModule();
@@ -454,7 +455,7 @@ public class TestUtils {
         return NncUtils.findRequired(klassDTO.enumConstants(), f -> name.equals(f.title()));
     }
 
-    private static final Klass mockKlass = KlassBuilder.newBuilder("TestUtilsMock", "TestUtilsMock").build();
+    private static final Klass mockKlass = TestUtils.newKlassBuilder("TestUtilsMock", "TestUtilsMock").build();
 
     public static ClassType mockClassType() {
         return mockKlass.getType();
@@ -509,4 +510,19 @@ public class TestUtils {
         worker.waitFor(predicate);
     }
 
+    private static long nextKlassTag() {
+        return nextKlassTag++;
+    }
+
+    public static KlassBuilder newKlassBuilder(Class<?> javaClass) {
+        return newKlassBuilder(javaClass.getSimpleName(), javaClass.getName());
+    }
+
+    public static KlassBuilder newKlassBuilder(String name) {
+        return newKlassBuilder(name, name);
+    }
+
+    public static KlassBuilder newKlassBuilder(String name, String code) {
+        return KlassBuilder.newBuilder(name, code).tag(nextKlassTag());
+    }
 }

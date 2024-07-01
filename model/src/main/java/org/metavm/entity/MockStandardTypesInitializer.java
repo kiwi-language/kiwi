@@ -1,36 +1,44 @@
 package org.metavm.entity;
 
+import org.metavm.api.ChildList;
+import org.metavm.api.ValueList;
 import org.metavm.object.type.*;
 import org.metavm.util.NncUtils;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class MockStandardTypesInitializer {
 
+    public static long nextKlassTag = 1;
+
     public static void init() {
         StdKlass.list.set(
-                KlassBuilder.newBuilder("List", List.class.getSimpleName())
+                newKlassBuilder(List.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "E", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.arrayList.set(
-                KlassBuilder.newBuilder("ReadWriteList", "ReadWriteList")
+                newKlassBuilder(ArrayList.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ReadWriteListElement", "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.childList.set(
-                KlassBuilder.newBuilder("ChildList", "ChildList")
+                newKlassBuilder(ChildList.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ChildListElement", "ChildListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.valueList.set(
-                KlassBuilder.newBuilder("ValueList", "ValueList")
+                newKlassBuilder(ValueList.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ValueListElement", "ValueListElement", DummyGenericDeclaration.INSTANCE))
@@ -38,7 +46,7 @@ public class MockStandardTypesInitializer {
         );
         var enumTypeParam = new TypeVariable(NncUtils.randomNonNegative(), "EnumType", "EnumType",
                 DummyGenericDeclaration.INSTANCE);
-        var enumType = KlassBuilder.newBuilder("Enum", Enum.class.getSimpleName())
+        var enumType = newKlassBuilder(Enum.class)
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
                 .tmpId(NncUtils.randomNonNegative())
@@ -47,55 +55,59 @@ public class MockStandardTypesInitializer {
         FieldBuilder.newBuilder("name", "name", enumType, Types.getStringType()).build();
         FieldBuilder.newBuilder("ordinal", "ordinal", enumType, Types.getLongType()).build();
         StdKlass.enum_.set(enumType);
-        StdKlass.entity.set(KlassBuilder.newBuilder("Entity", Entity.class.getSimpleName())
+        StdKlass.entity.set(newKlassBuilder(Entity.class)
                 .source(ClassSource.BUILTIN)
                 .build());
         StdKlass.predicate.set(
-                KlassBuilder.newBuilder("Predicate", "Predicate")
+                newKlassBuilder(Predicate.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.consumer.set(
-                KlassBuilder.newBuilder("Consumer", "Consumer")
+                newKlassBuilder(Consumer.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.throwable.set(
-                KlassBuilder.newBuilder("Throwable", "Throwable")
+                newKlassBuilder(Throwable.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
         );
         StdKlass.exception.set(
-                KlassBuilder.newBuilder("Exception", "Exception")
+                newKlassBuilder(Exception.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
         );
         StdKlass.runtimeException.set(
-                KlassBuilder.newBuilder("RuntimeException", "RuntimeException")
+                newKlassBuilder(RuntimeException.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
         );
         StdKlass.iterable.set(
-                KlassBuilder.newBuilder("Iterable", "Iterable")
+                newKlassBuilder(Iterable.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "T", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.iterator.set(
-                KlassBuilder.newBuilder("Iterator", "Iterator")
+                newKlassBuilder(Iterator.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
                         .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "T", "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
+    }
+
+    private static KlassBuilder newKlassBuilder(Class<?> javaClass) {
+        return KlassBuilder.newBuilder(javaClass.getSimpleName(), javaClass.getName()).tag(nextKlassTag++);
     }
 
 }

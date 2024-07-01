@@ -1,6 +1,5 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
@@ -8,7 +7,7 @@ import java.lang.reflect.TypeVariable;
 
 import static org.metavm.object.type.ResolutionStage.INIT;
 
-public class TypeVariableParser extends DefParser<Object, ClassInstance, TypeVariableDef> {
+public class TypeVariableParser extends DefParser<Object, TypeVariableDef> {
 
     private final TypeVariable<?> javaTypeVariable;
     private final Class<?> declaringClass;

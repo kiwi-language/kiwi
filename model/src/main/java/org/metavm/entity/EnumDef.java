@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
+public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
 
     public static final Logger logger = LoggerFactory.getLogger(EnumDef.class);
 
@@ -30,7 +30,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
     private final DefContext defContext;
 
     public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, Klass type, DefContext defContext) {
-        super(enumType, ClassInstance.class);
+        super(enumType);
         this.enumType = enumType;
         this.parentDef = parentDef;
         EntityType annotation = enumType.getAnnotation(EntityType.class);

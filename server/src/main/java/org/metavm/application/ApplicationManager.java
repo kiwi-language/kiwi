@@ -8,9 +8,10 @@ import org.metavm.entity.*;
 import org.metavm.message.Message;
 import org.metavm.message.MessageKind;
 import org.metavm.object.instance.core.TmpId;
+import org.metavm.object.type.GlobalKlassTagAssigner;
+import org.metavm.object.type.KlassTagAssigner;
 import org.metavm.system.IdService;
 import org.metavm.task.RemoveAppTaskGroup;
-import org.metavm.task.TaskSignal;
 import org.metavm.user.*;
 import org.metavm.user.rest.dto.*;
 import org.metavm.util.*;
@@ -147,12 +148,11 @@ public class ApplicationManager extends EntityContextFactoryAware {
     private Application createApp(Long id, String name, PlatformUser owner, IEntityContext platformContext) {
         long appId = id != null ? id :
                 idService.allocate(PLATFORM_APP_ID, ModelDefRegistry.getType(Application.class));
-        platformContext.bind(new TaskSignal(appId));
         Application application = new Application(name, owner);
         // initIdManually will bind application to context
         platformContext.initIdManually(application, Constants.getAppId(appId));
         platformUserManager.joinApplication(owner, application, platformContext);
-        setupApplication(appId);
+        setupApplication(appId, platformContext);
         return application;
     }
 
@@ -178,13 +178,13 @@ public class ApplicationManager extends EntityContextFactoryAware {
             createApp(appId, request.name(), owner, platformContext);
             platformContext.finish();
         }
-        setupApplication(appId);
         return new CreateAppResult(appId, owner.getStringId());
     }
 
-    private void setupApplication(long appId) {
+    private void setupApplication(long appId, IEntityContext platformContext) {
         try(var context = newContext(appId)) {
-            context.bind(new BeanDefinitionRegistry());
+            BeanDefinitionRegistry.initialize(context);
+            KlassTagAssigner.initialize(context, GlobalKlassTagAssigner.getInstance(platformContext));
             context.finish();
         }
     }

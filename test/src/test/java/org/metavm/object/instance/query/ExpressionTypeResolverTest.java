@@ -32,7 +32,7 @@ public class ExpressionTypeResolverTest extends TestCase {
     }
 
     public void testEq() {
-        var fooType = KlassBuilder.newBuilder("Foo", "Foo").build();
+        var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
         TestUtils.initEntityIds(fooType);
         typeDefRepository.save(List.of(fooType));
         FieldBuilder.newBuilder("name", "name", fooType, Types.getStringType()).build();
@@ -43,9 +43,9 @@ public class ExpressionTypeResolverTest extends TestCase {
     }
 
     public void testAllMatch() {
-        var listViewType = KlassBuilder.newBuilder("ListView", "ListView").build();
-        var classTypeType = KlassBuilder.newBuilder("ClassType", "ClassType").build();
-        var fieldType = KlassBuilder.newBuilder("Field", "Field").build();
+        var listViewType = TestUtils.newKlassBuilder("ListView", "ListView").build();
+        var classTypeType = TestUtils.newKlassBuilder("ClassType", "ClassType").build();
+        var fieldType = TestUtils.newKlassBuilder("Field", "Field").build();
         var fieldChildArrayType = new ArrayType(fieldType.getType(), ArrayKind.CHILD);
         FieldBuilder.newBuilder("visibleFields", "visibleFields", listViewType, fieldChildArrayType).build();
         FieldBuilder.newBuilder("type", "type", listViewType, classTypeType.getType()).build();

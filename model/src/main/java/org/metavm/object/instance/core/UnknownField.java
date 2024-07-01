@@ -5,10 +5,10 @@ import org.metavm.util.InstanceOutput;
 public class UnknownField implements IInstanceField {
 
     private final long recordGroupTag;
-    private final long recordTag;
+    private final int recordTag;
     private final byte[] valueBytes;
 
-    public UnknownField(long recordGroupTag, long recordTag, byte[] valueBytes) {
+    public UnknownField(long recordGroupTag, int recordTag, byte[] valueBytes) {
         this.recordGroupTag = recordGroupTag;
         this.recordTag = recordTag;
         this.valueBytes = valueBytes;
@@ -18,7 +18,7 @@ public class UnknownField implements IInstanceField {
         return recordGroupTag;
     }
 
-    public long getRecordTag() {
+    public int getRecordTag() {
         return recordTag;
     }
 
@@ -28,7 +28,21 @@ public class UnknownField implements IInstanceField {
     }
 
     @Override
+    public void set(Instance value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear() {
+    }
+
+    @Override
     public void writeValue(InstanceOutput output) {
         output.write(valueBytes);
+    }
+
+    @Override
+    public boolean isFieldInitialized() {
+        return true;
     }
 }

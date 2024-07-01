@@ -9,6 +9,7 @@ import org.metavm.util.TestUtils;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class TypeParserImplTest extends TestCase {
 
@@ -23,7 +24,7 @@ public class TypeParserImplTest extends TestCase {
     }
 
     public void testMethodRef() {
-        var fooKlass = KlassBuilder.newBuilder("Foo", "Foo").build();
+        var fooKlass = TestUtils.newKlassBuilder("Foo", "Foo").build();
         var testMethod = MethodBuilder.newBuilder(fooKlass, "test", "test").build();
         TestUtils.initEntityIds(fooKlass);
         var methodRef = TypeParser.parseMethodRef(
@@ -46,8 +47,8 @@ public class TypeParserImplTest extends TestCase {
     }
 
     public void testParseFunction() {
-        var functionSig = "T requireNonNull2<T>(T|null value, java.util.Supplier<string> messageSupplier)";
-        var supplierKlass = KlassBuilder.newBuilder("Supplier", "java.util.Supplier")
+        var functionSig = "T requireNonNull2<T>(T|null value, java.util.function.Supplier<string> messageSupplier)";
+        var supplierKlass = TestUtils.newKlassBuilder(Supplier.class)
                 .typeParameters(new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE))
                 .build();
         var func = new TypeParserImpl((String name) -> {

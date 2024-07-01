@@ -9,6 +9,7 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.*;
 import org.metavm.util.BootstrapUtils;
 import org.metavm.util.TestConstants;
+import org.metavm.util.TestUtils;
 
 import java.util.List;
 
@@ -31,18 +32,18 @@ public class BeanManagerTest extends TestCase {
 
     public void test() {
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var fooServiceKlass = KlassBuilder.newBuilder("FooService", "FooService")
+            var fooServiceKlass = TestUtils.newKlassBuilder("FooService", "FooService")
                     .addAttribute(AttributeNames.BEAN_NAME, "fooService")
                     .addAttribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT)
                     .build();
             addSimpleConstructor(fooServiceKlass);
-            var configKlass = KlassBuilder.newBuilder("Config", "Config")
+            var configKlass = TestUtils.newKlassBuilder("Config", "Config")
                     .addAttribute(AttributeNames.BEAN_NAME, "config")
                     .addAttribute(AttributeNames.BEAN_KIND, BeanKinds.CONFIGURATION)
                     .build();
             addSimpleConstructor(configKlass);
 
-            var barServiceKlass = KlassBuilder.newBuilder("BarService", "BarService")
+            var barServiceKlass = TestUtils.newKlassBuilder("BarService", "BarService")
                     .build();
             var field = FieldBuilder.newBuilder("fooService", "fooService", barServiceKlass, fooServiceKlass.getType())
                     .build();

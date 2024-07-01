@@ -18,6 +18,26 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 */
 	void exitCompilationUnit(AssemblyParser.CompilationUnitContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#packageDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterPackageDeclaration(AssemblyParser.PackageDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#packageDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitPackageDeclaration(AssemblyParser.PackageDeclarationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#importDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterImportDeclaration(AssemblyParser.ImportDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#importDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitImportDeclaration(AssemblyParser.ImportDeclarationContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#typeDeclaration}.
 	 * @param ctx the parse tree
 	 */

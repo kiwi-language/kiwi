@@ -29,6 +29,7 @@ public class WAL extends Entity implements LoadAware, ContextFinishWare {
         WAL.postProcessHook = postProcessHook;
     }
 
+    private final long appId;
     private String data = EncodingUtils.encodeBase64(new byte[]{});
 
     private transient Map<Long, InstancePO> inserts = new HashMap<>();
@@ -40,12 +41,12 @@ public class WAL extends Entity implements LoadAware, ContextFinishWare {
     private transient List<ReferencePO> removedReferences = new ArrayList<>();
     private transient List<InstanceLog> instanceLogs = new ArrayList<>();
 
-    public WAL() {
+    public WAL(long appId) {
+        this.appId = appId;
     }
 
     @Override
-    public void onLoad(IEntityContext context) {
-        var appId = context.getAppId();
+    public void onLoad() {
         var input = new InstanceInput(new ByteArrayInputStream(EncodingUtils.decodeBase64(data)));
         inserts = new HashMap<>();
         updates = new HashMap<>();

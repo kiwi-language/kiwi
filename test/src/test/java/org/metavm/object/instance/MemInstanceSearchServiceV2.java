@@ -1,7 +1,5 @@
 package org.metavm.object.instance;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.Page;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
@@ -11,6 +9,8 @@ import org.metavm.object.instance.search.SearchQuery;
 import org.metavm.util.Instances;
 import org.metavm.util.MultiApplicationMap;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -100,8 +100,9 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     private Source buildSource(ClassInstance instance) {
         var fields = new HashMap<Id, FieldValue>();
         instance.forEachField((field, value) -> {
-            if (!field.isChild())
-                fields.put(field.getTag(), value.toFieldValueDTO());
+            if (!field.isChild()) {
+                fields.put(field.getTagId(), value.toFieldValueDTO());
+            }
         });
         return new Source(
                 instance.getId(),

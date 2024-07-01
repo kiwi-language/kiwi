@@ -47,6 +47,14 @@ public interface Mapper<T, I extends DurableInstance> {
 
     void updateEntity(T model, I instance, ObjectInstanceMap objectInstanceMap);
 
+    default I allocateInstanceHelper(Object model, ObjectInstanceMap instanceMap, Id id) {
+       return allocateInstance(getEntityClass().cast(model), instanceMap, id);
+    }
+
+    default I allocateInstance(T model, ObjectInstanceMap instanceMap, Id id) {
+        return InstanceFactory.allocate(getInstanceClass(), id, EntityUtils.isEphemeral(model));
+    }
+
     default I createInstanceHelper(Object model, ObjectInstanceMap instanceMap, Id id) {
         return createInstance(getEntityClass().cast(model), instanceMap, id);
     }

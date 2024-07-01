@@ -15,11 +15,11 @@ import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
-import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.UncertainType;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
+import org.metavm.util.TestUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -65,7 +65,7 @@ public class TranspileUtilsTest extends TestCase {
         var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("add"));
         var sig = TranspileUtils.getInternalName(getMethod);
 
-        var fooType = KlassBuilder.newBuilder("SignatureFoo", SignatureFoo.class.getName()).build();
+        var fooType = TestUtils.newKlassBuilder(SignatureFoo.class).build();
         var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
 
         var addMethod = MethodBuilder.newBuilder(fooType, "add", "add")

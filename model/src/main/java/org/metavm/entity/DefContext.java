@@ -7,7 +7,6 @@ import org.metavm.flow.Function;
 import org.metavm.flow.Method;
 import org.metavm.flow.ScopeRT;
 import org.metavm.object.instance.ColumnKind;
-import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.object.view.Mapping;
@@ -29,10 +28,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     public static final Logger logger = LoggerFactory.getLogger(DefContext.class);
     public static final Set<Class<? extends GlobalKey>> BINDING_ALLOWED_CLASSES = Set.of();
 
-    private final Map<Type, ModelDef<?, ?>> javaType2Def = new HashMap<>();
-    private final Map<TypeDef, ModelDef<?, ?>> typeDef2Def = new IdentityHashMap<>();
-    private final Map<Integer, ModelDef<?, ?>> typeTag2Def = new HashMap<>();
-    private final IdentitySet<ModelDef<?, ?>> processedDefSet = new IdentitySet<>();
+    private final Map<Type, ModelDef<?>> javaType2Def = new HashMap<>();
+    private final Map<TypeDef, ModelDef<?>> typeDef2Def = new IdentityHashMap<>();
+    private final Map<Integer, ModelDef<?>> typeTag2Def = new HashMap<>();
+    private final IdentitySet<ModelDef<?>> processedDefSet = new IdentitySet<>();
     private final IdentitySet<Klass> initializedClassTypes = new IdentitySet<>();
     private final ValueDef<Enum<?>> enumDef;
     private final StdIdProvider stdIdProvider;
@@ -43,7 +42,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final IdentityContext identityContext;
     private final ColumnStore columnStore;
     private final TypeTagStore typeTagStore;
-    private final Map<Type, DefParser<?, ?, ?>> parsers = new HashMap<>();
+    private final Map<Type, DefParser<?, ?>> parsers = new HashMap<>();
     private final EntityMemoryIndex memoryIndex = new EntityMemoryIndex();
     private final Map<Id, Object> entityMap = new HashMap<>();
     private final Set<java.lang.reflect.Field> fieldBlacklist = new HashSet<>();
@@ -67,21 +66,21 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         super(instanceContext, null);
         this.stdIdProvider = stdIdProvider;
         this.identityContext = identityContext;
+        this.typeTagStore = typeTagStore;
         standardDefBuilder = new StandardDefBuilder(this);
         standardDefBuilder.initRootTypes();
         enumDef = standardDefBuilder.getEnumDef();
         this.columnStore = columnStore;
-        this.typeTagStore = typeTagStore;
         ColumnKind.columns().forEach(this::writeEntity);
     }
 
     @Override
-    public ModelDef<?, ?> getDef(Type javaType) {
+    public ModelDef<?> getDef(Type javaType) {
         return getDef(javaType, DEFINITION);
     }
 
     @Override
-    public ModelDef<?, ?> getDef(TypeDef typeDef) {
+    public ModelDef<?> getDef(TypeDef typeDef) {
         return Objects.requireNonNull(tryGetDef(typeDef), "Can not find def for: " + typeDef);
     }
 
@@ -119,7 +118,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         }, null);
     }
 
-    public ModelDef<?, ?> getDef(Type javaType, ResolutionStage stage) {
+    public ModelDef<?> getDef(Type javaType, ResolutionStage stage) {
         checkJavaType(javaType);
         javaType = ReflectionUtils.getBoxedType(javaType);
         if (!(javaType instanceof TypeVariable<?>)) {
@@ -131,7 +130,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                     javaType = EntityUtils.getRealType(klass);
             }
         }
-        ModelDef<?, ?> existing = javaType2Def.get(javaType);
+        ModelDef<?> existing = javaType2Def.get(javaType);
         if (existing != null && existing.getParser() == null)
             return existing;
         return parseType(javaType, stage);
@@ -231,8 +230,8 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @SuppressWarnings("unchecked")
-    public <T> ModelDef<T, ?> getDef(Class<T> klass) {
-        return (ModelDef<T, ?>) getDef((Type) klass);
+    public <T> ModelDef<T> getDef(Class<T> klass) {
+        return (ModelDef<T>) getDef((Type) klass);
     }
 
     @SuppressWarnings("unchecked")
@@ -323,7 +322,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         if (typeTag == TypeTags.DEFAULT)
             throw new IllegalArgumentException("Can not get mapper for default type tag");
         if (typeTag <= TypeTags.CHILD_ARRAY) {
-            var javaClass = switch (typeTag) {
+            var javaClass = switch ((int) typeTag) {
                 case TypeTags.READONLY_ARRAY -> ReadonlyArray.class;
                 case TypeTags.READ_WRITE_ARRAY -> ReadWriteArray.class;
                 case TypeTags.CHILD_ARRAY -> ChildArray.class;
@@ -334,11 +333,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             return typeTag2Def.get(typeTag);
     }
 
-    public @Nullable ModelDef<?, ?> tryGetDef(TypeDef typeDef) {
+    public @Nullable ModelDef<?> tryGetDef(TypeDef typeDef) {
         return typeDef2Def.get(typeDef);
     }
 
-    private DefParser<?, ?, ?> getParser(Type javaType) {
+    private DefParser<?, ?> getParser(Type javaType) {
         javaType = EntityUtils.getEntityType(javaType);
         var parser = parsers.get(javaType);
         if (parser != null)
@@ -348,7 +347,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return parser;
     }
 
-    private DefParser<?, ?, ?> createParser(Type javaType) {
+    private DefParser<?, ?> createParser(Type javaType) {
         Class<?> javaClass = ReflectionUtils.getRawClass(javaType);
         if (ReadonlyArray.class.isAssignableFrom(javaClass)) {
             throw new InternalException("Can not create parser for an array type: " + javaType.getTypeName());
@@ -384,9 +383,9 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         }
     }
 
-    private ModelDef<?, ?> parseType(Type javaType, ResolutionStage stage) {
+    private ModelDef<?> parseType(Type javaType, ResolutionStage stage) {
         var parser = parsers.get(javaType);
-        ModelDef<?, ?> def;
+        ModelDef<?> def;
         if (parser == null) {
             NncUtils.requireNull(javaType2Def.get(javaType));
             parser = getParser(javaType);
@@ -431,8 +430,8 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    public void preAddDef(ModelDef<?, ?> def) {
-        ModelDef<?, ?> existing = javaType2Def.get(def.getEntityType());
+    public void preAddDef(ModelDef<?> def) {
+        ModelDef<?> existing = javaType2Def.get(def.getEntityType());
         if (existing != null && existing != def)
             throw new InternalException("Def for java type " + def.getEntityType() + " already exists");
         javaType2Def.put(def.getEntityType(), def);
@@ -445,7 +444,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    public void addDef(ModelDef<?, ?> def) {
+    public void addDef(ModelDef<?> def) {
         preAddDef(def);
         afterDefInitialized(def);
     }
@@ -455,7 +454,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    public void afterDefInitialized(ModelDef<?, ?> def) {
+    public void afterDefInitialized(ModelDef<?> def) {
         if (processedDefSet.contains(def))
             return;
 //        identityContext.unmarkPending(def.getType());
@@ -483,7 +482,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             writeEntity(entity);
     }
 
-    private void tryInitDefEntityIds(ModelDef<?, ?> def) {
+    private void tryInitDefEntityIds(ModelDef<?> def) {
         def.getEntities().forEach(entity -> EntityUtils.forEachDescendant(entity, this::tryInitEntityId));
     }
 
@@ -511,7 +510,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @SuppressWarnings("unused")
-    public Collection<ModelDef<?, ?>> getAllDefList() {
+    public Collection<ModelDef<?>> getAllDefList() {
         return javaType2Def.values();
     }
 
@@ -559,7 +558,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return getInstance(model, null);
     }
 
-    public DurableInstance getInstance(Object model, ModelDef<?, ?> def) {
+    public DurableInstance getInstance(Object model, ModelDef<?> def) {
         if (model instanceof DurableInstance d)
             return d;
         if(model instanceof Method method && method.getDeclaringType().getName().equals("HashSet") && DebugEnv.method == null)
@@ -606,8 +605,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         var id = getEntityId(model);
         if (id == null) {
             if (mapper.isProxySupported()) {
-                var instance = InstanceFactory.allocate(mapper.getInstanceClass(), null,
-                        EntityUtils.isEphemeral(model));
+                var instance = mapper.allocateInstanceHelper(model, getObjectInstanceMap(), null);
                 addToContext(model, instance);
                 mapper.initInstanceHelper(instance, model, getObjectInstanceMap());
             } else {

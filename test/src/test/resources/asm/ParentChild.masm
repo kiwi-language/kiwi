@@ -1,3 +1,7 @@
+import java.util.List;
+import java.util.ArrayList;
+import org.metavm.api.ChildList;
+
 class Child {
     private string name;
     private Child|null next;
@@ -33,7 +37,7 @@ class Parent {
     }
 
     public List<Child> getChildren() {
-        children: unew ReadWriteList<Child>(this.children);
+        children: unew ArrayList<Child>(this.children);
         return children;
     }
 

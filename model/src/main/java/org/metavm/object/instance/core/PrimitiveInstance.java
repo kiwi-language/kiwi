@@ -120,4 +120,9 @@ public abstract class PrimitiveInstance extends Instance implements Comparable<P
     public boolean isMutable() {
         return false;
     }
+
+    @Override
+    public String toString() {
+        return Objects.toString(getValue());
+    }
 }

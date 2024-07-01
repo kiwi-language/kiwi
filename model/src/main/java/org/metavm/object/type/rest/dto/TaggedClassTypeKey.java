@@ -15,7 +15,7 @@ public record TaggedClassTypeKey(Id id, int tag) implements TypeKey {
     public void write(InstanceOutput output) {
         output.write(TypeKeyCodes.TAGGED_CLASS);
         output.writeId(id);
-        output.writeInt(tag);
+        output.writeLong(tag);
     }
 
     @Override

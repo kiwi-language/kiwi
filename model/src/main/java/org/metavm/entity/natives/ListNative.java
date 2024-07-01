@@ -59,11 +59,11 @@ public class ListNative extends IterableNative {
         return List(c, callContext);
     }
 
-    public Instance ReadWriteList(CallContext callContext) {
+    public Instance ArrayList(CallContext callContext) {
         return List(callContext);
     }
 
-    public Instance ReadWriteList(Instance c, CallContext callContext) {
+    public Instance ArrayList(Instance c, CallContext callContext) {
         return List(c, callContext);
     }
 

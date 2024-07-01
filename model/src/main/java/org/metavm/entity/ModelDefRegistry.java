@@ -1,7 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.ObjectInstanceMap;
-import org.metavm.object.instance.core.DurableInstance;
+import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.*;
 import org.metavm.util.ReflectionUtils;
@@ -34,8 +34,8 @@ public class ModelDefRegistry {
         return getDefContext().containsDef(typeDef);
     }
 
-    private static <T, I extends DurableInstance> void updateInstanceHelper(
-            ModelDef<T, I> modelDef,
+    private static <T, I extends ClassInstance> void updateInstanceHelper(
+            ModelDef<T> modelDef,
             Object entity,
             Instance instance,
             ObjectInstanceMap instanceMap) {
@@ -96,11 +96,11 @@ public class ModelDefRegistry {
         return enumType.cast(holder.get().getEnumDef(enumType).getEnumConstantDef(id).getValue());
     }
 
-    public static <T> ModelDef<T, ?> getDef(Class<T> aClass) {
+    public static <T> ModelDef<T> getDef(Class<T> aClass) {
         return holder.get().getDef(aClass);
     }
 
-    public static @Nullable ModelDef<?, ?> tryGetDef(TypeDef typeDef) {
+    public static @Nullable ModelDef<?> tryGetDef(TypeDef typeDef) {
         return holder.get().tryGetDef(typeDef);
     }
 

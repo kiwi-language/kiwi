@@ -1,9 +1,11 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.ObjectInstanceMap;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.ClassInstanceBuilder;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.ReflectionUtils;
@@ -15,29 +17,28 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ModelDef<T, I extends DurableInstance> implements Mapper<T, I> {
+public abstract class ModelDef<T> implements Mapper<T, ClassInstance> {
 
     public static final Logger logger = LoggerFactory.getLogger(ModelDef.class);
 
     protected final Class<T> javaClass;
     protected final java.lang.reflect.Type javaType;
-    private final Class<I> instanceType;
+    //    private final Class<I> instanceType;
     private boolean initialized;
     @Nullable
-    private DefParser<T,I,?> parser;
+    private DefParser<T, ?> parser;
 
-    protected ModelDef(Class<T> javaClass, Class<I> instanceType) {
-        this(javaClass, javaClass, instanceType);
+    protected ModelDef(Class<T> javaClass) {
+        this(javaClass, javaClass);
     }
 
-    protected ModelDef(TypeReference<T> typeReference, Class<I> instanceType) {
-        this(typeReference.getType(), typeReference.getGenericType(), instanceType);
+    protected ModelDef(TypeReference<T> typeReference) {
+        this(typeReference.getType(), typeReference.getGenericType());
     }
 
-    ModelDef(Class<T> javaClass, java.lang.reflect.Type javaType, Class<I> instanceType) {
+    ModelDef(Class<T> javaClass, java.lang.reflect.Type javaType) {
         this.javaClass = javaClass;
         this.javaType = javaType;
-        this.instanceType = instanceType;
     }
 
     public abstract TypeDef getTypeDef();
@@ -50,28 +51,36 @@ public abstract class ModelDef<T, I extends DurableInstance> implements Mapper<T
         return List.of(getTypeDef());
     }
 
-    public abstract void initEntity(T model, I instance, ObjectInstanceMap objectInstanceMap);
+    public abstract void initEntity(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap);
 
-    public abstract void updateEntity(T model, I instance, ObjectInstanceMap objectInstanceMap);
+    public abstract void updateEntity(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap);
 
-    public abstract void initInstance(I instance, T model, ObjectInstanceMap instanceMap);
+    public abstract void initInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap);
 
-    public I createInstance(T model, ObjectInstanceMap instanceMap, Id id) {
-        I instance = InstanceFactory.allocate(instanceType, id, EntityUtils.isEphemeral(model));
-        instance.setType(instanceMap.getType(EntityUtils.getRuntimeType(model)));
+    @Override
+    public ClassInstance allocateInstance(T model, ObjectInstanceMap instanceMap, Id id) {
+        return ClassInstanceBuilder.newBuilder((ClassType) instanceMap.getType(EntityUtils.getRealType(model)))
+                .ephemeral(EntityUtils.isEphemeral(model))
+                .id(id)
+                .build();
+    }
+
+    public ClassInstance createInstance(T model, ObjectInstanceMap instanceMap, Id id) {
+        var instance = allocateInstance(model, instanceMap, id);
         initInstance(instance, model, instanceMap);
         return instance;
     }
 
-    public abstract void updateInstance(I instance, T model, ObjectInstanceMap instanceMap);
+    public abstract void updateInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap);
 
     @Override
     public Class<T> getEntityClass() {
         return javaClass;
     }
 
-    public Class<I> getInstanceClass() {
-        return instanceType;
+    @Override
+    public Class<ClassInstance> getInstanceClass() {
+        return ClassInstance.class;
     }
 
     public java.lang.reflect.Type getEntityType() {
@@ -82,10 +91,10 @@ public abstract class ModelDef<T, I extends DurableInstance> implements Mapper<T
         return Map.of();
     }
 
-    public <R> ModelDef<R, I> as(Class<R> javaClass) {
-        if(javaClass.isAssignableFrom(this.javaClass))
+    public <R> ModelDef<R> as(Class<R> javaClass) {
+        if (javaClass.isAssignableFrom(this.javaClass))
             //noinspection unchecked
-            return (ModelDef<R, I>) this;
+            return (ModelDef<R>) this;
         else
             throw new ClassCastException(javaClass.getName() + " is not assignable from " + this.javaClass.getName());
     }
@@ -111,11 +120,11 @@ public abstract class ModelDef<T, I extends DurableInstance> implements Mapper<T
     }
 
     @Nullable
-    public DefParser<T, I, ?> getParser() {
+    public DefParser<T, ?> getParser() {
         return parser;
     }
 
-    public void setParser(@Nullable DefParser<T, I, ?> parser) {
+    public void setParser(@Nullable DefParser<T, ?> parser) {
         this.parser = parser;
     }
 }

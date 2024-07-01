@@ -5,12 +5,12 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.type.TypeDef;
 import org.metavm.object.type.TypeVariable;
 
-public class TypeVariableDef extends ModelDef<Object, ClassInstance> {
+public class TypeVariableDef extends ModelDef<Object> {
 
     private final TypeVariable variable;
 
     public TypeVariableDef(java.lang.reflect.TypeVariable<?> javaTypeVariable, TypeVariable variable) {
-        super(Object.class, javaTypeVariable, ClassInstance.class);
+        super(Object.class, javaTypeVariable);
         this.variable = variable;
     }
 

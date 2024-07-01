@@ -83,7 +83,7 @@ public class InstanceFactory {
             ClassInstance object = ClassInstance.allocate(classType, parentRef);
             instance = object;
             for (Field field : classType.resolve().getAllFields()) {
-                var tag = field.getTag().toString();
+                var tag = field.getTagId().toString();
                 if (fieldMap.containsKey(tag)) {
                     var fieldValue = resolveValue(
                             fieldMap.get(tag).value(),

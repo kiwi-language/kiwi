@@ -9,9 +9,9 @@ import java.lang.reflect.Type;
 
 public interface DefMap {
 
-    ModelDef<?, ?> getDef(Type javaType);
+    ModelDef<?> getDef(Type javaType);
 
-    ModelDef<?, ?> getDef(TypeDef typeDef);
+    ModelDef<?> getDef(TypeDef typeDef);
 
     default Mapper<?, ?> getMapper(Type javaType) {
         return getMapper(javaType, ResolutionStage.INIT);
@@ -34,11 +34,11 @@ public interface DefMap {
 
     org.metavm.object.type.Type internType(org.metavm.object.type.Type type);
 
-    void preAddDef(ModelDef<?,?> def);
+    void preAddDef(ModelDef<?> def);
 
-    void addDef(ModelDef<?, ?> def);
+    void addDef(ModelDef<?> def);
 
-    void afterDefInitialized(ModelDef<?,?> def);
+    void afterDefInitialized(ModelDef<?> def);
 
     boolean containsJavaType(Type javaType);
 

@@ -1,6 +1,5 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassKind;
 import org.metavm.object.type.ClassSource;
@@ -12,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-public class EnumParser<T extends Enum<?>> extends DefParser<T, ClassInstance, EnumDef<T>> {
+public class EnumParser<T extends Enum<?>> extends DefParser<T, EnumDef<T>> {
 
     private final Class<T> javaClass;
     private final ValueDef<Enum<?>> superDef;
@@ -38,7 +37,7 @@ public class EnumParser<T extends Enum<?>> extends DefParser<T, ClassInstance, E
                 javaClass,
                 superDef,
                 KlassBuilder.newBuilder(EntityUtils.getMetaTypeName(javaClass), javaClass.getName())
-                        .superClass(superDef.getType())
+                        .superType(superDef.getType())
                         .kind(ClassKind.ENUM)
                         .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getType))
                         .source(ClassSource.BUILTIN)

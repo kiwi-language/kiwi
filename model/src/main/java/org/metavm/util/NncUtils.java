@@ -1051,6 +1051,10 @@ public class NncUtils {
         return filterAndMap(source, type::isInstance, type::cast);
     }
 
+    public static <S, T, R> List<R> filterByTypeAndMap(Iterable<S> source, Class<T> type, Function<T, R> mapper) {
+        return filterAndMap(source, type::isInstance, v -> mapper.apply(type.cast(v)));
+    }
+
     @SuppressWarnings("unused")
     public static <
             T, R> Set<R> filterAndMapUnique(Iterable<T> source, Predicate<T> filter, Function<T, R> mapping) {
@@ -1553,10 +1557,9 @@ public class NncUtils {
     }
 
     @Nullable
-    public static <T> T requireNull(@Nullable T value, Supplier<RuntimeException> exceptionSupplier) {
-        if (value != null) {
-            throw exceptionSupplier.get();
-        }
+    public static <T> T requireNull(@Nullable T value, Supplier<String> exceptionSupplier) {
+        if (value != null)
+            throw new InternalException(exceptionSupplier.get());
         return null;
     }
 

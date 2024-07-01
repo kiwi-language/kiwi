@@ -3,7 +3,7 @@ package org.metavm.autograph;
 import junit.framework.TestCase;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.flow.MethodBuilder;
-import org.metavm.object.type.KlassBuilder;
+import org.metavm.util.TestUtils;
 
 public class ExpressionResolverTest extends TestCase {
 
@@ -13,7 +13,7 @@ public class ExpressionResolverTest extends TestCase {
     }
 
     public void testNewArrayList() {
-        var fooType = KlassBuilder.newBuilder("Foo", "Foo").build();
+        var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
         var barMethod = MethodBuilder.newBuilder(fooType, "bar", "bar")
                 .build();
     }

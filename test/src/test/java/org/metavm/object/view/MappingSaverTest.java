@@ -59,7 +59,7 @@ public class MappingSaverTest extends TestCase {
                 mappingProvider,
                 entityRepository
         );
-        var fooType = KlassBuilder.newBuilder("Foo", "Foo")
+        var fooType = TestUtils.newKlassBuilder("Foo", "Foo")
                 .build();
         FieldBuilder.newBuilder("name", "name", fooType, getStringType())
                 .asTitle()
@@ -76,9 +76,9 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testSaveBuiltin() {
-        var fooType = KlassBuilder.newBuilder("Foo", "Foo")
+        var fooType = TestUtils.newKlassBuilder("Foo", "Foo")
                 .build();
-        var barType = KlassBuilder.newBuilder("Bar", "Bar")
+        var barType = TestUtils.newKlassBuilder("Bar", "Bar")
                 .build();
 
         var barChildArrayType = new ArrayType(barType.getType(), ArrayKind.CHILD);
@@ -295,8 +295,8 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testPathId() {
-        var productType = KlassBuilder.newBuilder("Product", "Product").build();
-        var skuType = KlassBuilder.newBuilder("Sku", "Sku").build();
+        var productType = TestUtils.newKlassBuilder("Product", "Product").build();
+        var skuType = TestUtils.newKlassBuilder("Sku", "Sku").build();
         var skuChildArrayType = new ArrayType(skuType.getType(), ArrayKind.CHILD);
         var skuListField = FieldBuilder.newBuilder("skuList", "skuList", productType, skuChildArrayType)
                 .isChild(true)
@@ -375,8 +375,8 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testUnionType() {
-        var flowType = KlassBuilder.newBuilder("Flow", "Flow").build();
-        var scopeType = KlassBuilder.newBuilder("Scope", "Scope").build();
+        var flowType = TestUtils.newKlassBuilder("Flow", "Flow").build();
+        var scopeType = TestUtils.newKlassBuilder("Scope", "Scope").build();
         var scopeArrayType = new ArrayType(scopeType.getType(), ArrayKind.CHILD);
         var nullableScopeArrayType = new UnionType(Set.of(scopeArrayType, Types.getNullType()));
         var flowScopesField = FieldBuilder.newBuilder("scopes", "scopes", flowType, nullableScopeArrayType).isChild(true).build();
@@ -444,7 +444,7 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.entityRepository
         );
 
-        var nodeType = KlassBuilder.newBuilder("Node", "Node")
+        var nodeType = TestUtils.newKlassBuilder("Node", "Node")
                 .typeParameters(new TypeVariable(null, "V", "V", DummyGenericDeclaration.INSTANCE))
                 .build();
         FieldBuilder.newBuilder("label", "label", nodeType, getStringType())
@@ -455,7 +455,7 @@ public class MappingSaverTest extends TestCase {
 
         var nodeMapping = saver.saveBuiltinMapping(nodeType, true);
         var listTypeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
-        var listKlass = KlassBuilder.newBuilder("List", "List")
+        var listKlass = TestUtils.newKlassBuilder("List", "List")
                 .typeParameters(listTypeVar)
                 .build();
         var pNodeType = nodeType.getParameterized(List.of(listTypeVar.getType()), ResolutionStage.DEFINITION);
@@ -501,10 +501,10 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testApplication() {
-        var platformUserType = KlassBuilder.newBuilder("PlatformUser", "PlatformUser").build();
+        var platformUserType = TestUtils.newKlassBuilder("PlatformUser", "PlatformUser").build();
         var loginNameField = FieldBuilder.newBuilder("loginName", "loginName", platformUserType, getStringType()).asTitle().build();
 
-        var applicationType = KlassBuilder.newBuilder("Application", "Application").build();
+        var applicationType = TestUtils.newKlassBuilder("Application", "Application").build();
         var nameField = FieldBuilder.newBuilder("name", "name", applicationType, getStringType()).asTitle().build();
         var ownerField = FieldBuilder.newBuilder("owner", "owner", applicationType, platformUserType.getType())
                 .access(Access.PRIVATE).build();

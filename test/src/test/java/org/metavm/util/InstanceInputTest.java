@@ -5,6 +5,8 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,6 +16,8 @@ import java.util.Random;
 import java.util.function.Function;
 
 public class InstanceInputTest extends TestCase {
+
+    public static final Logger logger = LoggerFactory.getLogger(InstanceInputTest.class);
 
     public void testWriteString() {
         String s = "hello world";
@@ -93,9 +97,9 @@ public class InstanceInputTest extends TestCase {
 
     public void test() {
         String fooName = "foo", barCode = "bar001";
-        Klass fooType = KlassBuilder.newBuilder("Foo", "Foo").build();
-        Klass barType = KlassBuilder.newBuilder("Bar", "Bar").build();
-        Klass quxType = KlassBuilder.newBuilder("Qux", "Qux").build();
+        Klass fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
+        Klass barType = TestUtils.newKlassBuilder("Bar", "Bar").build();
+        Klass quxType = TestUtils.newKlassBuilder("Qux", "Qux").build();
 
         fooType.initId(PhysicalId.of(10001L, 0L, TestUtils.mockClassType()));
         barType.initId(PhysicalId.of(10002L, 0L, TestUtils.mockClassType()));
@@ -149,9 +153,9 @@ public class InstanceInputTest extends TestCase {
 
         Function<Id, DurableInstance> resolveInst = id -> {
             if(Objects.equals(id, fooInst.tryGetId()))
-                return new ClassInstance(id, fooType.getType(), false, null);
+                return ClassInstance.allocateUninitialized(id);
             else if(Objects.equals(id, barInst.tryGetId()))
-                return new ClassInstance(id, barType.getType(), false, null);
+                return ClassInstance.allocateUninitialized(id);
             else if(Objects.equals(id, quxInst.tryGetId()))
                 return quxInst;
             else
@@ -168,7 +172,7 @@ public class InstanceInputTest extends TestCase {
         };
         var bytes = InstanceOutput.toBytes(fooInst);
         var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, InstanceInput.UNSUPPORTED_ADD_VALUE, typeDefProvider);
-        var recoveredFooInst = input.readMessage();
+        var recoveredFooInst = (ClassInstance) input.readMessage();
         MatcherAssert.assertThat(recoveredFooInst, InstanceMatcher.of(fooInst));
         new StreamVisitor(new ByteArrayInputStream(bytes)) {
         }.visitMessage();

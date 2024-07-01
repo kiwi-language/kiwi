@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
@@ -34,7 +35,7 @@ public class ClassType extends Type implements ISubstitutor {
     private transient TypeSubstitutor substitutor;
     private transient Klass resolved;
 
-    public ClassType(Klass klass, List<Type> typeArguments) {
+    public ClassType(@NotNull Klass klass, List<Type> typeArguments) {
 //        if (klass.isParameterized())
 //            throw new InternalException("Can not use a parameterized klass for a ClassType. klass: " + klass.getTypeDesc());
 //        if(typeArguments.equals(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType)))
@@ -51,8 +52,8 @@ public class ClassType extends Type implements ISubstitutor {
     @Override
     public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
         return typeArguments == null ?
-                (klass.getTag() > 0 ?
-                        new TaggedClassTypeKey(getTypeDefId.apply(klass), klass.getTag()) :
+                (klass.getTypeTag() > 0 ?
+                        new TaggedClassTypeKey(getTypeDefId.apply(klass), klass.getTypeTag()):
                         new ClassTypeKey(getTypeDefId.apply(klass))
                 ) :
                 new ParameterizedTypeKey(klass.getId(), NncUtils.map(typeArguments, type -> type.toTypeKey(getTypeDefId)));
@@ -217,27 +218,27 @@ public class ClassType extends Type implements ISubstitutor {
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
         var id = getTypeDefExpr == null ? Constants.ID_PREFIX + serializeContext.getStringId(klass) : getTypeDefExpr.apply(klass);
-        var tag = klass.getTag();
+        var tag = klass.getTypeTag();
         return typeArguments == null ? (tag == 0 ? id : id + ":" + tag)
                 : id + "<" + NncUtils.join(typeArguments, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ">";
     }
 
     @Override
     public int getTypeKeyCode() {
-        return typeArguments == null ? (klass.getTag() == 0 ? TypeKeyCodes.CLASS : TypeKeyCodes.TAGGED_CLASS) : TypeKeyCodes.PARAMETERIZED;
+        return typeArguments == null ? (klass.getTypeTag() == 0 ? TypeKeyCodes.CLASS : TypeKeyCodes.TAGGED_CLASS) : TypeKeyCodes.PARAMETERIZED;
     }
 
     @Override
     public void write(InstanceOutput output) {
         if (typeArguments == null) {
-            var tag = klass.getTag();
+            var tag = klass.getTypeTag();
             if (tag == 0) {
                 output.write(TypeKeyCodes.CLASS);
                 output.writeId(klass.getId());
             } else {
                 output.write(TypeKeyCodes.TAGGED_CLASS);
                 output.writeId(klass.getId());
-                output.writeInt(tag);
+                output.writeLong(tag);
             }
         } else {
             output.write(TypeKeyCodes.PARAMETERIZED);
@@ -302,7 +303,7 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public int getTypeTag() {
-        return klass.getTag();
+        return klass.getTypeTag();
     }
 
     @Override
@@ -312,5 +313,9 @@ public class ClassType extends Type implements ISubstitutor {
 
     public boolean isAbstract() {
         return klass.isAbstract();
+    }
+
+    public boolean isKlassNull() {
+        return klass == null;
     }
 }

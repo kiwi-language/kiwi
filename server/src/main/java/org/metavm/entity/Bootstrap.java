@@ -4,6 +4,7 @@ import org.metavm.object.instance.MetaVersionPlugin;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.InstanceContext;
 import org.metavm.object.type.*;
+import org.metavm.task.SchedulerRegistry;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,6 +122,14 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
                 ensureIdInitialized();
                 tempContext.finish();
             }
+        }
+    }
+
+    @Transactional
+    public void initSystemEntities() {
+        try(var context = newPlatformContext()) {
+            SchedulerRegistry.initialize(context);
+            GlobalKlassTagAssigner.initialize(context);
         }
     }
 

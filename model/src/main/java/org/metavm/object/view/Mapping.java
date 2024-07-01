@@ -74,7 +74,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
 //                    if(mappingId == null)
 //                        mappingId = 0L;
                     if (getParentField() != null)
-                        instance.initId(new FieldViewId(isArray, (ViewId) getParent().tryGetId(), mappingKey, getParentField().getTag(), sourceId, instance.getType().toTypeKey()));
+                        instance.initId(new FieldViewId(isArray, (ViewId) getParent().tryGetId(), mappingKey, getParentField().getTagId(), sourceId, instance.getType().toTypeKey()));
                     else
                         instance.initId(new ElementViewId(isArray, (ViewId) getParent().tryGetId(), mappingKey, getIndex(), sourceId, instance.getType().toTypeKey()));
                 }
@@ -106,7 +106,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     }
 
     @Override
-    public void onLoad(IEntityContext context) {
+    public void onLoad() {
         this.stage = ResolutionStage.INIT;
     }
 

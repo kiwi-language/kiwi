@@ -6,10 +6,15 @@ public interface IInstanceField {
 
     long getRecordGroupTag();
 
-    long getRecordTag();
+    int getRecordTag();
 
     boolean shouldSkipWrite();
 
+    void set(Instance value);
+
+    void clear();
+
     void writeValue(InstanceOutput output);
 
+    boolean isFieldInitialized();
 }

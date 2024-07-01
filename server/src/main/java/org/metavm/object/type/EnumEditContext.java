@@ -4,7 +4,6 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ChoiceOptionDTO;
 import org.metavm.object.type.rest.dto.EnumConstantDTO;
 import org.metavm.util.BusinessException;
@@ -99,9 +98,10 @@ public class EnumEditContext {
 
     private Klass createType() {
         type = KlassBuilder.newBuilder(name, null)
-                .superClass(ModelDefRegistry.getClassType(Enum.class))
+                .superType(ModelDefRegistry.getClassType(Enum.class))
                 .kind(ClassKind.ENUM)
                 .anonymous(anonymous)
+                .tag(KlassTagAssigner.getInstance(entityContext).next())
                 .build();
         entityContext.bind(type);
         entityContext.initIds();

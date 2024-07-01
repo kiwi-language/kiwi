@@ -6,7 +6,6 @@ import org.metavm.flow.NodeRT;
 import org.metavm.flow.ScopeRT;
 import org.metavm.object.instance.DefaultObjectInstanceMap;
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
@@ -20,7 +19,8 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 import static java.util.Objects.requireNonNull;
-import static org.metavm.entity.EntityUtils.*;
+import static org.metavm.entity.EntityUtils.getRuntimeType;
+import static org.metavm.entity.EntityUtils.isModelInitialized;
 
 public abstract class BaseEntityContext implements CompositeTypeFactory, IEntityContext, ContextListener {
 
@@ -245,7 +245,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private void initializeModel0(Object model, Instance instance, Mapper<?, ?> def) {
         def.initEntityHelper(model, instance, objectInstanceMap);
         if(model instanceof LoadAware loadAware)
-            loadAware.onLoad(this);
+            loadAware.onLoad();
         EntityUtils.setProxyState(model, EntityMethodHandler.State.INITIALIZED);
     }
 
@@ -670,8 +670,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private DurableInstance newInstance(Object object) {
         Mapper<?, ?> mapper = getDefContext().getMapperByEntity(object);
         if (mapper.isProxySupported()) {
-            var instance = InstanceFactory.allocate(mapper.getInstanceClass(), tryGetId(object),
-                    EntityUtils.isEphemeral(object));
+            var instance = mapper.allocateInstanceHelper(object, objectInstanceMap, EntityUtils.tryGetId(object));
             addBinding(object, instance);
             mapper.initInstanceHelper(instance, object, objectInstanceMap);
             updateMemIndex(object);

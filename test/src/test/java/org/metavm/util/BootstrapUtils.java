@@ -9,16 +9,12 @@ import org.metavm.object.instance.log.InstanceLogServiceImpl;
 import org.metavm.object.instance.log.TaskHandler;
 import org.metavm.object.instance.log.VersionHandler;
 import org.metavm.object.instance.search.InstanceSearchService;
-import org.metavm.object.type.MemAllocatorStore;
-import org.metavm.object.type.MemColumnStore;
-import org.metavm.object.type.MemTypeTagStore;
-import org.metavm.object.type.StdAllocators;
+import org.metavm.object.type.*;
 import org.metavm.system.IdService;
 import org.metavm.system.RegionManager;
 import org.metavm.system.persistence.MemBlockMapper;
 import org.metavm.system.persistence.MemRegionMapper;
 import org.metavm.task.SchedulerRegistry;
-import org.metavm.task.TaskSignal;
 
 import java.util.List;
 
@@ -61,16 +57,15 @@ public class BootstrapUtils {
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             entityContextFactory.setDefContext(defContext);
             TestUtils.doInTransactionWithoutResult(() -> {
-                try (var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                    context.bind(new SchedulerRegistry());
-                    context.bind(new TaskSignal(TestConstants.APP_ID));
-                    context.finish();
-                }
-            });
-            TestUtils.doInTransactionWithoutResult(() -> {
-                try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                    context.bind(new BeanDefinitionRegistry());
-                    context.finish();
+                try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                    SchedulerRegistry.initialize(platformContext);
+                    var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
+                    try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                        BeanDefinitionRegistry.initialize(context);
+                        KlassTagAssigner.initialize(context, globalTagAssigner);
+                        context.finish();
+                    }
+                    platformContext.finish();
                 }
             });
             return new BootstrapResult(
@@ -123,16 +118,15 @@ public class BootstrapUtils {
                     instanceSearchService.copy()
             );
             TestUtils.doInTransactionWithoutResult(() -> {
-                try (var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                    context.bind(new SchedulerRegistry());
-                    context.bind(new TaskSignal(TestConstants.APP_ID));
-                    context.finish();
-                }
-            });
-            TestUtils.doInTransactionWithoutResult(() -> {
-                try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                    context.bind(new BeanDefinitionRegistry());
-                    context.finish();
+                try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                    SchedulerRegistry.initialize(platformContext);
+                    var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
+                    try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                        BeanDefinitionRegistry.initialize(context);
+                        KlassTagAssigner.initialize(context, globalTagAssigner);
+                        context.finish();
+                    }
+                    platformContext.finish();
                 }
             });
             return new BootstrapResult(

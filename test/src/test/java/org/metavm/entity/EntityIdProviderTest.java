@@ -22,8 +22,8 @@ import java.util.Set;
 public class EntityIdProviderTest extends TestCase {
 
     private void testAllocate(EntityIdProvider entityIdProvider) {
-        Klass typeType = KlassBuilder.newBuilder("Type", null).build();
-        Klass fooType = KlassBuilder.newBuilder("Foo", null).build();
+        Klass typeType = TestUtils.newKlassBuilder("Type", null).build();
+        Klass fooType = TestUtils.newKlassBuilder("Foo", null).build();
         ArrayType fooArrayType = new ArrayType(fooType.getType(), ArrayKind.READ_WRITE);
         typeType.initId(PhysicalId.of(1L, 0L, TestUtils.mockClassType()));
         fooType.initId(PhysicalId.of(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType.getType()), 0L, typeType.getType()));

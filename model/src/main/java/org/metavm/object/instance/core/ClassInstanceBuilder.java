@@ -22,6 +22,7 @@ public class ClassInstanceBuilder {
     private InstanceParentRef parentRef;
     private Consumer<DurableInstance> load;
     private boolean ephemeral;
+    private boolean initFieldTable = true;
 
     private ClassInstanceBuilder(ClassType type) {
         this.type = type;
@@ -72,10 +73,15 @@ public class ClassInstanceBuilder {
         return this;
     }
 
+    public ClassInstanceBuilder initFieldTable(boolean initFieldTable) {
+        this.initFieldTable = initFieldTable;
+        return this;
+    }
+
     public ClassInstance build() {
         //        if(tmpId != null)
 //            instance.setTmpId(tmpId);
-        return new ClassInstance(id, type, version, syncVersion, load, parentRef, data, sourceRef, ephemeral);
+        return new ClassInstance(id, type, version, syncVersion, load, parentRef, data, sourceRef, ephemeral, initFieldTable);
     }
 
 }

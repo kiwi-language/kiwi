@@ -1,9 +1,8 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.type.ResolutionStage;
 
-public abstract class DefParser<T,I extends DurableInstance,D extends ModelDef<T,I>> {
+public abstract class DefParser<T, D extends ModelDef<T>> {
 
     private ResolutionStage stage = ResolutionStage.INIT;
 

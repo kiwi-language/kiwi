@@ -21,7 +21,10 @@ import org.metavm.object.instance.core.DefaultViewId;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.*;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.TypeExpressions;
+import org.metavm.object.type.TypeManager;
+import org.metavm.object.type.Types;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldRefDTO;
@@ -464,7 +467,7 @@ public class InstanceManagerTest extends TestCase {
         var classType = new ClassType(StdKlass.childList.get(), List.of(Types.getStringType()));
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
-                var klass = KlassBuilder.newBuilder("Foo", null).build();
+                var klass = TestUtils.newKlassBuilder("Foo", null).build();
                 var method = MethodBuilder.newBuilder(klass, "test", null).build();
                 var methodCallNode = new MethodCallNode(
                         null,

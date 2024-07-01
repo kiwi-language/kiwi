@@ -19,6 +19,13 @@ public class SchedulerRegistry extends Entity {
         return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAG, true), "SchedulerRegistry not initialized");
     }
 
+    public static void initialize(IEntityContext context) {
+        var existing = context.selectFirstByKey(SchedulerRegistry.IDX_ALL_FLAG, true);
+        if (existing != null)
+            throw new IllegalStateException("SchedulerRegistry already exists");
+        context.bind(new SchedulerRegistry());
+    }
+
     private long version;
     private long lastHeartbeat;
     @Nullable

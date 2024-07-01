@@ -24,7 +24,7 @@ import java.util.List;
 
 import static org.metavm.object.type.ResolutionStage.*;
 
-public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, ClassInstance, D> {
+public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D> {
 
     protected final Class<T> javaClass;
     protected final java.lang.reflect.Type javaType;
@@ -246,13 +246,15 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         boolean isChild = javaField.isAnnotationPresent(ChildEntity.class);
         boolean lazy = isChild && javaField.getAnnotation(ChildEntity.class).lazy();
         var declaringType = declaringTypeDef.getKlass();
+        var colAndTag = columnStore.getColumn(javaType, javaField, fieldType.getSQLType());
         var field = FieldBuilder.newBuilder(
                         EntityUtils.getMetaFieldName(javaField),
                         javaField.getName(), declaringType, fieldType)
                 .unique(unique)
                 .lazy(lazy)
                 .readonly(Modifier.isFinal(javaField.getModifiers()))
-                .column(columnStore.getColumn(javaType, javaField, fieldType.getSQLType()))
+                .column(colAndTag.column())
+                .tag(colAndTag.tag())
                 .defaultValue(new NullInstance(Types.getNullType()))
                 .isChild(isChild)
                 .staticValue(new NullInstance(Types.getNullType()))
@@ -293,7 +295,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
                 .kind(ClassKind.fromTypeCategory(getTypeCategory()))
                 .source(ClassSource.BUILTIN)
                 .template(NncUtils.get(templateDef, PojoDef::getKlass))
-                .superClass(superClass)
+                .superType(superClass)
                 .interfaces(NncUtils.map(javaClass.getGenericInterfaces(), t -> (ClassType) defContext.getType(t)))
                 .typeParameters(NncUtils.map(javaClass.getTypeParameters(), this::createTypeVariable))
                 .tag(defContext.getTypeTag(javaClass))

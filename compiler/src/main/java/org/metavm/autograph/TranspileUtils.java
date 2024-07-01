@@ -26,8 +26,6 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -110,17 +108,18 @@ public class TranspileUtils {
     public static PsiType createType(java.lang.reflect.Type javaType, boolean ellipsis) {
         return switch (javaType) {
             case Class<?> klass -> {
-                if(klass.isPrimitive())
+                if (klass.isPrimitive())
                     yield createPrimitiveType(klass);
-                else if(klass.isArray())
+                else if (klass.isArray())
                     yield ellipsis ? createEllipsisType(klass) : createArrayType(klass);
                 else
                     yield createClassType(klass);
             }
             case ParameterizedType parameterizedType -> createParameterizedType(parameterizedType);
-            case WildcardType wildcardType  -> createWildcardType(wildcardType);
+            case WildcardType wildcardType -> createWildcardType(wildcardType);
             case TypeVariable<?> typeVariable -> createVariableType(typeVariable);
-            case GenericArrayType genericArrayType -> ellipsis ? createEllipsisType(genericArrayType) : createArrayType(genericArrayType);
+            case GenericArrayType genericArrayType ->
+                    ellipsis ? createEllipsisType(genericArrayType) : createArrayType(genericArrayType);
             default -> throw new IllegalStateException("Unexpected type: " + javaType);
         };
     }
@@ -138,16 +137,15 @@ public class TranspileUtils {
 
     public static PsiWildcardType createWildcardType(WildcardType wildcardType) {
         var psiManager = PsiManager.getInstance(project);
-        if((wildcardType.getUpperBounds().length == 0 ||
+        if ((wildcardType.getUpperBounds().length == 0 ||
                 wildcardType.getUpperBounds().length == 1 && wildcardType.getUpperBounds()[0].equals(Object.class)
-                && wildcardType.getLowerBounds().length == 0
+                        && wildcardType.getLowerBounds().length == 0
         )) {
             return PsiWildcardType.createUnbounded(psiManager);
         }
-        if(wildcardType.getLowerBounds().length > 0) {
+        if (wildcardType.getLowerBounds().length > 0) {
             return PsiWildcardType.createSuper(psiManager, createType(wildcardType.getLowerBounds()[0]));
-        }
-        else
+        } else
             return PsiWildcardType.createExtends(psiManager, createType(wildcardType.getUpperBounds()[0]));
     }
 
@@ -420,7 +418,7 @@ public class TranspileUtils {
     public static PsiClassType createVariableType(java.lang.reflect.TypeVariable<?> typeVariable) {
         var genDecl = typeVariable.getGenericDeclaration();
         var index = List.of(genDecl.getTypeParameters()).indexOf(typeVariable);
-        if(genDecl instanceof Class<?> klass)
+        if (genDecl instanceof Class<?> klass)
             return createVariableType(klass, index);
         else
             return createVariableType((Method) genDecl, index);
@@ -717,7 +715,7 @@ public class TranspileUtils {
 
     public static Type resolveParameterType(PsiParameter parameter, TypeResolver typeResolver) {
         var type = typeResolver.resolveTypeOnly(parameter.getType());
-        if(isAnnotatedWithNullable(parameter))
+        if (isAnnotatedWithNullable(parameter))
             type = Types.getNullableType(type);
         return type;
     }
@@ -821,9 +819,9 @@ public class TranspileUtils {
         var value = getAnnotationAttribute(psiClass, EntityType.class, attributeName);
         if (value != null)
             return value;
-        if((value = getAnnotationAttribute(psiClass, ValueType.class, attributeName)) != null)
+        if ((value = getAnnotationAttribute(psiClass, ValueType.class, attributeName)) != null)
             return value;
-        if((value = getAnnotationAttribute(psiClass, EntityStruct.class, attributeName)) != null)
+        if ((value = getAnnotationAttribute(psiClass, EntityStruct.class, attributeName)) != null)
             return value;
         return getAnnotationAttribute(psiClass, ValueStruct.class, attributeName);
     }
@@ -888,7 +886,7 @@ public class TranspileUtils {
     }
 
     private static String tryGetNameFromAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
-        var value =  (String) getAnnotationAttribute(element, annotationClass, "value");
+        var value = (String) getAnnotationAttribute(element, annotationClass, "value");
         return NncUtils.isNotBlank(value) ? value : null;
     }
 
@@ -964,16 +962,16 @@ public class TranspileUtils {
         if (attr != null) {
             JvmAnnotationConstantValue value = (JvmAnnotationConstantValue) attr.getAttributeValue();
             var constValue = requireNonNull(value).getConstantValue();
-            if(!isNullOrBlank(constValue))
+            if (!isNullOrBlank(constValue))
                 return constValue;
         }
         return defaultValue;
     }
 
     private static boolean isNullOrBlank(Object value) {
-        if(value == null)
+        if (value == null)
             return true;
-        if(value instanceof String s)
+        if (value instanceof String s)
             return s.isEmpty();
         return false;
     }
@@ -987,17 +985,8 @@ public class TranspileUtils {
             Map.entry(Float.class.getName(), "Double"),
             Map.entry(Boolean.class.getName(), "Boolean"),
             Map.entry(Date.class.getName(), "Time"),
-            Map.entry(Set.class.getName(), "Set"),
-            Map.entry(Map.class.getName(), "Map"),
-            Map.entry(Collection.class.getName(), "Collection"),
-            Map.entry(List.class.getName(), "List"),
-            Map.entry(ChildList.class.getName(), "ChildList"),
-            Map.entry(ArrayList.class.getName(), "ReadWriteList"),
-            Map.entry(LinkedList.class.getName(), "ReadWriteList"),
             Map.entry(Object.class.getName(), "Any"),
-            Map.entry(Iterable.class.getName(), "Iterable"),
-            Map.entry(Consumer.class.getName(), "Consumer"),
-            Map.entry(Predicate.class.getName(), "Predicate")
+            Map.entry(LinkedList.class.getName(), ArrayList.class.getName())
     );
 
     public static String getInternalName(PsiMethod method) {

@@ -15,6 +15,8 @@ UNIQUE:             'unique';
 STRUCT:             'struct';
 TIME:               'time';
 NULL:               'null';
+PACKAGE:            'package';
+IMPORT:             'import';
 PASSWORD:           'password';
 DOUBLE:             'double';
 ELSE:               'else';

@@ -1,3 +1,6 @@
+import java.util.List;
+import java.util.ArrayList;
+
 class LivingBeing {
 
     private int age;
@@ -8,9 +11,9 @@ class LivingBeing {
     public LivingBeing(int age, any|null extra) {
         this.age = age;
         this.extra = extra;
-        offsprings: new ReadWriteList<LivingBeing>();
+        offsprings: new ArrayList<LivingBeing>();
         this.offsprings = offsprings;
-        ancestors: new ReadWriteList<LivingBeing>();
+        ancestors: new ArrayList<LivingBeing>();
         this.ancestors = ancestors;
     }
 
@@ -23,12 +26,12 @@ class LivingBeing {
     }
 
     public List<LivingBeing> getOffsprings() {
-        offsprings: new ReadWriteList<LivingBeing>(this.offsprings);
+        offsprings: new ArrayList<LivingBeing>(this.offsprings);
         return offsprings;
     }
 
     public List<LivingBeing> getAncestors() {
-        ancestors: new ReadWriteList<LivingBeing>(this.ancestors);
+        ancestors: new ArrayList<LivingBeing>(this.ancestors);
         return ancestors;
     }
 

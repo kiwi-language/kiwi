@@ -1,13 +1,13 @@
 package org.metavm.entity;
 
 import org.metavm.api.Value;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.object.type.Klass;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -176,6 +176,15 @@ public class CopyVisitor extends ElementVisitor<Element> {
                     yield copy;
                 }
                 case ReadonlyArray<?> objects -> throw new InternalException("Readonly array copy not supported yet");
+                case List<?> list -> {
+                    var copy = new ArrayList<>();
+                    int i = 0;
+                    for (Object o : list) {
+                        final int _i = i;
+                        copy.add(getValue(o, v -> copy.set(_i, v)));
+                    }
+                    yield copy;
+                }
                 default -> {
                     var entityType = EntityUtils.getRealType(entity.getClass());
                     var copy = existing != null ? existing : allocateCopy(entity);
@@ -205,6 +214,8 @@ public class CopyVisitor extends ElementVisitor<Element> {
                             throw e;
                         }
                     });
+                    if(copy instanceof CopyAware copyAware)
+                        copyAware.onCopy();
                     yield copy;
                 }
             };

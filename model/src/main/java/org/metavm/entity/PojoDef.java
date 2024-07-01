@@ -12,7 +12,7 @@ import org.metavm.util.*;
 import java.lang.reflect.Type;
 import java.util.*;
 
-public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
+public abstract class PojoDef<T> extends ModelDef<T> {
     private final PojoDef<? super T> superDef;
     private final List<IFieldDef> fieldDefList = new ArrayList<>();
     private final List<IndexConstraintDef> indexConstraintDefList = new ArrayList<>();
@@ -28,7 +28,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
                    Klass klass,
                    DefContext defContext
     ) {
-        super(javaClass, javaType, ClassInstance.class);
+        super(javaClass, javaType);
         this.klass = klass;
         this.defContext = defContext;
         this.superDef = superDef;

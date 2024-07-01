@@ -3,6 +3,7 @@ package org.metavm.object.instance;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.ClassInstanceParam;
 import org.metavm.object.instance.rest.FieldValue;
@@ -78,7 +79,7 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void test_add_not_null_field() {
-        Klass type = KlassBuilder.newBuilder("Lab", null).build();
+        Klass type = TestUtils.newKlassBuilder("Lab", null).build();
         Field titleField = FieldBuilder
                 .newBuilder("title", null, type, Types.getStringType())
                 .build();
@@ -108,8 +109,8 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void testEphemeral() {
-        var flowType = KlassBuilder.newBuilder("Flow", "Flow").build();
-        var scopeType = KlassBuilder.newBuilder("Scope", "Scope").build();
+        var flowType = TestUtils.newKlassBuilder("Flow", "Flow").build();
+        var scopeType = TestUtils.newKlassBuilder("Scope", "Scope").build();
         var nullableScopeType = new UnionType(Set.of(Types.getNullType(), scopeType.getType()));
         var rootScopeField = FieldBuilder.newBuilder("rootScope", "rootScope", flowType, nullableScopeType)
                 .isChild(true)
@@ -138,8 +139,8 @@ public class ClassInstanceTest extends TestCase {
         var bin = new ByteArrayInputStream(InstanceOutput.toBytes(flow));
         var input = new InstanceInput(bin, id -> {
             var inst = id2instance.get(id);
-            if (inst instanceof ClassInstance classInst)
-                return new ClassInstance(id, classInst.getType(), classInst.isEphemeral(), null);
+            if (inst instanceof ClassInstance)
+                return ClassInstance.allocateUninitialized(id);
             else
                 throw new RuntimeException("Unexpected instance: " + inst);
         },
@@ -152,7 +153,27 @@ public class ClassInstanceTest extends TestCase {
                     throw new NullPointerException("Can not find type def for id: " + id);
                 });
         var loadedFlow = (ClassInstance) input.readMessage();
+        loadedFlow.logFieldTable();
         Assert.assertTrue(loadedFlow.getField(rootScopeField).isNull());
+    }
+
+    public void testReadWrite() {
+        var bootResult = BootstrapUtils.bootstrap();
+        var entityContextFactory = bootResult.entityContextFactory();
+        var klassId = TestUtils.doInTransaction(() -> {
+            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                var klass = context.bind(TestUtils.newKlassBuilder("Foo", "Foo")
+                        .superType(StdKlass.entity.type())
+                        .build());
+                context.finish();
+                return klass.getId();
+            }
+        });
+        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var klass = context.getKlass(klassId);
+            System.out.println(klass.getSuperType());
+        }
+
     }
 
 }

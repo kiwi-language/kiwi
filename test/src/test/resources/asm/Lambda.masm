@@ -1,3 +1,6 @@
+import java.lang.Iterable;
+import java.util.List;
+
 class Utils {
 
     public static int|null findGt(List<int> list, int value) {

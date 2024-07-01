@@ -34,6 +34,15 @@ public class BeanDefinitionRegistry extends Entity {
         return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAGS, true), "BeanDefinitionRegistry not found");
     }
 
+    public static void initialize(IEntityContext context) {
+        var existing = context.selectFirstByKey(IDX_ALL_FLAGS, true);
+        if(existing != null)
+            throw new IllegalStateException("BeanDefinitionRegistry already exists");
+        context.bind(new BeanDefinitionRegistry());
+    }
+
+    private BeanDefinitionRegistry() {}
+
     public void registerBeanDefinition(BeanDefinition beanDefinition) {
         if(NncUtils.exists(beanDefinitions, b -> b.getName().equals(beanDefinition.getName())))
             throw new IllegalStateException("BeanDefinition with name " + beanDefinition.getName() + " already exists");

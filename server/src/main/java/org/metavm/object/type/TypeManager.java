@@ -278,7 +278,7 @@ public class TypeManager extends EntityContextFactoryAware {
         FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
         SaveTypeBatch batch;
         try (var context = newContext()) {
-            var wal = context.bind(new WAL());
+            var wal = context.bind(new WAL(context.getAppId()));
             try (var bufferingContext = entityContextFactory.newBufferingContext(wal)) {
                 var runningCommit = bufferingContext.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
                 if (runningCommit != null)
@@ -450,7 +450,7 @@ public class TypeManager extends EntityContextFactoryAware {
         return instanceDTO.copyWithParam(
                 param.copyWithNewField(
                         new InstanceFieldDTO(
-                                ordinalField.getTag().toString(),
+                                ordinalField.getTagId().toString(),
                                 ordinalField.getName(),
                                 TypeCategory.LONG.code(),
                                 false,

@@ -17,6 +17,18 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitCompilationUnit(AssemblyParser.CompilationUnitContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#packageDeclaration}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitPackageDeclaration(AssemblyParser.PackageDeclarationContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#importDeclaration}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitImportDeclaration(AssemblyParser.ImportDeclarationContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#typeDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

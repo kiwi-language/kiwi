@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ArrayInstance;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.AnyType;
 import org.metavm.object.type.ArrayType;
@@ -79,6 +80,11 @@ public class InstanceArrayMapper<E extends Instance, C extends ReadWriteArray<E>
     public void updateEntity(C model, ArrayInstance instance, ObjectInstanceMap objectInstanceMap) {
         model.clear();
         initEntity(model, instance, objectInstanceMap);
+    }
+
+    @Override
+    public ArrayInstance allocateInstance(C model, ObjectInstanceMap instanceMap, Id id) {
+        return null;
     }
 
     @Override

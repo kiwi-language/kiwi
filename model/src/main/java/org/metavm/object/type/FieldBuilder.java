@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 
 public class FieldBuilder {
 
+
     public static FieldBuilder newBuilder(String name, @Nullable String code, Klass declaringType, Type type) {
         return new FieldBuilder(name, code, declaringType, type);
     }
@@ -31,6 +32,7 @@ public class FieldBuilder {
     private Field existing;
     private boolean readonly;
     private boolean asTitle;
+    private int tag = -1;
 
     private FieldBuilder(String name, @Nullable String code, Klass declaringType, Type type) {
         this.name = name;
@@ -56,6 +58,11 @@ public class FieldBuilder {
 
     public FieldBuilder state(MetadataState state) {
         this.state = state;
+        return this;
+    }
+
+    public FieldBuilder tag(int tag) {
+        this.tag = tag;
         return this;
     }
 
@@ -123,6 +130,8 @@ public class FieldBuilder {
                 staticValue = Instances.nullInstance();
             if (state == null)
                 state = defaultValue.isNotNull() ? MetadataState.INITIALIZING : MetadataState.READY;
+            if(tag == -1)
+                tag = declaringType.nextFieldTag();
             field = new Field(
                     tmpId,
                     name,
@@ -138,6 +147,7 @@ public class FieldBuilder {
                     lazy,
                     staticValue,
                     column,
+                    tag,
                     state
             );
         } else {

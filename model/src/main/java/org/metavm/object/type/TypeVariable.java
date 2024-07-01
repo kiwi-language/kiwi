@@ -41,7 +41,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     }
 
     @Override
-    public void onLoad(IEntityContext context) {
+    public void onLoad() {
         stage = ResolutionStage.INIT;
     }
 

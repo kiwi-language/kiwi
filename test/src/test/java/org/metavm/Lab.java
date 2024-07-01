@@ -1,6 +1,5 @@
 package org.metavm;
 
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 
 import java.io.IOException;
@@ -19,7 +18,8 @@ public class Lab {
     public native void testNative();
 
     public static void main(String[] args) throws IOException, SQLException {
-        System.out.println(Id.parse("0292a8d6b90780078201").getClass());
+        int i = 1;
+        System.out.println(i+=1);
     }
 
 

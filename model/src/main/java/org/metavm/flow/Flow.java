@@ -121,7 +121,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     @Override
-    public void onLoad(IEntityContext context) {
+    public void onLoad() {
         stage = ResolutionStage.INIT;
         nodeNames = new HashSet<>();
         accept(new VoidStructuralVisitor() {
@@ -600,7 +600,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     public void addParameterized(Flow parameterized) {
         NncUtils.requireTrue(parameterized.getTemplate() == this);
         NncUtils.requireNull(parameterizedFlows().put(parameterized.typeArguments.secretlyGetTable(), parameterized),
-                () -> new InternalException("Parameterized flow " + parameterized.getTypeDesc() + " already exists"));
+                () -> "Parameterized flow " + parameterized.getTypeDesc() + " already exists");
     }
 
     public @Nullable Flow getExistingParameterized(List<? extends Type> typeArguments) {

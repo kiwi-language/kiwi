@@ -6,6 +6,7 @@ import org.metavm.util.NncUtils;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.Properties;
 
 public class FileColumnStore extends MemColumnStore {
@@ -24,11 +25,12 @@ public class FileColumnStore extends MemColumnStore {
         }
         for (String propName : properties.stringPropertyNames()) {
             int idx = propName.lastIndexOf('.');
-            NncUtils.requireNonNull(idx > 0, "Invalid column file property name '" + propName + "'");
+            NncUtils.requireTrue(idx > 0, "Invalid column file property name '" + propName + "'");
             String typeName = propName.substring(0, idx);
             String fieldName = propName.substring(idx + 1);
-            columnNameMap.computeIfAbsent(typeName, k -> new HashMap<>())
-                    .put(fieldName, properties.getProperty(propName));
+            var splits = properties.getProperty(propName).split(",");
+            columnNameMap.computeIfAbsent(typeName, k -> new HashMap<>()).put(fieldName, splits[0]);
+            tagMap.computeIfAbsent(typeName, k -> new HashMap<>()).put(fieldName, Integer.valueOf(splits[1]));
         }
     }
 
@@ -37,7 +39,9 @@ public class FileColumnStore extends MemColumnStore {
         var properties = new Properties();
         for (var entry : columnNameMap.entrySet()) {
             for (var subEntry : entry.getValue().entrySet()) {
-                properties.put(entry.getKey() + "." + subEntry.getKey(), subEntry.getValue());
+                var tag = Objects.requireNonNull(tagMap.get(entry.getKey()).get(subEntry.getKey()),
+                        "Tag not found for " + entry.getKey() + "." + subEntry.getKey());
+                properties.put(entry.getKey() + "." + subEntry.getKey(), subEntry.getValue() + "," + tag);
             }
         }
         String filePath = cpRoot + FILE;

@@ -404,6 +404,7 @@ public class SubstitutorV2 extends CopyVisitor {
                         .ephemeral(klass.isEphemeral())
                         .template(template)
                         .tmpId(getCopyTmpId(template))
+                        .tag(klass.getTag())
                         .build();
                 copy.setStrictEphemeral(true);
                 klass.addParameterized(copy);

@@ -40,6 +40,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private boolean readonly;
     private MetadataState state;
     private Type type;
+    private int tag;
 
     public Field(
             Long tmpId,
@@ -56,6 +57,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             boolean lazy,
             Instance staticValue,
             @Nullable Column column,
+            int tag,
             MetadataState state
     ) {
         super(tmpId);
@@ -68,6 +70,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this.access = access;
         this.state = state;
         this.type = type;
+        this.tag = tag;
         this.readonly = readonly;
         if (column != null) {
             NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
@@ -430,6 +433,10 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this.type = type;
     }
 
+    public void setTag(int tag) {
+        this.tag = tag;
+    }
+
     @Override
     public boolean isStatic() {
         return _static;
@@ -458,20 +465,20 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return getEffectiveTemplate().isIdNotNull();
     }
 
-    public Id getTag() {
+    public Id getTagId() {
         return getEffectiveTemplate().getId();
     }
 
     public String getStringTag() {
-        return getTag().toString();
+        return getTagId().toString();
     }
 
-    public long getRecordGroupTag() {
-        return getEffectiveTemplate().getId().getTreeId();
+    public long getKlassTag() {
+        return declaringType.getTag();
     }
 
-    public long getRecordTag() {
-        return getEffectiveTemplate().getId().getNodeId();
+    public int getTag() {
+        return tag;
     }
 
 }
