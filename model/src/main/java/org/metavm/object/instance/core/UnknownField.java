@@ -2,23 +2,29 @@ package org.metavm.object.instance.core;
 
 import org.metavm.util.InstanceOutput;
 
+import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
+
 public class UnknownField implements IInstanceField {
 
+    private final ClassInstance owner;
     private final long recordGroupTag;
     private final int recordTag;
-    private final byte[] valueBytes;
+    private final byte[] bytes;
+    private @Nullable Instance value;
 
-    public UnknownField(long recordGroupTag, int recordTag, byte[] valueBytes) {
+    public UnknownField(ClassInstance owner, long recordGroupTag, int recordTag, byte[] bytes) {
+        this.owner = owner;
         this.recordGroupTag = recordGroupTag;
         this.recordTag = recordTag;
-        this.valueBytes = valueBytes;
+        this.bytes = bytes;
     }
 
-    public long getRecordGroupTag() {
+    public long getKlassTag() {
         return recordGroupTag;
     }
 
-    public int getRecordTag() {
+    public int getTag() {
         return recordTag;
     }
 
@@ -38,7 +44,19 @@ public class UnknownField implements IInstanceField {
 
     @Override
     public void writeValue(InstanceOutput output) {
-        output.write(valueBytes);
+        output.write(bytes);
+    }
+
+    public byte[] getBytes() {
+        return bytes;
+    }
+
+    public Instance getValue() {
+        if(value == null) {
+            var input = owner.getContext().createInstanceInput(new ByteArrayInputStream(bytes));
+            value = input.readInstance();
+        }
+        return value;
     }
 
     @Override

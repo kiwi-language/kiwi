@@ -37,11 +37,11 @@ public class InstanceField implements IInstanceField {
         return field;
     }
 
-    public long getRecordGroupTag() {
+    public long getKlassTag() {
         return field.getKlassTag();
     }
 
-    public int getRecordTag() {
+    public int getTag() {
         return field.getTag();
     }
 
@@ -57,10 +57,6 @@ public class InstanceField implements IInstanceField {
             output.writeRecord(value);
         else
             output.writeInstance(value);
-    }
-
-    public Id getTag() {
-        return field.getTagId();
     }
 
     public String getName() {

@@ -40,6 +40,8 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     private final Map<String, FlowDTO> functionMap = new HashMap<>();
     private final Map<String, FlowDTO> flowMap = new HashMap<>();
     private final Set<String> preparingSet = new HashSet<>();
+    private final Set<Field> newFields = new HashSet<>();
+    private final Set<Field> typeChangedFields = new HashSet<>();
 
     private SaveTypeBatch(IEntityContext context, List<? extends TypeDefDTO> typeDefDTOs, List<FlowDTO> functions) {
         this.context = context;
@@ -55,6 +57,14 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
         for (FlowDTO function : functions)
             functionMap.put(function.id(), function);
         preparingSet.addAll(PrepareSetGenerator.generate(NncUtils.filterByType(typeDefDTOs, KlassDTO.class), context));
+    }
+
+    public void addNewField(Field field) {
+        newFields.add(field);
+    }
+
+    public void addTypeChangedField(Field field) {
+        typeChangedFields.add(field);
     }
 
     private record SaveStage(ResolutionStage stage, Function<TypeDefDTO, Set<String>> getDependencies) {
@@ -276,13 +286,8 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     }
 
     public Commit buildCommit(WAL wal) {
-        var fieldIds = new ArrayList<String>();
-        preparingSet.forEach(id -> {
-            var entity = context.getEntity(Entity.class, id);
-            var physicalId = entity.getStringId();
-            if (entity instanceof Field)
-                fieldIds.add(physicalId);
-        });
+        var newFieldIds = NncUtils.map(newFields, Entity::getStringId);
+        var convertingFieldIds = NncUtils.map(typeChangedFields, Entity::getStringId);
         return new Commit(
                 wal,
                 new BatchSaveRequest(
@@ -290,7 +295,8 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                         new ArrayList<>(functionMap.values()),
                         true
                 ),
-                fieldIds
+                newFieldIds,
+                convertingFieldIds
         );
     }
 

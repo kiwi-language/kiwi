@@ -4,9 +4,9 @@ import org.metavm.util.InstanceOutput;
 
 public interface IInstanceField {
 
-    long getRecordGroupTag();
+    long getKlassTag();
 
-    int getRecordTag();
+    int getTag();
 
     boolean shouldSkipWrite();
 

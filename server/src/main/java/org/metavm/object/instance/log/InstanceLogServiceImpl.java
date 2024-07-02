@@ -79,7 +79,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             if (commit != null) {
                 try (var loadedContext = entityContextFactory.newLoadedContext(appId, commit.getWal())) {
                     var instances = NncUtils.mapAndFilterByType(instanceIds, loadedContext.getInstanceContext()::get, ClassInstance.class);
-                    var fields = NncUtils.map(commit.getFieldIds(), loadedContext::getField);
+                    var fields = NncUtils.map(commit.getNewFieldIds(), loadedContext::getField);
                     for (var instance : instances) {
                         for (Field field : fields) {
                             if (field.getDeclaringType().getType().isInstance(instance)) {

@@ -128,7 +128,7 @@ public class WALTest extends TestCase {
                 }
                 context.bind(new DDL(
                         new Commit(wal, new BatchSaveRequest(List.of(), List.of(), true),
-                                List.of(fieldId))
+                                List.of(fieldId), List.of())
                 ));
                 context.finish();
                 return wal.getId();

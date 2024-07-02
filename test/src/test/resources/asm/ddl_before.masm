@@ -1,9 +1,9 @@
 class Product {
     private string name;
-    private double price;
+    private int price;
     private int quantity;
 
-    public Product(string name, double price, int quantity) {
+    public Product(string name, int price, int quantity) {
         this.name = name;
         this.price = price;
         this.quantity = quantity;
@@ -17,11 +17,11 @@ class Product {
         this.name = name;
     }
 
-    public double getPrice() {
+    public int getPrice() {
         return this.price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(int price) {
         this.price = price;
     }
 

@@ -173,6 +173,7 @@ statement
     | functionCall ';'
     | (NEW | UNEW | ENEW) creator ';'
     | select ';'
+    | '(' castType=typeType ')' expression ';'
     | (THIS | IDENTIFIER) '.' IDENTIFIER
       bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
       expression ';'
@@ -262,7 +263,7 @@ expression
 //       | explicitGenericInvocation
       )
     | expression '[' expression ']'
-    | '(' typeType ')' expression
+//    | '(' castType=typeType ')' expression
     | expression postfix=('++' | '--')
     | prefix=('+'|'-'|'++'|'--') expression
     | prefix=('~'|'!') expression

@@ -107,9 +107,9 @@ public abstract class TypeFactory {
             if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION)) {
                 var declaringType = klass;
                 if (klassDTO.fields() != null)
-                    klass.setFields(NncUtils.map(klassDTO.fields(), f -> saveField(declaringType, f, context)));
+                    klass.setFields(NncUtils.map(klassDTO.fields(), f -> saveField(declaringType, f, batch)));
                 if (klassDTO.staticFields() != null)
-                    klass.setStaticFields(NncUtils.map(klassDTO.staticFields(), f -> saveField(declaringType, f, context)));
+                    klass.setStaticFields(NncUtils.map(klassDTO.staticFields(), f -> saveField(declaringType, f, batch)));
                 if (klassDTO.constraints() != null)
                     klass.setConstraints(NncUtils.map(klassDTO.constraints(), c -> ConstraintFactory.save(c, context)));
                 if (klassDTO.flows() != null) {
@@ -143,7 +143,8 @@ public abstract class TypeFactory {
         return type.isNullable();
     }
 
-    public Field saveField(Klass declaringType, FieldDTO fieldDTO, IEntityContext context) {
+    public Field saveField(Klass declaringType, FieldDTO fieldDTO, SaveTypeBatch batch) {
+        var context = batch.getContext();
         Field field = context.getField(fieldDTO.id());
         Type fieldType = TypeParser.parseType(fieldDTO.type(), context);
         var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
@@ -160,8 +161,8 @@ public abstract class TypeFactory {
                     .tag(declaringType.nextFieldTag())
                     .state(context.isNewEntity(declaringType) ? MetadataState.READY : MetadataState.INITIALIZING)
                     .build();
-//            if (!field.isReady())
-//                context.bind(new AddFieldTaskGroup(field));
+            if(!context.isNewEntity(declaringType))
+                batch.addNewField(field);
             context.bind(field);
         } else {
             field.setName(fieldDTO.name());
@@ -170,6 +171,8 @@ public abstract class TypeFactory {
             if(!fieldType.equals(field.getType())) {
                 field.setType(fieldType);
                 field.setTag(declaringType.nextFieldTag());
+                if(!field.isStatic())
+                    batch.addTypeChangedField(field);
             }
             field.setDefaultValue(defaultValue);
             field.setAccess(access);

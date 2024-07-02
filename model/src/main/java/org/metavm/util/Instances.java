@@ -536,4 +536,14 @@ public class Instances {
         else
             return Objects.requireNonNull(field.getDefaultValue());
     }
+
+    public static Instance computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {
+        var klass = field.getDeclaringType();
+        var initMethodName = "__" + field.getCodeNotNull() + "__";
+        var initMethod = klass.getMethod(m -> initMethodName.equals(m.getCode()) && m.getParameters().size() == 1
+                && m.getReturnType().equals(field.getType()));
+        var originalValue = instance.getUnknownField(field.getOriginalTag());
+        return Flows.invoke(initMethod, instance, List.of(originalValue), context);
+    }
+
 }

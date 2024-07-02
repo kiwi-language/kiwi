@@ -438,7 +438,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private void resetSortedFields() {
         this.sortedFields.clear();
         sortedFields.addAll(this.fields.toList());
-        sortedFields.sort(Comparator.comparingLong(Field::getTag));
+        sortedFields.sort(Comparator.comparingInt(Field::getTag));
     }
 
     public void moveMethod(Method method, int index) {

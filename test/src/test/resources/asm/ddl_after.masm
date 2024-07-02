@@ -59,6 +59,11 @@ class Product {
         return ver;
     }
 
+    private double __price__(int price) {
+        r: (double) price;
+        return r;
+    }
+
 }
 
 record Version {

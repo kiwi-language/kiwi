@@ -138,6 +138,14 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
         };
     }
 
+    public boolean isConvertibleFrom(Type that) {
+        return false;
+    }
+
+    public Instance convert(Instance instance) {
+        throw new UnsupportedOperationException();
+    }
+
     public boolean isUncertain() {
         return false;
     }

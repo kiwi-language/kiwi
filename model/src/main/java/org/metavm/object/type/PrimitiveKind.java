@@ -1,24 +1,45 @@
 package org.metavm.object.type;
 
 import org.metavm.object.instance.core.*;
-import org.metavm.util.NamingUtils;
-import org.metavm.util.NncUtils;
-import org.metavm.util.Null;
-import org.metavm.util.Password;
+import org.metavm.util.*;
 
 import java.util.Date;
 
 public enum PrimitiveKind {
-    LONG(1, "long", Long.class, LongInstance.class, TypeCategory.LONG),
-    DOUBLE(2, "double", Double.class, DoubleInstance.class, TypeCategory.DOUBLE),
+    LONG(1, "long", Long.class, LongInstance.class, TypeCategory.LONG) {
+        @Override
+        public boolean isConvertibleFrom(PrimitiveKind kind) {
+            return kind == DOUBLE;
+        }
+
+        @Override
+        public Instance convert(Instance instance) {
+            if (instance instanceof DoubleInstance d)
+                return Instances.longInstance(d.getValue().longValue());
+            else
+                throw new IllegalArgumentException();
+        }
+    },
+    DOUBLE(2, "double", Double.class, DoubleInstance.class, TypeCategory.DOUBLE) {
+        @Override
+        public boolean isConvertibleFrom(PrimitiveKind kind) {
+            return kind == LONG;
+        }
+
+        @Override
+        public Instance convert(Instance instance) {
+            if (instance instanceof LongInstance l)
+                return Instances.doubleInstance(l.getValue().doubleValue());
+            else
+                throw new IllegalArgumentException();
+        }
+    },
     STRING(3, "string", String.class, StringInstance.class, TypeCategory.STRING),
     BOOLEAN(4, "boolean", Boolean.class, BooleanInstance.class, TypeCategory.BOOLEAN),
     TIME(5, "time", Date.class, TimeInstance.class, TypeCategory.TIME),
     PASSWORD(6, "password", Password.class, PasswordInstance.class, TypeCategory.PASSWORD),
     NULL(7, "null", Null.class, NullInstance.class, TypeCategory.NULL),
-    VOID(8, "void", Void.class, null, TypeCategory.VOID)
-
-    ;
+    VOID(8, "void", Void.class, null, TypeCategory.VOID);
 
     private final int code;
     private final String name;
@@ -79,5 +100,13 @@ public enum PrimitiveKind {
 
     void setType(PrimitiveType type) {
         this.type = type;
+    }
+
+    public boolean isConvertibleFrom(PrimitiveKind kind) {
+        return false;
+    }
+
+    public Instance convert(Instance instance) {
+        throw new UnsupportedOperationException();
     }
 }

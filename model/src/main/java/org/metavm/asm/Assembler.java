@@ -1264,6 +1264,17 @@ public class Assembler {
                         );
                     }
                 }
+                if(statement.castType != null) {
+                    return new CastNode(
+                            null,
+                            name,
+                            null,
+                            parseType(statement.castType, this.scope, getCompilationUnit()),
+                            prevNode,
+                            scope,
+                            parseValue(statement.expression().getText(), parsingContext)
+                    );
+                }
                 throw new InternalException("Unknown statement: " + statement.getText());
             } catch (Exception e) {
                 throw new InternalException("Fail to process statement: " + statement.getText(), e);

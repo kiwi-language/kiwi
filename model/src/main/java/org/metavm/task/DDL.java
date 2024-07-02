@@ -39,28 +39,36 @@ public class DDL extends ScanTask implements WalTask {
     }
 
     private void processOne(ClassInstance instance, IEntityContext context) {
-        var fields = NncUtils.map(commit.getFieldIds(), context::getField);
-        for (Field field : fields) {
+        var newFields = NncUtils.map(commit.getNewFieldIds(), context::getField);
+        for (Field field : newFields) {
             if (field.getDeclaringType().getType().isInstance(instance))
                 initializeField(instance, field, context);
+        }
+        var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
+        for (Field field : convertingFields) {
+            if (field.getDeclaringType().getType().isInstance(instance))
+                convertField(instance, field, context);
         }
     }
 
     private void initializeField(ClassInstance instance, Field field, IEntityContext context) {
         var initialValue = Instances.computeFieldInitialValue(instance, field, context.getInstanceContext());
-//        if (!instance.isFieldInitialized(field))
         instance.setField(field, initialValue);
+    }
+
+    private void convertField(ClassInstance instance, Field field, IEntityContext context) {
+        var convertedValue = Instances.computeConvertedFieldValue(instance, field, context.getInstanceContext());
+        instance.setField(field, convertedValue);
+        logger.info("Converted value for " + field.getQualifiedName() + ": " + instance.getField(field));
     }
 
     @Override
     protected void onScanOver(IEntityContext context) {
-        try {
-            commit.finish();
-        } catch (Throwable e) {
-            logger.info("Failed to commit wal: {}", commit.getWal().getStringId());
-            throw e;
-        }
-
+//        var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
+//        for (Field field : convertingFields) {
+//            field.clearOriginalTag();
+//        }
+        commit.finish();
     }
 
     @Override

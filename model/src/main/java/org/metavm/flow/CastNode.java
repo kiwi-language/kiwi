@@ -74,6 +74,8 @@ public class CastNode extends NodeRT {
         var type = getType();
         if (type.isInstance(inst))
             return next(inst);
+        else if(type.isConvertibleFrom(inst.getType()))
+            return next(type.convert(inst));
         else {
             var exception = ClassInstance.allocate(StdKlass.exception.get().getType());
             var exceptionNative = new ExceptionNative(exception);

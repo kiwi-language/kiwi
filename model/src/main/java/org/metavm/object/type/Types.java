@@ -29,7 +29,7 @@ public class Types {
     private static final Function<java.lang.reflect.Type, Type> getType = ModelDefRegistry::getType;
 
     public static Klass resolveKlass(Type type) {
-        if(type instanceof ClassType classType)
+        if (type instanceof ClassType classType)
             return classType.resolve();
         else
             throw new InternalException("Can not resolve klass from type " + type.getTypeDesc() + " because it's not a class type");
@@ -75,7 +75,7 @@ public class Types {
                 }
             }
             case FunctionType functionType -> {
-                if(actualType instanceof FunctionType actualFunctionType) {
+                if (actualType instanceof FunctionType actualFunctionType) {
                     var formalParameterTypes = functionType.getParameterTypes();
                     var actualParameterTypes = actualFunctionType.getParameterTypes();
                     for (int i = 0; i < formalParameterTypes.size(); i++) {
@@ -90,18 +90,19 @@ public class Types {
                 actualMembers = new HashSet<>(actualMembers);
                 for (Type member : unionType.getMembers()) {
                     var actualMember = NncUtils.find(actualMembers, member::isAssignableFrom);
-                    if(actualMember == null)
+                    if (actualMember == null)
                         actualMember = getNeverType();
                     extractCapturedType(member, actualMember, setCaptureType);
                     actualMembers.remove(actualMember);
                 }
             }
             case ArrayType arrayType -> {
-                if(actualType instanceof ArrayType actualArrayType)
+                if (actualType instanceof ArrayType actualArrayType)
                     extractCapturedType(arrayType.getElementType(), actualArrayType.getElementType(), setCaptureType);
             }
             case UncertainType uncertainType -> throw new InternalException("Uncertain type not expected");
-            default -> {}
+            default -> {
+            }
         }
     }
 
@@ -165,9 +166,11 @@ public class Types {
             }
             case ArrayType arrayType -> new ArrayType(tryUncapture(arrayType.getElementType()), arrayType.getKind());
             case UnionType unionType -> new UnionType(NncUtils.mapUnique(unionType.getMembers(), Types::tryUncapture));
-            case IntersectionType intersectionType -> new IntersectionType(NncUtils.mapUnique(intersectionType.getTypes(), Types::tryUncapture));
-            case FunctionType functionType -> new FunctionType(NncUtils.map(functionType.getParameterTypes(), Types::tryUncapture),
-                    tryUncapture(functionType.getReturnType()));
+            case IntersectionType intersectionType ->
+                    new IntersectionType(NncUtils.mapUnique(intersectionType.getTypes(), Types::tryUncapture));
+            case FunctionType functionType ->
+                    new FunctionType(NncUtils.map(functionType.getParameterTypes(), Types::tryUncapture),
+                            tryUncapture(functionType.getReturnType()));
             case VariableType variableType -> variableType;
             default -> type;
         };
@@ -334,10 +337,11 @@ public class Types {
     }
 
     public static TypeDef saveTypeDef(TypeDefDTO typeDefDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        return switch(typeDefDTO) {
+        return switch (typeDefDTO) {
             case KlassDTO klassDTO -> saveClass(klassDTO, stage, batch);
             case TypeVariableDTO typeVariableDTO -> saveTypeVariable(typeVariableDTO, stage, batch);
-            case CapturedTypeVariableDTO capturedTypeVariableDTO -> saveCapturedTypeVariable(capturedTypeVariableDTO, stage, batch);
+            case CapturedTypeVariableDTO capturedTypeVariableDTO ->
+                    saveCapturedTypeVariable(capturedTypeVariableDTO, stage, batch);
             default -> throw new InternalException("Invalid TypeDefDTO: " + typeDefDTO);
         };
     }
@@ -386,7 +390,8 @@ public class Types {
     }
 
     public static Field createFieldAndBind(Klass type, FieldDTO fieldDTO, IEntityContext context) {
-        return TYPE_FACTORY.saveField(type, fieldDTO, context);
+        var batch = SaveTypeBatch.empty(context);
+        return TYPE_FACTORY.saveField(type, fieldDTO, batch);
     }
 
     public static Type getUnderlyingType(UnionType type) {
@@ -601,9 +606,9 @@ public class Types {
                 case DOUBLE -> Double.class;
             };
         }
-        if(type instanceof AnyType)
+        if (type instanceof AnyType)
             return Object.class;
-        if(type instanceof NeverType)
+        if (type instanceof NeverType)
             return Never.class;
         return null;
     }

@@ -207,7 +207,7 @@ public class ClassInstance extends DurableInstance {
             output.writeInt(numFields);
             subTable.forEach(field -> {
                 if (!field.shouldSkipWrite()) {
-                    output.writeInt(field.getRecordTag());
+                    output.writeInt(field.getTag());
                     field.writeValue(output);
                 }
             });
@@ -262,7 +262,7 @@ public class ClassInstance extends DurableInstance {
                         subTable.add(new InstanceField(this, field, value, false));
                         m++;
                     } else
-                        subTable.add(new UnknownField(groupTag, fieldTag, input.readInstanceBytes()));
+                        subTable.add(new UnknownField(this, groupTag, fieldTag, input.readInstanceBytes()));
                 }
                 input.setParent(getParent(), getParentField());
                 for (; m < fields.size(); m++) {
@@ -273,7 +273,7 @@ public class ClassInstance extends DurableInstance {
                 var subTable = fieldTable.addSubTable(groupTag);
                 int numFields = input.readInt();
                 for (int k = 0; k < numFields; k++) {
-                    subTable.add(new UnknownField(groupTag, input.readInt(), input.readInstanceBytes()));
+                    subTable.add(new UnknownField(this, groupTag, input.readInt(), input.readInstanceBytes()));
                 }
             }
         }
@@ -377,6 +377,10 @@ public class ClassInstance extends DurableInstance {
     public Instance getField(Field field) {
         ensureLoaded();
         return field(field).getValue();
+    }
+
+    public Instance getUnknownField(int tag) {
+        return fieldTable.getUnknown(tag);
     }
 
     public FlowInstance getFunction(Method method) {
@@ -637,6 +641,13 @@ public class ClassInstance extends DurableInstance {
             };
         }
 
+        public Instance getUnknown(int tag) {
+            for (var f : this) {
+               if(f instanceof UnknownField uf && uf.getTag() == tag)
+                   return uf.getValue();
+            }
+            throw new IllegalStateException("Can not find unknown field for tag " + tag);
+        }
     }
 
     private static class FieldSubTable implements Iterable<IInstanceField> {

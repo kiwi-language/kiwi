@@ -106,6 +106,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         }
     }
 
+    @NoProxy
     public boolean isStrictEphemeral() {
         return strictEphemeral;
     }

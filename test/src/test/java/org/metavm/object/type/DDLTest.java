@@ -47,6 +47,8 @@ public class DDLTest extends TestCase {
                 "quantity", 100,
                 "price", 100
         )));
+        var shoes = apiClient.getInstance(shoesId);
+        Assert.assertEquals(100L, shoes.get("price"));
         var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
         var hatId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
                 "name", "Hat",
@@ -64,10 +66,11 @@ public class DDLTest extends TestCase {
             }
         }
         TestUtils.waitForDDLDone(entityContextFactory);
-        var shoes = apiClient.getInstance(shoesId);
+        var shoes1 = apiClient.getInstance(shoesId);
         var hat = apiClient.getInstance(hatId);
+        Assert.assertEquals(100.0, shoes1.get("price"));
         //noinspection unchecked
-        Assert.assertEquals(0L, ((Map<String, Object>) shoes.get("version")).get("majorVersion"));
+        Assert.assertEquals(0L, ((Map<String, Object>) shoes1.get("version")).get("majorVersion"));
         //noinspection unchecked
         Assert.assertEquals(0L, ((Map<String, Object>) hat.get("version")).get("majorVersion"));
         // check that index entries have been generated

@@ -40,6 +40,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private boolean readonly;
     private MetadataState state;
     private Type type;
+    private int originalTag = -1;
     private int tag;
     private transient int offset;
 
@@ -435,6 +436,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     public void setTag(int tag) {
+        originalTag = this.tag;
         this.tag = tag;
     }
 
@@ -480,6 +482,14 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public int getTag() {
         return tag;
+    }
+
+    public int getOriginalTag() {
+        return originalTag;
+    }
+
+    public void clearOriginalTag() {
+        originalTag = -1;
     }
 
     public int getOffset() {

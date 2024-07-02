@@ -7,6 +7,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.InstanceOutput;
@@ -77,6 +78,19 @@ public class PrimitiveType extends Type {
     @Override
     public int hashCode() {
         return Objects.hash(kind);
+    }
+
+    @Override
+    public boolean isConvertibleFrom(Type that) {
+        return that instanceof PrimitiveType pt && kind.isConvertibleFrom(pt.kind);
+    }
+
+    @Override
+    public Instance convert(Instance instance) {
+        if(isConvertibleFrom(instance.getType()))
+            return kind.convert(instance);
+        else
+            throw new IllegalArgumentException(instance.getType() + " is not convertible to " + this);
     }
 
     public boolean isPrimitive() {
