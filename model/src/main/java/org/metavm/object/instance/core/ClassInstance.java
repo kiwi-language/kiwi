@@ -58,7 +58,7 @@ public class ClassInstance extends DurableInstance {
                          @Nullable Map<Field, Instance> data, @Nullable SourceRef sourceRef, boolean ephemeral, boolean initFieldTable) {
         super(id, type, version, syncVersion, ephemeral, load);
         this.klass = type.resolve();
-        if(klass != uninitializedKlass && initFieldTable)
+        if (klass != uninitializedKlass && initFieldTable)
             fieldTable.initialize();
         setParentRef(parentRef);
         setSourceRef(sourceRef);
@@ -69,14 +69,14 @@ public class ClassInstance extends DurableInstance {
     public ClassInstance(Id id, ClassType type, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
         super(id, type, 0, 0, ephemeral, load);
         this.klass = type.resolve();
-        if(klass != uninitializedKlass)
+        if (klass != uninitializedKlass)
             fieldTable.initialize();
     }
 
     public ClassInstance(Id id, Map<Field, Instance> data, Klass klass) {
         super(id, klass.getType(), 0, 0, klass.isEphemeral(), null);
         this.klass = klass;
-        if(klass != uninitializedKlass)
+        if (klass != uninitializedKlass)
             fieldTable.initialize();
         reset(data, 0L, 0L);
     }
@@ -218,7 +218,7 @@ public class ClassInstance extends DurableInstance {
             output.writeLong(subTable.klassTag);
             output.writeInt(numFields);
             subTable.forEach(field -> {
-                if(!field.shouldSkipWrite()) {
+                if (!field.shouldSkipWrite()) {
                     output.writeInt(field.getRecordTag());
                     field.writeValue(output);
                 }
@@ -231,7 +231,6 @@ public class ClassInstance extends DurableInstance {
     public void setType(Type type) {
         if (type instanceof ClassType classType) {
             klass = classType.resolve();
-//            fieldTable.initialize(this, klass);
             super.setType(type);
         } else
             throw new IllegalArgumentException(type + " is not a class type");
@@ -249,15 +248,16 @@ public class ClassInstance extends DurableInstance {
             int cmp = 1;
             Klass sk;
             while (j < sortedKlasses.size() && (cmp = Long.compare((sk = sortedKlasses.get(j)).getTag(), groupTag)) < 0) {
-                var subTable = fieldTable.addSubTable(sk.getTag());
+                var subTable = fieldTable.addSubTable(sk.getTag(), sk.getLevel());
                 for (var field : sk.getSortedFields()) {
                     subTable.add(new InstanceField(this, field, Instances.nullInstance(), false));
                 }
                 j++;
             }
-            var subTable = fieldTable.addSubTable(groupTag);
             if (cmp == 0) {
-                var fields = sortedKlasses.get(j++).getSortedFields();
+                sk = sortedKlasses.get(j++);
+                var subTable = fieldTable.addSubTable(groupTag, sk.getLevel());
+                var fields = sk.getSortedFields();
                 int m = 0;
                 int numFields = input.readInt();
                 for (int l = 0; l < numFields; l++) {
@@ -281,6 +281,7 @@ public class ClassInstance extends DurableInstance {
                     subTable.add(new InstanceField(this, field, Instances.nullInstance(), false));
                 }
             } else {
+                var subTable = fieldTable.addSubTable(groupTag, -1);
                 int numFields = input.readInt();
                 for (int k = 0; k < numFields; k++) {
                     subTable.add(new UnknownField(groupTag, input.readInt(), input.readInstanceBytes()));
@@ -289,7 +290,7 @@ public class ClassInstance extends DurableInstance {
         }
         for (; j < sortedKlasses.size(); j++) {
             var klass = sortedKlasses.get(j);
-            var subTale = fieldTable.addSubTable(klass.getTag());
+            var subTale = fieldTable.addSubTable(klass.getTag(), klass.getLevel());
             for (Field field : klass.getSortedFields()) {
                 subTale.add(new InstanceField(this, field, Instances.nullInstance(), false));
             }
@@ -356,12 +357,7 @@ public class ClassInstance extends DurableInstance {
     public boolean isFieldInitialized(Field field) {
         ensureLoaded();
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass));
-        return findField(field).isFieldInitialized();
-    }
-
-    public InstanceField findField(Field field) {
-        ensureLoaded();
-        return fieldTable.get(field);
+        return field(field).isFieldInitialized();
     }
 
     public @Nullable Field findUninitializedField(Klass type) {
@@ -419,10 +415,11 @@ public class ClassInstance extends DurableInstance {
         };
     }
 
-    protected InstanceField field(Field field) {
-        var instanceField = findField(field);
-        if (instanceField != null)
-            return instanceField;
+    private InstanceField field(Field field) {
+        return fieldTable.get(field);
+//        var instanceField = findField(field);
+//        if (instanceField != null)
+//            return instanceField;
 //        var unknownField = findUnknownFiled(field.getRecordGroupTag(), field.getRecordTag());
 //        if (unknownField != null) {
 //            unknownFields.remove(unknownField);
@@ -430,14 +427,14 @@ public class ClassInstance extends DurableInstance {
 //            addField(instanceField);
 //            return instanceField;
 //        }
-        if (DebugEnv.resolveVerbose) {
-            logger.info("initialized: {}, persisted: {}", isInitialized(), isPersisted());
-            logger.info("fields");
-            klass.forEachField(f -> logger.info("field: {}", f.getQualifiedName()));
-            logger.info("Instance fields:");
-            forEachField((f, v) -> logger.info("field: {}", f.getQualifiedName()));
-        }
-        throw new InternalException("Can not find instance field for '" + field + "'");
+//        if (DebugEnv.resolveVerbose) {
+//            logger.info("initialized: {}, persisted: {}", isInitialized(), isPersisted());
+//            logger.info("fields");
+//            klass.forEachField(f -> logger.info("field: {}", f.getQualifiedName()));
+//            logger.info("Instance fields:");
+//            forEachField((f, v) -> logger.info("field: {}", f.getQualifiedName()));
+//        }
+//        throw new InternalException("Can not find instance field for '" + field + "'");
     }
 
     protected InstanceField field(Id fieldId) {
@@ -564,7 +561,7 @@ public class ClassInstance extends DurableInstance {
     }
 
     private void ensureFieldInitialized(Field field) {
-        if (findField(field) != null)
+        if (field(field).isFieldInitialized())
             return;
 //        var unknownField = findUnknownFiled(field.getRecordGroupTag(), field.getRecordTag());
 //        if (unknownField != null) {
@@ -600,6 +597,7 @@ public class ClassInstance extends DurableInstance {
 
         private final ClassInstance owner;
         private final List<FieldSubTable> subTables = new ArrayList<>();
+        private FieldSubTable[] levels = new FieldSubTable[1];
         private boolean initialized;
 
         private FieldTable(ClassInstance owner) {
@@ -607,26 +605,37 @@ public class ClassInstance extends DurableInstance {
         }
 
         void initialize() {
-            assert !initialized;
-            initialized = true;
-            subTables.clear();
+//            assert !initialized;
+//            initialized = true;
+//            subTables.clear();
             for (Klass k : owner.klass.getSortedKlasses()) {
-                addSubTable(k.getTag()).initialize(owner, k);
+                addSubTable(k.getTag(), k.getLevel()).initialize(owner, k);
             }
         }
 
-        FieldSubTable addSubTable(long klassTag) {
+        FieldSubTable addSubTable(long klassTag, int level) {
             var subTable = new FieldSubTable(klassTag);
             subTables.add(subTable);
+            if (level >= 0) {
+                int len = levels.length;
+                if (len <= level) {
+                    do {
+                        len <<= 1;
+                    } while (len <= level);
+                    levels = Arrays.copyOf(levels, len);
+                }
+                levels[level] = subTable;
+            }
             return subTable;
         }
 
         InstanceField get(Field field) {
-            for (FieldSubTable subTable : subTables) {
-                if (subTable.klassTag == field.getKlassTag())
-                    return (InstanceField) subTable.get(field.getTag());
-            }
-            throw new IllegalArgumentException("Can not find instance field for " + field);
+            return (InstanceField) levels[field.getDeclaringType().getLevel()].fields[field.getTag()];
+//            for (FieldSubTable subTable : subTables) {
+//                if (subTable.klassTag == field.getKlassTag())
+//                    return (InstanceField) subTable.get(field.getTag());
+//            }
+//            throw new IllegalArgumentException("Can not find instance field for " + field);
         }
 
         void forEachField(BiConsumer<Field, Instance> action) {
@@ -723,7 +732,7 @@ public class ClassInstance extends DurableInstance {
         void forEachField(BiConsumer<Field, Instance> action) {
             for (IInstanceField f : fields) {
                 if (f instanceof InstanceField i) {
-                    if(i.isFieldInitialized())
+                    if (i.isFieldInitialized())
                         action.accept(i.getField(), i.getValue());
                 }
             }

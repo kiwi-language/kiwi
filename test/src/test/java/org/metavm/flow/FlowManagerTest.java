@@ -10,10 +10,7 @@ import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
 import org.metavm.task.TaskManager;
-import org.metavm.util.BootstrapUtils;
-import org.metavm.util.MockTransactionOperations;
-import org.metavm.util.NncUtils;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +37,7 @@ public class FlowManagerTest extends TestCase {
         flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
         FlowSavingContext.initConfig();
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     @Override

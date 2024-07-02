@@ -1,25 +1,34 @@
 package org.metavm;
 
-import org.metavm.object.type.Type;
+import org.metavm.util.Base;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
 
 public class Lab {
 
-    public static final String hex = "049EC9080C0B00180282C608002892020482C608021E0401A0C8081802031E6973536F7572636550526573656E74040B02161802FCC50800285400340324E69DA5E6BA90E698AFE590A6E5AD98E59CA85C04007C0C1802E2C90800289C0202E2C90802140A02D6CA08009E0292010B04161802F8C50800285E009E010C1802CEC60800285A02CEC60804040C191802FAC508002832020C18029CC60800288802000A0C1802E2C90800289C0202E2C90802140A02D6CA08009E02B4010B06161802E8C508002842020B081802E8C50800284202E8C5080818030CE8A786E59BBE2A0308766965773C0C18029CC60800288802009E010A029EC908009202B6010401BE010B0A151802FAC50800283200E6010400EA010A02CACB080056";
+    static class Foo extends Base {
 
-    private static Class<?> klass = Type.class;
+        Foo(int num) {
+            super(num);
+        }
 
-    public void test(List<String> list, String element) {
+        @Override
+        public int getInc() {
+            return 0;
+        }
+
+        Base __Base__() {
+            return new Base(10) {
+                @Override
+                public int getInc() {
+                    return Foo.this.getInc();
+                }
+            };
+        }
     }
 
-    public native void testNative();
-
     public static void main(String[] args) throws IOException, SQLException {
-        int i = 1;
-        System.out.println(i+=1);
     }
 
 

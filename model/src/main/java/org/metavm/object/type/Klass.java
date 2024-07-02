@@ -123,6 +123,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     // length of the longest path from the current type upwards to a root in the type hierarchy
     private transient int rank;
 
+    private transient int level;
+
     private transient List<Klass> supers;
 
     private transient List<Klass> sortedKlasses = new ArrayList<>();
@@ -203,6 +205,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         sortedKlasses.clear();
         forEachSuperClass(sortedKlasses::add);
         sortedKlasses.sort(Comparator.comparingLong(Klass::getTag));
+        level = sortedKlasses.size() - 1;
     }
 
     void removeSubType(Klass subType) {
@@ -276,7 +279,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     @NoProxy
     public int getTypeTag() {
-       return typeTag;
+        return typeTag;
     }
 
     public void setTitleField(@Nullable Field titleField) {
@@ -439,7 +442,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return sortedFields;
     }
 
-    void resetFieldsMemoryDataStructures() {
+    void resetSortedFields() {
         this.sortedFields.clear();
         sortedFields.addAll(this.fields.toList());
         sortedFields.sort(Comparator.comparingLong(Field::getTag));
@@ -633,7 +636,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             staticFields.addChild(field);
         else
             fields.addChild(field);
-        resetFieldsMemoryDataStructures();
+        resetSortedFields();
     }
 
     @Override
@@ -648,15 +651,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     private void initTransients() {
-        sortedFields = new ArrayList<>(fields.toList());
-        sortedFields.sort(Comparator.comparingLong(Field::getTag));
+        sortedFields = new ArrayList<>();
+        resetSortedFields();
         sortedKlasses = new ArrayList<>();
-        var k = this;
-        do {
-            sortedKlasses.add(k);
-            k = k.getSuperClass();
-        } while (k != null);
-        sortedKlasses.sort(Comparator.comparingLong(Klass::getTag));
+        resetSortedClasses();
+    }
+
+    public int getLevel() {
+        return level;
     }
 
     public List<Index> getFieldIndices(Field field) {
@@ -978,7 +980,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @Nullable
     public Index findIndex(Predicate<Index> predicate) {
         for (Constraint constraint : constraints) {
-            if(constraint instanceof Index index && predicate.test(index))
+            if (constraint instanceof Index index && predicate.test(index))
                 return index;
         }
         return null;
@@ -1054,7 +1056,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             staticFields.remove(field);
         else
             fields.remove(field);
-        resetFieldsMemoryDataStructures();
+        resetSortedFields();
     }
 
     public boolean isAssignableFrom(Klass that) {
@@ -1170,7 +1172,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void forEachSuperClass(Consumer<Klass> action) {
         action.accept(this);
-        if(superType != null)
+        if (superType != null)
             superType.resolve().forEachSuperClass(action);
     }
 
@@ -1641,7 +1643,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void setFields(List<Field> fields) {
         requireTrue(allMatch(fields, f -> f.getDeclaringType() == this));
         this.fields.resetChildren(fields);
-        resetFieldsMemoryDataStructures();
+        resetSortedFields();
     }
 
     public void moveField(Field field, int index) {
@@ -1857,17 +1859,16 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public @Nullable ObjectMapping getSourceMapping() {
         var template = getEffectiveTemplate();
         var mapping = template.findAncestorEntity(ObjectMapping.class);
-        if(mapping != null) {
+        if (mapping != null) {
             var sourceKlass = mapping.getSourceKlass().getParameterized(typeArguments);
             return sourceKlass.getMapping(m -> m.getEffectiveTemplate() == mapping);
-        }
-        else
+        } else
             return null;
     }
 
     public Method findGetterByPropertyName(String propertyName) {
         for (Method method : getAllMethods()) {
-            if(method.isGetter() && method.getPropertyName().equals(propertyName))
+            if (method.isGetter() && method.getPropertyName().equals(propertyName))
                 return method;
         }
         return null;
@@ -1875,7 +1876,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Method findSetterByPropertyName(String propertyName) {
         for (Method method : getAllMethods()) {
-            if(method.isSetter() && method.getPropertyName().equals(propertyName))
+            if (method.isSetter() && method.getPropertyName().equals(propertyName))
                 return method;
         }
         return null;

@@ -159,7 +159,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         }
         if (declaringType.isEnumConstantField(this))
             cascades.add(staticValue);
-        declaringType.resetFieldsMemoryDataStructures();
+        declaringType.resetSortedFields();
         return cascades;
     }
 
