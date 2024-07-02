@@ -102,7 +102,7 @@ public class SubstitutorV2Test extends TestCase {
                 ResolutionStage.DECLARATION
         );
 
-        var pType = (Klass) foo.accept(subst);
+        var pType = (Klass) subst.copy(foo);
         try (var serContext = SerializeContext.enter()) {
             serContext.includingCode(true);
             serContext.writeTypeDef(pType);

@@ -1,6 +1,5 @@
 package org.metavm.object.instance;
 
-import org.springframework.stereotype.Component;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
 import org.metavm.entity.*;
@@ -15,6 +14,7 @@ import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,7 +91,7 @@ public class InstanceQueryService {
         if (query.expression() != null) {
             var parsingContext = new TypeParsingContext(instanceProvider, typeDefProvider, viewType);
             var cond = ExpressionParser.parse(query.expression(), parsingContext);
-            var convertedCond = (Expression) cond.accept(new CopyVisitor(cond, false) {
+            var convertedCond = (Expression) new CopyVisitor(cond, false) {
                 @Override
                 public Element visitPropertyExpression(PropertyExpression expression) {
                     var field = (Field) expression.getProperty();
@@ -108,7 +108,7 @@ public class InstanceQueryService {
                 public Element visitThisExpression(ThisExpression expression) {
                     return new ThisExpression(sourceType);
                 }
-            });
+            }.copy(cond);
             convertedExpr = convertedCond.build(VarType.NAME);
         } else
             convertedExpr = null;

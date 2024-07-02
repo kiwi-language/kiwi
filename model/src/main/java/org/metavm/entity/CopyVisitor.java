@@ -108,7 +108,13 @@ public class CopyVisitor extends ElementVisitor<Element> {
         return reference;
     }
 
-    public final Object copy(Object object) {
+    public Object copy(Object object) {
+        var copy = copy0(object);
+        initializeCopies();
+        return copy;
+    }
+
+    protected Object copy0(Object object) {
         if (object == null)
             return null;
         if (object instanceof Element element) {
@@ -146,7 +152,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
                     }
                     addCopy(entity, copy);
                     for (Entity child : childArray) {
-                        copy.addChild((Entity) copy(child));
+                        copy.addChild((Entity) copy0(child));
                     }
                     yield copy;
                 }
@@ -203,7 +209,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
                             fieldValueCopy = null;
                         else if (prop.isChildEntity()) {
                             assert copy instanceof Entity;
-                            fieldValueCopy = ((Entity) copy).addChild((Entity) copy(fieldValue), prop.getName());
+                            fieldValueCopy = ((Entity) copy).addChild((Entity) copy0(fieldValue), prop.getName());
                         } else
                             fieldValueCopy = getValue(fieldValue, v -> prop.set(copy, v));
                         try {
@@ -214,13 +220,18 @@ public class CopyVisitor extends ElementVisitor<Element> {
                             throw e;
                         }
                     });
-                    if(copy instanceof CopyAware copyAware)
-                        copyAware.onCopy();
                     yield copy;
                 }
             };
         } finally {
             exitElement();
+        }
+    }
+
+    protected void initializeCopies() {
+        for (Object copy : map.values()) {
+            if(copy instanceof LoadAware loadAware)
+                loadAware.onLoad();
         }
     }
 

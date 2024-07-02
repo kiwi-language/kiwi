@@ -31,7 +31,7 @@ public class FunctionTest extends TestCase {
                 List.of(Types.getStringType()),
                 ResolutionStage.INIT
         );
-        var parameterizedFunc = (Function) function.accept(subst);
+        var parameterizedFunc = (Function) subst.copy(function);
         Assert.assertSame(function, parameterizedFunc.getHorizontalTemplate());
         Assert.assertEquals(List.of(Types.getStringType()), parameterizedFunc.getTypeArguments());
         Assert.assertEquals(Types.getStringType(), parameterizedFunc.getParameter(0).getType());

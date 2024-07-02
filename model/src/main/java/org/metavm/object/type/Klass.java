@@ -32,7 +32,7 @@ import java.util.function.Predicate;
 import static org.metavm.util.NncUtils.*;
 
 @EntityType
-public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity, GlobalKey, LoadAware, CopyAware {
+public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity, GlobalKey, LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
@@ -641,16 +641,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     @Override
     public void onLoad() {
-        stage = ResolutionStage.INIT;
-        initTransients();
-    }
-
-    @Override
-    public void onCopy() {
-        initTransients();
-    }
-
-    private void initTransients() {
+        if(stage == null)
+            stage = ResolutionStage.INIT;
         sortedFields = new ArrayList<>();
         resetSortedFields();
         sortedKlasses = new ArrayList<>();
@@ -1125,7 +1117,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             return pClass;
         var subst = new SubstitutorV2(
                 this, typeParameters.toList(), typeArguments, stage);
-        pClass = (Klass) this.accept(subst);
+        pClass = (Klass) subst.copy(this);
         return pClass;
     }
 

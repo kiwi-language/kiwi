@@ -232,7 +232,7 @@ public class SubstitutorV2 extends CopyVisitor {
             enterElement(copy);
             for (Method overridden : method.getOverridden())
                 NncUtils.biForEach(NncUtils.map(overridden.getTypeParameters(), TypeVariable::getType), copy.getTypeArguments(), typeSubstitutor::addMapping);
-            copy.setParameters(NncUtils.map(method.getParameters(), p -> (Parameter) copy(p)));
+            copy.setParameters(NncUtils.map(method.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(method.getReturnType()));
             processFlowBody(method, copy);
             exitElement();
@@ -268,7 +268,7 @@ public class SubstitutorV2 extends CopyVisitor {
             if (function.isRootScopePresent())
                 addCopy(function.getRootScope(), copy.getRootScope());
             enterElement(copy);
-            copy.setParameters(NncUtils.map(function.getParameters(), p -> (Parameter) copy(p)));
+            copy.setParameters(NncUtils.map(function.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(function.getReturnType()));
             processFlowBody(function, copy);
             exitElement();
@@ -286,18 +286,18 @@ public class SubstitutorV2 extends CopyVisitor {
     private void processFlowBody(Flow flow, Flow copy) {
         if (stage.isAfterOrAt(DEFINITION) && flow.isRootScopePresent()) {
             copy.clearContent();
-            copy.setCapturedTypeVariables(NncUtils.map(flow.getCapturedTypeVariables(), ct -> (CapturedTypeVariable) copy(ct)));
+            copy.setCapturedTypeVariables(NncUtils.map(flow.getCapturedTypeVariables(), ct -> (CapturedTypeVariable) copy0(ct)));
 //            for (var ct : flow.getCapturedTypeVariables()) {
 //                var ctCopy = (CapturedType) getCopy(ct);
 //                ctCopy.setCapturedCompositeTypes(NncUtils.map(ct.getCapturedCompositeTypes(), this::substituteType));
 //                ctCopy.setCapturedFlows(NncUtils.map(ct.getCapturedFlows(), this::substituteFlow));
 //            }
             for (NodeRT node : flow.getRootScope().getNodes())
-                copy.getRootScope().addNode((NodeRT) copy(node));
+                copy.getRootScope().addNode((NodeRT) copy0(node));
             for (Type capturedCompositeType : flow.getCapturedCompositeTypes())
-                copy.addCapturedCompositeType((Type) copy(capturedCompositeType));
+                copy.addCapturedCompositeType((Type) copy0(capturedCompositeType));
             for (Flow capturedFlow : flow.getCapturedFlows())
-                copy.addCapturedFlow((Flow) copy(capturedFlow));
+                copy.addCapturedFlow((Flow) copy0(capturedFlow));
         }
     }
 
@@ -420,20 +420,20 @@ public class SubstitutorV2 extends CopyVisitor {
             }
             enterElement(copy);
             if (stage.isAfterOrAt(DECLARATION) && curStage.isBefore(DEFINITION)) {
-                copy.setFields(NncUtils.map(klass.getFields(), field -> (Field) copy(field)));
-                copy.setStaticFields(NncUtils.map(klass.getStaticFields(), field -> (Field) copy(field)));
-                copy.setMethods(NncUtils.map(klass.getMethods(), method -> (Method) copy(method)));
+                copy.setFields(NncUtils.map(klass.getFields(), field -> (Field) copy0(field)));
+                copy.setStaticFields(NncUtils.map(klass.getStaticFields(), field -> (Field) copy0(field)));
+                copy.setMethods(NncUtils.map(klass.getMethods(), method -> (Method) copy0(method)));
                 if (klass.getTitleField() != null)
                     copy.setTitleField((Field) getValue(klass.getTitleField(), v -> {
                     }));
-                copy.setMappings(NncUtils.map(klass.getMappings(), m -> (ObjectMapping) copy(m)));
+                copy.setMappings(NncUtils.map(klass.getMappings(), m -> (ObjectMapping) copy0(m)));
                 if (klass.getDefaultMapping() != null)
                     copy.setDefaultMapping((FieldsObjectMapping) getValue(klass.getDefaultMapping(), v -> {
                     }));
             }
             if (stage.isAfterOrAt(DEFINITION) && curStage.isBefore(DEFINITION)) {
-//                copy.setMappings(NncUtils.map(type.getMappings(), m -> (ObjectMapping) copy(m)));
-//                copy.setArrayMappings(NncUtils.map(type.getArrayMappings(), m -> (ArrayMapping) copy(m)));
+//                copy.setMappings(NncUtils.map(type.getMappings(), m -> (ObjectMapping) copy0(m)));
+//                copy.setArrayMappings(NncUtils.map(type.getArrayMappings(), m -> (ArrayMapping) copy0(m)));
 //                if (type.getDefaultMapping() != null)
 //                    copy.setDefaultMapping((FieldsObjectMapping) getValue(type.getDefaultMapping(), v -> {
 //                    }));

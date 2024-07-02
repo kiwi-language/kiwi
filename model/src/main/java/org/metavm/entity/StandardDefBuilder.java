@@ -685,7 +685,7 @@ public class StandardDefBuilder {
     }
 
     private void createOverridingFlows(Klass declaringType, Klass baseType) {
-        for (Method flow : baseType.getMethods()) {
+        for (Method flow : new ArrayList<>(baseType.getMethods())) {
             MethodBuilder.newBuilder(declaringType, flow.getName(), flow.getCode())
                     .isNative(true)
                     .access(flow.getAccess())

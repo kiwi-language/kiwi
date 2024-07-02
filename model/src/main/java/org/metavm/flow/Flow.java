@@ -122,7 +122,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     @Override
     public void onLoad() {
-        stage = ResolutionStage.INIT;
+        if(stage == null)
+            stage = ResolutionStage.INIT;
         nodeNames = new HashSet<>();
         accept(new VoidStructuralVisitor() {
             @Override
@@ -632,7 +633,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     protected Flow substitute(SubstitutorV2 substitutor) {
-        return (Flow) accept(substitutor);
+        return (Flow) substitutor.copy(this);
     }
 
     public abstract FlowRef getRef();

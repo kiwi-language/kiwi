@@ -489,7 +489,7 @@ public class Method extends Flow implements Property, GenericElement {
     @Override
     protected Flow substitute(SubstitutorV2 substitutor) {
         substitutor.enterElement(declaringType);
-        var result = accept(substitutor);
+        var result = substitutor.copy(this);
         substitutor.exitElement();
         return (Flow) result;
     }

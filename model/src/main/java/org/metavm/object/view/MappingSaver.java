@@ -102,7 +102,7 @@ public class MappingSaver {
                         sourceKlass, sourceKlass.getTypeParameters(), templateInstance.getTypeArguments(),
                         ResolutionStage.DEFINITION
                 );
-                sourceKlass.accept(subst);
+                subst.copy(sourceKlass);
             }
         }
     }
@@ -385,7 +385,7 @@ public class MappingSaver {
                     template, template.getTypeParameters(),
                     NncUtils.map(sourceKlass.getTypeParameters(), TypeVariable::getType), ResolutionStage.INIT
             );
-            return (Klass) template.accept(subst);
+            return (Klass) subst.copy(template);
         } else {
             return KlassBuilder.newBuilder(viewTypeName, viewTypeCode)
                     .ephemeral(true)
@@ -430,7 +430,7 @@ public class MappingSaver {
                     targetType.getTypeArguments(), ResolutionStage.DECLARATION
             );
             targetType.setStage(ResolutionStage.INIT);
-            template.accept(subst);
+            subst.copy(template);
             return NncUtils.findRequired(targetType.getFields(), f -> f.getCopySource() == fieldTemplate);
         } else {
             return FieldBuilder

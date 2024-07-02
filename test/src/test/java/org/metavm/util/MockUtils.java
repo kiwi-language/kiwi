@@ -43,7 +43,7 @@ public class MockUtils {
                 enumKlass, enumKlass.getTypeParameters(), List.of(couponStateType.getType()),
                 ResolutionStage.DEFINITION
         );
-        var couponStateEnumKlas = (Klass) subst.visitKlass(enumKlass);
+        var couponStateEnumKlas = (Klass) subst.copy(enumKlass);
         couponStateType.setSuperType(couponStateEnumKlas.getType());
         var enumNameField = couponStateEnumKlas.getFieldByCode("name");
         var enumOrdinalField = couponStateEnumKlas.getFieldByCode("ordinal");

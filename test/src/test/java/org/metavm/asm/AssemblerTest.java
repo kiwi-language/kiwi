@@ -4,10 +4,7 @@ import junit.framework.TestCase;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
-import org.metavm.util.BootstrapUtils;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.TestConstants;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +43,7 @@ public class AssemblerTest extends TestCase {
     }
 
     public void testGenericOverloading() {
+        DebugEnv.flag = true;
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/GenericOverloading.masm");
     }
 
