@@ -2,7 +2,9 @@ package org.metavm.mocks;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.Entity;
+import org.metavm.entity.IndexDef;
+import org.metavm.entity.ReadWriteArray;
 
 import java.util.List;
 
@@ -52,7 +54,7 @@ public class LivingBeing extends Entity {
     }
 
     public List<LivingBeing> getOffsprings() {
-        return offsprings;
+        return offsprings.toList();
     }
 
     public void clearOffsprings() {
@@ -60,7 +62,7 @@ public class LivingBeing extends Entity {
     }
 
     public List<LivingBeing> getAncestors() {
-        return ancestors;
+        return ancestors.toList();
     }
 
     public void addAncestor(LivingBeing ancestor) {

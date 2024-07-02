@@ -2,6 +2,7 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
+import org.metavm.entity.CopyIgnore;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.ValueArray;
@@ -32,7 +33,9 @@ public class ClassType extends Type implements ISubstitutor {
 
     private final Klass klass;
     private final @Nullable ValueArray<Type> typeArguments;
+    @CopyIgnore
     private transient TypeSubstitutor substitutor;
+    @CopyIgnore
     private transient Klass resolved;
 
     public ClassType(@NotNull Klass klass, List<Type> typeArguments) {

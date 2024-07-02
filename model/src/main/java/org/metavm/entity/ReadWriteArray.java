@@ -7,11 +7,11 @@ import org.metavm.util.TypeReference;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Predicate;
 
 @SuppressWarnings("NullableProblems")
-public class ReadWriteArray<T> extends ReadonlyArray<T> implements List<T> {
+public class ReadWriteArray<T> extends ReadonlyArray<T> /*implements List<T>*/ {
 
     public ReadWriteArray(Class<T> klass) {
         super(klass);
@@ -42,14 +42,14 @@ public class ReadWriteArray<T> extends ReadonlyArray<T> implements List<T> {
 
     @SuppressWarnings("NullableProblems")
     @NotNull
-    @Override
+//    @Override
     public Object[] toArray() {
         return table.toArray();
     }
 
     @SuppressWarnings("NullableProblems")
     @NotNull
-    @Override
+//    @Override
     public <T1> T1[] toArray(@NotNull T1[] a) {
         return table.toArray(a);
     }
@@ -62,54 +62,54 @@ public class ReadWriteArray<T> extends ReadonlyArray<T> implements List<T> {
         return table.remove(value);
     }
 
-    @Override
+//    @Override
     public boolean containsAll(@NotNull Collection<?> c) {
         return table.containsAll(c);
     }
 
-    @Override
+//    @Override
     public boolean addAll(@NotNull Collection<? extends T> c) {
         return table.addAll(c);
     }
 
-    @Override
+//    @Override
     public boolean addAll(int index, @NotNull Collection<? extends T> c) {
         return table.addAll(index, c);
     }
 
-    @Override
+//    @Override
     public boolean removeAll(@NotNull Collection<?> c) {
         return table.removeAll(c);
     }
 
-    @Override
+//    @Override
     public boolean retainAll(@NotNull Collection<?> c) {
         return table.retainAll(c);
     }
 
-    @Override
+//    @Override
     public T set(int index, T value) {
         return table.set(index, value);
     }
 
-    @Override
+//    @Override
     public void add(int index, T value) {
         table.add(index, value);
     }
 
-    @Override
+//    @Override
     public T remove(int index) {
         return table.remove(index);
     }
 
     @NotNull
-    @Override
+//    @Override
     public ListIterator<T> listIterator() {
         return table.listIterator();
     }
 
     @NotNull
-    @Override
+//    @Override
     public ListIterator<T> listIterator(int index) {
         return table.listIterator(index);
     }
@@ -118,7 +118,7 @@ public class ReadWriteArray<T> extends ReadonlyArray<T> implements List<T> {
         NncUtils.listAddAll(table, values);
     }
 
-    @Override
+//    @Override
     public void clear() {
         table.clear();
     }
@@ -138,5 +138,9 @@ public class ReadWriteArray<T> extends ReadonlyArray<T> implements List<T> {
             return table.equals(thatArray.table);
         else
             return false;
+    }
+
+    public boolean removeIf(Predicate<? super T> predicate) {
+        return table.removeIf(predicate);
     }
 }

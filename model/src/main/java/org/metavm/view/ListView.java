@@ -3,7 +3,10 @@ package org.metavm.view;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ConstraintDef;
+import org.metavm.entity.Entity;
+import org.metavm.entity.IndexDef;
+import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.util.NncUtils;
@@ -60,11 +63,11 @@ public class ListView extends Entity {
     }
 
     public Collection<Field> getVisibleFields() {
-        return Collections.unmodifiableCollection(visibleFields);
+        return Collections.unmodifiableCollection(visibleFields.toList());
     }
 
     public Collection<Field> getSearchableFields() {
-        return Collections.unmodifiableCollection(searchableFields);
+        return Collections.unmodifiableCollection(searchableFields.toList());
     }
 
     public void setVisibleFields(Collection<Field> visibleFields) {

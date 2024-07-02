@@ -61,8 +61,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     private final ChildArray<CapturedTypeVariable> capturedTypeVariables = addChild(new ChildArray<>(CapturedTypeVariable.class), "capturedTypeVariables");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
-    private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);
-    private transient ReadWriteArray<NodeRT> nodes = new ReadWriteArray<>(NodeRT.class);
+    private transient List<ScopeRT> scopes = new ArrayList<>();
+    private transient List<NodeRT> nodes = new ArrayList<>();
     private transient ParameterizedElementMap<List<? extends Type>, Flow> parameterizedFlows;
     private transient Set<String> nodeNames = new HashSet<>();
 
@@ -116,14 +116,9 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return rootScope != null;
     }
 
-    public ScopeRT getScope(long id) {
-        return scopes().get(Entity::tryGetId, id);
-    }
-
     @Override
     public void onLoad() {
-        if(stage == null)
-            stage = ResolutionStage.INIT;
+        stage = ResolutionStage.INIT;
         nodeNames = new HashSet<>();
         accept(new VoidStructuralVisitor() {
             @Override
@@ -134,16 +129,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         });
         if (codeSource != null)
             codeSource.generateCode(this);
-    }
-
-    @SuppressWarnings("unused")
-    public ReadWriteArray<ScopeRT> getScopes() {
-        return scopes();
-    }
-
-    @SuppressWarnings("unused")
-    public void addScope(ScopeRT scope) {
-        this.scopes().add(scope);
     }
 
     public boolean matches(String code, List<Type> argumentTypes) {
@@ -215,10 +200,9 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return (InputNode) NncUtils.findRequired(getRootScope().getNodes(), node -> node instanceof InputNode);
     }
 
-    private ReadWriteArray<NodeRT> nodes() {
+    private List<NodeRT> nodes() {
         if (nodes == null) {
-            nodes = new ReadWriteArray<>(new TypeReference<>() {
-            });
+            nodes = new ArrayList<>();
             if (rootScope != null) {
                 rootScope.accept(new VoidStructuralVisitor() {
                     @Override
@@ -274,18 +258,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         accept(new FlowAnalyzer());
     }
 
-    private ReadWriteArray<ScopeRT> scopes() {
-        if (scopes == null)
-            scopes = new ReadWriteArray<>(ScopeRT.class);
-        return scopes;
-    }
-
-    public NodeRT getNode(long id) {
-        return nodes().get(Entity::tryGetId, id);
-    }
-
     @SuppressWarnings("unused")
-    public ReadonlyArray<NodeRT> getNodes() {
+    public List<NodeRT> getNodes() {
         return nodes();
     }
 

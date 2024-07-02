@@ -127,6 +127,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private transient List<Klass> supers;
 
+    private transient  List<Klass> loadedSubClasses;
+
     private transient List<Klass> sortedKlasses = new ArrayList<>();
 
     private transient List<Field> sortedFields = new ArrayList<>();
@@ -641,12 +643,19 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     @Override
     public void onLoad() {
-        if(stage == null)
-            stage = ResolutionStage.INIT;
+        stage = ResolutionStage.INIT;
         sortedFields = new ArrayList<>();
         resetSortedFields();
         sortedKlasses = new ArrayList<>();
         resetSortedClasses();
+        loadedSubClasses = new ArrayList<>();
+//        if(superType != null) {
+//            superType.resolve().addLoadedSubClass(this);
+//        }
+    }
+
+    protected void addLoadedSubClass(Klass klass) {
+        loadedSubClasses.add(klass);
     }
 
     public int getLevel() {
@@ -1852,7 +1861,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         var template = getEffectiveTemplate();
         var mapping = template.findAncestorEntity(ObjectMapping.class);
         if (mapping != null) {
-            var sourceKlass = mapping.getSourceKlass().getParameterized(typeArguments);
+            var sourceKlass = mapping.getSourceKlass().getParameterized(typeArguments.toList());
             return sourceKlass.getMapping(m -> m.getEffectiveTemplate() == mapping);
         } else
             return null;

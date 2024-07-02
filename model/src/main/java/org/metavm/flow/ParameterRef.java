@@ -12,6 +12,7 @@ public class ParameterRef  extends ValueElement implements Reference {
 
     private final CallableRef callableRef;
     private final Parameter rawParameter;
+    @CopyIgnore
     private transient Parameter resolved;
 
     public ParameterRef(CallableRef callableRef, Parameter rawParameter) {

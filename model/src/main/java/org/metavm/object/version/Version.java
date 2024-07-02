@@ -2,7 +2,9 @@ package org.metavm.object.version;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.Entity;
+import org.metavm.entity.IndexDef;
+import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.version.rest.dto.VersionDTO;
 
 import java.util.List;
@@ -70,16 +72,16 @@ public class Version extends Entity {
         return removedMappingIds.toList();
     }
 
-    public ReadWriteArray<String> getChangedFunctionIds() {
-        return changedFunctionIds;
+    public List<String> getChangedFunctionIds() {
+        return changedFunctionIds.toList();
     }
 
-    public ReadWriteArray<String> getRemovedFunctionIds() {
-        return removedFunctionIds;
+    public List<String> getRemovedFunctionIds() {
+        return removedFunctionIds.toList();
     }
 
     public VersionDTO toDTO() {
-        return new VersionDTO(version, changedTypeIds, removedTypeIds);
+        return new VersionDTO(version, changedTypeIds.toList(), removedTypeIds.toList());
     }
 
 }

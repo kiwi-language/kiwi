@@ -88,15 +88,57 @@ public class CopyVisitor extends ElementVisitor<Element> {
     }
 
     protected Object getValue(Object object, Consumer<Object> setter) {
-        if(object instanceof Value) {
-            if(object instanceof Element element)
-                return element.accept(this);
-            else
-                return defaultCopy(object, null);
+        return switch (object) {
+            case Value ignored -> {
+                if (object instanceof Element element)
+                    yield element.accept(this);
+                else
+                    yield defaultCopy(object, null);
+            }
+            case List<?> list -> copyList(list);
+            case Set<?> set -> copySet(set);
+            case Map<?, ?> m -> copyMap(m);
+            case null, default -> {
+                if (descendants.contains(object))
+                    yield Objects.requireNonNullElseGet(map.get(object), () -> addDummy(object, setter));
+                yield substituteReference(object);
+            }
+        };
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private List copyList(List list) {
+        var copy = new ArrayList();
+        int i = 0;
+        for (var t : list) {
+            int _i = i++;
+            copy.add(getValue(t, v -> copy.set(_i, v)));
         }
-        if (descendants.contains(object))
-            return Objects.requireNonNullElseGet(map.get(object), () -> addDummy(object, setter));
-        return substituteReference(object);
+        return copy;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Set copySet(Set set) {
+        var copy = new HashSet();
+        for (Object o : set) {
+            var e = getValue(o, copy::add);
+            if (!EntityProxyFactory.isDummy(e))
+                copy.add(e);
+        }
+        return copy;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Map copyMap(Map map) {
+        var copy = new HashMap();
+        map.forEach((k, v) -> {
+            var k1 = getValue(k, k2 -> {
+            });
+            if (EntityProxyFactory.isDummy(k1))
+                throw new IllegalStateException("Dummy is not supported for map key: " + k);
+            copy.put(k1, getValue(v, v1 -> copy.put(k1, v1)));
+        });
+        return copy;
     }
 
     private Object addDummy(Object value, Consumer<Object> setter) {
@@ -110,7 +152,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
 
     public Object copy(Object object) {
         var copy = copy0(object);
-        initializeCopies();
+//        initializeCopies();
         return copy;
     }
 
@@ -200,9 +242,9 @@ public class CopyVisitor extends ElementVisitor<Element> {
                     }
                     addCopy(entity, copy);
                     var desc = DescStore.get(entityType);
-                    desc.forEachNonTransientProp(prop -> {
+                    for (EntityProp prop : desc.getProps()) {
                         if (prop.isCopyIgnore())
-                            return;
+                            continue;
                         var fieldValue = prop.get(entity);
                         Object fieldValueCopy;
                         if (fieldValue == null)
@@ -219,7 +261,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
                                     EntityUtils.getEntityDesc(fieldValue), EntityUtils.getEntityDesc(fieldValueCopy));
                             throw e;
                         }
-                    });
+                    }
                     yield copy;
                 }
             };

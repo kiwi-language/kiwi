@@ -2,13 +2,13 @@ package org.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.api.ChildEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.flow.Value;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -19,18 +19,27 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     public static final Logger logger = LoggerFactory.getLogger(Entity.class);
 
+    @CopyIgnore
     private transient boolean removed;
+    @CopyIgnore
     private transient boolean persisted;
     //    private transient Long tmpId;
     @Nullable
+    @CopyIgnore
     protected transient Id id;
     @Nullable
+    @CopyIgnore
     private transient Entity parentEntity;
     @Nullable
+    @CopyIgnore
     private transient Field parentEntityField;
+    @CopyIgnore
     private transient long version;
+    @CopyIgnore
     private transient long syncVersion;
+    @CopyIgnore
     private transient boolean ephemeralEntity;
+    @CopyIgnore
     private transient boolean strictEphemeral;
 
     public Entity() {

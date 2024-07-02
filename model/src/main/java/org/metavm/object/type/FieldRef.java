@@ -19,6 +19,7 @@ public class FieldRef extends ValueElement implements PropertyRef {
 
     private final ClassType declaringType;
     private final Field rawField;
+    @CopyIgnore
     private transient Field resolved;
 
     public FieldRef(ClassType declaringType, Field rawField) {

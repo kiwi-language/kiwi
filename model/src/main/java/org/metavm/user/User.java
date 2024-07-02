@@ -3,7 +3,9 @@ package org.metavm.user;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.Entity;
+import org.metavm.entity.IndexDef;
+import org.metavm.entity.ReadWriteArray;
 import org.metavm.user.rest.dto.UserDTO;
 import org.metavm.util.NncUtils;
 import org.metavm.util.Password;
@@ -62,7 +64,7 @@ public class User extends Entity {
     }
 
     public List<Role> getRoles() {
-        return roles;
+        return roles.toList();
     }
 
     public void setRoles(List<Role> roles) {

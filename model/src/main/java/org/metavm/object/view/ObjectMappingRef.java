@@ -20,6 +20,7 @@ public class ObjectMappingRef extends ValueElement implements Reference {
 
     private final ClassType declaringType;
     private final ObjectMapping rawMapping;
+    @CopyIgnore
     private transient ObjectMapping resolved;
 
     public ObjectMappingRef(ClassType declaringType, ObjectMapping rawMapping) {
