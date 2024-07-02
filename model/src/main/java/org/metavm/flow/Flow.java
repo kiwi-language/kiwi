@@ -61,9 +61,9 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     private final ChildArray<CapturedTypeVariable> capturedTypeVariables = addChild(new ChildArray<>(CapturedTypeVariable.class), "capturedTypeVariables");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
-    private transient List<ScopeRT> scopes = new ArrayList<>();
     private transient List<NodeRT> nodes = new ArrayList<>();
-    private transient ParameterizedElementMap<List<? extends Type>, Flow> parameterizedFlows;
+    @CopyIgnore
+    private transient ParameterizedElementMap<List<? extends Type>, Flow> parameterizedFlows = new ParameterizedElementMap<>();
     private transient Set<String> nodeNames = new HashSet<>();
 
     public Flow(Long tmpId,
@@ -119,6 +119,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     @Override
     public void onLoad() {
         stage = ResolutionStage.INIT;
+        parameterizedFlows = new ParameterizedElementMap<>();
         nodeNames = new HashSet<>();
         accept(new VoidStructuralVisitor() {
             @Override
@@ -574,14 +575,14 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public void addParameterized(Flow parameterized) {
         NncUtils.requireTrue(parameterized.getTemplate() == this);
-        NncUtils.requireNull(parameterizedFlows().put(parameterized.typeArguments.secretlyGetTable(), parameterized),
+        NncUtils.requireNull(parameterizedFlows.put(parameterized.typeArguments.secretlyGetTable(), parameterized),
                 () -> "Parameterized flow " + parameterized.getTypeDesc() + " already exists");
     }
 
     public @Nullable Flow getExistingParameterized(List<? extends Type> typeArguments) {
         if (typeArguments.equals(NncUtils.map(typeParameters, TypeVariable::getType)))
             return this;
-        return parameterizedFlows().get(typeArguments);
+        return parameterizedFlows.get(typeArguments);
     }
 
     private ResolutionStage stage() {
@@ -598,12 +599,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
             return pFlow;
         var subst = new SubstitutorV2(this, typeParameters.toList(), typeArguments, ResolutionStage.DEFINITION);
         return substitute(subst);
-    }
-
-    private ParameterizedElementMap<List<? extends Type>, Flow> parameterizedFlows() {
-        if (parameterizedFlows == null)
-            parameterizedFlows = new ParameterizedElementMap<>();
-        return parameterizedFlows;
     }
 
     protected Flow substitute(SubstitutorV2 substitutor) {

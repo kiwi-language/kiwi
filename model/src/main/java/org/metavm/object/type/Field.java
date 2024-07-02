@@ -41,6 +41,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private MetadataState state;
     private Type type;
     private int tag;
+    private transient int offset;
 
     public Field(
             Long tmpId,
@@ -159,7 +160,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         }
         if (declaringType.isEnumConstantField(this))
             cascades.add(staticValue);
-        declaringType.resetSortedFields();
+        declaringType.resetFieldTransients();
         return cascades;
     }
 
@@ -481,4 +482,11 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return tag;
     }
 
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
 }

@@ -692,6 +692,19 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
+    public void beforeFinish() {
+        freezeKlasses();
+        super.beforeFinish();
+    }
+
+    private void freezeKlasses() {
+        typeDef2Def.keySet().forEach(t -> {
+            if(t instanceof Klass k)
+                k.freeze();
+        });
+    }
+
+    @Override
     public boolean isTypeDefType(ClassType type) {
         return typeDefTypes.contains(type);
     }

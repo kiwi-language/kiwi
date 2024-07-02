@@ -173,7 +173,31 @@ public class ClassInstanceTest extends TestCase {
             var klass = context.getKlass(klassId);
             System.out.println(klass.getSuperType());
         }
+    }
 
+    public void testFieldTable() {
+        var baseKlass = TestUtils.newKlassBuilder("Base").build();
+        var derivedKlass = TestUtils.newKlassBuilder("Derived")
+                .superType(baseKlass.getType())
+                .build();
+        var f1 = FieldBuilder.newBuilder("f1", "f1", baseKlass, PrimitiveType.longType).build();
+        var f2 = FieldBuilder.newBuilder("f2", "f2", derivedKlass, PrimitiveType.longType).build();
+        var f3 = FieldBuilder.newBuilder("f3", "f3", baseKlass, PrimitiveType.longType).build();
+        Assert.assertEquals(0, f1.getOffset());
+        Assert.assertEquals(2, f2.getOffset());
+        Assert.assertEquals(1, f3.getOffset());
+        var inst = new ClassInstance(
+                null,
+                Map.of(
+                        f1, Instances.longInstance(1),
+                        f2, Instances.longInstance(2),
+                        f3, Instances.longInstance(3)
+                ),
+                derivedKlass
+        );
+        Assert.assertEquals(Instances.longInstance(1), inst.getField(f1));
+        Assert.assertEquals(Instances.longInstance(2), inst.getField(f2));
+        Assert.assertEquals(Instances.longInstance(3), inst.getField(f3));
     }
 
 }

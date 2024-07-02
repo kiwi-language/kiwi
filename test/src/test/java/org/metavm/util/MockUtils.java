@@ -545,7 +545,7 @@ public class MockUtils {
         var humanOccupationField = FieldBuilder.newBuilder("occupation", "occupation", humanType, Types.getStringType())
                 .build();
         if (initIds)
-            TestUtils.initEntityIds(livingBeingType);
+            TestUtils.initEntityIds(humanType);
         return new LivingBeingTypes(
                 livingBeingType,
                 animalType,

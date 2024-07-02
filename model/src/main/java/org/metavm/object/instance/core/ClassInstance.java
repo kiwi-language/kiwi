@@ -104,13 +104,11 @@ public class ClassInstance extends DurableInstance {
 
     private void clear() {
         new ArrayList<>(getOutgoingReferences()).forEach(ReferenceRT::clear);
-        this.fieldTable.forEach(IInstanceField::clear);
+        fieldTable.clear();
     }
 
     public void logFieldTable() {
-        fieldTable.forEachField((field, value) -> {
-            logger.info("Field: {}, Value: {}", field.getName(), value);
-        });
+        fieldTable.forEachField((field, value) -> logger.info("Field: {}, Value: {}", field.getName(), value));
     }
 
     public void forEachField(BiConsumer<Field, Instance> action) {
@@ -133,20 +131,10 @@ public class ClassInstance extends DurableInstance {
             if (v instanceof DurableInstance d)
                 result.add(d);
         });
-//        for (UnknownField unknownField : unknownFields) {
-//            Instance fieldValue = unknownField.getValue();
-//            if (fieldValue instanceof DurableInstance d)
-//                result.add(d);
-//        }
         return result;
     }
 
     private void addField(Field field, Instance value) {
-//        NncUtils.requireNull(
-//                NncUtils.find(fields, f -> f instanceof InstanceField i && i.getField() == field.getField()),
-//                () -> String.format("Field '%s' is already added to instance '%s'", field.getName(), this)
-//        );
-//        this.fields.add(field);
         fieldTable.get(field).set(value);
     }
 
@@ -205,12 +193,12 @@ public class ClassInstance extends DurableInstance {
     protected void writeBody(InstanceOutput output) {
         ensureLoaded();
         var subTables = fieldTable.subTables;
-        int numGroups = 0;
+        int numKlasses = 0;
         for (FieldSubTable subTable : subTables) {
             if (subTable.countFieldsForWriting() > 0)
-                numGroups++;
+                numKlasses++;
         }
-        output.writeInt(numGroups);
+        output.writeInt(numKlasses);
         for (FieldSubTable subTable : subTables) {
             int numFields = subTable.countFieldsForWriting();
             if (numFields == 0)
@@ -240,6 +228,7 @@ public class ClassInstance extends DurableInstance {
     @NoProxy
     public void readFrom(InstanceInput input) {
         setLoaded(input.isLoadedFromCache());
+        fieldTable.initializeFieldsArray();
         var sortedKlasses = klass.getSortedKlasses();
         int j = 0;
         int numKlasses = input.readInt();
@@ -248,7 +237,7 @@ public class ClassInstance extends DurableInstance {
             int cmp = 1;
             Klass sk;
             while (j < sortedKlasses.size() && (cmp = Long.compare((sk = sortedKlasses.get(j)).getTag(), groupTag)) < 0) {
-                var subTable = fieldTable.addSubTable(sk.getTag(), sk.getLevel());
+                var subTable = fieldTable.addSubTable(sk.getTag());
                 for (var field : sk.getSortedFields()) {
                     subTable.add(new InstanceField(this, field, Instances.nullInstance(), false));
                 }
@@ -256,7 +245,7 @@ public class ClassInstance extends DurableInstance {
             }
             if (cmp == 0) {
                 sk = sortedKlasses.get(j++);
-                var subTable = fieldTable.addSubTable(groupTag, sk.getLevel());
+                var subTable = fieldTable.addSubTable(groupTag);
                 var fields = sk.getSortedFields();
                 int m = 0;
                 int numFields = input.readInt();
@@ -281,7 +270,7 @@ public class ClassInstance extends DurableInstance {
                     subTable.add(new InstanceField(this, field, Instances.nullInstance(), false));
                 }
             } else {
-                var subTable = fieldTable.addSubTable(groupTag, -1);
+                var subTable = fieldTable.addSubTable(groupTag);
                 int numFields = input.readInt();
                 for (int k = 0; k < numFields; k++) {
                     subTable.add(new UnknownField(groupTag, input.readInt(), input.readInstanceBytes()));
@@ -290,7 +279,7 @@ public class ClassInstance extends DurableInstance {
         }
         for (; j < sortedKlasses.size(); j++) {
             var klass = sortedKlasses.get(j);
-            var subTale = fieldTable.addSubTable(klass.getTag(), klass.getLevel());
+            var subTale = fieldTable.addSubTable(klass.getTag());
             for (Field field : klass.getSortedFields()) {
                 subTale.add(new InstanceField(this, field, Instances.nullInstance(), false));
             }
@@ -328,14 +317,6 @@ public class ClassInstance extends DurableInstance {
     public void setField(Field field, Instance value) {
         ensureLoaded();
         setFieldInternal(field, value);
-    }
-
-    void setOrInitField(Field field, Instance value) {
-        ensureLoaded();
-        if (isFieldInitialized(field))
-            setFieldInternal(field, value);
-        else
-            initFieldInternal(field, value);
     }
 
     @Override
@@ -417,24 +398,6 @@ public class ClassInstance extends DurableInstance {
 
     private InstanceField field(Field field) {
         return fieldTable.get(field);
-//        var instanceField = findField(field);
-//        if (instanceField != null)
-//            return instanceField;
-//        var unknownField = findUnknownFiled(field.getRecordGroupTag(), field.getRecordTag());
-//        if (unknownField != null) {
-//            unknownFields.remove(unknownField);
-//            instanceField = new InstanceField(this, field, unknownField.getValue());
-//            addField(instanceField);
-//            return instanceField;
-//        }
-//        if (DebugEnv.resolveVerbose) {
-//            logger.info("initialized: {}, persisted: {}", isInitialized(), isPersisted());
-//            logger.info("fields");
-//            klass.forEachField(f -> logger.info("field: {}", f.getQualifiedName()));
-//            logger.info("Instance fields:");
-//            forEachField((f, v) -> logger.info("field: {}", f.getQualifiedName()));
-//        }
-//        throw new InternalException("Can not find instance field for '" + field + "'");
     }
 
     protected InstanceField field(Id fieldId) {
@@ -475,8 +438,6 @@ public class ClassInstance extends DurableInstance {
     public <R> void acceptReferences(InstanceVisitor<R> visitor) {
         ensureLoaded();
         forEachField((f, v) -> v.accept(visitor));
-//        for (var unknownField : unknownFields)
-//            unknownField.getValue().accept(visitor);
     }
 
     @Override
@@ -533,11 +494,6 @@ public class ClassInstance extends DurableInstance {
         return field(field).getInstanceArray();
     }
 
-    public ArrayInstance getInstanceArray(String fieldName) {
-        ensureLoaded();
-        return field(klass.tryGetFieldByName(fieldName)).getInstanceArray();
-    }
-
     @Override
     public Object toJson(IEntityContext context) {
         if (isList()) {
@@ -563,12 +519,6 @@ public class ClassInstance extends DurableInstance {
     private void ensureFieldInitialized(Field field) {
         if (field(field).isFieldInitialized())
             return;
-//        var unknownField = findUnknownFiled(field.getRecordGroupTag(), field.getRecordTag());
-//        if (unknownField != null) {
-//            unknownFields.remove(unknownField);
-//            initFieldInternal(field, unknownField.getValue());
-//            return;
-//        }
         throw new BusinessException(
                 ErrorCode.FIELD_NOT_INITIALIZED,
                 getType().getName(),
@@ -597,49 +547,47 @@ public class ClassInstance extends DurableInstance {
 
         private final ClassInstance owner;
         private final List<FieldSubTable> subTables = new ArrayList<>();
-        private FieldSubTable[] levels = new FieldSubTable[1];
-        private boolean initialized;
+        private InstanceField[] fields;
 
         private FieldTable(ClassInstance owner) {
             this.owner = owner;
         }
 
+        void initializeFieldsArray() {
+            fields = new InstanceField[owner.klass.getNumFields()];
+        }
+
         void initialize() {
-//            assert !initialized;
-//            initialized = true;
-//            subTables.clear();
+            initializeFieldsArray();
             for (Klass k : owner.klass.getSortedKlasses()) {
-                addSubTable(k.getTag(), k.getLevel()).initialize(owner, k);
+                addSubTable(k.getTag()).initialize(owner, k);
             }
         }
 
-        FieldSubTable addSubTable(long klassTag, int level) {
-            var subTable = new FieldSubTable(klassTag);
+        FieldSubTable addSubTable(long klassTag) {
+            var subTable = new FieldSubTable(this, klassTag);
             subTables.add(subTable);
-            if (level >= 0) {
-                int len = levels.length;
-                if (len <= level) {
-                    do {
-                        len <<= 1;
-                    } while (len <= level);
-                    levels = Arrays.copyOf(levels, len);
-                }
-                levels[level] = subTable;
-            }
             return subTable;
         }
 
+        void onFieldAdded(InstanceField field) {
+            fields[field.getField().getOffset()] = field;
+        }
+
         InstanceField get(Field field) {
-            return (InstanceField) levels[field.getDeclaringType().getLevel()].fields[field.getTag()];
-//            for (FieldSubTable subTable : subTables) {
-//                if (subTable.klassTag == field.getKlassTag())
-//                    return (InstanceField) subTable.get(field.getTag());
-//            }
-//            throw new IllegalArgumentException("Can not find instance field for " + field);
+            return fields[field.getOffset()];
         }
 
         void forEachField(BiConsumer<Field, Instance> action) {
-            subTables.forEach(t -> t.forEachField(action));
+            for (InstanceField field : fields) {
+                action.accept(field.getField(), field.getValue());
+            }
+        }
+
+        void clear() {
+            for (InstanceField field : fields) {
+                field.clear();
+            }
         }
 
         public void forEach(Consumer<? super IInstanceField> action) {
@@ -688,13 +636,16 @@ public class ClassInstance extends DurableInstance {
                 }
             };
         }
+
     }
 
     private static class FieldSubTable implements Iterable<IInstanceField> {
+        private final FieldTable table;
         private final long klassTag;
-        private IInstanceField[] fields = new IInstanceField[1];
+        private final List<IInstanceField> fields = new ArrayList<>();
 
-        public FieldSubTable(long klassTag) {
+        public FieldSubTable(FieldTable table, long klassTag) {
+            this.table = table;
             this.klassTag = klassTag;
         }
 
@@ -705,19 +656,9 @@ public class ClassInstance extends DurableInstance {
         }
 
         void add(IInstanceField field) {
-            var fieldTag = field.getRecordTag();
-            var fields = this.fields;
-            if (fields.length <= fieldTag) {
-                int len = fields.length << 1;
-                while (len <= fieldTag)
-                    len <<= 1;
-                fields = this.fields = Arrays.copyOf(fields, len);
-            }
-            fields[fieldTag] = field;
-        }
-
-        IInstanceField get(int fieldTag) {
-            return fields[fieldTag];
+            fields.add(field);
+            if (field instanceof InstanceField f)
+                table.onFieldAdded(f);
         }
 
         int countFieldsForWriting() {
@@ -729,50 +670,15 @@ public class ClassInstance extends DurableInstance {
             return count;
         }
 
-        void forEachField(BiConsumer<Field, Instance> action) {
-            for (IInstanceField f : fields) {
-                if (f instanceof InstanceField i) {
-                    if (i.isFieldInitialized())
-                        action.accept(i.getField(), i.getValue());
-                }
-            }
-        }
-
         @Override
         public void forEach(Consumer<? super IInstanceField> action) {
-            for (IInstanceField field : fields) {
-                if (field != null)
-                    action.accept(field);
-            }
+            fields.forEach(action);
         }
 
         @NotNull
         @Override
         public Iterator<IInstanceField> iterator() {
-            var fields = this.fields;
-            var len = fields.length;
-            int i = 0;
-            while (i < len && fields[i] == null)
-                i++;
-            var start = i;
-            return new Iterator<>() {
-                int next = start;
-
-                @Override
-                public boolean hasNext() {
-                    return next < len;
-                }
-
-                @Override
-                public IInstanceField next() {
-                    var f = fields[next++];
-                    var n = next;
-                    while (n < len && fields[n] == null)
-                        n++;
-                    next = n;
-                    return f;
-                }
-            };
+            return fields.iterator();
         }
     }
 
