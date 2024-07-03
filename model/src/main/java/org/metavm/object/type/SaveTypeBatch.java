@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import org.metavm.common.ErrorCode;
 import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.Entity;
@@ -12,9 +13,7 @@ import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.object.view.FieldsObjectMapping;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
-import org.metavm.util.IdentitySet;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -252,6 +251,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     }
 
     public Commit buildCommit(WAL wal) {
+        checkForDDL();
         return new Commit(
                 wal,
                 new BatchSaveRequest(
@@ -263,6 +263,21 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                 NncUtils.map(typeChangedFields, Entity::getStringId),
                 NncUtils.map(changingSuperKlasses, Entity::getStringId)
         );
+    }
+
+    private void checkForDDL() {
+        for (Field field : newFields) {
+            if(Instances.findFieldInitializer(field) == null && Instances.getDefaultValue(field) == null)
+                throw new BusinessException(ErrorCode.MISSING_FIELD_INITIALIZER, field.getQualifiedName());
+        }
+        for (Field field : typeChangedFields) {
+            if(Instances.findTypeConverter(field) == null)
+                throw new BusinessException(ErrorCode.MISSING_TYPE_CONVERTER, field.getQualifiedName());
+        }
+        for (var klass : changingSuperKlasses) {
+            if(Instances.findSuperInitializer(klass) == null)
+                throw new BusinessException(ErrorCode.MISSING_SUPER_INITIALIZER, klass.getCode());
+        }
     }
 
     public static SaveTypeBatch empty(IEntityContext context) {

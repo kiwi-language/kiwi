@@ -176,4 +176,7 @@ public class PrimitiveType extends Type {
         output.write(PrimitiveTypeKey.getTypeKeyCode(kind.code()));
     }
 
+    public @Nullable Instance getDefaultValue() {
+        return kind.getDefaultValue();
+    }
 }

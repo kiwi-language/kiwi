@@ -2,6 +2,7 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.instance.ApiService;
@@ -72,6 +73,7 @@ public class DDLTest extends TestCase {
         var shoes1 = apiClient.getInstance(shoesId);
         var hat = apiClient.getInstance(hatId);
         Assert.assertEquals(true, shoes1.get("available"));
+        Assert.assertNull(shoes1.get("description"));
         Assert.assertEquals(100.0, shoes1.get("price"));
         //noinspection unchecked
         Assert.assertEquals(0L, ((Map<String, Object>) shoes1.get("version")).get("majorVersion"));
@@ -88,4 +90,24 @@ public class DDLTest extends TestCase {
         Assert.assertEquals("FINISHED", commitState.get("name"));
     }
 
+    public void testDDLRollback() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "Shoes",
+                "quantity", 100,
+                "price", 100
+        )));
+        var shoes = apiClient.getInstance(shoesId);
+        Assert.assertEquals(100L, shoes.get("price"));
+        try {
+            MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after_failed.masm", typeManager, false, entityContextFactory);
+            Assert.fail("Should have thrown exception");
+        } catch (BusinessException e) {
+            Assert.assertEquals(
+                    ResultUtil.formatMessage(ErrorCode.MISSING_FIELD_INITIALIZER, "Product.description"),
+                    e.getMessage()
+            );
+        }
+
+    }
 }

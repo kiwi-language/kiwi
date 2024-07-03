@@ -3,6 +3,7 @@ package org.metavm.object.type;
 import org.metavm.object.instance.core.*;
 import org.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.util.Date;
 
 public enum PrimitiveKind {
@@ -19,6 +20,11 @@ public enum PrimitiveKind {
             else
                 throw new IllegalArgumentException();
         }
+
+        @Override
+        public Instance getDefaultValue() {
+            return Instances.longInstance(0L);
+        }
     },
     DOUBLE(2, "double", Double.class, DoubleInstance.class, TypeCategory.DOUBLE) {
         @Override
@@ -33,9 +39,19 @@ public enum PrimitiveKind {
             else
                 throw new IllegalArgumentException();
         }
+
+        @Override
+        public Instance getDefaultValue() {
+            return Instances.doubleInstance(0.0);
+        }
     },
     STRING(3, "string", String.class, StringInstance.class, TypeCategory.STRING),
-    BOOLEAN(4, "boolean", Boolean.class, BooleanInstance.class, TypeCategory.BOOLEAN),
+    BOOLEAN(4, "boolean", Boolean.class, BooleanInstance.class, TypeCategory.BOOLEAN) {
+        @Override
+        public Instance getDefaultValue() {
+            return Instances.booleanInstance(false);
+        }
+    },
     TIME(5, "time", Date.class, TimeInstance.class, TypeCategory.TIME),
     PASSWORD(6, "password", Password.class, PasswordInstance.class, TypeCategory.PASSWORD),
     NULL(7, "null", Null.class, NullInstance.class, TypeCategory.NULL),
@@ -108,5 +124,9 @@ public enum PrimitiveKind {
 
     public Instance convert(Instance instance) {
         throw new UnsupportedOperationException();
+    }
+
+    public @Nullable Instance getDefaultValue() {
+        return null;
     }
 }

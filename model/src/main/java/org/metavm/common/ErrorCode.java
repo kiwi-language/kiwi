@@ -173,6 +173,9 @@ public enum ErrorCode {
 
     // DDL
     COMMIT_RUNNING(1601, "Commit is in progress"),
+    MISSING_FIELD_INITIALIZER(1602, "Initializer is missing for new field {}"),
+    MISSING_TYPE_CONVERTER(1603, "Type converter is missing for field {}"),
+    MISSING_SUPER_INITIALIZER(1604, "Super class initializer is missing class {}"),
 
     ;
 

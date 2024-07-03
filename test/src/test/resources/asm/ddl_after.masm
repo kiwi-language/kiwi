@@ -13,12 +13,14 @@ class Product extends Versioned {
     private double price;
     private int quantity;
     private boolean available;
+    private string|null description;
 
-    public Product(string name, double price, int quantity) {
+    public Product(string name, double price, int quantity, string|null description) {
         super();
         this.name = name;
         this.price = price;
         this.quantity = quantity;
+        this.description = description;
     }
 
     public string getName() {
@@ -51,6 +53,14 @@ class Product extends Versioned {
 
     public void setAvailable(boolean available) {
         this.available = available;
+    }
+
+    public string|null getDescription() {
+        return this.description;
+    }
+
+    public void setDescription(string|null description) {
+        this.description= description;
     }
 
     private boolean __available__() {

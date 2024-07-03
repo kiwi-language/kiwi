@@ -6,6 +6,7 @@ import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.flow.Flows;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.StructuralVisitor;
 import org.metavm.object.instance.core.*;
@@ -561,14 +562,28 @@ public class Instances {
         instance.setField(field, initialValue);
     }
 
-    public static Instance computeFieldInitialValue(ClassInstance instance, Field field, CallContext callContext) {
+    public static @Nullable Method findFieldInitializer(Field field) {
         var klass = field.getDeclaringType();
         var initMethodName = "__" + field.getCodeNotNull() + "__";
-        var initMethod = klass.findMethodByCodeAndParamTypes(initMethodName, List.of());
-        if (initMethod != null)
+        return klass.findMethodByCodeAndParamTypes(initMethodName, List.of());
+    }
+
+    public static @Nullable Instance getDefaultValue(Field field) {
+        var type = field.getType();
+        if(type.isNullable())
+            return Instances.nullInstance();
+        else if(type instanceof PrimitiveType primitiveType)
+            return primitiveType.getDefaultValue();
+        else
+            return null;
+    }
+
+    public static Instance computeFieldInitialValue(ClassInstance instance, Field field, CallContext callContext) {
+        var initMethod = findFieldInitializer(field);
+        if(initMethod != null)
             return Flows.invoke(initMethod, instance, List.of(), callContext);
         else
-            return Objects.requireNonNull(field.getDefaultValue());
+            return Objects.requireNonNull(getDefaultValue(field), "Can not find a default value for field " + field.getQualifiedName());
     }
 
     private static void convertField(ClassInstance instance, Field field, IEntityContext context) {
@@ -576,16 +591,20 @@ public class Instances {
         instance.setField(field, convertedValue);
     }
 
-    public static Instance computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {
+    public static @Nullable Method findTypeConverter(Field field) {
         var klass = field.getDeclaringType();
         var initMethodName = "__" + field.getCodeNotNull() + "__";
-        var initMethod = klass.getMethod(
+        return klass.findMethod(
                 m -> initMethodName.equals(m.getCode())
                         && m.getParameters().size() == 1
                         && m.getReturnType().equals(field.getType())
         );
+    }
+
+    public static Instance computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {
+        var converter = Objects.requireNonNull(findTypeConverter(field));
         var originalValue = instance.getUnknownField(field.getOriginalTag());
-        return Flows.invoke(initMethod, instance, List.of(originalValue), context);
+        return Flows.invoke(converter, instance, List.of(originalValue), context);
     }
 
     private static void initializeSuper(ClassInstance instance, Klass klass, IEntityContext context) {
@@ -593,15 +612,20 @@ public class Instances {
         s.forEachField(instance::setField);
     }
 
-    private static ClassInstance computeSuper(ClassInstance instance, Klass klass, CallContext callContext) {
+
+    public static Method findSuperInitializer(Klass klass) {
         var superKlass = Objects.requireNonNull(klass.getSuperType()).resolve();
         var initMethodName = "__" + superKlass.getName() + "__";
-        var initMethod = klass.getMethod(
+        return klass.findMethod(
                 m -> initMethodName.equals(m.getCode())
                         && m.getParameters().isEmpty()
                         && m.getReturnType().equals(superKlass.getType())
         );
-        return (ClassInstance) Flows.invoke(initMethod, instance, List.of(), callContext);
+    }
+
+    private static ClassInstance computeSuper(ClassInstance instance, Klass klass, CallContext callContext) {
+        var initializer = Objects.requireNonNull(findSuperInitializer(klass));
+        return (ClassInstance) Flows.invoke(initializer, instance, List.of(), callContext);
     }
 
 }
