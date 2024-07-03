@@ -8,6 +8,13 @@ import org.metavm.object.type.antlr.TypeParserVisitor;
 public class TypeParserTransformer extends AbstractParseTreeTransformer implements TypeParserVisitor<ParseTree> {
 
     @Override
+    public ParseTree visitUnit(TypeParser.UnitContext ctx) {
+        var transformed = new TypeParser.UnitContext(getCurrent(), ctx.invokingState);
+        transformChildren(ctx, transformed);
+        return transformed;
+    }
+
+    @Override
     public TypeParser.TypeContext visitType(TypeParser.TypeContext ctx) {
         var transformed = new TypeParser.TypeContext(getCurrent(), ctx.invokingState);
         transformChildren(ctx, transformed);

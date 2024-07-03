@@ -2,6 +2,8 @@ parser grammar TypeParser;
 
 options {tokenVocab = TypeLexer;}
 
+unit: type EOF;
+
 type
     : NEVER
     | ANY

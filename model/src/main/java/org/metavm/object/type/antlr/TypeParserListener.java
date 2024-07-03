@@ -8,6 +8,16 @@ import org.antlr.v4.runtime.tree.ParseTreeListener;
  */
 public interface TypeParserListener extends ParseTreeListener {
 	/**
+	 * Enter a parse tree produced by {@link TypeParser#unit}.
+	 * @param ctx the parse tree
+	 */
+	void enterUnit(TypeParser.UnitContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TypeParser#unit}.
+	 * @param ctx the parse tree
+	 */
+	void exitUnit(TypeParser.UnitContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link TypeParser#type}.
 	 * @param ctx the parse tree
 	 */

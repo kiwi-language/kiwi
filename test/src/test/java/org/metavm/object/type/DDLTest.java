@@ -47,6 +47,9 @@ public class DDLTest extends TestCase {
                 "quantity", 100,
                 "price", 100
         )));
+        var boxId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Box<Product>", Map.of(
+                "item", shoesId
+        )));
         var shoes = apiClient.getInstance(shoesId);
         Assert.assertEquals(100L, shoes.get("price"));
         var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
@@ -79,6 +82,8 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(shoesId, foundId);
         var foundId2 = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Hat")));
         Assert.assertEquals(hatId, foundId2);
+        var box = apiClient.getInstance(boxId);
+        Assert.assertEquals(1L, box.get("count"));
         var commitState = apiClient.getInstance((String) apiClient.getInstance(commitId).get("state"));
         Assert.assertEquals("FINISHED", commitState.get("name"));
     }

@@ -574,7 +574,6 @@ public class Instances {
     private static void convertField(ClassInstance instance, Field field, IEntityContext context) {
         var convertedValue = computeConvertedFieldValue(instance, field, context.getInstanceContext());
         instance.setField(field, convertedValue);
-        logger.info("Converted value for " + field.getQualifiedName() + ": " + instance.getField(field));
     }
 
     public static Instance computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {

@@ -41,7 +41,7 @@ public class TypeParserImpl implements TypeParser {
     public Type parseType(@NotNull String expression) {
         var parser = createAntlrParser(expression);
         try {
-            return parseType(parser.type());
+            return parseType(parser.unit().type());
         } catch (Exception e) {
             throw new InternalException("Failed to parse type: " + expression, e);
         }

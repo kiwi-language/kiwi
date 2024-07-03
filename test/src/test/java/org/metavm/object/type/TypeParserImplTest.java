@@ -1,6 +1,7 @@
 package org.metavm.object.type;
 
 import junit.framework.TestCase;
+import org.antlr.v4.runtime.CharStreams;
 import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.flow.MethodBuilder;
@@ -69,6 +70,25 @@ public class TypeParserImplTest extends TestCase {
         Assert.assertEquals("messageSupplier", func.getParameter(1).getName());
         Assert.assertEquals("messageSupplier", func.getParameter(1).getCode());
         Assert.assertEquals(supplierKlass.getParameterized(List.of(Types.getStringType())).getType(), func.getParameter(1).getType());
+    }
+
+
+    public void testQualifiedClass() {
+        var classCode = "capturedtypes.CtLab";
+        var klass = TestUtils.newKlassBuilder("CtLab", classCode).build();
+        ParserTypeDefProvider typeDefProvider = name -> {
+            if(name.equals(classCode))
+                return klass;
+            else
+                return null;
+        };
+        var input = CharStreams.fromString(classCode);
+//        var parser = new org.metavm.object.type.antlr.TypeParser(new CommonTokenStream(new TypeLexer(input)));
+//        var parser = new AssemblyParser(new CommonTokenStream(new AssemblyLexer(input)));
+//        parser.setErrorHandler(new BailErrorStrategy());
+        var parser = new TypeParserImpl(typeDefProvider);
+        var type = parser.parseType(classCode);
+        Assert.assertEquals(klass.getType(), type);
     }
 
 }

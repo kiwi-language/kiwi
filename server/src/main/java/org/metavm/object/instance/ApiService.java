@@ -142,7 +142,9 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private Klass getKlass(String classCode, IEntityContext context) {
-        var klass = context.selectFirstByKey(Klass.UNIQUE_CODE, classCode);
+        ParserTypeDefProvider typeDefProvider = name -> context.selectFirstByKey(Klass.UNIQUE_CODE, name);
+        var type = (ClassType) new TypeParserImpl(typeDefProvider).parseType(classCode);
+        var klass = type.resolve();
         if (klass == null)
             throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, classCode);
         return klass;
