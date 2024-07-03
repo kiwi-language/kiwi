@@ -1,4 +1,4 @@
-class Product {
+class Product extends Versioned {
 
     index IdxName {
         name: this.name;
@@ -12,14 +12,13 @@ class Product {
     private string name;
     private double price;
     private int quantity;
-    private Version version;
+    private boolean available;
 
     public Product(string name, double price, int quantity) {
+        super();
         this.name = name;
         this.price = price;
         this.quantity = quantity;
-        ver: new Version(0, 0);
-        this.version = ver;
     }
 
     public string getName() {
@@ -46,22 +45,45 @@ class Product {
         this.quantity = quantity;
     }
 
+    public boolean isAvailable() {
+        return this.available;
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
+    private boolean __available__() {
+        return true;
+    }
+
+    private double __price__(int price) {
+        r: (double) price;
+        return r;
+    }
+
+    private Versioned __Versioned__() {
+        v: new Versioned();
+        return v;
+    }
+
+}
+
+class Versioned {
+
+    private Version version;
+
+    public Versioned() {
+        v: new Version(0, 0);
+        this.version = v;
+    }
+
     public Version getVersion() {
         return this.version;
     }
 
     public void setVersion(Version version) {
         this.version = version;
-    }
-
-    private Version __version__() {
-        ver: new Version(0, 0);
-        return ver;
-    }
-
-    private double __price__(int price) {
-        r: (double) price;
-        return r;
     }
 
 }

@@ -39,9 +39,9 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     private final LinkedHashMap<String, TypeDefDTO> typeDefMap = new LinkedHashMap<>();
     private final Map<String, FlowDTO> functionMap = new HashMap<>();
     private final Map<String, FlowDTO> flowMap = new HashMap<>();
-    private final Set<String> preparingSet = new HashSet<>();
     private final Set<Field> newFields = new HashSet<>();
     private final Set<Field> typeChangedFields = new HashSet<>();
+    private final Set<Klass> changingSuperKlasses = new HashSet<>();
 
     private SaveTypeBatch(IEntityContext context, List<? extends TypeDefDTO> typeDefDTOs, List<FlowDTO> functions) {
         this.context = context;
@@ -56,7 +56,6 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
         }
         for (FlowDTO function : functions)
             functionMap.put(function.id(), function);
-        preparingSet.addAll(PrepareSetGenerator.generate(NncUtils.filterByType(typeDefDTOs, KlassDTO.class), context));
     }
 
     public void addNewField(Field field) {
@@ -65,6 +64,10 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public void addTypeChangedField(Field field) {
         typeChangedFields.add(field);
+    }
+
+    public void addChangingSuperKlass(Klass klass) {
+        changingSuperKlasses.add(klass);
     }
 
     private record SaveStage(ResolutionStage stage, Function<TypeDefDTO, Set<String>> getDependencies) {
@@ -130,19 +133,6 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     public TypeVariable getTypeVariable(String id) {
         return (TypeVariable) getTypeDef(id);
     }
-
-    /*public Type get(String id) {
-        var existing = context.getType(id);
-        if (existing != null)
-            return existing;
-        var typeDTO = NncUtils.requireNonNull(typeMap.get(id),
-                "Type '" + id + "' not available");
-        return Types.saveType(typeDTO, ResolutionStage.INIT, this);
-    }*/
-
-//    public ClassType getClassType(String id) {
-//        return (ClassType) get(id);
-//    }
 
     public CapturedTypeVariable getCapturedTypeVariable(String id) {
         return (CapturedTypeVariable) getTypeDef(id);
@@ -240,30 +230,6 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     }
 
-    /*public void saveParameterizedFlows(Klass type, ResolutionStage stage) {
-        var pFlowDTOs = getPFlowsByDeclaringType(type.getStringId());
-        for (ParameterizedFlowDTO parameterizedFlowDTO : pFlowDTOs) {
-            Flows.getParameterizedFlow(
-                    context.getFlow(Id.parse(parameterizedFlowDTO.getTemplateId())),
-                    NncUtils.map(parameterizedFlowDTO.getTypeArgumentIds(), id -> context.getType(Id.parse(id))),
-                    stage,
-                    this
-            );
-        }
-    }
-
-    private List<ParameterizedFlowDTO> getPFlowsByDeclaringType(String id) {
-        var typeDTO = getTypeDTONotNull(id);
-        if(typeDTO.param() instanceof ClassTypeParam classParam) {
-            return NncUtils.flatMap(
-                    classParam.flows(),
-                    f -> parameterizedFlowMap.getOrDefault(f.id(), List.of())
-            );
-        }
-        else
-            return List.of();
-    }*/
-
     public @Nullable ObjectMappingDTO getMappingDTO(FieldsObjectMapping mapping) {
         var typeDTO = getTypeDTO(mapping.getSourceType().getStringId());
         if (typeDTO == null)
@@ -286,8 +252,6 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     }
 
     public Commit buildCommit(WAL wal) {
-        var newFieldIds = NncUtils.map(newFields, Entity::getStringId);
-        var convertingFieldIds = NncUtils.map(typeChangedFields, Entity::getStringId);
         return new Commit(
                 wal,
                 new BatchSaveRequest(
@@ -295,8 +259,9 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                         new ArrayList<>(functionMap.values()),
                         true
                 ),
-                newFieldIds,
-                convertingFieldIds
+                NncUtils.map(newFields, Entity::getStringId),
+                NncUtils.map(typeChangedFields, Entity::getStringId),
+                NncUtils.map(changingSuperKlasses, Entity::getStringId)
         );
     }
 

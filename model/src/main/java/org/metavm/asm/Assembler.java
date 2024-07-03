@@ -456,11 +456,7 @@ public class Assembler {
                     typeCategory == TypeCategory.ENUM
             );
             setAttribute(ctx, AsmAttributeKey.classInfo, classInfo);
-            if (typeCategory == TypeCategory.ENUM)
-                classInfo.superType = new ClassType(getKlass(Enum.class.getName()), List.of(klass.getType()));
             super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, ctx, processBody);
-            if (superType != null)
-                classInfo.superType = (ClassType) parseType(superType, classInfo, getCompilationUnit());
         }
 
         @Override

@@ -24,16 +24,19 @@ public class Commit extends Entity {
     private final ReadWriteArray<String> newFieldIds = addChild(new ReadWriteArray<>(String.class), "newFieldIds");
     @ChildEntity
     private final ReadWriteArray<String> convertingFieldIds = addChild(new ReadWriteArray<>(String.class), "convertingFieldIds");
+    @ChildEntity
+    private final ReadWriteArray<String> changingSuperKlassIds = addChild(new ReadWriteArray<>(String.class), "changingSuperKlassIds");
     private CommitState state = CommitState.RUNNING;
 
     private transient BatchSaveRequest request;
 
-    public Commit(WAL wal, BatchSaveRequest request, List<String> newFieldIds, List<String> convertingFieldIds) {
+    public Commit(WAL wal, BatchSaveRequest request, List<String> newFieldIds, List<String> convertingFieldIds, List<String> changingSuperKlassIds) {
         this.wal = wal;
         this.requestJSON = NncUtils.toJSONString(request);
         this.request = request;
         this.newFieldIds.addAll(newFieldIds);
         this.convertingFieldIds.addAll(convertingFieldIds);
+        this.changingSuperKlassIds.addAll(changingSuperKlassIds);
     }
 
     public BatchSaveRequest getRequest() {
@@ -65,7 +68,12 @@ public class Commit extends Entity {
         return convertingFieldIds.toList();
     }
 
+    public List<String> getChangingSuperKlassIds() {
+        return changingSuperKlassIds.toList();
+    }
+
     public WAL getWal() {
         return wal;
     }
+
 }

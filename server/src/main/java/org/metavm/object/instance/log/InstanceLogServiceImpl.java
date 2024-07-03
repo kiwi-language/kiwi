@@ -11,7 +11,7 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.search.InstanceSearchService;
-import org.metavm.object.type.Field;
+import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +20,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
-
-import static org.metavm.util.Instances.computeFieldInitialValue;
 
 @Component
 public class InstanceLogServiceImpl extends EntityContextFactoryAware implements InstanceLogService {
@@ -72,22 +70,17 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     }
 
     private void handleDDL(long appId, Collection<Id> instanceIds) {
-        if(instanceIds.isEmpty())
+        if (instanceIds.isEmpty())
             return;
         try (var context = newContext(appId)) {
             var commit = context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
             if (commit != null) {
                 try (var loadedContext = entityContextFactory.newLoadedContext(appId, commit.getWal())) {
-                    var instances = NncUtils.mapAndFilterByType(instanceIds, loadedContext.getInstanceContext()::get, ClassInstance.class);
-                    var fields = NncUtils.map(commit.getNewFieldIds(), loadedContext::getField);
-                    for (var instance : instances) {
-                        for (Field field : fields) {
-                            if (field.getDeclaringType().getType().isInstance(instance)) {
-                                var initialValue = computeFieldInitialValue(instance, field, loadedContext.getInstanceContext());
-                                instance.setField(field, initialValue);
-                            }
-                        }
-                    }
+                    Iterable<ClassInstance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
+                            .filter(i -> i instanceof ClassInstance)
+                            .map(i -> (ClassInstance) i)
+                            .iterator();
+                    Instances.applyDDL(instances, commit, loadedContext);
                     loadedContext.finish();
                 }
             }

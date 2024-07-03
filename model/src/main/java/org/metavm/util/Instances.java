@@ -1,6 +1,7 @@
 package org.metavm.util;
 
 import org.metavm.api.ReadonlyList;
+import org.metavm.ddl.Commit;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ListNative;
@@ -10,6 +11,8 @@ import org.metavm.object.instance.core.StructuralVisitor;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -17,6 +20,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class Instances {
+
+    private static final Logger logger = LoggerFactory.getLogger(Instances.class);
 
     public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.of(
             Integer.class, PrimitiveType.longType,
@@ -98,7 +103,7 @@ public class Instances {
     }
 
     public static int compare(DurableInstance instance1, DurableInstance instance2) {
-        if(instance1.isIdInitialized() && instance2.isIdInitialized())
+        if (instance1.isIdInitialized() && instance2.isIdInitialized())
             return instance1.getId().compareTo(instance2.getId());
         else
             return Integer.compare(instance1.getSeq(), instance2.getSeq());
@@ -155,17 +160,16 @@ public class Instances {
     }
 
     public static String getInstanceDetailedDesc(Instance instance) {
-        if(instance instanceof ClassInstance clsInst && clsInst.getType().isList()) {
+        if (instance instanceof ClassInstance clsInst && clsInst.getType().isList()) {
             var listNative = new ListNative(clsInst);
             var array = listNative.toArray();
             return clsInst.getType().getName() + " [" + NncUtils.join(array, Instances::getInstanceDesc) + "]";
-        }
-        else
+        } else
             return getInstanceDesc(instance);
     }
 
     public static String getInstanceDesc(Instance instance) {
-        if(instance instanceof DurableInstance d && d.getMappedEntity() != null)
+        if (instance instanceof DurableInstance d && d.getMappedEntity() != null)
             return EntityUtils.getEntityDesc(d.getMappedEntity());
         else
             return instance.toString();
@@ -176,7 +180,7 @@ public class Instances {
         instance.accept(new StructuralVisitor() {
             @Override
             public Void visitInstance(Instance instance) {
-                if(predicate.test(instance))
+                if (predicate.test(instance))
                     result.add(instance);
                 return super.visitInstance(instance);
             }
@@ -186,7 +190,7 @@ public class Instances {
 
     public static String getInstancePath(Instance instance) {
         if (instance instanceof DurableInstance d) {
-            if(d.getMappedEntity() != null)
+            if (d.getMappedEntity() != null)
                 return EntityUtils.getEntityPath(d.getMappedEntity());
             else {
                 var path = new LinkedList<DurableInstance>();
@@ -197,8 +201,7 @@ public class Instances {
                 }
                 return NncUtils.join(path, Instances::getInstanceDesc, "->");
             }
-        }
-        else
+        } else
             return getInstanceDesc(instance);
     }
 
@@ -510,40 +513,96 @@ public class Instances {
     }
 
     public static ClassInstance createList(ClassType listType, List<? extends Instance> elements) {
-       if(listType.isList()) {
-           var elementType = listType.getFirstTypeArgument();
-           if(listType.getKlass() == StdKlass.list.get()) {
-               listType = StdKlass.arrayList.get().getParameterized(List.of(elementType)).getType();
-           }
-           var list = ClassInstance.allocate(listType);
-           var listNative = new ListNative(list);
-           listNative.List();
-           for (Instance element : elements) {
-               listNative.add(element);
-           }
-           return list;
-       }
-       else
-           throw new IllegalArgumentException(listType + " is not a List type");
+        if (listType.isList()) {
+            var elementType = listType.getFirstTypeArgument();
+            if (listType.getKlass() == StdKlass.list.get()) {
+                listType = StdKlass.arrayList.get().getParameterized(List.of(elementType)).getType();
+            }
+            var list = ClassInstance.allocate(listType);
+            var listNative = new ListNative(list);
+            listNative.List();
+            for (Instance element : elements) {
+                listNative.add(element);
+            }
+            return list;
+        } else
+            throw new IllegalArgumentException(listType + " is not a List type");
+    }
+
+    public static void applyDDL(Iterable<ClassInstance> instances, Commit commit, IEntityContext context) {
+        var newFields = NncUtils.map(commit.getNewFieldIds(), context::getField);
+        var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
+        var changingSuperKlasses = NncUtils.map(commit.getChangingSuperKlassIds(), context::getKlass);
+        for (ClassInstance instance : instances) {
+            for (Field field : newFields) {
+                var k = instance.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
+                if (k != null) {
+                    var pf = k.findField(f -> f.getEffectiveTemplate() == field);
+                    initializeField(instance, pf, context);
+                }
+            }
+            for (Field field : convertingFields) {
+                var k = instance.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
+                if (k != null) {
+                    var pf = k.findField(f -> f.getEffectiveTemplate() == field);
+                    convertField(instance, pf, context);
+                }
+            }
+            for (Klass klass : changingSuperKlasses) {
+                var k = instance.getKlass().findAncestorKlassByTemplate(klass);
+                if (k != null)
+                    initializeSuper(instance, k, context);
+            }
+        }
+    }
+
+    private static void initializeField(ClassInstance instance, Field field, IEntityContext context) {
+        var initialValue = computeFieldInitialValue(instance, field, context.getInstanceContext());
+        instance.setField(field, initialValue);
     }
 
     public static Instance computeFieldInitialValue(ClassInstance instance, Field field, CallContext callContext) {
         var klass = field.getDeclaringType();
         var initMethodName = "__" + field.getCodeNotNull() + "__";
         var initMethod = klass.findMethodByCodeAndParamTypes(initMethodName, List.of());
-        if(initMethod != null)
+        if (initMethod != null)
             return Flows.invoke(initMethod, instance, List.of(), callContext);
         else
             return Objects.requireNonNull(field.getDefaultValue());
     }
 
+    private static void convertField(ClassInstance instance, Field field, IEntityContext context) {
+        var convertedValue = computeConvertedFieldValue(instance, field, context.getInstanceContext());
+        instance.setField(field, convertedValue);
+        logger.info("Converted value for " + field.getQualifiedName() + ": " + instance.getField(field));
+    }
+
     public static Instance computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {
         var klass = field.getDeclaringType();
         var initMethodName = "__" + field.getCodeNotNull() + "__";
-        var initMethod = klass.getMethod(m -> initMethodName.equals(m.getCode()) && m.getParameters().size() == 1
-                && m.getReturnType().equals(field.getType()));
+        var initMethod = klass.getMethod(
+                m -> initMethodName.equals(m.getCode())
+                        && m.getParameters().size() == 1
+                        && m.getReturnType().equals(field.getType())
+        );
         var originalValue = instance.getUnknownField(field.getOriginalTag());
         return Flows.invoke(initMethod, instance, List.of(originalValue), context);
+    }
+
+    private static void initializeSuper(ClassInstance instance, Klass klass, IEntityContext context) {
+        var s = computeSuper(instance, klass, context.getInstanceContext());
+        s.forEachField(instance::setField);
+    }
+
+    private static ClassInstance computeSuper(ClassInstance instance, Klass klass, CallContext callContext) {
+        var superKlass = Objects.requireNonNull(klass.getSuperType()).resolve();
+        var initMethodName = "__" + superKlass.getName() + "__";
+        var initMethod = klass.getMethod(
+                m -> initMethodName.equals(m.getCode())
+                        && m.getParameters().isEmpty()
+                        && m.getReturnType().equals(superKlass.getType())
+        );
+        return (ClassInstance) Flows.invoke(initMethod, instance, List.of(), callContext);
     }
 
 }

@@ -425,7 +425,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private void resetSelfFieldOffset() {
         var offset = superType != null ? superType.resolve().getNumFields() : 0;
         for (Field f : getSortedFields()) {
-           f.setOffset(offset++);
+            f.setOffset(offset++);
         }
         numFields = offset;
     }
@@ -439,6 +439,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.sortedFields.clear();
         sortedFields.addAll(this.fields.toList());
         sortedFields.sort(Comparator.comparingInt(Field::getTag));
+        assert fields.size() <= 1 || NncUtils.allMatch(fields, EntityUtils::isModelInitialized);
     }
 
     public void moveMethod(Method method, int index) {
@@ -643,12 +644,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     protected void addExtension(Klass klass) {
-        if(!frozen)
+        if (!frozen)
             extensions.add(klass);
     }
 
     protected void addImplementation(Klass klass) {
-        if(!frozen)
+        if (!frozen)
             implementations.add(klass);
     }
 
@@ -664,10 +665,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public void freeze() {
-        if(frozen)
+        if (frozen)
             throw new IllegalStateException("Already frozen");
         this.frozen = true;
-        if(isTemplate()) {
+        if (isTemplate()) {
             for (Klass p : parameterizedClasses.values())
                 p.freeze();
         }
@@ -1080,6 +1081,18 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Klass findAncestorByTemplate(Klass template) {
         return getClosure().find(t -> t.templateEquals(template));
+    }
+
+    public @Nullable Klass findAncestorKlassByTemplate(Klass template) {
+        return findAncestorKlass(k -> k.getEffectiveTemplate() == template);
+    }
+
+    public @Nullable Klass findAncestorKlass(Predicate<Klass> predicate) {
+        if (predicate.test(this))
+            return this;
+        if (superType != null)
+            return superType.resolve().findAncestorKlass(predicate);
+        return null;
     }
 
     public KlassDTO toDTO() {

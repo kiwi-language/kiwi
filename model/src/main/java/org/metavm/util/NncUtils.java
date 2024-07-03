@@ -767,8 +767,7 @@ public class NncUtils {
         return merged;
     }
 
-    public static <
-            T, M, R> List<R> mapAndFilterByType(Iterable<T> source, Function<T, M> mapper, Class<R> resultType) {
+    public static <T, M, R> Iterable<R> mapAndFilterByType(Iterable<T> source, Function<T, M> mapper, Class<R> resultType) {
         return NncUtils.filterByType(
                 NncUtils.map(source, mapper),
                 resultType

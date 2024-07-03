@@ -68,6 +68,7 @@ public class DDLTest extends TestCase {
         TestUtils.waitForDDLDone(entityContextFactory);
         var shoes1 = apiClient.getInstance(shoesId);
         var hat = apiClient.getInstance(hatId);
+        Assert.assertEquals(true, shoes1.get("available"));
         Assert.assertEquals(100.0, shoes1.get("price"));
         //noinspection unchecked
         Assert.assertEquals(0L, ((Map<String, Object>) shoes1.get("version")).get("majorVersion"));

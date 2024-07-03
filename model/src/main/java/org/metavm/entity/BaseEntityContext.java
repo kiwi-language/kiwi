@@ -120,11 +120,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     public void onInstanceInitialized(DurableInstance instance) {
-        Object model = instance.getMappedEntity();
-        if (model != null && model2instance.containsKey(model)) {
-            var mapper = getDefContext().getMapperByEntity(model);
-            initializeModel0(model, instance, mapper);
-        }
+//        Object model = instance.getMappedEntity();
+//        if (model != null && model2instance.containsKey(model)) {
+//            var mapper = getDefContext().getMapperByEntity(model);
+//            initializeModel0(model, instance, mapper);
+//        }
     }
 
     @Override

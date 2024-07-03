@@ -22,6 +22,7 @@ import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 public abstract class TypeFactory {
 
@@ -94,11 +95,16 @@ public abstract class TypeFactory {
             var curStage = klass.setStage(stage);
             if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {
                 if (klass.isEnum()) {
-                    // TODO handle memory leak
                     var enumSuperClass = StdKlass.enum_.get().getParameterized(List.of(klass.getType()));
                     klass.setSuperType(enumSuperClass.getType());
-                } else
-                    klass.setSuperType(NncUtils.get(klassDTO.superType(), t -> (ClassType) TypeParser.parseType(t, batch)));
+                } else {
+                    var superType = NncUtils.get(klassDTO.superType(), t -> (ClassType) TypeParser.parseType(t, batch));
+                    if(!Objects.equals(superType, klass.getSuperType())) {
+                        if (!context.isNewEntity(klass))
+                            batch.addChangingSuperKlass(klass);
+                        klass.setSuperType(superType);
+                    }
+                }
                 klass.setInterfaces(NncUtils.map(klassDTO.interfaces(), t -> (ClassType) TypeParser.parseType(t, batch)));
                 if (!klass.isTemplate())
                     klass.setTypeArguments(NncUtils.map(klassDTO.typeArguments(), t -> TypeParser.parseType(t, batch)));
