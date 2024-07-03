@@ -1,10 +1,8 @@
 package org.metavm.task;
 
-import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.EntityContextFactoryAware;
-import org.metavm.entity.EntityIndexKey;
-import org.metavm.entity.EntityIndexQuery;
+import org.metavm.entity.*;
 import org.metavm.util.NetworkUtils;
+import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -79,13 +77,17 @@ public class Scheduler extends EntityContextFactoryAware {
                 return;
             }
             executors = executors.stream().sorted(Comparator.comparing(ExecutorData::getIp)).toList();
+            logger.info("Scheduling tasks {}", NncUtils.join(tasks, t -> EntityUtils.getRealType(t).getSimpleName()));
+            logger.info("Online executors {}", NncUtils.join(executors, ExecutorData::getIp));
             var i = 0;
             if (nextWorkerIP != null) {
                 while (i < executors.size() && executors.get(i).getIp().compareTo(nextWorkerIP) < 0)
                     i++;
             }
             for (ShadowTask task : tasks) {
-                task.setExecutorIP(executors.get((i++) % executors.size()).getIp());
+                var ip = executors.get((i++) % executors.size()).getIp();
+                task.setExecutorIP(ip);
+                logger.info("Assigning task {} to executor {}", EntityUtils.getRealType(task).getSimpleName(), ip);
             }
             nextWorkerIP = executors.get(i % executors.size()).getIp();
             context.finish();

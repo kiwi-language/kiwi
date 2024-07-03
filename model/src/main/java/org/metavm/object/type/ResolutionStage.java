@@ -23,7 +23,10 @@ public enum ResolutionStage {
     DECLARATION(3) {
         @Override
         TypeDef saveTypeDef(TypeDefDTO typeDefDTO, SaveTypeBatch batch) {
-            return Types.saveTypeDef(typeDefDTO, DECLARATION, batch);
+            var typeDef = Types.saveTypeDef(typeDefDTO, DECLARATION, batch);
+            if(typeDef instanceof Klass klass && klass.isTemplate())
+                klass.updateParameterized();
+            return typeDef;
         }
 
         @Override

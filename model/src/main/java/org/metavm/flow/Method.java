@@ -276,6 +276,10 @@ public class Method extends Flow implements Property, GenericElement {
         declaringType.rebuildMethodTable();
     }
 
+    public String getQualifiedSignature() {
+        return declaringType.getTypeDesc() + "." + getSignatureString();
+    }
+
     @Nullable
     @Override
     public Method getHorizontalTemplate() {

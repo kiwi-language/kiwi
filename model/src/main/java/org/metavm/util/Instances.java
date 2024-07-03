@@ -625,7 +625,9 @@ public class Instances {
 
     private static ClassInstance computeSuper(ClassInstance instance, Klass klass, CallContext callContext) {
         var initializer = Objects.requireNonNull(findSuperInitializer(klass));
-        return (ClassInstance) Flows.invoke(initializer, instance, List.of(), callContext);
+        var s =  (ClassInstance) Objects.requireNonNull(Flows.invoke(initializer, instance, List.of(), callContext));
+        s.setEphemeral();
+        return s;
     }
 
 }

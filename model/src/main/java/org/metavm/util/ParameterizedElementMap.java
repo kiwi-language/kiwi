@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.WeakHashMap;
+import java.util.function.BiConsumer;
 
 public class ParameterizedElementMap<K, V> {
 
@@ -35,6 +36,11 @@ public class ParameterizedElementMap<K, V> {
         var values = new ArrayList<>(sharedMap.values());
         values.addAll(map().values());
         return values;
+    }
+
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        sharedMap.forEach(action);
+        TL.get().forEach(action);
     }
 
     private InternalMap<K, V> map() {
@@ -74,6 +80,14 @@ public class ParameterizedElementMap<K, V> {
 
         void clear() {
             weakMap.clear();
+        }
+
+        void forEach(BiConsumer<? super K, ? super V> acton) {
+            weakMap.forEach((k, ref) -> {
+                var v = ref.get();
+                if(v != null)
+                    acton.accept(k, v);
+            });
         }
 
     }

@@ -95,8 +95,11 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     public void saveIndexEntries(ChangeList<IndexEntryPO> changes) {
-        indexEntryMapper.batchInsert(changes.inserts());
-        indexEntryMapper.batchDelete(changes.deletes());
+        changes.apply(
+                indexEntryMapper::batchInsert,
+                i -> {},
+                indexEntryMapper::batchDelete
+        );
     }
 
     @Override

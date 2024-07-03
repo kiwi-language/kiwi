@@ -55,8 +55,8 @@ public class ClassType extends Type implements ISubstitutor {
     @Override
     public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
         return typeArguments == null ?
-                (klass.getTypeTag() > 0 ?
-                        new TaggedClassTypeKey(getTypeDefId.apply(klass), klass.getTypeTag()):
+                (getTypeTag() > 0 ?
+                        new TaggedClassTypeKey(getTypeDefId.apply(klass), getTypeTag()) :
                         new ClassTypeKey(getTypeDefId.apply(klass))
                 ) :
                 new ParameterizedTypeKey(klass.getId(), NncUtils.map(typeArguments, type -> type.toTypeKey(getTypeDefId)));
@@ -221,20 +221,20 @@ public class ClassType extends Type implements ISubstitutor {
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
         var id = getTypeDefExpr == null ? Constants.ID_PREFIX + serializeContext.getStringId(klass) : getTypeDefExpr.apply(klass);
-        var tag = klass.getTypeTag();
+        var tag = getTypeTag();
         return typeArguments == null ? (tag == 0 ? id : id + ":" + tag)
                 : id + "<" + NncUtils.join(typeArguments, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ">";
     }
 
     @Override
     public int getTypeKeyCode() {
-        return typeArguments == null ? (klass.getTypeTag() == 0 ? TypeKeyCodes.CLASS : TypeKeyCodes.TAGGED_CLASS) : TypeKeyCodes.PARAMETERIZED;
+        return typeArguments == null ? (getTypeTag() == 0 ? TypeKeyCodes.CLASS : TypeKeyCodes.TAGGED_CLASS) : TypeKeyCodes.PARAMETERIZED;
     }
 
     @Override
     public void write(InstanceOutput output) {
         if (typeArguments == null) {
-            var tag = klass.getTypeTag();
+            var tag = getTypeTag();
             if (tag == 0) {
                 output.write(TypeKeyCodes.CLASS);
                 output.writeId(klass.getId());
@@ -306,7 +306,7 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public int getTypeTag() {
-        return klass.getTypeTag();
+        return typeArguments == null && klass.getTag() < 1000000 ? (int) klass.getTag() : 0;
     }
 
     @Override

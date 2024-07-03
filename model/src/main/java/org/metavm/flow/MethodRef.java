@@ -1,7 +1,9 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.PropertyRef;
@@ -49,7 +51,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
         var partialResolved = klass.findMethod(m -> m.getEffectiveVerticalTemplate() == getRawFlow());
         if (partialResolved == null) {
             logger.info("all methods in klass");
-            klass.forEachMethod(m -> logger.info(m.getQualifiedName()));
+            klass.forEachMethod(m -> logger.info(m.getQualifiedSignature()));
             throw new InternalException("fail to resolve methodRef: " + this);
         }
         var r =  partialResolved.getParameterized(getTypeArguments());
@@ -85,6 +87,6 @@ public class MethodRef extends FlowRef implements PropertyRef {
 
     @Override
     protected String toString0() {
-        return "{\"declaringType\": \"" + declaringType + "\", \"rawMethod\": \"" + getRawFlow().getQualifiedName() + "\"}";
+        return "{\"declaringType\": \"" + declaringType + "\", \"rawMethod\": \"" + getRawFlow().getSignatureString() + "\"}";
     }
 }

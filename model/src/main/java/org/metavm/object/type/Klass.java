@@ -102,8 +102,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private final long tag;
 
-    private transient final int typeTag;
-
     @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private boolean templateFlag = false;
 
@@ -174,7 +172,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.source = source;
         this.desc = desc;
         this.tag = tag;
-        this.typeTag = tag < 1000000 ? (int) tag : 0;
         this.numFields = superType != null ? superType.resolve().getNumFields() : 0;
         closure = new Closure(this);
         resetRank();
@@ -269,11 +266,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public long getTag() {
         return tag;
-    }
-
-    @NoProxy
-    public int getTypeTag() {
-        return typeTag;
     }
 
     public void setTitleField(@Nullable Field titleField) {
@@ -1330,6 +1322,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return parameterizedClasses.values();
     }
 
+    public void updateParameterized() {
+        parameterizedClasses.forEach((typeArgs, k) -> {
+            var subst = new SubstitutorV2(
+                    this, typeParameters.toList(), typeArgs, stage);
+            subst.copy(this);
+        });
+    }
+
     public void setTemplate(Object template) {
         NncUtils.requireNull(this.template);
         isParameterized = template != null;
@@ -1722,6 +1722,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void setNativeClass(Class<? extends NativeBase> nativeClass) {
         this.nativeClass = nativeClass;
+    }
+
+    public void clearBuiltinMapping() {
+        mappings.removeIf(ObjectMapping::isBuiltin);
+        if(defaultMapping != null && defaultMapping.isBuiltin())
+            defaultMapping = null;
     }
 
 }

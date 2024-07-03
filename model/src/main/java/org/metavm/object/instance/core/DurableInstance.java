@@ -208,6 +208,20 @@ public abstract class DurableInstance extends Instance {
             setParentInternal(null, null);
     }
 
+    public void setEphemeral() {
+        if (ephemeral)
+            return;
+        if(!_new)
+            throw new IllegalStateException("Can not make a persisted instance ephemeral");
+        accept(new StructuralVisitor() {
+            @Override
+            public Void visitDurableInstance(DurableInstance instance) {
+                instance.ephemeral = true;
+                return super.visitDurableInstance(instance);
+            }
+        });
+    }
+
     @NoProxy
     public void setParentInternal(@Nullable DurableInstance parent, @Nullable Field parentField) {
         if (parent == this.parent && parentField == this.parentField)

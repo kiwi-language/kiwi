@@ -16,6 +16,7 @@ import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionOperations;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -30,24 +31,26 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
 
     private final IInstanceStore instanceStore;
 
+    private final TransactionOperations transactionOperations;
+
     private final List<LogHandler<?>> handlers;
 
     public InstanceLogServiceImpl(
             EntityContextFactory entityContextFactory,
             InstanceSearchService instanceSearchService,
-            IInstanceStore instanceStore, List<LogHandler<?>> handlers) {
+            IInstanceStore instanceStore, TransactionOperations transactionOperations, List<LogHandler<?>> handlers) {
         super(entityContextFactory);
         this.instanceSearchService = instanceSearchService;
         this.instanceStore = instanceStore;
+        this.transactionOperations = transactionOperations;
         this.handlers = handlers;
         WAL.setPostProcessHook(logs -> process(logs, instanceStore, null));
     }
 
     @Override
     public void process(List<InstanceLog> logs, IInstanceStore instanceStore, @Nullable String clientId) {
-        if (NncUtils.isEmpty(logs)) {
+        if (NncUtils.isEmpty(logs))
             return;
-        }
         var appId = logs.get(0).getAppId();
         List<Id> idsToLoad = NncUtils.filterAndMap(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getId);
         var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
@@ -75,14 +78,16 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         try (var context = newContext(appId)) {
             var commit = context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
             if (commit != null) {
-                try (var loadedContext = entityContextFactory.newLoadedContext(appId, commit.getWal())) {
-                    Iterable<ClassInstance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
-                            .filter(i -> i instanceof ClassInstance)
-                            .map(i -> (ClassInstance) i)
-                            .iterator();
-                    Instances.applyDDL(instances, commit, loadedContext);
-                    loadedContext.finish();
-                }
+                transactionOperations.executeWithoutResult(s -> {
+                    try (var loadedContext = entityContextFactory.newLoadedContext(appId, commit.getWal())) {
+                        Iterable<ClassInstance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
+                                .filter(i -> i instanceof ClassInstance)
+                                .map(i -> (ClassInstance) i)
+                                .iterator();
+                        Instances.applyDDL(instances, commit, loadedContext);
+                        loadedContext.finish();
+                    }
+                });
             }
         }
     }

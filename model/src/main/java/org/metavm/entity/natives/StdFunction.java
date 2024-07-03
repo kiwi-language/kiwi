@@ -106,6 +106,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var value = args.get(0);
                 if (type.isInstance(value))
                     return FlowExecResult.of(value);
+                else if(type.isConvertibleFrom(value.getType()))
+                    return FlowExecResult.of(type.convert(value));
                 else
                     throw new BusinessException(ErrorCode.TYPE_CAST_ERROR, value.getType(), type);
             }),

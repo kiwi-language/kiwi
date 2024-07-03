@@ -101,8 +101,23 @@ public class Compiler {
                     psiClasses, TranspileUtils.getElementFactory()::createType
             );
             for (ResolutionStage stage : ResolutionStage.values()) {
-                try(var ignored = profiler.enter("stage: " + stage)) {
+                try (var ignored = profiler.enter("stage: " + stage)) {
                     psiClassTypes.forEach(t -> typeResolver.resolve(t, stage));
+                    if (stage == ResolutionStage.INIT) {
+                        psiClassTypes.forEach(t -> {
+                            var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS));
+                            // The builtin mapping will be regenerated on the server side based on the new metadata.
+                            // It must be cleared here because it may contain references to obsolete elements.
+                            klass.clearBuiltinMapping();
+                        });
+                    }
+                    if (stage == ResolutionStage.DECLARATION) {
+                        psiClassTypes.forEach(t -> {
+                            var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS));
+                            if (klass.isTemplate())
+                                klass.updateParameterized();
+                        });
+                    }
                 }
             }
             var generatedTypes = typeResolver.getGeneratedTypeDefs();
@@ -111,12 +126,11 @@ public class Compiler {
             deploy(generatedTypes, typeResolver);
             logger.info("Deploy done");
             return true;
-        }
-        catch (CompilerException e) {
+        } catch (
+                CompilerException e) {
             logger.error("Compilation failed: {}", e.getMessage());
             return false;
-        }
-        finally {
+        } finally {
             logger.info(profiler.finish(false, true).output());
         }
 
@@ -129,7 +143,7 @@ public class Compiler {
                     .includeNodeOutputType(false)
                     .includingValueType(false);
             for (var typeDef : generatedTypeDefs) {
-                if(typeDef instanceof Klass klass) {
+                if (typeDef instanceof Klass klass) {
                     typeResolver.ensureCodeGenerated(klass);
                     serContext.addWritingCodeType(klass);
                 }
@@ -143,7 +157,7 @@ public class Compiler {
             serContext.forEachType(
                     (t -> (t.isIdNull() || !RegionConstants.isSystemId(t.getId().getTreeId()))),
                     t -> {
-                        if(t instanceof Klass k && k.isParameterized())
+                        if (t instanceof Klass k && k.isParameterized())
                             return;
                         typeDefDTOs.add(t.toDTO(serContext));
                     }
@@ -151,7 +165,7 @@ public class Compiler {
 //            var pFlowDTOs = NncUtils.map(generatedPFlows, f -> f.toPFlowDTO(serContext));
             logger.info("Compile successful");
             var request = new BatchSaveRequest(typeDefDTOs, List.of(), true);
-            if(DebugEnv.saveCompileResult)
+            if (DebugEnv.saveCompileResult)
                 saveRequest(request);
             typeClient.batchSave(request);
         }

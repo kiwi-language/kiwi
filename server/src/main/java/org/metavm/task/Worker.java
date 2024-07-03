@@ -2,10 +2,13 @@ package org.metavm.task;
 
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
+import org.metavm.entity.EntityUtils;
 import org.metavm.entity.IEntityContext;
 import org.metavm.util.InternalException;
 import org.metavm.util.NetworkUtils;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionOperations;
@@ -18,6 +21,8 @@ import java.util.function.Predicate;
 
 @Component
 public class Worker extends EntityContextFactoryAware {
+
+    public static final Logger logger = LoggerFactory.getLogger(Worker.class);
 
     private final TransactionOperations transactionOperations;
     private final TaskRunner taskRunner;
@@ -83,6 +88,7 @@ public class Worker extends EntityContextFactoryAware {
         return transactionOperations.execute(s -> {
             try (var appContext = newContext(shadowTask.getAppId())) {
                 var appTask = appContext.getEntity(Task.class, shadowTask.getAppTaskId());
+                logger.info("Running task {}", EntityUtils.getRealType(appTask).getSimpleName());
                 boolean done;
                 if (appTask instanceof WalTask walTask) {
                     try (var walContext = entityContextFactory.newLoadedContext(shadowTask.getAppId(), walTask.getWAL())) {

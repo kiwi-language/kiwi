@@ -29,7 +29,7 @@ public class BootstrapUtils {
                 TestUtils.getInstanceContextFactory(idProvider, instanceStore);
         var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
         entityContextFactory.setInstanceLogService(
-                new InstanceLogServiceImpl(entityContextFactory, instanceSearchService, instanceStore, List.of(
+                new InstanceLogServiceImpl(entityContextFactory, instanceSearchService, instanceStore, new MockTransactionOperations(), List.of(
                         new TaskHandler(entityContextFactory, new MockTransactionOperations()),
                         new VersionHandler(new MockEventQueue())
                 ))

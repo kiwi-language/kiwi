@@ -130,6 +130,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
         try(var context = newPlatformContext()) {
             SchedulerRegistry.initialize(context);
             GlobalKlassTagAssigner.initialize(context);
+            context.finish();
         }
     }
 
