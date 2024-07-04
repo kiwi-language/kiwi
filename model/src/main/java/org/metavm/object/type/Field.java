@@ -29,7 +29,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private Instance defaultValue;
     private boolean lazy;
     private final Column column;
-    private final boolean isChild;
+    private boolean isChild;
     @EntityField(code = "static")
     private Instance staticValue;
     @Nullable
@@ -94,6 +94,10 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public boolean isChild() {
         return isChild;
+    }
+
+    public void setChild(boolean child) {
+        isChild = child;
     }
 
     public boolean isTitle() {

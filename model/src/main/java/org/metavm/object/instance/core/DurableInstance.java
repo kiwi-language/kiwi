@@ -37,10 +37,8 @@ public abstract class DurableInstance extends Instance {
 
     transient IInstanceContext context;
     private transient boolean afterContextInitIdsNotified;
-    @Nullable
-    private transient DurableInstance prev;
-    @Nullable
-    private transient DurableInstance next;
+    private @Nullable transient DurableInstance prev;
+    private @Nullable transient DurableInstance next;
     private transient Object mappedEntity;
 
     private Id id;
@@ -48,10 +46,8 @@ public abstract class DurableInstance extends Instance {
     private long version;
     private long syncVersion;
 
-    @Nullable
-    private DurableInstance parent;
-    @Nullable
-    private Field parentField;
+    private @Nullable DurableInstance parent;
+    private @Nullable Field parentField;
     private @NotNull DurableInstance root = this;
 
     private transient Long tmpId;
@@ -197,15 +193,15 @@ public abstract class DurableInstance extends Instance {
                     + ", new parentField: " + parentField
             );
         }
-        setParentInternal(parent, parentField);
+        setParentInternal(parent, parentField, true);
     }
 
     @NoProxy
     public void setParentInternal(@Nullable InstanceParentRef parentRef) {
         if (parentRef != null)
-            setParentInternal(parentRef.parent(), parentRef.field());
+            setParentInternal(parentRef.parent(), parentRef.field(), true);
         else
-            setParentInternal(null, null);
+            setParentInternal(null, null, true);
     }
 
     public void setEphemeral() {
@@ -223,12 +219,12 @@ public abstract class DurableInstance extends Instance {
     }
 
     @NoProxy
-    public void setParentInternal(@Nullable DurableInstance parent, @Nullable Field parentField) {
+    public void setParentInternal(@Nullable DurableInstance parent, @Nullable Field parentField, boolean setRoot) {
         if (parent == this.parent && parentField == this.parentField)
             return;
         if (parent != null) {
             this.parent = parent;
-            if (parent instanceof ClassInstance parentClassInst) {
+            if (parent instanceof ClassInstance) {
                 this.parentField = requireNonNull(parentField);
                 assert parentField.isChild() : "Invalid parent field: " + parentField;
 //                parentClassInst.setOrInitField(parentField, this);
@@ -239,7 +235,8 @@ public abstract class DurableInstance extends Instance {
 //                parentArray.addElement(this);
             } else
                 throw new InternalException("Invalid parent: " + parent);
-            root = parent.root;
+            if(setRoot)
+                root = parent.root;
             if (parent.isEphemeral() && !ephemeral) {
                 accept(new StructuralVisitor() {
                     @Override
@@ -252,7 +249,8 @@ public abstract class DurableInstance extends Instance {
         } else {
             this.parent = null;
             this.parentField = null;
-            root = this;
+            if(setRoot)
+                root = this;
         }
     }
 

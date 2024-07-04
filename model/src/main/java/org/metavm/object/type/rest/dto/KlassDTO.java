@@ -6,6 +6,7 @@ import org.metavm.flow.rest.FlowDTO;
 import org.metavm.flow.rest.GenericDeclarationDTO;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
+import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -52,6 +53,11 @@ public record KlassDTO(
     @Override
     public int getDefKind() {
         return 1;
+    }
+
+    @JsonIgnore
+    public FieldDTO getFieldByName(String name) {
+        return NncUtils.findRequired(fields, f -> f.name().equals(name));
     }
 
 }

@@ -507,6 +507,7 @@ public class Assembler {
                         .build();
             } else {
                 field.setType(type);
+                field.setChild(mods.contains(Modifiers.CHILD));
             }
             field.setAccess(getAccess(mods));
             field.setReadonly(mods.contains(Modifiers.READONLY));

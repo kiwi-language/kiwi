@@ -11,15 +11,15 @@ class Product extends Versioned {
 
     private string name;
     private double price;
-    private int quantity;
+    private child Inventory inventory;
     private boolean available;
     private string|null description;
 
-    public Product(string name, double price, int quantity, string|null description) {
+    public Product(string name, double price, Inventory inventory, string|null description) {
         super();
         this.name = name;
         this.price = price;
-        this.quantity = quantity;
+        this.inventory = inventory;
         this.description = description;
     }
 
@@ -39,12 +39,12 @@ class Product extends Versioned {
         this.price = price;
     }
 
-    public int getQuantity() {
-        return this.quantity;
+    public Inventory getInventory() {
+        return this.inventory;
     }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
+    public void setInventory(Inventory inventory) {
+        this.inventory = inventory;
     }
 
     public boolean isAvailable() {
@@ -75,6 +75,23 @@ class Product extends Versioned {
     private Versioned __Versioned__() {
         v: new Versioned();
         return v;
+    }
+
+}
+
+class Inventory {
+    private int quantity;
+
+    public Inventory(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public int getQuantity() {
+        return this.quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 
 }

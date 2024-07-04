@@ -45,18 +45,25 @@ public class DDLTest extends TestCase {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
         var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
                 "name", "Shoes",
-                "quantity", 100,
+                "inventory", Map.of(
+                        "quantity", 100
+                ),
                 "price", 100
         )));
         var boxId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Box<Product>", Map.of(
                 "item", shoesId
         )));
-        var shoes = apiClient.getInstance(shoesId);
+        var shoes = apiClient.getObject(shoesId);
         Assert.assertEquals(100L, shoes.get("price"));
+        var inventory = apiClient.getObject(shoes.getString("inventory"));
+        Assert.assertEquals(100L, inventory.get("quantity"));
+        DebugEnv.flag = true;
         var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
         var hatId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
                 "name", "Hat",
-                "quantity", 100,
+                "inventory", Map.of(
+                        "quantity", 100
+                ),
                 "price", 20
         )));
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
@@ -70,34 +77,37 @@ public class DDLTest extends TestCase {
             }
         }
         TestUtils.waitForDDLDone(entityContextFactory);
-        var shoes1 = apiClient.getInstance(shoesId);
-        var hat = apiClient.getInstance(hatId);
+        var productType = typeManager.getTypeByCode("Product").type();
+        Assert.assertEquals(true, productType.getFieldByName("inventory").isChild());
+        var shoes1 = apiClient.getObject(shoesId);
+        var hat = apiClient.getObject(hatId);
         Assert.assertEquals(true, shoes1.get("available"));
         Assert.assertNull(shoes1.get("description"));
         Assert.assertEquals(100.0, shoes1.get("price"));
-        //noinspection unchecked
-        Assert.assertEquals(0L, ((Map<String, Object>) shoes1.get("version")).get("majorVersion"));
-        //noinspection unchecked
-        Assert.assertEquals(0L, ((Map<String, Object>) hat.get("version")).get("majorVersion"));
+        Assert.assertEquals(100L, shoes1.getObject("inventory").get("quantity"));
+        Assert.assertEquals(0L, shoes1.getObject("version").get("majorVersion"));
+        Assert.assertEquals(0L, hat.getObject("version").get("majorVersion"));
         // check that index entries have been generated
         var foundId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Shoes")));
         Assert.assertEquals(shoesId, foundId);
         var foundId2 = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Hat")));
         Assert.assertEquals(hatId, foundId2);
-        var box = apiClient.getInstance(boxId);
+        var box = apiClient.getObject(boxId);
         Assert.assertEquals(1L, box.get("count"));
-        var commitState = apiClient.getInstance((String) apiClient.getInstance(commitId).get("state"));
+        var commitState = apiClient.getObject(apiClient.getObject(commitId).getString("state"));
         Assert.assertEquals("FINISHED", commitState.get("name"));
     }
 
-    public void testDDLRollback() {
+    public void testCheck() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
         var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
                 "name", "Shoes",
-                "quantity", 100,
+                "inventory", Map.of(
+                        "quantity", 100
+                ),
                 "price", 100
         )));
-        var shoes = apiClient.getInstance(shoesId);
+        var shoes = apiClient.getObject(shoesId);
         Assert.assertEquals(100L, shoes.get("price"));
         try {
             MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after_failed.masm", typeManager, false, entityContextFactory);

@@ -129,14 +129,16 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         var parentField = getParentField();
         var elements = this.elements;
         int len = input.readInt();
-        input.setParent(this, null);
+        input.setParent(this);
+        input.setParentField(null);
         for (int i = 0; i < len; i++) {
             var element = input.readInstance();
             elements.add(element);
             if (element instanceof DurableInstance d)
                 new ReferenceRT(this, d, null);
         }
-        input.setParent(parent, parentField);
+        input.setParent(parent);
+        input.setParentField(parentField);
     }
 
     public Instance get(int index) {

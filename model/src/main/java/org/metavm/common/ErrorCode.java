@@ -43,7 +43,7 @@ public enum ErrorCode {
     INVALID_TYPE_VALUE(304, "Invalid data format for type: {}, value: {}"),
     FIELD_VALUE_REQUIRED(305, "Field '{}' is required"),
     STRONG_REFS_PREVENT_REMOVAL(306, "Object is referenced by others and cannot be deleted: {}"),
-    STRONG_REFS_PREVENT_REMOVAL2(308, "'{}' is associated with '{}', cannot be deleted"),
+    STRONG_REFS_PREVENT_REMOVAL2(308, "'{}' is referenced by '{}', cannot be deleted"),
     INVALID_INSTANCE_PATH(307, "Invalid object path: {}"),
     INCORRECT_PARENT_REF(308, "Invalid parent object reference, child: {}, parent: {}, reference: {}"),
     MULTI_PARENT(309, "Child object belongs to multiple parents: {}"),

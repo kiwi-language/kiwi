@@ -174,6 +174,13 @@ public abstract class TypeFactory {
             field.setName(fieldDTO.name());
             field.setCode(fieldDTO.code());
             field.setUnique(fieldDTO.unique());
+            if(fieldDTO.isChild() != field.isChild()) {
+                field.setChild(fieldDTO.isChild());
+                if(field.isChild())
+                    batch.addToChildField(field);
+                else
+                    batch.addToNonChildField(field);
+            }
             if(!fieldType.equals(field.getType())) {
                 field.setType(fieldType);
                 field.setTag(declaringType.nextFieldTag());

@@ -239,7 +239,7 @@ public class ClassInstance extends DurableInstance {
             while (j < sortedKlasses.size() && (cmp = Long.compare((sk = sortedKlasses.get(j)).getTag(), groupTag)) < 0) {
                 var subTable = fieldTable.addSubTable(sk.getTag());
                 for (var field : sk.getSortedFields()) {
-                    subTable.add(new InstanceField(this, field, Instances.nullInstance(), false));
+                    subTable.add(new InstanceField(this, field, Instances.nullInstance()));
                 }
                 j++;
             }
@@ -253,21 +253,23 @@ public class ClassInstance extends DurableInstance {
                     var fieldTag = input.readInt();
                     Field field;
                     while (m < fields.size() && (field = fields.get(m)).getTag() < fieldTag) {
-                        subTable.add(new InstanceField(this, field, Instances.nullInstance(), false));
+                        subTable.add(new InstanceField(this, field, Instances.nullInstance()));
                         m++;
                     }
+                    input.setParent(this);
                     if (m < fields.size() && (field = fields.get(m)).getTag() == fieldTag) {
-                        input.setParent(this, field);
+                        input.setParentField(field);
                         var value = input.readInstance();
-                        subTable.add(new InstanceField(this, field, value, false));
+                        subTable.add(new InstanceField(this, field, value));
                         m++;
                     } else
                         subTable.add(new UnknownField(this, groupTag, fieldTag, input.readInstanceBytes()));
                 }
-                input.setParent(getParent(), getParentField());
+                input.setParent(getParent());
+                input.setParentField(getParentField());
                 for (; m < fields.size(); m++) {
                     var field = fields.get(m);
-                    subTable.add(new InstanceField(this, field, Instances.nullInstance(), false));
+                    subTable.add(new InstanceField(this, field, Instances.nullInstance()));
                 }
             } else {
                 var subTable = fieldTable.addSubTable(groupTag);
@@ -281,7 +283,7 @@ public class ClassInstance extends DurableInstance {
             var klass = sortedKlasses.get(j);
             var subTale = fieldTable.addSubTable(klass.getTag());
             for (Field field : klass.getSortedFields()) {
-                subTale.add(new InstanceField(this, field, Instances.nullInstance(), false));
+                subTale.add(new InstanceField(this, field, Instances.nullInstance()));
             }
         }
     }
@@ -662,7 +664,7 @@ public class ClassInstance extends DurableInstance {
 
         void initialize(ClassInstance owner, Klass klass) {
             for (Field field : klass.getSortedFields()) {
-                add(new InstanceField(owner, field, null, false));
+                add(new InstanceField(owner, field));
             }
         }
 

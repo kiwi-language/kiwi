@@ -6,6 +6,8 @@ import org.metavm.api.entity.HttpResponse;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.core.InstanceWrap;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -23,8 +25,12 @@ public class ApiClient {
         this.apiService = apiService;
     }
 
-    public Map<String, Object> getInstance(String id) {
-        return apiService.getInstance(id);
+    public InstanceWrap getInstance(String id) {
+        return InstanceWrap.from(apiService.getInstance(id));
+    }
+
+    public ClassInstanceWrap getObject(String id) {
+        return (ClassInstanceWrap) getInstance(id);
     }
 
     public String saveInstance(String className, Map<String, Object> map) {

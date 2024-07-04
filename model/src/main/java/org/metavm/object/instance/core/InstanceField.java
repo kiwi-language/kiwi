@@ -17,20 +17,16 @@ public class InstanceField implements IInstanceField {
     private final Field field;
     private @Nullable Instance value;
 
-    InstanceField(ClassInstance owner, Field field, Instance value) {
-        this(owner, field, value, true);
+    InstanceField(ClassInstance owner, Field field) {
+        this.owner = owner;
+        this.field = field;
     }
 
-    InstanceField(ClassInstance owner, Field field, @Nullable Instance value, boolean check) {
-        this.field = field;
-        this.owner = owner;
-        if(value != null) {
-            if (field.isChild() && value.isNotNull())
-                ((DurableInstance) value).setParent(this.owner, this.field);
-            if (value instanceof DurableInstance d)
-                new ReferenceRT(owner, d, field);
-            this.value = check ? checkValue(value) : value;
-        }
+    InstanceField(ClassInstance owner, Field field, @NotNull Instance value) {
+        this(owner, field);
+        if (value instanceof DurableInstance d)
+            new ReferenceRT(owner, d, field);
+        this.value = value;
     }
 
     public Field getField() {
@@ -53,7 +49,7 @@ public class InstanceField implements IInstanceField {
     @Override
     public void writeValue(InstanceOutput output) {
         Objects.requireNonNull(value, () -> "Field " + field.getQualifiedName() + " is not initialized");
-        if (value.isValue() || value instanceof DurableInstance d && d.isInitialized() && d.getParent() == owner)
+        if (value.isValue() || field.isChild() && value instanceof DurableInstance d && !d.isRoot())
             output.writeRecord(value);
         else
             output.writeInstance(value);

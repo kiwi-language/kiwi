@@ -150,10 +150,9 @@ public class ApiService extends EntityContextFactoryAware {
         return klass;
     }
 
-    public Map<String, Object> getInstance(String id) {
+    public Object getInstance(String id) {
         try (var context = newContext()) {
-            //noinspection unchecked
-            return (Map<String, Object>) formatInstance(context.getInstanceContext().get(Id.parse(id)), true);
+            return formatInstance(context.getInstanceContext().get(Id.parse(id)), true);
         }
     }
 

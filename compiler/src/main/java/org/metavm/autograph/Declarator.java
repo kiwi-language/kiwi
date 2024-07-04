@@ -266,6 +266,7 @@ public class Declarator extends CodeGenVisitor {
             field.setType(type);
             field.setAccess(getAccess(psiField));
             field.setUnique(TranspileUtils.isUnique(psiField));
+            field.setChild(TranspileUtils.isChild(psiField));
         }
         visitedFields.add(field);
         if (TranspileUtils.isTitleField(psiField))

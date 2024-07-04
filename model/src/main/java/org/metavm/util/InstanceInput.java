@@ -85,11 +85,18 @@ public class InstanceInput implements Closeable {
             case WireTypes.BOOLEAN -> new BooleanInstance(readBoolean(), Types.getBooleanType());
             case WireTypes.TIME -> new TimeInstance(readLong(), Types.getTimeType());
             case WireTypes.PASSWORD -> new PasswordInstance(readString(), Types.getPasswordType());
-            case WireTypes.REFERENCE -> resolveInstance(readId());
+            case WireTypes.REFERENCE -> readReference();
             case WireTypes.RECORD -> readRecord();
             case WireTypes.VALUE -> readValue();
             default -> throw new IllegalStateException("Invalid wire type: " + wireType);
         };
+    }
+
+    private DurableInstance readReference() {
+        var inst = resolveInstance(readId());
+        if(parentField != null && parentField.isChild())
+            inst.setParentInternal(parent, parentField, false);
+        return inst;
     }
 
     private DurableInstance resolveInstance(Id id) {
@@ -107,7 +114,7 @@ public class InstanceInput implements Closeable {
             skipper.visitRecordBody(nodeId, type);
         else {
             instance.setType(type);
-            instance.setParentInternal(parent, parentField);
+            instance.setParentInternal(parent, parentField, true);
             instance.readFrom(this);
         }
         return instance;
@@ -188,8 +195,11 @@ public class InstanceInput implements Closeable {
         }
     }
 
-    public void setParent(@Nullable DurableInstance parent, @Nullable Field parentField) {
+    public void setParent(@Nullable DurableInstance parent) {
         this.parent = parent;
+    }
+
+    public void setParentField(@Nullable Field parentField) {
         this.parentField = parentField;
     }
 

@@ -506,9 +506,9 @@ public class Instances {
             Field parentField = null;
             if (entity.getParentEntityField() != null)
                 parentField = defContext.getField(entity.getParentEntityField());
-            instance.setParentInternal(parent, parentField);
+            instance.setParentInternal(parent, parentField, true);
         } else {
-            instance.setParentInternal(null, null);
+            instance.setParentInternal(null, null, true);
         }
 //        }
     }

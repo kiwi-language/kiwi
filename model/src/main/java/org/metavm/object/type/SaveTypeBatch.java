@@ -40,6 +40,8 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     private final Map<String, FlowDTO> flowMap = new HashMap<>();
     private final Set<Field> newFields = new HashSet<>();
     private final Set<Field> typeChangedFields = new HashSet<>();
+    private final Set<Field> toChildFields = new HashSet<>();
+    private final Set<Field> toNonChildFields = new HashSet<>();
     private final Set<Klass> changingSuperKlasses = new HashSet<>();
 
     private SaveTypeBatch(IEntityContext context, List<? extends TypeDefDTO> typeDefDTOs, List<FlowDTO> functions) {
@@ -63,6 +65,14 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public void addTypeChangedField(Field field) {
         typeChangedFields.add(field);
+    }
+
+    public void addToChildField(Field field) {
+        toChildFields.add(field);
+    }
+
+    public void addToNonChildField(Field field) {
+        toNonChildFields.add(field);
     }
 
     public void addChangingSuperKlass(Klass klass) {
@@ -267,15 +277,15 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     private void checkForDDL() {
         for (Field field : newFields) {
-            if(Instances.findFieldInitializer(field) == null && Instances.getDefaultValue(field) == null)
+            if (Instances.findFieldInitializer(field) == null && Instances.getDefaultValue(field) == null)
                 throw new BusinessException(ErrorCode.MISSING_FIELD_INITIALIZER, field.getQualifiedName());
         }
         for (Field field : typeChangedFields) {
-            if(Instances.findTypeConverter(field) == null)
+            if (Instances.findTypeConverter(field) == null)
                 throw new BusinessException(ErrorCode.MISSING_TYPE_CONVERTER, field.getQualifiedName());
         }
         for (var klass : changingSuperKlasses) {
-            if(Instances.findSuperInitializer(klass) == null)
+            if (Instances.findSuperInitializer(klass) == null)
                 throw new BusinessException(ErrorCode.MISSING_SUPER_INITIALIZER, klass.getCode());
         }
     }

@@ -67,7 +67,6 @@ public class AssemblerTest extends TestCase {
         try(var context = bootResult.entityContextFactory().newContext(TestConstants.APP_ID)) {
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             var request = assemble(List.of(source), assembler);
-//        DebugEnv.DEBUG_ON = true;
             ContextUtil.setAppId(TestConstants.APP_ID);
             TestUtils.doInTransaction(() -> typeManager.batchSave(request));
             TestUtils.waitForDDLDone(bootResult.entityContextFactory());

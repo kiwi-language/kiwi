@@ -456,7 +456,6 @@ public class InstanceManagerTest extends TestCase {
         var mappingId = new DirectMappingKey(Id.parse(TestUtils.getDefaultMapping(parentType).id()));
         var viewId = new DefaultViewId(false, mappingId, Id.parse(parent.id()));
 //        var parentMapping = instanceManager.get(viewId.toString(), 2);
-//        DebugEnv.DEBUG_ON = true;
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(viewId.toString()));
     }
 

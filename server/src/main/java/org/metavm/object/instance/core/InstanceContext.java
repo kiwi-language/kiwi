@@ -183,7 +183,10 @@ public class InstanceContext extends BufferingInstanceContext {
                 }
             };
             clearMarks();
-            forEachInitializedRoot(i -> i.accept(checker));
+            forEachInitializedRoot(i -> {
+                if(i.getParent() == null)
+                    i.accept(checker);
+            });
         }
     }
 
