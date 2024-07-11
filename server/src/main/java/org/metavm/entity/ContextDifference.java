@@ -94,6 +94,7 @@ public class ContextDifference {
         var input = new InstanceInput(bin);
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
+        output.write(TreeTags.DEFAULT);
         output.writeLong(input.readLong() + 1);
         var newHeadBytes = bout.toByteArray();
         var oldHeadLen = calcHeadLength(tree);
@@ -109,6 +110,7 @@ public class ContextDifference {
         var input = new InstanceInput(bin);
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
+        output.write(TreeTags.DEFAULT);
         output.writeLong(input.readLong());
         return bout.toByteArray().length;
     }

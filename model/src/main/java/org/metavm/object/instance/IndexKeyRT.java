@@ -3,10 +3,10 @@ package org.metavm.object.instance;
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.persistence.IndexKeyPO;
-import org.metavm.object.type.KlassBuilder;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.IndexField;
 import org.metavm.object.type.Klass;
+import org.metavm.object.type.KlassBuilder;
 import org.metavm.util.BytesUtils;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -19,14 +19,18 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
 
     private static final Klass DUMMY_TYPE = KlassBuilder.newBuilder("Dummy", "Dummy").build();
 
-    public  static final ClassInstance MIN_INSTANCE = ClassInstance.allocate(DUMMY_TYPE.getType());
+    public  static final InstanceReference MIN_INSTANCE;
 
-    public static final ClassInstance MAX_INSTANCE = ClassInstance.allocate(DUMMY_TYPE.getType());
+    public static final InstanceReference MAX_INSTANCE;
 
     static {
-        MIN_INSTANCE.initId(new NullId());
-        MAX_INSTANCE.initId(new MockId(Long.MAX_VALUE));
-        MAX_INSTANCE.setSeq(Integer.MAX_VALUE);
+        var i1 = ClassInstance.allocate(DUMMY_TYPE.getType());
+        i1.initId(new NullId());
+        MIN_INSTANCE = new InstanceReference(i1);
+        var i2 = ClassInstance.allocate(DUMMY_TYPE.getType());
+        i2.initId(new MockId(Long.MAX_VALUE));
+        i2.setSeq(Integer.MAX_VALUE);
+        MAX_INSTANCE = new InstanceReference(i2);
     }
 
     private final Index index;
@@ -126,8 +130,8 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
             return -1;
         if(second instanceof NullInstance)
             return 1;
-        if(first instanceof DurableInstance d1 && !d1.isView()
-                && second instanceof DurableInstance d2 && !d2.isView()) {
+        if(first instanceof InstanceReference d1 && !d1.isView()
+                && second instanceof InstanceReference d2 && !d2.isView()) {
             if(d1.isNew() && d2.isNew())
                 return Integer.compare(d1.getSeq(), d2.getSeq());
             if(d1.isNew())
@@ -139,4 +143,11 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
         throw new InternalException("Can not compare instances");
     }
 
+    @Override
+    public String toString() {
+        var sb = new StringBuilder("{index: ").append(index.getName()).append(", fields: {");
+        sb.append(NncUtils.join(fields.entrySet(), e -> e.getKey().getName() + ": " + e.getValue()));
+        sb.append("}}");
+        return sb.toString();
+    }
 }

@@ -19,7 +19,7 @@ public class InstanceDTOBuilderTest extends TestCase {
 
     public void test() {
         var foo = MockUtils.createFoo(MockUtils.createFooTypes(true), true);
-        InstanceDTO instanceDTO = InstanceDTOBuilder.buildDTO(foo, 2);
+        InstanceDTO instanceDTO = InstanceDTOBuilder.buildDTO(foo.getReference(), 2);
         TestUtils.logJSON(logger, instanceDTO);
     }
 }

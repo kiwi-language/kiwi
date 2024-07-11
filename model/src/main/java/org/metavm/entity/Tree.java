@@ -12,6 +12,10 @@ public record Tree(long id, long version, long nextNodeId, byte[] data) implemen
         return new Tree(treeDTO.id(), treeDTO.version(), treeDTO.nextNodeId(), treeDTO.bytes());
     }
 
+    public boolean migrated() {
+        return data[0] == TreeTags.MIGRATED;
+    }
+
     public InputStream openInput() {
         return new ByteArrayInputStream(data);
     }

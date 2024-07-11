@@ -13,8 +13,9 @@ import org.metavm.expression.Var;
 import org.metavm.flow.Error;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.view.MappingSaver;
@@ -156,7 +157,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             boolean isAbstract,
             boolean isTemplate,
             List<TypeVariable> typeParameters,
-            List<Type> typeArguments,
+            List<? extends Type> typeArguments,
             long tag) {
         this.name = name;
         this.code = code;
@@ -618,17 +619,21 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     @Override
-    public void onLoad() {
+    public void onLoadPrepare() {
         parameterizedClasses = new ParameterizedElementMap<>();
+        extensions = new ArrayList<>();
+        implementations = new ArrayList<>();
+    }
+
+    @Override
+    public void onLoad() {
         stage = ResolutionStage.INIT;
         sortedFields = new ArrayList<>();
         resetSortedFields();
         sortedKlasses = new ArrayList<>();
         resetSortedClasses();
-        extensions = new ArrayList<>();
         if (superType != null)
             superType.resolve().addExtension(this);
-        implementations = new ArrayList<>();
         interfaces.forEach(it -> it.resolve().addImplementation(this));
         resetSelfFieldOffset();
         closure = new Closure(this);
@@ -1018,6 +1023,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void addParameterized(Klass parameterized) {
         NncUtils.requireTrue(parameterized.getTemplate() == this);
+        var existing = parameterizedClasses.get(parameterized.typeArguments.secretlyGetTable());
+        if(existing != null)
+            throw new IllegalStateException("Parameterized klass " + parameterized.getTypeDesc() + " already exists. "
+                    + "existing: " + System.identityHashCode(existing) + ", new: "+ System.identityHashCode(parameterized)
+            );
         NncUtils.requireNull(parameterizedClasses.put(parameterized.typeArguments.secretlyGetTable(), parameterized),
                 () -> "Parameterized klass " + parameterized.getTypeDesc() + " already exists");
     }
@@ -1039,15 +1049,32 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             else
                 throw new InternalException(this + " is not a template class");
         }
+//        typeArguments.forEach(Type::getTypeDesc);
         var pClass = getExistingParameterized(typeArguments);
         if (pClass == this)
             return this;
-        if (pClass != null && pClass.getStage().isAfterOrAt(stage))
+        if(pClass == null)
+            addParameterized(createParameterized(typeArguments));
+        else if (pClass.getStage().isAfterOrAt(stage))
             return pClass;
         var subst = new SubstitutorV2(
                 this, typeParameters.toList(), typeArguments, stage);
         pClass = (Klass) subst.copy(this);
         return pClass;
+    }
+
+    private Klass createParameterized(List<? extends Type> typeArguments) {
+        var copy = KlassBuilder.newBuilder(name, null)
+                .kind(getKind())
+                .typeArguments(typeArguments)
+                .anonymous(true)
+                .ephemeral(isEphemeral())
+                .template(this)
+//                .tmpId(getCopyTmpId(template))
+                .tag(getTag())
+                .build();
+        copy.setStrictEphemeral(true);
+        return copy;
     }
 
     @Nullable
@@ -1117,7 +1144,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.get(defaultMapping, serializeContext::getStringId),
                 desc,
                 getExtra(),
-                isEnum() ? NncUtils.map(getEnumConstants(), Instance::toDTO) : List.of(),
+                isEnum() ? NncUtils.map(getEnumConstants(), DurableInstance::toDTO) : List.of(),
                 isAbstract,
                 isTemplate(),
                 NncUtils.map(typeParameters, serializeContext::getStringId),
@@ -1177,7 +1204,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return NncUtils.filterAndMap(
                 staticFields,
                 this::isEnumConstantField,
-                f -> (ClassInstance) f.getStaticValue()
+                f -> f.getStaticValue().resolveObject()
         );
     }
 
@@ -1186,7 +1213,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             throw new InternalException("type " + this + " is not a enum type");
         for (Field field : staticFields) {
             if (isEnumConstantField(field) && Objects.equals(field.getStaticValue().tryGetId(), id))
-                return createEnumConstant((ClassInstance) field.getStaticValue());
+                return createEnumConstant(field.getStaticValue().resolveObject());
         }
         throw new InternalException("Can not find enum constant with id " + id);
     }
@@ -1198,7 +1225,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     boolean isEnumConstantField(Field field) {
         // TODO be more precise
         return isEnum() && field.isStatic() && isType(field.getType())
-                && field.getStaticValue() instanceof ClassInstance;
+                && field.getStaticValue() instanceof InstanceReference r && r.resolve() instanceof ClassInstance;
     }
 
     public boolean isType(Type type) {

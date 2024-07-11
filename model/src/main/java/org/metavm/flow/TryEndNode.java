@@ -4,7 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.ChildArray;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.NodeDTO;
@@ -104,7 +107,7 @@ public class TryEndNode extends ChildTypeNode {
         Instance exception;
         NodeRT raiseNode;
         if (exceptionInfo != null) {
-            exception = exceptionInfo.exception();
+            exception = exceptionInfo.exception().getReference();
             raiseNode = exceptionInfo.raiseNode();
         } else {
             exception = Instances.nullInstance();
@@ -115,7 +118,7 @@ public class TryEndNode extends ChildTypeNode {
                 f -> f.getValue(raiseNode).evaluate(frame)
         ));
         fieldValues.put(exceptionField, exception);
-        return next(ClassInstance.create(fieldValues, getType()));
+        return next(ClassInstance.create(fieldValues, getType()).getReference());
     }
 
     @Override

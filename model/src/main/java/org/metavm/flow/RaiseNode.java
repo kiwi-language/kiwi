@@ -91,7 +91,7 @@ public class RaiseNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         if (exception != null) {
-            return NodeExecResult.exception((ClassInstance) this.exception.evaluate(frame));
+            return NodeExecResult.exception(this.exception.evaluate(frame).resolveObject());
         } else {
             NncUtils.requireNonNull(message);
             var exceptionInst = ClassInstance.allocate(StdKlass.exception.get().getType());

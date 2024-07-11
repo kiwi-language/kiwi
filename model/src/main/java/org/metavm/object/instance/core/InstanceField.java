@@ -8,10 +8,14 @@ import org.metavm.object.type.Field;
 import org.metavm.util.BusinessException;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.InternalException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
 public class InstanceField implements IInstanceField {
+
+    private static final Logger logger = LoggerFactory.getLogger(InstanceField.class);
 
     private final ClassInstance owner;
     private final Field field;
@@ -24,8 +28,6 @@ public class InstanceField implements IInstanceField {
 
     InstanceField(ClassInstance owner, Field field, @NotNull Instance value) {
         this(owner, field);
-        if (value instanceof DurableInstance d)
-            new ReferenceRT(owner, d, field);
         this.value = value;
     }
 
@@ -49,7 +51,7 @@ public class InstanceField implements IInstanceField {
     @Override
     public void writeValue(InstanceOutput output) {
         Objects.requireNonNull(value, () -> "Field " + field.getQualifiedName() + " is not initialized");
-        if (value.isValue() || field.isChild() && value instanceof DurableInstance d && !d.isRoot())
+        if (field.isChild() && value instanceof InstanceReference r && !r.resolve().isRoot())
             output.writeRecord(value);
         else
             output.writeInstance(value);
@@ -68,11 +70,7 @@ public class InstanceField implements IInstanceField {
     public void set(Instance value) {
         value = checkValue(value);
         if (field.isChild() && value.isNotNull())
-            ((DurableInstance) value).setParent(this.owner, this.field);
-        if (this.value != null && this.value.isNotPrimitive())
-            owner.getOutgoingReference(this.value, field).clear();
-        if (value instanceof DurableInstance d)
-            new ReferenceRT(owner, d, field);
+            ((InstanceReference) value).resolve().setParent(this.owner.getReference(), this.field);
         this.value = value;
     }
 
@@ -135,7 +133,8 @@ public class InstanceField implements IInstanceField {
     }
 
     public ArrayInstance getInstanceArray() {
-        return (ArrayInstance) value;
+        assert value != null;
+        return (ArrayInstance) ((InstanceReference) value).resolve();
     }
 
     @Override

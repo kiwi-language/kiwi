@@ -72,7 +72,9 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
             logger.info("type: {}, state: {}", enumType.getSimpleName(), Objects.requireNonNull(getParser()).getState().name());
             throw new NullPointerException("Can not find definition for enum constant: " + model.getDeclaringClass().getSimpleName() + "." + model.name());
         }
-        return ecDef.getInstance();
+        var instance = ecDef.getInstance();
+        instanceMap.addMapping(model, instance);
+        return instance;
     }
 
     @Override
@@ -109,8 +111,9 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
                     klass
             );
         }
-        else
+        else {
             instance = (ClassInstance) defContext.getInstanceContext().get(id);
+        }
         instance.setField(
                 klass.getFieldByCode("name"),
                 new StringInstance(
@@ -123,7 +126,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
                 .defaultValue(new NullInstance(PrimitiveType.nullType))
                 .isChild(true)
                 .isStatic(true)
-                .staticValue(instance)
+                .staticValue(instance.getReference())
                 .build();
         return enumConstant;
     }

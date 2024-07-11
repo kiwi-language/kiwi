@@ -69,7 +69,11 @@ public abstract class Instance {
 
     @NoProxy
     public boolean isArray() {
-        return this instanceof ArrayInstance;
+        return false;
+    }
+
+    public boolean isObject() {
+        return false;
     }
 
     @NoProxy
@@ -179,5 +183,17 @@ public abstract class Instance {
     public abstract  boolean isMutable();
 
     public abstract Object toJson(IEntityContext context);
+
+    public ClassInstance resolveObject() {
+        return (ClassInstance) resolveDurable();
+    }
+
+    public ArrayInstance resolveArray() {
+        return (ArrayInstance) resolveDurable();
+    }
+
+    public DurableInstance resolveDurable(){
+        return ((InstanceReference) this).resolve();
+    }
 
 }

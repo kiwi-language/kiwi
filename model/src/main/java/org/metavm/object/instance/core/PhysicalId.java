@@ -57,6 +57,11 @@ public class PhysicalId extends Id {
     }
 
     @Override
+    public boolean isRoot() {
+        return nodeId == 0L;
+    }
+
+    @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof PhysicalId that)) return false;

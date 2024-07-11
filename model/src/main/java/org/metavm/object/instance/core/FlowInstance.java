@@ -26,7 +26,7 @@ public class FlowInstance extends FunctionInstance {
         if(boundSelf != null)
             return flow.execute(boundSelf, arguments, callContext);
         else
-            return flow.execute((ClassInstance) arguments.get(0), arguments.subList(1, arguments.size()), callContext);
+            return flow.execute(arguments.get(0).resolveObject(), arguments.subList(1, arguments.size()), callContext);
     }
 
 //    public Frame createFrame(FlowStack stack, List<Instance> arguments) {

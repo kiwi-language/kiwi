@@ -128,8 +128,8 @@ public class ClassInstance extends DurableInstance {
         ensureLoaded();
         Set<DurableInstance> result = new IdentitySet<>();
         forEachField((f, v) -> {
-            if (v instanceof DurableInstance d)
-                result.add(d);
+            if (v instanceof InstanceReference r)
+                result.add(r.resolve());
         });
         return result;
     }
@@ -144,13 +144,37 @@ public class ClassInstance extends DurableInstance {
         return titleField != null ? field(titleField).getDisplayValue() : tryGetTreeId() + "";
     }
 
+    @Override
+    public void forEachChild(Consumer<DurableInstance> action) {
+        forEachField((f, v) -> {
+            if(f.isChild() && v instanceof InstanceReference r)
+                action.accept(r.resolve());
+        });
+    }
+
+    @Override
+    public void forEachMember(Consumer<DurableInstance> action) {
+        forEachField((f, v) -> {
+            if(v instanceof InstanceReference r && (f.isChild() || r.isValueReference()))
+                action.accept(r.resolve());
+        });
+    }
+
+    @Override
+    public void forEachReference(Consumer<InstanceReference> action) {
+        forEachField((f, v) -> {
+            if(v instanceof InstanceReference r)
+                action.accept(r);
+        });
+    }
+
     public Object getField(List<Id> fieldPath) {
         ensureLoaded();
         var fieldId = fieldPath.get(0);
         InstanceField field = field(fieldId);
         if (fieldPath.size() > 1) {
             var subFieldPath = fieldPath.subList(1, fieldPath.size());
-            return NncUtils.get((ClassInstance) field.getValue(), inst -> inst.getField(subFieldPath));
+            return NncUtils.get((ClassInstance) ((InstanceReference) field.getValue()).resolve(), inst -> inst.getField(subFieldPath));
         } else {
             return field.getValue();
         }
@@ -173,7 +197,7 @@ public class ClassInstance extends DurableInstance {
 
     @Override
     public boolean isChild(DurableInstance instance) {
-        return instance.getParent() == this;
+        return Objects.equals(instance.getParent(), getReference());
     }
 
     public Set<DurableInstance> getChildren() {
@@ -182,7 +206,7 @@ public class ClassInstance extends DurableInstance {
         forEachField((f, v) -> {
             if (f.isChild()) {
                 if (v.isNotNull()) {
-                    children.add((DurableInstance) v);
+                    children.add(((InstanceReference) v).resolve());
                 }
             }
         });
@@ -225,6 +249,11 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
+    public boolean isArray() {
+        return false;
+    }
+
+    @Override
     @NoProxy
     public void readFrom(InstanceInput input) {
         setLoaded(input.isLoadedFromCache());
@@ -256,7 +285,6 @@ public class ClassInstance extends DurableInstance {
                         subTable.add(new InstanceField(this, field, Instances.nullInstance()));
                         m++;
                     }
-                    input.setParent(this);
                     if (m < fields.size() && (field = fields.get(m)).getTag() == fieldTag) {
                         input.setParentField(field);
                         var value = input.readInstance();
@@ -265,7 +293,6 @@ public class ClassInstance extends DurableInstance {
                     } else
                         subTable.add(new UnknownField(this, groupTag, fieldTag, input.readInstanceBytes()));
                 }
-                input.setParent(getParent());
                 input.setParentField(getParentField());
                 for (; m < fields.size(); m++) {
                     var field = fields.get(m);
@@ -290,7 +317,7 @@ public class ClassInstance extends DurableInstance {
 
     public ClassInstance getClassInstance(Field field) {
         ensureLoaded();
-        return (ClassInstance) field(field).getValue();
+        return (ClassInstance) ((InstanceReference) field(field).getValue()).resolve();
     }
 
     public Instance getField(String fieldPath) {
@@ -301,7 +328,7 @@ public class ClassInstance extends DurableInstance {
         } else {
             String fieldName = fieldPath.substring(0, idx);
             String subPath = fieldPath.substring(idx + 1);
-            ClassInstance fieldInstance = (ClassInstance) getInstanceField(fieldName);
+            ClassInstance fieldInstance = (ClassInstance) ((InstanceReference) getInstanceField(fieldName)).resolve();
             return NncUtils.get(fieldInstance, inst -> inst.getField(subPath));
         }
     }
@@ -321,18 +348,13 @@ public class ClassInstance extends DurableInstance {
         setFieldInternal(field, value);
     }
 
-    @Override
-    public ClassInstance tryGetSource() {
-        return (ClassInstance) super.tryGetSource();
-    }
-
     private void setFieldInternal(Field field, Instance value) {
         ensureLoaded();
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass));
         if (field.isReadonly())
             throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD);
         if (field.isChild() && value.isNotNull())
-            ((DurableInstance) value).setParent(this, field);
+            ((InstanceReference) value).resolve().setParent(getReference(), field);
         setModified();
         field(field).set(value);
     }
@@ -357,9 +379,10 @@ public class ClassInstance extends DurableInstance {
     private void initFieldInternal(Field field, Instance value) {
 //        try (var ignored = ContextUtil.getProfiler().enter("ClassInstance.initFieldInternal")) {
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass));
-        NncUtils.requireFalse(isFieldInitialized(field));
+        NncUtils.requireFalse(isFieldInitialized(field),
+                "Field " + field.getQualifiedName() + " is already initialized");
         if (field.isChild() && value.isNotNull())
-            ((DurableInstance) value).setParent(this, field);
+            ((InstanceReference) value).resolve().setParent(getReference(), field);
         addField(field, value);
 //        }
     }
@@ -434,28 +457,7 @@ public class ClassInstance extends DurableInstance {
             return new ClassInstanceParam(NncUtils.filterByTypeAndMap(fieldTable, InstanceField.class, InstanceField::toDTO));
     }
 
-    @Override
-    @NoProxy
-    public <R> R accept(InstanceVisitor<R> visitor) {
-        return visitor.visitClassInstance(this);
-    }
-
-    @Override
-    public <R> void acceptReferences(InstanceVisitor<R> visitor) {
-        ensureLoaded();
-        forEachField((f, v) -> v.accept(visitor));
-    }
-
-    @Override
-    public <R> void acceptChildren(InstanceVisitor<R> visitor) {
-        ensureLoaded();
-        forEachField((f, v) -> {
-            if (f.isChild())
-                v.accept(visitor);
-        });
-    }
-
-    @Override
+//    @Override
     protected void writeTree(TreeWriter treeWriter) {
         ensureLoaded();
         treeWriter.writeLine(getType().getName() + " " + getTitle());
@@ -463,15 +465,21 @@ public class ClassInstance extends DurableInstance {
         forEachField((f, v) -> {
             treeWriter.writeLine(f.getName() + ":");
             treeWriter.indent();
-            if (f.isChild())
-                v.writeTree(treeWriter);
+            if (v instanceof InstanceReference r && (r.isValueReference() || f.isChild()))
+                r.resolve().writeTree(treeWriter);
             else
                 treeWriter.writeLine(v.getTitle());
+            treeWriter.deIndent();
         });
         treeWriter.deIndent();
     }
 
     @Override
+    public void accept(StructuralInstanceVisitor visitor) {
+        visitor.visitClassInstance(this);
+    }
+
+    //    @Override
     public FieldValue toFieldValueDTO() {
         ensureLoaded();
         if (isValue() || isList()) {
@@ -500,7 +508,7 @@ public class ClassInstance extends DurableInstance {
         return field(field).getInstanceArray();
     }
 
-    @Override
+//    @Override
     public Object toJson(IEntityContext context) {
         if (isList()) {
             var listNative = new ListNative(this);
@@ -544,9 +552,21 @@ public class ClassInstance extends DurableInstance {
         return klass;
     }
 
-    @Override
+//    @Override
     public boolean isMutable() {
         return getKlass().getKind() != ClassKind.VALUE;
+    }
+
+    @Override
+    public DurableInstance copy() {
+        var copy = new ClassInstance(null, null, klass);
+        forEachField((f, v) -> {
+            if(f.isChild())
+                copy.setField(f, v.resolveDurable().copy().getReference());
+            else
+                copy.setField(f, v);
+        });
+        return copy;
     }
 
     private static class FieldTable implements Iterable<IInstanceField> {

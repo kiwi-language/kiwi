@@ -7,11 +7,14 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.PhysicalId;
+import org.metavm.object.type.Klass;
+import org.metavm.task.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DebugEnv {
 
@@ -19,7 +22,7 @@ public class DebugEnv {
 
     public static volatile boolean removeCheckVerbose = false;
 
-    public static volatile boolean recordPath = false;
+    public static volatile boolean recordPath = true;
 
     public static volatile boolean logApiParsing = true;
 
@@ -32,6 +35,10 @@ public class DebugEnv {
     public static volatile boolean printMapping = false;
 
     public static volatile boolean flag = false;
+
+    public static final List<Klass> list = new CopyOnWriteArrayList<>();
+
+    public static volatile AtomicInteger counter = new AtomicInteger();
 
     public static volatile boolean saveCompileResult = false;
 
@@ -71,6 +78,16 @@ public class DebugEnv {
 
     public static boolean checkPath(String pathStr) {
         return path.equals(List.of(pathStr.split("\\.")));
+    }
+
+    public static boolean isTarget(DurableInstance instance) {
+        return instance.toString().startsWith("MyListbuiltinView<string>-");
+    }
+
+    public static Task task;
+
+    public static boolean isTargetKlass(Klass klass) {
+        return klass.getTypeDesc().equals("ChildList<AreabuiltinView>");
     }
 
 }

@@ -9,6 +9,14 @@ import java.util.function.Consumer;
 
 public class EntityChange<T> implements Comparable<EntityChange<?>> {
 
+    public static  <T> EntityChange<T> create(Class<T> entityType, Collection<T> inserts, Collection<T> updates, Collection<T> deletes) {
+        var change = new EntityChange<>(entityType);
+        inserts.forEach(change::addInsert);
+        updates.forEach(change::addUpdate);
+        deletes.forEach(change::addDelete);
+        return change;
+    }
+
     private final Class<T> entityType;
     private final List<T> inserts = new ArrayList<>();
     private final List<T> updates = new ArrayList<>();

@@ -1,9 +1,10 @@
 package org.metavm.beans;
 
-import org.metavm.entity.Entity;
 import org.metavm.api.EntityType;
+import org.metavm.entity.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.ClassType;
 
 import javax.annotation.Nullable;
@@ -14,7 +15,7 @@ import java.util.Objects;
 public abstract class BeanDefinition extends Entity {
 
     private String name;
-    private @Nullable ClassInstance bean;
+    private @Nullable InstanceReference bean;
 
     public BeanDefinition(String name) {
         this.name = name;
@@ -29,14 +30,14 @@ public abstract class BeanDefinition extends Entity {
     }
 
     public ClassInstance getBean() {
-        return Objects.requireNonNull(bean);
+        return Objects.requireNonNull(bean).resolveObject();
     }
 
     public abstract ClassType getBeanType();
 
     public void initialize(BeanDefinitionRegistry registry, IEntityContext context) {
         if (bean == null)
-            bean = createBean(registry, context);
+            bean = createBean(registry, context).getReference();
         else
             throw new IllegalStateException("Bean already created");
     }

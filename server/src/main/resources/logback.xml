@@ -19,7 +19,7 @@
         </encoder>
     </appender>
 
-    <logger name="Assignable" level="info" additivity="false">
+    <logger name="Assignable" level="debug" additivity="false">
         <appender-ref ref="FILE" />
     </logger>
 
@@ -27,7 +27,7 @@
         <appender-ref ref="DEBUG" />
     </logger>
 
-    <root level="info">
+    <root level="debug">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

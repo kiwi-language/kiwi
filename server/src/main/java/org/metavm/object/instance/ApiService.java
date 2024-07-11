@@ -127,11 +127,11 @@ public class ApiService extends EntityContextFactoryAware {
         var reqInst = context.getInstance(request);
         var respInst = context.getInstance(response);
         for (ClassInstance interceptor : interceptors) {
-            Flows.invokeVirtual(beforeMethod, interceptor, List.of(reqInst, respInst), context);
+            Flows.invokeVirtual(beforeMethod, interceptor, List.of(reqInst.getReference(), respInst.getReference()), context);
         }
         var result = action.get();
         for (ClassInstance interceptor : interceptors) {
-            result = Objects.requireNonNull(Flows.invokeVirtual(afterMethod, interceptor, List.of(reqInst, respInst, result), context));
+            result = Objects.requireNonNull(Flows.invokeVirtual(afterMethod, interceptor, List.of(reqInst.getReference(), respInst.getReference(), result), context));
         }
         return result;
     }
@@ -152,7 +152,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     public Object getInstance(String id) {
         try (var context = newContext()) {
-            return formatInstance(context.getInstanceContext().get(Id.parse(id)), true);
+            return formatInstance(context.getInstanceContext().get(Id.parse(id)).getReference(), true);
         }
     }
 
@@ -169,13 +169,13 @@ public class ApiService extends EntityContextFactoryAware {
     public String saveInstance(String classCode, Map<String, Object> object, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
-            var inst = (ClassInstance) doIntercepted(() -> {
+            var inst = doIntercepted(() -> {
                 var r = tryResolveValue(object, klass.getType(), true, null, context);
                 if (r.successful()) {
-                    var i = (DurableInstance) r.resolved();
+                    var i = (InstanceReference) r.resolved();
                     var instanceContext = context.getInstanceContext();
-                    if (!instanceContext.containsInstance(i))
-                        instanceContext.bind(i);
+                    if (!instanceContext.containsInstance(i.resolve()))
+                        instanceContext.bind(i.resolve());
                     return i;
                 } else
                     return null;
@@ -200,13 +200,13 @@ public class ApiService extends EntityContextFactoryAware {
         return switch (instance) {
             case null -> null;
             case PrimitiveInstance primitiveInstance -> primitiveInstance.getValue();
-            case ClassInstance classInstance -> {
-                if (classInstance.isList())
-                    yield formatList(classInstance);
+            case InstanceReference classInstance when classInstance.isObject() -> {
+                if (classInstance.resolveObject().isList())
+                    yield formatList(classInstance.resolveObject());
                 else
-                    yield classInstance.isValue() || asValue ? formatValueObject(classInstance) : classInstance.getStringId();
+                    yield classInstance.isValueReference() || asValue ? formatValueObject(classInstance.resolveObject()) : classInstance.getStringId();
             }
-            case ArrayInstance arrayInstance -> formatArray(arrayInstance);
+            case InstanceReference arrayInstance when arrayInstance.isArray() -> formatArray(arrayInstance.resolveArray());
             default -> throw new BusinessException(ErrorCode.FAILED_TO_FORMAT_VALUE, instance);
         };
     }
@@ -334,7 +334,7 @@ public class ApiService extends EntityContextFactoryAware {
                 actualType = type;
             var klass = actualType.resolve();
             var instance = saveObject(map, klass, context);
-            return instance != null ? ValueResolutionResult.of(instance) : ValueResolutionResult.failed;
+            return instance != null ? ValueResolutionResult.of(instance.getReference()) : ValueResolutionResult.failed;
         } else
             return ValueResolutionResult.failed;
     }
@@ -343,7 +343,7 @@ public class ApiService extends EntityContextFactoryAware {
         var id = (String) map.get(KEY_ID);
         if (id != null) {
             var inst = (ClassInstance) context.getInstanceContext().get(Id.parse(id));
-            if (!klass.getType().isInstance(inst))
+            if (!klass.getType().isInstance(inst.getReference()))
                 return null;
             updateObject(inst, map, context);
             return inst;
@@ -365,13 +365,14 @@ public class ApiService extends EntityContextFactoryAware {
                 else
                     return ValueResolutionResult.failed;
             }
-            if (currentValue instanceof ArrayInstance currentArray && type.isInstance(currentValue)) {
+            if (currentValue != null && currentValue.isArray() && type.isInstance(currentValue)) {
+                var currentArray = currentValue.resolveArray();
                 currentArray.clear();
                 currentArray.addAll(elements);
-                return ValueResolutionResult.of(currentArray);
+                return ValueResolutionResult.of(currentArray.getReference());
             } else {
                 var actualType = new ArrayType(type.getElementType().getUpperBound2(), type.getKind());
-                return ValueResolutionResult.of(new ArrayInstance(actualType, elements));
+                return ValueResolutionResult.of(new ArrayInstance(actualType, elements).getReference());
             }
         } else
             return ValueResolutionResult.failed;
@@ -379,8 +380,8 @@ public class ApiService extends EntityContextFactoryAware {
 
     private ValueResolutionResult tryResolveList(List<?> list, ClassType type, @Nullable Instance currentValue, IEntityContext context) {
         ListNative listNative;
-        if (currentValue instanceof ClassInstance currentList && type.isInstance(currentList)) {
-            listNative = new ListNative(currentList);
+        if (currentValue != null && currentValue.isObject() && type.isInstance(currentValue)) {
+            listNative = new ListNative(currentValue.resolveObject());
             listNative.clear();
         } else {
             ClassType concreteType;
@@ -412,7 +413,7 @@ public class ApiService extends EntityContextFactoryAware {
                 return ValueResolutionResult.failed;
         }
         elements.forEach(listNative::add);
-        return ValueResolutionResult.of(listNative.getInstance());
+        return ValueResolutionResult.of(listNative.getInstance().getReference());
     }
 
     private ValueResolutionResult tryResolveReference(Object rawValue, Type type, IEntityContext context) {
@@ -420,7 +421,7 @@ public class ApiService extends EntityContextFactoryAware {
             var id = Id.tryParse(str);
             if (id != null) {
                 var inst = context.getInstanceContext().get(id);
-                return type.isInstance(inst) ? ValueResolutionResult.of(inst) : ValueResolutionResult.failed;
+                return type.isInstance(inst.getReference()) ? ValueResolutionResult.of(inst.getReference()) : ValueResolutionResult.failed;
             }
         }
         return ValueResolutionResult.failed;
@@ -433,7 +434,7 @@ public class ApiService extends EntityContextFactoryAware {
             if (str.startsWith("0")) {
                 var id = Id.tryParse(str);
                 if (id != null)
-                    return context.getInstanceContext().get(id);
+                    return context.getInstanceContext().get(id).getReference();
             }
             return Instances.stringInstance(str);
         }

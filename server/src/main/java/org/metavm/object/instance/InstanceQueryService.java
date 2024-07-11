@@ -51,14 +51,14 @@ public class InstanceQueryService {
         );
     }
 
-    public Page<DurableInstance> query(InstanceQuery query, IEntityContext context) {
+    public Page<InstanceReference> query(InstanceQuery query, IEntityContext context) {
         return query(query, context.getInstanceContext(),
                 new ContextTypeDefRepository(context));
     }
 
-    public Page<DurableInstance> query(InstanceQuery query,
-                                       InstanceRepository instanceRepository,
-                                       IndexedTypeDefProvider typeDefProvider) {
+    public Page<InstanceReference> query(InstanceQuery query,
+                                         InstanceRepository instanceRepository,
+                                         IndexedTypeDefProvider typeDefProvider) {
         var type = query.klass().getType();
         if (type instanceof ClassType classType && query.sourceMapping() != null) {
             var sourceMapping = query.sourceMapping();
@@ -70,7 +70,7 @@ public class InstanceQueryService {
                     typeDefProvider);
             return new Page<>(
                     NncUtils.map(sourcePage.data(),
-                            i -> sourceObjectMapping.mapRoot(i, new DefaultCallContext(instanceRepository))),
+                            i -> sourceObjectMapping.mapRoot(i.resolve(), new DefaultCallContext(instanceRepository)).getReference()),
                     sourcePage.total()
             );
         } else
@@ -132,10 +132,10 @@ public class InstanceQueryService {
         );
     }
 
-    private Page<DurableInstance> queryPhysical(InstanceQuery query,
-                                                InstanceRepository instanceRepository,
-                                                IndexedTypeDefProvider typeDefProvider,
-                                                InstanceProvider instanceProvider) {
+    private Page<InstanceReference> queryPhysical(InstanceQuery query,
+                                                  InstanceRepository instanceRepository,
+                                                  IndexedTypeDefProvider typeDefProvider,
+                                                  InstanceProvider instanceProvider) {
         var searchQuery = buildSearchQuery(query, typeDefProvider, instanceProvider);
         var idPage = instanceSearchService.search(searchQuery);
 //        var newlyCreatedIds = NncUtils.map(query.createdIds(), id -> ((PhysicalId) id).getId());
@@ -149,7 +149,7 @@ public class InstanceQueryService {
         int actualSize = ids.size();
         ids = ids.subList(0, Math.min(ids.size(), query.pageSize()));
         long total = idPage.total() + (actualSize - idPage.data().size());
-        return new Page<>(NncUtils.map(ids, instanceRepository::get), total);
+        return new Page<>(NncUtils.map(ids, id -> instanceProvider.get(id).getReference()), total);
     }
 
     public long count(InstanceQuery query, IEntityContext context) {
@@ -168,8 +168,8 @@ public class InstanceQueryService {
         for (InstanceQueryField queryField : query.fields()) {
             Expression fieldCondition = null;
             if (queryField.value() != null) {
-                if (queryField.value() instanceof ArrayInstance array) {
-                    fieldCondition = Expressions.fieldIn(queryField.field(), array.getElements());
+                if (queryField.value().isArray()) {
+                    fieldCondition = Expressions.fieldIn(queryField.field(), queryField.value().resolveArray().getElements());
                 } else {
                     fieldCondition = Expressions.fieldEq(queryField.field(), queryField.value());
                 }

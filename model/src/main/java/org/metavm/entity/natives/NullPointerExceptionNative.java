@@ -2,6 +2,7 @@ package org.metavm.entity.natives;
 
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceReference;
 
 public class NullPointerExceptionNative extends RuntimeExceptionNative {
 
@@ -9,15 +10,15 @@ public class NullPointerExceptionNative extends RuntimeExceptionNative {
         super(instance);
     }
 
-    public ClassInstance NullPointerException(CallContext callContext) {
+    public InstanceReference NullPointerException(CallContext callContext) {
         return RuntimeException(callContext);
     }
 
-    public ClassInstance NullPointerException(Instance causeOrMessage, CallContext callContext) {
+    public InstanceReference NullPointerException(Instance causeOrMessage, CallContext callContext) {
         return RuntimeException(causeOrMessage, callContext);
     }
 
-    public ClassInstance NullPointerException(Instance message, Instance cause, CallContext callContext) {
+    public InstanceReference NullPointerException(Instance message, Instance cause, CallContext callContext) {
         return RuntimeException(message, cause, callContext);
     }
 

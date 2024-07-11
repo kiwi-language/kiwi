@@ -207,7 +207,7 @@ public class TypeManagerTest extends TestCase {
         var skuViewChildArrayType = TypeExpressions.getChildArrayType(TypeExpressions.getClassType(skuViewType.id()));
         var productViewSkuField = TestUtils.getFieldByName(productViewType, "sku");
         Assert.assertEquals(skuViewChildArrayType, productViewSkuField.type());
-        TestUtils.doInTransaction(() -> typeManager.saveField(
+        var fieldId = TestUtils.doInTransaction(() -> typeManager.saveField(
                 FieldDTOBuilder.newBuilder("desc", "string")
                         .id(TmpId.random().toString())
                         .declaringTypeId(productType.id())

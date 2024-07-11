@@ -81,7 +81,7 @@ public class IndexSelectNode extends NodeRT {
         var listNative = new ListNative(list);
         listNative.List(frame);
         result.forEach(e -> listNative.add(e, frame));
-        return next(list);
+        return next(list.getReference());
     }
 
     @Override

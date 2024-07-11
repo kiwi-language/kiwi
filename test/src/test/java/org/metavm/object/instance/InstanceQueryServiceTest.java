@@ -93,14 +93,14 @@ public class InstanceQueryServiceTest extends TestCase {
         var fooNameField = fooTypes.fooNameField();
         var fooQuxField = fooTypes.fooQuxField();
         var foo = addInstance(MockUtils.createFoo(fooTypes, true));
-        var qux = (ClassInstance) foo.getField(fooQuxField);
+        var qux = foo.getField(fooQuxField).resolveObject();
         addInstance(qux);
 
         var page = instanceQueryService.query(
                 InstanceQueryBuilder.newBuilder(fooKlas)
                         .fields(
                                 InstanceQueryField.create(fooNameField, foo.getField(fooNameField)),
-                                InstanceQueryField.create(fooQuxField, qux)
+                                InstanceQueryField.create(fooQuxField, qux.getReference())
                         )
                         .newlyCreated(List.of(requireNonNull(qux.tryGetId())))
                         .build(),

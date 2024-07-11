@@ -90,10 +90,10 @@ public class BeanManagerTest extends TestCase {
             var registry = BeanDefinitionRegistry.getInstance(context);
             beanManager.createBeans(List.of(configKlass, fooServiceKlass), registry, context);
             var fooService = registry.getBean("fooService");
-            Assert.assertTrue(fooServiceKlass.getType().isInstance(fooService));
+            Assert.assertTrue(fooServiceKlass.getType().isInstance(fooService.getReference()));
             var barService = registry.getBean("barService");
-            Assert.assertTrue(barServiceKlass.getType().isInstance(barService));
-            Assert.assertSame(fooService, barService.getField(field));
+            Assert.assertTrue(barServiceKlass.getType().isInstance(barService.getReference()));
+            Assert.assertSame(fooService, barService.getField(field).resolveObject());
             Assert.assertEquals(1, registry.getBeansOfType(fooServiceKlass.getType()).size());
             Assert.assertEquals(1, registry.getBeansOfType(barServiceKlass.getType()).size());
         }

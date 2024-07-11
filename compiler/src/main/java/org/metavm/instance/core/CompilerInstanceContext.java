@@ -5,10 +5,7 @@ import org.metavm.entity.VersionSource;
 import org.metavm.event.EventQueue;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.instance.TreeSource;
-import org.metavm.object.instance.core.BufferingInstanceContext;
-import org.metavm.object.instance.core.DurableInstance;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
 
@@ -40,7 +37,7 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public List<DurableInstance> scan(long start, long limit) {
+    public List<InstanceReference> scan(long start, long limit) {
         throw new UnsupportedOperationException();
     }
 

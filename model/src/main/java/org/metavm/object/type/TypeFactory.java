@@ -20,12 +20,15 @@ import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
 
 public abstract class TypeFactory {
 
+    public static final Logger logger = LoggerFactory.getLogger(TypeFactory.class);
 
     public TypeVariable saveTypeVariable(TypeVariableDTO typeVariableDTO, ResolutionStage stage, SaveTypeBatch batch) {
         try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveTypeVariable")) {
@@ -34,6 +37,8 @@ public abstract class TypeFactory {
             if (type == null) {
                 type = new TypeVariable(typeVariableDTO.tmpId(), typeVariableDTO.name(), typeVariableDTO.code(), DummyGenericDeclaration.INSTANCE);
                 context.bind(type);
+                var retrieved = context.getEntity(TypeVariable.class, type.getId());
+                assert retrieved != null : "Fail to save type variable " + type.getId();
             } else if (type.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
                 type.setName(typeVariableDTO.name());
                 type.setCode(typeVariableDTO.code());

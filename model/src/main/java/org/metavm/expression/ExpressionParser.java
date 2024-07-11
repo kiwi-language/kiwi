@@ -267,7 +267,7 @@ public class ExpressionParser {
             String text = identifier.IDENTIFIER().getText();
             if (text.startsWith(Constants.ID_PREFIX)) {
                 return new ConstantExpression(context.getInstanceProvider().get(
-                        Id.parse(text.substring(Constants.ID_PREFIX.length()))));
+                        Id.parse(text.substring(Constants.ID_PREFIX.length()))).getReference());
             } else {
                 return new VariableExpression(identifier.IDENTIFIER().getText());
             }

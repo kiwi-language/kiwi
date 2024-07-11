@@ -11,7 +11,6 @@ import org.metavm.entity.natives.RuntimeExceptionNative;
 import org.metavm.flow.rest.FlowParam;
 import org.metavm.flow.rest.FlowSummaryDTO;
 import org.metavm.flow.rest.MethodParam;
-import org.metavm.object.instance.DefaultObjectInstanceMap;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Instance;
@@ -76,7 +75,7 @@ public class Method extends Flow implements Property, GenericElement {
                   Type returnType,
                   List<MethodRef> overridden,
                   List<TypeVariable> typeParameters,
-                  List<Type> typeArguments,
+                  List<? extends Type> typeArguments,
                   boolean isStatic,
                   @Nullable Method horizontalTemplate,
                   Access access,
@@ -389,7 +388,7 @@ public class Method extends Flow implements Property, GenericElement {
                 }
             }
             if (isConstructor && result.ret() != null) {
-                var instance = (ClassInstance) result.ret();
+                var instance = result.ret().resolveObject();
                 var uninitializedField = instance.findUninitializedField(declaringType);
                 if (uninitializedField != null) {
                     var exception = ClassInstance.allocate(StdKlass.runtimeException.get().getType());
@@ -407,7 +406,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     private @NotNull FlowExecResult invokeNative(DurableInstance self, List<? extends Instance> arguments, CallContext callContext) {
         assert javaMethod != null;
-        var map = new DefaultObjectInstanceMap(ContextUtil.getEntityContext());
+        var map = ContextUtil.getEntityContext().getObjectInstanceMap();
         var nativeSelf = Objects.requireNonNull(self.getMappedEntity());
         var nativeArgs = NncUtils.biMap(List.of(javaMethod.getParameterTypes()), arguments, map::getEntity);
         try {
@@ -482,6 +481,21 @@ public class Method extends Flow implements Property, GenericElement {
     @Override
     public Method getParameterized(List<? extends Type> typeArguments) {
         return (Method) super.getParameterized(typeArguments);
+    }
+
+    @Override
+    protected Method createParameterized(List<? extends Type> typeArguments) {
+        var parameterized = MethodBuilder
+                .newBuilder(declaringType, getName(), getCode())
+//                .tmpId(getCopyTmpId(method))
+                .horizontalTemplate(this)
+                .isSynthetic(isSynthetic())
+                .access(getAccess())
+                .isStatic(isStatic())
+                .typeArguments(typeArguments)
+                .build();
+        parameterized.setStrictEphemeral(true);
+        return parameterized;
     }
 
     @Nullable

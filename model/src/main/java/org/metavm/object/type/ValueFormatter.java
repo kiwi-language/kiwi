@@ -22,7 +22,7 @@ public class ValueFormatter {
 
     public static final DateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public static DurableInstance parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
+    public static InstanceReference parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
         Type actualType;
         if (!instanceDTO.isNew())
             actualType = context.get(instanceDTO.parseId()).getType();
@@ -47,7 +47,7 @@ public class ValueFormatter {
                             parseOne(element, classType.getFirstTypeArgument(),
                                     null, context));
                 }
-                return list;
+                return list.getReference();
             } else {
                 Map<Field, Instance> fieldValueMap = new HashMap<>();
                 ClassInstanceParam param = (ClassInstanceParam) instanceDTO.param();
@@ -65,7 +65,7 @@ public class ValueFormatter {
                 for (Field field : klass.getAllFields()) {
                     FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getStringTag()), InstanceFieldDTO::value);
                     Instance fieldValue = rawValue != null ?
-                            parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context)
+                            parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance.getReference(), field), context)
                             : Instances.nullInstance();
                     fieldValueMap.put(field, fieldValue);
                 }
@@ -79,7 +79,7 @@ public class ValueFormatter {
                     instance.ensureAllFieldsInitialized();
                     context.bind(instance);
                 }
-                return instance;
+                return instance.getReference();
             }
         } else if (actualType instanceof ArrayType arrayType) {
             ArrayInstanceParam param = (ArrayInstanceParam) instanceDTO.param();
@@ -93,12 +93,12 @@ public class ValueFormatter {
             for (FieldValue element : param.elements()) {
                 elements.add(
                         parseOne(element, arrayType.getElementType(),
-                                InstanceParentRef.ofArray(array),
+                                InstanceParentRef.ofArray(array.getReference()),
                                 context)
                 );
             }
             array.setElements(elements);
-            return array;
+            return array.getReference();
         } else {
             throw new InternalException("Can not parse instance of type '" + actualType + "'");
         }
@@ -109,8 +109,8 @@ public class ValueFormatter {
         Instance value = InstanceFactory.resolveValue(
                 rawValue, type, parentRef, context
         );
-        if (value instanceof DurableInstance d && d.tryGetId() == null && !context.containsInstance(d))
-            context.bind(d);
+        if (value instanceof InstanceReference r && r.tryGetId() == null && !context.containsInstance(r.resolve()))
+            context.bind(r.resolve());
         return value;
     }
 
@@ -125,7 +125,7 @@ public class ValueFormatter {
                 return primitiveInstance.getValue();
             }
         } else {
-            var d = (DurableInstance) value;
+            var d = (DurableInstance) value.resolveDurable();
             if (value.getType().isValue()) {
                 return value.toDTO();
             } else if (d.tryGetTreeId() != null) {

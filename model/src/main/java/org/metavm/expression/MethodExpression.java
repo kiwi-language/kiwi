@@ -1,12 +1,11 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodRef;
 import org.metavm.flow.Parameter;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
@@ -57,7 +56,7 @@ public class MethodExpression extends Expression {
 
     @Override
     protected Instance evaluateSelf(EvaluationContext context) {
-        return ((ClassInstance) self.evaluate(context)).getFunction(getMethod());
+        return self.evaluate(context).resolveObject().getFunction(getMethod());
     }
 
     @Override

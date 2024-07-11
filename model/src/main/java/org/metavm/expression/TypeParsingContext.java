@@ -32,7 +32,7 @@ public class TypeParsingContext extends BaseParsingContext {
         super(instanceProvider, typeProvider);
         this.klass = klass;
         thisExpression = new ThisExpression(klass.getType());
-        this.getInstanceFunc = instanceProvider::get;
+        this.getInstanceFunc = id -> instanceProvider.get(id).getReference();
     }
 
     public Klass getKlass() {

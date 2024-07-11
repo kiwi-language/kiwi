@@ -1,7 +1,7 @@
 package org.metavm.flow;
 
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.NodeDTO;
@@ -36,7 +36,7 @@ public class SelfNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         try(var ignored = ContextUtil.getProfiler().enter("SelfNode.execute")) {
-            return next(Objects.requireNonNull(frame.getSelf()));
+            return next(Objects.requireNonNull(frame.getSelf()).getReference());
         }
     }
 

@@ -1,7 +1,9 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.ExpressionParser;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.VarType;
@@ -140,7 +142,7 @@ public class MethodCallNode extends CallNode {
     }
 
     protected ClassInstance getSelf(MetaFrame frame) {
-        return self != null ? (ClassInstance) self.evaluate(frame) : null;
+        return self != null ? self.evaluate(frame).resolveObject() : null;
     }
 
     @Override

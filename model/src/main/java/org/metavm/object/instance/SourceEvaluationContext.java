@@ -32,23 +32,23 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         var inExpr = getInExpression(expression);
         if (inExpr != null) {
             var left = inExpr.getLeft().evaluate(this);
-            var right = (ArrayInstance) inExpr.getRight().evaluate(this);
+            var right = inExpr.getRight().evaluate(this).resolveArray();
             return Instances.booleanInstance(arrayContains(right, left));
         }
         throw new InternalException(expression + " is not a context expression of " + this);
     }
 
     private BooleanInstance checkEquals(Instance left, Instance right) {
-        if (left instanceof DurableInstance leftDurable
-                && right instanceof DurableInstance rightDurable) {
-            if (right instanceof ArrayInstance) {
+        if (left instanceof InstanceReference leftDurable
+                && right instanceof InstanceReference rightDurable) {
+            if (right.isArray()) {
                 var tmp = leftDurable;
                 leftDurable = rightDurable;
                 rightDurable = tmp;
             }
             if (Objects.equals(leftDurable.tryGetId(), rightDurable.tryGetId()))
                 return Instances.trueInstance();
-            else if (leftDurable instanceof ArrayInstance array && arrayContains(array, rightDurable))
+            else if (leftDurable.resolve() instanceof ArrayInstance array && arrayContains(array, rightDurable))
                 return Instances.trueInstance();
             else
                 return Instances.falseInstance();
@@ -60,7 +60,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         for (var element : array) {
             if (element.equals(instance))
                 return true;
-            if (element instanceof DurableInstance durableElement && instance instanceof DurableInstance durableInstance) {
+            if (element instanceof InstanceReference durableElement && instance instanceof InstanceReference durableInstance) {
                 if (Objects.equals(durableElement.tryGetId(), durableInstance.tryGetId()))
                     return true;
             }
@@ -78,7 +78,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
             case PrimitiveFieldValue primitiveValue -> createPrimitiveInstance(primitiveValue);
             case InstanceFieldValue instanceFieldValue
                     when instanceFieldValue.getInstance().param() instanceof ArrayInstanceParam ->
-                    createArrayInstance(instanceFieldValue.getInstance());
+                    createArrayInstance(instanceFieldValue.getInstance()).getReference();
             default -> throw new IllegalStateException("Unexpected value: " + value);
         };
     }
@@ -114,12 +114,12 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         };
     }
 
-    private DurableInstance createReferenceProxy(String idStr) {
+    private InstanceReference createReferenceProxy(String idStr) {
         var id = Id.parse(idStr);
         if (RegionConstants.isArrayId(id)) {
-            return new ArrayInstance(id, Types.getAnyArrayType(), false, null);
+            return new ArrayInstance(id, Types.getAnyArrayType(), false, null).getReference();
         } else {
-            return new ClassInstance(id, StdKlass.entity.get().getType(), false, null);
+            return new ClassInstance(id, StdKlass.entity.get().getType(), false, null).getReference();
         }
     }
 

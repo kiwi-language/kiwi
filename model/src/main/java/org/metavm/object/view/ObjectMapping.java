@@ -4,18 +4,14 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
-import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.rest.dto.ParameterizedTypeKey;
 import org.metavm.object.view.rest.dto.*;
-import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,14 +146,6 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                 Objects.equals(method.getCode(), "fromView") &&
                 method.getReturnType().equals(getSourceType()) &&
                 method.getParameters().size() == 1 && method.getParameters().get(0).getType().equals(getTargetType());
-    }
-
-    @Override
-    public ClassInstance map(DurableInstance instance, CallContext callContext) {
-        if (instance instanceof ClassInstance)
-            return (ClassInstance) super.map(instance, callContext);
-        else
-            throw new InternalException("Invalid source");
     }
 
     @Override

@@ -8,7 +8,6 @@ import org.metavm.entity.natives.ListNative;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.ObjectInstanceMap;
-import org.metavm.object.instance.core.StructuralVisitor;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
@@ -87,7 +86,7 @@ public class Instances {
         return isInteger(instance) || instance instanceof DoubleInstance;
     }
 
-    public static <T extends DurableInstance> List<T> sort(List<T> instances, boolean desc) {
+    public static <T extends InstanceReference> List<T> sort(List<T> instances, boolean desc) {
         if (desc)
             instances.sort((i1, i2) -> NncUtils.compareId(i2.tryGetTreeId(), i1.tryGetTreeId()));
         else
@@ -95,7 +94,7 @@ public class Instances {
         return instances;
     }
 
-    public static <T extends DurableInstance> List<T> sortAndLimit(List<T> instances, boolean desc, long limit) {
+    public static <T extends InstanceReference> List<T> sortAndLimit(List<T> instances, boolean desc, long limit) {
         sort(instances, desc);
         if (limit == -1L)
             return instances;
@@ -161,7 +160,7 @@ public class Instances {
     }
 
     public static String getInstanceDetailedDesc(Instance instance) {
-        if (instance instanceof ClassInstance clsInst && clsInst.getType().isList()) {
+        if (instance instanceof InstanceReference r && r.resolve() instanceof ClassInstance clsInst && clsInst.getType().isList()) {
             var listNative = new ListNative(clsInst);
             var array = listNative.toArray();
             return clsInst.getType().getName() + " [" + NncUtils.join(array, Instances::getInstanceDesc) + "]";
@@ -169,36 +168,48 @@ public class Instances {
             return getInstanceDesc(instance);
     }
 
-    public static String getInstanceDesc(Instance instance) {
-        if (instance instanceof DurableInstance d && d.getMappedEntity() != null)
-            return EntityUtils.getEntityDesc(d.getMappedEntity());
+    public static String getInstanceDesc(DurableInstance instance) {
+        if (instance.getMappedEntity() != null)
+            return EntityUtils.getEntityDesc(instance.getMappedEntity());
         else
             return instance.toString();
     }
 
-    public static List<Instance> filterInTree(Instance instance, Predicate<Instance> predicate) {
-        List<Instance> result = new ArrayList<>();
-        instance.accept(new StructuralVisitor() {
-            @Override
-            public Void visitInstance(Instance instance) {
-                if (predicate.test(instance))
-                    result.add(instance);
-                return super.visitInstance(instance);
+    public static String getInstanceDesc(Instance instance) {
+        if (instance instanceof InstanceReference r) {
+            if(r.resolve().getMappedEntity() != null)
+                return EntityUtils.getEntityDesc(r.resolve().getMappedEntity());
+            else
+                return r.resolve().toString();
+        }
+        else
+            return instance.toString();
+    }
+
+    public static String getInstancePath(DurableInstance instance) {
+        if (instance.getMappedEntity() != null)
+            return EntityUtils.getEntityPath(instance.getMappedEntity());
+        else {
+            var path = new LinkedList<DurableInstance>();
+            var i = instance;
+            while (i != null) {
+                path.addFirst(i);
+                i = NncUtils.get(i.getParent(), InstanceReference::resolve);
             }
-        });
-        return result;
+            return NncUtils.join(path, Instances::getInstanceDesc, "->");
+        }
     }
 
     public static String getInstancePath(Instance instance) {
-        if (instance instanceof DurableInstance d) {
-            if (d.getMappedEntity() != null)
-                return EntityUtils.getEntityPath(d.getMappedEntity());
+        if (instance instanceof InstanceReference r) {
+            if (r.resolve().getMappedEntity() != null)
+                return EntityUtils.getEntityPath(r.resolve().getMappedEntity());
             else {
-                var path = new LinkedList<DurableInstance>();
-                var i = d;
+                var path = new LinkedList<InstanceReference>();
+                var i = r;
                 while (i != null) {
                     path.addFirst(i);
-                    i = i.getParent();
+                    i = i.resolve().getParent();
                 }
                 return NncUtils.join(path, Instances::getInstanceDesc, "->");
             }
@@ -488,21 +499,22 @@ public class Instances {
         return a.add(b);
     }
 
-    public static List<ClassInstance> merge(List<ClassInstance> result1, List<ClassInstance> result2, boolean desc, long limit) {
+    public static List<InstanceReference> merge(List<InstanceReference> result1, List<InstanceReference> result2, boolean desc, long limit) {
         return sortAndLimit(new ArrayList<>(NncUtils.mergeUnique(result1, result2)), desc, limit);
     }
 
     public static @Nullable ObjectMappingRefDTO getSourceMappingRefDTO(Instance instance) {
-        if (instance instanceof DurableInstance durableInstance)
+        if (instance instanceof InstanceReference ref) {
+            var durableInstance = ref.resolve();
             return durableInstance.isView() ? durableInstance.getSourceRef().getMappingRefDTO() : null;
-        else
+        } else
             return null;
     }
 
     public static void reloadParent(Entity entity, DurableInstance instance, ObjectInstanceMap instanceMap, DefContext defContext) {
 //        try(var ignored = ContextUtil.getProfiler().enter("ModelDef.reloadParent")) {
         if (entity.getParentEntity() != null) {
-            var parent = (DurableInstance) instanceMap.getInstance(entity.getParentEntity());
+            var parent = (InstanceReference) instanceMap.getInstance(entity.getParentEntity());
             Field parentField = null;
             if (entity.getParentEntityField() != null)
                 parentField = defContext.getField(entity.getParentEntityField());
@@ -570,9 +582,9 @@ public class Instances {
 
     public static @Nullable Instance getDefaultValue(Field field) {
         var type = field.getType();
-        if(type.isNullable())
+        if (type.isNullable())
             return Instances.nullInstance();
-        else if(type instanceof PrimitiveType primitiveType)
+        else if (type instanceof PrimitiveType primitiveType)
             return primitiveType.getDefaultValue();
         else
             return null;
@@ -580,7 +592,7 @@ public class Instances {
 
     public static Instance computeFieldInitialValue(ClassInstance instance, Field field, CallContext callContext) {
         var initMethod = findFieldInitializer(field);
-        if(initMethod != null)
+        if (initMethod != null)
             return Flows.invoke(initMethod, instance, List.of(), callContext);
         else
             return Objects.requireNonNull(getDefaultValue(field), "Can not find a default value for field " + field.getQualifiedName());
@@ -625,7 +637,7 @@ public class Instances {
 
     private static ClassInstance computeSuper(ClassInstance instance, Klass klass, CallContext callContext) {
         var initializer = Objects.requireNonNull(findSuperInitializer(klass));
-        var s =  (ClassInstance) Objects.requireNonNull(Flows.invoke(initializer, instance, List.of(), callContext));
+        var s = Objects.requireNonNull(Flows.invoke(initializer, instance, List.of(), callContext)).resolveObject();
         s.setEphemeral();
         return s;
     }

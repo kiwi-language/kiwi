@@ -1,12 +1,13 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.CopyNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.InstanceCopier;
 import org.metavm.object.type.FieldRef;
 import org.metavm.util.NncUtils;
 
@@ -71,13 +72,12 @@ public class CopyNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var sourceInst = source.evaluate(frame);
-        var copier = new InstanceCopier(sourceInst);
+        var copy = sourceInst.resolveDurable().copy();
         if (parentRef != null) {
             var instParentRef = parentRef.evaluate(frame);
-            copier.setCurrentInstance(instParentRef.parent());
-            copier.setCurrentField(instParentRef.field());
+            copy.setParent(instParentRef.parent(), instParentRef.field());
         }
-        return next(sourceInst.accept(copier));
+        return next(copy.getReference());
     }
 
     @Override

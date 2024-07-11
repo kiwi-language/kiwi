@@ -3,9 +3,9 @@ package org.metavm.task;
 import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
@@ -24,14 +24,14 @@ public abstract class ScanByTypeTask extends ScanTask {
     }
 
     @Override
-    protected List<DurableInstance> scan(IInstanceContext context, long cursor, long limit) {
+    protected List<InstanceReference> scan(IInstanceContext context, long cursor, long limit) {
         return NncUtils.filter(context.scan(cursor, limit), this::filer);
     }
 
-    private boolean filer(DurableInstance instance) {
+    private boolean filer(InstanceReference instance) {
         Klass klass;
         if(type instanceof ClassType classType && (klass = classType.resolve()).isTemplate()) {
-            if(instance instanceof ClassInstance classInstance)
+            if(instance.resolve() instanceof ClassInstance classInstance)
                 return classInstance.getKlass().findAncestorByTemplate(klass) != null;
             else
                 return false;
@@ -41,7 +41,7 @@ public abstract class ScanByTypeTask extends ScanTask {
     }
 
     @Override
-    protected final void process(List<DurableInstance> batch, IEntityContext context) {
+    protected final void process(List<InstanceReference> batch, IEntityContext context) {
         for (Instance instance : batch) {
             processInstance(instance, context);
         }

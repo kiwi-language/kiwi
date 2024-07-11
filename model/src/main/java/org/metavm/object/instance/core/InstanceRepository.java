@@ -9,13 +9,14 @@ public interface InstanceRepository extends InstanceProvider {
 
     DurableInstance get(Id id);
 
-    @Nullable DurableInstance selectFirstByKey(IndexKeyRT key);
+    @Nullable
+    InstanceReference selectFirstByKey(IndexKeyRT key);
 
-    List<ClassInstance> indexScan(IndexKeyRT from, IndexKeyRT to);
+    List<InstanceReference> indexScan(IndexKeyRT from, IndexKeyRT to);
 
     long indexCount(IndexKeyRT from, IndexKeyRT to);
 
-    List<ClassInstance> indexSelect(IndexKeyRT key);
+    List<InstanceReference> indexSelect(IndexKeyRT key);
 
     boolean contains(Id id);
 

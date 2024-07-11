@@ -1,13 +1,6 @@
-1 Type narrowing in flow doesn't cover the following case:
-
-    public static <T> T findRequired(Iterable<? extends T> iterable, Predicate<? super T> predicate) {
-        T t = find(iterable, predicate);
-        if (t == null) {
-            throw new IllegalArgumentException("Not found");
-        }
-        return t;
-    }
-
-2 Simplify the process of adding standard exception types
-
-3 Circular reference problem arising from Enum Klass and its enum constants.
+1 Discard ReferenceRT
+2 Change NncUtils.requireNull(Object, Supplier<Exception>) to requireNull(Object, Supplier<String>) and other similar methods.
+3 Rename InstanceContext.checkRemoval to validateRemoval
+4 Disregarding mappings when creating version because mappings are always children of klass
+5 Remove DurableInstance.clearId
+6 Create a non-proxied entity when it's loaded and no proxy for it exists at that moment.

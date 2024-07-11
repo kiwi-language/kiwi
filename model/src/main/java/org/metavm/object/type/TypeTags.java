@@ -12,4 +12,10 @@ public class TypeTags {
 
     public static final int VALUE_ARRAY = 4;
 
+    public static final int SYSTEM_TYPE_TAG_LIMIT = 1000000;
+
+    public static boolean isSystemTypeTag(int typeTag) {
+        return typeTag > 0 && typeTag < SYSTEM_TYPE_TAG_LIMIT;
+    }
+
 }

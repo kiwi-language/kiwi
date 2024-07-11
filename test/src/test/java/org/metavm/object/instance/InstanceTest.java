@@ -51,17 +51,17 @@ public class InstanceTest extends TestCase {
         fooData.put(fooTypes.fooBarsField(),
                 new ArrayInstance(
                         fooTypes.barChildArrayType(),
-                        List.of(getBarInstance(fooTypes))
-                )
+                        List.of(getBarInstance(fooTypes).getReference())
+                ).getReference()
         );
-        fooData.put(fooTypes.fooBazListField(), new ArrayInstance(fooTypes.bazArrayType()));
+        fooData.put(fooTypes.fooBazListField(), new ArrayInstance(fooTypes.bazArrayType()).getReference());
         return ClassInstance.create(fooData, fooTypes.fooType().getType());
     }
 
     public void testFoo() {
         var fooTypes = MockUtils.createFooTypes(false);
         var foo = getFooInstance(fooTypes);
-        var bar = (ClassInstance) foo.getInstanceArray(fooTypes.fooBarsField()).get(0);
+        var bar = foo.getInstanceArray(fooTypes.fooBarsField()).get(0).resolveObject();
         Assert.assertEquals(CONST_FOO_NAME, foo.getStringField(fooTypes.fooNameField()).getValue());
         Assert.assertNotNull(bar);
         Assert.assertEquals(CONST_BAR_CODE, bar.getStringField(fooTypes.barCodeField()).getValue());
@@ -74,14 +74,14 @@ public class InstanceTest extends TestCase {
                 fooTypes.fooBarsField(),
                 new ArrayInstance(
                         fooTypes.barChildArrayType(),
-                        List.of(getBarInstance(fooTypes))
-                ),
+                        List.of(getBarInstance(fooTypes).getReference())
+                ).getReference(),
                 fooTypes.fooBazListField(),
-                new ArrayInstance(fooTypes.bazArrayType())
+                new ArrayInstance(fooTypes.bazArrayType()).getReference()
         );
         var foo = ClassInstance.create(data, fooTypes.fooType().getType());
         var bars = foo.getInstanceArray(fooTypes.fooBarsField());
-        var bar = (ClassInstance) bars.getInstance(0);
+        var bar = bars.getInstance(0).resolveObject();
         Assert.assertEquals(1, bars.length());
         Assert.assertEquals(CONST_BAR_CODE, bar.getStringField(fooTypes.barCodeField()).getValue());
     }

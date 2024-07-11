@@ -2,10 +2,7 @@ package org.metavm.entity.natives;
 
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
-import org.metavm.object.instance.core.ArrayInstance;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.FunctionInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Field;
 import org.metavm.util.BusinessException;
@@ -27,7 +24,7 @@ public class SetNative extends IterableNative {
         this.instance = instance;
         arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByCode("array"));
         if (instance.isFieldInitialized(arrayField)) {
-            array = (ArrayInstance) instance.getField(arrayField);
+            array = instance.getField(arrayField).resolveArray();
             for (int i = 0; i < array.getElements().size(); i++) {
                 element2index.put(array.get(i), i);
             }
@@ -36,16 +33,16 @@ public class SetNative extends IterableNative {
 
     public Instance HashSet(CallContext callContext) {
         array = new ArrayInstance((ArrayType) arrayField.getType());
-        instance.initField(arrayField, array);
-        return instance;
+        instance.initField(arrayField, array.getReference());
+        return instance.getReference();
     }
 
-    public ClassInstance iterator(CallContext callContext) {
+    public InstanceReference iterator(CallContext callContext) {
         var iteratorImplType = StdKlass.iteratorImpl.get().getParameterized(List.of(instance.getKlass().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType.getType());
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
-        return it;
+        return it.getReference();
     }
 
     public Instance add(Instance value, CallContext callContext) {

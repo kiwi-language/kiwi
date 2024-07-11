@@ -2,7 +2,9 @@ package org.metavm.task;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ChildArray;
+import org.metavm.entity.Entity;
+import org.metavm.entity.IEntityContext;
 
 import java.util.List;
 
@@ -44,4 +46,7 @@ public abstract class TaskGroup extends Entity {
 
     protected abstract void onTasksDone(IEntityContext context);
 
+    public List<Task> getTasks() {
+        return tasks.toList();
+    }
 }

@@ -1,10 +1,8 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.expression.ExpressionParser;
@@ -17,9 +15,10 @@ import org.metavm.object.instance.core.ClassInstanceBuilder;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeParser;
-import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -133,8 +132,6 @@ public class NewObjectNode extends CallNode implements NewNode {
                 .ephemeral(ephemeral)
                 .parentRef(parentRef)
                 .build();
-        if (DebugEnv.debugging)
-            DebugEnv.logger.info("getSelf for node {}, ephemeral: {}, unbound: {}", this.getName(), instance.isEphemeral(), unbound);
         if (!instance.isEphemeral() && !unbound)
             frame.addInstance(instance);
         return instance;

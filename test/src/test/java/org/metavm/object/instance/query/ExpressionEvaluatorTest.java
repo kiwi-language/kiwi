@@ -53,7 +53,7 @@ public class ExpressionEvaluatorTest extends TestCase {
                                 fooTypes.fooCodeField(),
                                 Instances.stringInstance("001"),
                                 fooTypes.fooBarsField(),
-                                new ArrayInstance(fooTypes.barChildArrayType()),
+                                new ArrayInstance(fooTypes.barChildArrayType()).getReference(),
                                 fooTypes.fooBazListField(),
                                 new ArrayInstance(fooTypes.bazArrayType(), List.of(
                                         ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
@@ -64,16 +64,16 @@ public class ExpressionEvaluatorTest extends TestCase {
                                                                         .data(Map.of(
                                                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                                                         ))
-                                                                        .build(),
+                                                                        .buildAndGetReference(),
                                                                 ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                                         .data(Map.of(
                                                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                                                         ))
-                                                                        .build()
-                                                        ))
+                                                                        .buildAndGetReference()
+                                                        )).getReference()
                                                 ))
-                                                .build()
-                                ))
+                                                .buildAndGetReference()
+                                )).getReference()
                         )
                 )
                 .build();
@@ -94,15 +94,15 @@ public class ExpressionEvaluatorTest extends TestCase {
                                         .data(Map.of(
                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                         ))
-                                        .build(),
+                                        .buildAndGetReference(),
                                 ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                         .data(Map.of(
                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                         ))
-                                        .build()
-                        )),
+                                        .buildAndGetReference()
+                        )).getReference(),
                         fooTypes.fooBazListField(),
-                        new ArrayInstance(fooTypes.bazArrayType())
+                        new ArrayInstance(fooTypes.bazArrayType()).getReference()
                 ))
                 .build();
         String str = "allmatch(bars, code = this.code)";

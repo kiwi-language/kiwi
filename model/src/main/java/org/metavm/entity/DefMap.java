@@ -4,10 +4,14 @@ import org.metavm.object.type.ResolutionStage;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.RuntimeGeneric;
 import org.metavm.util.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 
 public interface DefMap {
+
+    Logger logger = LoggerFactory.getLogger(DefMap.class);
 
     ModelDef<?> getDef(Type javaType);
 
@@ -26,8 +30,13 @@ public interface DefMap {
     boolean containsDef(TypeDef typeDef);
 
     default Mapper<?, ?> getMapperByEntity(Object entity) {
-        if(entity instanceof RuntimeGeneric runtimeGeneric)
+        if(entity instanceof RuntimeGeneric runtimeGeneric) {
+            if (runtimeGeneric.getGenericType() == null) {
+                runtimeGeneric.getGenericType();
+                throw new RuntimeException("Encountering a runtime generic with null generic type: " + runtimeGeneric);
+            }
             return getMapper(runtimeGeneric.getGenericType(), ResolutionStage.DEFINITION);
+        }
         else
             return getMapper(entity.getClass(), ResolutionStage.DEFINITION);
     }

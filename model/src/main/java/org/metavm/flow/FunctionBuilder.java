@@ -31,7 +31,7 @@ public class FunctionBuilder {
     private Function horizontalTemplate;
     private @NotNull Type returnType = Types.getVoidType();
     private List<TypeVariable> typeParameters = new ArrayList<>();
-    private List<Type> typeArguments = new ArrayList<>();
+    private List<? extends Type> typeArguments = new ArrayList<>();
     private CodeSource codeSource;
     private MetadataState state = MetadataState.READY;
 
@@ -66,7 +66,7 @@ public class FunctionBuilder {
         return this;
     }
 
-    public FunctionBuilder typeArguments(List<Type> typeArguments) {
+    public FunctionBuilder typeArguments(List<?extends Type> typeArguments) {
         this.typeArguments = typeArguments;
         return this;
     }

@@ -1,10 +1,7 @@
 package org.metavm.entity.natives;
 
 import org.metavm.entity.StdKlass;
-import org.metavm.object.instance.core.ArrayInstance;
-import org.metavm.object.instance.core.BooleanInstance;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -38,8 +35,8 @@ public class MapNative extends NativeBase {
         keyType = ((ArrayType) keyArrayField.getType()).getElementType();
         valueType = ((ArrayType) valueArrayField.getType()).getElementType();
         if (instance.isFieldInitialized(keyArrayField)) {
-            keyArray = (ArrayInstance) instance.getField(keyArrayField);
-            valueArray = (ArrayInstance) instance.getField(valueArrayField);
+            keyArray = instance.getField(keyArrayField).resolveArray();
+            valueArray = instance.getField(valueArrayField).resolveArray();
             if (valueArray == null || keyArray.length() != valueArray.length()) {
                 throw new InternalException("Map data corrupted");
             }
@@ -52,12 +49,12 @@ public class MapNative extends NativeBase {
     public Instance HashMap(CallContext callContext) {
         keyArray = new ArrayInstance((ArrayType) keyArrayField.getType());
         valueArray = new ArrayInstance((ArrayType) valueArrayField.getType());
-        instance.initField(keyArrayField, keyArray);
-        instance.initField(valueArrayField, valueArray);
-        return instance;
+        instance.initField(keyArrayField, keyArray.getReference());
+        instance.initField(valueArrayField, valueArray.getReference());
+        return instance.getReference();
     }
 
-    public ClassInstance keySet(CallContext callContext) {
+    public InstanceReference keySet(CallContext callContext) {
         var keySetKlass = StdKlass.hashSet.get().getParameterized(List.of(instance.getKlass().getFirstTypeArgument()));
         ClassInstance keySet = ClassInstance.allocate(keySetKlass.getType());
         var setNative = (SetNative) NativeMethods.getNativeObject(keySet);
@@ -65,7 +62,7 @@ public class MapNative extends NativeBase {
         for (Instance key : keyArray) {
             setNative.add(key, callContext);
         }
-        return keySet;
+        return keySet.getReference();
     }
 
     public Instance get(Instance key, CallContext callContext) {

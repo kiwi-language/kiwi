@@ -25,6 +25,7 @@ import org.metavm.task.AddFieldTaskGroup;
 import org.metavm.task.DDL;
 import org.metavm.task.TaskManager;
 import org.metavm.util.BusinessException;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -428,7 +429,7 @@ public class TypeManager extends EntityContextFactoryAware {
                 instance = (ClassInstance) instanceManager.create(instanceDTO, instanceContext);
                 FieldBuilder.newBuilder(instance.getTitle(), null, klass, klass.getType())
                         .isStatic(true)
-                        .staticValue(instance)
+                        .staticValue(instance.getReference())
                         .build();
             } else {
                 instance = (ClassInstance) instanceContext.get(instanceDTO.parseId());
@@ -575,7 +576,9 @@ public class TypeManager extends EntityContextFactoryAware {
                 context
         );
 //        if (fieldDTO.defaultValue() != null || fieldDTO.isChild() && type.isArray()) {
-        context.bind(new AddFieldTaskGroup(field));
+        var taskGroup = new AddFieldTaskGroup(field);
+        context.bind(taskGroup);
+        DebugEnv.task = taskGroup.getTasks().get(0);
 //        }
         return field;
     }

@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ValueArray;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Instance;
@@ -69,7 +69,7 @@ public class ArrayExpression extends Expression {
 
     @Override
     protected Instance evaluateSelf(EvaluationContext context) {
-        return new ArrayInstance(type, NncUtils.map(expressions, e -> e.evaluate(context)));
+        return new ArrayInstance(type, NncUtils.map(expressions, e -> e.evaluate(context))).getReference();
     }
 
     @Override

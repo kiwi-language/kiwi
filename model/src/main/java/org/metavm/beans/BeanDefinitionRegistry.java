@@ -6,6 +6,7 @@ import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.ClassType;
 import org.metavm.util.Instances;
@@ -91,8 +92,8 @@ public class BeanDefinitionRegistry extends Entity {
             var beanName = parameter.getAttribute(AttributeNames.BEAN_NAME);
             if (beanName != null) {
                 var bean = getBean(beanName);
-                if (parameter.getType().isInstance(bean))
-                    arguments.add(bean);
+                if (parameter.getType().isInstance(bean.getReference()))
+                    arguments.add(bean.getReference());
                 else
                     throw new InternalException("Bean " + beanName + " is not of type " + parameter.getType());
                 continue;
@@ -100,7 +101,7 @@ public class BeanDefinitionRegistry extends Entity {
             if (parameter.getType() instanceof ClassType paramType) {
                 if (paramType.isList()) {
                     if(paramType.getFirstTypeArgument() instanceof ClassType beanType)
-                        arguments.add(Instances.createList(paramType, getBeansOfType(beanType)));
+                        arguments.add(Instances.createList(paramType, NncUtils.map(getBeansOfType(beanType), DurableInstance::getReference)).getReference());
                     else
                         throw new InternalException("Unsupported list element type " + paramType.getFirstTypeArgument() + " in bean factory method " + method.getName());
                 } else {
@@ -109,7 +110,7 @@ public class BeanDefinitionRegistry extends Entity {
                         throw new InternalException("No beans of type " + paramType + " found");
                     if (beans.size() > 1)
                         throw new InternalException("Multiple beans of type " + paramType + " found");
-                    arguments.add(beans.get(0));
+                    arguments.add(beans.get(0).getReference());
                 }
             } else {
                 throw new InternalException("Unsupported parameter type " + parameter.getType() + " in bean factory method " + method.getName());

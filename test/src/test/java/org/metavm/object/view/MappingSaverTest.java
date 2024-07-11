@@ -153,7 +153,7 @@ public class MappingSaverTest extends TestCase {
                 ))
                 .build();
 
-        var barChildArray = new ArrayInstance(barChildArrayType, List.of(barInst));
+        var barChildArray = new ArrayInstance(barChildArrayType, List.of(barInst.getReference()));
 
         var foo = ClassInstanceBuilder.newBuilder(fooType.getType())
                 .data(
@@ -161,7 +161,7 @@ public class MappingSaverTest extends TestCase {
                                 fooNameField,
                                 new StringInstance("foo", Types.getStringType()),
                                 fooBarsField,
-                                barChildArray
+                                barChildArray.getReference()
                         )
                 )
                 .build();
@@ -177,14 +177,14 @@ public class MappingSaverTest extends TestCase {
         var fooView = (ClassInstance) fooMapping.mapRoot(foo, callContext);
 
         Assert.assertSame(fooView.getKlass(), fooViewType);
-        Assert.assertSame(foo, fooView.tryGetSource());
+        Assert.assertEquals(foo.getReference(), fooView.tryGetSource());
         var fooViewName = fooView.getField("name");
         Assert.assertEquals(foo.getField("name"), fooViewName);
         Assert.assertTrue(fooView.tryGetId() instanceof ViewId);
 
-        var fooViewBars = (ArrayInstance) fooView.getField("bars");
+        var fooViewBars = fooView.getField("bars").resolveArray();
         Assert.assertTrue(fooViewBars.isChildArray());
-        var barView = (ClassInstance) fooViewBars.get(0);
+        var barView = fooViewBars.get(0).resolveObject();
         var barViewType = barMapping.getTargetType();
         Assert.assertEquals(barView.getType(), barViewType);
         Assert.assertEquals(barInst.getField("code"), barView.getField("code"));
@@ -211,12 +211,12 @@ public class MappingSaverTest extends TestCase {
 //        );
 
         var unmappedFoo =
-                fooMapping.unmap(fooView, new DefaultCallContext(instanceRepository));
-        Assert.assertSame(foo, unmappedFoo);
+                fooMapping.unmap(fooView.getReference(), new DefaultCallContext(instanceRepository));
+        Assert.assertSame(foo, unmappedFoo.resolve());
         Assert.assertEquals(Instances.stringInstance("foo2"), foo.getField("name"));
-        var bars = (ArrayInstance) foo.getField("bars");
+        var bars = foo.getField("bars").resolveArray();
         Assert.assertEquals(1, bars.size());
-        var bar = (ClassInstance) bars.get(0);
+        var bar = bars.get(0).resolveObject();
         Assert.assertEquals(Instances.stringInstance("bar002"), bar.getField("code"));
     }
 
@@ -256,9 +256,9 @@ public class MappingSaverTest extends TestCase {
                                                         shoppingTypes.couponDiscountField(),
                                                         Instances.longInstance(5L),
                                                         shoppingTypes.couponStateField(),
-                                                        shoppingTypes.couponNormalState()
+                                                        shoppingTypes.couponNormalState().getReference()
                                                 ))
-                                                .build(),
+                                                .buildAndGetReference(),
                                         ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
                                                 .data(Map.of(
                                                         shoppingTypes.couponTitleField(),
@@ -266,11 +266,11 @@ public class MappingSaverTest extends TestCase {
                                                         shoppingTypes.couponDiscountField(),
                                                         Instances.longInstance(10L),
                                                         shoppingTypes.couponStateField(),
-                                                        shoppingTypes.couponNormalState()
+                                                        shoppingTypes.couponNormalState().getReference()
                                                 ))
-                                                .build()
+                                                .buildAndGetReference()
                                 )
-                        ),
+                        ).getReference(),
                         shoppingTypes.orderPriceField(),
                         Instances.doubleInstance(85.0),
                         shoppingTypes.orderProductField(),
@@ -282,16 +282,16 @@ public class MappingSaverTest extends TestCase {
                                         new ArrayInstance(
                                                 shoppingTypes.skuChildArrayType(),
                                                 List.of()
-                                        )
+                                        ).getReference()
                                 ))
-                                .build(),
+                                .buildAndGetReference(),
                         shoppingTypes.orderTimeField(),
                         Instances.timeInstance(System.currentTimeMillis())
                 ))
                 .build();
         logger.info(orderMapping.getReadMethod().getText());
         logger.info(orderMapping.getMapper().getText());
-        var oderView = orderMapping.mapRoot(order,new DefaultCallContext(instanceRepository));
+        var oderView = orderMapping.mapRoot(order, new DefaultCallContext(instanceRepository));
     }
 
     public void testPathId() {
@@ -356,21 +356,21 @@ public class MappingSaverTest extends TestCase {
         var product = ClassInstanceBuilder.newBuilder(productType.getType())
                 .data(Map.of(
                         skuListField,
-                        new ArrayInstance(skuChildArrayType, List.of(sku))
+                        new ArrayInstance(skuChildArrayType, List.of(sku.getReference())).getReference()
                 ))
                 .build();
         TestUtils.initInstanceIds(product);
         var viewSkuListField = productMapping.getTargetKlass().getFieldByCode("skuList");
         var productView = (ClassInstance) productMapping.mapRoot(product, callContext);
-        var skuListView = (ArrayInstance) productView.getField(viewSkuListField);
+        var skuListView = productView.getField(viewSkuListField).resolveArray();
         Assert.assertTrue(productView.tryGetId() instanceof ViewId);
         Assert.assertTrue(skuListView.tryGetId() instanceof FieldViewId);
         Assert.assertTrue(skuListView.get(0).tryGetId() instanceof ChildViewId);
 
         skuListView.removeElement(0);
 
-        productMapping.unmap(productView, callContext);
-        var skuList = (ArrayInstance) product.getField(skuListField);
+        productMapping.unmap(productView.getReference(), callContext);
+        var skuList = product.getField(skuListField).resolveArray();
         Assert.assertTrue(skuList.isEmpty());
     }
 
@@ -411,26 +411,26 @@ public class MappingSaverTest extends TestCase {
                         new ArrayInstance(
                                 scopeArrayType,
                                 List.of(
-                                        ClassInstanceBuilder.newBuilder(scopeType.getType()).build(),
-                                        ClassInstanceBuilder.newBuilder(scopeType.getType()).build(),
-                                        ClassInstanceBuilder.newBuilder(scopeType.getType()).build()
+                                        ClassInstanceBuilder.newBuilder(scopeType.getType()).buildAndGetReference(),
+                                        ClassInstanceBuilder.newBuilder(scopeType.getType()).buildAndGetReference(),
+                                        ClassInstanceBuilder.newBuilder(scopeType.getType()).buildAndGetReference()
                                 )
-                        )
+                        ).getReference()
                 ))
                 .build();
         TestUtils.initInstanceIds(flow);
 
         var flowView = (ClassInstance) flowMapping.mapRoot(flow, callContext);
-        var flowViewScopes = (ArrayInstance) flowView.getField(flowViewScopesField);
+        var flowViewScopes = flowView.getField(flowViewScopesField).resolveArray();
         Assert.assertEquals(3, flowViewScopes.size());
 
         flowViewScopes.removeElement(2);
-        flowMapping.unmap(flowView, callContext);
-        var flowScopes = (ArrayInstance) flow.getField(flowScopesField);
+        flowMapping.unmap(flowView.getReference(), callContext);
+        var flowScopes = flow.getField(flowScopesField).resolveArray();
         Assert.assertEquals(2, flowScopes.size());
 
         flowView.setField(flowViewScopesField, Instances.nullInstance());
-        flowMapping.unmap(flowView, callContext);
+        flowMapping.unmap(flowView.getReference(), callContext);
         Assert.assertTrue(flow.getField(flowScopesField).isNull());
     }
 
@@ -490,9 +490,9 @@ public class MappingSaverTest extends TestCase {
                                                                 Instances.stringInstance("Hello")
                                                         )
                                                 )
-                                                .build()
+                                                .buildAndGetReference()
                                 )
-                        )
+                        ).getReference()
                 ))
                 .build();
         TestUtils.initInstanceIds(listOfStr);

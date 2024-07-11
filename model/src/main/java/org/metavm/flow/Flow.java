@@ -74,7 +74,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                 List<Parameter> parameters,
                 @NotNull Type returnType,
                 List<TypeVariable> typeParameters,
-                List<Type> typeArguments,
+                List<? extends Type> typeArguments,
                 @Nullable Flow horizontalTemplate,
                 @Nullable CodeSource codeSource,
                 @NotNull MetadataState state,
@@ -579,6 +579,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                 () -> "Parameterized flow " + parameterized.getTypeDesc() + " already exists");
     }
 
+    protected abstract Flow createParameterized(List<? extends Type> typeArguments);
+
     public @Nullable Flow getExistingParameterized(List<? extends Type> typeArguments) {
         if (typeArguments.equals(NncUtils.map(typeParameters, TypeVariable::getType)))
             return this;
@@ -595,7 +597,9 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         var pFlow = getExistingParameterized(typeArguments);
         if(pFlow == this)
             return pFlow;
-        if (pFlow != null && pFlow.getStage().isAfterOrAt(stage()))
+        if(pFlow == null)
+            addParameterized(createParameterized(typeArguments));
+        else if (pFlow.getStage().isAfterOrAt(stage()))
             return pFlow;
         var subst = new SubstitutorV2(this, typeParameters.toList(), typeArguments, ResolutionStage.DEFINITION);
         return substitute(subst);

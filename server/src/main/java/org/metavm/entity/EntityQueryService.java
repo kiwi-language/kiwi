@@ -29,7 +29,7 @@ public class EntityQueryService {
                 new ContextTypeDefRepository(context)
         );
         return new Page<>(
-                NncUtils.map(idPage.data(), inst -> context.getEntity(query.entityType(), inst)),
+                NncUtils.map(idPage.data(), inst -> context.getEntity(query.entityType(), inst.getId())),
                 idPage.total()
         );
     }
@@ -65,7 +65,7 @@ public class EntityQueryService {
 
     private Instance convertValue(Object value, IEntityContext context) {
         if (context.containsEntity(value)) {
-            return context.getInstance(value);
+            return context.getInstance(value).getReference();
         } else if (value instanceof Collection<?> coll) {
             return new ArrayInstance(
                     Types.getAnyArrayType(),
@@ -73,7 +73,7 @@ public class EntityQueryService {
                             coll,
                             item -> convertSingleValue(item, context)
                     )
-            );
+            ).getReference();
         } else {
             return convertSingleValue(value, context);
         }

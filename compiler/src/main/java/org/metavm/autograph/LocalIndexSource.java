@@ -35,16 +35,14 @@ public class LocalIndexSource implements IndexSource {
             var instanceContext = context.getInstanceContext();
             Map<IndexKeyPO, String> indexMap = new HashMap<>();
             for (var id : ids) {
-                instanceContext.get(id).accept(new StructuralVisitor() {
-                    @Override
-                    public Void visitClassInstance(ClassInstance instance) {
-                        if (instance.isEphemeral())
-                            return null;
-                        var keys = instance.getIndexKeys();
+                instanceContext.get(id).forEachDescendant(instance -> {
+                    if (instance.isEphemeral())
+                        return;
+                    if(instance instanceof ClassInstance classInstance) {
+                        var keys = classInstance.getIndexKeys();
                         for (IndexKeyRT key : keys) {
                             indexMap.put(convertKey(key), instance.getStringId());
                         }
-                        return super.visitClassInstance(instance);
                     }
                 });
             }

@@ -4,7 +4,6 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.EntityUtils;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
 
 @EntityType
 public class ReferenceCleanupTask extends Task {
@@ -27,7 +26,7 @@ public class ReferenceCleanupTask extends Task {
     public boolean run0(IEntityContext context) {
         var instanceContext = context.getInstanceContext();
         var instances = instanceContext.getByReferenceTargetId(Id.parse(targetId), nextTreeId, BATCH_SIZE);
-        for (Instance instance : instances) {
+        for (var instance : instances) {
             EntityUtils.ensureProxyInitialized(instance);
         }
         if(instances.size() < BATCH_SIZE) {

@@ -4,6 +4,9 @@ public interface ContextListener {
 
     default void beforeFinish() {}
 
+    /**
+     * Notifies the listener that the instance has been initialized. Only root instances are notified.
+     */
     default void onInstanceInitialized(DurableInstance instance) {}
 
     /**
@@ -19,7 +22,7 @@ public interface ContextListener {
 
     default void onPatchBuild() {}
 
-    default boolean onChange(Instance instance) {
+    default boolean onChange(DurableInstance instance) {
         return false;
     }
 

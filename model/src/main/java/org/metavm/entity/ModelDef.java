@@ -67,6 +67,7 @@ public abstract class ModelDef<T> implements Mapper<T, ClassInstance> {
 
     public ClassInstance createInstance(T model, ObjectInstanceMap instanceMap, Id id) {
         var instance = allocateInstance(model, instanceMap, id);
+        instanceMap.addMapping(model, instance);
         initInstance(instance, model, instanceMap);
         return instance;
     }

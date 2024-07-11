@@ -148,14 +148,14 @@ public class AddObjectNode extends ScopeNode implements NewNode {
                 if (field.isChild()
                         && field.getType() instanceof ArrayType arrayType
                         && arrayType.getKind() != ArrayKind.READ_ONLY) {
-                    new ArrayInstance(arrayType, new InstanceParentRef(instance, field));
+                    new ArrayInstance(arrayType, new InstanceParentRef(instance.getReference(), field));
                 }
             }
         }
         if (!instance.isEphemeral())
             frame.addInstance(instance);
         return bodyScope.isNotEmpty() ?
-                NodeExecResult.jump(instance, bodyScope.tryGetFirstNode()) : next(instance);
+                NodeExecResult.jump(instance.getReference(), bodyScope.tryGetFirstNode()) : next(instance.getReference());
     }
 
     @Override

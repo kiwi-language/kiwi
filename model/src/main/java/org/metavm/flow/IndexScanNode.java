@@ -1,7 +1,9 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.IndexScanNodeParam;
 import org.metavm.flow.rest.NodeDTO;
@@ -80,7 +82,7 @@ public class IndexScanNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var result = frame.instanceRepository().indexScan(from.buildIndexKey(frame), to.buildIndexKey(frame));
-        return next(new ArrayInstance(getType(), result));
+        return next(new ArrayInstance(getType(), result).getReference());
     }
 
     @Override

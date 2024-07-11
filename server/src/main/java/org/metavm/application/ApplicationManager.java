@@ -239,7 +239,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
                     new Message(
                             invitee,
                             String.format("'%s' invited you to join application '%s'", currentUser.getName(), app.getName()),
-                            MessageKind.INVITATION, invitationInst)
+                            MessageKind.INVITATION, invitationInst.getReference())
             );
             platformCtx.finish();
         }

@@ -1,7 +1,7 @@
 package org.metavm.object.instance.query;
 
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.Klass;
 import org.metavm.util.NncUtils;
 
@@ -10,7 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ObjectNode extends InstanceNode<ClassInstance> {
+public class ObjectNode extends InstanceNode<InstanceReference> {
 
     private final Klass type;
     private final Map<String, InstanceNode<?>> children = new LinkedHashMap<>();
@@ -26,10 +26,11 @@ public class ObjectNode extends InstanceNode<ClassInstance> {
         }
     }
 
-    public List<NodeInstancePair> getNodeInstancePairsForChildren0(ClassInstance instance) {
+    @Override
+    public List<NodeInstancePair> getNodeInstancePairsForChildren0(InstanceReference instance) {
         return NncUtils.map(
                 getChildren(),
-                child -> new NodeInstancePair(child, instance.getField(child.getName()))
+                child -> new NodeInstancePair(child, instance.resolveObject().getField(child.getName()))
         );
     }
 
@@ -39,19 +40,19 @@ public class ObjectNode extends InstanceNode<ClassInstance> {
     }
 
     @Override
-    public Instance getByPath0(ClassInstance instance, Path path) {
+    public Instance getByPath0(InstanceReference instance, Path path) {
         InstanceNode<?> child = children.get(path.firstItem());
-        Instance fieldValue = instance.getField(path.firstItem());
+        Instance fieldValue = instance.resolveObject().getField(path.firstItem());
         return child.getByPath(fieldValue, path.subPath());
     }
 
     @Override
-    protected void fetch0(ClassInstance instance, Path path, List<Instance> result) {
-        children.get(path.firstItem()).fetch(instance.getField(path.firstItem()), path.subPath(), result);
+    protected void fetch0(InstanceReference instance, Path path, List<Instance> result) {
+        children.get(path.firstItem()).fetch(instance.resolveObject().getField(path.firstItem()), path.subPath(), result);
     }
 
     @Override
-    protected Class<ClassInstance> getInstanceClass() {
-        return ClassInstance.class;
+    protected Class<InstanceReference> getInstanceClass() {
+        return InstanceReference.class;
     }
 }

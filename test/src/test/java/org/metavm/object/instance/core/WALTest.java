@@ -3,6 +3,7 @@ package org.metavm.object.instance.core;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.ddl.Commit;
+import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
 import org.metavm.flow.MethodBuilder;
@@ -18,6 +19,8 @@ import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.task.DDL;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -25,6 +28,8 @@ import java.util.Map;
 import static org.metavm.util.TestConstants.APP_ID;
 
 public class WALTest extends TestCase {
+
+    private static final Logger logger = LoggerFactory.getLogger(WALTest.class);
 
     private EntityContextFactory entityContextFactory;
     private IInstanceStore instanceStore;
@@ -111,7 +116,7 @@ public class WALTest extends TestCase {
         });
         var klassId = ids[0];
         var instId = ids[1];
-        var walId = TestUtils.doInTransaction(() -> {
+        var ids2 = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
                 var wal = context.bind(new WAL(context.getAppId()));
                 String fieldId;
@@ -126,14 +131,15 @@ public class WALTest extends TestCase {
                     walContext.finish();
                     fieldId = field.getStringId();
                 }
-                context.bind(new DDL(
-                        new Commit(wal, new BatchSaveRequest(List.of(), List.of(), true),
-                                List.of(fieldId), List.of(), List.of())
-                ));
+                var commit = new Commit(wal, new BatchSaveRequest(List.of(), List.of(), true),
+                        List.of(fieldId), List.of(), List.of());
+                context.bind(new DDL(commit));
                 context.finish();
-                return wal.getId();
+                return new Id[] {wal.getId(), commit.getId()};
             }
         });
+        var walId = ids2[0];
+        var commitId = ids2[1];
         try (var context = newContext()) {
             var wal = context.getEntity(WAL.class, walId);
             try (var walContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
@@ -164,6 +170,9 @@ public class WALTest extends TestCase {
         });
         try (var context = newContext()) {
             var wal = context.getEntity(WAL.class, walId);
+            var commit = context.getEntity(Commit.class, commitId);
+            Assert.assertEquals(CommitState.RUNNING, commit.getState());
+            Assert.assertEquals(commit, context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING));
             try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
                 var inst = (ClassInstance) loadedContext.getInstanceContext().get(instanceId2);
                 Assert.assertEquals(Instances.longInstance(0L), inst.getField("version"));

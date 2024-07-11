@@ -10,6 +10,8 @@ import org.metavm.object.type.Klass;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
@@ -18,7 +20,9 @@ import java.util.List;
 
 public class NativeMethods {
 
-    public static @NotNull FlowExecResult invoke(Method method, @Nullable Instance self, List<? extends Instance> arguments, CallContext callContext) {
+    public static final Logger logger = LoggerFactory.getLogger(NativeMethods.class);
+
+    public static @NotNull FlowExecResult invoke(Method method, @Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
         if (method.isStatic()) {
             var nativeClass = tryGetNativeClass(method.getDeclaringType());
             NncUtils.requireNonNull(nativeClass,

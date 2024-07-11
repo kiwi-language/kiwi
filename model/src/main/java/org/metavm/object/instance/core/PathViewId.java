@@ -71,7 +71,7 @@ public abstract class PathViewId extends ViewId {
     public SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
         var mappingKey = getMappingKey();
         if(sourceId != null)
-            return new SourceRef(instanceProvider.get(sourceId), mappingKey != null ? mappingKey.toMapping(mappingProvider, typeDefProvider) : null);
+            return new SourceRef(instanceProvider.get(sourceId).getReference(), mappingKey != null ? mappingKey.toMapping(mappingProvider, typeDefProvider) : null);
         else
             return null;
     }

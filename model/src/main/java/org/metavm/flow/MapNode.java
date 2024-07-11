@@ -4,12 +4,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.MapNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.Type;
 import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.AssertUtils;
@@ -65,8 +67,8 @@ public class MapNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var sourceInst = (DurableInstance) source.evaluate(frame);
-        return next(mappingRef.resolve().map(sourceInst, frame));
+        var sourceInst = (InstanceReference) source.evaluate(frame);
+        return next(mappingRef.resolve().map(sourceInst.resolve(), frame).getReference());
     }
 
     @Override

@@ -7,7 +7,6 @@ import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.log.InstanceLogServiceImpl;
 import org.metavm.object.instance.log.TaskHandler;
-import org.metavm.object.instance.log.VersionHandler;
 import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.type.*;
 import org.metavm.system.IdService;
@@ -30,9 +29,9 @@ public class BootstrapUtils {
         var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
         entityContextFactory.setInstanceLogService(
                 new InstanceLogServiceImpl(entityContextFactory, instanceSearchService, instanceStore, new MockTransactionOperations(), List.of(
-                        new TaskHandler(entityContextFactory, new MockTransactionOperations()),
-                        new VersionHandler(new MockEventQueue())
-                ))
+                        new TaskHandler(entityContextFactory, new MockTransactionOperations())
+//                        new VersionHandler(new MockEventQueue())
+                ), new MockEventQueue())
         );
         entityContextFactory.setDefaultAsyncLogProcess(false);
         return entityContextFactory;

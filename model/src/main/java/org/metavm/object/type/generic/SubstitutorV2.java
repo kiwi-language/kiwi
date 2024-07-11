@@ -15,10 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.metavm.object.type.ResolutionStage.*;
 
@@ -207,20 +204,20 @@ public class SubstitutorV2 extends CopyVisitor {
     public Element visitMethod(Method method) {
         if (method == getRoot()) {
             var typeArgs = NncUtils.map(NncUtils.map(method.getTypeParameters(), TypeVariable::getType), this::substituteType);
-            var copy = (Method) getExistingCopy(method);
-            if (copy == null) {
-                copy = MethodBuilder
-                        .newBuilder(currentClass(), method.getName(), method.getCode())
-                        .tmpId(getCopyTmpId(method))
-                        .horizontalTemplate(method)
-                        .isSynthetic(method.isSynthetic())
-                        .access(method.getAccess())
-                        .isStatic(method.isStatic())
-                        .typeArguments(typeArgs)
-                        .build();
-                copy.setStrictEphemeral(true);
-                method.addParameterized(copy);
-            }
+            var copy = (Method) Objects.requireNonNull(getExistingCopy(method));
+//            if (copy == null) {
+//                copy = MethodBuilder
+//                        .newBuilder(currentClass(), method.getName(), method.getCode())
+//                        .tmpId(getCopyTmpId(method))
+//                        .horizontalTemplate(method)
+//                        .isSynthetic(method.isSynthetic())
+//                        .access(method.getAccess())
+//                        .isStatic(method.isStatic())
+//                        .typeArguments(typeArgs)
+//                        .build();
+//                copy.setStrictEphemeral(true);
+//                method.addParameterized(copy);
+//            }
             copy.setStage(stage);
             copy.setAbstract(method.isAbstract());
             copy.setNative(method.isNative());
@@ -246,20 +243,20 @@ public class SubstitutorV2 extends CopyVisitor {
     public Element visitFunction(Function function) {
         if (function == getRoot()) {
             var typeArgs = NncUtils.map(function.getEffectiveTypeArguments(), this::substituteType);
-            var copy = (Function) getExistingCopy(function);
-            if (copy == null) {
-                var name = Types.getParameterizedName(function.getName(), typeArgs);
-                var code = Types.getParameterizedCode(function.getCode(), typeArgs);
-                copy = FunctionBuilder
-                        .newBuilder(name, code)
-                        .tmpId(getCopyTmpId(function))
-                        .horizontalTemplate(function)
-                        .typeArguments(typeArgs)
-                        .isSynthetic(function.isSynthetic())
-                        .build();
-                copy.setStrictEphemeral(true);
-                function.addParameterized(copy);
-            }
+            var copy = (Function) Objects.requireNonNull(getExistingCopy(function));
+//            if (copy == null) {
+//                var name = Types.getParameterizedName(function.getName(), typeArgs);
+//                var code = Types.getParameterizedCode(function.getCode(), typeArgs);
+//                copy = FunctionBuilder
+//                        .newBuilder(name, code)
+//                        .tmpId(getCopyTmpId(function))
+//                        .horizontalTemplate(function)
+//                        .typeArguments(typeArgs)
+//                        .isSynthetic(function.isSynthetic())
+//                        .build();
+//                copy.setStrictEphemeral(true);
+//                function.addParameterized(copy);
+//            }
             copy.setStage(stage);
             copy.setNative(function.isNative());
             if(copy.isNative())
@@ -392,25 +389,11 @@ public class SubstitutorV2 extends CopyVisitor {
     @Override
     public Element visitKlass(Klass klass) {
         if (klass == getRoot()) {
-            var copy = (Klass) getExistingCopy(klass);
+            var copy = (Klass) Objects.requireNonNull(getExistingCopy(klass));
             var template = klass.getEffectiveTemplate();
             var typeArguments = NncUtils.map(klass.getTypeArguments(), this::substituteType);
             var name = Types.getParameterizedName(template.getName(), typeArguments);
-            if (copy == null) {
-                copy = KlassBuilder.newBuilder(name, null)
-                        .kind(klass.getKind())
-                        .typeArguments(typeArguments)
-                        .anonymous(true)
-                        .ephemeral(klass.isEphemeral())
-                        .template(template)
-                        .tmpId(getCopyTmpId(template))
-                        .tag(klass.getTag())
-                        .build();
-                copy.setStrictEphemeral(true);
-                klass.addParameterized(copy);
-            } else {
-                copy.setName(name);
-            }
+            copy.setName(name);
             addCopy(klass, copy);
             var curStage = copy.setStage(stage);
             if (stage.isAfterOrAt(SIGNATURE) && curStage.isBefore(SIGNATURE)) {

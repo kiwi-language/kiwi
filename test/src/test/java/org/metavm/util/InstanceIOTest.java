@@ -10,14 +10,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Function;
 
-public class InstanceInputTest extends TestCase {
+public class InstanceIOTest extends TestCase {
 
-    public static final Logger logger = LoggerFactory.getLogger(InstanceInputTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(InstanceIOTest.class);
 
     public void testWriteString() {
         String s = "hello world";
@@ -95,6 +93,54 @@ public class InstanceInputTest extends TestCase {
 //        System.out.printf("average time: %d%n", elapsed / runs);
 //    }
 
+    public void testArrayChildField() {
+        var fooKlass = TestUtils.newKlassBuilder("Foo").build();
+        var stringArrayType = new ArrayType(Types.getStringType(), ArrayKind.READ_WRITE);
+        var namesField = FieldBuilder.newBuilder("names", "names", fooKlass, stringArrayType)
+                .isChild(true)
+                .build();
+        TestUtils.initEntityIds(fooKlass);
+        var names = new ArrayInstance(stringArrayType, List.of(Instances.stringInstance("foo")));
+        names.initId(PhysicalId.of(1L, 1L, stringArrayType));
+        var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType())
+                .data(Map.of(namesField, names.getReference()))
+                .id(PhysicalId.of(1L, 0L, fooKlass.getType()))
+                .build();
+        var bout = new ByteArrayOutputStream();
+        var output = new InstanceOutput(bout);
+        output.writeMessage(foo);
+        var instanceMap = new HashMap<Id, DurableInstance>();
+        var input = new InstanceInput(new ByteArrayInputStream(bout.toByteArray()), id -> null,
+                i -> instanceMap.put(i.getId(), i), id -> id.equals(fooKlass.getId()) ? fooKlass : null);
+        var recovered = (ClassInstance) input.readMessage();
+        var recoveredNames = recovered.getField(namesField).resolveArray();
+        var name = recoveredNames.get(0);
+        Assert.assertEquals(Instances.stringInstance("foo"), name);
+        Assert.assertNotNull(instanceMap.get(names.getId()));
+    }
+
+    public void testInheritance() {
+        var baseKlass = TestUtils.newKlassBuilder("Base").build();
+        var nameField = FieldBuilder.newBuilder("name", "name", baseKlass, Types.getStringType()).build();
+        var derivedKlass = TestUtils.newKlassBuilder("Derived").superType(baseKlass.getType()).build();
+        var codeField = FieldBuilder.newBuilder("code", "code", derivedKlass, Types.getLongType()).build();
+        TestUtils.initEntityIds(derivedKlass);
+        var inst = ClassInstanceBuilder.newBuilder(derivedKlass.getType())
+                .data(Map.of(
+                        nameField, Instances.stringInstance("foo"),
+                        codeField, Instances.longInstance(1)
+                ))
+                .build();
+        inst.initId(PhysicalId.of(1L, 1L, inst.getType()));
+        var bout = new ByteArrayOutputStream();
+        var out = new InstanceOutput(bout);
+        out.writeMessage(inst);
+        var input = new InstanceInput(new ByteArrayInputStream(bout.toByteArray()), id -> null, i -> {
+        }, id -> id.equals(derivedKlass.getId()) ? derivedKlass : null);
+        var recovered = (ClassInstance) input.readMessage();
+        Assert.assertEquals(inst.getField(nameField), recovered.getField(nameField));
+    }
+
     public void test() {
         String fooName = "foo", barCode = "bar001";
         Klass fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
@@ -144,12 +190,12 @@ public class InstanceInputTest extends TestCase {
                 PhysicalId.of(30001L, 0L, TestUtils.mockClassType()),
                 Map.of(
                         nameField, new StringInstance(fooName, Types.getStringType()),
-                        barField, barInst,
-                        quxField, quxInst
+                        barField, barInst.getReference(),
+                        quxField, quxInst.getReference()
                 ),
                 fooType
         );
-        barInst.setParentInternal(fooInst, barField, true);
+        barInst.setParentInternal(fooInst.getReference(), barField, true);
 
         Function<Id, DurableInstance> resolveInst = id -> {
             if(Objects.equals(id, fooInst.tryGetId()))
@@ -171,7 +217,7 @@ public class InstanceInputTest extends TestCase {
             throw new NullPointerException("Can not find type def for id: " + id);
         };
         var bytes = InstanceOutput.toBytes(fooInst);
-        var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, InstanceInput.UNSUPPORTED_ADD_VALUE, typeDefProvider);
+        var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, i -> {}, typeDefProvider);
         var recoveredFooInst = (ClassInstance) input.readMessage();
         MatcherAssert.assertThat(recoveredFooInst, InstanceMatcher.of(fooInst));
         new StreamVisitor(new ByteArrayInputStream(bytes)) {

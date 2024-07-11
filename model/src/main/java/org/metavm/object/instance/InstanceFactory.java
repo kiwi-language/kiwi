@@ -25,11 +25,11 @@ public class InstanceFactory {
     public static final Map<Class<? extends Instance>, Method> ALLOCATE_METHOD_MAP = new ConcurrentHashMap<>();
     public static final String ALLOCATE_METHOD_NAME = "allocate";
 
-    public static <T extends Instance> T allocate(Class<T> instanceType, boolean ephemeral) {
+    public static <T extends DurableInstance> T allocate(Class<T> instanceType, boolean ephemeral) {
         return allocate(instanceType, null, ephemeral);
     }
 
-    public static <T extends Instance> T allocate(Class<T> instanceType, Id id, boolean ephemeral) {
+    public static <T extends DurableInstance> T allocate(Class<T> instanceType, Id id, boolean ephemeral) {
         T instance;
         if (instanceType == ArrayInstance.class)
             instance = instanceType.cast(new ArrayInstance(id, Types.getAnyArrayType(), ephemeral, null));
@@ -48,11 +48,11 @@ public class InstanceFactory {
         );
     }
 
-    public static DurableInstance create(InstanceDTO instanceDTO, IInstanceContext context) {
+    public static InstanceReference create(InstanceDTO instanceDTO, IInstanceContext context) {
         return create(instanceDTO, null, context);
     }
 
-    public static DurableInstance save(InstanceDTO instanceDTO,
+    public static InstanceReference save(InstanceDTO instanceDTO,
                                 @Nullable InstanceParentRef parentRef,
                                 IInstanceContext context) {
         if (!instanceDTO.isNew()) {
@@ -68,7 +68,7 @@ public class InstanceFactory {
         }
     }
 
-    public static DurableInstance create(
+    public static InstanceReference create(
             InstanceDTO instanceDTO,
             @Nullable InstanceParentRef parentRef,
             IInstanceContext context) {
@@ -88,7 +88,7 @@ public class InstanceFactory {
                     var fieldValue = resolveValue(
                             fieldMap.get(tag).value(),
                             field.getType(),
-                            InstanceParentRef.ofObject(object, field),
+                            InstanceParentRef.ofObject(object.getReference(), field),
                             context
                     );
                     object.initField(field, fieldValue);
@@ -104,7 +104,7 @@ public class InstanceFactory {
             var elements = NncUtils.map(
                     arrayInstanceParam.elements(),
                     v -> resolveValue(v, arrayType.getElementType(),
-                            InstanceParentRef.ofArray(array), context)
+                            InstanceParentRef.ofArray(array.getReference()), context)
             );
             array.addAll(elements);
         } else if (param instanceof ListInstanceParam listInstanceParam) {
@@ -127,14 +127,14 @@ public class InstanceFactory {
                     (ClassType) TypeParser.parseType(mappingRefDTO.declaringType(), context.getTypeDefProvider()),
                     context.getMappingProvider().getObjectMapping(Id.parse(mappingRefDTO.rawMappingId()))
             ).resolve();
-            var source = sourceMapping.unmap(instance, context);
+            var source = sourceMapping.unmap(instance.getReference(), context);
             instance.setSourceRef(new SourceRef(source, sourceMapping));
             context.bind(instance);
-            if(!context.containsInstance(source))
-                context.bind(source);
+            if(!context.containsInstance(source.resolve()))
+                context.bind(source.resolve());
         } else
             context.bind(instance);
-        return instance;
+        return instance.getReference();
     }
 
     public static Instance resolveValue(FieldValue rawValue, Type type, IEntityContext context) {
@@ -160,7 +160,7 @@ public class InstanceFactory {
 //            }
             return resolvePrimitiveValue(primitiveFieldValue);
         } else if (rawValue instanceof ReferenceFieldValue referenceFieldValue) {
-            return context.get(Id.parse(referenceFieldValue.getId()));
+            return context.get(Id.parse(referenceFieldValue.getId())).getReference();
         } else if (rawValue instanceof InstanceFieldValue instanceFieldValue) {
             return save(instanceFieldValue.getInstance(), parentRef, context);
         } else if (rawValue instanceof ArrayFieldValue arrayFieldValue) {
@@ -171,21 +171,21 @@ public class InstanceFactory {
                         NncUtils.map(
                                 arrayFieldValue.getElements(),
                                 e -> resolveValue(e, arrayInstance.getType().getElementType(),
-                                        InstanceParentRef.ofArray(arrayInstance),
+                                        InstanceParentRef.ofArray(arrayInstance.getReference()),
                                         context)
                         )
                 );
-                return arrayInstance;
+                return arrayInstance.getReference();
             } else {
                 var array = ArrayInstance.allocate((ArrayType) type);
                 var elements = NncUtils.map(
                         arrayFieldValue.getElements(),
                         e -> resolveValue(e, Types.getAnyType(),
-                                InstanceParentRef.ofArray(array), context)
+                                InstanceParentRef.ofArray(array.getReference()), context)
                 );
                 array.setParentInternal(parentRef);
                 array.reset(elements);
-                return array;
+                return array.getReference();
             }
         } else if (rawValue instanceof ListFieldValue listFieldValue) {
             if (listFieldValue.getId() != null) {
@@ -196,7 +196,7 @@ public class InstanceFactory {
                         listFieldValue.getElements(),
                         e -> listNative.add(resolveValue(e, list.getKlass().getFirstTypeArgument(), null, context))
                 );
-                return list;
+                return list.getReference();
             } else {
                 var classType = (ClassType) type;
                 if(!classType.isList())
@@ -218,7 +218,7 @@ public class InstanceFactory {
                         e -> listNative.add(resolveValue(e, list.getType().getFirstTypeArgument(), null, context))
                 );
                 list.setParentInternal(parentRef);
-                return list;
+                return list.getReference();
             }
         }
         throw new InternalException("Can not resolve field value: " + rawValue);

@@ -4,8 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.ArrayInstance;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.Type;
@@ -77,12 +77,12 @@ public class AllMatchExpression extends Expression {
         if (instance.isNull()) {
             return Instances.trueInstance();
         }
-        if (!(instance instanceof ArrayInstance arrayInst)) {
+        if (!(instance instanceof InstanceReference r && r.resolve() instanceof ArrayInstance)) {
             throw new InternalException("Expecting array instance for AllMatchExpression but got " + instance);
         }
-        for (Instance element : arrayInst.getElements()) {
-            if (element instanceof ClassInstance classInstance) {
-                EvaluationContext subContext = new SubEvaluationContext(context, classInstance);
+        for (Instance element : instance.resolveArray().getElements()) {
+            if (element instanceof InstanceReference r1) {
+                EvaluationContext subContext = new SubEvaluationContext(context, r1);
                 if (!Instances.isTrue(condition.evaluate(subContext))) {
                     return Instances.falseInstance();
                 }

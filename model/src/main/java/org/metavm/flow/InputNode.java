@@ -75,7 +75,7 @@ public class InputNode extends ChildTypeNode {
         try(var ignored = ContextUtil.getProfiler().enter("InputNode.execute")) {
             Map<Field, Instance> fieldValues = new HashMap<>();
             NncUtils.biForEach(getKlass().getReadyFields(), frame.getArguments(), fieldValues::put);
-            return next(ClassInstance.create(fieldValues, getType()));
+            return next(ClassInstance.create(fieldValues, getType()).getReference());
         }
     }
 

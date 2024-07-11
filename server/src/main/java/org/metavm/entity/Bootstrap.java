@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.MetaVersionPlugin;
+//import org.metavm.object.instance.MetaVersionPlugin;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.InstanceContext;
 import org.metavm.object.type.*;
@@ -22,6 +22,7 @@ import static org.metavm.util.Constants.ROOT_APP_ID;
 public class Bootstrap extends EntityContextFactoryAware implements InitializingBean {
 
     private static final Logger logger = LoggerFactory.getLogger(Bootstrap.class);
+    private static final Logger assignableLogger = LoggerFactory.getLogger("Assignable");
 
     private final StdAllocators stdAllocators;
     private final ColumnStore columnStore;
@@ -46,7 +47,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
             var bridge = new EntityInstanceContextBridge();
             var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
                     ROOT_APP_ID, false, null, null,
-                    idInitializer, bridge, null, null, null);
+                    idInitializer, bridge, null, null, null, false);
             var defContext = new DefContext(
                     new StdIdProvider(stdIdStore),
                     standardInstanceContext, columnStore, typeTagStore, identityContext);
@@ -98,10 +99,10 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
 //                var klass = defContext.getKlass(Constraint.class);
 //                DebugEnv.instance = defContext.getInstance(klass.getDefaultMapping());
                 var stdInstanceContext = (InstanceContext) defContext.getInstanceContext();
-                var metaVersionPlugin = stdInstanceContext.getPlugin(MetaVersionPlugin.class);
+//                var metaVersionPlugin = stdInstanceContext.getPlugin(MetaVersionPlugin.class);
                 var bridge = new EntityInstanceContextBridge();
                 bridge.setEntityContext(tempContext);
-                metaVersionPlugin.setVersionRepository(bridge);
+//                metaVersionPlugin.setVersionRepository(bridge);
                 NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
                 defContext.finish();
                 defContext.getIdentityMap().forEach((object, javaConstruct) -> {
@@ -119,6 +120,10 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
                     typeTagStore.save();
                 }
                 stdIdStore.save(defContext.getStdIdMap());
+//                assignableLogger.debug("Std id map");
+//                defContext.getStdIdMap().forEach((name, id) -> {
+//                    assignableLogger.debug("{}: {}", name, id);
+//                });
                 ensureIdInitialized();
                 tempContext.finish();
             }

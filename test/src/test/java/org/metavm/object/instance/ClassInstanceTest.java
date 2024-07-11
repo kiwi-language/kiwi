@@ -39,9 +39,9 @@ public class ClassInstanceTest extends TestCase {
                         new ArrayInstance(
                                 fooType.barChildArrayType(),
                                 List.of()
-                        ),
+                        ).getReference(),
                         fooType.fooBazListField(),
-                        new ArrayInstance(fooType.bazArrayType())
+                        new ArrayInstance(fooType.bazArrayType()).getReference()
                 ))
                 .build();
         foo.initId(PhysicalId.of(100000L, 0L, TestUtils.mockClassType()));
@@ -69,12 +69,12 @@ public class ClassInstanceTest extends TestCase {
                         fooTypes.fooNameField(),
                         Instances.stringInstance("foo"),
                         fooTypes.fooBarsField(),
-                        new ArrayInstance(fooTypes.barChildArrayType(), List.of()),
+                        new ArrayInstance(fooTypes.barChildArrayType(), List.of()).getReference(),
                         fooTypes.fooBazListField(),
-                        new ArrayInstance(fooTypes.bazArrayType())
+                        new ArrayInstance(fooTypes.bazArrayType()).getReference()
                 ))
                 .build();
-        var barArray = (DurableInstance) foo.getField(fooTypes.fooBarsField());
+        var barArray = foo.getField(fooTypes.fooBarsField()).resolveDurable();
         Assert.assertTrue(foo.isChild(barArray));
     }
 
@@ -122,20 +122,13 @@ public class ClassInstanceTest extends TestCase {
                         rootScopeField,
                         ClassInstanceBuilder.newBuilder(scopeType.getType())
                                 .ephemeral(true)
-                                .build()
+                                .build().getReference()
                 ))
                 .build();
 
         TestUtils.initInstanceIds(flow);
         Map<Id, DurableInstance> id2instance = new HashMap<>();
-        flow.accept(new StructuralVisitor() {
-
-            @Override
-            public Void visitDurableInstance(DurableInstance instance) {
-                id2instance.put(instance.tryGetId(), instance);
-                return super.visitDurableInstance(instance);
-            }
-        });
+        flow.forEachDescendant(instance -> id2instance.put(instance.tryGetId(), instance));
         var bin = new ByteArrayInputStream(InstanceOutput.toBytes(flow));
         var input = new InstanceInput(bin, id -> {
             var inst = id2instance.get(id);
@@ -144,7 +137,7 @@ public class ClassInstanceTest extends TestCase {
             else
                 throw new RuntimeException("Unexpected instance: " + inst);
         },
-                InstanceInput.UNSUPPORTED_ADD_VALUE,
+                i -> {},
                 id -> {
                     if (flowType.idEquals(id))
                         return flowType;

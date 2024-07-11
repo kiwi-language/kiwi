@@ -32,7 +32,7 @@ public class FactoryBeanDefinition extends BeanDefinition {
 
     @Override
     public ClassInstance createBean(BeanDefinitionRegistry registry, IEntityContext context) {
-        return (ClassInstance) Objects.requireNonNull(Flows.invoke(method, configurationBeanDef.getBean(), registry.getFlowArguments(method), context));
+        return Objects.requireNonNull(Flows.invoke(method, configurationBeanDef.getBean(), registry.getFlowArguments(method), context)).resolveObject();
     }
 
     @Override

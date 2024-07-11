@@ -1,7 +1,7 @@
 class Product {
     private string name;
     private int price;
-    private Inventory inventory;
+    private child Inventory inventory;
 
     public Product(string name, int price, Inventory inventory) {
         this.name = name;

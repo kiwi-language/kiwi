@@ -8,9 +8,7 @@ import org.metavm.http.HttpRequestImpl;
 import org.metavm.object.instance.InstanceStore;
 import org.metavm.object.instance.MockInstanceLogService;
 import org.metavm.object.instance.cache.MockCache;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.object.instance.core.StructuralVisitor;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -75,7 +73,7 @@ public class BootstrapTest extends TestCase {
         var defContext = ModelDefRegistry.getDefContext();
         var klass = defContext.getKlass(HttpRequestImpl.class);
         for (Method javaMethod : HttpRequestImpl.class.getDeclaredMethods()) {
-            if(Modifier.isPublic(javaMethod.getModifiers()) && !Modifier.isStatic(javaMethod.getModifiers())) {
+            if (Modifier.isPublic(javaMethod.getModifiers()) && !Modifier.isStatic(javaMethod.getModifiers())) {
                 var method = klass.findMethodByCode(javaMethod.getName());
                 Assert.assertNotNull("Method " + javaMethod.getName() + " does not exist", method);
                 Assert.assertTrue(method.isNative());
@@ -167,14 +165,9 @@ public class BootstrapTest extends TestCase {
                 var ref = new Object() {
                     long maxNodeId;
                 };
-                instance.accept(new StructuralVisitor() {
-
-                    @Override
-                    public Void visitDurableInstance(DurableInstance instance) {
-                        if (instance.tryGetId() instanceof PhysicalId id)
-                            ref.maxNodeId = Math.max(id.getNodeId(), ref.maxNodeId);
-                        return super.visitDurableInstance(instance);
-                    }
+                instance.forEachDescendant(i -> {
+                    if (i.tryGetId() instanceof PhysicalId id)
+                        ref.maxNodeId = Math.max(id.getNodeId(), ref.maxNodeId);
                 });
                 Assert.assertEquals(instance.getNextNodeId(), ref.maxNodeId + 1L);
             }

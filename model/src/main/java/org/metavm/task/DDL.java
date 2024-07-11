@@ -3,8 +3,8 @@ package org.metavm.task;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
@@ -25,14 +25,15 @@ public class DDL extends ScanTask implements WalTask {
     }
 
     @Override
-    protected List<DurableInstance> scan(IInstanceContext context, long cursor, long limit) {
+    protected List<InstanceReference> scan(IInstanceContext context, long cursor, long limit) {
         return context.scan(cursor, limit);
     }
 
     @Override
-    protected void process(List<DurableInstance> batch, IEntityContext context) {
+    protected void process(List<InstanceReference> batch, IEntityContext context) {
         Instances.applyDDL(
                 () -> batch.stream()
+                        .map(InstanceReference::resolve)
                         .filter(i -> i instanceof ClassInstance)
                         .map(i -> (ClassInstance) i)
                         .iterator(),
@@ -47,5 +48,10 @@ public class DDL extends ScanTask implements WalTask {
     @Override
     public WAL getWAL() {
         return commit.getWal();
+    }
+
+    @Override
+    public boolean isMigrationDisabled() {
+        return true;
     }
 }

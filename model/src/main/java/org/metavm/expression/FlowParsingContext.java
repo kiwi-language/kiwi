@@ -59,7 +59,7 @@ public class FlowParsingContext extends BaseParsingContext {
 
     @Override
     public Instance getInstance(Id id) {
-        return getInstanceProvider().get(id);
+        return getInstanceProvider().get(id).getReference();
     }
 
     @Override

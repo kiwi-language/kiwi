@@ -41,12 +41,12 @@ public class InstanceInput implements Closeable {
     }
 
     private final InputStream inputStream;
-    private final Function<Id, DurableInstance> getInstance;
+    private final Function<Id, DurableInstance> resolver;
     private final Consumer<DurableInstance> addValue;
     private final TypeDefProvider typeDefProvider;
     private long treeId;
     @Nullable
-    private DurableInstance parent;
+    private InstanceReference parent;
     @Nullable
     private Field parentField;
     private boolean loadedFromCache;
@@ -56,22 +56,37 @@ public class InstanceInput implements Closeable {
     }
 
     public InstanceInput(InputStream inputStream,
-                         Function<Id, DurableInstance> getInstance,
+                         Function<Id, DurableInstance> resolver,
                          Consumer<DurableInstance> addValue,
                          TypeDefProvider typeDefProvider) {
         this.inputStream = inputStream;
-        this.getInstance = getInstance;
+        this.resolver = resolver;
         this.addValue = addValue;
         this.typeDefProvider = typeDefProvider;
     }
 
     public DurableInstance readMessage() {
+        read(); // TreeTags.DEFAULT
         var version = readLong();
         readTreeId();
         var nextNodeId = readLong();
-        var instance = (DurableInstance) readInstance();
+        var separateChild = readBoolean();
+        InstanceReference parent = null;
+        Field parentField = null;
+        boolean pendingChild = false;
+        if (separateChild) {
+            parent = resolveInstance(readId());
+            var fieldId = readId();
+            parentField = ((ClassInstance) parent.resolve()).getKlass().findField(f -> f.idEquals(fieldId));
+            pendingChild = parentField == null || !parentField.isChild();
+        }
+        var instance = (DurableInstance) readInstance().resolveDurable();
         instance.setVersion(version);
         instance.setNextNodeId(nextNodeId);
+        if (separateChild) {
+            instance.setPendingChild(pendingChild);
+            instance.setParentInternal(parent, parentField, false);
+        }
         return instance;
     }
 
@@ -92,15 +107,16 @@ public class InstanceInput implements Closeable {
         };
     }
 
-    private DurableInstance readReference() {
-        var inst = resolveInstance(readId());
-        if(parentField != null && parentField.isChild())
-            inst.setParentInternal(parent, parentField, false);
-        return inst;
+    private InstanceReference readReference() {
+//        var inst = resolveInstance(readId());
+//        if(parentField != null && parentField.isChild())
+//            inst.setParentInternal(parent, parentField, false);
+//        return inst;
+        return resolveInstance(readId());
     }
 
-    private DurableInstance resolveInstance(Id id) {
-        return getInstance.apply(id);
+    private InstanceReference resolveInstance(Id id) {
+        return new InstanceReference(id, () -> resolver.apply(id));
     }
 
     private final StreamVisitor skipper = new StreamVisitor(this);
@@ -109,17 +125,19 @@ public class InstanceInput implements Closeable {
         var nodeId = readLong();
         var type = Type.readType(this, typeDefProvider);
         var id = PhysicalId.of(treeId, nodeId, type);
-        var instance = resolveInstance(id);
-        if (instance.isInitialized())
-            skipper.visitRecordBody(nodeId, type);
-        else {
-            instance.setType(type);
+        var instance = type instanceof ArrayType arrayType ?
+                new ArrayInstance(id, arrayType, false, null) :
+                ClassInstanceBuilder.newBuilder((ClassType) type).id(id).initFieldTable(false).build();
+        if(parent != null)
             instance.setParentInternal(parent, parentField, true);
-            instance.readFrom(this);
-        }
-        return instance;
+        var oldParent = parent;
+        var ref = instance.getReference();
+        parent = ref;
+        instance.readFrom(this);
+        parent = oldParent;
+        addValue.accept(instance);
+        return ref;
     }
-
 
     private Instance readValue() {
         var type = Type.readType(this, typeDefProvider);
@@ -127,7 +145,7 @@ public class InstanceInput implements Closeable {
                 new ArrayInstance(arrayType) : ClassInstance.allocateEmpty((ClassType) type);
         instance.readFrom(this);
         addValue.accept(instance);
-        return instance;
+        return instance.getReference();
     }
 
     public void skipInstance() {
@@ -195,7 +213,7 @@ public class InstanceInput implements Closeable {
         }
     }
 
-    public void setParent(@Nullable DurableInstance parent) {
+    public void setParent(@Nullable InstanceReference parent) {
         this.parent = parent;
     }
 

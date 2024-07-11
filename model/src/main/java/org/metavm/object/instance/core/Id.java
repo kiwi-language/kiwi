@@ -106,4 +106,7 @@ public abstract class Id implements Comparable<Id> {
         return UnsignedBytes.lexicographicalComparator().compare(toBytes(), o.toBytes());
     }
 
+    public boolean isRoot() {
+        return false;
+    }
 }

@@ -67,6 +67,7 @@ public class AssemblerTest extends TestCase {
         try(var context = bootResult.entityContextFactory().newContext(TestConstants.APP_ID)) {
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             var request = assemble(List.of(source), assembler);
+            TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
             ContextUtil.setAppId(TestConstants.APP_ID);
             TestUtils.doInTransaction(() -> typeManager.batchSave(request));
             TestUtils.waitForDDLDone(bootResult.entityContextFactory());

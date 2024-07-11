@@ -4,11 +4,10 @@ import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
 
 public interface Mapper<T, I extends DurableInstance> {
 
-    default T createEntityHelper(Instance instance, ObjectInstanceMap objectInstanceMap) {
+    default T createEntityHelper(DurableInstance instance, ObjectInstanceMap objectInstanceMap) {
         return createEntity(getInstanceClass().cast(instance), objectInstanceMap);
     }
 
@@ -16,14 +15,14 @@ public interface Mapper<T, I extends DurableInstance> {
         T model = allocateEntity();
         if(model instanceof IdInitializing idInitializing) {
             var d = (DurableInstance) instance;
-            if(d.tryGetTreeId() != null)
+            if(d.tryGetId() != null)
                 idInitializing.initId(d.tryGetId());
         }
         initEntity(model, instance, objectInstanceMap);
         return model;
     }
 
-    default void updateInstanceHelper(Object entity, Instance instance,ObjectInstanceMap map) {
+    default void updateInstanceHelper(Object entity, DurableInstance instance,ObjectInstanceMap map) {
         updateInstance(getInstanceClass().cast(instance), getEntityClass().cast(entity), map);
     }
 
@@ -39,7 +38,7 @@ public interface Mapper<T, I extends DurableInstance> {
 
     T createModelProxy(Class<? extends T> proxyClass);
 
-    default void initEntityHelper(Object model, Instance instance, ObjectInstanceMap objectInstanceMap) {
+    default void initEntityHelper(Object model, DurableInstance instance, ObjectInstanceMap objectInstanceMap) {
         initEntity(getEntityClass().cast(model), getInstanceClass().cast(instance), objectInstanceMap);
     }
 
@@ -61,11 +60,12 @@ public interface Mapper<T, I extends DurableInstance> {
 
     default I createInstance(T model, ObjectInstanceMap instanceMap, Id id) {
         I instance = InstanceFactory.allocate(getInstanceClass(), id, EntityUtils.isEphemeral(model));
+        instanceMap.addMapping(model, instance);
         initInstance(instance, model, instanceMap);
         return instance;
     }
 
-    default void initInstanceHelper(Instance instance, Object model, ObjectInstanceMap instanceMap) {
+    default void initInstanceHelper(DurableInstance instance, Object model, ObjectInstanceMap instanceMap) {
         initInstance(getInstanceClass().cast(instance), getEntityClass().cast(model), instanceMap);
     }
 

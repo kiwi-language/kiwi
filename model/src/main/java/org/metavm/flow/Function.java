@@ -11,6 +11,7 @@ import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
+import org.metavm.object.type.Types;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -41,7 +42,7 @@ public class Function extends Flow implements GlobalKey {
                     List<Parameter> parameters,
                     Type returnType,
                     List<TypeVariable> typeParameters,
-                    List<Type> typeArguments,
+                    List<? extends Type> typeArguments,
                     @Nullable Function horizontalTemplate,
                     @Nullable CodeSource codeSource,
                     MetadataState state) {
@@ -90,6 +91,21 @@ public class Function extends Flow implements GlobalKey {
     @Override
     public Function getEffectiveHorizontalTemplate() {
         return (Function) super.getEffectiveHorizontalTemplate();
+    }
+
+    @Override
+    protected Function createParameterized(List<? extends Type> typeArguments) {
+        var name = Types.getParameterizedName(getName(), typeArguments);
+        var code = Types.getParameterizedCode(getCode(), typeArguments);
+        var parameterized = FunctionBuilder
+                .newBuilder(name, code)
+//                .tmpId(getCopyTmpId(function))
+                .horizontalTemplate(this)
+                .typeArguments(typeArguments)
+                .isSynthetic(isSynthetic())
+                .build();
+        parameterized.setStrictEphemeral(true);
+        return parameterized;
     }
 
     @Override

@@ -28,7 +28,7 @@ public class KlassBuilder {
     private boolean struct;
     private String desc;
     private List<ClassType> interfaces = new ArrayList<>();
-    private List<Type> typeArguments = new ArrayList<>();
+    private List<? extends Type> typeArguments = new ArrayList<>();
     private Klass existing;
     private boolean done;
     private Long suffix;
@@ -131,7 +131,7 @@ public class KlassBuilder {
         return typeParameters(List.of(typeParameters));
     }
 
-    public KlassBuilder typeArguments(List<Type> typeArguments) {
+    public KlassBuilder typeArguments(List<? extends Type> typeArguments) {
         this.typeArguments = typeArguments;
         return this;
     }

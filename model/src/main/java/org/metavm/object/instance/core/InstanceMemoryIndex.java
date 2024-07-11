@@ -101,7 +101,7 @@ public class InstanceMemoryIndex {
                 from = new IndexKeyRT(index, NncUtils.toMap(index.getFields(), f -> f, f -> MIN_INSTANCE));
             if (to == null)
                 to = new IndexKeyRT(index, NncUtils.toMap(index.getFields(), f -> f, f -> MAX_INSTANCE));
-            return map.subSet(new IndexEntryRT(from, MIN_INSTANCE), true, new IndexEntryRT(to, MAX_INSTANCE), true);
+            return map.subSet(new IndexEntryRT(from, (ClassInstance) MIN_INSTANCE.resolve()), true, new IndexEntryRT(to, (ClassInstance) MAX_INSTANCE.resolve()), true);
         }
 
         public List<ClassInstance> scan(IndexKeyRT from, IndexKeyRT to) {

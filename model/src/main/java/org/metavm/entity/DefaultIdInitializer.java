@@ -2,7 +2,6 @@ package org.metavm.entity;
 
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.object.instance.core.StructuralVisitor;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.IdentitySet;
@@ -28,27 +27,10 @@ public class DefaultIdInitializer implements IdInitializer {
 
     @Override
     public void initializeIds(long appId, Collection<? extends DurableInstance> instancesToInitId) {
-        if (DebugEnv.instance != null) {
-            logger.info("treeId: {}, next nodeId: {}",
-                    DebugEnv.instance.isIdInitialized() ? DebugEnv.instance.getId().getTreeId() : null,
-                    DebugEnv.instance.getRoot().getNextNodeId());
-            DebugEnv.instance.accept(new StructuralVisitor() {
-                @Override
-                public Void visitDurableInstance(DurableInstance instance) {
-                    if (instance.isIdInitialized()) {
-                        logger.info("child instance: {}, id: {}, treeId: {}, nodeId: {}",
-                                Instances.getInstancePath(instance),
-                                instance.getId(),
-                                instance.getId().getTreeId(),
-                                instance.getId().getNodeId());
-                    }
-                    return super.visitDurableInstance(instance);
-                }
-            });
-        }
         var klassType = StdKlass.entity.type();
         var countMap = Map.of(klassType, (int) NncUtils.count(instancesToInitId, DurableInstance::isRoot));
         var ids = new LinkedList<>(idProvider.allocate(appId, countMap).get(klassType));
+        var roots = NncUtils.filterUnique(instancesToInitId, DurableInstance::isRoot);
         var typeDefInstance = new HashMap<TypeDef, DurableInstance>();
         for (DurableInstance instance : instancesToInitId) {
             if (instance.getMappedEntity() instanceof TypeDef typeDef)

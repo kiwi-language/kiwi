@@ -11,6 +11,7 @@ import org.metavm.object.instance.TreeSource;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.util.BusinessException;
+import org.metavm.util.ForwardingPointer;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.NncUtils;
 
@@ -54,27 +55,39 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 //    }
 
     @Override
-    protected void initializeInstance(DurableInstance instance) {
+    protected void initializeInstance(Id id) {
         try {
-            var tree = loadingBuffer.getTree(instance.tryGetId());
+//            logger.debug("Start initializing instance: " + id);
+            var result = loadingBuffer.getTree(id);
+            var tree = result.tree();
             onTreeLoaded(tree);
             var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
             readInstance(input);
+            if(result.migrated())
+                establishForwarding(result.forwardingPointers());
+//            logger.debug("Finish initializing instance: {}, migrated: {}" ,id, result.migrated());
+//            logger.debug("Request tree id: {}, actual tree id: {}", id.getTreeId(), tree.id());
         } catch (TreeNotFoundException e) {
-            throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getId());
+            throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id);
+        }
+    }
+
+    private void establishForwarding(List<ForwardingPointer> forwardingPointers) {
+        for (ForwardingPointer fp : forwardingPointers) {
+            mapManually(fp.sourceId(), get(fp.targetId()));
         }
     }
 
     protected void onTreeLoaded(Tree tree) {
     }
 
-    private DurableInstance readInstance(InstanceInput input) {
+    private void readInstance(InstanceInput input) {
 //        try (var entry = getProfiler().enter("readInstance")) {
         var instance = input.readMessage();
 //            entry.addMessage("id", instance.getPhysicalId());
         onInstanceInitialized(instance);
-        return instance;
-//        }
+
+        //        }
     }
 
     @Override
@@ -88,7 +101,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    public void invalidateCache(DurableInstance instance) {
+    public void invalidateCache(InstanceReference instance) {
         loadingBuffer.invalidateCache(List.of(instance.getTreeId()));
     }
 

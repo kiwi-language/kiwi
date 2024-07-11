@@ -21,9 +21,18 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitMessage() {
+        output.write(read());
         output.writeLong(readLong());
         output.writeLong(readTreeId());
         output.writeLong(readLong());
+        boolean separateChild = readBoolean();
+        if(separateChild) {
+            output.writeBoolean(true);
+            output.writeId(readId());
+            output.writeId(readId());
+        }
+        else
+            output.writeBoolean(false);
         visit();
     }
 

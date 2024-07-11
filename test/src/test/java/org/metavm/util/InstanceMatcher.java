@@ -3,11 +3,10 @@ package org.metavm.util;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.metavm.object.instance.core.DurableInstance;
-import org.metavm.object.instance.core.Instance;
 
 import java.util.Arrays;
 
-public class InstanceMatcher extends BaseMatcher<Instance> {
+public class InstanceMatcher extends BaseMatcher<DurableInstance> {
 
     public static InstanceMatcher of(DurableInstance instance) {
         return new InstanceMatcher(instance);

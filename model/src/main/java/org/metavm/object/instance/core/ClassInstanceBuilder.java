@@ -84,4 +84,8 @@ public class ClassInstanceBuilder {
         return new ClassInstance(id, type, version, syncVersion, load, parentRef, data, sourceRef, ephemeral, initFieldTable);
     }
 
+    public InstanceReference buildAndGetReference() {
+        return build().getReference();
+    }
+
 }

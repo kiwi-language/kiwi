@@ -2,7 +2,10 @@ package org.metavm.flow;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ChildArray;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.NodeDTO;
@@ -115,7 +118,7 @@ public class UpdateObjectNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        ClassInstance instance = (ClassInstance) object.evaluate(frame);
+        ClassInstance instance = object.evaluate(frame).resolveObject();
         for (UpdateField updateField : fields) {
             var inConstructor = Flows.isConstructor(getFlow()) || Objects.equals(getFlow().getCode(), "<init>");
             updateField.execute(instance, frame, inConstructor);

@@ -2,11 +2,14 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.Element;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.ParentRefDTO;
-import org.metavm.object.instance.core.DurableInstance;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
@@ -37,7 +40,7 @@ public class ParentRef extends Element implements org.metavm.api.Value {
     }
 
     public InstanceParentRef evaluate(EvaluationContext context) {
-        return new InstanceParentRef((DurableInstance) parent.evaluate(context), NncUtils.get(fieldRef, FieldRef::resolve));
+        return new InstanceParentRef((InstanceReference) parent.evaluate(context), NncUtils.get(fieldRef, FieldRef::resolve));
     }
 
     public ParentRefDTO toDTO() {

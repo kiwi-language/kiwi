@@ -317,8 +317,8 @@ public class Expressions {
     }
 
     public static ArrayInstance castCollection(Instance value) {
-        if (value instanceof ArrayInstance arrayInstance) {
-            return arrayInstance;
+        if (value.isArray()) {
+            return value.resolveArray();
         } else {
             throw BusinessException.invalidExpressionValue("Collection", value);
         }

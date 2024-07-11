@@ -1,15 +1,10 @@
 package org.metavm.object.instance;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.expression.ExpressionParser;
-import org.metavm.object.instance.core.StructuralVisitor;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
@@ -24,6 +19,10 @@ import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.ValueFormatter;
 import org.metavm.system.RegionConstants;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,7 +46,7 @@ public class InstanceManager extends EntityContextFactoryAware {
     public GetInstanceResponse get(String id, int depth) {
         try (var context = newInstanceContext()) {
             var instanceId = Id.parse(id);
-            var instance = context.get(instanceId);
+            var instance = context.get(instanceId).getReference();
             var instanceDTO = InstanceDTOBuilder.buildDTO(instance, depth);
             return new GetInstanceResponse(instanceDTO);
         }
@@ -67,7 +66,7 @@ public class InstanceManager extends EntityContextFactoryAware {
             List<Expression> selects = NncUtils.map(request.selects(), sel -> ExpressionParser.parse(klass, sel, entityContext));
             GraphQueryExecutor graphQueryExecutor = new GraphQueryExecutor();
             return new Page<>(
-                    graphQueryExecutor.execute(klass, roots, selects),
+                    graphQueryExecutor.execute(klass, NncUtils.map(roots, InstanceReference::resolve), selects),
                     dataPage.total()
             );
         }
@@ -106,10 +105,10 @@ public class InstanceManager extends EntityContextFactoryAware {
                     if (defaultMapping != null) {
                         var viewId = new DefaultViewId(false, defaultMapping.toKey(), instanceId);
                         var view = context.get(viewId);
-                        return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(view, 1));
+                        return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(view.getReference(), 1));
                     }
                 }
-                return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(instance, 1));
+                return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(instance.getReference(), 1));
             } else
                 throw new BusinessException(ErrorCode.NOT_A_CLASS_INSTANCE, id);
         }
@@ -128,7 +127,7 @@ public class InstanceManager extends EntityContextFactoryAware {
             var instances = context.batchGet(instanceIds);
             context.buffer(instanceIds);
             try (var ignored1 = SerializeContext.enter()) {
-                var instanceDTOs = NncUtils.map(instances, i -> InstanceDTOBuilder.buildDTO(i, depth));
+                var instanceDTOs = NncUtils.map(instances, i -> InstanceDTOBuilder.buildDTO(i.getReference(), depth));
                 return new GetInstancesResponse(instanceDTOs);
             }
         }
@@ -171,7 +170,7 @@ public class InstanceManager extends EntityContextFactoryAware {
     }
 
     public DurableInstance create(InstanceDTO instanceDTO, IInstanceContext context) {
-        return InstanceFactory.create(instanceDTO, context);
+        return InstanceFactory.create(instanceDTO, context).resolve();
     }
 
     @Transactional
@@ -228,14 +227,9 @@ public class InstanceManager extends EntityContextFactoryAware {
                     var parent = trees.get(ref.getTargetInstanceId());
                     var tree = new ReferenceTree(inst, rootMode);
                     parent.addChild(tree);
-
-                    inst.accept(new StructuralVisitor() {
-                        @Override
-                        public Void visitDurableInstance(DurableInstance instance) {
-                            ids.add(instance.getId());
-                            trees.put(instance.getId(), tree);
-                            return super.visitDurableInstance(instance);
-                        }
+                    inst.forEachDescendant(instance -> {
+                        ids.add(instance.getId());
+                        trees.put(instance.getId(), tree);
                     });
                 }
             }
@@ -262,7 +256,7 @@ public class InstanceManager extends EntityContextFactoryAware {
                 var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
                 return new QueryInstancesResponse(
                         new Page<>(
-                                NncUtils.map(dataPage1.data(), Instance::toDTO),
+                                NncUtils.map(dataPage1.data(), r -> r.resolve().toDTO()),
                                 dataPage1.total()
                         ),
                         List.of()
@@ -284,8 +278,9 @@ public class InstanceManager extends EntityContextFactoryAware {
             List<InstanceDTO> result = new ArrayList<>();
             for (Path path : paths) {
                 var instanceId = Id.parse(path.firstItem().substring(Constants.ID_PREFIX.length()));
-                Instance instance = context.get(instanceId);
-                InstanceNode<?> node = instance2node.get(instance);
+                Instance instance = context.get(instanceId).getReference();
+                InstanceNode<?> node = Objects.requireNonNull(instance2node.get(instance),
+                        () -> "Can not find node for instance " + instance);
                 List<Instance> values = node.getFetchResults(instance, path.subPath());
                 for (Instance value : values) {
                     if (!visited.contains(value)) {
@@ -301,7 +296,7 @@ public class InstanceManager extends EntityContextFactoryAware {
     private Map<Instance, InstanceNode<?>> buildObjectTree(List<Path> paths, IInstanceContext context) {
         Map<Instance, PathTree> pathTreeMap = new HashMap<>();
         for (Path path : paths) {
-            Instance instance = context.get(Id.parse(path.firstItem().substring(Constants.ID_PREFIX.length())));
+            Instance instance = context.get(Id.parse(path.firstItem().substring(Constants.ID_PREFIX.length()))).getReference();
             PathTree pathTree = pathTreeMap.computeIfAbsent(instance, k -> new PathTree(k + ""));
             if (path.hasSubPath()) {
                 pathTree.addPath(path.subPath());

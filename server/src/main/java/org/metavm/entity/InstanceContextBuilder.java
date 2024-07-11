@@ -47,6 +47,7 @@ public class InstanceContextBuilder {
     private @Nullable WAL readWAL;
     private @Nullable WAL writeWAL;
     private boolean skipPostprocessing;
+    private boolean migrationDisabled;
 
     public InstanceContextBuilder(long appId,
                                   IInstanceStore instanceStore,
@@ -140,6 +141,11 @@ public class InstanceContextBuilder {
         return this;
     }
 
+    public InstanceContextBuilder migrationDisabled(boolean migrationDisabled) {
+        this.migrationDisabled = migrationDisabled;
+        return this;
+    }
+
     public IInstanceContext build() {
         if (executor == null)
             executor = Executors.newSingleThreadExecutor();
@@ -148,7 +154,7 @@ public class InstanceContextBuilder {
                 appId, instanceStore, idInitializer, executor, asyncPostProcess,
                 plugins, parent, typeDefProvider, mappingProvider,
                 childLazyLoading, cache,
-                eventQueue, readonly, skipPostprocessing);
+                eventQueue, readonly, skipPostprocessing, migrationDisabled);
     }
 
 }

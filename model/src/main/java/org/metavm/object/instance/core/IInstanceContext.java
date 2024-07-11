@@ -37,6 +37,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     DurableInstance get(Id id);
 
+    InstanceReference createReference(Id id);
+
     List<DurableInstance> batchGetRoots(List<Long> treeIds);
 
     default DurableInstance getRoot(long treeId) {
@@ -68,7 +70,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
 //    boolean existsInstances(Type type, boolean persistedOnly);
 
-    List<DurableInstance> scan(long start, long limit);
+    List<InstanceReference> scan(long start, long limit);
 
     @Override
     default InstanceRepository instanceRepository() {
@@ -95,6 +97,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void close();
 
+    boolean containsIdSelf(Id id);
+
     void finish();
 
     boolean isFinished();
@@ -107,13 +111,13 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     boolean remove(DurableInstance instance);
 
-    List<ClassInstance> selectByKey(IndexKeyRT indexKey);
+    List<InstanceReference> selectByKey(IndexKeyRT indexKey);
 
-    List<ClassInstance> query(InstanceIndexQuery query);
+    List<InstanceReference> query(InstanceIndexQuery query);
 
     long count(InstanceIndexQuery query);
 
-    default DurableInstance selectFirstByKey(IndexKeyRT key) {
+    default InstanceReference selectFirstByKey(IndexKeyRT key) {
         return NncUtils.first(selectByKey(key));
     }
 
@@ -137,7 +141,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     DurableInstance getRemoved(Id id);
 
-    void invalidateCache(DurableInstance instance);
+    void invalidateCache(InstanceReference instance);
 
     @Nullable EventQueue getEventQueue();
 

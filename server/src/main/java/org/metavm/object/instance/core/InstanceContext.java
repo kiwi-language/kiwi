@@ -41,6 +41,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private final IInstanceStore instanceStore;
     private final Cache cache;
     private final boolean skipPostprocessing;
+    private final boolean migrationDisabled;
 
     public InstanceContext(long appId,
                            IInstanceStore instanceStore,
@@ -55,7 +56,8 @@ public class InstanceContext extends BufferingInstanceContext {
                            Cache cache,
                            @Nullable EventQueue eventQueue,
                            boolean readonly,
-                           boolean skipPostprocessing
+                           boolean skipPostprocessing,
+                           boolean migrationDisabled
     ) {
         super(appId,
                 List.of(/*new CacheTreeSource(cache),*/new StoreTreeSource(instanceStore)),
@@ -76,6 +78,7 @@ public class InstanceContext extends BufferingInstanceContext {
 //        );
         this.cache = cache;
         this.skipPostprocessing = skipPostprocessing;
+        this.migrationDisabled = migrationDisabled;
     }
 
     @Override
@@ -96,14 +99,18 @@ public class InstanceContext extends BufferingInstanceContext {
             throw new IllegalStateException("Already finished");
         if (DebugEnv.debugging)
             debugLogger.info("InstanceContext.finish");
+        headContext.freeze();
         var patchContext = new PatchContext();
         var patch = buildPatch(null, patchContext);
+        patch = migrate(patch);
         checkRemoval();
         processRemoval(patch);
-        patch = beforeSaving(patch, patchContext);
+        /*patch = */
+        beforeSaving(patch, patchContext);
         saveInstances(patch.treeChanges);
+        saveReferences(patch);
         afterSaving(patch);
-        saveReferences(patch.referenceChange);
+        headContext.unfreeze();
         headContext.clear();
         patch.trees.forEach(headContext::add);
         if (TransactionSynchronizationManager.isActualTransactionActive())
@@ -132,7 +139,7 @@ public class InstanceContext extends BufferingInstanceContext {
             patchContext.incBuild();
             if (DebugEnv.buildPatchLog)
                 debugLogger.info("building patch. numBuild: {}", patchContext.numBuild);
-            onPatchBuild();
+            unfrozen(this::onPatchBuild);
             saveViews();
             craw();
             check();
@@ -163,8 +170,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 if (!instance.isRemoved())
                     orphans.add(instance);
             }
-            if (DebugEnv.buildPatchLog)
-                debugLogger.info("removeOrphans, numOrphans: {}, numNonPersistedOrphans: {}", orphans.size(), nonPersistedOrphans.size());
+//            logger.debug("Removing orphans, numOrphans: {}, numNonPersistedOrphans: {}", orphans.size(), nonPersistedOrphans.size());
             if (!orphans.isEmpty()) {
                 batchRemove(orphans);
             }
@@ -173,19 +179,15 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private void check() {
         try (var ignored = getProfiler().enter("check")) {
-            var checker = new StructuralVisitor() {
-                @Override
-                public Void visitDurableInstance(DurableInstance instance) {
-                    if (instance.isMarked())
-                        throw new BusinessException(ErrorCode.MULTI_PARENT, Instances.getInstanceDesc(instance));
-                    instance.setMarked(true);
-                    return super.visitDurableInstance(instance);
-                }
-            };
             clearMarks();
-            forEachInitializedRoot(i -> {
-                if(i.getParent() == null)
-                    i.accept(checker);
+            forEachInitializedRoot(root -> {
+                if (root.getParent() == null) {
+                    root.forEachDescendant(instance -> {
+                        if (instance.isMarked())
+                            throw new BusinessException(ErrorCode.MULTI_PARENT, Instances.getInstanceDesc(instance.getReference()));
+                        instance.setMarked(true);
+                    });
+                }
             });
         }
     }
@@ -207,7 +209,7 @@ public class InstanceContext extends BufferingInstanceContext {
     public void initIds() {
         try (var ignored = getProfiler().enter("initIds")) {
             var instancesToInitId =
-                    NncUtils.filter(this, i -> !i.isIdInitialized() && !i.isEphemeral());
+                    NncUtils.filter(this, i -> !i.isIdInitialized() && !i.isEphemeral() && !i.isValue());
             if (instancesToInitId.isEmpty())
                 return;
             idInitializer.initializeIds(appId, instancesToInitId);
@@ -254,8 +256,9 @@ public class InstanceContext extends BufferingInstanceContext {
     private Patch beforeSaving(Patch patch, PatchContext patchContext) {
         for (ContextPlugin plugin : plugins) {
             try (var ignored = getProfiler().enter(plugin.getClass().getSimpleName() + ".beforeSaving")) {
-                if (plugin.beforeSaving(patch.entityChange, this))
-                    patch = buildPatch(patch, patchContext);
+                plugin.beforeSaving(patch.entityChange, this);
+//                if (plugin.beforeSaving(patch.entityChange, this))
+//                    patch = buildPatch(patch, patchContext);
             }
         }
         return patch;
@@ -284,27 +287,30 @@ public class InstanceContext extends BufferingInstanceContext {
                 boolean changed = false;
             };
             removeOrphans(patch, nonPersistedOrphans);
-            patch.entityChange.forEachInsertOrUpdate(v -> {
-                var instance = internalGet(v.id());
-                if (instance.setChangeNotified()) {
-                    if (onChange(instance)) {
-                        if (DebugEnv.buildPatchLog && !ref.changed)
-                            debugLogger.info("insert/update change detected {}, numBuilds: {}", Instances.getInstancePath(instance), patchContext.numBuild);
-                        ref.changed = true;
+            // Temporarily unfreeze the head context because custom onChange and oRemove callbacks may load instances
+            unfrozen(() -> {
+                patch.entityChange.forEachInsertOrUpdate(v -> {
+                    var instance = internalGet(v.id());
+                    if (instance.setChangeNotified()) {
+                        if (onChange(instance)) {
+                            if (DebugEnv.buildPatchLog && !ref.changed)
+                                debugLogger.info("insert/update change detected {}, numBuilds: {}", Instances.getInstancePath(instance), patchContext.numBuild);
+                            ref.changed = true;
+                        }
                     }
-                }
+                });
+                Consumer<DurableInstance> processRemove = instance -> {
+                    if (instance.setRemovalNotified()) {
+                        if (onRemove(instance)) {
+                            if (DebugEnv.buildPatchLog && !ref.changed)
+                                debugLogger.info("removal change detected {}, numBuilds: {}", Instances.getInstancePath(instance), patchContext.numBuild);
+                            ref.changed = true;
+                        }
+                    }
+                };
+                patch.entityChange.deletes().forEach(v -> processRemove.accept(internalGet(v.id())));
+                nonPersistedOrphans.forEach(processRemove);
             });
-            Consumer<DurableInstance> processRemove = instance -> {
-                if (instance.setRemovalNotified()) {
-                    if (onRemove(instance)) {
-                        if (DebugEnv.buildPatchLog && !ref.changed)
-                            debugLogger.info("removal change detected {}, numBuilds: {}", Instances.getInstancePath(instance), patchContext.numBuild);
-                        ref.changed = true;
-                    }
-                }
-            };
-            patch.entityChange.deletes().forEach(v -> processRemove.accept(internalGet(v.id())));
-            nonPersistedOrphans.forEach(processRemove);
             return ref.changed ? buildPatch(patch, patchContext) : patch;
         }
     }
@@ -323,60 +329,23 @@ public class InstanceContext extends BufferingInstanceContext {
         var i = instance;
         while (i != null) {
             path.addFirst(i);
-            i = i.getParent();
+            i = NncUtils.get(i.getParent(), InstanceReference::resolve);
         }
         return NncUtils.join(path, this::getInstanceDesc, "/");
     }
 
     private void checkRemoval() {
-        var visitor = new GraphVisitor() {
-
-            private final LinkedList<String> path = new LinkedList<>();
-
-            @Override
-            public Void visitDurableInstance(DurableInstance instance) {
-                if (DebugEnv.removeCheckVerbose)
-                    path.addLast(getInstancePath(instance));
-                if (instance.isRemoved()) {
-                    if (DebugEnv.removeCheckVerbose)
-                        logger.info("reference path: {}", String.join("->", path));
-                    throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(instance));
-                }
-                if (DebugEnv.removeCheckVerbose) {
-                    try {
-                        numCalls++;
-                        if (!visited.add(instance))
-                            return null;
-                        if (instance instanceof ArrayInstance arrayInstance) {
-                            for (int i = 0; i < arrayInstance.getElements().size(); i++) {
-                                path.addLast(i + "");
-                                visit(arrayInstance.getElement(i));
-                                path.removeLast();
-                            }
-                        } else if (instance instanceof ClassInstance classInstance) {
-                            classInstance.forEachField((field, fieldValue) -> {
-                                path.addLast(field.getName());
-                                visit(fieldValue);
-                                path.removeLast();
-                            });
-//                            classInstance.forEachUnknownField((fieldValue) -> {
-//                                path.addLast("<unknown>");
-//                                visit(fieldValue);
-//                                path.removeLast();
-//                            });
-                        }
-                        return null;
-                    } finally {
-                        path.removeLast();
+        var visited = new IdentitySet<DurableInstance>();
+        forEachInitializedRoot(root -> {
+            if (!root.isRemoved() && !root.isEphemeral()) {
+                root.visitGraph(i -> {
+                    if (i.isRemoved()) {
+                        throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(i.getReference()));
                     }
-                } else
-                    return super.visitDurableInstance(instance);
+                    return true;
+                }, r -> r.tryGetId() == null || containsIdSelf(r.getId()), visited);
             }
-        };
-        for (var instance : this) {
-            if (instance.isRoot() && !instance.isRemoved() && !instance.isEphemeral())
-                visitor.visit(instance);
-        }
+        });
     }
 
     private void processRemoval(Patch patch) {
@@ -391,8 +360,8 @@ public class InstanceContext extends BufferingInstanceContext {
                     appId, idsToRemove, mergeSets(NncUtils.mapUnique(idsToRemove, Id::getTreeId), idsToUpdate)
             );
             if (ref != null)
-                throw BusinessException.strongReferencesPreventRemoval(getRoot(ref.getSourceTreeId()),
-                        internalGet(ref.getTargetInstanceId()));
+                throw BusinessException.strongReferencesPreventRemoval(getRoot(ref.getSourceTreeId()).getReference(),
+                        internalGet(ref.getTargetInstanceId()).getReference());
         }
     }
 
@@ -425,13 +394,14 @@ public class InstanceContext extends BufferingInstanceContext {
     private Set<ReferencePO> getBufferedReferences(Collection<Tree> trees) {
         Set<ReferencePO> references = new HashSet<>();
         for (Tree tree : trees) {
-            new ReferenceExtractor(tree.openInput(), appId, references::add).visitMessage();
+            if (!tree.migrated())
+                new ReferenceExtractor(tree.openInput(), appId, references::add).visitMessage();
         }
         return references;
     }
 
     private void registerTransactionSynchronization() {
-        if(skipPostprocessing)
+        if (skipPostprocessing)
             return;
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
@@ -444,7 +414,7 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void postProcess() {
-        if(skipPostprocessing)
+        if (skipPostprocessing)
             return;
         if (asyncPostProcessing) {
             executor.execute(this::postProcess0);
@@ -465,9 +435,11 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    private void saveReferences(EntityChange<ReferencePO> referenceChange) {
+    private void saveReferences(Patch patch) {
+        var diff = new ContextDifference(appId);
+        diff.diffReferences(headContext.getReferences(), getBufferedReferences(patch.trees));
         try (var ignored = getProfiler().enter("saveReferences")) {
-            instanceStore.saveReferences(referenceChange.toChangeList());
+            instanceStore.saveReferences(diff.getReferenceChange().toChangeList());
         }
     }
 
@@ -511,17 +483,98 @@ public class InstanceContext extends BufferingInstanceContext {
                 cache,
                 eventQueue,
                 isReadonly(),
-                skipPostprocessing
+                skipPostprocessing,
+                migrationDisabled
         );
     }
 
     @Override
-    public List<DurableInstance> scan(long start, long limit) {
+    public List<InstanceReference> scan(long start, long limit) {
         var treeIds = instanceStore.scan(getAppId(), start, limit);
         treeIds.forEach(loadingBuffer::buffer);
         loadingBuffer.flush();
         var ids = NncUtils.flatMap(treeIds, loadingBuffer::getIdsInTree);
-        return NncUtils.map(ids, this::get);
+        return NncUtils.map(ids, this::createReference);
+    }
+
+    private Patch migrate(Patch patch) {
+        var migrated = new ArrayList<DurableInstance>();
+        var roots = new HashSet<DurableInstance>();
+        forEachInitializedRoot(i -> {
+            if (!i.isRemoved() && i.getRoot() != i.getAggregateRoot()) {
+                assert !i.getAggregateRoot().isRemoved();
+                roots.add(i.getAggregateRoot());
+                i.forEachDescendant(instance -> {
+                    instance.migrate();
+                    logger.info("Instance {} migrated to {}", i.getOldId(), i.getId());
+                    mapManually(instance.getId(), instance);
+                });
+                migrated.add(i);
+            }
+        });
+        if (migrated.isEmpty())
+            return patch;
+        var trees = new ArrayList<>(patch.trees);
+        var inserts = new ArrayList<>(patch.treeChanges.inserts());
+        var updates = new ArrayList<>(patch.treeChanges.updates());
+        for (DurableInstance root : roots) {
+            var i = new InstancePO(
+                    appId,
+                    root.getTreeId(),
+                    InstanceOutput.toBytes(root),
+                    root.getVersion() + 1,
+                    root.getSyncVersion(),
+                    root.getNextNodeId()
+            );
+            boolean added = NncUtils.replace(inserts, i, (t1, t2) -> t1.getId() == t2.getId());
+            if (!added)
+                NncUtils.replaceOrAppend(updates, i, (t1, t2) -> t1.getId() == t2.getId());
+            NncUtils.replace(trees, i.toTree(), (t1, t2) -> t1.id() == t2.id());
+        }
+        for (DurableInstance instance : migrated) {
+            var originalTreeId = instance.getOldId().getTreeId();
+            var i = new InstancePO(
+                    appId,
+                    originalTreeId,
+                    InstanceOutput.toMigrationsBytes(instance),
+                    0L,
+                    0L,
+                    0L
+            );
+            NncUtils.replaceOrAppend(updates, i, (t1, t2) -> t1.getId() == t2.getId());
+            trees.removeIf(t -> t.id() == originalTreeId);
+        }
+        return new Patch(
+                trees,
+                patch.entityChange,
+                EntityChange.create(InstancePO.class, inserts, updates, patch.treeChanges.deletes()),
+                patch.referenceChange
+        );
+    }
+
+    private void loadSeparateChildren() {
+        // Assuming multiple levels of separate children are rare, hence only one level of buffering is applied
+        forEachInitialized(i -> {
+            if(i instanceof ClassInstance classInstance) {
+                classInstance.forEachField((f, v) -> {
+                    if (f.isChild() && v instanceof InstanceReference r) {
+                        if (!r.isInitialized()) {
+                            buffer(r.getId());
+                        }
+                    }
+                });
+            }
+        });
+        forEachInitializedRoot(r -> {
+            if (r.getParent() == null)
+                r.forEachDescendant(i -> {});
+        });
+    }
+
+    private void unfrozen(Runnable action) {
+        headContext.unfreeze();
+        action.run();
+        headContext.freeze();
     }
 
 }

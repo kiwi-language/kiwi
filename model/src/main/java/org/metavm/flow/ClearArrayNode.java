@@ -3,11 +3,12 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.ClearArrayNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.BusinessException;
 
@@ -58,7 +59,7 @@ public class ClearArrayNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var arrayInst = (ArrayInstance) array.evaluate(frame);
+        var arrayInst = array.evaluate(frame).resolveArray();
         arrayInst.clear();
         return next();
     }

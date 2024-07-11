@@ -11,7 +11,6 @@ import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.ForeachNodeNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
@@ -92,7 +91,7 @@ public class ForeachNode extends LoopNode {
     protected boolean checkExtraCondition(ClassInstance loopObject, MetaFrame frame) {
         var arrayField = getKlass().findFieldByCode("array");
         var indexField = getKlass().findFieldByCode("index");
-        var array = (ArrayInstance) loopObject.getField(arrayField);
+        var array = loopObject.getField(arrayField).resolveArray();
         var index = loopObject.getLongField(indexField);
         return index.getValue() < array.length();
     }

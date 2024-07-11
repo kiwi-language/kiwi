@@ -6,4 +6,8 @@ public interface WalTask {
 
     WAL getWAL();
 
+    default boolean isMigrationDisabled() {
+        return false;
+    }
+
 }

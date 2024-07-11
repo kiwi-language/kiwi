@@ -2,10 +2,7 @@ package org.metavm.object.instance;
 
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.natives.ListNative;
-import org.metavm.object.instance.core.ArrayInstance;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.PrimitiveInstance;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -26,8 +23,12 @@ public class InstanceDTOBuilder {
 //            serContext.writeType(instance.getType());
 //        }
         return switch (instance) {
-            case ClassInstance classInstance -> buildForClassInstance(classInstance, depth, isChild);
-            case ArrayInstance arrayInstance -> buildForArray(arrayInstance, depth, isChild);
+            case InstanceReference reference -> {
+                if (reference.isArray())
+                    yield buildForArray(reference.resolveArray(), depth, isChild);
+                else
+                    yield buildForClassInstance(reference.resolveObject(), depth, isChild);
+            }
             case PrimitiveInstance primitiveInstance -> buildForPrimitive(primitiveInstance);
             case null, default -> throw new InternalException("Unrecognized instance: " + instance);
         };
@@ -51,7 +52,7 @@ public class InstanceDTOBuilder {
                         instance.getType().toExpression(serContext),
                         instance.getType().getName(),
                         instance.getTitle(),
-                        Instances.getSourceMappingRefDTO(instance),
+                        Instances.getSourceMappingRefDTO(instance.getReference()),
                         new ListInstanceParam(
                                 array.isChildArray(),
                                 NncUtils.map(
@@ -75,7 +76,7 @@ public class InstanceDTOBuilder {
                         instance.getType().toExpression(serContext),
                         instance.getType().getName(),
                         instance.getTitle(),
-                        Instances.getSourceMappingRefDTO(instance),
+                        Instances.getSourceMappingRefDTO(instance.getReference()),
                         new ClassInstanceParam(
                                 NncUtils.map(
                                         instance.getKlass().getAllFields(),
@@ -104,7 +105,7 @@ public class InstanceDTOBuilder {
                         array.getType().toExpression(serContext),
                         array.getType().getName(),
                         array.getTitle(),
-                        Instances.getSourceMappingRefDTO(array),
+                        Instances.getSourceMappingRefDTO(array.getReference()),
                         new ArrayInstanceParam(
                                 array.isChildArray(),
                                 NncUtils.map(

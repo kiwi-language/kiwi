@@ -37,6 +37,7 @@ public class InstanceMapper<I extends DurableInstance> implements Mapper<I, I> {
 
     @Override
     public I createInstance(I model, ObjectInstanceMap map, Id id) {
+        map.addMapping(model, model);
         return model;
     }
 

@@ -18,15 +18,15 @@ public class GraphQueryExecutor {
     public List<InstanceDTO[]> execute(Klass type, List<DurableInstance> instances, List<Expression> expressions) {
         PathTree path = resolvePath(expressions);
         ObjectNode tree = new ObjectNode(path, type);
-        loadTree(NncUtils.map(instances, i -> new NodeInstancePair(tree, i)));
+        loadTree(NncUtils.map(instances, i -> new NodeInstancePair(tree, i.getReference())));
         Expression[] exprArray = new Expression[expressions.size()];
         expressions.toArray(exprArray);
         List<InstanceDTO[]> results = new ArrayList<>();
-        for (Instance instance : instances) {
+        for (var instance : instances) {
             InstanceDTO[] value = new InstanceDTO[exprArray.length];
             results.add(value);
             for (int j = 0; j < exprArray.length; j++) {
-                value[j] = exprArray[j].evaluate(new TreeEvaluationContext(tree, instance)).toDTO();
+                value[j] = exprArray[j].evaluate(new TreeEvaluationContext(tree, instance.getReference())).toDTO();
             }
         }
         return results;

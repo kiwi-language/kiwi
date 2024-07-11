@@ -36,7 +36,7 @@ public class MethodBuilder {
     private List<TypeVariable> typeParameters = List.of();
     private Method horizontalTemplate;
     private Method verticalTemplate;
-    private List<Type> typeArguments = List.of();
+    private List<? extends Type> typeArguments = List.of();
     private FunctionType type;
     private boolean hidden;
     private FunctionType staticType;
@@ -146,7 +146,7 @@ public class MethodBuilder {
         return this;
     }
 
-    public MethodBuilder typeArguments(List<Type> typeArguments) {
+    public MethodBuilder typeArguments(List<? extends Type> typeArguments) {
         this.typeArguments = typeArguments;
         return this;
     }

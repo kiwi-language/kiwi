@@ -4,12 +4,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.UnmapNodeParam;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.Type;
 import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.AssertUtils;
@@ -65,7 +67,7 @@ public class UnmapNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var viewInst = (DurableInstance) view.evaluate(frame);
+        var viewInst = (InstanceReference) view.evaluate(frame);
         return next(mappingRef.resolve().unmap(viewInst, frame));
     }
 

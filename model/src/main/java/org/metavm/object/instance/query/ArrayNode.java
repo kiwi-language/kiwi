@@ -1,7 +1,7 @@
 package org.metavm.object.instance.query;
 
-import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ArrayNode extends InstanceNode<ArrayInstance> {
+public class ArrayNode extends InstanceNode<InstanceReference> {
 
     private final Type type;
     private final Map<String, InstanceNode<?>> children = new HashMap<>();
@@ -37,53 +37,53 @@ public class ArrayNode extends InstanceNode<ArrayInstance> {
     }
 
     @Override
-    public Instance getByPath0(ArrayInstance instance, Path path) {
+    public Instance getByPath0(InstanceReference instance, Path path) {
         InstanceNode<?> child = children.get(path.firstItem());
         if(child.isAsterisk()) {
             return Instances.createArray(
                     NncUtils.map(
-                            instance.getElements(),
+                            instance.resolveArray().getElements(),
                             e -> child.getByPath(e, path.subPath())
                     )
-            );
+            ).getReference();
         }
         else {
-            return child.getByPath(instance.get(Integer.parseInt(path.firstItem())), path.subPath());
+            return child.getByPath(instance.resolveArray().get(Integer.parseInt(path.firstItem())), path.subPath());
         }
     }
 
     @Override
-    protected void fetch0(ArrayInstance instance, Path path, List<Instance> result) {
+    protected void fetch0(InstanceReference instance, Path path, List<Instance> result) {
         InstanceNode<?> child = children.get(path.firstItem());
         if(child.isAsterisk()) {
-            for (Instance element : instance.getElements()) {
+            for (Instance element : instance.resolveArray().getElements()) {
                 child.fetch(element, path.subPath(), result);
             }
         }
         else {
-            child.fetch(instance.getInstance(child.getNameAsIndex()), path.subPath(), result);
+            child.fetch(instance.resolveArray().getInstance(child.getNameAsIndex()), path.subPath(), result);
         }
     }
 
     @Override
-    public List<NodeInstancePair> getNodeInstancePairsForChildren0(ArrayInstance instance) {
+    public List<NodeInstancePair> getNodeInstancePairsForChildren0(InstanceReference instance) {
         List<NodeInstancePair> pairs = new ArrayList<>();
         for (InstanceNode<?> child : children.values()) {
             if(child.isAsterisk()) {
-                for (Instance element : instance.getElements()) {
+                for (Instance element : instance.resolveArray().getElements()) {
                     pairs.add(new NodeInstancePair(child, element));
                 }
             }
             else {
-                pairs.add(new NodeInstancePair(child, instance.get(child.getNameAsIndex())));
+                pairs.add(new NodeInstancePair(child, instance.resolveArray().get(child.getNameAsIndex())));
             }
         }
         return pairs;
     }
 
     @Override
-    protected Class<ArrayInstance> getInstanceClass() {
-        return ArrayInstance.class;
+    protected Class<InstanceReference> getInstanceClass() {
+        return InstanceReference.class;
     }
 
 }

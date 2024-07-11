@@ -381,11 +381,7 @@ public class MappingSaver {
                             p -> new TypeVariable(null, p.getName(), p.getCode(), DummyGenericDeclaration.INSTANCE)
                     ))
                     .build();
-            var subst = new SubstitutorV2(
-                    template, template.getTypeParameters(),
-                    NncUtils.map(sourceKlass.getTypeParameters(), TypeVariable::getType), ResolutionStage.INIT
-            );
-            return (Klass) subst.copy(template);
+            return template.getParameterized(NncUtils.map(sourceKlass.getTypeParameters(), TypeVariable::getType), ResolutionStage.INIT);
         } else {
             return KlassBuilder.newBuilder(viewTypeName, viewTypeCode)
                     .ephemeral(true)
@@ -550,7 +546,7 @@ public class MappingSaver {
 
     public static ClassInstance getSource(ClassInstance view) {
         var sourceField = view.getKlass().getFieldByCode("source");
-        return (ClassInstance) view.getField(sourceField);
+        return view.getField(sourceField).resolveObject();
     }
 
     private static @Nullable Accessor getAccessor(Method getter) {

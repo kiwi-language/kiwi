@@ -2,7 +2,9 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.ArrayExpression;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.NewArrayNodeParam;
@@ -89,8 +91,8 @@ public class NewArrayNode extends NodeRT implements NewNode {
         // TODO support ephemeral
         var array = new ArrayInstance(getType(), instParentRef);
         if (!array.isChildArray() && value != null)
-            array.addAll((ArrayInstance) value.evaluate(frame));
-        return next(array);
+            array.addAll( value.evaluate(frame).resolveArray());
+        return next(array.getReference());
     }
 
     @Override

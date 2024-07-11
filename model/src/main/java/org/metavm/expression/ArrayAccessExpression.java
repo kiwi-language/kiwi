@@ -1,9 +1,8 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
-import org.metavm.object.instance.core.ArrayInstance;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.LongInstance;
 import org.metavm.object.type.ArrayType;
@@ -56,7 +55,7 @@ public class ArrayAccessExpression extends Expression {
     @Override
     protected Instance evaluateSelf(EvaluationContext context) {
         int i = ((LongInstance) (index.evaluate(context))).getValue().intValue();
-        return ((ArrayInstance) array.evaluate(context)).get(i);
+        return array.evaluate(context).resolveArray().get(i);
     }
 
     @Override

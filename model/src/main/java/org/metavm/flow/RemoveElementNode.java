@@ -8,7 +8,6 @@ import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.RemoveElementNodeParam;
-import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
@@ -80,7 +79,7 @@ public class RemoveElementNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var arrayInst = (ArrayInstance) array.evaluate(frame);
+        var arrayInst = array.evaluate(frame).resolveArray();
         var elementInst = element.evaluate(frame);
         return next(Instances.booleanInstance(arrayInst.removeElement(elementInst)));
     }

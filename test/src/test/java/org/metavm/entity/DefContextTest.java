@@ -11,7 +11,9 @@ import org.metavm.mocks.Baz;
 import org.metavm.mocks.Foo;
 import org.metavm.mocks.Qux;
 import org.metavm.object.instance.ObjectInstanceMap;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.EntityInstanceContextBridge;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -54,7 +56,7 @@ public class DefContextTest extends TestCase {
     public void testConvertToInstance() {
         EntityDef<Klass> typeDef = defContext.getEntityDef(Klass.class);
         Klass type = typeDef.getKlass();
-        var instance = (DurableInstance) objectInstanceMap.getInstance(type);
+        var instance = objectInstanceMap.getInstance(type);
 //                typeDef.createInstance(type, objectInstanceMap, null);
 //        InstanceDTO instanceDTO = instance.toDTO();
 //        TestUtils.logJSON(logger, "instance", instanceDTO);
@@ -64,7 +66,7 @@ public class DefContextTest extends TestCase {
     public void testConvertFoo() {
         EntityDef<Foo> fooDef = defContext.getEntityDef(Foo.class);
         Foo foo = new Foo(" Big Foo", new Bar("Bar001"));
-        ClassInstance instance = (ClassInstance) objectInstanceMap.getInstance(foo);
+        ClassInstance instance = objectInstanceMap.getInstance(foo).resolveObject();
         Foo recoveredFoo = fooDef.createEntity(instance, objectInstanceMap);
         Assert.assertFalse(DiffUtils.isPojoDifferent(foo, recoveredFoo));
     }
@@ -72,7 +74,7 @@ public class DefContextTest extends TestCase {
     public void testConvertType() {
         EntityDef<Klass> typeDef = defContext.getEntityDef(Klass.class);
         Klass type = typeDef.getKlass();
-        var instance = (ClassInstance) objectInstanceMap.getInstance(type);
+        var instance = objectInstanceMap.getInstance(type).resolveObject();
         typeDef.initInstance(instance, type, objectInstanceMap);
         Klass recoveredType = typeDef.createEntity(instance, objectInstanceMap);
         MatcherAssert.assertThat(recoveredType, PojoMatcher.of(type));
@@ -107,8 +109,8 @@ public class DefContextTest extends TestCase {
                 quxType.getType()
         );
         qux.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.APP_ID, quxType.getType()), 0L, quxType.getType()));
-        ConstantExpression model = new ConstantExpression(qux);
-        Instance instance = def.createInstance(model, objectInstanceMap, null);
+        ConstantExpression model = new ConstantExpression(qux.getReference());
+        var instance = def.createInstance(model, objectInstanceMap, null);
         ConstantExpression recoveredModel = def.createEntityHelper(instance, objectInstanceMap);
         MatcherAssert.assertThat(recoveredModel, PojoMatcher.of(model));
     }

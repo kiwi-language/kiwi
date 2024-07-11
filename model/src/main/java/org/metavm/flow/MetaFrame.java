@@ -1,22 +1,19 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.expression.NodeExpression;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.DurableInstance;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceRepository;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Access;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.util.LinkedList;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -72,9 +69,8 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         loopingNodes.remove(loopNode);
     }
 
-    public Instance addInstance(DurableInstance instance) {
+    public void addInstance(DurableInstance instance) {
         instanceRepository.bind(instance);
-        return instance;
     }
 
     public void enterTrySection(TryNode tryNode) {
@@ -127,8 +123,8 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         return exceptions.get(tryNode);
     }
 
-    public void deleteInstance(DurableInstance instance) {
-        instanceRepository.remove(instance);
+    public void deleteInstance(InstanceReference instance) {
+        instanceRepository.remove(instance.resolve());
     }
 
     @SuppressWarnings("unused")

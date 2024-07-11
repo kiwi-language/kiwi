@@ -24,8 +24,10 @@ import org.metavm.flow.rest.ParameterDTO;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.cache.MockCache;
-import org.metavm.object.instance.core.StructuralVisitor;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.DefaultViewId;
+import org.metavm.object.instance.core.DurableInstance;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.instance.rest.*;
@@ -298,29 +300,18 @@ public class TestUtils {
 
     public static void initInstanceIds(List<DurableInstance> instances, EntityIdProvider idProvider) {
         var roots = new IdentitySet<DurableInstance>();
-        var visitor = new GraphVisitor() {
-            @Override
-            public Void visitDurableInstance(DurableInstance instance) {
-                var root = instance.getRoot();
-                if (!root.isIdInitialized())
-                    roots.add(root);
-                return super.visitDurableInstance(instance);
-            }
-        };
-        instances.forEach(visitor::visit);
+        instances.forEach(r -> r.visitGraph(i -> {
+            var root = i.getRoot();
+            if (!root.isIdInitialized())
+                roots.add(root);
+            return true;
+        }));
         roots.forEach(r -> {
             var treeId = idProvider.allocateOne(TestConstants.APP_ID, r.getType());
             var nodeIdRef = new Object() {
                 long nextNodeId;
             };
-            r.accept(new StructuralVisitor() {
-
-                @Override
-                public Void visitDurableInstance(DurableInstance instance) {
-                    instance.initId(PhysicalId.of(treeId, nodeIdRef.nextNodeId++, instance.getType()));
-                    return super.visitDurableInstance(instance);
-                }
-            });
+            r.forEachDescendant(instance -> instance.initId(PhysicalId.of(treeId, nodeIdRef.nextNodeId++, instance.getType())));
         });
     }
 

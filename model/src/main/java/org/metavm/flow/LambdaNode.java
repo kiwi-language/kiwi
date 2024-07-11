@@ -135,7 +135,7 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
         } else {
             var funcImplKlass = functionInterfaceImpl.resolve();
             var funcField = funcImplKlass.getFieldByCode("func");
-            return next(ClassInstance.create(Map.of(funcField, func), functionInterfaceImpl));
+            return next(ClassInstance.create(Map.of(funcField, func), functionInterfaceImpl).getReference());
         }
     }
 

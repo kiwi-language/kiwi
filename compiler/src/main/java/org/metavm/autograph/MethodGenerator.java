@@ -399,6 +399,11 @@ public class MethodGenerator {
     MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments,
                                     List<Type> capturedExpressionTypes,
                                     List<Expression> capturedExpressions) {
+        if(method.getParameters().size() != arguments.size()) {
+            throw new IllegalArgumentException(
+                    "Method " + method.getTypeDesc() + " expects " + method.getParameters().size() +
+                            " arguments, but " + arguments.size() + " were provided");
+        }
         List<Argument> args = NncUtils.biMap(
                 method.getParameters(), arguments,
                 (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))

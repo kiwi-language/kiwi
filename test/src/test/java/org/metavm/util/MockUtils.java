@@ -18,7 +18,6 @@ import org.metavm.object.instance.core.ClassInstanceBuilder;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
-import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
@@ -39,11 +38,7 @@ public class MockUtils {
                 .kind(ClassKind.ENUM)
                 .build();
         var enumKlass = StdKlass.enum_.get();
-        var subst = new SubstitutorV2(
-                enumKlass, enumKlass.getTypeParameters(), List.of(couponStateType.getType()),
-                ResolutionStage.DEFINITION
-        );
-        var couponStateEnumKlas = (Klass) subst.copy(enumKlass);
+        var couponStateEnumKlas = enumKlass.getParameterized(List.of(couponStateType.getType()));
         couponStateType.setSuperType(couponStateEnumKlas.getType());
         var enumNameField = couponStateEnumKlas.getFieldByCode("name");
         var enumOrdinalField = couponStateEnumKlas.getFieldByCode("ordinal");
@@ -97,7 +92,7 @@ public class MockUtils {
         var couponDiscountField = FieldBuilder.newBuilder("discount", "discount", couponType, Types.getDoubleType())
                 .build();
         var couponStateField = FieldBuilder.newBuilder("state", "state", couponType, couponStateType.getType())
-                .defaultValue(couponNormalState)
+                .defaultValue(couponNormalState.getReference())
                 .build();
 
         return new ShoppingTypes(
@@ -332,7 +327,7 @@ public class MockUtils {
                         Instances.stringInstance("shoes"),
                         shoppingTypes.productSkuListField(),
                         new ArrayInstance(shoppingTypes.skuChildArrayType(),
-                                List.of(sku40, sku41, sku42))
+                                List.of(sku40.getReference(), sku41.getReference(), sku42.getReference())).getReference()
                 ))
                 .build();
         var couponFiveOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
@@ -404,7 +399,7 @@ public class MockUtils {
         var name = enumConstant.getStringField(nameField).getValue();
         return FieldBuilder.newBuilder(name, null, enumType, enumType.getType())
                 .isStatic(true)
-                .staticValue(enumConstant)
+                .staticValue(enumConstant.getReference())
                 .build();
     }
 
@@ -566,9 +561,9 @@ public class MockUtils {
                         livingBeingTypes.livingBeingAgeField(),
                         Instances.longInstance(30L),
                         livingBeingTypes.livingBeingAncestorsField(),
-                        new ArrayInstance(livingBeingTypes.livingBeingArrayType()),
+                        new ArrayInstance(livingBeingTypes.livingBeingArrayType()).getReference(),
                         livingBeingTypes.livingBeingOffspringsField(),
-                        new ArrayInstance(livingBeingTypes.livingBeingArrayType()),
+                        new ArrayInstance(livingBeingTypes.livingBeingArrayType()).getReference(),
                         livingBeingTypes.livingBeingExtraInfoFIeld(),
                         Instances.stringInstance("very smart"),
                         livingBeingTypes.animalIntelligenceField(),
@@ -600,15 +595,15 @@ public class MockUtils {
                                                         fooTypes.barCodeField(),
                                                         Instances.stringInstance("bar001")
                                                 ))
-                                                .build(),
+                                                .buildAndGetReference(),
                                         ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                 .data(Map.of(
                                                         fooTypes.barCodeField(),
                                                         Instances.stringInstance("bar002")
                                                 ))
-                                                .build()
+                                                .buildAndGetReference()
                                 )
-                        ),
+                        ).getReference(),
                         fooTypes.fooQuxField(),
                         ClassInstanceBuilder.newBuilder(fooTypes.quxType().getType())
                                 .data(
@@ -617,7 +612,7 @@ public class MockUtils {
                                                 Instances.longInstance(100L)
                                         )
                                 )
-                                .build(),
+                                .buildAndGetReference(),
                         fooTypes.fooBazListField(),
                         new ArrayInstance(
                                 fooTypes.bazArrayType(),
@@ -633,17 +628,17 @@ public class MockUtils {
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar003")
                                                                                 ))
-                                                                                .build(),
+                                                                                .buildAndGetReference(),
                                                                         ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                                                 .data(Map.of(
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar004")
                                                                                 ))
-                                                                                .build()
+                                                                                .buildAndGetReference()
                                                                 )
-                                                        )
+                                                        ).getReference()
                                                 ))
-                                                .build(),
+                                                .buildAndGetReference(),
                                         ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
                                                 .data(Map.of(
                                                         fooTypes.bazBarsField(),
@@ -655,19 +650,19 @@ public class MockUtils {
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar005")
                                                                                 ))
-                                                                                .build(),
+                                                                                .buildAndGetReference(),
                                                                         ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
                                                                                 .data(Map.of(
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar006")
                                                                                 ))
-                                                                                .build()
+                                                                                .buildAndGetReference()
                                                                 )
-                                                        )
+                                                        ).getReference()
                                                 ))
-                                                .build()
+                                                .buildAndGetReference()
                                 )
-                        )
+                        ).getReference()
                 ))
                 .build();
         if (initIds)

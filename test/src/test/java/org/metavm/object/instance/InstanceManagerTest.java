@@ -13,10 +13,7 @@ import org.metavm.flow.rest.FlowExecutionRequest;
 import org.metavm.flow.rest.MethodParam;
 import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.flow.rest.UpdateFieldDTO;
-import org.metavm.mocks.Bar;
-import org.metavm.mocks.Baz;
-import org.metavm.mocks.Foo;
-import org.metavm.mocks.Qux;
+import org.metavm.mocks.*;
 import org.metavm.object.instance.core.DefaultViewId;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
@@ -115,7 +112,7 @@ public class InstanceManagerTest extends TestCase {
             foo = context.getEntity(Foo.class, foo.getId());
             Assert.assertEquals(
                     List.of(
-                            context.getInstance(foo.getBar()).toDTO(),
+                            context.getInstance(foo.getBar()).getReference().toDTO(),
                             Instances.createString("Bar001").toDTO(),
                             Instances.createString("Bar002").toDTO(),
                             Instances.createString("Bar004").toDTO(),
@@ -409,7 +406,7 @@ public class InstanceManagerTest extends TestCase {
             ));
             Assert.fail("Should not be able to delete child in use");
         } catch (BusinessException e) {
-            Assert.assertEquals(String.format("Object is referenced by others and cannot be deleted: %s-%s", childType.name(), child.title()), e.getMessage());
+            Assert.assertEquals(String.format("Object is referenced by others and cannot be deleted: Child-%s", child.title()), e.getMessage());
         }
     }
 
@@ -492,6 +489,80 @@ public class InstanceManagerTest extends TestCase {
             var node = context.getEntity(MethodCallNode.class, ref.id);
             Assert.assertEquals(classType, node.getFlowRef().getDeclaringType());
         }
+    }
+
+//    public void testMigration() {
+//        var klassIds = TestUtils.doInTransaction(() -> {
+//            try (var context = newContext()) {
+//                var productKlass = context.bind(TestUtils.newKlassBuilder("Product").build());
+//                var inventoryKlass = context.bind(TestUtils.newKlassBuilder("Inventory").build());
+//                FieldBuilder.newBuilder("inventory", "inventory", productKlass, Types.getNullableType(inventoryKlass.getType()))
+//                        .isChild(true)
+//                        .build();
+//                FieldBuilder.newBuilder("quantity", "quantity", inventoryKlass, PrimitiveType.longType)
+//                        .build();
+//                context.finish();
+//                return new Id[]{productKlass.getId(), inventoryKlass.getId()};
+//            }
+//        });
+//        var productKlassId = klassIds[0];
+//        var inventoryKlassId = klassIds[1];
+//        var ids = TestUtils.doInTransaction(() -> {
+//            try (var context = newContext()) {
+//                var productKlass = context.getKlass(productKlassId);
+//                var inventoryKlass = context.getKlass(inventoryKlassId);
+//                var product = ClassInstance.create(Map.of(), productKlass.getType());
+//                context.getInstanceContext().bind(product);
+//                var inventory = ClassInstance.create(
+//                        Map.of(
+//                                inventoryKlass.getFieldByCode("quantity"),
+//                                Instances.longInstance(0L)
+//                        ),
+//                        inventoryKlass.getType()
+//                );
+//                context.getInstanceContext().bind(inventory);
+//                context.finish();
+//                return new Id[]{product.getId(), inventory.getId()};
+//            }
+//        });
+//        var productId = ids[0];
+//        var inventoryId = ids[1];
+//        TestUtils.doInTransactionWithoutResult(() -> {
+//            try (var context = newContext()) {
+//                var product = (ClassInstance) context.getInstanceContext().get(productId);
+//                var inventory = context.getInstanceContext().get(inventoryId);
+////                context.getInstanceContext().remove(product);
+//                product.setField(product.getKlass().getFieldByCode("inventory"), inventory.getReference());
+//                context.finish();
+//                Assert.assertEquals(product, inventory.getRoot());
+//                Assert.assertEquals(product.getTreeId(), inventory.getTreeId());
+//            }
+//        });
+////        try (var context = newContext()) {
+////            var inventory = context.getInstanceContext().get(inventoryId);
+////            try {
+////                inventory.ensureLoaded();
+////                Assert.fail();
+////            } catch (BusinessException e) {
+////                Assert.assertEquals(String.format("Object '%s' not found", inventoryId.toString()), e.getMessage());
+////            }
+////        }
+//    }
+
+    public void testIndexQuery() {
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var foo = new IndexFoo();
+                context.bind(foo);
+                context.finish();
+            }
+        });
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var fooByState = context.selectFirstByKey(IndexFoo.IDX_STATE, FooState.STATE1);
+                Assert.assertNotNull(fooByState);
+            }
+        });
     }
 
 }

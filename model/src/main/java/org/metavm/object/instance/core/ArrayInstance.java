@@ -88,7 +88,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     public Set<DurableInstance> getChildren() {
         ensureLoaded();
         if (getType().getKind() == ArrayKind.CHILD) {
-            return NncUtils.filterAndMapUnique(elements, Instance::isNotNull, e -> (DurableInstance) e);
+            return NncUtils.filterAndMapUnique(elements, Instance::isNotNull, Instance::resolveDurable);
         } else {
             return Set.of();
         }
@@ -112,10 +112,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         } else {
             for (Instance element : elements) {
                 if (!element.shouldSkipWrite()) {
-                    if(element.isValue())
-                        output.writeRecord(element);
-                    else
-                        output.writeInstance(element);
+                    output.writeInstance(element);
                 }
             }
         }
@@ -125,19 +122,14 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     @NoProxy
     public void readFrom(InstanceInput input) {
         setLoaded(input.isLoadedFromCache());
-        var parent = getParent();
         var parentField = getParentField();
         var elements = this.elements;
         int len = input.readInt();
-        input.setParent(this);
         input.setParentField(null);
         for (int i = 0; i < len; i++) {
             var element = input.readInstance();
             elements.add(element);
-            if (element instanceof DurableInstance d)
-                new ReferenceRT(this, d, null);
         }
-        input.setParent(parent);
         input.setParentField(parentField);
     }
 
@@ -179,6 +171,11 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         return elements.iterator();
     }
 
+    public ListIterator<Instance> listIterator() {
+        ensureLoaded();
+        return elements.listIterator();
+    }
+
     public boolean addElement(Instance element) {
         ensureLoaded();
         return addInternally(element);
@@ -209,7 +206,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         checkIndex(index);
         element = checkElement(element);
         if (isChildArray() && element.isNotNull())
-            ((DurableInstance) element).setParent(this, null);
+            element.resolveDurable().setParent(getReference(), null);
         var removed = elements.set(index, element);
         if (removed != null)
             onRemove(removed);
@@ -232,7 +229,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     private boolean addInternally(Instance element) {
         element = checkElement(element);
         if (isChildArray() && element.isNotNull())
-            ((DurableInstance) element).setParent(this, null);
+            element.resolveDurable().setParent(getReference(), null);
         elements.add(element);
         onAdd(element);
         return true;
@@ -262,16 +259,12 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
 
     private void onRemove(Instance instance) {
         setModified();
-        if (instance.isNotPrimitive())
-            getOutgoingReference(instance, null).clear();
         for (ArrayListener listener : listeners)
             listener.onRemove(instance);
     }
 
     private void onAdd(Instance instance) {
         setModified();
-        if (instance instanceof DurableInstance d)
-            new ReferenceRT(this, d, null);
         for (ArrayListener listener : listeners)
             listener.onAdd(instance);
     }
@@ -309,7 +302,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         );
     }
 
-    @Override
+//    @Override
     @NoProxy
     public boolean isReference() {
         return true;
@@ -323,6 +316,40 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     }
 
     @Override
+    public void forEachChild(Consumer<DurableInstance> action) {
+        if(isChildArray()) {
+            elements.forEach(e -> {
+                if (e instanceof InstanceReference r)
+                    action.accept(r.resolve());
+            });
+        }
+    }
+
+    @Override
+    public void forEachMember(Consumer<DurableInstance> action) {
+        if(isChildArray()) {
+            elements.forEach(e -> {
+                if (e instanceof InstanceReference r)
+                    action.accept(r.resolve());
+            });
+        }
+        else {
+            elements.forEach(e -> {
+                if(e instanceof InstanceReference r && r.isValueReference())
+                    action.accept(r.resolve());
+            });
+        }
+    }
+
+    @Override
+    public void forEachReference(Consumer<InstanceReference> action) {
+        elements.forEach(e -> {
+            if(e instanceof InstanceReference r)
+                action.accept(r);
+        });
+    }
+
+    //    @Override
     protected ArrayInstanceParam getParam() {
         ensureLoaded();
         if (isChildArray()) {
@@ -342,19 +369,19 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         }
     }
 
-    @Override
-    @NoProxy
-    public <R> R accept(InstanceVisitor<R> visitor) {
-        return visitor.visitArrayInstance(this);
-    }
+//    @Override
+//    @NoProxy
+//    public <R> R accept(InstanceVisitor<R> visitor) {
+//        return visitor.visitArrayInstance(this);
+//    }
 
-    @Override
+//    @Override
     public <R> void acceptReferences(InstanceVisitor<R> visitor) {
         ensureLoaded();
         elements.forEach(visitor::visit);
     }
 
-    @Override
+//    @Override
     public <R> void acceptChildren(InstanceVisitor<R> visitor) {
         ensureLoaded();
         if (isChildArray())
@@ -415,7 +442,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         return (ArrayType) super.getType();
     }
 
-    @Override
+//    @Override
     public InstanceFieldValue toFieldValueDTO() {
         ensureLoaded();
         return new InstanceFieldValue(getTitle(), toDTO());
@@ -424,10 +451,6 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     public void clear() {
         ensureLoaded();
         clearInternal();
-    }
-
-    public ArrayInstance tryGetSource() {
-        return (ArrayInstance) super.tryGetSource();
     }
 
     public void addListener(ArrayListener listener) {
@@ -439,20 +462,33 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         return elements.removeIf(filter);
     }
 
-    @Override
+//    @Override
     protected void writeTree(TreeWriter treeWriter) {
         ensureLoaded();
         treeWriter.writeLine(getType().getName());
         treeWriter.indent();
         if(isChildArray()) {
-            for (Instance element : elements)
-                element.writeTree(treeWriter);
+            for (Instance element : elements) {
+                if(element instanceof InstanceReference r)
+                    r.resolve().writeTree(treeWriter);
+                else
+                    treeWriter.writeLine(element.getTitle());
+            }
         }
         else {
-            for (Instance element : elements)
-                treeWriter.writeLine(element.getTitle());
+            for (Instance element : elements) {
+                if(element instanceof InstanceReference r && r.isValueReference())
+                    r.resolve().writeTree(treeWriter);
+                else
+                    treeWriter.writeLine(element.getTitle());
+            }
         }
         treeWriter.deIndent();
+    }
+
+    @Override
+    public void accept(StructuralInstanceVisitor visitor) {
+        visitor.visitArrayInstance(this);
     }
 
     public List<Object> toJson(IEntityContext context) {
@@ -461,8 +497,23 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         return list;
     }
 
-    @Override
+//    @Override
     public boolean isMutable() {
         return getType().getKind() != ArrayKind.VALUE;
+    }
+
+    @Override
+    public boolean isArray() {
+        return true;
+    }
+
+    @Override
+    public DurableInstance copy() {
+        var copy = new ArrayInstance(getType());
+        if(isChildArray())
+            elements.forEach(e -> copy.addElement(e.resolveDurable().getReference()));
+        else
+            elements.forEach(copy::addElement);
+        return copy;
     }
 }

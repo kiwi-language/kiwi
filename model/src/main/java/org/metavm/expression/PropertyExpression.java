@@ -1,9 +1,8 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
-import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Property;
 import org.metavm.object.type.PropertyRef;
@@ -42,7 +41,7 @@ public class PropertyExpression extends Expression {
 
     @Override
     protected Instance evaluateSelf(EvaluationContext context) {
-        return ((ClassInstance) instance.evaluate(context)).getProperty(getProperty());
+        return (instance.evaluate(context)).resolveObject().getProperty(getProperty());
     }
 
     @Override

@@ -95,7 +95,7 @@ public class FunctionMethods {
     }
 
     public static LongInstance GET_ID(Instance instance) {
-        if(instance instanceof DurableInstance d)
+        if(instance instanceof InstanceReference d)
             return Instances.longInstance(NncUtils.orElse(d.tryGetTreeId(), 0L));
         else
             return Instances.longInstance(0L);
@@ -193,14 +193,14 @@ public class FunctionMethods {
     }
 
     public static LongInstance LEN(Instance instance) {
-        if(instance instanceof ArrayInstance array)
-            return Instances.longInstance(array.length());
+        if(instance.isArray())
+            return Instances.longInstance(instance.resolveArray().length());
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT, "LEN");
     }
 
     public static BooleanInstance HAS_NEXT(Instance iterator) {
-        var iteratorNative = (IteratorImplNative) NativeMethods.getNativeObject((ClassInstance) iterator);
+        var iteratorNative = (IteratorImplNative) NativeMethods.getNativeObject(iterator.resolveObject());
         return iteratorNative.hasNext();
     }
 

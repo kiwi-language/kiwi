@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class BytesUtils {
 
@@ -40,14 +41,14 @@ public class BytesUtils {
 
     public static Object readIndexBytes(byte[] bytes) {
         var bin = new ByteArrayInputStream(bytes);
-        var input = new IndexKeyReader(bin, MockDurableInstance::new);
+        var input = new IndexKeyReader(bin, id -> new MockDurableInstance(id));
         return convertInstanceToValue(input.readInstance());
     }
 
     private static Object convertInstanceToValue(Instance instance) {
         if(instance instanceof PrimitiveInstance primitiveInstance)
             return primitiveInstance.getValue();
-        else if(instance instanceof DurableInstance durableInstance)
+        else if(instance instanceof InstanceReference durableInstance)
             return durableInstance.getId();
         else
             throw new InternalException("Can not convert instance: " + instance);
@@ -78,11 +79,14 @@ public class BytesUtils {
         }
 
         @Override
+        public boolean isArray() {
+            return false;
+        }
+
         public boolean isReference() {
             return false;
         }
 
-        @Override
         public FieldValue toFieldValueDTO() {
             return null;
         }
@@ -90,6 +94,21 @@ public class BytesUtils {
         @Override
         public String getTitle() {
             return null;
+        }
+
+        @Override
+        public void forEachChild(Consumer<DurableInstance> action) {
+
+        }
+
+        @Override
+        public void forEachMember(Consumer<DurableInstance> action) {
+
+        }
+
+        @Override
+        public void forEachReference(Consumer<InstanceReference> action) {
+
         }
 
         @Override
@@ -103,31 +122,35 @@ public class BytesUtils {
         }
 
         @Override
+        public DurableInstance copy() {
+            return null;
+        }
+
         public <R> R accept(InstanceVisitor<R> visitor) {
             return null;
         }
 
-        @Override
         public <R> void acceptReferences(InstanceVisitor<R> visitor) {
 
         }
 
-        @Override
         public <R> void acceptChildren(InstanceVisitor<R> visitor) {
 
         }
 
-        @Override
         protected void writeTree(TreeWriter treeWriter) {
 
         }
 
         @Override
+        public void accept(StructuralInstanceVisitor visitor) {
+
+        }
+
         public boolean isMutable() {
             return false;
         }
 
-        @Override
         public Object toJson(IEntityContext context) {
             throw new UnsupportedOperationException();
         }
@@ -154,7 +177,7 @@ public class BytesUtils {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.writeLong(instance.getVersion());
-        output.writeRecord(instance);
+        output.writeRecord(instance.getReference());
         return bout.toByteArray();
     }
 

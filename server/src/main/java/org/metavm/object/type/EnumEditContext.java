@@ -83,7 +83,7 @@ public class EnumEditContext {
         FieldBuilder.newBuilder(name, null, type, type.getType())
                 .isChild(true)
                 .isStatic(true)
-                .staticValue(instance)
+                .staticValue(instance.getReference())
                 .build();
     }
 

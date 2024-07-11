@@ -15,6 +15,8 @@ import org.metavm.object.instance.core.NullInstance;
 import org.metavm.object.type.*;
 import org.metavm.object.view.MappingSaver;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -26,6 +28,7 @@ import static org.metavm.object.type.ResolutionStage.*;
 
 public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D> {
 
+    public static final Logger logger = LoggerFactory.getLogger(PojoParser.class);
     protected final Class<T> javaClass;
     protected final java.lang.reflect.Type javaType;
     private D def;

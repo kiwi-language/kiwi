@@ -6,6 +6,7 @@ import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.*;
 import org.metavm.object.view.Mapping;
 import org.metavm.object.view.MappingProvider;
@@ -74,11 +75,11 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
 //    boolean existsInstances(Class<?> type);
 
-    boolean containsEntity(Class<?> entityType, long id);
+    boolean containsEntity(Class<?> entityType, Id id);
 
     //    <T> T getEntity(Class<T> entityType, long id);
 
-    <T> T getBufferedEntity(Class<T> entityType, long id);
+    <T> T getBufferedEntity(Class<T> entityType, Id id);
 
     <T> T getEntity(Class<T> entityType, Id id);
 
@@ -135,6 +136,8 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     EventQueue getEventQueue();
 
     long getAppId(Object model);
+
+    Instance resolveInstance(Object value);
 
     long getAppId();
 

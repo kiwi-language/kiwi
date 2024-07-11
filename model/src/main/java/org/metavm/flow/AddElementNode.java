@@ -3,12 +3,12 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.AddElementNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.ArrayInstance;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
 import org.metavm.util.AssertUtils;
@@ -74,8 +74,8 @@ public class AddElementNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var arrayInst = (ArrayInstance) array.evaluate(frame);
-        var elementInst = (Instance) element.evaluate(frame);
+        var arrayInst = array.evaluate(frame).resolveArray();
+        var elementInst = element.evaluate(frame);
         arrayInst.addElement(elementInst);
         return next();
     }

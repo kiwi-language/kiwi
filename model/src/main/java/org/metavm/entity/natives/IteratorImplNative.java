@@ -20,9 +20,9 @@ public class IteratorImplNative extends NativeBase {
 
     public Instance IteratorImpl(ClassInstance collection, CallContext callContext) {
         var arrayField = collection.getKlass().getFieldByCode("array");
-        array = (ArrayInstance) collection.getField(arrayField);
+        array = collection.getField(arrayField).resolveArray();
         size = array.size();
-        return instance;
+        return instance.getReference();
     }
 
     public BooleanInstance hasNext(CallContext callContext) {

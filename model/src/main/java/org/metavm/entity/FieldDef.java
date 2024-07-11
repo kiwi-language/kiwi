@@ -5,11 +5,15 @@ import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 
 public class FieldDef implements IFieldDef {
+
+    private static final Logger logger = LoggerFactory.getLogger(FieldDef.class);
 
     private final Field javaField;
     private final PojoDef<?> declaringTypeDef;

@@ -9,10 +9,7 @@ import org.metavm.entity.LockMode;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
-import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.ClassType;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.type.Types;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.util.*;
 import org.metavm.util.profile.Profiler;
@@ -94,8 +91,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public List<ClassInstance> indexScan(IndexKeyRT from, IndexKeyRT to) {
-        return NncUtils.map(indexSource.scan(from, to, this), id -> (ClassInstance) get(id));
+    public List<InstanceReference> indexScan(IndexKeyRT from, IndexKeyRT to) {
+        return NncUtils.map(indexSource.scan(from, to, this), this::createReference);
+    }
+
+    public InstanceReference createReference(Id id) {
+        return new InstanceReference(id, () -> get(id));
     }
 
     @Override
@@ -103,16 +104,16 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return indexSource.count(from, to, this);
     }
 
-    public List<ClassInstance> indexSelect(IndexKeyRT key) {
+    public List<InstanceReference> indexSelect(IndexKeyRT key) {
         return query(key.toQuery());
     }
 
     @Override
-    public List<ClassInstance> query(InstanceIndexQuery query) {
-        var memResults = memIndex.query(query);
+    public List<InstanceReference> query(InstanceIndexQuery query) {
+        var memResults = NncUtils.map(memIndex.query(query), DurableInstance::getReference);
         if (query.memoryOnly())
             return memResults;
-        var storeResults = NncUtils.map(indexSource.query(query, this), id -> (ClassInstance) get(id));
+        var storeResults = NncUtils.map(indexSource.query(query, this), this::createReference);
         return Instances.merge(memResults, storeResults, query.desc(), NncUtils.orElse(query.limit(), -1L));
     }
 
@@ -218,8 +219,14 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                                 found.getMappedEntity() != null ? EntityUtils.getEntityDesc(found.getMappedEntity()) : found));
             return found;
         } else {
-            buffer(id);
-            return add(id);
+            if(id instanceof ViewId viewId)
+                initializeView(viewId);
+            else {
+                buffer(id);
+                initializeInstance(id);
+            }
+            return Objects.requireNonNull(getBuffered(id), () -> "Failed to initialize instance " + id);
+//            return add(id);
         }
     }
 
@@ -229,7 +236,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (found != null)
             return found;
         else {
-            return add(id);
+            buffer(id);
+            initializeInstance(id);
+            return getBuffered(id);
+//            return add(id);
         }
     }
 
@@ -265,42 +275,49 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return checkAliveInStore(id);
     }
 
-    private DurableInstance allocateView(ViewId viewId) {
-        var viewType = viewId.getViewTypeKey(mappingProvider, typeDefProvider).toType(typeDefProvider);
-        DurableInstance view;
-        if (viewType instanceof ClassType classViewType) {
-            view = ClassInstanceBuilder.newBuilder(classViewType)
-                    .sourceRef(viewId.getSourceRef(this, mappingProvider, typeDefProvider))
-                    .load(this::initializeView)
-                    .id(viewId)
-                    .ephemeral(true)
-                    .build();
-        } else if (viewType instanceof ArrayType arrayViewType) {
-            view = new ArrayInstance(viewId, arrayViewType, true, this::initializeView);
-            view.setSourceRef(viewId.getSourceRef(this, mappingProvider, typeDefProvider));
-        } else
-            throw new InternalException("Invalid view type: " + viewType);
-//        source2views.computeIfAbsent(view.tryGetSource(), k -> new ArrayList<>()).add(view);
-        return view;
+    private InstanceReference allocateView(ViewId viewId) {
+        var ref = new InstanceReference(viewId, () -> initializeView(viewId));
+        ref.setView(true);
+        return ref;
+//        var viewType = viewId.getViewTypeKey(mappingProvider, typeDefProvider).toType(typeDefProvider);
+//        DurableInstance view;
+//        if (viewType instanceof ClassType classViewType) {
+//            view = ClassInstanceBuilder.newBuilder(classViewType)
+//                    .sourceRef(viewId.getSourceRef(this, mappingProvider, typeDefProvider))
+//                    .load(this::initializeView)
+//                    .id(viewId)
+//                    .ephemeral(true)
+//                    .build();
+//        } else if (viewType instanceof ArrayType arrayViewType) {
+//            view = new ArrayInstance(viewId, arrayViewType, true, this::initializeView);
+//            view.setSourceRef(viewId.getSourceRef(this, mappingProvider, typeDefProvider));
+//        } else
+//            throw new InternalException("Invalid view type: " + viewType);
+////        source2views.computeIfAbsent(view.tryGetSource(), k -> new ArrayList<>()).add(view);
+//        return view;
     }
 
-    private void initializeView(DurableInstance view) {
-        var id = (ViewId) requireNonNull(view.tryGetId());
-        view = internalGet(id.getRootId());
-        var mapping = view.getMappingKey().toMapping(mappingProvider, typeDefProvider);
-        var r = mapping.mapRoot(view.getSource(), this);
-        r.accept(new InstanceCopier(r) {
-            @Override
-            protected Instance getExisting(Instance instance) {
-                var id = instance.tryGetId();
-                if (id != null) {
-                    var existing = internalGet(id);
-                    existing.setLoaded(requireNonNull(((DurableInstance) instance).tryGetSource()).isLoadedFromCache());
-                    return existing;
-                } else
-                    return null;
-            }
-        });
+    private DurableInstance initializeView(ViewId id) {
+        var rootId = id.getRootId();
+        var mappingKey = Objects.requireNonNull(rootId.getMappingKey(),
+                () -> "The MappingKey is missing in the id: " + rootId.getClass().getName() + "-" + rootId);
+        var mapping = mappingKey.toMapping(mappingProvider, typeDefProvider);
+        var sourceRef = Objects.requireNonNull(rootId.getSourceRef(this, mappingProvider, typeDefProvider));
+        var view =  mapping.mapRoot(sourceRef.source().resolveObject(), this);
+        view.forEachDescendant(this::add);
+        return view;
+//        r.accept(new InstanceCopier(r) {
+//            @Override
+//            protected Instance getExisting(Instance instance) {
+//                var id = instance.tryGetId();
+//                if (id != null) {
+//                    var existing = internalGet(id);
+//                    existing.setLoaded(requireNonNull(((DurableInstance) instance).tryGetSource()).isLoadedFromCache());
+//                    return existing;
+//                } else
+//                    return null;
+//            }
+//        });
     }
 
 //    private Type getTypeByInstanceId(Id id) {
@@ -314,7 +331,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
 //    protected abstract long getTypeId(long id);
 
-    protected abstract void initializeInstance(DurableInstance instance);
+    protected abstract void initializeInstance(Id id);
 
     protected abstract boolean checkAliveInStore(Id id);
 
@@ -323,24 +340,24 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //        return tmpId2Instance.get(tmpId);
 //    }
 
-    private DurableInstance add(Id id) {
+    private InstanceReference add(Id id) {
         var instance = allocateInstance(id);
-        add(instance);
+//        add(instance);
         return instance;
     }
 
-    protected DurableInstance allocateInstance(Id id) {
+    protected InstanceReference allocateInstance(Id id) {
         if (id.isArray()) {
             return switch (id) {
-                case PhysicalId physicalId ->
-                        new ArrayInstance(physicalId, Types.getAnyArrayType(), false, this::initializeInstance);
+                case PhysicalId physicalId -> new InstanceReference(physicalId, () -> get(physicalId));
+//                        new ArrayInstance(physicalId, Types.getAnyArrayType(), false, this::initializeInstance);
                 case ViewId viewId -> allocateView(viewId);
                 default -> throw new IllegalStateException("Unexpected value: " + id);
             };
         } else {
             return switch (id) {
-                case PhysicalId physicalId ->
-                        new ClassInstance(physicalId, ClassInstance.uninitializedKlass.getType(), false, this::initializeInstance);
+                case PhysicalId physicalId -> new InstanceReference(physicalId, () -> get(physicalId));
+//                        new ClassInstance(physicalId, ClassInstance.uninitializedKlass.getType(), false, instance -> initializeInstance());
                 case ViewId viewId -> allocateView(viewId);
                 default -> throw new IllegalStateException("Unexpected value: " + id);
             };
@@ -368,6 +385,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
+    public boolean containsIdSelf(Id id) {
+        return instanceMap.containsKey(id);
+    }
+
+    @Override
     public final void finish() {
         if (closed)
             throw new IllegalStateException("Context closed");
@@ -388,8 +410,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected void saveViews() {
         try (var ignored = getProfiler().enter("saveViews")) {
             NncUtils.enhancedForEach(instanceMap.values(), value -> {
-                if (value instanceof ClassInstance classInstance) {
-                    if (classInstance.isView() && !classInstance.isList() && !classInstance.isRemoved() && !classInstance.isViewSaved())
+                if (value.isView()) {
+                    var classInstance = (ClassInstance) value;
+                    if (!classInstance.isList() && !classInstance.isRemoved() && !classInstance.isViewSaved())
                         saveView(classInstance);
                 }
             });
@@ -399,7 +422,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private void saveView(ClassInstance view) {
         view.setViewSaved();
         var mapping = view.getMappingKey().toMapping(mappingProvider, typeDefProvider);
-        mapping.unmap(view, this);
+        mapping.unmap(view.getReference(), this);
     }
 
     @Override
@@ -436,10 +459,20 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected void onIdInitialized(DurableInstance instance) {
         instanceMap.put(instance.tryGetId(), instance);
         listeners.forEach(l -> l.onInstanceIdInit(instance));
-        forEachView(instance, v ->
-                v.initId(new DefaultViewId(
-                        v instanceof ArrayInstance,
-                        requireNonNull(requireNonNull(v.getSourceRef().mapping()).toKey()), v.getSource().tryGetId())));
+        forEachView(instance, v -> {
+            if(v.getSourceRef().mapping() != null) {
+                v.initId(
+                        new DefaultViewId(
+                                v instanceof ArrayInstance,
+                                Objects.requireNonNull(v.getSourceRef().mapping(),
+                                        () -> "Mapping is missing in the SourceRef: " + v.getSourceRef() + ", source: " + instance
+                                ).toKey(),
+                                v.getSource().tryGetId()
+                        )
+                );
+            }
+            // TODO handle the case of mapping being null
+        });
     }
 
     protected void onContextInitializeId() {
@@ -450,7 +483,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
     }
 
-    protected boolean onChange(Instance instance) {
+    protected boolean onChange(DurableInstance instance) {
         boolean anyChange = false;
         for (ContextListener listener : listeners) {
             if (listener.onChange(instance))
@@ -518,11 +551,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (instance.isRemoved())
             return;
         var parent = instance.getParent();
-        if (parent != null && !parent.isRemoved() && !removalBatch.contains(parent)) {
-            switch (parent) {
+        if (parent != null && !parent.isRemoved() && !removalBatch.contains(parent.resolve())) {
+            switch (parent.resolve()) {
                 case ClassInstance classParent -> {
                     var parentField = requireNonNull(instance.getParentField());
-                    if (classParent.getField(parentField) == instance) {
+                    if (classParent.getField(parentField) instanceof InstanceReference r && r.resolve() == instance) {
                         if (parentField.isNullable())
                             classParent.setField(parentField, Instances.nullInstance());
                         else {
@@ -534,7 +567,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                         }
                     }
                 }
-                case ArrayInstance arrayParent -> arrayParent.removeChild(instance);
+                case ArrayInstance arrayParent -> arrayParent.removeChild(instance.getReference());
                 default -> throw new IllegalStateException("Unexpected value: " + instance);
             }
         }
@@ -555,7 +588,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         for (var listener : listeners) {
             listener.onInstanceRemoved(instance);
         }
-        createReferenceCleanupJob(instance);
+        createReferenceCleanupJob(instance.getReference());
     }
 
     private Set<DurableInstance> getRemovalBatch(Collection<DurableInstance> instances) {
@@ -568,51 +601,17 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             } else
                 return false;
         };
-        var visitor = new InstanceVisitor<Boolean>() {
-
-//            @Override
-//            public Boolean visitClassInstance(ClassInstance instance) {
-//                if (instance.isView())
-//                    return Objects.requireNonNull(instance.tryGetSource()).accept(this);
-//                else {
-//                    if (super.visitClassInstance(instance)) {
-//                        forEachView(instance, result::add);
-//                        return true;
-//                    } else
-//                        return false;
-//                }
-//            }
-
-            @Override
-            public Boolean visitInstance(Instance instance) {
-                return false;
-            }
-
-            @Override
-            public Boolean visitDurableInstance(DurableInstance instance) {
-                if (addResult.test(instance)) {
-                    instance.acceptChildren(this);
-                    return true;
-                } else
-                    return false;
-            }
-
-            @Override
-            public Boolean visitNullInstance(NullInstance instance) {
-                return false;
-            }
-        };
         var next = new ArrayList<>(instances);
         Consumer<DurableInstance> addNext = i -> {
             if (!result.contains(i))
                 next.add(i);
         };
         while (!next.isEmpty()) {
-            next.forEach(visitor::visit);
+            next.forEach(i -> i.forEachDescendantConditional(addResult));
             next.clear();
             newlyAdded.forEach(i -> {
                 if (i instanceof ClassInstance k && k.tryGetSource() != null)
-                    addNext.accept(k.getSource());
+                    addNext.accept(k.getSource().resolve());
                 forEachView(i, addNext);
             });
             newlyAdded.clear();
@@ -629,9 +628,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private void getRemovalBatch0(DurableInstance instance, IdentitySet<Instance> result) {
-        if (result.contains(instance))
+        if (result.contains(instance.getReference()))
             return;
-        result.add(instance);
+        result.add(instance.getReference());
         var children = instance.getChildren();
         for (var child : children) {
             getRemovalBatch0(child, result);
@@ -663,7 +662,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //        NncUtils.requireFalse(instance.isValue(), "Can not bind a value instance");
         NncUtils.requireNull(instance.getContext(), "Instance already bound");
         NncUtils.requireNull(instance.tryGetTreeId(),
-                () -> {throw new InternalException("Can not bind a persisted instance: " + instance);});
+                () -> {
+                    throw new InternalException("Can not bind a persisted instance: " + instance);
+                });
         NncUtils.requireFalse(instance.isRemoved(),
                 () -> new InternalException("Can not bind instance " + instance + " because it's already removed"));
     }
@@ -686,20 +687,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     protected List<DurableInstance> computeNonPersistedOrphans() {
         clearMarks();
-        var marker = new StructuralVisitor() {
-            @Override
-            public Void visitDurableInstance(DurableInstance instance) {
-                instance.setMarked(true);
-                return super.visitDurableInstance(instance);
-            }
-        };
         for (var instance : this) {
-            if (instance.isRoot() && !instance.isRemoved())
-                instance.accept(marker);
+            if (instance.isInitialized() && instance.isRoot() && !instance.isRemoved())
+                instance.forEachDescendant(d -> d.setMarked(true));
         }
         var orphans = new ArrayList<DurableInstance>();
         for (var instance : this) {
-            if (instance.isNew() && !instance.isRemoved() && !instance.isMarked())
+            if (instance.isNew() && !instance.isValue() && !instance.isRemoved() && !instance.isMarked())
                 orphans.add(instance);
         }
         return orphans;
@@ -726,11 +720,16 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             tail = instance;
         }
         if (instance.isView())
-            source2views.computeIfAbsent(instance.getSource(), k -> new ArrayList<>()).add(instance);
+            source2views.computeIfAbsent(instance.getSource().resolve(), k -> new ArrayList<>()).add(instance);
         if (instance.tryGetId() != null) {
+//            logger.info("Adding instance {} to context, treeId: {}", instance.getId(), instance.getId().tryGetTreeId());
             if (instanceMap.put(instance.tryGetId(), instance) != null)
                 logger.warn("Duplicate instance add to context: " + instance.tryGetId());
         }
+    }
+
+    protected void mapManually(Id id, DurableInstance instance) {
+        instanceMap.put(id, instance);
     }
 
     protected void onInstanceInitialized(DurableInstance instance) {
@@ -765,26 +764,18 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private List<DurableInstance> doCraw(Iterable<DurableInstance> instances) {
         var added = new ArrayList<DurableInstance>();
-        var visitor = new GraphVisitor() {
-
-            @Override
-            public Void visitDurableInstance(DurableInstance instance) {
-                if (instance.isInitialized()) {
-                    if (instance.isRemoved())
-                        return null;
-                    if (instance.context != null && instance.context != BaseInstanceContext.this)
-                        return null;
-                    if (instance.context == null)
-                        added.add(instance);
-                    super.visitDurableInstance(instance);
-                }
-                return null;
-            }
-
-        };
+        var visited = new IdentitySet<DurableInstance>();
         for (var instance : instances) {
-            if (instance.isRoot() && instance.isInitialized() && !instance.isRemoved())
-                visitor.visit(instance);
+            if (instance.isRoot() && !instance.isRemoved())
+                instance.visitGraph(i -> {
+                    if (i.isRemoved())
+                        return false;
+                    if (i.context != null && i.context != BaseInstanceContext.this)
+                        return false;
+                    if (i.context == null)
+                        added.add(i);
+                    return true;
+                }, r -> r.tryGetId() == null || instanceMap.containsKey(r.getId()), visited);
         }
         return added;
     }
@@ -795,12 +786,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     //</editor-fold>
 
     @Override
-    public List<ClassInstance> selectByKey(IndexKeyRT indexKey) {
+    public List<InstanceReference> selectByKey(IndexKeyRT indexKey) {
         return query(indexKey.toQuery());
     }
 
     @Override
-    public DurableInstance selectFirstByKey(IndexKeyRT key) {
+    public InstanceReference selectFirstByKey(IndexKeyRT key) {
 //        NncUtils.requireTrue(key.getIndex().isUnique());
 //        var instances = memIndex.get(key);
 //        if (NncUtils.isNotEmpty(instances)) return instances.iterator().next();

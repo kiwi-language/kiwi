@@ -88,23 +88,24 @@ public abstract class LoopNode extends ScopeNode {
 
     @Override
     public final NodeExecResult execute(MetaFrame frame) {
-        ClassInstance loopObject = (ClassInstance) frame.getOutput(this);
+        ClassInstance loopObject;
         if (!frame.isLooping(this)) {
             frame.enterLoop(this);
             loopObject = initLoopObject(frame);
-            frame.setOutput(this, loopObject);
+            frame.setOutput(this, loopObject.getReference());
         } else {
+            loopObject = frame.getOutput(this).resolveObject();
             updateLoopObject(loopObject, frame);
         }
         var extraCondValue = (BooleanInstance) condition.evaluate(frame);
         if (!extraCondValue.getValue() || !checkExtraCondition(loopObject, frame)) {
             frame.exitLoop(this);
-            return next(loopObject);
+            return next(loopObject.getReference());
         }
         if (bodyScope.isEmpty()) {
-            return NodeExecResult.jump(loopObject, this);
+            return NodeExecResult.jump(loopObject.getReference(), this);
         } else {
-            return NodeExecResult.jump(loopObject, bodyScope.tryGetFirstNode());
+            return NodeExecResult.jump(loopObject.getReference(), bodyScope.tryGetFirstNode());
         }
     }
 

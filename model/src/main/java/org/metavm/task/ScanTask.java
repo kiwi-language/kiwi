@@ -2,8 +2,8 @@ package org.metavm.task;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.NncUtils;
 
@@ -20,7 +20,7 @@ public abstract class ScanTask extends Task {
         super(title);
     }
 
-    public final void processNewInstances(List<DurableInstance> newInstances, IEntityContext context) {
+    public final void processNewInstances(List<InstanceReference> newInstances, IEntityContext context) {
         process(newInstances, context);
     }
 
@@ -45,10 +45,10 @@ public abstract class ScanTask extends Task {
 
     protected void onScanOver(IEntityContext context) {}
 
-    protected abstract List<DurableInstance> scan(IInstanceContext context,
-                                                  long cursor,
-                                                  @SuppressWarnings("SameParameterValue") long limit);
+    protected abstract List<InstanceReference> scan(IInstanceContext context,
+                                                    long cursor,
+                                                    @SuppressWarnings("SameParameterValue") long limit);
 
-    protected abstract void process(List<DurableInstance> batch, IEntityContext context);
+    protected abstract void process(List<InstanceReference> batch, IEntityContext context);
 
 }

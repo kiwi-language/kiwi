@@ -4,12 +4,16 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ReferenceExtractor;
 import org.metavm.entity.Tree;
 import org.metavm.object.instance.persistence.ReferencePO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public final class SubContext {
+    public static final Logger logger = LoggerFactory.getLogger(SubContext.class);
     private final Map<Long, Tree> trees = new HashMap<>();
     private final Set<ReferencePO> references = new HashSet<>();
+    private boolean frozen;
     private final long appId;
 
     public SubContext(long appId) {
@@ -21,6 +25,7 @@ public final class SubContext {
     }
 
     public void add(@NotNull Tree tree) {
+        ensureNotFrozen();
         if (trees.containsKey(tree.id()))
             throw new IllegalArgumentException("Tree " + tree.id() + " already exists in the HeadContext");
         trees.put(tree.id(), tree);
@@ -32,6 +37,7 @@ public final class SubContext {
     }
 
     public void clear() {
+        ensureNotFrozen();
         trees.clear();
         references.clear();
     }
@@ -39,5 +45,22 @@ public final class SubContext {
     Collection<Tree> trees() {
         return Collections.unmodifiableCollection(trees.values());
     }
+
+    private void ensureNotFrozen() {
+        if(frozen)
+            throw new IllegalStateException("Head context is frozen");
+    }
+
+    public void freeze() {
+        assert !frozen;
+        frozen = true;
+    }
+
+    public void unfreeze() {
+        assert frozen;
+        frozen = false;
+    }
+
+
 
 }

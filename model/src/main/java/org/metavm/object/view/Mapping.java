@@ -49,18 +49,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         view.accept(new CollectionAwareStructuralVisitor() {
 
             @Override
-            public Void visitArrayInstance(ArrayInstance instance) {
-                process(instance);
-                return super.visitArrayInstance(instance);
-            }
-
-            @Override
-            public Void visitClassInstance(ClassInstance instance) {
-                process(instance);
-                return super.visitClassInstance(instance);
-            }
-
-            private void process(DurableInstance instance) {
+            public void visitDurableInstance(DurableInstance instance) {
                 var sourceRef = instance.getSourceRef();
                 var sourceId = sourceRef.source().tryGetId();
                 var mappingKey = sourceRef.getMappingKey();
@@ -70,38 +59,75 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
                         instance.initId(new DefaultViewId(isArray, mappingKey, sourceId));
                     else
                         instance.initId(new ChildViewId(isArray, mappingKey, sourceId, (ViewId) instance.getRoot().tryGetId()));
-                } else if (/*mappingId != null && */getParent() != null && getParent().tryGetId() != null) {
+                } else if (/*mappingId != null && */instance.getParent() != null && instance.getParent().tryGetId() != null) {
 //                    if(mappingId == null)
 //                        mappingId = 0L;
-                    if (getParentField() != null)
-                        instance.initId(new FieldViewId(isArray, (ViewId) getParent().tryGetId(), mappingKey, getParentField().getTagId(), sourceId, instance.getType().toTypeKey()));
-                    else
-                        instance.initId(new ElementViewId(isArray, (ViewId) getParent().tryGetId(), mappingKey, getIndex(), sourceId, instance.getType().toTypeKey()));
+                    if (instance.getParentField() != null)
+                        instance.initId(new FieldViewId(isArray, (ViewId) instance.getParent().tryGetId(), mappingKey, instance.getParentField().getTagId(), sourceId, instance.getType().toTypeKey()));
+                    else {
+                        var index = instance.getParent().resolveArray().getElements().indexOf(instance.getReference());
+                        instance.initId(new ElementViewId(isArray, (ViewId) instance.getParent().tryGetId(), mappingKey, index, sourceId, instance.getType().toTypeKey()));
+                    }
                 }
+                super.visitDurableInstance(instance);
             }
         });
+//        view.accept(new CollectionAwareStructuralVisitor() {
+//
+//            @Override
+//            public Void visitArrayInstance(ArrayInstance instance) {
+//                process(instance);
+//                return super.visitArrayInstance(instance);
+//            }
+//
+//            @Override
+//            public Void visitClassInstance(ClassInstance instance) {
+//                process(instance);
+//                return super.visitClassInstance(instance);
+//            }
+//
+//            private void process(DurableInstance instance) {
+//                var sourceRef = instance.getSourceRef();
+//                var sourceId = sourceRef.source().tryGetId();
+//                var mappingKey = sourceRef.getMappingKey();
+//                boolean isArray = instance instanceof ArrayInstance;
+//                if (sourceId != null && mappingKey != null) {
+//                    if (instance.isRoot())
+//                        instance.initId(new DefaultViewId(isArray, mappingKey, sourceId));
+//                    else
+//                        instance.initId(new ChildViewId(isArray, mappingKey, sourceId, (ViewId) instance.getRoot().tryGetId()));
+//                } else if (/*mappingId != null && */getParent() != null && getParent().tryGetId() != null) {
+////                    if(mappingId == null)
+////                        mappingId = 0L;
+//                    if (getParentField() != null)
+//                        instance.initId(new FieldViewId(isArray, (ViewId) getParent().tryGetId(), mappingKey, getParentField().getTagId(), sourceId, instance.getType().toTypeKey()));
+//                    else
+//                        instance.initId(new ElementViewId(isArray, (ViewId) getParent().tryGetId(), mappingKey, getIndex(), sourceId, instance.getType().toTypeKey()));
+//                }
+//            }
+//        });
         return view;
     }
 
     public DurableInstance map(DurableInstance instance, CallContext callContext) {
-        var view = (DurableInstance) getMapper().execute(null, List.of(instance), callContext).ret();
-        requireNonNull(view).setSourceRef(new SourceRef(instance, (ObjectMapping) this));
-        return view;
+        var view = (InstanceReference) getMapper().execute(null, List.of(instance.getReference()), callContext).ret();
+        requireNonNull(view).resolve().setSourceRef(new SourceRef(instance.getReference(), (ObjectMapping) this));
+        return view.resolve();
     }
 
-    public DurableInstance unmap(DurableInstance view, CallContext callContext) {
+    public InstanceReference unmap(InstanceReference view, CallContext callContext) {
         if(DebugEnv.debugging) {
             DebugEnv.logger.info("unmap {}/{}, idClass: {}, source: {}", Instances.getInstanceDesc(view), view.getStringId(),
-                    view.tryGetId() != null ? view.getId().getClass().getName() : null, NncUtils.get(view.tryGetSource(), Instances::getInstanceDesc));
+                    view.tryGetId() != null ? view.getId().getClass().getName() : null, NncUtils.get(view.resolve().tryGetSource(), Instances::getInstanceDesc));
         }
         var result = getUnmapper().execute(null, List.of(view), callContext);
         if(result.exception() != null) {
             var exceptionNative = new ExceptionNative(result.exception());
             throw new BusinessException(ErrorCode.FAIL_TO_SAVE_VIEW, exceptionNative.getMessage().getTitle());
         }
-        var source = (DurableInstance) Objects.requireNonNull(result.ret());
-        if (source.getContext() == null)
-            callContext.instanceRepository().bind(source);
+        var source = (InstanceReference) Objects.requireNonNull(result.ret());
+        if (source.resolve().getContext() == null)
+            callContext.instanceRepository().bind(source.resolve());
         return source;
     }
 
@@ -149,7 +175,8 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     @Override
     public void generateCode(Flow flow) {
         if (flow != mapper && flow != unmapper)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Flow " + flow + " is neither the mapper nor the unmapper of this Mapping" +
+                    ", mapper: " + mapper + ", unmapper: " + unmapper);
         if (flow == mapper)
             generateMappingCode(false);
         else

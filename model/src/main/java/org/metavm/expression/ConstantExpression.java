@@ -1,10 +1,10 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
-import org.metavm.object.instance.core.DurableInstance;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.instance.core.PrimitiveInstance;
 import org.metavm.object.instance.core.StringInstance;
 import org.metavm.object.type.Type;
@@ -36,7 +36,7 @@ public class ConstantExpression extends Expression {
         else if(value instanceof PrimitiveInstance primitiveInstance) {
             return primitiveInstance.getValue() + "";
         }
-        else if(value instanceof DurableInstance d){
+        else if(value instanceof InstanceReference d){
             if(relaxedCheck)
                 return Constants.ID_PREFIX + NncUtils.orElse(d.getStringId(), "<uninitializedId>");
             else

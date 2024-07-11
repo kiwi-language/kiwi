@@ -1,7 +1,10 @@
 package org.metavm.expression;
 
 import org.metavm.api.EntityType;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.BooleanInstance;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.LongInstance;
+import org.metavm.object.instance.core.NumberInstance;
 import org.metavm.object.instance.query.OperatorTypes;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
@@ -153,7 +156,7 @@ public enum BinaryOperator {
     IN(15, "in", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
-            return Instances.booleanInstance(((ArrayInstance) second).contains(first));
+            return Instances.booleanInstance((second.resolveArray()).contains(first));
         }
     },
     AND(20, "and", 7, OperatorTypes.BINARY, Types.getBooleanType()) {

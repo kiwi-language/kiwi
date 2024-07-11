@@ -468,7 +468,7 @@ public class Types {
         return getParameterizedName(templateName, List.of(typeArguments));
     }
 
-    public static String getParameterizedName(String templateName, @Nullable List<Type> typeArguments) {
+    public static String getParameterizedName(String templateName, @Nullable List<? extends Type> typeArguments) {
         if (typeArguments == null || typeArguments.isEmpty()) {
             return templateName;
         }
@@ -488,7 +488,7 @@ public class Types {
         return getParameterizedCode(templateCode, List.of(typeArguments));
     }
 
-    public static String getParameterizedCode(String templateCode, List<Type> typeArguments) {
+    public static String getParameterizedCode(String templateCode, List<? extends Type> typeArguments) {
         if (templateCode == null)
             return null;
         if (typeArguments.isEmpty())

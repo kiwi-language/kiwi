@@ -124,7 +124,7 @@ public class MergeNode extends ChildTypeNode {
                     field.getValue(branch).evaluate(frame)
             );
         }
-        return next(ClassInstance.create(fieldValues, getType()));
+        return next(ClassInstance.create(fieldValues, getType()).getReference());
     }
 
     @Override

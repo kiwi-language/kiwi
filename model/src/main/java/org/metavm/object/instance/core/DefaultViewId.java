@@ -68,7 +68,7 @@ public class DefaultViewId extends ViewId {
     @Nullable
     @Override
     public SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
-        return new SourceRef(instanceProvider.get(sourceId), getMappingKey().toMapping(mappingProvider, typeDefProvider));
+        return new SourceRef(instanceProvider.get(sourceId).getReference(), getMappingKey().toMapping(mappingProvider, typeDefProvider));
     }
 
 }

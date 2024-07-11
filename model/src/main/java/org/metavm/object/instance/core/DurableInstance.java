@@ -2,7 +2,11 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.NoProxy;
+import org.metavm.entity.SerializeContext;
 import org.metavm.entity.Tree;
+import org.metavm.entity.TreeTags;
+import org.metavm.object.instance.rest.InstanceDTO;
+import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
@@ -15,15 +19,17 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class DurableInstance extends Instance {
+public abstract class DurableInstance /*extends Instance*/ {
 
     public static final Logger logger = LoggerFactory.getLogger(DurableInstance.class);
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
+    private Type type;
     private transient boolean marked;
     private transient boolean viewSaved;
     private transient boolean _new;
@@ -37,8 +43,10 @@ public abstract class DurableInstance extends Instance {
 
     transient IInstanceContext context;
     private transient boolean afterContextInitIdsNotified;
-    private @Nullable transient DurableInstance prev;
-    private @Nullable transient DurableInstance next;
+    private @Nullable
+    transient DurableInstance prev;
+    private @Nullable
+    transient DurableInstance next;
     private transient Object mappedEntity;
 
     private Id id;
@@ -46,9 +54,12 @@ public abstract class DurableInstance extends Instance {
     private long version;
     private long syncVersion;
 
-    private @Nullable DurableInstance parent;
+    private @Nullable InstanceReference parent;
     private @Nullable Field parentField;
-    private @NotNull DurableInstance root = this;
+    private @NotNull InstanceReference root;
+    private Id oldId;
+    private @NotNull InstanceReference aggregateRoot;
+    private boolean pendingChild;
 
     private transient Long tmpId;
 
@@ -69,7 +80,8 @@ public abstract class DurableInstance extends Instance {
     }
 
     public DurableInstance(@Nullable Id id, Type type, long version, long syncVersion, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
-        super(type);
+//        super(type);
+        this.type = type;
         this.version = version;
         this.syncVersion = syncVersion;
         this.load = load;
@@ -79,36 +91,45 @@ public abstract class DurableInstance extends Instance {
             _new = id.tryGetTreeId() == null;
         } else
             _new = true;
+        this.root = aggregateRoot = getReference();
     }
 
     public boolean isDurable() {
         return !isEphemeral();
     }
 
-    @Override
+    public Type getType() {
+        return type;
+    }
+
+//    @Override
     public boolean isEphemeral() {
         return ephemeral || getType().isEphemeral();
     }
 
-    @Override
+//    @Override
     public boolean shouldSkipWrite() {
         return isInitialized() && isEphemeral();
     }
 
-    public @Nullable DurableInstance tryGetSource() {
+    public @Nullable InstanceReference tryGetSource() {
         return NncUtils.get(sourceRef, SourceRef::source);
     }
 
-    public @NotNull DurableInstance getSource() {
+    public @NotNull InstanceReference getSource() {
         return Objects.requireNonNull(tryGetSource());
     }
 
     public void setSourceRef(@Nullable SourceRef sourceRef) {
+//        if(toString().equals("ChildList<SKUbuiltinView>-null") && sourceRef != null) {
+//            logger.debug(DebugEnv.flow.getText());
+//            throw new RuntimeException("Setting source ref");
+//        }
         this.sourceRef = sourceRef;
     }
 
     public SourceRef getSourceRef() {
-        return Objects.requireNonNull(sourceRef);
+        return Objects.requireNonNull(sourceRef, () -> "SourceRef is not present for instance " + this);
     }
 
     public boolean isView() {
@@ -181,19 +202,19 @@ public abstract class DurableInstance extends Instance {
     }
 
     @NoProxy
-    public void setParent(DurableInstance parent, @Nullable Field parentField) {
+    public void setParent(InstanceReference parent, @Nullable Field parentField) {
         ensureLoaded();
         if (this.parent != null) {
-            if (this.parent == parent && Objects.equals(this.parentField, parentField))
+            if (this.parent.equals(parent) && Objects.equals(this.parentField, parentField))
                 return;
-            throw new InternalException("Can not change parent of " + Instances.getInstanceDesc(this)
-                    + ", current parent: " + Instances.getInstancePath(this.parent)
+            throw new InternalException("Can not change parent of " + Instances.getInstanceDesc(getReference())
+                    + ", current parent: " + this.parent
                     + ", current parentField: " + this.parentField
-                    + ", new parent: " + Instances.getInstancePath(parent)
+                    + ", new parent: " + parent
                     + ", new parentField: " + parentField
             );
         }
-        setParentInternal(parent, parentField, true);
+        setParentInternal(parent, parentField, id == null || !id.isRoot());
     }
 
     @NoProxy
@@ -207,50 +228,40 @@ public abstract class DurableInstance extends Instance {
     public void setEphemeral() {
         if (ephemeral)
             return;
-        if(!_new)
+        if (!_new)
             throw new IllegalStateException("Can not make a persisted instance ephemeral");
-        accept(new StructuralVisitor() {
-            @Override
-            public Void visitDurableInstance(DurableInstance instance) {
-                instance.ephemeral = true;
-                return super.visitDurableInstance(instance);
-            }
-        });
+        forEachDescendant(instance -> instance.ephemeral = true);
     }
 
     @NoProxy
-    public void setParentInternal(@Nullable DurableInstance parent, @Nullable Field parentField, boolean setRoot) {
+    public void setParentInternal(@Nullable InstanceReference parent, @Nullable Field parentField, boolean setRoot) {
         if (parent == this.parent && parentField == this.parentField)
             return;
         if (parent != null) {
             this.parent = parent;
-            if (parent instanceof ClassInstance) {
+            this.parentField = parentField;
+            if (parent.resolve() instanceof ClassInstance) {
                 this.parentField = requireNonNull(parentField);
                 assert parentField.isChild() : "Invalid parent field: " + parentField;
-//                parentClassInst.setOrInitField(parentField, this);
-            } else if (parent instanceof ArrayInstance parentArray) {
+            } else if(parent.resolve() instanceof ArrayInstance parentArray){
                 NncUtils.requireNull(parentField);
                 assert parentArray.isChildArray();
                 this.parentField = null;
-//                parentArray.addElement(this);
-            } else
-                throw new InternalException("Invalid parent: " + parent);
-            if(setRoot)
-                root = parent.root;
-            if (parent.isEphemeral() && !ephemeral) {
-                accept(new StructuralVisitor() {
-                    @Override
-                    public Void visitDurableInstance(DurableInstance instance) {
-                        instance.ephemeral = true;
-                        return super.visitDurableInstance(instance);
-                    }
-                });
+            }
+            else
+                throw new IllegalArgumentException("Invalid parent: " + parent.resolve());
+            if (setRoot)
+                root = parent.resolve().getRoot().getReference();
+            if (!pendingChild)
+                aggregateRoot = parent;
+            if (parent.resolve().isEphemeral() && !ephemeral) {
+                forEachDescendant(instance -> instance.ephemeral = true);
             }
         } else {
             this.parent = null;
             this.parentField = null;
-            if(setRoot)
-                root = this;
+            if (setRoot)
+                aggregateRoot = root = getReference();
         }
     }
 
@@ -268,7 +279,7 @@ public abstract class DurableInstance extends Instance {
     }
 
     public boolean isRoot() {
-        return root == this;
+        return !isValue() && getRoot() == this;
     }
 
     @NoProxy
@@ -294,10 +305,13 @@ public abstract class DurableInstance extends Instance {
     }
 
     public DurableInstance getRoot() {
-        if (root == this)
+        if (root.resolve() == this)
             return this;
-        else
-            return root = root.getRoot();
+        else {
+            var actualRoot = root.resolve().getRoot();
+            this.root = actualRoot.getReference();
+            return actualRoot;
+        }
     }
 
     @NoProxy
@@ -381,18 +395,12 @@ public abstract class DurableInstance extends Instance {
         return Collections.unmodifiableSet(outgoingReferences.keySet());
     }
 
-    public ReferenceRT getOutgoingReference(Instance target, Field field) {
-        ensureLoaded();
-        return NncUtils.findRequired(outgoingReferences.keySet(),
-                ref -> ref.target() == target && ref.field() == field);
-    }
-
     public Tree toTree() {
         NncUtils.requireTrue(isRoot());
         return new Tree(getTreeId(), getVersion(), nextNodeId, InstanceOutput.toBytes(this));
     }
 
-    @Override
+//    @Override
     public void writeRecord(InstanceOutput output) {
         if (isValue())
             output.write(WireTypes.VALUE);
@@ -406,7 +414,7 @@ public abstract class DurableInstance extends Instance {
 
     protected abstract void writeBody(InstanceOutput output);
 
-    @Override
+//    @Override
     public void write(InstanceOutput output) {
         output.write(WireTypes.REFERENCE);
         output.writeId(getId());
@@ -425,9 +433,13 @@ public abstract class DurableInstance extends Instance {
         this.modified = true;
     }
 
-    public @Nullable DurableInstance getParent() {
+    public @Nullable InstanceReference getParent() {
         ensureLoaded();
         return parent;
+    }
+
+    public @Nullable DurableInstance getResolvedParent() {
+        return parent != null ? parent.resolve() : null;
     }
 
     @Nullable
@@ -484,11 +496,7 @@ public abstract class DurableInstance extends Instance {
     @NoProxy
     @Override
     public final String toString() {
-        if (this.isInitialized()) {
-            return getType().getName() + "-" + getTitle();
-        } else {
-            return String.format("Uninitialized instance, id: %s", id);
-        }
+        return getType().getTypeDesc() + "-" + getTitle();
     }
 
 
@@ -585,12 +593,150 @@ public abstract class DurableInstance extends Instance {
     }
 
     public void setType(Type type) {
-        super.setType(type);
+        this.type = type;
     }
 
-    @Override
+//    @Override
     public boolean isValue() {
-        // to-be-initialized instance can not be value
-        return isInitialized() && getType().isValue();
+        return getType().isValue();
     }
+
+    public Id getOldId() {
+        return oldId;
+    }
+
+    public boolean isSeparateChild() {
+        ensureLoaded();
+        return isRoot() && parent != null;
+    }
+
+    public boolean isPendingChild() {
+        return pendingChild;
+    }
+
+    public DurableInstance getAggregateRoot() {
+        if (aggregateRoot.resolve() == this)
+            return this;
+        else {
+            var actual = aggregateRoot.resolve().getAggregateRoot();
+            aggregateRoot = actual.getReference();
+            return actual;
+        }
+    }
+
+
+    public void migrate() {
+        this.oldId = id;
+        var aggRoot = getAggregateRoot();
+        this.root = aggRoot.getReference();
+        this.id = PhysicalId.of(aggRoot.getTreeId(), aggRoot.nextNodeId(), getType());
+    }
+
+    public void writeForwardingPointers(InstanceOutput output) {
+        output.write(TreeTags.MIGRATED);
+        List<ForwardingPointer> fps = new ArrayList<>();
+        forEachDescendant(instance -> {
+            if (instance.isRemoved())
+                return;
+            fps.add(new ForwardingPointer(instance.getOldId(), instance.getId()));
+        });
+        output.writeLong(getTreeId());
+        output.writeInt(fps.size());
+        fps.forEach(fp -> fp.write(output));
+    }
+
+    public void setPendingChild(boolean pendingChild) {
+        this.pendingChild = pendingChild;
+    }
+
+    public InstanceReference getReference() {
+        return new InstanceReference(this);
+    }
+
+    public abstract boolean isArray();
+
+    public abstract String getTitle();
+
+    public void forEachDescendant(Consumer<DurableInstance> action) {
+        action.accept(this);
+        forEachChild(c -> c.forEachDescendant(action));
+    }
+
+    public void forEachDescendantConditional(Predicate<DurableInstance> action) {
+        if(action.test(this))
+            forEachChild(c -> c.forEachDescendantConditional(action));
+    }
+
+    public abstract void forEachChild(Consumer<DurableInstance> action);
+
+    public abstract void forEachMember(Consumer<DurableInstance> action);
+
+    public abstract void forEachReference(Consumer<InstanceReference> action);
+
+    public void visitGraph(Predicate<DurableInstance> action) {
+       visitGraph(action, r -> true, new IdentitySet<>());
+    }
+
+    public void visitGraph(Predicate<DurableInstance> action, Predicate<InstanceReference> predicate) {
+        visitGraph(action, predicate, new IdentitySet<>());
+    }
+
+    public void visitGraph(Predicate<DurableInstance> action, Predicate<InstanceReference> predicate, IdentitySet<DurableInstance> visited) {
+        if(DebugEnv.recordPath)
+            DebugEnv.path.clear();
+        visitGraph0(action, predicate, visited);
+    }
+
+    private void visitGraph0(Predicate<DurableInstance> action, Predicate<InstanceReference> predicate, IdentitySet<DurableInstance> visited) {
+        if(DebugEnv.recordPath)
+            DebugEnv.path.addLast(this.toString());
+        if (visited.add(this) && action.test(this)) {
+            forEachReference(r -> {
+                if (predicate.test(r))
+                    r.resolve().visitGraph0(action, predicate, visited);
+            });
+        }
+        if(DebugEnv.recordPath)
+            DebugEnv.path.removeLast();
+    }
+
+    protected abstract InstanceParam getParam();
+
+    public String getStringIdForDTO() {
+        return getStringId();
+    }
+
+    public InstanceDTO toDTO() {
+        return toDTO(getParam());
+    }
+
+    protected InstanceDTO toDTO(InstanceParam param) {
+        try (var serContext = SerializeContext.enter()) {
+            return new InstanceDTO(
+                    getStringIdForDTO(),
+                    getType().toExpression(serContext),
+                    getType().getName(),
+                    getTitle(),
+                    Instances.getSourceMappingRefDTO(this.getReference()),
+                    param
+            );
+        }
+    }
+
+    public abstract DurableInstance copy();
+
+    public String getQualifiedTitle() {
+        return getType().getName() + "-" + getTitle();
+    }
+
+    protected abstract void writeTree(TreeWriter treeWriter);
+
+    public String getText() {
+        var treeWriter = new TreeWriter();
+        writeTree(treeWriter);
+        return treeWriter.toString();
+    }
+
+    public abstract void accept(StructuralInstanceVisitor visitor);
+
 }

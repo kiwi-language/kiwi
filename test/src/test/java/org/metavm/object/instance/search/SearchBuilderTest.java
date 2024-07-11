@@ -29,7 +29,7 @@ public class SearchBuilderTest extends TestCase {
                         fooTypes.fooNameField(),
                         foo.getStringField(fooTypes.fooNameField())
                 ),
-                Expressions.fieldEq(fooTypes.fooQuxField(), baz)
+                Expressions.fieldEq(fooTypes.fooQuxField(), baz.getReference())
         );
         var query = new SearchQuery(
                 Constants.ROOT_APP_ID,

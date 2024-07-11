@@ -571,12 +571,12 @@ public class EntityUtils {
 
     public static String getEntityDesc(Object entity) {
         if (entity instanceof Flow flow)
-            return flow.getNameWithTypeArguments();
+            return getRealType(entity).getSimpleName() + "-" + flow.getNameWithTypeArguments();
         if (entity instanceof ReadonlyArray<?> array)
             return getRealType(array.getClass()).getSimpleName();
         if(entity instanceof Klass klass)
-            return klass.getTypeDesc();
-        return entity.toString();
+            return "Klass-" + klass.getTypeDesc();
+        return getRealType(entity).getSimpleName() + "-" + entity;
     }
 
     public static String getEntityPath(Object entity) {

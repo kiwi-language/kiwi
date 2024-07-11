@@ -52,7 +52,7 @@ public class InstanceContextTest extends TestCase {
                 entityRepository,
                 false,
                 cache,
-                eventQueue, false, false);
+                eventQueue, false, false, false);
     }
 
     public void test() {
@@ -96,10 +96,10 @@ public class InstanceContextTest extends TestCase {
         });
         try (var context = newContext()) {
             var foo = MockUtils.createFoo(fooTypes);
-            var bars = (ArrayInstance) foo.getField(fooTypes.fooBarsField());
-            var bar001 = (DurableInstance) (bars.get(0));
+            var bars = foo.getField(fooTypes.fooBarsField()).resolveArray();
+            var bar001 = bars.get(0);
             var baz = ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
-                    .data(Map.of(fooTypes.bazBarsField(), new ArrayInstance(fooTypes.barArrayType(), List.of(bar001))))
+                    .data(Map.of(fooTypes.bazBarsField(), new ArrayInstance(fooTypes.barArrayType(), List.of(bar001)).getReference()))
                     .build();
             context.bind(foo);
             context.bind(baz);
@@ -111,17 +111,17 @@ public class InstanceContextTest extends TestCase {
             try (var context = newContext()) {
                 var foo = (ClassInstance) context.get(fooId);
                 var baz = (ClassInstance) context.get(bazId);
-                var bars = (ArrayInstance) foo.getField(fooTypes.fooBarsField());
-                var bar001 = (DurableInstance) (bars.get(0));
+                var bars = foo.getField(fooTypes.fooBarsField()).resolveArray();
+                var bar001 = (InstanceReference) bars.get(0);
                 baz.ensureLoaded();
-                context.remove(bar001);
+                context.remove(bar001.resolve());
                 final boolean[] onChangeCalled = new boolean[1];
                 context.addListener(new ContextListener() {
                     @Override
-                    public boolean onChange(Instance instance) {
+                    public boolean onChange(DurableInstance instance) {
                         if (instance == foo) {
                             bars.removeElement(bar001);
-                            ((ArrayInstance) baz.getField(fooTypes.bazBarsField())).removeElement(bar001);
+                            baz.getField(fooTypes.bazBarsField()).resolveArray().removeElement(bar001);
                             onChangeCalled[0] = true;
                             return true;
                         } else

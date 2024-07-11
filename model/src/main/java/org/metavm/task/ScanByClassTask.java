@@ -17,8 +17,8 @@ public abstract class ScanByClassTask extends ScanByTypeTask {
 
     @Override
     protected final void processInstance(Instance instance, IEntityContext context) {
-        if (instance instanceof ClassInstance classInstance) {
-            processClassInstance(classInstance, context);
+        if (instance.isObject()) {
+            processClassInstance(instance.resolveObject(), context);
         } else {
             logger.error("Not a class instance: " + instance);
         }

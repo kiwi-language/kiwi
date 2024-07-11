@@ -91,7 +91,7 @@ public class Worker extends EntityContextFactoryAware {
                 logger.info("Running task {}", EntityUtils.getRealType(appTask).getSimpleName());
                 boolean done;
                 if (appTask instanceof WalTask walTask) {
-                    try (var walContext = entityContextFactory.newLoadedContext(shadowTask.getAppId(), walTask.getWAL())) {
+                    try (var walContext = entityContextFactory.newLoadedContext(shadowTask.getAppId(), walTask.getWAL(), walTask.isMigrationDisabled())) {
                         done = runTask0(appTask, walContext);
                         walContext.finish();
                     }

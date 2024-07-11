@@ -7,6 +7,7 @@ import sun.misc.Unsafe;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
@@ -244,12 +245,19 @@ public class ReflectionUtils {
     public static void forEachField(Class<?> klass, Consumer<Field> action) {
         if (klass.isInterface())
             return;
-        for (Field field : klass.getDeclaredFields()) {
-            action.accept(field);
-        }
         var superClass = klass.getSuperclass();
         if (superClass != Object.class)
             forEachField(superClass, action);
+        for (Field field : klass.getDeclaredFields()) {
+            action.accept(field);
+        }
+    }
+
+    public static void forEachField(@NotNull Object object, BiConsumer<Field, Object> action) {
+        forEachField(object.getClass(), f -> {
+            if(!Modifier.isStatic(f.getModifiers()))
+               action.accept(f, get(object,f));
+        });
     }
 
     public static Class<?> getCompatibleType(List<Class<?>> classes) {
@@ -1015,6 +1023,14 @@ public class ReflectionUtils {
         return element.isAnnotationPresent(javax.annotation.Nullable.class)
                 || element.isAnnotationPresent(Nullable.class);
 
+    }
+
+    public static String dumpObject(Object object) {
+        if(object == null)
+            return "null";
+        Map<String, Object> values = new HashMap<>();
+        forEachField(object, (f, v) -> values.put(f.getName(), Objects.toString(v)));
+        return NncUtils.toPrettyJsonString(values);
     }
 
 }

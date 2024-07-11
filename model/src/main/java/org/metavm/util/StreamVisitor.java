@@ -41,9 +41,15 @@ public class StreamVisitor {
     }
 
     public void visitMessage() {
+        input.read();
         input.readLong();
         readTreeId();
         input.readLong();
+        boolean separateChild = readBoolean();
+        if(separateChild) {
+            readId();
+            readId();
+        }
         visit();
     }
 

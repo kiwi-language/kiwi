@@ -9,7 +9,7 @@ public class TaggedPhysicalId extends PhysicalId {
     private final int typeTag;
 
     public TaggedPhysicalId(long treeId, long nodeId, int typeTag) {
-        super(typeTag > 0 && typeTag < 4, treeId, nodeId);
+        super(typeTag > 0 && typeTag <= 4, treeId, nodeId);
         this.typeTag = typeTag;
     }
 

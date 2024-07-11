@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.expression.Expressions;
 import org.metavm.expression.ThisExpression;
-import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.search.SearchQuery;
 import org.metavm.util.MockUtils;
 import org.metavm.util.TestConstants;
@@ -53,7 +52,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
                                         new ThisExpression(fooType),
                                         fooTypes.fooBazListField()
                                 ),
-                                Expressions.constant(((ArrayInstance) foo.getField(fooTypes.fooBazListField())).get(0))
+                                Expressions.constant(foo.getField(fooTypes.fooBazListField()).resolveArray().get(0))
                         )
                 ),
                 false,

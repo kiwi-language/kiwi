@@ -15,7 +15,7 @@ public class InstanceEvaluationContext implements EvaluationContext {
     @Override
     public Instance evaluate(Expression expression) {
         if(isContextExpression(expression))
-            return instance;
+            return instance.getReference();
         else
             throw new InternalException(expression + " is not a context expression of " + this);
     }

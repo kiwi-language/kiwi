@@ -5,13 +5,11 @@ import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.mocks.MockEntityRepository;
 import org.metavm.expression.NodeExpression;
 import org.metavm.expression.PropertyExpression;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.*;
-import org.metavm.object.type.mocks.TypeProviders;
 import org.metavm.util.InternalException;
 import org.metavm.util.Null;
 import org.metavm.util.TestUtils;
@@ -90,19 +88,8 @@ public class SubstitutorV2Test extends TestCase {
                 return stringType;
             throw new InternalException("Type not found: " + t.getTypeName());
         });
-
         stringType.initId(PhysicalId.of(1L, 0L, TestUtils.mockClassType()));
-
-        var typeProviders = new TypeProviders();
-
-        var entityRepo = new MockEntityRepository(typeProviders.typeRegistry);
-
-        var subst = new SubstitutorV2(
-                foo, List.of(typeVar), List.of(stringType),
-                ResolutionStage.DECLARATION
-        );
-
-        var pType = (Klass) subst.copy(foo);
+        var pType = foo.getParameterized(List.of(stringType));
         try (var serContext = SerializeContext.enter()) {
             serContext.includingCode(true);
             serContext.writeTypeDef(pType);

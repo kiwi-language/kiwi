@@ -25,24 +25,24 @@ public enum StdFunction implements ValueHolderOwner<Function> {
     isSourcePresent(
             "boolean isSourcePresent(any view)", true, List.of(),
             (func, args, callContext) -> {
-                if (args.get(0) instanceof DurableInstance durableInstance)
-                    return FlowExecResult.of(Instances.booleanInstance(durableInstance.tryGetSource() != null));
+                if (args.get(0) instanceof InstanceReference durableInstance)
+                    return FlowExecResult.of(Instances.booleanInstance(durableInstance.resolve().tryGetSource() != null));
                 else
                     throw new InternalException("Can not get source of a non-durable instance: " + args.get(0));
             }),
     getSource(
             "any getSource(any view)", true, List.of(),
             (func, args, callContext) -> {
-                if (args.get(0) instanceof DurableInstance durableInstance)
-                    return FlowExecResult.of(durableInstance.getSource());
+                if (args.get(0) instanceof InstanceReference durableInstance)
+                    return FlowExecResult.of(durableInstance.resolve().getSource());
                 else
                     throw new InternalException("Can not get source of a non-durable instance: " + args.get(0));
             }),
     setSource(
             "void setSource(any view, any source)", true, List.of(),
             (func, args, callContext) -> {
-                if (args.get(0) instanceof DurableInstance durableInstance) {
-                    durableInstance.setSourceRef(new SourceRef((DurableInstance) args.get(1), null));
+                if (args.get(0) instanceof InstanceReference ref) {
+                    ref.resolve().setSourceRef(new SourceRef((InstanceReference) args.get(1), null));
                     return FlowExecResult.of(Instances.nullInstance());
                 } else
                     throw new InternalException("Can not set source for a non-durable instance: " + args.get(0));
@@ -53,7 +53,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (args.get(0) instanceof FunctionInstance functionInstance) {
                     var samInterface = ((ClassType) func.getTypeArguments().get(0)).resolve();
                     var type = Types.createSAMInterfaceImpl(samInterface, functionInstance);
-                    return FlowExecResult.of(new ClassInstance(null, Map.of(), type));
+                    return FlowExecResult.of(new ClassInstance(null, Map.of(), type).getReference());
                 } else {
                     throw new InternalException("Invalid function instance: " + Instances.getInstancePath(args.get(0)));
                 }
@@ -126,8 +126,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             (func, args, callContext) -> {
                 var entityContext = ContextUtil.getEntityContext();
                 var instance = args.get(0);
-                if (instance instanceof DurableInstance durableInstance) {
-                    entityContext.getInstanceContext().remove(durableInstance);
+                if (instance instanceof InstanceReference ref) {
+                    entityContext.getInstanceContext().remove(ref.resolve());
                     return FlowExecResult.of(Instances.nullInstance());
                 } else
                     throw new BusinessException(ErrorCode.DELETE_NON_DURABLE_INSTANCE, instance);
@@ -211,7 +211,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     throw new IllegalArgumentException("requireNonNull requires exactly three arguments");
                 }
                 var value = args.get(0);
-                var messageSupplier = (ClassInstance) args.get(1);
+                var messageSupplier = args.get(1).resolveObject();
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
@@ -347,7 +347,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             List.of(ReflectionUtils.getMethod(String.class, "format", String.class, Object[].class)),
             (func, args, ctx) -> {
                 var format = (StringInstance) args.get(0);
-                var values = (ArrayInstance) args.get(1);
+                var values = args.get(1).resolveArray();
                 var argsArray = new Object[values.size()];
                 for (int i = 0; i < values.size(); i++) {
                     argsArray[i] = values.get(i).getTitle();
@@ -381,7 +381,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             List.of(ReflectionUtils.getMethod(Lang.class, "getId", Object.class)),
             (func, args, ctx) -> {
                 var obj = args.get(0);
-                if (obj instanceof DurableInstance d) {
+                if (obj instanceof InstanceReference d) {
                     var id = d.getStringId();
                     if (id != null)
                         return FlowExecResult.of(Instances.stringInstance(id));

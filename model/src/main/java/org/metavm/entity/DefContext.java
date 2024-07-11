@@ -4,9 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Value;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
-import org.metavm.flow.Method;
 import org.metavm.flow.ScopeRT;
 import org.metavm.object.instance.ColumnKind;
+import org.metavm.object.instance.DefaultObjectInstanceMap;
+import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.object.view.Mapping;
@@ -50,6 +51,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final Set<ClassType> mappingTypes = new HashSet<>();
     private final Set<ClassType> functionTypes = new HashSet<>();
     private final StandardDefBuilder standardDefBuilder;
+    private final ObjectInstanceMap defObjectInstanceMap = new DefaultObjectInstanceMap(this, this::addToContext);
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
             Map.entry(Byte.class, Long.class),
@@ -167,11 +169,16 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
+    public boolean containsEntity(Class<?> entityType, Id id) {
+        return entityMap.containsKey(id);
+    }
+
+    @Override
     public void onInstanceIdInit(DurableInstance instance) {
         super.onInstanceIdInit(instance);
         var entity = instance.getMappedEntity();
-        if (entity instanceof IdInitializing idInitializing)
-            entityMap.put(idInitializing.getId(), idInitializing);
+        if(entity != null)
+            entityMap.put(instance.getId(), entity);
     }
 
     @Override
@@ -319,13 +326,14 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     public @Nullable Mapper<?, ?> tryGetMapper(int typeTag) {
-        if (typeTag == TypeTags.DEFAULT)
-            throw new IllegalArgumentException("Can not get mapper for default type tag");
-        if (typeTag <= TypeTags.CHILD_ARRAY) {
-            var javaClass = switch ((int) typeTag) {
+        if (!TypeTags.isSystemTypeTag(typeTag))
+            throw new IllegalArgumentException("Can not get mapper for type tag: " + typeTag);
+        if (typeTag <= TypeTags.VALUE_ARRAY) {
+            var javaClass = switch (typeTag) {
                 case TypeTags.READONLY_ARRAY -> ReadonlyArray.class;
                 case TypeTags.READ_WRITE_ARRAY -> ReadWriteArray.class;
                 case TypeTags.CHILD_ARRAY -> ChildArray.class;
+                case TypeTags.VALUE_ARRAY ->  ValueArray.class;
                 default -> throw new IllegalStateException("Should not reach here");
             };
             return new ArrayMapper<>(javaClass, this);
@@ -488,12 +496,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     private void tryInitEntityId(Object entity) {
         if (EntityUtils.isDurable(entity)) {
-            if ((entity instanceof IdInitializing idInitializing) && idInitializing.tryGetId() == null) {
-                var id = getEntityId(entity);
-                if (id != null) {
+            var id = getEntityId(entity);
+            if(id != null) {
+                entityMap.put(id, entity);
+                if ((entity instanceof IdInitializing idInitializing) && idInitializing.tryGetId() == null)
                     idInitializing.initId(id);
-                    entityMap.put(id, idInitializing);
-                }
             }
         }
     }
@@ -554,20 +561,18 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 //    }
 
     @Override
-    public DurableInstance getInstance(Object model) {
-        return getInstance(model, null);
+    public DurableInstance getInstance(Object entity) {
+        return getInstance(entity, null);
     }
 
     public DurableInstance getInstance(Object model, ModelDef<?> def) {
-        if (model instanceof DurableInstance d)
-            return d;
-        if(model instanceof Method method && method.getDeclaringType().getName().equals("HashSet") && DebugEnv.method == null)
-            DebugEnv.method = method;
+        if (model instanceof InstanceReference d)
+            return d.resolve();
         if (pendingModels.contains(model)) {
             generateInstance(model, def);
         }
 //        assert isInstanceGenerated(model);
-        return super.getInstance(model);
+        return Objects.requireNonNull(super.getInstance(model), () -> "Failed to get instance for entity " + model);
     }
 
     @SuppressWarnings("unused")
@@ -598,24 +603,31 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         if (EntityUtils.isOrphaned(model))
             logger.error("Encounter orphaned entity: {}", EntityUtils.getEntityPath(model));
         pendingModels.remove(model);
-        if (isInstanceGenerated(model))
+        if (isInstanceGenerated(model)) {
             return;
+        }
         if (mapper == null)
             mapper = getMapperByEntity(model);
         var id = getEntityId(model);
         if (id == null) {
-            if (mapper.isProxySupported()) {
-                var instance = mapper.allocateInstanceHelper(model, getObjectInstanceMap(), null);
-                addToContext(model, instance);
-                mapper.initInstanceHelper(instance, model, getObjectInstanceMap());
-            } else {
-                var instance = mapper.createInstanceHelper(model, getObjectInstanceMap(), null);
-                addToContext(model, instance);
-            }
+//            if (mapper.isProxySupported()) {
+//                var instance = mapper.allocateInstanceHelper(model, getObjectInstanceMap(), null);
+//                addToContext(model, instance);
+//                mapper.initInstanceHelper(instance, model, getObjectInstanceMap());
+//            } else {
+                //var instance =
+             mapper.createInstanceHelper(model, defObjectInstanceMap, null);
+//                addToContext(model, instance);
+//            }
         } else {
-            var instance = getInstanceContext().get(id);
-            addToContext(model, instance);
-            mapper.updateInstanceHelper(model, instance, getObjectInstanceMap());
+            try {
+                var instance = getInstanceContext().get(id);
+                addToContext(model, instance);
+                mapper.updateInstanceHelper(model, instance, defObjectInstanceMap);
+            }
+            catch (Throwable e) {
+                throw new RuntimeException("Fail to generate instance entity: " + model, e);
+            }
         }
     }
 
@@ -756,7 +768,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     @Override
     protected void writeInstances(IInstanceContext instanceContext) {
         try (var ignored = getProfiler().enter("writeInstances ")) {
-            instanceContext.batchBind(NncUtils.exclude(instances(), instanceContext::containsInstance));
+            instanceContext.batchBind(NncUtils.filter(instances(), i -> !instanceContext.containsInstance(i)));
         }
     }
 
@@ -832,6 +844,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         StdKlass.initialize(this);
         StdMethod.initialize(this);
         standardDefBuilder.initUserFunctions();
+    }
+
+    public Class<?> getJavaClassByTag(int tag) {
+        return typeTag2Def.get(tag).getEntityClass();
     }
 
 }

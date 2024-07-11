@@ -1,12 +1,14 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.DeleteObjectNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.InstanceReference;
 
 import javax.annotation.Nullable;
 
@@ -47,7 +49,7 @@ public class DeleteObjectNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        frame.deleteInstance((DurableInstance) object.evaluate(frame));
+        frame.deleteInstance((InstanceReference) object.evaluate(frame));
         return next();
     }
 
