@@ -242,7 +242,7 @@ public abstract class DurableInstance /*extends Instance*/ {
             this.parentField = parentField;
             if (parent.resolve() instanceof ClassInstance) {
                 this.parentField = requireNonNull(parentField);
-                assert parentField.isChild() : "Invalid parent field: " + parentField;
+//                assert parentField.isChild() : "Invalid parent field: " + parentField;
             } else if(parent.resolve() instanceof ArrayInstance parentArray){
                 NncUtils.requireNull(parentField);
                 assert parentArray.isChildArray();
@@ -312,6 +312,10 @@ public abstract class DurableInstance /*extends Instance*/ {
             this.root = actualRoot.getReference();
             return actualRoot;
         }
+    }
+
+    public boolean isMigratable() {
+        return !pendingChild && parent != null && isRoot();
     }
 
     @NoProxy

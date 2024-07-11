@@ -119,7 +119,7 @@ public class LoadingBuffer {
                 var hits = new ArrayList<Tree>();
                 for (Tree tree : trees) {
                     if (tree.migrated()) {
-                        logger.info("Loaded a migration tree: {}", tree.id());
+                        logger.debug("Loaded a migration tree: {}", tree.id());
                         addMigratedTree(tree);
                     }
                     else
@@ -162,7 +162,7 @@ public class LoadingBuffer {
             @Override
             public void visitForwardingPointer(long sourceNodeId, long targetNodeId) {
                 var id = new PhysicalId(false, tree.id(), sourceNodeId);
-                logger.info("Visiting forward pointer: {}", id);
+                logger.debug("Visiting forward pointer: {}", id);
                 invertedIndex.put(id, tree);
                 ids.add(id);
             }

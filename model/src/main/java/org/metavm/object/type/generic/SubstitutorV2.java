@@ -28,7 +28,7 @@ public class SubstitutorV2 extends CopyVisitor {
                                        List<? extends Type> typeArguments,
                                        ResolutionStage stage) {
         return new SubstitutorV2(
-                root, typeParameters, typeArguments, stage
+                root, typeParameters, typeArguments, null, stage
         );
     }
 
@@ -40,6 +40,7 @@ public class SubstitutorV2 extends CopyVisitor {
     public SubstitutorV2(Object root,
                          List<TypeVariable> typeParameters,
                          List<? extends Type> typeArguments,
+                         Object existingRoot,
                          ResolutionStage stage) {
         super(root, true);
         if (typeParameters.size() != typeArguments.size()) {
@@ -52,13 +53,13 @@ public class SubstitutorV2 extends CopyVisitor {
         }
         this.typeSubstitutor = new TypeSubstitutor(NncUtils.map(typeParameters, TypeVariable::getType), typeArguments);
         this.stage = stage;
-        Object existingRoot = switch (root) {
-            case Flow flow -> flow.getEffectiveHorizontalTemplate().getExistingParameterized(
-                    NncUtils.map(NncUtils.map(flow.getTypeParameters(), TypeVariable::getType), this::substituteType));
-            case Klass klass -> klass.getEffectiveTemplate().getExistingParameterized(
-                    NncUtils.map(klass.getTypeArguments(), this::substituteType));
-            default -> throw new IllegalStateException("Unexpected root: " + root);
-        };
+//        Object existingRoot = switch (root) {
+//            case Flow flow -> flow.getEffectiveHorizontalTemplate().getExistingParameterized(
+//                    NncUtils.map(NncUtils.map(flow.getTypeParameters(), TypeVariable::getType), this::substituteType));
+//            case Klass klass -> klass.getEffectiveTemplate().getExistingParameterized(
+//                    NncUtils.map(klass.getTypeArguments(), this::substituteType));
+//            default -> throw new IllegalStateException("Unexpected root: " + root);
+//        };
         if (existingRoot != null) {
             addExistingCopy(root, existingRoot);
             EntityUtils.forEachDescendant(existingRoot, d -> {

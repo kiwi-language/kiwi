@@ -545,6 +545,7 @@ public class Instances {
     public static void applyDDL(Iterable<ClassInstance> instances, Commit commit, IEntityContext context) {
         var newFields = NncUtils.map(commit.getNewFieldIds(), context::getField);
         var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
+        var toChildFields = NncUtils.map(commit.getToChildFieldIds(), context::getField);
         var changingSuperKlasses = NncUtils.map(commit.getChangingSuperKlassIds(), context::getKlass);
         for (ClassInstance instance : instances) {
             for (Field field : newFields) {
@@ -559,6 +560,15 @@ public class Instances {
                 if (k != null) {
                     var pf = k.findField(f -> f.getEffectiveTemplate() == field);
                     convertField(instance, pf, context);
+                }
+            }
+            for (Field field : toChildFields) {
+                var k = instance.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
+                if (k != null) {
+                    var pf = k.findField(f -> f.getEffectiveTemplate() == field);
+                    var value = instance.getField(pf);
+                    if(value instanceof InstanceReference r)
+                        r.resolve().setParent(instance.getReference(), pf);
                 }
             }
             for (Klass klass : changingSuperKlasses) {

@@ -14,14 +14,12 @@ import org.metavm.flow.rest.MethodParam;
 import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.flow.rest.UpdateFieldDTO;
 import org.metavm.mocks.*;
+import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.DefaultViewId;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.TypeExpressions;
-import org.metavm.object.type.TypeManager;
-import org.metavm.object.type.Types;
+import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldRefDTO;
@@ -32,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public class InstanceManagerTest extends TestCase {
 
@@ -64,7 +63,7 @@ public class InstanceManagerTest extends TestCase {
     }
 
     private IEntityContext newContext() {
-        return entityContextFactory.newContext(false);
+        return entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.asyncPostProcess(false));
     }
 
     private Foo saveFoo() {
@@ -491,63 +490,76 @@ public class InstanceManagerTest extends TestCase {
         }
     }
 
-//    public void testMigration() {
-//        var klassIds = TestUtils.doInTransaction(() -> {
-//            try (var context = newContext()) {
-//                var productKlass = context.bind(TestUtils.newKlassBuilder("Product").build());
-//                var inventoryKlass = context.bind(TestUtils.newKlassBuilder("Inventory").build());
-//                FieldBuilder.newBuilder("inventory", "inventory", productKlass, Types.getNullableType(inventoryKlass.getType()))
-//                        .isChild(true)
-//                        .build();
-//                FieldBuilder.newBuilder("quantity", "quantity", inventoryKlass, PrimitiveType.longType)
-//                        .build();
-//                context.finish();
-//                return new Id[]{productKlass.getId(), inventoryKlass.getId()};
+    public void testMigration() {
+        var klassIds = TestUtils.doInTransaction(() -> {
+            try (var context = newContext()) {
+                var productKlass = context.bind(TestUtils.newKlassBuilder("Product").build());
+                var inventoryKlass = context.bind(TestUtils.newKlassBuilder("Inventory").build());
+                FieldBuilder.newBuilder("inventory", "inventory", productKlass, Types.getNullableType(inventoryKlass.getType()))
+                        .isChild(true)
+                        .build();
+                FieldBuilder.newBuilder("quantity", "quantity", inventoryKlass, PrimitiveType.longType)
+                        .build();
+                context.finish();
+                return new Id[]{productKlass.getId(), inventoryKlass.getId()};
+            }
+        });
+        var productKlassId = klassIds[0];
+        var inventoryKlassId = klassIds[1];
+        var ids = TestUtils.doInTransaction(() -> {
+            try (var context = newContext()) {
+                var productKlass = context.getKlass(productKlassId);
+                var inventoryKlass = context.getKlass(inventoryKlassId);
+                var product = ClassInstance.create(Map.of(), productKlass.getType());
+                context.getInstanceContext().bind(product);
+                var inventory = ClassInstance.create(
+                        Map.of(
+                                inventoryKlass.getFieldByCode("quantity"),
+                                Instances.longInstance(0L)
+                        ),
+                        inventoryKlass.getType()
+                );
+                context.getInstanceContext().bind(inventory);
+                context.finish();
+                return new Id[]{product.getId(), inventory.getId()};
+            }
+        });
+        var productId = ids[0];
+        var inventoryId = ids[1];
+        logger.debug("Product ID: {}, tree ID: {}", productId, productId.getTreeId());
+        logger.debug("Inventory ID: {}, tree ID: {}", inventoryId, inventoryId.getTreeId());
+        DebugEnv.inventoryId = inventoryId;
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.migrationDisabled(true))) {
+                var product = (ClassInstance) context.getInstanceContext().get(productId);
+                var inventory = context.getInstanceContext().get(inventoryId);
+//                context.getInstanceContext().remove(product);
+                product.setField(product.getKlass().getFieldByCode("inventory"), inventory.getReference());
+                context.finish();
+                Assert.assertEquals(inventory, inventory.getRoot());
+                Assert.assertEquals(inventory.getTreeId(), inventory.getTreeId());
+            }
+        });
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = newContext()) {
+                var product = (ClassInstance) context.getInstanceContext().get(productId);
+                var inventory = context.getInstanceContext().get(inventoryId);
+//                context.getInstanceContext().remove(product);
+                context.finish();
+                Assert.assertEquals(product, inventory.getRoot());
+                Assert.assertEquals(product.getTreeId(), inventory.getTreeId());
+            }
+        });
+//        try (var context = newContext()) {
+//            var inventory = context.getInstanceContext().get(inventoryId);
+//            try {
+//                inventory.ensureLoaded();
+//                Assert.fail();
+//            } catch (BusinessException e) {
+//                Assert.assertEquals(String.format("Object '%s' not found", inventoryId.toString()), e.getMessage());
 //            }
-//        });
-//        var productKlassId = klassIds[0];
-//        var inventoryKlassId = klassIds[1];
-//        var ids = TestUtils.doInTransaction(() -> {
-//            try (var context = newContext()) {
-//                var productKlass = context.getKlass(productKlassId);
-//                var inventoryKlass = context.getKlass(inventoryKlassId);
-//                var product = ClassInstance.create(Map.of(), productKlass.getType());
-//                context.getInstanceContext().bind(product);
-//                var inventory = ClassInstance.create(
-//                        Map.of(
-//                                inventoryKlass.getFieldByCode("quantity"),
-//                                Instances.longInstance(0L)
-//                        ),
-//                        inventoryKlass.getType()
-//                );
-//                context.getInstanceContext().bind(inventory);
-//                context.finish();
-//                return new Id[]{product.getId(), inventory.getId()};
-//            }
-//        });
-//        var productId = ids[0];
-//        var inventoryId = ids[1];
-//        TestUtils.doInTransactionWithoutResult(() -> {
-//            try (var context = newContext()) {
-//                var product = (ClassInstance) context.getInstanceContext().get(productId);
-//                var inventory = context.getInstanceContext().get(inventoryId);
-////                context.getInstanceContext().remove(product);
-//                product.setField(product.getKlass().getFieldByCode("inventory"), inventory.getReference());
-//                context.finish();
-//                Assert.assertEquals(product, inventory.getRoot());
-//                Assert.assertEquals(product.getTreeId(), inventory.getTreeId());
-//            }
-//        });
-////        try (var context = newContext()) {
-////            var inventory = context.getInstanceContext().get(inventoryId);
-////            try {
-////                inventory.ensureLoaded();
-////                Assert.fail();
-////            } catch (BusinessException e) {
-////                Assert.assertEquals(String.format("Object '%s' not found", inventoryId.toString()), e.getMessage());
-////            }
-////        }
-//    }
+//        }
+    }
 
     public void testIndexQuery() {
         TestUtils.doInTransactionWithoutResult(() -> {

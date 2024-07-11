@@ -10,7 +10,6 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceProvider;
 import org.metavm.object.type.*;
-import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.view.rest.dto.*;
 import org.metavm.util.*;
@@ -98,11 +97,7 @@ public class MappingSaver {
         if (sourceKlass.isTemplate()) {
             for (Klass templateInstance : sourceKlass.getParameterized()) {
                 templateInstance.setStage(ResolutionStage.INIT);
-                var subst = new SubstitutorV2(
-                        sourceKlass, sourceKlass.getTypeParameters(), templateInstance.getTypeArguments(),
-                        ResolutionStage.DEFINITION
-                );
-                subst.copy(sourceKlass);
+                sourceKlass.getParameterized(templateInstance.getTypeArguments());
             }
         }
     }
@@ -405,12 +400,12 @@ public class MappingSaver {
         return NamingUtils.escapeTypeName(sourceType.getCode()) + mappingCode + "View";
     }
 
-    private Field createTargetField(Klass targetType, String name, String code, Type type,
+    private Field createTargetField(Klass targetKlass, String name, String code, Type type,
                                     boolean isChild, boolean asTitle, boolean readonly) {
-        if (targetType.getTemplate() != null) {
-            var template = requireNonNull(targetType.getTemplate());
+        if (targetKlass.getTemplate() != null) {
+            var template = requireNonNull(targetKlass.getTemplate());
             var typeSubst = new TypeSubstitutor(
-                    targetType.getTypeArguments(),
+                    targetKlass.getTypeArguments(),
                     NncUtils.map(template.getTypeParameters(), TypeVariable::getType)
             );
             type = type.accept(typeSubst);
@@ -421,17 +416,13 @@ public class MappingSaver {
                     .asTitle(asTitle)
                     .readonly(readonly)
                     .build();
-            var subst = new SubstitutorV2(
-                    template, template.getTypeParameters(),
-                    targetType.getTypeArguments(), ResolutionStage.DECLARATION
-            );
-            targetType.setStage(ResolutionStage.INIT);
-            subst.copy(template);
-            return NncUtils.findRequired(targetType.getFields(), f -> f.getCopySource() == fieldTemplate);
+            targetKlass.setStage(ResolutionStage.INIT);
+            template.getParameterized(targetKlass.getTypeArguments(), ResolutionStage.DECLARATION);
+            return NncUtils.findRequired(targetKlass.getFields(), f -> f.getCopySource() == fieldTemplate);
         } else {
             return FieldBuilder
                     .newBuilder(NamingUtils.ensureValidName(name),
-                            NamingUtils.ensureValidCode(code), targetType, type)
+                            NamingUtils.ensureValidCode(code), targetKlass, type)
                     .isChild(isChild)
                     .asTitle(asTitle)
                     .readonly(readonly)

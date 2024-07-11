@@ -17,12 +17,15 @@ import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     protected final LoadingBuffer loadingBuffer;
     protected final IdInitializer idInitializer;
+    private final Set<Long> loadedTreeIds = new HashSet<>();
 
     public BufferingInstanceContext(long appId,
                                     List<TreeSource> treeSources,
@@ -60,9 +63,10 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 //            logger.debug("Start initializing instance: " + id);
             var result = loadingBuffer.getTree(id);
             var tree = result.tree();
-            onTreeLoaded(tree);
-            var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
-            readInstance(input);
+            if(onTreeLoaded(tree)) {
+                var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
+                readInstance(input);
+            }
             if(result.migrated())
                 establishForwarding(result.forwardingPointers());
 //            logger.debug("Finish initializing instance: {}, migrated: {}" ,id, result.migrated());
@@ -78,7 +82,8 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         }
     }
 
-    protected void onTreeLoaded(Tree tree) {
+    protected boolean onTreeLoaded(Tree tree) {
+        return loadedTreeIds.add(tree.id());
     }
 
     private void readInstance(InstanceInput input) {

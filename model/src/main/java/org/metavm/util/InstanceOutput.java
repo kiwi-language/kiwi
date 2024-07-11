@@ -11,6 +11,8 @@ import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,6 +23,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public class InstanceOutput extends OutputStream {
+
+    private static final Logger logger = LoggerFactory.getLogger(InstanceOutput.class);
 
     public static byte[] toBytes(DurableInstance instance) {
         var bout = new ByteArrayOutputStream();

@@ -597,11 +597,13 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         var pFlow = getExistingParameterized(typeArguments);
         if(pFlow == this)
             return pFlow;
-        if(pFlow == null)
-            addParameterized(createParameterized(typeArguments));
+        if(pFlow == null) {
+            pFlow = createParameterized(typeArguments);
+            addParameterized(pFlow);
+        }
         else if (pFlow.getStage().isAfterOrAt(stage()))
             return pFlow;
-        var subst = new SubstitutorV2(this, typeParameters.toList(), typeArguments, ResolutionStage.DEFINITION);
+        var subst = new SubstitutorV2(this, typeParameters.toList(), typeArguments, pFlow, ResolutionStage.DEFINITION);
         return substitute(subst);
     }
 

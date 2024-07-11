@@ -24,12 +24,18 @@ public final class SubContext {
         return trees.get(id);
     }
 
-    public void add(@NotNull Tree tree) {
+    public boolean tryAdd(@NotNull Tree tree) {
         ensureNotFrozen();
         if (trees.containsKey(tree.id()))
-            throw new IllegalArgumentException("Tree " + tree.id() + " already exists in the HeadContext");
+            return false;
         trees.put(tree.id(), tree);
         new ReferenceExtractor(tree.openInput(), appId, references::add).visitMessage();
+        return true;
+    }
+
+    public void add(@NotNull Tree tree) {
+        if(!tryAdd(tree))
+            throw new IllegalArgumentException("Tree " + tree.id() + " already exists in the HeadContext");
     }
 
     public Set<ReferencePO> getReferences() {

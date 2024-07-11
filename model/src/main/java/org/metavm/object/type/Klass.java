@@ -1053,12 +1053,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         var pClass = getExistingParameterized(typeArguments);
         if (pClass == this)
             return this;
-        if(pClass == null)
-            addParameterized(createParameterized(typeArguments));
+        if(pClass == null) {
+            pClass = createParameterized(typeArguments);
+            addParameterized(pClass);
+        }
         else if (pClass.getStage().isAfterOrAt(stage))
             return pClass;
         var subst = new SubstitutorV2(
-                this, typeParameters.toList(), typeArguments, stage);
+                this, typeParameters.toList(), typeArguments, pClass, stage);
         pClass = (Klass) subst.copy(this);
         return pClass;
     }
@@ -1352,7 +1354,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void updateParameterized() {
         parameterizedClasses.forEach((typeArgs, k) -> {
             var subst = new SubstitutorV2(
-                    this, typeParameters.toList(), typeArgs, stage);
+                    this, typeParameters.toList(), typeArgs, null, stage);
             subst.copy(this);
         });
     }

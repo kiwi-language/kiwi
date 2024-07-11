@@ -82,8 +82,8 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    protected void onTreeLoaded(Tree tree) {
-        headContext.add(tree);
+    protected boolean onTreeLoaded(Tree tree) {
+        return headContext.tryAdd(tree);
     }
 
     @Override
@@ -102,7 +102,8 @@ public class InstanceContext extends BufferingInstanceContext {
         headContext.freeze();
         var patchContext = new PatchContext();
         var patch = buildPatch(null, patchContext);
-        patch = migrate(patch);
+        if(!migrationDisabled)
+            patch = migrate(patch);
         checkRemoval();
         processRemoval(patch);
         /*patch = */
@@ -500,9 +501,9 @@ public class InstanceContext extends BufferingInstanceContext {
     private Patch migrate(Patch patch) {
         var migrated = new ArrayList<DurableInstance>();
         var roots = new HashSet<DurableInstance>();
-        forEachInitializedRoot(i -> {
-            if (!i.isRemoved() && i.getRoot() != i.getAggregateRoot()) {
-                assert !i.getAggregateRoot().isRemoved();
+        forEachInitialized(i -> {
+            if (!i.isEphemeral() && !i.isRemoved() && i.isMigratable()) {
+//                assert !i.getAggregateRoot().isRemoved();
                 roots.add(i.getAggregateRoot());
                 i.forEachDescendant(instance -> {
                     instance.migrate();
@@ -544,12 +545,30 @@ public class InstanceContext extends BufferingInstanceContext {
             NncUtils.replaceOrAppend(updates, i, (t1, t2) -> t1.getId() == t2.getId());
             trees.removeIf(t -> t.id() == originalTreeId);
         }
+        var treeChanges = EntityChange.create(InstancePO.class, inserts, updates, patch.treeChanges.deletes());
         return new Patch(
                 trees,
                 patch.entityChange,
-                EntityChange.create(InstancePO.class, inserts, updates, patch.treeChanges.deletes()),
+                treeChanges,
                 patch.referenceChange
         );
+    }
+
+    // For debugging, don't remove
+    @SuppressWarnings("unused")
+    private void logTreeChanges(EntityChange<InstancePO> treeChanges) {
+        logger.debug("inserts");
+        for (InstancePO insert : treeChanges.inserts()) {
+            logger.debug("Tree ID: {}", insert.getId());
+        }
+        logger.debug("updates");
+        for (InstancePO update : treeChanges.updates()) {
+            logger.debug("Tree ID: {}, size: {}", update.getId(), update.getData().length);
+        }
+        logger.debug("deletes");
+        for (InstancePO delete : treeChanges.deletes()) {
+            logger.debug("Tree ID: {}", delete.getId());
+        }
     }
 
     private void loadSeparateChildren() {

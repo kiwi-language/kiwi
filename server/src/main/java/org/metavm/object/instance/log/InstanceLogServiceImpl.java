@@ -164,7 +164,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             var commit = context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
             if (commit != null) {
                 transactionOperations.executeWithoutResult(s -> {
-                    try (var loadedContext = entityContextFactory.newLoadedContext(appId, commit.getWal())) {
+                    try (var loadedContext = entityContextFactory.newLoadedContext(appId, commit.getWal(), true)) {
                         Iterable<ClassInstance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
                                 .filter(i -> i instanceof ClassInstance)
                                 .map(i -> (ClassInstance) i)

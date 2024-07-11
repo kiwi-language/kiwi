@@ -55,9 +55,9 @@ public class DDLTest extends TestCase {
         )));
         var shoes = apiClient.getObject(shoesId);
         Assert.assertEquals(100L, shoes.get("price"));
-        var inventory = shoes.getObject("inventory");
-//        var inventoryId = shoes.getString("inventory");
-//        var inventory = apiClient.getObject(inventoryId);
+//        var inventory = shoes.getObject("inventory");
+        var inventoryId = shoes.getString("inventory");
+        var inventory = apiClient.getObject(inventoryId);
         Assert.assertEquals(100L, inventory.get("quantity"));
         var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
         var hatId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
@@ -97,10 +97,15 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(1L, box.get("count"));
         var commitState = apiClient.getObject(apiClient.getObject(commitId).getString("state"));
         Assert.assertEquals("FINISHED", commitState.get("name"));
-//        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-//            var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
-//            Assert.assertTrue(invInst.isSeparateChild());
-//        }
+        DebugEnv.flag = true;
+        DebugEnv.inventoryId = Id.parse(inventoryId);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
+                context.finish();
+                Assert.assertFalse(invInst.isRoot());
+            }
+        });
     }
 
     public void testCheck() {

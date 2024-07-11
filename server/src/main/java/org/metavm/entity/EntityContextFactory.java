@@ -17,6 +17,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Consumer;
 
 @Component
 public class EntityContextFactory {
@@ -39,7 +40,8 @@ public class EntityContextFactory {
 
 
     public IEntityContext newContext(boolean asyncLogProcess) {
-        return newContext(ContextUtil.getAppId(), defContext, null, asyncLogProcess, null, null, false, null);
+        return newContext(ContextUtil.getAppId(), defContext, null, asyncLogProcess, null, null, false, null, builder -> {
+        });
     }
 
     public IEntityContext newContext(long appId, IdInitializer idProvider) {
@@ -55,7 +57,8 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newLoadedContext(long appId, WAL cachingWAL, boolean migrationDisabled) {
-        return newContext(appId, defContext, null, defaultAsyncLogProcess, cachingWAL, null, migrationDisabled, null);
+        return newContext(appId, defContext, null, defaultAsyncLogProcess, cachingWAL, null, migrationDisabled, null, builder -> {
+        });
     }
 
     public IEntityContext newBufferingContext(WAL bufferingWAL) {
@@ -63,11 +66,17 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newBufferingContext(long appId, WAL bufferingWAL) {
-        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, bufferingWAL, false, null);
+        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, bufferingWAL, false, null, builder -> {
+        });
     }
 
     public IEntityContext newContext(long appId) {
         return newContext(appId, defContext);
+    }
+
+    public IEntityContext newContext(long appId, Consumer<InstanceContextBuilder> customizer) {
+        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, null,
+                false, null, customizer);
     }
 
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent) {
@@ -75,7 +84,8 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider) {
-        return newContext(appId, parent, idProvider, defaultAsyncLogProcess, null, null, false, null);
+        return newContext(appId, parent, idProvider, defaultAsyncLogProcess, null, null, false, null, builder -> {
+        });
     }
 
     public IEntityContext newContext(long appId,
@@ -84,18 +94,20 @@ public class EntityContextFactory {
                                      boolean asyncLogProcessing,
                                      @Nullable WAL cachingWAL,
                                      @Nullable WAL bufferingWAL,
-                                     boolean migrationDisabled, @Nullable IInstanceStore store) {
+                                     boolean migrationDisabled, @Nullable IInstanceStore store, Consumer<InstanceContextBuilder> customizer) {
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(), asyncLogProcessing,
-                NncUtils.get(parent, IEntityContext::getInstanceContext), idProvider, bridge, cachingWAL, bufferingWAL, store, migrationDisabled);
+                NncUtils.get(parent, IEntityContext::getInstanceContext), idProvider, bridge, cachingWAL, bufferingWAL, store, migrationDisabled, customizer);
         var context = new EntityContext(instanceContext, parent, defContext);
         bridge.setEntityContext(context);
         return context;
     }
 
     public IEntityContext newContextWithStore(long appId, IInstanceStore instanceStore) {
-        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, null, false, instanceStore);
+        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, null, false, instanceStore, builder -> {
+        });
     }
+
     public IInstanceContext newBridgedInstanceContext(long appId,
                                                       boolean readonly,
                                                       @Nullable Boolean asyncLogProcessing,
@@ -104,7 +116,7 @@ public class EntityContextFactory {
                                                       EntityInstanceContextBridge bridge,
                                                       @Nullable WAL cachingWAL,
                                                       @Nullable WAL bufferingWAL,
-                                                      @Nullable IInstanceStore store, boolean migrationDisabled) {
+                                                      @Nullable IInstanceStore store, boolean migrationDisabled, Consumer<InstanceContextBuilder> customizer) {
         var builder = instanceContextFactory.newBuilder(appId, bridge, bridge)
                 .readonly(readonly)
                 .asyncPostProcess(NncUtils.orElse(asyncLogProcessing, defaultAsyncLogProcess))
@@ -123,6 +135,7 @@ public class EntityContextFactory {
                 ));
         if (idProvider != null)
             builder.idInitializer(idProvider);
+        customizer.accept(builder);
         return builder.build();
     }
 

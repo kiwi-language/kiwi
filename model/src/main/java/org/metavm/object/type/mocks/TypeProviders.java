@@ -22,7 +22,7 @@ public class TypeProviders {
                 template,
                 typeParameters,
                 typeArguments,
-                stage
+                null, stage
         );
     }
 

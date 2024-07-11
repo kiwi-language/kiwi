@@ -271,6 +271,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                 ),
                 NncUtils.map(newFields, Entity::getStringId),
                 NncUtils.map(typeChangedFields, Entity::getStringId),
+                NncUtils.map(toChildFields, Entity::getStringId),
                 NncUtils.map(changingSuperKlasses, Entity::getStringId)
         );
     }
