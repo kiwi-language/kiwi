@@ -9,8 +9,8 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.task.ForwardedReferenceMarkingTask;
-import org.metavm.task.ReferenceForwardingTask;
+import org.metavm.task.MigrationMarkingTask;
+import org.metavm.task.MigrationForwardingTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,7 +108,7 @@ public class DDLTest extends TestCase {
                 Assert.assertFalse(invInst.isRoot());
             }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof ForwardedReferenceMarkingTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof MigrationMarkingTask, entityContextFactory);
         var newInventorId = TestUtils.doInTransaction(() -> {
            try(var context = newContext()) {
                var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
@@ -116,7 +116,7 @@ public class DDLTest extends TestCase {
                return Objects.requireNonNull(invInst.tryGetCurrentId());
            }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof ReferenceForwardingTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof MigrationForwardingTask, entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var boxInst = (ClassInstance) instCtx.get(Id.parse(boxId));
