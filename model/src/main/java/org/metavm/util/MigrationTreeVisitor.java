@@ -20,10 +20,10 @@ public class MigrationTreeVisitor {
         var tag = input.read();
         assert tag == TreeTags.MIGRATED;
         visitTargetTreeId(input.readLong());
-        int numForwards = input.readInt();
-        for (int i = 0; i < numForwards; i++) {
-            visitForwardingPointer(input.readLong(), input.readLong());
-        }
+//        int numForwards = input.readInt();
+//        for (int i = 0; i < numForwards; i++) {
+//            visitForwardingPointer(input.readLong(), input.readLong());
+//        }
     }
 
     public void visitTargetTreeId(long treeId) {

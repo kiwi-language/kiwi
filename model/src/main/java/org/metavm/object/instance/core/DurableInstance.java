@@ -409,8 +409,15 @@ public abstract class DurableInstance /*extends Instance*/ {
         if (isValue())
             output.write(WireTypes.VALUE);
         else {
-            output.write(WireTypes.RECORD);
-            output.writeLong(getId().getNodeId());
+            var id = getId();
+            var treeId = id.getTreeId();
+            if(treeId == getRoot().getTreeId())
+                output.write(WireTypes.RECORD);
+            else {
+                output.write(WireTypes.MIGRATING_RECORD);
+                output.writeLong(treeId);
+            }
+            output.writeLong(id.getNodeId());
         }
         getType().write(output);
         writeBody(output);
@@ -630,23 +637,23 @@ public abstract class DurableInstance /*extends Instance*/ {
 
 
     public void migrate() {
-        this.oldId = id;
+//        this.oldId = id;
         var aggRoot = getAggregateRoot();
         this.root = aggRoot.getReference();
-        this.id = PhysicalId.of(aggRoot.getTreeId(), aggRoot.nextNodeId(), getType());
+//        this.id = PhysicalId.of(aggRoot.getTreeId(), aggRoot.nextNodeId(), getType());
     }
 
     public void writeForwardingPointers(InstanceOutput output) {
         output.write(TreeTags.MIGRATED);
-        List<ForwardingPointer> fps = new ArrayList<>();
-        forEachDescendant(instance -> {
-            if (instance.isRemoved())
-                return;
-            fps.add(new ForwardingPointer(instance.getOldId(), instance.getId()));
-        });
-        output.writeLong(getTreeId());
-        output.writeInt(fps.size());
-        fps.forEach(fp -> fp.write(output));
+//        List<ForwardingPointer> fps = new ArrayList<>();
+//        forEachDescendant(instance -> {
+//            if (instance.isRemoved())
+//                return;
+//            fps.add(new ForwardingPointer(instance.getOldId(), instance.getId()));
+//        });
+        output.writeLong(getRoot().getTreeId());
+//        output.writeInt(fps.size());
+//        fps.forEach(fp -> fp.write(output));
     }
 
     public void setPendingChild(boolean pendingChild) {

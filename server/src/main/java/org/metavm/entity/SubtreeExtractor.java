@@ -24,7 +24,7 @@ public class SubtreeExtractor extends StreamVisitor {
     }
 
     @Override
-    public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitRecordBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.write(WireTypes.RECORD);
@@ -32,7 +32,7 @@ public class SubtreeExtractor extends StreamVisitor {
         typeOrTypeKey.write(output);
         var oldParentId = parentId;
         var oldParentFieldTag = parentFieldTag;
-        var id = PhysicalId.of(getTreeId(), nodeId, typeOrTypeKey);
+        var id = PhysicalId.of(treeId, nodeId, typeOrTypeKey);
         parentId = id;
         parentFieldTag = -1;
         new StreamCopier(getInput(), output) {
@@ -43,14 +43,14 @@ public class SubtreeExtractor extends StreamVisitor {
             }
 
             @Override
-            public void visitRecord() {
+            public void visitRecord(long treeId) {
                 var nodeId = readLong();
                 var typeKey = readTypeKey();
                 write(WireTypes.REFERENCE);
-                writeId(PhysicalId.of(getTreeId(), nodeId, typeKey));
-                SubtreeExtractor.this.visitRecordBody(nodeId, typeKey);
+                writeId(PhysicalId.of(treeId, nodeId, typeKey));
+                SubtreeExtractor.this.visitRecordBody(treeId, nodeId, typeKey);
             }
-        }.visitRecordBody(nodeId, typeOrTypeKey);
+        }.visitRecordBody(treeId, nodeId, typeOrTypeKey);
         parentId = oldParentId;
         parentFieldTag = oldParentFieldTag;
         add.accept(new Subtree(

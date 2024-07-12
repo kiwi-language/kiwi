@@ -6,7 +6,6 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.TypeOrTypeKey;
-import org.metavm.util.ForwardingPointer;
 import org.metavm.util.MigrationTreeVisitor;
 import org.metavm.util.NncUtils;
 import org.metavm.util.StreamVisitor;
@@ -27,6 +26,7 @@ public class LoadingBuffer {
     private final IInstanceContext context;
     private final Map<Long, List<Id>> index = new HashMap<>();
     private final Map<Id, Tree> invertedIndex = new HashMap<>();
+    private final Map<Long, Long> forwardingPointers = new HashMap<>();
     private final List<TreeSource> treeSources;
 
     public LoadingBuffer(IInstanceContext context, List<TreeSource> treeSources) {
@@ -49,35 +49,35 @@ public class LoadingBuffer {
     }
 
     public TreeLoadResult getTree(Id id) {
-        var tree =  NncUtils.requireNonNull(
+        var tree = NncUtils.requireNonNull(
                 tryGetTree(id),
                 TreeNotFoundException::new
         );
-        if(tree.migrated()) {
-            var visitor = new MigrationTreeVisitor(new ByteArrayInputStream(tree.data())) {
-                long targetTreeId;
-                final List<ForwardingPointer> forwardingPointers = new ArrayList<>();
-
-                @Override
-                public void visitTargetTreeId(long treeId) {
-                    targetTreeId = treeId;
-                }
-
-                @Override
-                public void visitForwardingPointer(long sourceNodeId, long targetNodeId) {
-                    forwardingPointers.add(new ForwardingPointer(
-                            new PhysicalId(false, tree.id(), sourceNodeId),
-                            new PhysicalId(false, targetTreeId, targetNodeId)
-                    ));
-                }
-            };
-            visitor.visit();
-            var targetId = NncUtils.findRequired(visitor.forwardingPointers, fp -> fp.sourceId().equals(id)).targetId();
-            var result = getTree(targetId);
-            NncUtils.requireFalse(result.migrated(), () -> new IllegalStateException("Multiple level of forwarding detected for id " + id));
-            return TreeLoadResult.ofMigrated(result.tree(), visitor.forwardingPointers);
-        }
-        else
+//        if(tree.migrated()) {
+//            var visitor = new MigrationTreeVisitor(new ByteArrayInputStream(tree.data())) {
+//                long targetTreeId;
+//                final List<ForwardingPointer> forwardingPointers = new ArrayList<>();
+//
+//                @Override
+//                public void visitTargetTreeId(long treeId) {
+//                    targetTreeId = treeId;
+//                }
+//
+//                @Override
+//                public void visitForwardingPointer(long sourceNodeId, long targetNodeId) {
+//                    forwardingPointers.add(new ForwardingPointer(
+//                            new PhysicalId(false, tree.id(), sourceNodeId),
+//                            new PhysicalId(false, targetTreeId, targetNodeId)
+//                    ));
+//                }
+//            };
+//            visitor.visit();
+//            var targetId = NncUtils.findRequired(visitor.forwardingPointers, fp -> fp.sourceId().equals(id)).targetId();
+//            var result = getTree(targetId);
+//            NncUtils.requireFalse(result.migrated(), () -> new IllegalStateException("Multiple level of forwarding detected for id " + id));
+//            return TreeLoadResult.ofMigrated(result.tree(), visitor.forwardingPointers);
+//        }
+//        else
             return new TreeLoadResult(tree, false, List.of());
     }
 
@@ -98,7 +98,16 @@ public class LoadingBuffer {
         buffer(id.getTreeId());
         flush();
         tree = invertedIndex.get(id);
-        return tree;
+        if(tree != null)
+            return tree;
+        var targetTreeId = forwardingPointers.get(id.getTreeId());
+        if(targetTreeId != null) {
+            buffer(targetTreeId);
+            flush();
+            return invertedIndex.get(id);
+        }
+        else
+            return null;
     }
 
     public void flush() {
@@ -143,11 +152,11 @@ public class LoadingBuffer {
         new StreamVisitor(new ByteArrayInputStream(tree.data())) {
 
             @Override
-            public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
-                var id = PhysicalId.of(getTreeId(), nodeId, typeOrTypeKey);
+            public void visitRecordBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+                var id = PhysicalId.of(treeId, nodeId, typeOrTypeKey);
                 invertedIndex.put(id, tree);
                 ids.add(id);
-                super.visitRecordBody(nodeId, typeOrTypeKey);
+                super.visitRecordBody(treeId, nodeId, typeOrTypeKey);
             }
 
         }.visitMessage();
@@ -155,17 +164,22 @@ public class LoadingBuffer {
     }
 
     private void addMigratedTree(Tree tree) {
-        var ids = new ArrayList<Id>();
-        index.put(tree.id(), ids);
+//        var ids = new ArrayList<Id>();
+//        index.put(tree.id(), ids);
         new MigrationTreeVisitor(new ByteArrayInputStream(tree.data())) {
 
             @Override
-            public void visitForwardingPointer(long sourceNodeId, long targetNodeId) {
-                var id = new PhysicalId(false, tree.id(), sourceNodeId);
-                logger.debug("Visiting forward pointer: {}", id);
-                invertedIndex.put(id, tree);
-                ids.add(id);
+            public void visitTargetTreeId(long treeId) {
+                forwardingPointers.put(tree.id(), treeId);
             }
+
+            //            @Override
+//            public void visitForwardingPointer(long sourceNodeId, long targetNodeId) {
+//                var id = new PhysicalId(false, tree.id(), sourceNodeId);
+//                logger.debug("Visiting forward pointer: {}", id);
+//                invertedIndex.put(id, tree);
+//                ids.add(id);
+//            }
         }.visit();
     }
 

@@ -31,6 +31,7 @@ public class StreamVisitor {
             case WireTypes.PASSWORD -> visitPassword();
             case WireTypes.REFERENCE -> visitReference();
             case WireTypes.RECORD -> visitRecord();
+            case WireTypes.MIGRATING_RECORD -> visitMigratingRecord();
             case WireTypes.VALUE -> visitValue();
             default -> throw new InternalException("Invalid wire type: " + wireType);
         }
@@ -63,7 +64,15 @@ public class StreamVisitor {
     }
 
     public void visitRecord() {
-        visitRecordBody(readLong(), TypeKey.read(input));
+        visitRecord(getTreeId());
+    }
+
+    public void visitMigratingRecord() {
+        visitRecord(readLong());
+    }
+
+    public void visitRecord(long treeId) {
+        visitRecordBody(treeId, readLong(), TypeKey.read(input));
     }
 
     public void visitValue() {
@@ -102,7 +111,7 @@ public class StreamVisitor {
         return input.readBoolean();
     }
 
-    public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitRecordBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
         visitBody(typeOrTypeKey);
     }
 

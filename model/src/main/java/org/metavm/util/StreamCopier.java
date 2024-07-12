@@ -45,11 +45,24 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitRecord() {
         output.write(WireTypes.RECORD);
+        visitRecord(getTreeId());
+    }
+
+    @Override
+    public void visitMigratingRecord() {
+        output.write(WireTypes.MIGRATING_RECORD);
+        var treeId = readLong();
+        output.writeLong(treeId);
+        visitRecord(treeId);
+    }
+
+    @Override
+    public void visitRecord(long treeId) {
         var nodeId = readLong();
         output.writeLong(nodeId);
         var typeKey = readTypeKey();
         typeKey.write(output);
-        visitRecordBody(nodeId, typeKey);
+        visitRecordBody(treeId, nodeId, typeKey);
     }
 
 

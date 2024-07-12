@@ -533,7 +533,7 @@ public class InstanceContext extends BufferingInstanceContext {
             NncUtils.replace(trees, i.toTree(), (t1, t2) -> t1.id() == t2.id());
         }
         for (DurableInstance instance : migrated) {
-            var originalTreeId = instance.getOldId().getTreeId();
+            var originalTreeId = instance.getId().getTreeId();
             var i = new InstancePO(
                     appId,
                     originalTreeId,

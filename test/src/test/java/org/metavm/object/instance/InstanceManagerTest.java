@@ -547,7 +547,7 @@ public class InstanceManagerTest extends TestCase {
 //                context.getInstanceContext().remove(product);
                 context.finish();
                 Assert.assertEquals(product, inventory.getRoot());
-                Assert.assertEquals(product.getTreeId(), inventory.getTreeId());
+                Assert.assertEquals(inventoryId, inventory.getId());
             }
         });
 //        try (var context = newContext()) {

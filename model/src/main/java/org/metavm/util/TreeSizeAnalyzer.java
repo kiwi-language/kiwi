@@ -23,6 +23,7 @@ public class TreeSizeAnalyzer extends StreamCopier {
     private Entry entry;
     private Entry root;
     private int sizeBeforeRecord;
+    private Long treeId;
     private Long nodeId;
     private int totalHeadSize;
     private int numReferences;
@@ -41,19 +42,21 @@ public class TreeSizeAnalyzer extends StreamCopier {
 
     @Override
     public void visitValue() {
+        treeId = null;
         nodeId = null;
         super.visitValue();
     }
 
     @Override
-    public void visitRecordBody(long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitRecordBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+        this.treeId = treeId;
         this.nodeId = nodeId;
-        super.visitRecordBody(nodeId, typeOrTypeKey);
+        super.visitRecordBody(treeId, nodeId, typeOrTypeKey);
     }
 
     @Override
     public void visitBody(TypeOrTypeKey typeOrTypeKey) {
-        var id = nodeId != null ? PhysicalId.of(getTreeId(), nodeId, typeOrTypeKey) : null;
+        var id = treeId != null ? PhysicalId.of(treeId, nodeId, typeOrTypeKey) : null;
         var sizeBefore = bout.size();
         var headSize = sizeBefore - sizeBeforeRecord;
         totalHeadSize += headSize;

@@ -102,6 +102,7 @@ public class InstanceInput implements Closeable {
             case WireTypes.PASSWORD -> new PasswordInstance(readString(), Types.getPasswordType());
             case WireTypes.REFERENCE -> readReference();
             case WireTypes.RECORD -> readRecord();
+            case WireTypes.MIGRATING_RECORD -> readMigratingRecord();
             case WireTypes.VALUE -> readValue();
             default -> throw new IllegalStateException("Invalid wire type: " + wireType);
         };
@@ -122,7 +123,14 @@ public class InstanceInput implements Closeable {
     private final StreamVisitor skipper = new StreamVisitor(this);
 
     private Instance readRecord() {
-        var nodeId = readLong();
+        return readRecord(treeId, readLong());
+    }
+
+    private Instance readMigratingRecord() {
+        return readRecord(readLong(), readLong());
+    }
+
+    private Instance readRecord(long treeId, long nodeId) {
         var type = Type.readType(this, typeDefProvider);
         var id = PhysicalId.of(treeId, nodeId, type);
         var instance = type instanceof ArrayType arrayType ?
