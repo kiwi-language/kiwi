@@ -21,7 +21,6 @@ import java.io.Closeable;
 import java.io.InputStream;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 import static org.metavm.util.NncUtils.requireNonNull;
 
@@ -523,21 +522,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public void batchRemove(Collection<DurableInstance> instances) {
-        if (DebugEnv.debugging) {
-            for (DurableInstance instance : instances) {
-                if (instance.isView() && !instance.isLoaded())
-                    instance.ensureLoaded();
-            }
-        }
         var removalBatch = getRemovalBatch(instances);
-        if (DebugEnv.debugging) {
-            debugLogger.info("removalBatch: [{}]", NncUtils.join(removalBatch, Instances::getInstanceDesc));
-        }
-        // remove views first otherwise uninitialized views in the removal batch may fail to initialize
-        var sortedRemovalBatch = NncUtils.sort(removalBatch, Comparator.comparingInt(i -> i.isView() ? 0 : 1));
-        for (var toRemove : sortedRemovalBatch) {
-            remove0(toRemove, removalBatch);
-        }
+        removalBatch.forEach(i -> remove0(i, removalBatch));
     }
 
     public boolean remove(DurableInstance instance) {
@@ -547,7 +533,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return true;
     }
 
-    private void remove0(DurableInstance instance, Set<DurableInstance> removalBatch) {
+    private void remove0(DurableInstance instance, RemovalSet removalBatch) {
         if (instance.isRemoved())
             return;
         var parent = instance.getParent();
@@ -571,13 +557,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 default -> throw new IllegalStateException("Unexpected value: " + instance);
             }
         }
-//        Set<ReferenceRT> refsOutsideOfRemoval = NncUtils.filterUnique(
-//                referencesByTarget.get(instance), ref -> !removalBatch.contains(ref.source())
-//        );
-//        ReferenceRT strongRef;
-//        if ((strongRef = NncUtils.find(refsOutsideOfRemoval, ReferenceRT::isStrong)) != null)
-//            throw BusinessException.strongReferencesPreventRemoval(strongRef.source(), instance);
-//        new ArrayList<>(refsOutsideOfRemoval).forEach(ReferenceRT::remove);
         instance.setRemoved();
         if (instance instanceof ClassInstance classInstance)
             removeFromMemIndex(classInstance);
@@ -587,32 +566,22 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         createReferenceCleanupJob(instance.getReference());
     }
 
-    private Set<DurableInstance> getRemovalBatch(Collection<DurableInstance> instances) {
-        var result = new IdentitySet<DurableInstance>();
-        var newlyAdded = new ArrayList<DurableInstance>();
-        Predicate<DurableInstance> addResult = inst -> {
-            if (result.add(inst)) {
-                newlyAdded.add(inst);
-                return true;
-            } else
-                return false;
-        };
-        var next = new ArrayList<>(instances);
-        Consumer<DurableInstance> addNext = i -> {
-            if (!result.contains(i))
-                next.add(i);
-        };
-        while (!next.isEmpty()) {
-            next.forEach(i -> i.forEachDescendantConditional(addResult));
-            next.clear();
-            newlyAdded.forEach(i -> {
-                if (i instanceof ClassInstance k && k.tryGetSource() != null)
-                    addNext.accept(k.getSource().resolve());
-                forEachView(i, addNext);
+    private RemovalSet getRemovalBatch(Collection<DurableInstance> instances) {
+        var visited = new HashSet<DurableInstance>();
+        var results = new RemovalSet();
+        for (var instance : instances) {
+            instance.accept(new DurableInstanceVisitor() {
+                @Override
+                public void visitDurableInstance(DurableInstance instance) {
+                    if(visited.add(instance)) {
+                        results.add(instance);
+                        instance.forEachChild(c -> c.accept(this));
+                        forEachView(instance, v -> v.accept(this));
+                    }
+                }
             });
-            newlyAdded.clear();
         }
-        return result;
+        return results;
     }
 
     private void forEachView(DurableInstance instance, Consumer<DurableInstance> action) {
@@ -623,17 +592,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             views.forEach(v -> forEachView(v, action));
     }
 
-    private void getRemovalBatch0(DurableInstance instance, IdentitySet<Instance> result) {
-        if (result.contains(instance.getReference()))
-            return;
-        result.add(instance.getReference());
-        var children = instance.getChildren();
-        for (var child : children) {
-            getRemovalBatch0(child, result);
-        }
-    }
-
-    @SuppressWarnings({"unused", "CommentedOutCode"})
     private void createReferenceCleanupJob(Instance instance) {
 //        if (createJob != null && isPersisted(instance)) {
 //            createJob.accept(new ReferenceCleanupTask(

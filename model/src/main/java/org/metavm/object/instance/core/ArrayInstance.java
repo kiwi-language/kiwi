@@ -487,7 +487,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     }
 
     @Override
-    public void accept(StructuralInstanceVisitor visitor) {
+    public void accept(DurableInstanceVisitor visitor) {
         visitor.visitArrayInstance(this);
     }
 

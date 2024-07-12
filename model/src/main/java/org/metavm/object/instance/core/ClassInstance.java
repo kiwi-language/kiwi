@@ -474,7 +474,7 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
-    public void accept(StructuralInstanceVisitor visitor) {
+    public void accept(DurableInstanceVisitor visitor) {
         visitor.visitClassInstance(this);
     }
 

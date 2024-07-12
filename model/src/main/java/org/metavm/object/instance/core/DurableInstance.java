@@ -727,6 +727,6 @@ public abstract class DurableInstance {
         return treeWriter.toString();
     }
 
-    public abstract void accept(StructuralInstanceVisitor visitor);
+    public abstract void accept(DurableInstanceVisitor visitor);
 
 }

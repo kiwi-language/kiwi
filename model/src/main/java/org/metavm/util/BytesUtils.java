@@ -143,7 +143,7 @@ public class BytesUtils {
         }
 
         @Override
-        public void accept(StructuralInstanceVisitor visitor) {
+        public void accept(DurableInstanceVisitor visitor) {
 
         }
 
