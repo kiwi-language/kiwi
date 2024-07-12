@@ -33,7 +33,7 @@ public class InstanceReference extends Instance {
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceReference.class);
 
-    private final @Nullable Id id;
+    private @Nullable Id id;
     private @Nullable DurableInstance target;
     private final Supplier<DurableInstance> resolver;
     private boolean view;
@@ -78,10 +78,6 @@ public class InstanceReference extends Instance {
 
     public void setTarget(@NotNull DurableInstance target) {
         this.target = target;
-    }
-
-    public void forward(InstanceReference forwardPointer) {
-        forwarded = true;
     }
 
     public boolean isForwarded() {
@@ -191,7 +187,17 @@ public class InstanceReference extends Instance {
         return target != null;
     }
 
-//    public IInstanceContext getContext() {
+    public void setForwarded(boolean forwarded) {
+        this.forwarded = forwarded;
+    }
+
+    public void forward() {
+        assert forwarded;
+        this.id = resolve().getId();
+        this.forwarded = false;
+    }
+
+    //    public IInstanceContext getContext() {
 //        return target != null ? target.getContext() : context;
 //    }
 

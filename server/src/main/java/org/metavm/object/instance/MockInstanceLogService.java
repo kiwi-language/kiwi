@@ -1,5 +1,6 @@
 package org.metavm.object.instance;
 
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.log.InstanceLogService;
 
@@ -12,7 +13,7 @@ public class MockInstanceLogService implements InstanceLogService {
     private final List<InstanceLog> logs = new ArrayList<>();
 
     @Override
-    public void process(List<InstanceLog> logs, IInstanceStore instanceStore, @Nullable String clientId) {
+    public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, List<Id> migrated, @Nullable String clientId) {
         this.logs.addAll(logs);
     }
 

@@ -1,6 +1,5 @@
 package org.metavm.util;
 
-import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.function.Supplier;
@@ -13,8 +12,15 @@ public class MockTransactionUtils {
     }
 
     public static void commitTransaction() {
-        var synchronizations = TransactionSynchronizationManager.getSynchronizations();
-        synchronizations.forEach(TransactionSynchronization::afterCommit);
+        var syncs = TransactionSynchronizationManager.getSynchronizations();
+        var offset = 0;
+        do {
+            for (int i = offset; i < syncs.size(); i++) {
+                syncs.get(i).afterCommit();
+            }
+            offset = syncs.size();
+            syncs = TransactionSynchronizationManager.getSynchronizations();
+        } while (offset != syncs.size());
         TransactionSynchronizationManager.clear();
     }
 

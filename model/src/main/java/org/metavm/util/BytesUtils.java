@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class BytesUtils {
@@ -109,6 +110,11 @@ public class BytesUtils {
         @Override
         public void forEachReference(Consumer<InstanceReference> action) {
 
+        }
+
+        @Override
+        public void forEachReference(BiConsumer<InstanceReference, Boolean> action) {
+            
         }
 
         @Override

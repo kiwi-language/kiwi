@@ -45,24 +45,30 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitRecord() {
         output.write(WireTypes.RECORD);
-        visitRecord(getTreeId());
+        var nodeId = readLong();
+        output.writeLong(nodeId);
+        visitRecord(-1L, -1L, false, getTreeId(), nodeId);
     }
 
     @Override
     public void visitMigratingRecord() {
         output.write(WireTypes.MIGRATING_RECORD);
-        var treeId = readLong();
-        output.writeLong(treeId);
-        visitRecord(treeId);
+        var oldTreeId = readLong();
+        output.writeLong(oldTreeId);
+        var oldNodeId = readLong();
+        output.writeLong(oldNodeId);
+        var useOldId = readBoolean();
+        output.writeBoolean(useOldId);
+        var nodeId = readLong();
+        output.writeLong(nodeId);
+        visitRecord(oldTreeId, oldNodeId, useOldId, getTreeId(), nodeId);
     }
 
     @Override
-    public void visitRecord(long treeId) {
-        var nodeId = readLong();
-        output.writeLong(nodeId);
+    public void visitRecord(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
         var typeKey = readTypeKey();
         typeKey.write(output);
-        visitRecordBody(treeId, nodeId, typeKey);
+        visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeKey);
     }
 
 
@@ -99,6 +105,12 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitReference() {
         output.write(WireTypes.REFERENCE);
+        output.writeId(readId());
+    }
+
+    @Override
+    protected void visitForwardedReference() {
+        output.write(WireTypes.FORWARDED_REFERENCE);
         output.writeId(readId());
     }
 

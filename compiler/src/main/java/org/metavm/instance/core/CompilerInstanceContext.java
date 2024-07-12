@@ -62,6 +62,11 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
     }
 
     @Override
+    public List<DurableInstance> getMigrated() {
+        return List.of();
+    }
+
+    @Override
     protected void finishInternal() {
         throw new UnsupportedOperationException();
     }

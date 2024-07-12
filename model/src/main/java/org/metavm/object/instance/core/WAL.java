@@ -13,19 +13,20 @@ import org.metavm.util.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @EntityType
 public class WAL extends Entity implements LoadAware, ContextFinishWare {
 
     private static Consumer<WAL> commitHook;
-    private static Consumer<List<InstanceLog>> postProcessHook;
+    private static BiConsumer<Long, List<InstanceLog>> postProcessHook;
 
     public static void setCommitHook(Consumer<WAL> commitHook) {
         WAL.commitHook = commitHook;
     }
 
-    public static void setPostProcessHook(Consumer<List<InstanceLog>> postProcessHook) {
+    public static void setPostProcessHook(BiConsumer<Long, List<InstanceLog>> postProcessHook) {
         WAL.postProcessHook = postProcessHook;
     }
 
@@ -144,7 +145,7 @@ public class WAL extends Entity implements LoadAware, ContextFinishWare {
 
     public void commit() {
         commitHook.accept(this);
-        postProcessHook.accept(instanceLogs);
+        postProcessHook.accept(appId, instanceLogs);
     }
 
     private static class IndexEntryList implements Iterable<IndexEntryPO> {

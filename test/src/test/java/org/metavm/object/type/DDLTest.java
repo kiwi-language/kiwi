@@ -5,9 +5,12 @@ import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.EntityContextFactory;
+import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.task.ForwardedReferenceMarkingTask;
+import org.metavm.task.ReferenceForwardingTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,15 +53,15 @@ public class DDLTest extends TestCase {
                 ),
                 "price", 100
         )));
-        var boxId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Box<Product>", Map.of(
-                "item", shoesId
-        )));
         var shoes = apiClient.getObject(shoesId);
         Assert.assertEquals(100L, shoes.get("price"));
 //        var inventory = shoes.getObject("inventory");
         var inventoryId = shoes.getString("inventory");
         var inventory = apiClient.getObject(inventoryId);
         Assert.assertEquals(100L, inventory.get("quantity"));
+        var boxId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Box<Inventory>", Map.of(
+                "item", inventoryId
+        )));
         var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
         var hatId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
                 "name", "Hat",
@@ -97,15 +100,35 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(1L, box.get("count"));
         var commitState = apiClient.getObject(apiClient.getObject(commitId).getString("state"));
         Assert.assertEquals("FINISHED", commitState.get("name"));
-        DebugEnv.flag = true;
         DebugEnv.inventoryId = Id.parse(inventoryId);
         TestUtils.doInTransactionWithoutResult(() -> {
-            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            try (var context = newContext()) {
                 var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
                 context.finish();
                 Assert.assertFalse(invInst.isRoot());
             }
         });
+        TestUtils.waitForTaskDone(t -> t instanceof ForwardedReferenceMarkingTask, entityContextFactory);
+        var newInventorId = TestUtils.doInTransaction(() -> {
+           try(var context = newContext()) {
+               var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
+               Assert.assertEquals(invInst.getRoot().getTreeId(), invInst.getId().getTreeId());
+               return Objects.requireNonNull(invInst.tryGetCurrentId());
+           }
+        });
+        TestUtils.waitForTaskDone(t -> t instanceof ReferenceForwardingTask, entityContextFactory);
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var boxInst = (ClassInstance) instCtx.get(Id.parse(boxId));
+            Assert.assertEquals(newInventorId, boxInst.getField("item").resolveObject().getId());
+            try {
+                instCtx.get(Id.parse(inventoryId));
+                Assert.fail("Should have been migrated");
+            }
+            catch (BusinessException e) {
+                Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+            }
+        }
     }
 
     public void testCheck() {
@@ -130,4 +153,9 @@ public class DDLTest extends TestCase {
         }
 
     }
+
+    private IEntityContext newContext() {
+        return entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.asyncPostProcess(false));
+    }
+
 }

@@ -5,11 +5,14 @@ import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.TypeOrTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 
 public class StreamVisitor {
 
+    private static final Logger logger = LoggerFactory.getLogger(StreamVisitor.class);
     private final InstanceInput input;
 
     public StreamVisitor(InputStream in) {
@@ -30,11 +33,16 @@ public class StreamVisitor {
             case WireTypes.TIME -> visitTime();
             case WireTypes.PASSWORD -> visitPassword();
             case WireTypes.REFERENCE -> visitReference();
+            case WireTypes.FORWARDED_REFERENCE -> visitForwardedReference();
             case WireTypes.RECORD -> visitRecord();
             case WireTypes.MIGRATING_RECORD -> visitMigratingRecord();
             case WireTypes.VALUE -> visitValue();
             default -> throw new InternalException("Invalid wire type: " + wireType);
         }
+    }
+
+    protected void visitForwardedReference() {
+        visitReference();
     }
 
     public InstanceInput getInput() {
@@ -64,15 +72,15 @@ public class StreamVisitor {
     }
 
     public void visitRecord() {
-        visitRecord(getTreeId());
+        visitRecord(-1L, -1L, false, getTreeId(), readLong());
     }
 
     public void visitMigratingRecord() {
-        visitRecord(readLong());
+        visitRecord(readLong(), readLong(), readBoolean(), getTreeId(), readLong());
     }
 
-    public void visitRecord(long treeId) {
-        visitRecordBody(treeId, readLong(), TypeKey.read(input));
+    public void visitRecord(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
+        visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, TypeKey.read(input));
     }
 
     public void visitValue() {
@@ -111,7 +119,7 @@ public class StreamVisitor {
         return input.readBoolean();
     }
 
-    public void visitRecordBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitRecordBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
         visitBody(typeOrTypeKey);
     }
 

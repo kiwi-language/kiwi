@@ -675,11 +675,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
         if (instance.isView())
             source2views.computeIfAbsent(instance.getSource().resolve(), k -> new ArrayList<>()).add(instance);
-        if (instance.tryGetId() != null) {
+        if (instance.tryGetCurrentId() != null) {
 //            logger.info("Adding instance {} to context, treeId: {}", instance.getId(), instance.getId().tryGetTreeId());
-            if (instanceMap.put(instance.tryGetId(), instance) != null)
-                logger.warn("Duplicate instance add to context: " + instance.tryGetId());
+            if (instanceMap.put(instance.tryGetCurrentId(), instance) != null)
+                logger.warn("Duplicate instance add to context: " + instance.tryGetCurrentId());
         }
+        if (instance.tryGetOldId() != null)
+            instanceMap.put(instance.tryGetOldId(), instance);
     }
 
     protected void mapManually(Id id, DurableInstance instance) {

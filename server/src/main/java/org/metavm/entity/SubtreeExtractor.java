@@ -7,12 +7,16 @@ import org.metavm.util.InstanceOutput;
 import org.metavm.util.StreamCopier;
 import org.metavm.util.StreamVisitor;
 import org.metavm.util.WireTypes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.function.Consumer;
 
 public class SubtreeExtractor extends StreamVisitor {
+
+    private static final Logger logger = LoggerFactory.getLogger(SubtreeExtractor.class);
 
     private Id parentId;
     private long parentFieldTag = -1L;
@@ -24,7 +28,7 @@ public class SubtreeExtractor extends StreamVisitor {
     }
 
     @Override
-    public void visitRecordBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitRecordBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.write(WireTypes.RECORD);
@@ -43,20 +47,22 @@ public class SubtreeExtractor extends StreamVisitor {
             }
 
             @Override
-            public void visitRecord(long treeId) {
-                var nodeId = readLong();
+            public void visitRecord(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
                 var typeKey = readTypeKey();
                 write(WireTypes.REFERENCE);
                 writeId(PhysicalId.of(treeId, nodeId, typeKey));
-                SubtreeExtractor.this.visitRecordBody(treeId, nodeId, typeKey);
+                SubtreeExtractor.this.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeKey);
             }
-        }.visitRecordBody(treeId, nodeId, typeOrTypeKey);
+        }.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
         parentId = oldParentId;
         parentFieldTag = oldParentFieldTag;
+        var oldId = oldTreeId != -1L ? PhysicalId.of(oldTreeId, oldNodeId, typeOrTypeKey) : null;
         add.accept(new Subtree(
                 id,
                 parentId,
                 parentFieldTag,
+                oldId,
+                useOldId,
                 bout.toByteArray()
         ));
     }

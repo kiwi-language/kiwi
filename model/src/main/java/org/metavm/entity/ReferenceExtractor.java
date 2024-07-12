@@ -33,4 +33,5 @@ public class ReferenceExtractor extends StreamVisitor {
     public void visitReference() {
         addReference(readId());
     }
+
 }

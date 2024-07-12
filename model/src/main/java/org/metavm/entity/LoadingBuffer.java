@@ -125,10 +125,8 @@ public class LoadingBuffer {
                 var trees = treeSource.load(misses, context);
                 var hits = new ArrayList<Tree>();
                 for (Tree tree : trees) {
-                    if (tree.migrated()) {
-                        logger.debug("Loaded a migration tree: {}", tree.id());
+                    if (tree.migrated())
                         addMigratedTree(tree);
-                    }
                     else
                         addTree(tree);
                     hits.add(tree);
@@ -150,11 +148,15 @@ public class LoadingBuffer {
         new StreamVisitor(new ByteArrayInputStream(tree.data())) {
 
             @Override
-            public void visitRecordBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+            public void visitRecordBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
                 var id = PhysicalId.of(treeId, nodeId, typeOrTypeKey);
                 invertedIndex.put(id, tree);
+                if(oldTreeId != -1L) {
+                    var oldId = PhysicalId.of(oldTreeId, oldNodeId, typeOrTypeKey);
+                    invertedIndex.put(oldId, tree);
+                }
                 ids.add(id);
-                super.visitRecordBody(treeId, nodeId, typeOrTypeKey);
+                super.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
             }
 
         }.visitMessage();

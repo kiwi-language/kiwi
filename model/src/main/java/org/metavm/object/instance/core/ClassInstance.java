@@ -167,6 +167,14 @@ public class ClassInstance extends DurableInstance {
         });
     }
 
+    @Override
+    public void forEachReference(BiConsumer<InstanceReference, Boolean> action) {
+        forEachField((f, v) -> {
+            if(v instanceof InstanceReference r)
+                action.accept(r, f.isChild());
+        });
+    }
+
     public Object getField(List<Id> fieldPath) {
         ensureLoaded();
         var fieldId = fieldPath.get(0);

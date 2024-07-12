@@ -42,6 +42,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private final Cache cache;
     private final boolean skipPostprocessing;
     private final boolean migrationDisabled;
+    private final List<DurableInstance> migrated = new ArrayList<>();
 
     public InstanceContext(long appId,
                            IInstanceStore instanceStore,
@@ -501,16 +502,21 @@ public class InstanceContext extends BufferingInstanceContext {
     private Patch migrate(Patch patch) {
         var migrated = new ArrayList<DurableInstance>();
         var roots = new HashSet<DurableInstance>();
+        var fpsToRemove = new ArrayList<Long>();
         forEachInitialized(i -> {
-            if (!i.isEphemeral() && !i.isRemoved() && i.isMigratable()) {
+            if (!i.isEphemeral() && !i.isRemoved()) {
+                if(i.isMigratable()) {
 //                assert !i.getAggregateRoot().isRemoved();
-                roots.add(i.getAggregateRoot());
-                i.forEachDescendant(instance -> {
-                    instance.migrate();
-                    logger.info("Instance {} migrated from {} to {}", i, i.getId().getTreeId(), i.getRoot().getTreeId());
+                    roots.add(i.getAggregateRoot());
+                    i.forEachDescendant(instance -> {
+                        instance.migrate();
                     mapManually(instance.getId(), instance);
-                });
-                migrated.add(i);
+                    });
+                    migrated.add(i);
+                    this.migrated.add(i);
+                }
+                else if(i.getForwardingPointerToRemove() != null)
+                    fpsToRemove.add(i.getForwardingPointerToRemove());
             }
         });
         if (migrated.isEmpty())
@@ -518,6 +524,7 @@ public class InstanceContext extends BufferingInstanceContext {
         var trees = new ArrayList<>(patch.trees);
         var inserts = new ArrayList<>(patch.treeChanges.inserts());
         var updates = new ArrayList<>(patch.treeChanges.updates());
+        var deletes = new ArrayList<>(patch.treeChanges.deletes());
         for (DurableInstance root : roots) {
             var i = new InstancePO(
                     appId,
@@ -545,13 +552,28 @@ public class InstanceContext extends BufferingInstanceContext {
             NncUtils.replaceOrAppend(updates, i, (t1, t2) -> t1.getId() == t2.getId());
             trees.removeIf(t -> t.id() == originalTreeId);
         }
-        var treeChanges = EntityChange.create(InstancePO.class, inserts, updates, patch.treeChanges.deletes());
+        for (Long treeId : fpsToRemove) {
+           deletes.add(new InstancePO(
+                   appId,
+                   treeId,
+                   new byte[0],
+                   0L,
+                   0L,
+                   0L
+           ));
+        }
+        var treeChanges = EntityChange.create(InstancePO.class, inserts, updates, deletes);
         return new Patch(
                 trees,
                 patch.entityChange,
                 treeChanges,
                 patch.referenceChange
         );
+    }
+
+    @Override
+    public List<DurableInstance> getMigrated() {
+        return Collections.unmodifiableList(migrated);
     }
 
     // For debugging, don't remove

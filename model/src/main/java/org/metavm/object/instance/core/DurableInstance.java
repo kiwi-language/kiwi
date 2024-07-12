@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -58,9 +59,11 @@ public abstract class DurableInstance {
     private @Nullable InstanceReference parent;
     private @Nullable Field parentField;
     private @NotNull InstanceReference root;
-    private Id oldId;
+    private @Nullable Id oldId;
     private @NotNull InstanceReference aggregateRoot;
     private boolean pendingChild;
+    private @Nullable Long forwardingPointerToRemove;
+    private boolean useOldId;
 
     private transient Long tmpId;
 
@@ -145,15 +148,19 @@ public abstract class DurableInstance {
     //    @Override
     @NoProxy
     public @Nullable Id tryGetId() {
+        return useOldId ? oldId : id;
+    }
+
+    public @Nullable Id tryGetCurrentId() {
         return id;
     }
 
     public Id getId() {
-        return requireNonNull(id, () -> Instances.getInstancePath(this) + " id not initialized yet");
+        return requireNonNull(tryGetId(), () -> Instances.getInstancePath(this) + " id not initialized yet");
     }
 
     public String getStringId() {
-        return NncUtils.get(id, Id::toString);
+        return NncUtils.get(tryGetId(), Id::toString);
     }
 
     public Object getMappedEntity() {
@@ -178,6 +185,8 @@ public abstract class DurableInstance {
     public void setRemoved() {
         if (removed)
             throw new InternalException(String.format("Instance %s is already removed", this));
+        if(DebugEnv.flag && toString().startsWith("Inventory-"))
+            throw new RuntimeException("Removing inventory");
         removed = true;
     }
 
@@ -388,14 +397,14 @@ public abstract class DurableInstance {
         if (isValue())
             output.write(WireTypes.VALUE);
         else {
-            var id = getId();
-            var treeId = id.getTreeId();
-            if(treeId == getRoot().getTreeId())
-                output.write(WireTypes.RECORD);
-            else {
+            if (oldId != null) {
                 output.write(WireTypes.MIGRATING_RECORD);
-                output.writeLong(treeId);
+                output.writeLong(oldId.getTreeId());
+                output.writeLong(oldId.getNodeId());
+                output.writeBoolean(useOldId);
             }
+            else
+                output.write(WireTypes.RECORD);
             output.writeLong(id.getNodeId());
         }
         getType().write(output);
@@ -591,8 +600,26 @@ public abstract class DurableInstance {
         return getType().isValue();
     }
 
-    public Id getOldId() {
+    public @Nullable Id tryGetOldId() {
         return oldId;
+    }
+
+    public void setOldId(@Nullable Id oldId) {
+        this.oldId = oldId;
+    }
+
+    public void setUseOldId(boolean useOldId) {
+        this.useOldId = useOldId;
+    }
+
+    public void clearOldId() {
+        assert oldId != null;
+        forwardingPointerToRemove = oldId.getTreeId();
+        this.oldId = null;
+    }
+
+    public @Nullable Long getForwardingPointerToRemove() {
+        return forwardingPointerToRemove;
     }
 
     public boolean isSeparateChild() {
@@ -616,10 +643,15 @@ public abstract class DurableInstance {
 
 
     public void migrate() {
-//        this.oldId = id;
+        this.oldId = id;
         var aggRoot = getAggregateRoot();
         this.root = aggRoot.getReference();
-//        this.id = PhysicalId.of(aggRoot.getTreeId(), aggRoot.nextNodeId(), getType());
+        this.id = PhysicalId.of(aggRoot.getTreeId(), aggRoot.nextNodeId(), getType());
+        useOldId = true;
+    }
+
+    public void switchId() {
+        useOldId = false;
     }
 
     public void writeForwardingPointers(InstanceOutput output) {
@@ -662,6 +694,8 @@ public abstract class DurableInstance {
     public abstract void forEachMember(Consumer<DurableInstance> action);
 
     public abstract void forEachReference(Consumer<InstanceReference> action);
+
+    public abstract void forEachReference(BiConsumer<InstanceReference, Boolean> action);
 
     public void visitGraph(Predicate<DurableInstance> action) {
        visitGraph(action, r -> true, new IdentitySet<>());

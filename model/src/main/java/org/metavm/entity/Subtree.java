@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.metavm.object.instance.core.Id;
 
 import java.util.Arrays;
@@ -10,8 +11,15 @@ public record Subtree(
         Id id,
         Id parentId,
         long parentFieldTag,
+        @Nullable Id oldId,
+        boolean useOldId,
         byte[] data
 ) implements Comparable<Subtree> {
+
+    public Id getId() {
+        return useOldId ? Objects.requireNonNull(oldId) : id;
+    }
+
     @Override
     public boolean equals(Object object) {
         if (this == object) return true;

@@ -100,6 +100,7 @@ public class InstanceInput implements Closeable {
             case WireTypes.BOOLEAN -> new BooleanInstance(readBoolean(), Types.getBooleanType());
             case WireTypes.TIME -> new TimeInstance(readLong(), Types.getTimeType());
             case WireTypes.PASSWORD -> new PasswordInstance(readString(), Types.getPasswordType());
+            case WireTypes.FORWARDED_REFERENCE -> readForwardedReference();
             case WireTypes.REFERENCE -> readReference();
             case WireTypes.RECORD -> readRecord();
             case WireTypes.MIGRATING_RECORD -> readMigratingRecord();
@@ -116,6 +117,12 @@ public class InstanceInput implements Closeable {
         return resolveInstance(readId());
     }
 
+    public InstanceReference readForwardedReference() {
+        var ref = resolveInstance(readId());
+        ref.setForwarded(true);
+        return ref;
+    }
+
     private InstanceReference resolveInstance(Id id) {
         return new InstanceReference(id, () -> resolver.apply(id));
     }
@@ -123,14 +130,18 @@ public class InstanceInput implements Closeable {
     private final StreamVisitor skipper = new StreamVisitor(this);
 
     private Instance readRecord() {
-        return readRecord(treeId, readLong());
+        return readRecord(-1L, -1L, false, treeId, readLong());
     }
 
     private Instance readMigratingRecord() {
-        return readRecord(readLong(), readLong());
+        return readRecord(readLong(), readLong(), readBoolean(), treeId, readLong());
     }
 
-    private Instance readRecord(long treeId, long nodeId) {
+    private Instance readForwardingRecord() {
+        return readRecord(readLong(), readLong(), false, treeId, readLong());
+    }
+
+    private Instance readRecord(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
         var type = Type.readType(this, typeDefProvider);
         var id = PhysicalId.of(treeId, nodeId, type);
         var instance = type instanceof ArrayType arrayType ?
@@ -138,6 +149,10 @@ public class InstanceInput implements Closeable {
                 ClassInstanceBuilder.newBuilder((ClassType) type).id(id).initFieldTable(false).build();
         if(parent != null)
             instance.setParentInternal(parent, parentField, true);
+        if(oldTreeId != -1L) {
+            instance.setOldId(PhysicalId.of(oldTreeId, oldNodeId, type));
+            instance.setUseOldId(useOldId);
+        }
         var oldParent = parent;
         var ref = instance.getReference();
         parent = ref;

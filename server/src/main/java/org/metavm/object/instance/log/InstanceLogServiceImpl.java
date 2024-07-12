@@ -18,6 +18,8 @@ import org.metavm.object.version.Version;
 import org.metavm.object.version.VersionRepository;
 import org.metavm.object.version.Versions;
 import org.metavm.object.view.Mapping;
+import org.metavm.task.ForwardedReferenceMarkingTask;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -54,17 +56,17 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         this.transactionOperations = transactionOperations;
         this.handlers = handlers;
         this.eventQueue = eventQueue;
-        WAL.setPostProcessHook(logs -> process(logs, instanceStore, null));
+        WAL.setPostProcessHook((appId, logs) -> process(appId, logs, instanceStore, List.of(), null));
     }
 
     @Override
-    public void process(List<InstanceLog> logs, IInstanceStore instanceStore, @Nullable String clientId) {
-        if (NncUtils.isEmpty(logs))
+    public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, List<Id> migrated, @Nullable String clientId) {
+        if (NncUtils.isEmpty(logs) && migrated.isEmpty())
             return;
-        var appId = logs.get(0).getAppId();
         List<Id> idsToLoad = NncUtils.filterAndMap(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getId);
         var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
         handleDDL(appId, newInstanceIds);
+        handleMigration(appId, migrated);
         handleMetaChanges(appId, logs, clientId);
         try (var context = newContextWithStore(appId, instanceStore)) {
             var instanceContext = context.getInstanceContext();
@@ -175,6 +177,23 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                 });
             }
         }
+    }
+
+    private void handleMigration(long appId, List<Id> migrated) {
+        if(migrated.isEmpty())
+            return;
+        transactionOperations.executeWithoutResult(s -> {
+            try(var context = newContext(appId)) {
+                for (Id id : migrated) {
+                    if(DebugEnv.flag)
+                        logger.debug("Creating forwarding marking task for " + id);
+                    context.bind(new ForwardedReferenceMarkingTask(id.toString()));
+                }
+                if(DebugEnv.flag)
+                    DebugEnv.flag2 = true;
+                context.finish();
+            }
+        });
     }
 
     private <T extends Entity> void invokeHandler(List<ClassInstance> instances, LogHandler<T> handler,

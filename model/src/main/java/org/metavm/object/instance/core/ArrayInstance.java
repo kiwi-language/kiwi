@@ -15,6 +15,7 @@ import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -346,6 +347,15 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         elements.forEach(e -> {
             if(e instanceof InstanceReference r)
                 action.accept(r);
+        });
+    }
+
+    @Override
+    public void forEachReference(BiConsumer<InstanceReference, Boolean> action) {
+        boolean isChild = isChildArray();
+        elements.forEach(e -> {
+            if(e instanceof InstanceReference r)
+                action.accept(r, isChild);
         });
     }
 

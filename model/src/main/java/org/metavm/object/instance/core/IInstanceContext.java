@@ -89,6 +89,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     List<DurableInstance> getByReferenceTargetId(Id targetId, long startExclusive, long limit);
 
+    List<DurableInstance> getMigrated();
+
     void buffer(Id id);
 
     default void buffer(Collection<? extends Id> ids) {
