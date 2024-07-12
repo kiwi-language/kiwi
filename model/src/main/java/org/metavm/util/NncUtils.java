@@ -1556,9 +1556,9 @@ public class NncUtils {
     }
 
     @Nullable
-    public static <T> T requireNull(@Nullable T value, Supplier<String> exceptionSupplier) {
+    public static <T> T requireNull(@Nullable T value, Supplier<String> messageSupplier) {
         if (value != null)
-            throw new InternalException(exceptionSupplier.get());
+            throw new InternalException(messageSupplier.get());
         return null;
     }
 
@@ -1592,9 +1592,9 @@ public class NncUtils {
         return new HashSet<>(coll1).equals(new HashSet<>(coll2));
     }
 
-    public static <T> T requireNonNull(@Nullable T value, Supplier<RuntimeException> exceptionSupplier) {
+    public static <T> T requireNonNull(@Nullable T value, Supplier<String> messageSupplier) {
         if (value == null) {
-            throw exceptionSupplier.get();
+            throw new NullPointerException(messageSupplier.get());
         }
         return value;
     }
@@ -1604,9 +1604,9 @@ public class NncUtils {
             throw new InternalException("value must be false");
     }
 
-    public static void requireFalse(boolean value, Supplier<? extends RuntimeException> exceptionSupplier) {
+    public static void requireFalse(boolean value, Supplier<String> messageSupplier) {
         if (value)
-            throw exceptionSupplier.get();
+            throw new IllegalStateException(messageSupplier.get());
     }
 
     public static void requireFalse(boolean value, String message) {
@@ -1624,9 +1624,9 @@ public class NncUtils {
             throw new InternalException(message);
     }
 
-    public static void requireTrue(boolean value, Supplier<? extends RuntimeException> exceptionSupplier) {
+    public static void requireTrue(boolean value, Supplier<String> messageSupplier) {
         if (!value)
-            throw exceptionSupplier.get();
+            throw new IllegalStateException(messageSupplier.get());
     }
 
     public static void requireEquals(Object first, Object second) {

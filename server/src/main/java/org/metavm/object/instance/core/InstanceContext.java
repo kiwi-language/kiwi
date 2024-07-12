@@ -104,7 +104,7 @@ public class InstanceContext extends BufferingInstanceContext {
         var patch = buildPatch(null, patchContext);
         if(!migrationDisabled)
             patch = migrate(patch);
-        checkRemoval();
+        validateRemoval();
         processRemoval(patch);
         /*patch = */
         beforeSaving(patch, patchContext);
@@ -335,7 +335,7 @@ public class InstanceContext extends BufferingInstanceContext {
         return NncUtils.join(path, this::getInstanceDesc, "/");
     }
 
-    private void checkRemoval() {
+    private void validateRemoval() {
         var visited = new IdentitySet<DurableInstance>();
         forEachInitializedRoot(root -> {
             if (!root.isRemoved() && !root.isEphemeral()) {
@@ -507,7 +507,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 roots.add(i.getAggregateRoot());
                 i.forEachDescendant(instance -> {
                     instance.migrate();
-                    logger.info("Instance {} migrated to {}", i.getOldId(), i.getId());
+                    logger.info("Instance {} migrated from {} to {}", i, i.getId().getTreeId(), i.getRoot().getTreeId());
                     mapManually(instance.getId(), instance);
                 });
                 migrated.add(i);

@@ -1,12 +1,11 @@
 package org.metavm.user;
 
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.metavm.common.Page;
 import org.metavm.entity.*;
 import org.metavm.user.rest.dto.RoleDTO;
-import org.metavm.util.BusinessException;
 import org.metavm.util.NncUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class RoleManager extends EntityContextFactoryAware {
@@ -35,7 +34,7 @@ public class RoleManager extends EntityContextFactoryAware {
     public RoleDTO get(String id) {
         try (var context = newContext()) {
             Role role = context.getEntity(Role.class, id);
-            NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));
+            NncUtils.requireNonNull(role, () -> "Role not found: " + id);
             return role.toRoleDTO();
         }
     }
@@ -64,7 +63,7 @@ public class RoleManager extends EntityContextFactoryAware {
     public void delete(String id) {
         try (var context = newContext()) {
             Role role = context.getEntity(Role.class, id);
-            NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));
+            NncUtils.requireNonNull(role, () -> "Role not found: " + id);
             context.remove(role);
             context.finish();
         }

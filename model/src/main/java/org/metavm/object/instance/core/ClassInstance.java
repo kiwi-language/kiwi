@@ -103,7 +103,6 @@ public class ClassInstance extends DurableInstance {
     }
 
     private void clear() {
-        new ArrayList<>(getOutgoingReferences()).forEach(ReferenceRT::clear);
         fieldTable.clear();
     }
 
@@ -141,7 +140,7 @@ public class ClassInstance extends DurableInstance {
     public String getTitle() {
         ensureLoaded();
         Field titleField = klass.getTitleField();
-        return titleField != null ? field(titleField).getDisplayValue() : tryGetTreeId() + "";
+        return titleField != null ? field(titleField).getDisplayValue() : getStringId();
     }
 
     @Override

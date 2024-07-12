@@ -368,7 +368,7 @@ public class TypeResolverImpl implements TypeResolver {
     private Klass createMetaClass(PsiClass psiClass) {
         try (var ignored = ContextUtil.getProfiler().enter("createMetaClass")) {
             NncUtils.requireFalse(Objects.requireNonNull(psiClass.getQualifiedName()).startsWith("org.metavm.api."),
-                    () -> new IllegalStateException("Can not create meta class for API class: " + psiClass.getQualifiedName()));
+                    () -> "Can not create meta class for API class: " + psiClass.getQualifiedName());
             var name = TranspileUtils.getBizClassName(psiClass);
             var kind = getClassKind(psiClass);
             boolean isTemplate = psiClass.getTypeParameterList() != null

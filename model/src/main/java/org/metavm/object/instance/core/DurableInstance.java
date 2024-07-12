@@ -17,13 +17,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class DurableInstance /*extends Instance*/ {
+public abstract class DurableInstance {
 
     public static final Logger logger = LoggerFactory.getLogger(DurableInstance.class);
 
@@ -62,8 +63,6 @@ public abstract class DurableInstance /*extends Instance*/ {
     private boolean pendingChild;
 
     private transient Long tmpId;
-
-    private transient final Map<ReferenceRT, Integer> outgoingReferences = new HashMap<>();
 
     private transient Object nativeObject;
 
@@ -360,11 +359,6 @@ public abstract class DurableInstance /*extends Instance*/ {
             throw new IllegalStateException(String.format("Instance %s is immutable", this));
     }
 
-    @NoProxy
-    public void clearId() {
-        this.id = null;
-    }
-
     public long getVersion() {
         ensureLoaded();
         return version;
@@ -382,21 +376,6 @@ public abstract class DurableInstance /*extends Instance*/ {
     public Set<DurableInstance> getChildren() {
         ensureLoaded();
         return Set.of();
-    }
-
-    @NoProxy
-    public void addOutgoingReference(ReferenceRT reference) {
-        outgoingReferences.compute(reference, (k, c) -> c == null ? 1 : c + 1);
-    }
-
-    @NoProxy
-    public void removeOutgoingReference(ReferenceRT reference) {
-        outgoingReferences.compute(reference, (k, c) -> c == null || c <= 1 ? null : c - 1);
-    }
-
-    @NoProxy
-    public Set<ReferenceRT> getOutgoingReferences() {
-        return Collections.unmodifiableSet(outgoingReferences.keySet());
     }
 
     public Tree toTree() {

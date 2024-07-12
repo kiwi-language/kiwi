@@ -4,7 +4,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
 import java.util.Map;
@@ -46,7 +45,7 @@ public class IdBlockCache {
         if (block == null || !block.contains(id)) {
             block = this.getById.apply(id);
             NncUtils.requireTrue(block != null && block.contains(id),
-                    () -> new InternalException("Can not find a block containing id: " + id)
+                    () -> "Can not find a block containing id: " + id
             );
             addToCache(block);
         }

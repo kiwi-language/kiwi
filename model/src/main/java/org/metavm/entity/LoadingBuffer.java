@@ -7,7 +7,6 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.TypeOrTypeKey;
 import org.metavm.util.MigrationTreeVisitor;
-import org.metavm.util.NncUtils;
 import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,10 +48,9 @@ public class LoadingBuffer {
     }
 
     public TreeLoadResult getTree(Id id) {
-        var tree = NncUtils.requireNonNull(
-                tryGetTree(id),
-                TreeNotFoundException::new
-        );
+        var tree = tryGetTree(id);
+        if(tree == null)
+            throw new TreeNotFoundException();
 //        if(tree.migrated()) {
 //            var visitor = new MigrationTreeVisitor(new ByteArrayInputStream(tree.data())) {
 //                long targetTreeId;
@@ -78,7 +76,7 @@ public class LoadingBuffer {
 //            return TreeLoadResult.ofMigrated(result.tree(), visitor.forwardingPointers);
 //        }
 //        else
-            return new TreeLoadResult(tree, false, List.of());
+        return new TreeLoadResult(tree, false, List.of());
     }
 
     public List<Id> getIdsInTree(long treeId) {

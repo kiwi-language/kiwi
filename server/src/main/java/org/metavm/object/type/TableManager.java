@@ -85,7 +85,7 @@ public class TableManager extends EntityContextFactoryAware {
 
     @Transactional
     public String saveColumn(ColumnDTO column) {
-        requireNonNull(column.ownerId(), () -> BusinessException.invalidParams("table Id require"));
+        requireNonNull(column.ownerId(), () -> "table Id require");
         IEntityContext context = newContext();
         var declaringType = context.getKlass(Id.parse(column.ownerId()));
         Field field = saveField(column, declaringType, context);

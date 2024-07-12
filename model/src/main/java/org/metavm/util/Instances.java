@@ -132,7 +132,7 @@ public class Instances {
 
     public static PrimitiveInstance serializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
         return NncUtils.requireNonNull(trySerializePrimitive(value, getTypeFunc),
-                () -> new InternalException(String.format("Can not resolve primitive value '%s", value)));
+                () -> String.format("Can not resolve primitive value '%s", value));
     }
 
     public static boolean isPrimitive(Object value) {

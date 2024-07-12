@@ -44,7 +44,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
             this.fields.put(
                     indexField,
                     NncUtils.requireNonNull(fields.get(indexField),
-                            () -> new InternalException("Not an index prefix"))
+                            () -> "Not an index prefix")
             );
         }
     }

@@ -485,9 +485,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public Method getMethod(String name, List<Type> parameterTypes) {
         return NncUtils.requireNonNull(
                 tryGetMethod(name, parameterTypes),
-                () -> new InternalException("Can not find method '" + name + "(" +
+                () -> "Can not find method '" + name + "(" +
                         NncUtils.join(parameterTypes, Type::getName, ",")
-                        + ")' in type '" + getName() + "'")
+                        + ")' in type '" + getName() + "'"
         );
     }
 

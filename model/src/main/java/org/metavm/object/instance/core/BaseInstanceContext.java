@@ -581,10 +581,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         instance.setRemoved();
         if (instance instanceof ClassInstance classInstance)
             removeFromMemIndex(classInstance);
-        for (ReferenceRT ref : new ArrayList<>(instance.getOutgoingReferences())) {
-            if (!removalBatch.contains(ref.target()))
-                ref.clear();
-        }
         for (var listener : listeners) {
             listener.onInstanceRemoved(instance);
         }
@@ -666,7 +662,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                     throw new InternalException("Can not bind a persisted instance: " + instance);
                 });
         NncUtils.requireFalse(instance.isRemoved(),
-                () -> new InternalException("Can not bind instance " + instance + " because it's already removed"));
+                () -> "Can not bind instance " + instance + " because it's already removed");
     }
 
     protected void craw() {
@@ -711,7 +707,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             return;
         NncUtils.requireTrue(instance.getNext() == null && instance.getPrev() == null);
         NncUtils.requireFalse(instance.isRemoved(),
-                () -> new InternalException(String.format("Can not add a removed instance: %d", instance.tryGetTreeId())));
+                () -> String.format("Can not add a removed instance: %d", instance.tryGetTreeId()));
         instance.setSeq(seq++);
         if (tail == null)
             head = tail = instance;

@@ -1,6 +1,6 @@
-1 Discard ReferenceRT
-2 Change NncUtils.requireNull(Object, Supplier<Exception>) to requireNull(Object, Supplier<String>) and other similar methods.
-3 Rename InstanceContext.checkRemoval to validateRemoval
+1 Discard ReferenceRT [done]
+2 Change NncUtils.requireNull(Object, Supplier<Exception>) to requireNull(Object, Supplier<String>) and other similar methods. [done]
+3 Rename InstanceContext.checkRemoval to validateRemoval [done]
 4 Disregarding mappings when creating version because mappings are always children of klass
-5 Remove DurableInstance.clearId
-6 Create a non-proxied entity when it's loaded and no proxy for it exists at that moment.
+5 Remove DurableInstance.clearId [done]
+6 Create a non-proxied entity when it's loaded and no proxy for it exists at that moment. [done]

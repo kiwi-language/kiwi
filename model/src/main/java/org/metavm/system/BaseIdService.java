@@ -3,7 +3,6 @@ package org.metavm.system;
 import org.metavm.entity.EntityIdProvider;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.ContextUtil;
-import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
 public abstract class BaseIdService implements EntityIdProvider {
@@ -23,7 +22,7 @@ public abstract class BaseIdService implements EntityIdProvider {
         try (var ignored = ContextUtil.getProfiler().enter("IdService.loadBlock")) {
             return NncUtils.requireNonNull(
                     blockSource.getContainingBlock(point),
-                    () -> new InternalException("Can not find a block containing id " + point)
+                    () -> "Can not find a block containing id " + point
             );
         }
     }
