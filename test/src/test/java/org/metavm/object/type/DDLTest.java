@@ -9,8 +9,9 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.task.MigrationMarkingTask;
-import org.metavm.task.MigrationForwardingTask;
+import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.task.ReferenceMarkingTask;
+import org.metavm.task.ReferenceRedirectTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +83,7 @@ public class DDLTest extends TestCase {
         }
         TestUtils.waitForDDLDone(entityContextFactory);
         var productType = typeManager.getTypeByCode("Product").type();
-        Assert.assertEquals(true, productType.getFieldByName("inventory").isChild());
+        Assert.assertTrue(productType.getFieldByName("inventory").isChild());
         var shoes1 = apiClient.getObject(shoesId);
         var hat = apiClient.getObject(hatId);
         Assert.assertEquals(true, shoes1.get("available"));
@@ -100,7 +101,6 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(1L, box.get("count"));
         var commitState = apiClient.getObject(apiClient.getObject(commitId).getString("state"));
         Assert.assertEquals("FINISHED", commitState.get("name"));
-        DebugEnv.inventoryId = Id.parse(inventoryId);
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
                 var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
@@ -108,15 +108,21 @@ public class DDLTest extends TestCase {
                 Assert.assertFalse(invInst.isRoot());
             }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof MigrationMarkingTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof ReferenceMarkingTask, entityContextFactory);
         var newInventorId = TestUtils.doInTransaction(() -> {
            try(var context = newContext()) {
                var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
                Assert.assertEquals(invInst.getRoot().getTreeId(), invInst.getId().getTreeId());
-               return Objects.requireNonNull(invInst.tryGetCurrentId());
+               var boxInst = (ClassInstance) context.getInstanceContext().get(Id.parse(boxId));
+               var item = (InstanceReference) boxInst.getField("item");
+               Assert.assertTrue(item.isForwarded());
+               Assert.assertEquals(inventoryId, item.getStringId());
+               Assert.assertNotEquals(invInst.getId(), item.getId());
+               Assert.assertEquals(invInst.getReference(), item);
+               return invInst.getId();
            }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof MigrationForwardingTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirectTask, entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var boxInst = (ClassInstance) instCtx.get(Id.parse(boxId));

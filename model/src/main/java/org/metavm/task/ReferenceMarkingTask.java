@@ -6,14 +6,14 @@ import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.DurableInstanceVisitor;
 import org.metavm.object.instance.core.Id;
 
-public class MigrationMarkingTask extends Task {
+public class ReferenceMarkingTask extends Task {
 
     public static final int BATCH_SIZE = 256;
 
     private final String id;
     private long next;
 
-    public MigrationMarkingTask(String id) {
+    public ReferenceMarkingTask(String id) {
         super("MigrationMarkingTask-" + id);
         this.id = id;
     }
@@ -50,7 +50,7 @@ public class MigrationMarkingTask extends Task {
         try {
             var target = context.getInstanceContext().get(id);
             target.switchId();
-            context.bind(new MigrationForwardingTask(this.id));
+            context.bind(new ReferenceRedirectTask(this.id));
         }
         catch (TreeNotFoundException ignored) {
         }

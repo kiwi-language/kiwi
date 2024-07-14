@@ -18,6 +18,10 @@ public class ClassInstanceWrap extends InstanceWrap {
         return (String) get(fieldName);
     }
 
+    public Id getId(String fieldName) {
+        return Id.parse(getString(fieldName));
+    }
+
     public ClassInstanceWrap getObject(String fieldName) {
         var value = get(fieldName);
         if(value instanceof ClassInstanceWrap classInstanceWrap)
