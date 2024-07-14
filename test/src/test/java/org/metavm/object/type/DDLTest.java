@@ -11,7 +11,7 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.task.ReferenceMarkingTask;
-import org.metavm.task.ReferenceRedirectTask;
+import org.metavm.task.ReferenceRedirectingTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,7 +122,7 @@ public class DDLTest extends TestCase {
                return invInst.getId();
            }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirectTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirectingTask, entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var boxInst = (ClassInstance) instCtx.get(Id.parse(boxId));

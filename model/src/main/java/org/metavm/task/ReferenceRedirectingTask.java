@@ -6,7 +6,7 @@ import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.DurableInstanceVisitor;
 import org.metavm.object.instance.core.Id;
 
-public class ReferenceRedirectTask extends Task {
+public class ReferenceRedirectingTask extends Task {
 
     public static final int BATCH_SIZE = 256;
 
@@ -14,7 +14,7 @@ public class ReferenceRedirectTask extends Task {
     private long next;
 
 
-    protected ReferenceRedirectTask(String id) {
+    protected ReferenceRedirectingTask(String id) {
         super("MigrationForwardingTask-" + id);
         this.id = id;
     }

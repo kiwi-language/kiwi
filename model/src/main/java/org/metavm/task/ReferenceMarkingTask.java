@@ -50,7 +50,7 @@ public class ReferenceMarkingTask extends Task {
         try {
             var target = context.getInstanceContext().get(id);
             target.switchId();
-            context.bind(new ReferenceRedirectTask(this.id));
+            context.bind(new ReferenceRedirectingTask(this.id));
         }
         catch (TreeNotFoundException ignored) {
         }
