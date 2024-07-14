@@ -18,7 +18,7 @@ import org.metavm.object.version.Version;
 import org.metavm.object.version.VersionRepository;
 import org.metavm.object.version.Versions;
 import org.metavm.object.view.Mapping;
-import org.metavm.task.ReferenceMarkingTask;
+import org.metavm.task.ForwardedFlagSetter;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
@@ -187,7 +187,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                 for (Id id : migrated) {
                     if(DebugEnv.flag)
                         logger.debug("Creating forwarding marking task for " + id);
-                    context.bind(new ReferenceMarkingTask(id.toString()));
+                    context.bind(new ForwardedFlagSetter(id.toString()));
                 }
                 if(DebugEnv.flag)
                     DebugEnv.flag2 = true;

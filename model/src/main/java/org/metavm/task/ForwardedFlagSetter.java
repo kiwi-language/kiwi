@@ -6,16 +6,15 @@ import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.DurableInstanceVisitor;
 import org.metavm.object.instance.core.Id;
 
-public class ReferenceRedirectingTask extends Task {
+public class ForwardedFlagSetter extends Task {
 
     public static final int BATCH_SIZE = 256;
 
     private final String id;
     private long next;
 
-
-    protected ReferenceRedirectingTask(String id) {
-        super("MigrationForwardingTask-" + id);
+    public ForwardedFlagSetter(String id) {
+        super("MigrationMarkingTask-" + id);
         this.id = id;
     }
 
@@ -23,14 +22,14 @@ public class ReferenceRedirectingTask extends Task {
     protected boolean run0(IEntityContext context) {
         var id = Id.parse(this.id);
         var referring = context.getInstanceContext().getByReferenceTargetId(id, next, BATCH_SIZE);
-        if(!referring.isEmpty()) {
+        if (!referring.isEmpty()) {
             for (DurableInstance root : referring) {
                 root.accept(new DurableInstanceVisitor() {
                     @Override
                     public void visitDurableInstance(DurableInstance instance) {
                         instance.forEachReference((ref, isChild) -> {
                             if (id.equals(ref.tryGetId()))
-                                ref.forward();
+                                ref.setForwarded(true);
                             if (isChild)
                                 ref.resolve().accept(this);
                         });
@@ -47,11 +46,14 @@ public class ReferenceRedirectingTask extends Task {
             return false;
     }
 
-    public void onTaskDone(IEntityContext context, Id id) {
+    private void onTaskDone(IEntityContext context, Id id) {
         try {
             var target = context.getInstanceContext().get(id);
-            target.clearOldId();
+            target.switchId();
+            context.bind(new ReferenceRedirecter(this.id));
         }
-        catch (TreeNotFoundException ignored) {}
+        catch (TreeNotFoundException ignored) {
+        }
     }
+
 }
