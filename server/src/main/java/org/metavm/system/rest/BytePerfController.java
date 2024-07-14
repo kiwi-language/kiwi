@@ -1,6 +1,5 @@
 package org.metavm.system.rest;
 
-import org.springframework.web.bind.annotation.*;
 import org.metavm.common.Result;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
@@ -8,6 +7,7 @@ import org.metavm.object.instance.cache.RedisCache;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.StreamVisitor;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
 
@@ -31,7 +31,7 @@ public class BytePerfController extends EntityContextFactoryAware {
             for (int i = 0; i < runs; i++) {
                 var input = InstanceInput.create(bytes, context.getInstanceContext());
                 try (var ignored = ContextUtil.getProfiler().enter("readCacheBytes")) {
-                    input.readMessage();
+                    input.readSingleMessageGrove();
                 }
             }
             long elapsed = System.currentTimeMillis() - start;
@@ -47,7 +47,7 @@ public class BytePerfController extends EntityContextFactoryAware {
         for (int i = 0; i < runs; i++) {
             var visitor = new StreamVisitor(new ByteArrayInputStream(bytes));
             try (var ignored = ContextUtil.getProfiler().enter("readCacheBytes")) {
-                visitor.visitMessage();
+                visitor.visitGrove();
             }
         }
         long elapsed = System.currentTimeMillis() - start;

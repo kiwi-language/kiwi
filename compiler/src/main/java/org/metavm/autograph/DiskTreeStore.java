@@ -34,7 +34,7 @@ public class DiskTreeStore implements TreeSource {
                     ids.add(PhysicalId.of(treeId, nodeId, typeOrTypeKey));
                     super.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
                 }
-            }.visitMessage();
+            }.visitGrove();
         }
         return ids;
     }

@@ -1,11 +1,7 @@
 package org.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.TreeTags;
-import org.metavm.object.instance.core.DurableInstance;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.IdTag;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
@@ -19,23 +15,33 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.Objects;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class InstanceOutput extends OutputStream {
 
     private static final Logger logger = LoggerFactory.getLogger(InstanceOutput.class);
 
+    public static byte[] toBytes(List<Message> messages) {
+        var bout = new ByteArrayOutputStream();
+        var output = new InstanceOutput(bout);
+        output.writeInt(messages.size());
+        messages.forEach(msg -> msg.writeTo(output));
+        return bout.toByteArray();
+    }
+
     public static byte[] toBytes(DurableInstance instance) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
-        output.writeMessage(instance);
+        output.writeInt(1);
+        instance.writeTo(output);
         return bout.toByteArray();
     }
 
     public static byte[] toMigrationsBytes(DurableInstance instance) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
+        output.writeInt(1);
         instance.writeForwardingPointers(output);
         return bout.toByteArray();
     }
@@ -44,22 +50,6 @@ public class InstanceOutput extends OutputStream {
 
     public InstanceOutput(OutputStream outputStream) {
         this.outputStream = outputStream;
-    }
-
-    public void writeMessage(DurableInstance instance) {
-        write(TreeTags.DEFAULT);
-        // !!! IMPORTANT: Version must starts at the second byte. @see org.metavm.entity.ContextDifference.incVersion !!!
-        writeLong(instance.getVersion());
-        writeLong(instance.getTreeId());
-        writeLong(instance.getNextNodeId());
-        if(instance.isSeparateChild()) {
-            writeBoolean(true);
-            writeId(Objects.requireNonNull(instance.getParent()).getId());
-            writeId(Objects.requireNonNull(instance.getParentField()).getId());
-        }
-        else
-            writeBoolean(false);
-        writeRecord(instance.getReference());
     }
 
     public void writeRecord(Instance instance) {

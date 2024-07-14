@@ -145,7 +145,7 @@ public class ClassInstanceTest extends TestCase {
                         return scopeType;
                     throw new NullPointerException("Can not find type def for id: " + id);
                 });
-        var loadedFlow = (ClassInstance) input.readMessage();
+        var loadedFlow = (ClassInstance) input.readSingleMessageGrove();
         loadedFlow.logFieldTable();
         Assert.assertTrue(loadedFlow.getField(rootScopeField).isNull());
     }

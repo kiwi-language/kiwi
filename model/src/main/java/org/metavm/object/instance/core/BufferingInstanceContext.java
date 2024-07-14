@@ -17,15 +17,14 @@ import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     protected final LoadingBuffer loadingBuffer;
     protected final IdInitializer idInitializer;
     private final Set<Long> loadedTreeIds = new HashSet<>();
+    private final Map<Long, NavigableSet<ForwardingPointer>> forwardingPointers = new HashMap<>();
 
     public BufferingInstanceContext(long appId,
                                     List<TreeSource> treeSources,
@@ -67,8 +66,9 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
                 var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
                 readInstance(input);
             }
-            if(result.migrated())
+            if(result.migrated()) {
                 establishForwarding(result.forwardingPointers());
+            }
 //            logger.debug("Finish initializing instance: {}, migrated: {}" ,id, result.migrated());
 //            logger.debug("Request tree id: {}, actual tree id: {}", id.getTreeId(), tree.id());
         } catch (TreeNotFoundException e) {
@@ -78,8 +78,19 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     private void establishForwarding(List<ForwardingPointer> forwardingPointers) {
         for (ForwardingPointer fp : forwardingPointers) {
-            mapManually(fp.sourceId(), get(fp.targetId()));
+            addForwardingPointer(fp);
         }
+    }
+
+    private void addForwardingPointer(ForwardingPointer forwardingPointer) {
+        this.forwardingPointers.computeIfAbsent(forwardingPointer.sourceId().getTreeId(), k -> new TreeSet<>())
+                .add(forwardingPointer);
+        mapManually(forwardingPointer.sourceId(), get(forwardingPointer.targetId()));
+    }
+
+    protected Collection<ForwardingPointer> getForwardingPointers(long groveId) {
+        var fps = forwardingPointers.get(groveId);
+        return fps != null ? Collections.unmodifiableCollection(fps) : List.of();
     }
 
     protected boolean onTreeLoaded(Tree tree) {
@@ -87,12 +98,16 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     }
 
     private void readInstance(InstanceInput input) {
-//        try (var entry = getProfiler().enter("readInstance")) {
-        var instance = input.readMessage();
-//            entry.addMessage("id", instance.getPhysicalId());
-        onInstanceInitialized(instance);
-
-        //        }
+        int numTrees = input.readInt();
+        for (int i = 0; i < numTrees; i++) {
+            var tree = input.readTree();
+            if(tree instanceof DurableInstance instance)
+                onInstanceInitialized(instance);
+            else if(tree instanceof ForwardingPointer fp)
+                addForwardingPointer(fp);
+            else
+                throw new IllegalStateException("Unrecognized message: " + tree);
+        }
     }
 
     @Override

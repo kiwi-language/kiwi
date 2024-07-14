@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDefProvider;
@@ -49,8 +50,28 @@ public class StreamVisitor {
         return input;
     }
 
+    public void visitGrove() {
+        int trees = readInt();
+        for (int i = 0; i < trees; i++) {
+            visitTree();;
+        }
+    }
+
+    public void visitTree() {
+        var treeTag = read();
+        switch (treeTag) {
+            case TreeTags.DEFAULT -> visitMessage();
+            case TreeTags.MIGRATED -> visitForwardingPointer();
+            default -> throw new IllegalStateException("Invalid tree tag: " + treeTag);
+        }
+    }
+
+    public void visitForwardingPointer() {
+        readId();
+        readId();
+    }
+
     public void visitMessage() {
-        input.read();
         input.readLong();
         readTreeId();
         input.readLong();

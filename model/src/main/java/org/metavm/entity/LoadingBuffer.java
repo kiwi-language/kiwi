@@ -6,7 +6,6 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.TypeOrTypeKey;
-import org.metavm.util.MigrationTreeVisitor;
 import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,10 +124,7 @@ public class LoadingBuffer {
                 var trees = treeSource.load(misses, context);
                 var hits = new ArrayList<Tree>();
                 for (Tree tree : trees) {
-                    if (tree.migrated())
-                        addMigratedTree(tree);
-                    else
-                        addTree(tree);
+                    addTree(tree);
                     hits.add(tree);
                     misses.remove(tree.id());
                 }
@@ -159,28 +155,14 @@ public class LoadingBuffer {
                 super.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
             }
 
-        }.visitMessage();
-
-    }
-
-    private void addMigratedTree(Tree tree) {
-//        var ids = new ArrayList<Id>();
-//        index.put(tree.id(), ids);
-        new MigrationTreeVisitor(new ByteArrayInputStream(tree.data())) {
-
             @Override
-            public void visitTargetTreeId(long treeId) {
-                forwardingPointers.put(tree.id(), treeId);
+            public void visitForwardingPointer() {
+                var sourceId = readId();
+                var targetId = readId();
+                forwardingPointers.put(sourceId.getTreeId(), targetId.getTreeId());
             }
+        }.visitGrove();
 
-            //            @Override
-//            public void visitForwardingPointer(long sourceNodeId, long targetNodeId) {
-//                var id = new PhysicalId(false, tree.id(), sourceNodeId);
-//                logger.debug("Visiting forward pointer: {}", id);
-//                invertedIndex.put(id, tree);
-//                ids.add(id);
-//            }
-        }.visit();
     }
 
 }

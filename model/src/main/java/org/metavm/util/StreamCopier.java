@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeOrTypeKey;
 
@@ -20,8 +21,33 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
+    public void visitGrove() {
+        int numTrees = readInt();
+        output.writeInt(numTrees);
+        for (int i = 0; i < numTrees; i++) {
+            visitTree();
+        }
+    }
+
+    @Override
+    public void visitTree() {
+        var treeTag = read();
+        output.write(treeTag);
+        switch (treeTag) {
+            case TreeTags.DEFAULT -> visitMessage();
+            case TreeTags.MIGRATED -> visitForwardingPointer();
+            default -> throw new IllegalStateException("Invalid tree tag: " + treeTag);
+        }
+    }
+
+    @Override
+    public void visitForwardingPointer() {
+        output.writeId(readId());
+        output.writeId(readId());
+    }
+
+    @Override
     public void visitMessage() {
-        output.write(read());
         output.writeLong(readLong());
         output.writeLong(readTreeId());
         output.writeLong(readLong());

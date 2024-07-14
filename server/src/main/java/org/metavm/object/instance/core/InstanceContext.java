@@ -22,6 +22,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -380,11 +381,17 @@ public class InstanceContext extends BufferingInstanceContext {
                         && instance.isRoot()
                         && !instance.isRemoved() && !instance.isEphemeral()
                         && !instance.isLoadedFromCache()) {
+                    var bout = new ByteArrayOutputStream();
+                    var out = new InstanceOutput(bout);
+                    var fps = getForwardingPointers(instance.getTreeId());
+                    out.writeInt(1 + fps.size());
+                    instance.writeTo(out);
+                    fps.forEach(fp -> fp.writeTo(out));
                     var tree = new Tree(
                             instance.getTreeId(),
                             instance.getVersion(),
                             instance.getNextNodeId(),
-                            InstanceOutput.toBytes(instance)
+                            bout.toByteArray()
                     );
                     trees.add(tree);
                 }
@@ -396,8 +403,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private Set<ReferencePO> getBufferedReferences(Collection<Tree> trees) {
         Set<ReferencePO> references = new HashSet<>();
         for (Tree tree : trees) {
-            if (!tree.migrated())
-                new ReferenceExtractor(tree.openInput(), appId, references::add).visitMessage();
+            new ReferenceExtractor(tree.openInput(), appId, references::add).visitGrove();
         }
         return references;
     }

@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.ChangeType;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.log.InstanceLog;
@@ -65,8 +66,21 @@ public class InstanceInput implements Closeable {
         this.typeDefProvider = typeDefProvider;
     }
 
+    public DurableInstance readSingleMessageGrove() {
+        readInt();
+        return (DurableInstance) readTree();
+    }
+
+    public Message readTree() {
+        var treeTag = read();
+        return switch (treeTag) {
+            case TreeTags.DEFAULT -> readMessage();
+            case TreeTags.MIGRATED -> readForwardingPointer();
+            default -> throw new IllegalStateException("Invalid tree tag: " + treeTag);
+        };
+    }
+
     public DurableInstance readMessage() {
-        read(); // TreeTags.DEFAULT
         var version = readLong();
         readTreeId();
         var nextNodeId = readLong();
@@ -88,6 +102,10 @@ public class InstanceInput implements Closeable {
             instance.setParentInternal(parent, parentField, false);
         }
         return instance;
+    }
+
+    public ForwardingPointer readForwardingPointer() {
+        return new ForwardingPointer(readId(), readId());
     }
 
     public Instance readInstance() {

@@ -25,7 +25,7 @@ import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class DurableInstance {
+public abstract class DurableInstance implements Message {
 
     public static final Logger logger = LoggerFactory.getLogger(DurableInstance.class);
 
@@ -413,10 +413,21 @@ public abstract class DurableInstance {
 
     protected abstract void writeBody(InstanceOutput output);
 
-//    @Override
-    public void write(InstanceOutput output) {
-        output.write(WireTypes.REFERENCE);
-        output.writeId(getId());
+    @Override
+    public void writeTo(InstanceOutput output) {
+        output.write(TreeTags.DEFAULT);
+        // !!! IMPORTANT: Version must starts at the second byte. @see org.metavm.entity.ContextDifference.incVersion !!!
+        output.writeLong(getVersion());
+        output.writeLong(getTreeId());
+        output.writeLong(getNextNodeId());
+        if(isSeparateChild()) {
+            output.writeBoolean(true);
+            output.writeId(Objects.requireNonNull(getParent()).getId());
+            output.writeId(Objects.requireNonNull(getParentField()).getId());
+        }
+        else
+            output.writeBoolean(false);
+        writeRecord(output);
     }
 
     public abstract void readFrom(InstanceInput input);
@@ -662,7 +673,8 @@ public abstract class DurableInstance {
 //                return;
 //            fps.add(new ForwardingPointer(instance.getOldId(), instance.getId()));
 //        });
-        output.writeLong(getRoot().getTreeId());
+        output.writeId(Objects.requireNonNull(oldId));
+        output.writeId(id);
 //        output.writeInt(fps.size());
 //        fps.forEach(fp -> fp.write(output));
     }

@@ -106,13 +106,10 @@ public class InstanceIOTest extends TestCase {
                 .data(Map.of(namesField, names.getReference()))
                 .id(PhysicalId.of(1L, 0L, fooKlass.getType()))
                 .build();
-        var bout = new ByteArrayOutputStream();
-        var output = new InstanceOutput(bout);
-        output.writeMessage(foo);
         var instanceMap = new HashMap<Id, DurableInstance>();
-        var input = new InstanceInput(new ByteArrayInputStream(bout.toByteArray()), id -> null,
+        var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(foo)), id -> null,
                 i -> instanceMap.put(i.getId(), i), id -> id.equals(fooKlass.getId()) ? fooKlass : null);
-        var recovered = (ClassInstance) input.readMessage();
+        var recovered = (ClassInstance) input.readSingleMessageGrove();
         var recoveredNames = recovered.getField(namesField).resolveArray();
         var name = recoveredNames.get(0);
         Assert.assertEquals(Instances.stringInstance("foo"), name);
@@ -132,12 +129,9 @@ public class InstanceIOTest extends TestCase {
                 ))
                 .build();
         inst.initId(PhysicalId.of(1L, 1L, inst.getType()));
-        var bout = new ByteArrayOutputStream();
-        var out = new InstanceOutput(bout);
-        out.writeMessage(inst);
-        var input = new InstanceInput(new ByteArrayInputStream(bout.toByteArray()), id -> null, i -> {
+        var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(inst)), id -> null, i -> {
         }, id -> id.equals(derivedKlass.getId()) ? derivedKlass : null);
-        var recovered = (ClassInstance) input.readMessage();
+        var recovered = (ClassInstance) input.readSingleMessageGrove();
         Assert.assertEquals(inst.getField(nameField), recovered.getField(nameField));
     }
 
@@ -218,10 +212,10 @@ public class InstanceIOTest extends TestCase {
         };
         var bytes = InstanceOutput.toBytes(fooInst);
         var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, i -> {}, typeDefProvider);
-        var recoveredFooInst = (ClassInstance) input.readMessage();
+        var recoveredFooInst = (ClassInstance) input.readSingleMessageGrove();
         MatcherAssert.assertThat(recoveredFooInst, InstanceMatcher.of(fooInst));
         new StreamVisitor(new ByteArrayInputStream(bytes)) {
-        }.visitMessage();
+        }.visitGrove();
     }
 
 }

@@ -93,14 +93,8 @@ public class ContextDifference {
     }
 
     private byte[] incVersion(byte[] tree) {
-        var bin = new ByteArrayInputStream(tree);
-        var input = new InstanceInput(bin);
-        var bout = new ByteArrayOutputStream();
-        var output = new InstanceOutput(bout);
-        output.write(TreeTags.DEFAULT);
-        output.writeLong(input.readLong() + 1);
-        var newHeadBytes = bout.toByteArray();
-        var oldHeadLen = calcHeadLength(tree);
+        var oldHeadLen = getHeadBytes(tree, 0).length;
+        var newHeadBytes = getHeadBytes(tree, 1);
         var length = newHeadBytes.length - oldHeadLen + tree.length;
         var newTree = new byte[length];
         System.arraycopy(newHeadBytes, 0, newTree, 0, newHeadBytes.length);
@@ -108,19 +102,20 @@ public class ContextDifference {
         return newTree;
     }
 
-    private int calcHeadLength(byte[] tree) {
+    private byte[] getHeadBytes(byte[] tree, int versionDelta) {
         var bin = new ByteArrayInputStream(tree);
         var input = new InstanceInput(bin);
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
+        output.writeInt(input.readInt());
         output.write(TreeTags.DEFAULT);
-        output.writeLong(input.readLong());
-        return bout.toByteArray().length;
+        output.writeLong(input.readLong() + versionDelta);
+        return bout.toByteArray();
     }
 
     private List<Subtree> getSubTrees(Tree tree) {
         var subTrees = new ArrayList<Subtree>();
-        new SubtreeExtractor(tree.openInput(), subTrees::add).visitMessage();
+        new SubtreeExtractor(tree.openInput(), subTrees::add).visitGrove();
         return subTrees;
     }
 
@@ -136,7 +131,7 @@ public class ContextDifference {
                 super.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
             }
 
-        }.visitMessage();
+        }.visitGrove();
         return ids;
     }
 

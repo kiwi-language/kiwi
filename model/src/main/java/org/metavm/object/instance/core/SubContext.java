@@ -29,7 +29,7 @@ public final class SubContext {
         if (trees.containsKey(tree.id()))
             return false;
         trees.put(tree.id(), tree);
-        new ReferenceExtractor(tree.openInput(), appId, references::add).visitMessage();
+        new ReferenceExtractor(tree.openInput(), appId, references::add).visitGrove();
         return true;
     }
 
