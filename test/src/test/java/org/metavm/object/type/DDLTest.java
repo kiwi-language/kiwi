@@ -135,7 +135,22 @@ public class DDLTest extends TestCase {
                 Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
             }
         }
-//        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_rollback.masm", typeManager, entityContextFactory);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_rollback.masm", typeManager, entityContextFactory);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var instCtx = context.getInstanceContext();
+                var invInst = instCtx.get(newInventorId);
+                context.finish();
+                Assert.assertNotEquals(newInventorId, invInst.tryGetCurrentId());
+            }
+        });
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var instCtx = context.getInstanceContext();
+                var invInst = instCtx.get(newInventorId);
+                Assert.assertEquals(newInventorId, invInst.getId());
+            }
+        });
     }
 
     public void testCheck() {

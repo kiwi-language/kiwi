@@ -381,19 +381,7 @@ public class InstanceContext extends BufferingInstanceContext {
                         && instance.isRoot()
                         && !instance.isRemoved() && !instance.isEphemeral()
                         && !instance.isLoadedFromCache()) {
-                    var bout = new ByteArrayOutputStream();
-                    var out = new InstanceOutput(bout);
-                    var fps = getForwardingPointers(instance.getTreeId());
-                    out.writeInt(1 + fps.size());
-                    instance.writeTo(out);
-                    fps.forEach(fp -> fp.writeTo(out));
-                    var tree = new Tree(
-                            instance.getTreeId(),
-                            instance.getVersion(),
-                            instance.getNextNodeId(),
-                            bout.toByteArray()
-                    );
-                    trees.add(tree);
+                    trees.add(buildTree(instance, instance.getVersion()).toTree());
                 }
             }
             return trees;
@@ -506,67 +494,19 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private Patch migrate(Patch patch) {
-        var migrated = new ArrayList<DurableInstance>();
-        var roots = new HashSet<DurableInstance>();
-        var fpsToRemove = new ArrayList<Long>();
-        forEachInitialized(i -> {
-            if (!i.isEphemeral() && !i.isRemoved()) {
-                if(i.canMoveIn()) {
-//                assert !i.getAggregateRoot().isRemoved();
-                    roots.add(i.getAggregateRoot());
-                    i.forEachDescendant(instance -> {
-                        instance.migrate();
-                    mapManually(instance.getId(), instance);
-                    });
-                    migrated.add(i);
-                    this.migrated.add(i);
-                }
-                else if(i.getForwardingPointerToRemove() != null)
-                    fpsToRemove.add(i.getForwardingPointerToRemove());
-            }
-        });
-        if (migrated.isEmpty())
-            return patch;
         var trees = new ArrayList<>(patch.trees);
         var inserts = new ArrayList<>(patch.treeChanges.inserts());
         var updates = new ArrayList<>(patch.treeChanges.updates());
         var deletes = new ArrayList<>(patch.treeChanges.deletes());
+        var roots = new HashSet<DurableInstance>();
+        moveIn(trees, inserts, updates, deletes, roots);
+        moveOut(trees, inserts, updates, deletes, roots);
         for (DurableInstance root : roots) {
-            var i = new InstancePO(
-                    appId,
-                    root.getTreeId(),
-                    InstanceOutput.toBytes(root),
-                    root.getVersion() + 1,
-                    root.getSyncVersion(),
-                    root.getNextNodeId()
-            );
+            var i = buildTree(root, root.getVersion() + 1);
             boolean added = NncUtils.replace(inserts, i, (t1, t2) -> t1.getId() == t2.getId());
             if (!added)
                 NncUtils.replaceOrAppend(updates, i, (t1, t2) -> t1.getId() == t2.getId());
             NncUtils.replace(trees, i.toTree(), (t1, t2) -> t1.id() == t2.id());
-        }
-        for (DurableInstance instance : migrated) {
-            var originalTreeId = instance.getId().getTreeId();
-            var i = new InstancePO(
-                    appId,
-                    originalTreeId,
-                    InstanceOutput.toMigrationsBytes(instance),
-                    0L,
-                    0L,
-                    0L
-            );
-            NncUtils.replaceOrAppend(updates, i, (t1, t2) -> t1.getId() == t2.getId());
-            trees.removeIf(t -> t.id() == originalTreeId);
-        }
-        for (Long treeId : fpsToRemove) {
-           deletes.add(new InstancePO(
-                   appId,
-                   treeId,
-                   new byte[0],
-                   0L,
-                   0L,
-                   0L
-           ));
         }
         var treeChanges = EntityChange.create(InstancePO.class, inserts, updates, deletes);
         return new Patch(
@@ -577,8 +517,98 @@ public class InstanceContext extends BufferingInstanceContext {
         );
     }
 
-    private void moveOut() {
+    private void moveIn(List<Tree> trees, List<InstancePO> inserts, List<InstancePO> updates, List<InstancePO> deletes, HashSet<DurableInstance> roots) {
+        var migrated = new ArrayList<DurableInstance>();
+        var fpsToRemove = new ArrayList<Long>();
+        forEachInitialized(i -> {
+            if (!i.isEphemeral() && !i.isRemoved()) {
+                if(i.canMoveIn()) {
+//                assert !i.getAggregateRoot().isRemoved();
+                    roots.add(i.getAggregateRoot());
+                    i.forEachDescendant(instance -> {
+                        instance.moveIn();
+                        mapManually(instance.getId(), instance);
+                    });
+                    migrated.add(i);
+                    this.migrated.add(i);
+                }
+                else if(i.getForwardingPointerToRemove() != null)
+                    fpsToRemove.add(i.getForwardingPointerToRemove());
+            }
+        });
+        if (migrated.isEmpty())
+            return;
+        for (DurableInstance instance : migrated) {
+            var originalTreeId = instance.getId().getTreeId();
+            var descendants = new ArrayList<DurableInstance>();
+            instance.forEachDescendant(descendants::add);
+            var bout = new ByteArrayOutputStream();
+            var out = new InstanceOutput(bout);
+            out.writeInt(descendants.size());
+            descendants.forEach(i -> i.writeForwardingPointers(out));
+            var i = new InstancePO(
+                    appId,
+                    originalTreeId,
+                    bout.toByteArray(),
+                    0L,
+                    0L,
+                    0L
+            );
+            NncUtils.replaceOrAppend(updates, i, (t1, t2) -> t1.getId() == t2.getId());
+            trees.removeIf(t -> t.id() == originalTreeId);
+        }
+        for (Long treeId : fpsToRemove) {
+            deletes.add(new InstancePO(
+                    appId,
+                    treeId,
+                    new byte[0],
+                    0L,
+                    0L,
+                    0L
+            ));
+        }
+    }
 
+    private void moveOut(List<Tree> trees, List<InstancePO> inserts, List<InstancePO> updates, List<InstancePO> deletes, Set<DurableInstance> roots) {
+        var toMoveOut = new ArrayList<DurableInstance>();
+        var allMoved = new ArrayList<DurableInstance>();
+        forEachInitialized(instance -> {
+            if (instance.canMoveOut()) {
+                toMoveOut.add(instance);
+                roots.add(instance.getRoot());
+                instance.clearParent();
+                instance.forEachDescendant(i -> {
+                    allMoved.add(i);
+                    i.moveOut();
+                });
+            }
+        });
+        idInitializer.initializeIds(appId, allMoved);
+        for (DurableInstance instance : allMoved) {
+            addForwardingPointer(new ForwardingPointer(instance.getOldId(), instance.getCurrentId()));
+        }
+        for (DurableInstance instance : toMoveOut) {
+            var tree = buildTree(instance, 0);
+            inserts.add(tree);
+            trees.add(tree.toTree());
+        }
+    }
+
+    private InstancePO buildTree(DurableInstance instance, long version) {
+        var bout = new ByteArrayOutputStream();
+        var out = new InstanceOutput(bout);
+        var fps = getForwardingPointers(instance.getTreeId());
+        out.writeInt(1 + fps.size());
+        instance.writeTo(out);
+        fps.forEach(fp -> fp.writeTo(out));
+        return new InstancePO(
+                appId,
+                instance.getTreeId(),
+                bout.toByteArray(),
+                version,
+                instance.getSyncVersion(),
+                instance.getNextNodeId()
+        );
     }
 
     @Override

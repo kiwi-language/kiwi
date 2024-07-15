@@ -82,10 +82,10 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         }
     }
 
-    private void addForwardingPointer(ForwardingPointer forwardingPointer) {
+    protected void addForwardingPointer(ForwardingPointer forwardingPointer) {
         this.forwardingPointers.computeIfAbsent(forwardingPointer.sourceId().getTreeId(), k -> new TreeSet<>())
                 .add(forwardingPointer);
-        mapManually(forwardingPointer.sourceId(), get(forwardingPointer.targetId()));
+//        mapManually(forwardingPointer.sourceId(), get(forwardingPointer.targetId()));
     }
 
     protected Collection<ForwardingPointer> getForwardingPointers(long groveId) {

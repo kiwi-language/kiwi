@@ -151,6 +151,10 @@ public abstract class DurableInstance implements Message {
         return useOldId ? oldId : id;
     }
 
+    public Id getCurrentId() {
+        return Objects.requireNonNull(id);
+    }
+
     public @Nullable Id tryGetCurrentId() {
         return id;
     }
@@ -185,8 +189,6 @@ public abstract class DurableInstance implements Message {
     public void setRemoved() {
         if (removed)
             throw new InternalException(String.format("Instance %s is already removed", this));
-        if(DebugEnv.flag && toString().startsWith("Inventory-"))
-            throw new RuntimeException("Removing inventory");
         removed = true;
     }
 
@@ -314,11 +316,8 @@ public abstract class DurableInstance implements Message {
     public DurableInstance getRoot() {
         if (root == this)
             return this;
-        else {
-            var actualRoot = root.getRoot();
-            this.root = actualRoot;
-            return actualRoot;
-        }
+        else
+            return root = root.getRoot();
     }
 
     public boolean canMoveIn() {
@@ -326,7 +325,7 @@ public abstract class DurableInstance implements Message {
     }
 
     public boolean canMoveOut() {
-        return parent != null && parentField != null && !parentField.isChild();
+        return !isRoot() && parent != null && parentField != null && !parentField.isChild();
     }
 
     @NoProxy
@@ -448,7 +447,7 @@ public abstract class DurableInstance implements Message {
     }
 
     public boolean isChildOf(DurableInstance instance, @Nullable Field parentField) {
-        return !isRoot() && parent != null && parent == instance && this.parentField == parentField;
+        return !isRoot() && parent == instance && this.parentField == parentField;
     }
 
     @Nullable
@@ -610,6 +609,10 @@ public abstract class DurableInstance implements Message {
         return getType().isValue();
     }
 
+    public Id getOldId() {
+        return Objects.requireNonNull(oldId);
+    }
+
     public @Nullable Id tryGetOldId() {
         return oldId;
     }
@@ -644,20 +647,23 @@ public abstract class DurableInstance implements Message {
     public DurableInstance getAggregateRoot() {
         if (aggregateRoot == this)
             return this;
-        else {
-            var actual = aggregateRoot.getAggregateRoot();
-            aggregateRoot = actual;
-            return actual;
-        }
+        else
+            return aggregateRoot = aggregateRoot.getAggregateRoot();
     }
 
-
-    public void migrate() {
+    public void moveIn() {
         this.oldId = id;
         var aggRoot = getAggregateRoot();
         this.root = aggRoot;
         this.id = PhysicalId.of(aggRoot.getTreeId(), aggRoot.nextNodeId(), getType());
         useOldId = true;
+    }
+
+    public void moveOut() {
+        this.oldId = id;
+        this.id = null;
+        useOldId = true;
+        this.root = aggregateRoot = parent == null ? this : parent;
     }
 
     public void switchId() {
@@ -774,4 +780,9 @@ public abstract class DurableInstance implements Message {
 
     public abstract void accept(DurableInstanceVisitor visitor);
 
+    public void clearParent() {
+        parent = null;
+        parentField = null;
+        root = aggregateRoot = this;
+    }
 }
