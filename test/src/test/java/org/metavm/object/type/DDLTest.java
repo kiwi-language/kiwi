@@ -135,6 +135,7 @@ public class DDLTest extends TestCase {
                 Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
             }
         }
+//        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_rollback.masm", typeManager, entityContextFactory);
     }
 
     public void testCheck() {

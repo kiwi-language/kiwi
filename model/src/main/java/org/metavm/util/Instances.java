@@ -194,7 +194,7 @@ public class Instances {
             var i = instance;
             while (i != null) {
                 path.addFirst(i);
-                i = NncUtils.get(i.getParent(), InstanceReference::resolve);
+                i = i.getParent();
             }
             return NncUtils.join(path, Instances::getInstanceDesc, "->");
         }
@@ -206,10 +206,10 @@ public class Instances {
                 return EntityUtils.getEntityPath(r.resolve().getMappedEntity());
             else {
                 var path = new LinkedList<InstanceReference>();
-                var i = r;
+                var i = r.resolve();
                 while (i != null) {
-                    path.addFirst(i);
-                    i = i.resolve().getParent();
+                    path.addFirst(i.getReference());
+                    i = i.getParent();
                 }
                 return NncUtils.join(path, Instances::getInstanceDesc, "->");
             }
@@ -518,7 +518,7 @@ public class Instances {
             Field parentField = null;
             if (entity.getParentEntityField() != null)
                 parentField = defContext.getField(entity.getParentEntityField());
-            instance.setParentInternal(parent, parentField, true);
+            instance.setParentInternal(parent.resolve(), parentField, true);
         } else {
             instance.setParentInternal(null, null, true);
         }
@@ -568,7 +568,7 @@ public class Instances {
                     var pf = k.findField(f -> f.getEffectiveTemplate() == field);
                     var value = instance.getField(pf);
                     if(value instanceof InstanceReference r)
-                        r.resolve().setParent(instance.getReference(), pf);
+                        r.resolve().setParent(instance, pf);
                 }
             }
             for (Klass klass : changingSuperKlasses) {

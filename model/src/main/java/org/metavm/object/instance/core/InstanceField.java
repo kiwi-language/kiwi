@@ -51,7 +51,7 @@ public class InstanceField implements IInstanceField {
     @Override
     public void writeValue(InstanceOutput output) {
         Objects.requireNonNull(value, () -> "Field " + field.getQualifiedName() + " is not initialized");
-        if (field.isChild() && value instanceof InstanceReference r && !r.resolve().isRoot())
+        if (value instanceof InstanceReference r && r.isResolved() && r.resolve().isChildOf(owner, field))
             output.writeRecord(value);
         else
             output.writeInstance(value);
@@ -70,7 +70,7 @@ public class InstanceField implements IInstanceField {
     public void set(Instance value) {
         value = checkValue(value);
         if (field.isChild() && value.isNotNull())
-            ((InstanceReference) value).resolve().setParent(this.owner.getReference(), this.field);
+            ((InstanceReference) value).resolve().setParent(this.owner, this.field);
         this.value = value;
     }
 

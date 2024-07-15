@@ -80,12 +80,6 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         return getType().getKind() == ArrayKind.CHILD;
     }
 
-    @Override
-    public boolean isChild(DurableInstance instance) {
-        ensureLoaded();
-        return isChildArray() && elements.contains(instance);
-    }
-
     public Set<DurableInstance> getChildren() {
         ensureLoaded();
         if (getType().getKind() == ArrayKind.CHILD) {
@@ -207,7 +201,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         checkIndex(index);
         element = checkElement(element);
         if (isChildArray() && element.isNotNull())
-            element.resolveDurable().setParent(getReference(), null);
+            element.resolveDurable().setParent(this, null);
         var removed = elements.set(index, element);
         if (removed != null)
             onRemove(removed);
@@ -230,7 +224,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     private boolean addInternally(Instance element) {
         element = checkElement(element);
         if (isChildArray() && element.isNotNull())
-            element.resolveDurable().setParent(getReference(), null);
+            element.resolveDurable().setParent(this, null);
         elements.add(element);
         onAdd(element);
         return true;

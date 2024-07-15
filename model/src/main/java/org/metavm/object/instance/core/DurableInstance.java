@@ -56,11 +56,11 @@ public abstract class DurableInstance implements Message {
     private long version;
     private long syncVersion;
 
-    private @Nullable InstanceReference parent;
+    private @Nullable DurableInstance parent;
     private @Nullable Field parentField;
-    private @NotNull InstanceReference root;
+    private @NotNull DurableInstance root;
     private @Nullable Id oldId;
-    private @NotNull InstanceReference aggregateRoot;
+    private @NotNull DurableInstance aggregateRoot;
     private boolean pendingChild;
     private @Nullable Long forwardingPointerToRemove;
     private boolean useOldId;
@@ -93,7 +93,7 @@ public abstract class DurableInstance implements Message {
             _new = id.tryGetTreeId() == null;
         } else
             _new = true;
-        this.root = aggregateRoot = getReference();
+        this.root = aggregateRoot = this;
     }
 
     public boolean isDurable() {
@@ -206,11 +206,11 @@ public abstract class DurableInstance implements Message {
 
     public void setParentRef(@Nullable InstanceParentRef parentRef) {
         if (parentRef != null)
-            setParent(parentRef.parent(), parentRef.field());
+            setParent(parentRef.parent().resolve(), parentRef.field());
     }
 
     @NoProxy
-    public void setParent(InstanceReference parent, @Nullable Field parentField) {
+    public void setParent(DurableInstance parent, @Nullable Field parentField) {
         ensureLoaded();
         if (this.parent != null) {
             if (this.parent.equals(parent) && Objects.equals(this.parentField, parentField))
@@ -228,7 +228,7 @@ public abstract class DurableInstance implements Message {
     @NoProxy
     public void setParentInternal(@Nullable InstanceParentRef parentRef) {
         if (parentRef != null)
-            setParentInternal(parentRef.parent(), parentRef.field(), true);
+            setParentInternal(parentRef.parent().resolve(), parentRef.field(), true);
         else
             setParentInternal(null, null, true);
     }
@@ -242,34 +242,33 @@ public abstract class DurableInstance implements Message {
     }
 
     @NoProxy
-    public void setParentInternal(@Nullable InstanceReference parent, @Nullable Field parentField, boolean setRoot) {
+    public void setParentInternal(@Nullable DurableInstance parent, @Nullable Field parentField, boolean setRoot) {
         if (parent == this.parent && parentField == this.parentField)
             return;
         if (parent != null) {
             this.parent = parent;
-            this.parentField = parentField;
-            if (parent.resolve() instanceof ClassInstance) {
+            if (parent instanceof ClassInstance) {
                 this.parentField = requireNonNull(parentField);
 //                assert parentField.isChild() : "Invalid parent field: " + parentField;
-            } else if(parent.resolve() instanceof ArrayInstance parentArray){
+            } else if(parent instanceof ArrayInstance parentArray){
                 NncUtils.requireNull(parentField);
                 assert parentArray.isChildArray();
                 this.parentField = null;
             }
             else
-                throw new IllegalArgumentException("Invalid parent: " + parent.resolve());
+                throw new IllegalArgumentException("Invalid parent: " + parent);
             if (setRoot)
-                root = parent.resolve().getRoot().getReference();
+                root = parent.getRoot();
             if (!pendingChild)
                 aggregateRoot = parent;
-            if (parent.resolve().isEphemeral() && !ephemeral) {
+            if (parent.isEphemeral() && !ephemeral) {
                 forEachDescendant(instance -> instance.ephemeral = true);
             }
         } else {
             this.parent = null;
             this.parentField = null;
             if (setRoot)
-                aggregateRoot = root = getReference();
+                aggregateRoot = root = this;
         }
     }
 
@@ -313,17 +312,21 @@ public abstract class DurableInstance implements Message {
     }
 
     public DurableInstance getRoot() {
-        if (root.resolve() == this)
+        if (root == this)
             return this;
         else {
-            var actualRoot = root.resolve().getRoot();
-            this.root = actualRoot.getReference();
+            var actualRoot = root.getRoot();
+            this.root = actualRoot;
             return actualRoot;
         }
     }
 
-    public boolean isMigratable() {
+    public boolean canMoveIn() {
         return !pendingChild && parent != null && isRoot();
+    }
+
+    public boolean canMoveOut() {
+        return parent != null && parentField != null && !parentField.isChild();
     }
 
     @NoProxy
@@ -376,10 +379,6 @@ public abstract class DurableInstance implements Message {
     public long getSyncVersion() {
         ensureLoaded();
         return syncVersion;
-    }
-
-    public boolean isChild(DurableInstance instance) {
-        return false;
     }
 
     public Set<DurableInstance> getChildren() {
@@ -443,13 +442,13 @@ public abstract class DurableInstance implements Message {
         this.modified = true;
     }
 
-    public @Nullable InstanceReference getParent() {
+    public @Nullable DurableInstance getParent() {
         ensureLoaded();
         return parent;
     }
 
-    public @Nullable DurableInstance getResolvedParent() {
-        return parent != null ? parent.resolve() : null;
+    public boolean isChildOf(DurableInstance instance, @Nullable Field parentField) {
+        return !isRoot() && parent != null && parent == instance && this.parentField == parentField;
     }
 
     @Nullable
@@ -460,7 +459,7 @@ public abstract class DurableInstance implements Message {
 
     public @Nullable InstanceParentRef getParentRef() {
         ensureLoaded();
-        return parent == null ? null : new InstanceParentRef(parent, parentField);
+        return parent == null ? null : new InstanceParentRef(parent.getReference(), parentField);
     }
 
 
@@ -643,11 +642,11 @@ public abstract class DurableInstance implements Message {
     }
 
     public DurableInstance getAggregateRoot() {
-        if (aggregateRoot.resolve() == this)
+        if (aggregateRoot == this)
             return this;
         else {
-            var actual = aggregateRoot.resolve().getAggregateRoot();
-            aggregateRoot = actual.getReference();
+            var actual = aggregateRoot.getAggregateRoot();
+            aggregateRoot = actual;
             return actual;
         }
     }
@@ -656,7 +655,7 @@ public abstract class DurableInstance implements Message {
     public void migrate() {
         this.oldId = id;
         var aggRoot = getAggregateRoot();
-        this.root = aggRoot.getReference();
+        this.root = aggRoot;
         this.id = PhysicalId.of(aggRoot.getTreeId(), aggRoot.nextNodeId(), getType());
         useOldId = true;
     }

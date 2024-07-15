@@ -47,7 +47,7 @@ public class InstanceInput implements Closeable {
     private final TypeDefProvider typeDefProvider;
     private long treeId;
     @Nullable
-    private InstanceReference parent;
+    private DurableInstance parent;
     @Nullable
     private Field parentField;
     private boolean loadedFromCache;
@@ -99,7 +99,7 @@ public class InstanceInput implements Closeable {
         instance.setNextNodeId(nextNodeId);
         if (separateChild) {
             instance.setPendingChild(pendingChild);
-            instance.setParentInternal(parent, parentField, false);
+            instance.setParentInternal(parent.resolve(), parentField, false);
         }
         return instance;
     }
@@ -173,7 +173,7 @@ public class InstanceInput implements Closeable {
         }
         var oldParent = parent;
         var ref = instance.getReference();
-        parent = ref;
+        parent = instance;
         instance.readFrom(this);
         parent = oldParent;
         addValue.accept(instance);
@@ -254,7 +254,7 @@ public class InstanceInput implements Closeable {
         }
     }
 
-    public void setParent(@Nullable InstanceReference parent) {
+    public void setParent(@Nullable DurableInstance parent) {
         this.parent = parent;
     }
 

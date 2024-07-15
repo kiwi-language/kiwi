@@ -180,7 +180,7 @@ public class InstanceReference extends Instance {
     }
 
     public Long tryGetTreeId() {
-        return NncUtils.get(id, Id::tryGetTreeId);
+        return id != null ? id.getTreeId() : null;
     }
 
     public boolean isLoaded() {
@@ -282,4 +282,7 @@ public class InstanceReference extends Instance {
         return id == null && resolve().isValue();
     }
 
+    public boolean isResolved() {
+        return target != null;
+    }
 }

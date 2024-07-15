@@ -332,7 +332,7 @@ public class InstanceContext extends BufferingInstanceContext {
         var i = instance;
         while (i != null) {
             path.addFirst(i);
-            i = NncUtils.get(i.getParent(), InstanceReference::resolve);
+            i = i.getParent();
         }
         return NncUtils.join(path, this::getInstanceDesc, "/");
     }
@@ -511,7 +511,7 @@ public class InstanceContext extends BufferingInstanceContext {
         var fpsToRemove = new ArrayList<Long>();
         forEachInitialized(i -> {
             if (!i.isEphemeral() && !i.isRemoved()) {
-                if(i.isMigratable()) {
+                if(i.canMoveIn()) {
 //                assert !i.getAggregateRoot().isRemoved();
                     roots.add(i.getAggregateRoot());
                     i.forEachDescendant(instance -> {
@@ -575,6 +575,10 @@ public class InstanceContext extends BufferingInstanceContext {
                 treeChanges,
                 patch.referenceChange
         );
+    }
+
+    private void moveOut() {
+
     }
 
     @Override

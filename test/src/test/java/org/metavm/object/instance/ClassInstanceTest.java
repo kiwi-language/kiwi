@@ -75,7 +75,7 @@ public class ClassInstanceTest extends TestCase {
                 ))
                 .build();
         var barArray = foo.getField(fooTypes.fooBarsField()).resolveDurable();
-        Assert.assertTrue(foo.isChild(barArray));
+        Assert.assertTrue(barArray.isChildOf(foo, fooTypes.fooBarsField()));
     }
 
     public void test_add_not_null_field() {

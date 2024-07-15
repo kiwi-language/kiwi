@@ -54,7 +54,7 @@ public abstract class PojoDef<T> extends ModelDef<T> {
         if (klass.isType(instance.getType())) {
             if (model instanceof Entity entity) {
                 entity.setParent(
-                        NncUtils.get(instance.getParent(), p -> objectInstanceMap.getEntity(Entity.class, p)),
+                        NncUtils.get(instance.getParent(), p -> objectInstanceMap.getEntity(Entity.class, p.getReference())),
                         NncUtils.get(instance.getParentField(), defContext::getJavaField)
                 );
             }

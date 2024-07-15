@@ -537,8 +537,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (instance.isRemoved())
             return;
         var parent = instance.getParent();
-        if (parent != null && !parent.isRemoved() && !removalBatch.contains(parent.resolve())) {
-            switch (parent.resolve()) {
+        if (parent != null && !parent.isRemoved() && !removalBatch.contains(parent)) {
+            switch (parent) {
                 case ClassInstance classParent -> {
                     var parentField = requireNonNull(instance.getParentField());
                     if (classParent.getField(parentField) instanceof InstanceReference r && r.resolve() == instance) {

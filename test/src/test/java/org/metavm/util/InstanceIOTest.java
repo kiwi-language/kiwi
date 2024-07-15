@@ -189,7 +189,7 @@ public class InstanceIOTest extends TestCase {
                 ),
                 fooType
         );
-        barInst.setParentInternal(fooInst.getReference(), barField, true);
+        barInst.setParentInternal(fooInst, barField, true);
 
         Function<Id, DurableInstance> resolveInst = id -> {
             if(Objects.equals(id, fooInst.tryGetId()))

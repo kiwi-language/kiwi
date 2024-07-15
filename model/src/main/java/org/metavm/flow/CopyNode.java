@@ -75,7 +75,7 @@ public class CopyNode extends NodeRT {
         var copy = sourceInst.resolveDurable().copy();
         if (parentRef != null) {
             var instParentRef = parentRef.evaluate(frame);
-            copy.setParent(instParentRef.parent(), instParentRef.field());
+            copy.setParent(instParentRef.parent().resolve(), instParentRef.field());
         }
         return next(copy.getReference());
     }

@@ -202,11 +202,6 @@ public class ClassInstance extends DurableInstance {
         return field(field).getValue();
     }
 
-    @Override
-    public boolean isChild(DurableInstance instance) {
-        return Objects.equals(instance.getParent(), getReference());
-    }
-
     public Set<DurableInstance> getChildren() {
         ensureLoaded();
         var children = new IdentitySet<DurableInstance>();
@@ -361,7 +356,7 @@ public class ClassInstance extends DurableInstance {
         if (field.isReadonly())
             throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD);
         if (field.isChild() && value.isNotNull())
-            ((InstanceReference) value).resolve().setParent(getReference(), field);
+            ((InstanceReference) value).resolve().setParent(this, field);
         setModified();
         field(field).set(value);
     }
@@ -389,7 +384,7 @@ public class ClassInstance extends DurableInstance {
         NncUtils.requireFalse(isFieldInitialized(field),
                 "Field " + field.getQualifiedName() + " is already initialized");
         if (field.isChild() && value.isNotNull())
-            ((InstanceReference) value).resolve().setParent(getReference(), field);
+            ((InstanceReference) value).resolve().setParent(this, field);
         addField(field, value);
 //        }
     }
