@@ -320,11 +320,11 @@ public abstract class DurableInstance implements Message {
             return root = root.getRoot();
     }
 
-    public boolean canMoveIn() {
+    public boolean canMerge() {
         return !pendingChild && parent != null && isRoot();
     }
 
-    public boolean canMoveOut() {
+    public boolean canExtract() {
         return !isRoot() && parent != null && parentField != null && !parentField.isChild();
     }
 
@@ -651,7 +651,7 @@ public abstract class DurableInstance implements Message {
             return aggregateRoot = aggregateRoot.getAggregateRoot();
     }
 
-    public void moveIn() {
+    public void merge() {
         this.oldId = id;
         var aggRoot = getAggregateRoot();
         this.root = aggRoot;
@@ -659,7 +659,7 @@ public abstract class DurableInstance implements Message {
         useOldId = true;
     }
 
-    public void moveOut() {
+    public void extract() {
         this.oldId = id;
         this.id = null;
         useOldId = true;

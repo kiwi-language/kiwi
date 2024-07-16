@@ -499,8 +499,8 @@ public class InstanceContext extends BufferingInstanceContext {
         var updates = new ArrayList<>(patch.treeChanges.updates());
         var deletes = new ArrayList<>(patch.treeChanges.deletes());
         var roots = new HashSet<DurableInstance>();
-        moveIn(trees, inserts, updates, deletes, roots);
-        moveOut(trees, inserts, updates, deletes, roots);
+        merge(trees, inserts, updates, deletes, roots);
+        extract(trees, inserts, updates, deletes, roots);
         for (DurableInstance root : roots) {
             var i = buildTree(root, root.getVersion() + 1);
             boolean added = NncUtils.replace(inserts, i, (t1, t2) -> t1.getId() == t2.getId());
@@ -517,16 +517,16 @@ public class InstanceContext extends BufferingInstanceContext {
         );
     }
 
-    private void moveIn(List<Tree> trees, List<InstancePO> inserts, List<InstancePO> updates, List<InstancePO> deletes, HashSet<DurableInstance> roots) {
+    private void merge(List<Tree> trees, List<InstancePO> inserts, List<InstancePO> updates, List<InstancePO> deletes, HashSet<DurableInstance> roots) {
         var migrated = new ArrayList<DurableInstance>();
         var fpsToRemove = new ArrayList<Long>();
         forEachInitialized(i -> {
             if (!i.isEphemeral() && !i.isRemoved()) {
-                if(i.canMoveIn()) {
+                if(i.canMerge()) {
 //                assert !i.getAggregateRoot().isRemoved();
                     roots.add(i.getAggregateRoot());
                     i.forEachDescendant(instance -> {
-                        instance.moveIn();
+                        instance.merge();
                         mapManually(instance.getId(), instance);
                     });
                     migrated.add(i);
@@ -569,17 +569,17 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    private void moveOut(List<Tree> trees, List<InstancePO> inserts, List<InstancePO> updates, List<InstancePO> deletes, Set<DurableInstance> roots) {
+    private void extract(List<Tree> trees, List<InstancePO> inserts, List<InstancePO> updates, List<InstancePO> deletes, Set<DurableInstance> roots) {
         var toMoveOut = new ArrayList<DurableInstance>();
         var allMoved = new ArrayList<DurableInstance>();
         forEachInitialized(instance -> {
-            if (instance.canMoveOut()) {
+            if (instance.canExtract()) {
                 toMoveOut.add(instance);
                 roots.add(instance.getRoot());
                 instance.clearParent();
                 instance.forEachDescendant(i -> {
                     allMoved.add(i);
-                    i.moveOut();
+                    i.extract();
                 });
             }
         });
