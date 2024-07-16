@@ -518,7 +518,7 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void merge(List<Tree> trees, List<InstancePO> inserts, List<InstancePO> updates, List<InstancePO> deletes, HashSet<DurableInstance> roots) {
-        var migrated = new ArrayList<DurableInstance>();
+        var mergedRoots = new ArrayList<DurableInstance>();
         var fpsToRemove = new ArrayList<Long>();
         forEachInitialized(i -> {
             if (!i.isEphemeral() && !i.isRemoved()) {
@@ -529,16 +529,16 @@ public class InstanceContext extends BufferingInstanceContext {
                         instance.merge();
                         mapManually(instance.getId(), instance);
                     });
-                    migrated.add(i);
+                    mergedRoots.add(i);
                     this.migrated.add(i);
                 }
                 else if(i.getForwardingPointerToRemove() != null)
                     fpsToRemove.add(i.getForwardingPointerToRemove());
             }
         });
-        if (migrated.isEmpty())
+        if (mergedRoots.isEmpty())
             return;
-        for (DurableInstance instance : migrated) {
+        for (DurableInstance instance : mergedRoots) {
             var originalTreeId = instance.getId().getTreeId();
             var descendants = new ArrayList<DurableInstance>();
             instance.forEachDescendant(descendants::add);
@@ -570,24 +570,24 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void extract(List<Tree> trees, List<InstancePO> inserts, List<InstancePO> updates, List<InstancePO> deletes, Set<DurableInstance> roots) {
-        var toMoveOut = new ArrayList<DurableInstance>();
-        var allMoved = new ArrayList<DurableInstance>();
+        var extractedRoots = new ArrayList<DurableInstance>();
+        var allExtracted = new ArrayList<DurableInstance>();
         forEachInitialized(instance -> {
             if (instance.canExtract()) {
-                toMoveOut.add(instance);
+                extractedRoots.add(instance);
                 roots.add(instance.getRoot());
                 instance.clearParent();
                 instance.forEachDescendant(i -> {
-                    allMoved.add(i);
+                    allExtracted.add(i);
                     i.extract();
                 });
             }
         });
-        idInitializer.initializeIds(appId, allMoved);
-        for (DurableInstance instance : allMoved) {
+        idInitializer.initializeIds(appId, allExtracted);
+        for (DurableInstance instance : allExtracted) {
             addForwardingPointer(new ForwardingPointer(instance.getOldId(), instance.getCurrentId()));
         }
-        for (DurableInstance instance : toMoveOut) {
+        for (DurableInstance instance : extractedRoots) {
             var tree = buildTree(instance, 0);
             inserts.add(tree);
             trees.add(tree.toTree());
