@@ -46,35 +46,53 @@ public class ContextDifference {
         }
     }
 
-    public void diff(Collection<Tree> head, Collection<Tree> buffer) {
-        try (var entry = ContextUtil.getProfiler().enter("Difference.diff")) {
-            NncUtils.forEachPair(head, buffer, this::diffOne);
-            entry.addMessage("numSubTreeAdded", numSubTreeAdded);
-            entry.addMessage("numSubTreeRemoved", numSubTreeRemoved);
-            entry.addMessage("numSubTreeUpdated", numSubTreeUpdated);
+    public void diffTrees(Collection<Tree> head, Collection<Tree> buffer) {
+        try (var ignored = ContextUtil.getProfiler().enter("Difference.diff")) {
+            NncUtils.forEachPair(head, buffer, this::diffTree);
         }
     }
 
-    private void diffOne(@Nullable Tree t1, @Nullable Tree t2) {
+    public void diffEntities(Collection<Tree> head, Collection<Tree> buffered) {
+        try(var ignored = ContextUtil.getProfiler().enter("ContextDifference.diffEntities")) {
+            NncUtils.forEachPair(head, buffered, this::diffEntity);
+        }
+    }
+
+    private void diffTree(@Nullable Tree t1, @Nullable Tree t2) {
+        if (t1 == null && t2 == null)
+            return;
+        if (t1 == null)
+            treeChanges.addInsert(buildInstancePO(t2));
+        else if (t2 == null)
+            treeChanges.addDelete(buildInstancePO(t1));
+        else if (!Arrays.equals(t1.data(), t2.data()))
+            treeChanges.addUpdate(buildInstancePO(t2));
+    }
+
+    public void diffEntity(@Nullable Tree t1, @Nullable Tree t2) {
         if (t1 == null && t2 == null)
             return;
         if (t1 == null) {
-            treeChanges.addInsert(buildInstancePO(t2));
             getInstanceIds(t2).forEach(id ->
                     entityChange.addInsert(new VersionRT(appId, id.getId(), t2.version())));
         } else if (t2 == null) {
-            treeChanges.addDelete(buildInstancePO(t1));
-            getInstanceIds(t1).forEach(id ->
-                    entityChange.addDelete(new VersionRT(appId, id.getId(), t1.version() + 1)));
+            getInstanceIds(t1).forEach(id -> {
+                if(id.toString().equals("01a2a8d6b90700"))
+                    logger.debug("DEBUG1");
+                entityChange.addDelete(new VersionRT(appId, id.getId(), t1.version() + 1));
+            });
+
         } else if (!Arrays.equals(t1.data(), t2.data())) {
-            treeChanges.addUpdate(buildInstancePO(t2));
             NncUtils.forEachPair(getSubTrees(t1), getSubTrees(t2), (s1, s2) -> {
                 if (s1 == null && s2 == null)
                     return;
                 if (s1 == null)
                     entityChange.addInsert(new VersionRT(appId, s2.getId(), t2.version()));
-                else if (s2 == null)
+                else if (s2 == null) {
+                    if(s1.getId().toString().equals("01a2a8d6b90700"))
+                        throw new RuntimeException("Removing product");
                     entityChange.addDelete(new VersionRT(appId, s1.getId(), t2.version()));
+                }
                 else if (!s1.equals(s2))
                     entityChange.addUpdate(new VersionRT(appId, s2.getId(), t2.version()));
             });
@@ -93,23 +111,13 @@ public class ContextDifference {
     }
 
     private byte[] incVersion(byte[] tree) {
-        var oldHeadLen = getHeadBytes(tree, 0).length;
-        var newHeadBytes = getHeadBytes(tree, 1);
-        var length = newHeadBytes.length - oldHeadLen + tree.length;
-        var newTree = new byte[length];
-        System.arraycopy(newHeadBytes, 0, newTree, 0, newHeadBytes.length);
-        System.arraycopy(tree, oldHeadLen, newTree, newHeadBytes.length, tree.length - oldHeadLen);
-        return newTree;
-    }
-
-    private byte[] getHeadBytes(byte[] tree, int versionDelta) {
-        var bin = new ByteArrayInputStream(tree);
-        var input = new InstanceInput(bin);
         var bout = new ByteArrayOutputStream();
-        var output = new InstanceOutput(bout);
-        output.writeInt(input.readInt());
-        output.write(TreeTags.DEFAULT);
-        output.writeLong(input.readLong() + versionDelta);
+        new StreamCopier(new ByteArrayInputStream(tree), bout) {
+            @Override
+            public void visitVersion(long version) {
+                output.writeLong(version + 1);
+            }
+        }.visitGrove();
         return bout.toByteArray();
     }
 

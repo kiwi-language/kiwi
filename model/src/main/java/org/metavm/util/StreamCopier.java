@@ -48,7 +48,7 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitMessage() {
-        output.writeLong(readLong());
+        visitVersion(readLong());
         output.writeLong(readTreeId());
         output.writeLong(readLong());
         boolean separateChild = readBoolean();
@@ -60,6 +60,11 @@ public class StreamCopier extends StreamVisitor {
         else
             output.writeBoolean(false);
         visit();
+    }
+
+    @Override
+    public void visitVersion(long version) {
+        output.writeLong(version);
     }
 
     @Override

@@ -93,6 +93,10 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         return fps != null ? Collections.unmodifiableCollection(fps) : List.of();
     }
 
+    public Map<Long, NavigableSet<ForwardingPointer>> getForwardingPointers() {
+        return forwardingPointers;
+    }
+
     protected boolean onTreeLoaded(Tree tree) {
         return loadedTreeIds.add(tree.id());
     }

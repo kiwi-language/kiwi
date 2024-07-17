@@ -72,7 +72,7 @@ public class StreamVisitor {
     }
 
     public void visitMessage() {
-        input.readLong();
+        visitVersion(input.readLong());
         readTreeId();
         input.readLong();
         boolean separateChild = readBoolean();
@@ -82,6 +82,8 @@ public class StreamVisitor {
         }
         visit();
     }
+
+    public void visitVersion(long version) {}
 
     public void visit() {
         visit(input.read());

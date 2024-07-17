@@ -59,7 +59,10 @@ public abstract class DurableInstance implements Message {
     private @Nullable DurableInstance parent;
     private @Nullable Field parentField;
     private @NotNull DurableInstance root;
+    private @Nullable DurableInstance oldRoot;
+    private @Nullable Field oldParentField;
     private @Nullable Id oldId;
+    private @Nullable Id migratedId;
     private @NotNull DurableInstance aggregateRoot;
     private boolean pendingChild;
     private @Nullable Long forwardingPointerToRemove;
@@ -76,6 +79,7 @@ public abstract class DurableInstance implements Message {
     private int seq;
 
     private long nextNodeId = 1;
+    private boolean isExtractionRoot;
 
     public DurableInstance(Type type) {
         this(null, type, 0L, 0L, false, null);
@@ -654,16 +658,52 @@ public abstract class DurableInstance implements Message {
     public void merge() {
         this.oldId = id;
         var aggRoot = getAggregateRoot();
+        this.oldRoot = root;
         this.root = aggRoot;
-        this.id = PhysicalId.of(aggRoot.getTreeId(), aggRoot.nextNodeId(), getType());
+        this.id = migratedId != null ? migratedId : PhysicalId.of(aggRoot.getTreeId(), aggRoot.nextNodeId(), getType());
         useOldId = true;
     }
 
-    public void extract() {
+    public void rollbackMerge() {
+        migratedId = id;
+        id = oldId;
+        oldId = null;
+        useOldId = false;
+        root = Objects.requireNonNull(oldRoot);
+        oldRoot = null;
+    }
+
+    public void extract(boolean isRoot) {
+        this.isExtractionRoot = isRoot;
         this.oldId = id;
-        this.id = null;
+        this.id = migratedId;
         useOldId = true;
-        this.root = aggregateRoot = parent == null ? this : parent;
+        if(isRoot) {
+            this.root = aggregateRoot = this;
+            oldRoot = parent;
+            oldParentField = parentField;
+            parent = null;
+            parentField = null;
+        }
+        else {
+            this.oldRoot = this.root;
+            this.root = aggregateRoot = Objects.requireNonNull(parent);
+        }
+    }
+
+    public void rollbackExtraction() {
+        migratedId = id;
+        id = oldId;
+        oldId = null;
+        useOldId = false;
+        if(isExtractionRoot) {
+            root = aggregateRoot = parent = Objects.requireNonNull(oldRoot);
+            parentField = oldParentField;
+            oldParentField = null;
+        }
+        else
+            root = aggregateRoot =  Objects.requireNonNull(oldRoot);
+        oldRoot = null;
     }
 
     public void switchId() {
@@ -780,9 +820,7 @@ public abstract class DurableInstance implements Message {
 
     public abstract void accept(DurableInstanceVisitor visitor);
 
-    public void clearParent() {
-        parent = null;
-        parentField = null;
-        root = aggregateRoot = this;
+    public boolean isExtractionRoot() {
+        return false;
     }
 }
