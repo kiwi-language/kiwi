@@ -285,12 +285,42 @@ public class InstanceContext extends BufferingInstanceContext {
             if(migrations.isEmpty())
                 difference.diffEntities(headContext.trees(), bufferedTrees);
             else {
+                List<DurableInstance> toRebuild = new ArrayList<>();
+                for (DurableInstance instance : migrations.merged) {
+                    toRebuild.add(instance.getRoot());
+                    toRebuild.add(instance);
+                }
+                var discardedTreeIds = new HashSet<Long>();
+                migrations.forEach(i -> {
+                    discardedTreeIds.add(i.getCurrentId().getTreeId());
+                    discardedTreeIds.add(i.getOldId().getTreeId());
+                });
                 migrations.rollback();
-                difference.diffEntities(headContext.trees(), getBufferedTrees());
+                for (DurableInstance extracted : migrations.extracted) {
+                    toRebuild.add(extracted.getRoot());
+                }
+                var trees = NncUtils.exclude(bufferedTrees, t -> discardedTreeIds.contains(t.id()));
+                toRebuild.forEach(i -> trees.add(buildTree(i)));
+                difference.diffEntities(headContext.trees(), trees);
                 migrations.apply();
             }
             return difference;
         }
+    }
+
+    private Tree buildTree(DurableInstance instance) {
+        var bout = new ByteArrayOutputStream();
+        var out = new InstanceOutput(bout);
+        out.writeInt(1);
+        instance.writeTo(out);
+        return new InstancePO(
+                appId,
+                instance.getTreeId(),
+                bout.toByteArray(),
+                instance.getVersion(),
+                instance.getSyncVersion(),
+                instance.getNextNodeId()
+        ).toTree();
     }
 
     private Patch processChanges(Patch patch, List<DurableInstance> nonPersistedOrphans, PatchContext patchContext) {
@@ -541,6 +571,11 @@ public class InstanceContext extends BufferingInstanceContext {
     ) {
 
         static final Migrations EMPTY = new Migrations(List.of(), List.of());
+
+        void forEach(Consumer<? super DurableInstance> action) {
+            merged.forEach(action);
+            extracted.forEach(action);
+        }
 
         void rollback() {
             merged.forEach(DurableInstance::rollbackMerge);
