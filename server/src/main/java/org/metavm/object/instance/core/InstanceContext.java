@@ -151,7 +151,7 @@ public class InstanceContext extends BufferingInstanceContext {
             craw();
             check();
             initIds();
-            var bufferedTrees = getBufferedTrees();
+            var bufferedTrees = buildBufferedTrees();
             var difference = buildDifference(bufferedTrees, patchContext.migrations);
             var entityChange = difference.getEntityChange();
             var refChange = difference.getReferenceChange();
@@ -422,8 +422,8 @@ public class InstanceContext extends BufferingInstanceContext {
         return finished;
     }
 
-    private List<Tree> getBufferedTrees() {
-        try (var ignored = getProfiler().enter("getBufferedTrees")) {
+    private List<Tree> buildBufferedTrees() {
+        try (var ignored = getProfiler().enter("buildBufferedTrees")) {
             var trees = new ArrayList<Tree>();
             var fpMap = new HashMap<>(getForwardingPointers());
             for (var instance : this) {

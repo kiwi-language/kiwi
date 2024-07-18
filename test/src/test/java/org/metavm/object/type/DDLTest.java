@@ -161,7 +161,7 @@ public class DDLTest extends TestCase {
             }
         });
         TestUtils.waitForTaskDone(t -> t instanceof ForwardedFlagSetter, entityContextFactory);
-        // Ensure that removal check is effective for an instance under migration
+        // Ensure removal of a referenced object is prevented even when the object is migrating.
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var instCtx = context.getInstanceContext();
@@ -170,7 +170,7 @@ public class DDLTest extends TestCase {
                 instCtx.remove(invInst);
                 try {
                     context.finish();
-                    Assert.fail("The inventory object is referenced and should not be allowed get removed");
+                    Assert.fail("The inventory object is referenced and the removal should have failed");
                 }
                 catch (BusinessException e) {
                     Assert.assertEquals(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, e.getErrorCode());
