@@ -1,7 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.NoProxy;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.Tree;
 import org.metavm.entity.TreeTags;
@@ -79,14 +78,12 @@ public abstract class DurableInstance implements Message {
     private int seq;
 
     private long nextNodeId = 1;
-    private boolean isExtractionRoot;
 
     public DurableInstance(Type type) {
         this(null, type, 0L, 0L, false, null);
     }
 
     public DurableInstance(@Nullable Id id, Type type, long version, long syncVersion, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
-//        super(type);
         this.type = type;
         this.version = version;
         this.syncVersion = syncVersion;
@@ -108,12 +105,10 @@ public abstract class DurableInstance implements Message {
         return type;
     }
 
-//    @Override
     public boolean isEphemeral() {
         return ephemeral || getType().isEphemeral();
     }
 
-//    @Override
     public boolean shouldSkipWrite() {
         return isInitialized() && isEphemeral();
     }
@@ -127,10 +122,6 @@ public abstract class DurableInstance implements Message {
     }
 
     public void setSourceRef(@Nullable SourceRef sourceRef) {
-//        if(toString().equals("ChildList<SKUbuiltinView>-null") && sourceRef != null) {
-//            logger.debug(DebugEnv.flow.getText());
-//            throw new RuntimeException("Setting source ref");
-//        }
         this.sourceRef = sourceRef;
     }
 
@@ -149,8 +140,6 @@ public abstract class DurableInstance implements Message {
             throw new InternalException("Not a view instance");
     }
 
-    //    @Override
-    @NoProxy
     public @Nullable Id tryGetId() {
         return useOldId ? oldId : id;
     }
@@ -179,29 +168,24 @@ public abstract class DurableInstance implements Message {
         this.mappedEntity = mappedEntity;
     }
 
-    @NoProxy
     public boolean isRemoved() {
         return removed;
     }
 
-    @NoProxy
     public boolean isNew() {
         return _new;
     }
 
-    @NoProxy
     public void setRemoved() {
         if (removed)
             throw new InternalException(String.format("Instance %s is already removed", this));
         removed = true;
     }
 
-    @NoProxy
     public boolean isPersisted() {
         return !isNew();
     }
 
-    @NoProxy
     public boolean isLoadedFromCache() {
         return loadedFromCache;
     }
@@ -215,7 +199,6 @@ public abstract class DurableInstance implements Message {
             setParent(parentRef.parent().resolve(), parentRef.field());
     }
 
-    @NoProxy
     public void setParent(DurableInstance parent, @Nullable Field parentField) {
         ensureLoaded();
         if (this.parent != null) {
@@ -231,7 +214,6 @@ public abstract class DurableInstance implements Message {
         setParentInternal(parent, parentField, id == null || !id.isRoot());
     }
 
-    @NoProxy
     public void setParentInternal(@Nullable InstanceParentRef parentRef) {
         if (parentRef != null)
             setParentInternal(parentRef.parent().resolve(), parentRef.field(), true);
@@ -247,7 +229,6 @@ public abstract class DurableInstance implements Message {
         forEachDescendant(instance -> instance.ephemeral = true);
     }
 
-    @NoProxy
     public void setParentInternal(@Nullable DurableInstance parent, @Nullable Field parentField, boolean setRoot) {
         if (parent == this.parent && parentField == this.parentField)
             return;
@@ -256,12 +237,11 @@ public abstract class DurableInstance implements Message {
             if (parent instanceof ClassInstance) {
                 this.parentField = requireNonNull(parentField);
 //                assert parentField.isChild() : "Invalid parent field: " + parentField;
-            } else if(parent instanceof ArrayInstance parentArray){
+            } else if (parent instanceof ArrayInstance parentArray) {
                 NncUtils.requireNull(parentField);
                 assert parentArray.isChildArray();
                 this.parentField = null;
-            }
-            else
+            } else
                 throw new IllegalArgumentException("Invalid parent: " + parent);
             if (setRoot)
                 root = parent.getRoot();
@@ -278,7 +258,6 @@ public abstract class DurableInstance implements Message {
         }
     }
 
-    @NoProxy
     public void ensureLoaded() {
         if (!loaded && load != null) {
             load.accept(this);
@@ -286,7 +265,6 @@ public abstract class DurableInstance implements Message {
         }
     }
 
-    @NoProxy
     public boolean isInitialized() {
         return _new || loaded;
     }
@@ -295,7 +273,6 @@ public abstract class DurableInstance implements Message {
         return !isValue() && getRoot() == this;
     }
 
-    @NoProxy
     void setLoaded(boolean fromCache) {
         if (loaded)
             throw new InternalException(String.format("Instance %d is already loaded", getTreeId()));
@@ -304,7 +281,6 @@ public abstract class DurableInstance implements Message {
         setLoadedFromCache(fromCache);
     }
 
-    @NoProxy
     public boolean isLoaded() {
         return loaded;
     }
@@ -332,13 +308,11 @@ public abstract class DurableInstance implements Message {
         return !isRoot() && parent != null && parentField != null && !parentField.isChild();
     }
 
-    @NoProxy
     @Nullable
     public Long tryGetTreeId() {
         return id != null ? id.tryGetTreeId() : null;
     }
 
-    @NoProxy
     public long getTreeId() {
         var treeId = tryGetTreeId();
         if (treeId != null)
@@ -347,17 +321,14 @@ public abstract class DurableInstance implements Message {
             throw new NullPointerException("Instance id not initialized yet");
     }
 
-    @NoProxy
     public boolean idEquals(long id) {
         return Objects.equals(this.tryGetTreeId(), id);
     }
 
-    @NoProxy
     public boolean isIdInitialized() {
         return id != null && !id.isTemporary();
     }
 
-    @NoProxy
     public void initId(Id id) {
         if (isIdInitialized())
             throw new InternalException("id already initialized");
@@ -368,7 +339,6 @@ public abstract class DurableInstance implements Message {
         this.id = id;
     }
 
-    @NoProxy
     void ensureMutable() {
         if (isLoadedFromCache())
             throw new IllegalStateException(String.format("Instance %s is immutable", this));
@@ -394,7 +364,6 @@ public abstract class DurableInstance implements Message {
         return new Tree(getTreeId(), getVersion(), nextNodeId, InstanceOutput.toBytes(this));
     }
 
-//    @Override
     public void writeRecord(InstanceOutput output) {
         if (isValue())
             output.write(WireTypes.VALUE);
@@ -404,8 +373,7 @@ public abstract class DurableInstance implements Message {
                 output.writeLong(oldId.getTreeId());
                 output.writeLong(oldId.getNodeId());
                 output.writeBoolean(useOldId);
-            }
-            else
+            } else
                 output.write(WireTypes.RECORD);
             output.writeLong(id.getNodeId());
         }
@@ -422,24 +390,21 @@ public abstract class DurableInstance implements Message {
         output.writeLong(getVersion());
         output.writeLong(getTreeId());
         output.writeLong(getNextNodeId());
-        if(isSeparateChild()) {
+        if (isSeparateChild()) {
             output.writeBoolean(true);
             output.writeId(Objects.requireNonNull(getParent()).getId());
             output.writeId(Objects.requireNonNull(getParentField()).getId());
-        }
-        else
+        } else
             output.writeBoolean(false);
         writeRecord(output);
     }
 
     public abstract void readFrom(InstanceInput input);
 
-    @NoProxy
     boolean isModified() {
         return modified;
     }
 
-    @NoProxy
     void setModified() {
         ensureMutable();
         this.modified = true;
@@ -485,27 +450,22 @@ public abstract class DurableInstance implements Message {
         version++;
     }
 
-    @NoProxy
     public void setVersion(long version) {
         this.version = version;
     }
 
-    @NoProxy
     public void setSyncVersion(long syncVersion) {
         this.syncVersion = syncVersion;
     }
 
-    @NoProxy
     public Object getNativeObject() {
         return nativeObject;
     }
 
-    @NoProxy
     public void setNativeObject(Object nativeObject) {
         this.nativeObject = nativeObject;
     }
 
-    @NoProxy
     @Override
     public final String toString() {
         return getType().getTypeDesc() + "-" + getTitle();
@@ -522,7 +482,6 @@ public abstract class DurableInstance implements Message {
     }
 
 
-    @NoProxy
     public Object toSearchConditionValue() {
         return id.getTreeId();
     }
@@ -608,7 +567,6 @@ public abstract class DurableInstance implements Message {
         this.type = type;
     }
 
-//    @Override
     public boolean isValue() {
         return getType().isValue();
     }
@@ -657,10 +615,9 @@ public abstract class DurableInstance implements Message {
 
     public void merge() {
         this.oldId = id;
-        var aggRoot = getAggregateRoot();
         this.oldRoot = root;
-        this.root = aggRoot;
-        this.id = migratedId != null ? migratedId : PhysicalId.of(aggRoot.getTreeId(), aggRoot.nextNodeId(), getType());
+        this.root = Objects.requireNonNull(parent).getRoot();
+        this.id = migratedId != null ? migratedId : PhysicalId.of(root.getTreeId(), root.nextNodeId(), getType());
         useOldId = true;
     }
 
@@ -674,35 +631,33 @@ public abstract class DurableInstance implements Message {
     }
 
     public void extract(boolean isRoot) {
-        this.isExtractionRoot = isRoot;
         this.oldId = id;
         this.id = migratedId;
         useOldId = true;
-        if(isRoot) {
+        if (isRoot) {
             this.root = aggregateRoot = this;
             oldRoot = parent;
             oldParentField = parentField;
             parent = null;
             parentField = null;
-        }
-        else {
+        } else {
             this.oldRoot = this.root;
             this.root = aggregateRoot = Objects.requireNonNull(parent);
         }
     }
 
     public void rollbackExtraction() {
+        var isRoot = isRoot();
         migratedId = id;
         id = oldId;
         oldId = null;
         useOldId = false;
-        if(isExtractionRoot) {
+        if (isRoot) {
             root = aggregateRoot = parent = Objects.requireNonNull(oldRoot);
             parentField = oldParentField;
             oldParentField = null;
-        }
-        else
-            root = aggregateRoot =  Objects.requireNonNull(oldRoot);
+        } else
+            root = aggregateRoot = Objects.requireNonNull(oldRoot);
         oldRoot = null;
     }
 
@@ -712,16 +667,8 @@ public abstract class DurableInstance implements Message {
 
     public void writeForwardingPointers(InstanceOutput output) {
         output.write(TreeTags.MIGRATED);
-//        List<ForwardingPointer> fps = new ArrayList<>();
-//        forEachDescendant(instance -> {
-//            if (instance.isRemoved())
-//                return;
-//            fps.add(new ForwardingPointer(instance.getOldId(), instance.getId()));
-//        });
         output.writeId(Objects.requireNonNull(oldId));
         output.writeId(id);
-//        output.writeInt(fps.size());
-//        fps.forEach(fp -> fp.write(output));
     }
 
     public void setPendingChild(boolean pendingChild) {
@@ -742,7 +689,7 @@ public abstract class DurableInstance implements Message {
     }
 
     public void forEachDescendantConditional(Predicate<DurableInstance> action) {
-        if(action.test(this))
+        if (action.test(this))
             forEachChild(c -> c.forEachDescendantConditional(action));
     }
 
@@ -755,7 +702,7 @@ public abstract class DurableInstance implements Message {
     public abstract void forEachReference(BiConsumer<InstanceReference, Boolean> action);
 
     public void visitGraph(Predicate<DurableInstance> action) {
-       visitGraph(action, r -> true, new IdentitySet<>());
+        visitGraph(action, r -> true, new IdentitySet<>());
     }
 
     public void visitGraph(Predicate<DurableInstance> action, Predicate<InstanceReference> predicate) {
@@ -763,13 +710,13 @@ public abstract class DurableInstance implements Message {
     }
 
     public void visitGraph(Predicate<DurableInstance> action, Predicate<InstanceReference> predicate, IdentitySet<DurableInstance> visited) {
-        if(DebugEnv.recordPath)
+        if (DebugEnv.recordPath)
             DebugEnv.path.clear();
         visitGraph0(action, predicate, visited);
     }
 
     private void visitGraph0(Predicate<DurableInstance> action, Predicate<InstanceReference> predicate, IdentitySet<DurableInstance> visited) {
-        if(DebugEnv.recordPath)
+        if (DebugEnv.recordPath)
             DebugEnv.path.addLast(this.toString());
         if (visited.add(this) && action.test(this)) {
             forEachReference(r -> {
@@ -777,7 +724,7 @@ public abstract class DurableInstance implements Message {
                     r.resolve().visitGraph0(action, predicate, visited);
             });
         }
-        if(DebugEnv.recordPath)
+        if (DebugEnv.recordPath)
             DebugEnv.path.removeLast();
     }
 
@@ -820,7 +767,7 @@ public abstract class DurableInstance implements Message {
 
     public abstract void accept(DurableInstanceVisitor visitor);
 
-    public boolean isExtractionRoot() {
-        return false;
+    public Id getMigratedId() {
+        return Objects.requireNonNull(migratedId);
     }
 }

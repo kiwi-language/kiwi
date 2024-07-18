@@ -302,7 +302,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 var trees = NncUtils.exclude(bufferedTrees, t -> discardedTreeIds.contains(t.id()));
                 toRebuild.forEach(i -> trees.add(buildTree(i)));
                 difference.diffEntities(headContext.trees(), trees);
-                migrations.apply();
+                migrations.recover();
             }
             return difference;
         }
@@ -582,9 +582,9 @@ public class InstanceContext extends BufferingInstanceContext {
             extracted.forEach(DurableInstance::rollbackExtraction);
         }
 
-        void apply() {
+        void recover() {
             merged.forEach(DurableInstance::merge);
-            extracted.forEach(i -> i.extract(i.isExtractionRoot()));
+            extracted.forEach(i -> i.extract(i.getMigratedId().isRoot()));
         }
 
         public boolean isEmpty() {
