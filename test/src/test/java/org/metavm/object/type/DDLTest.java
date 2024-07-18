@@ -6,6 +6,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
+import org.metavm.entity.MemInstanceStore;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
@@ -16,6 +17,7 @@ import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,6 +29,7 @@ public class DDLTest extends TestCase {
     private TypeManager typeManager;
     private EntityContextFactory entityContextFactory;
     private ApiClient apiClient;
+    private MemInstanceStore instanceStore;
 
     @Override
     protected void setUp() throws Exception {
@@ -35,6 +38,7 @@ public class DDLTest extends TestCase {
         typeManager = commonManagers.typeManager();
         entityContextFactory = bootResult.entityContextFactory();
         apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory()));
+        instanceStore = bootResult.instanceStore();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -43,6 +47,7 @@ public class DDLTest extends TestCase {
         typeManager = null;
         entityContextFactory = null;
         apiClient = null;
+        instanceStore = null;
     }
 
     public void testDDL() {
@@ -134,6 +139,10 @@ public class DDLTest extends TestCase {
             catch (BusinessException e) {
                 Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
             }
+            Assert.assertNull(
+                "Forwarding pointer should have been removed",
+                    instanceStore.get(TestConstants.APP_ID, Id.parse(inventoryId).getTreeId())
+            );
         }
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_rollback.masm", typeManager, entityContextFactory);
         TestUtils.doInTransactionWithoutResult(() -> {
@@ -151,6 +160,30 @@ public class DDLTest extends TestCase {
                 Assert.assertEquals(newInventorId, invInst.getId());
             }
         });
+        TestUtils.waitForTaskDone(t -> t instanceof ForwardedFlagSetter, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirecter, entityContextFactory);
+        try(var context = newContext()) {
+            try {
+                context.getInstanceContext().get(newInventorId);
+                Assert.fail();
+            }
+            catch (BusinessException e) {
+                Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+            }
+            var productTree = instanceStore.get(TestConstants.APP_ID, Id.parse(shoesId).getTreeId());
+            var visitor = new StreamVisitor(new ByteArrayInputStream(productTree.getData())) {
+
+                private int numFps;
+
+                @Override
+                public void visitForwardingPointer() {
+                    numFps++;
+                    super.visitForwardingPointer();
+                }
+            };
+            visitor.visitGrove();
+            Assert.assertEquals(0, visitor.numFps);
+        }
     }
 
     public void testCheck() {

@@ -93,6 +93,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void buffer(Id id);
 
+    void removeForwardingPointer(DurableInstance instance);
+
     default void buffer(Collection<? extends Id> ids) {
         ids.forEach(this::buffer);
     }

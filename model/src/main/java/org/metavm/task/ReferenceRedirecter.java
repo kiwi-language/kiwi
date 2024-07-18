@@ -29,8 +29,9 @@ public class ReferenceRedirecter extends Task {
                     @Override
                     public void visitDurableInstance(DurableInstance instance) {
                         instance.forEachReference((ref, isChild) -> {
-                            if (id.equals(ref.tryGetId()))
+                            if (id.equals(ref.tryGetId())) {
                                 ref.forward();
+                            }
                             if (isChild)
                                 ref.resolve().accept(this);
                         });
@@ -50,7 +51,7 @@ public class ReferenceRedirecter extends Task {
     public void onTaskDone(IEntityContext context, Id id) {
         try {
             var target = context.getInstanceContext().get(id);
-            target.clearOldId();
+            context.getInstanceContext().removeForwardingPointer(target);
         }
         catch (TreeNotFoundException ignored) {}
     }

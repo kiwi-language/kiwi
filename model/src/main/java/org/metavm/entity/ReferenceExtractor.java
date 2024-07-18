@@ -6,12 +6,15 @@ import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.util.StreamVisitor;
 
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class ReferenceExtractor extends StreamVisitor {
 
     private final long appId;
     private final Consumer<ReferencePO> add;
+    private Set<Id> forwarded;
 
     public ReferenceExtractor(InputStream in, long appId, Consumer<ReferencePO> add) {
         super(in);
@@ -19,9 +22,17 @@ public class ReferenceExtractor extends StreamVisitor {
         this.add = add;
     }
 
+    @Override
+    public void visitForwardingPointer() {
+        if(forwarded == null)
+            forwarded = new HashSet<>();
+        forwarded.add(readId());
+        readId();
+    }
+
     private void addReference(Id targetId) {
         var treeId = getTreeId();
-        if(treeId != targetId.getTreeId()) {
+        if(treeId != targetId.getTreeId() || forwarded != null && forwarded.contains(targetId)) {
             add.accept(new ReferencePO(this.appId,
                     treeId,
                     targetId.toBytes(),

@@ -5,7 +5,10 @@ import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.type.TypeOrTypeKey;
-import org.metavm.util.*;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.NncUtils;
+import org.metavm.util.StreamCopier;
+import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,8 +80,6 @@ public class ContextDifference {
                     entityChange.addInsert(new VersionRT(appId, id.getId(), t2.version())));
         } else if (t2 == null) {
             getInstanceIds(t1).forEach(id -> {
-                if(id.toString().equals("01a2a8d6b90700"))
-                    logger.debug("DEBUG1");
                 entityChange.addDelete(new VersionRT(appId, id.getId(), t1.version() + 1));
             });
 

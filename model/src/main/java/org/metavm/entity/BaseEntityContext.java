@@ -65,34 +65,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if(mapper == null)
             mapper = getDefContext().getMapper(instance.getType()).as(entityClass);
         return createEntity(instance, mapper);
-//        var found = instance.getMappedEntity();
-//        if (found != null)
-//            return entityClass.cast(found);
-//        if (instance.getContext() == null)
-//            logger.debug("Class: {}, id: {}", instance.getClass().getName(), instance.getStringId());
-//        Objects.requireNonNull(instance.getContext(),
-//                () -> "Instance " + Instances.getInstancePath(instance) + " is not contained in the context");
-//        if (mapper == null) {
-//            var id = instance.tryGetId();
-//            var resolvedMapper =
-//                    id != null ? getDefContext().tryGetMapper(instance.getId().getTypeTag(this, this))
-//                            : getDefContext().tryGetMapper(instance.getType());
-//            if (resolvedMapper == null || resolvedMapper instanceof DirectDef<?>)
-//                return entityClass.cast(instance);
-//            try {
-//                mapper = resolvedMapper.as(entityClass);
-//            } catch (ClassCastException e) {
-//                logger.info("{}", instance.getId().getTypeTag(this, this));
-//                logger.info(instance.getText());
-//                throw e;
-//            }
-//        }
-//        if (instance.getContext() == instanceContext)
-//            return createEntity(instance, mapper);
-//        if (parent != null)
-//            return parent.createEntity(instance, mapper);
-//        else
-//            throw new InternalException(String.format("Instance '%s' is not contained in the context", instance));
     }
 
     @Override
@@ -124,7 +96,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             entityMap.put(instance.getId(), model);
             if (model instanceof IdInitializing idInitializing) {
                 NncUtils.requireNull(idInitializing.tryGetPhysicalId());
-//                logger.debug("Initializing id for {}: {}", EntityUtils.getRealType(model).getName(), instance.tryGetId());
                 idInitializing.initId(instance.tryGetId());
             }
         }

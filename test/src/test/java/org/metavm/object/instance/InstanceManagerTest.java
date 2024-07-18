@@ -526,8 +526,6 @@ public class InstanceManagerTest extends TestCase {
         });
         var productId = ids[0];
         var inventoryId = ids[1];
-        logger.debug("Product ID: {}, tree ID: {}", productId, productId.getTreeId());
-        logger.debug("Inventory ID: {}, tree ID: {}", inventoryId, inventoryId.getTreeId());
         DebugEnv.inventoryId = inventoryId;
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.migrationDisabled(true))) {

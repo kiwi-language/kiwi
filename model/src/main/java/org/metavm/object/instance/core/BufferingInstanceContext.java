@@ -59,18 +59,17 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     @Override
     protected void initializeInstance(Id id) {
         try {
-//            logger.debug("Start initializing instance: " + id);
             var result = loadingBuffer.getTree(id);
-            var tree = result.tree();
-            if(onTreeLoaded(tree)) {
-                var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
-                readInstance(input);
+            var trees = result.trees();
+            for (Tree tree : trees) {
+                if (onTreeLoaded(tree)) {
+                    var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
+                    readInstance(input);
+                }
             }
             if(result.migrated()) {
                 establishForwarding(result.forwardingPointers());
             }
-//            logger.debug("Finish initializing instance: {}, migrated: {}" ,id, result.migrated());
-//            logger.debug("Request tree id: {}, actual tree id: {}", id.getTreeId(), tree.id());
         } catch (TreeNotFoundException e) {
             throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id);
         }
@@ -136,5 +135,12 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
                 treeIds,
                 treeId -> get(loadingBuffer.getRootId(treeId))
         );
+    }
+
+    @Override
+    public void removeForwardingPointer(DurableInstance instance) {
+        Objects.requireNonNull(forwardingPointers.get(instance.getOldId().getTreeId()))
+                .remove(new ForwardingPointer(instance.getOldId(), instance.getCurrentId()));
+        instance.clearOldId();
     }
 }

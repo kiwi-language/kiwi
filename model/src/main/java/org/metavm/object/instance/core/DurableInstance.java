@@ -64,7 +64,6 @@ public abstract class DurableInstance implements Message {
     private @Nullable Id migratedId;
     private @NotNull DurableInstance aggregateRoot;
     private boolean pendingChild;
-    private @Nullable Long forwardingPointerToRemove;
     private boolean useOldId;
 
     private transient Long tmpId;
@@ -587,14 +586,9 @@ public abstract class DurableInstance implements Message {
         this.useOldId = useOldId;
     }
 
-    public void clearOldId() {
+    void clearOldId() {
         assert oldId != null;
-        forwardingPointerToRemove = oldId.getTreeId();
         this.oldId = null;
-    }
-
-    public @Nullable Long getForwardingPointerToRemove() {
-        return forwardingPointerToRemove;
     }
 
     public boolean isSeparateChild() {

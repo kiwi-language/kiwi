@@ -23,6 +23,7 @@ public class LoadingBuffer {
     private final Set<Long> visited = new HashSet<>();
     private final IInstanceContext context;
     private final Map<Long, List<Id>> index = new HashMap<>();
+    private final Map<Long, Tree> trees = new HashMap<>();
     private final Map<Id, Tree> invertedIndex = new HashMap<>();
     private final Map<Long, Long> forwardingPointers = new HashMap<>();
     private final List<TreeSource> treeSources;
@@ -47,35 +48,10 @@ public class LoadingBuffer {
     }
 
     public TreeLoadResult getTree(Id id) {
-        var tree = tryGetTree(id);
-        if(tree == null)
+        var trees = tryGetTree(id);
+        if(trees.isEmpty())
             throw new TreeNotFoundException();
-//        if(tree.migrated()) {
-//            var visitor = new MigrationTreeVisitor(new ByteArrayInputStream(tree.data())) {
-//                long targetTreeId;
-//                final List<ForwardingPointer> forwardingPointers = new ArrayList<>();
-//
-//                @Override
-//                public void visitTargetTreeId(long treeId) {
-//                    targetTreeId = treeId;
-//                }
-//
-//                @Override
-//                public void visitForwardingPointer(long sourceNodeId, long targetNodeId) {
-//                    forwardingPointers.add(new ForwardingPointer(
-//                            new PhysicalId(false, tree.id(), sourceNodeId),
-//                            new PhysicalId(false, targetTreeId, targetNodeId)
-//                    ));
-//                }
-//            };
-//            visitor.visit();
-//            var targetId = NncUtils.findRequired(visitor.forwardingPointers, fp -> fp.sourceId().equals(id)).targetId();
-//            var result = getTree(targetId);
-//            NncUtils.requireFalse(result.migrated(), () -> new IllegalStateException("Multiple level of forwarding detected for id " + id));
-//            return TreeLoadResult.ofMigrated(result.tree(), visitor.forwardingPointers);
-//        }
-//        else
-        return new TreeLoadResult(tree, false, List.of());
+        return new TreeLoadResult(trees, false, List.of());
     }
 
     public List<Id> getIdsInTree(long treeId) {
@@ -88,23 +64,23 @@ public class LoadingBuffer {
         }
     }
 
-    public Tree tryGetTree(Id id) {
+    public List<Tree> tryGetTree(Id id) {
         var tree = invertedIndex.get(id);
         if (tree != null)
-            return tree;
+            return List.of(tree);
         buffer(id.getTreeId());
         flush();
         tree = invertedIndex.get(id);
         if(tree != null)
-            return tree;
+            return List.of(tree);
         var targetTreeId = forwardingPointers.get(id.getTreeId());
         if(targetTreeId != null) {
             buffer(targetTreeId);
             flush();
-            return invertedIndex.get(id);
+            return List.of(trees.get(id.getTreeId()), invertedIndex.get(id));
         }
         else
-            return null;
+            return List.of();
     }
 
     public void flush() {
@@ -141,6 +117,7 @@ public class LoadingBuffer {
     private void addTree(Tree tree) {
         var ids = new ArrayList<Id>();
         index.put(tree.id(), ids);
+        trees.put(tree.id(), tree);
         new StreamVisitor(new ByteArrayInputStream(tree.data())) {
 
             @Override

@@ -177,7 +177,6 @@ public class InstanceContext extends BufferingInstanceContext {
                 if (!instance.isRemoved())
                     orphans.add(instance);
             }
-//            logger.debug("Removing orphans, numOrphans: {}, numNonPersistedOrphans: {}", orphans.size(), nonPersistedOrphans.size());
             if (!orphans.isEmpty()) {
                 batchRemove(orphans);
             }
@@ -427,9 +426,9 @@ public class InstanceContext extends BufferingInstanceContext {
                     var out = new InstanceOutput(bout);
                     var fps = fpMap.remove(instance.getTreeId());
                     out.writeInt(fps != null ? 1 + fps.size() : 1);
-                    instance.writeTo(out);
                     if(fps != null)
                         fps.forEach(fp -> fp.writeTo(out));
+                    instance.writeTo(out);
                     trees.add(new InstancePO(
                             appId,
                             instance.getTreeId(),
