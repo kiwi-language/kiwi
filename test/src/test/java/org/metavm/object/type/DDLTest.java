@@ -161,6 +161,22 @@ public class DDLTest extends TestCase {
             }
         });
         TestUtils.waitForTaskDone(t -> t instanceof ForwardedFlagSetter, entityContextFactory);
+        // Ensure that removal check is effective for an instance under migration
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var instCtx = context.getInstanceContext();
+                instCtx.remove(instCtx.get(Id.parse(shoesId)));
+                var invInst = instCtx.get(newInventorId);
+                instCtx.remove(invInst);
+                try {
+                    context.finish();
+                    Assert.fail("The inventory object is referenced and should not be allowed get removed");
+                }
+                catch (BusinessException e) {
+                    Assert.assertEquals(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, e.getErrorCode());
+                }
+            }
+        });
         TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirecter, entityContextFactory);
         try(var context = newContext()) {
             try {

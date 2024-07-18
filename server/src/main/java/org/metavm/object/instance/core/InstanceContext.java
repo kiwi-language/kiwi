@@ -393,18 +393,27 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private void processRemoval(Patch patch) {
         try (var ignored = getProfiler().enter("processRemoval")) {
-//            removeOrphans(patch, List.of());
             var entityChange = patch.entityChange;
             if (NncUtils.isEmpty(entityChange.deletes()))
                 return;
-            var idsToRemove = NncUtils.mapUnique(entityChange.deletes(), VersionRT::id);
+            var idsToRemove = new HashSet<Id>();
+            for (VersionRT delete : entityChange.deletes()) {
+                var i = internalGet(delete.id());
+                if(i.tryGetCurrentId() != null)
+                    idsToRemove.add(i.getCurrentId());
+                if(i.tryGetOldId() != null)
+                    idsToRemove.add(i.getOldId());
+            }
             var idsToUpdate = NncUtils.mapUnique(entityChange.updates(), v -> v.id().getTreeId());
             var ref = instanceStore.getFirstReference(
                     appId, idsToRemove, mergeSets(NncUtils.mapUnique(idsToRemove, Id::getTreeId), idsToUpdate)
             );
-            if (ref != null)
-                throw BusinessException.strongReferencesPreventRemoval(getRoot(ref.getSourceTreeId()).getReference(),
-                        internalGet(ref.getTargetInstanceId()).getReference());
+            if (ref != null) {
+                unfrozen(() -> {
+                    throw BusinessException.strongReferencesPreventRemoval(getRoot(ref.getSourceTreeId()).getReference(),
+                            internalGet(ref.getTargetInstanceId()).getReference());
+                });
+            }
         }
     }
 

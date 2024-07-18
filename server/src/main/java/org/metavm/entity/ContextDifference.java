@@ -89,11 +89,8 @@ public class ContextDifference {
                     return;
                 if (s1 == null)
                     entityChange.addInsert(new VersionRT(appId, s2.getId(), t2.version()));
-                else if (s2 == null) {
-                    if(s1.getId().toString().equals("01a2a8d6b90700"))
-                        throw new RuntimeException("Removing product");
+                else if (s2 == null)
                     entityChange.addDelete(new VersionRT(appId, s1.getId(), t2.version()));
-                }
                 else if (!s1.equals(s2))
                     entityChange.addUpdate(new VersionRT(appId, s2.getId(), t2.version()));
             });
