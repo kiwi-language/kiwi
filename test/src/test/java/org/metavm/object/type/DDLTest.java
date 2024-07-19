@@ -225,6 +225,29 @@ public class DDLTest extends TestCase {
 
     }
 
+    public void testDDLFailure() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "Shoes",
+                "inventory", Map.of(
+                        "quantity", 100
+                ),
+                "price", 100
+        )));
+        var shoes = apiClient.getObject(shoesId);
+        var inventoryId = shoes.getString("inventory");
+        TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "Hat",
+                "inventory", inventoryId,
+                "price", 20
+        )));
+        try {
+            MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, entityContextFactory);
+            Assert.fail("DDL should have failed");
+        }
+        catch (IllegalStateException ignored) {}
+    }
+
     private IEntityContext newContext() {
         return entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.asyncPostProcess(false));
     }
