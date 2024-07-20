@@ -504,8 +504,12 @@ public class TestUtils {
     public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate) {
         scheduler.sendHeartbeat();
         worker.sendHeartbeat();
-        scheduler.schedule();
-        worker.waitFor(predicate);
+        for (int i = 0; i < 3; i++) {
+            scheduler.schedule();
+            if(worker.waitFor(predicate, 5))
+                return;
+        }
+        throw new IllegalStateException("Condition not met after " + 15 + " runs");
     }
 
     private static long nextKlassTag() {

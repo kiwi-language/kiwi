@@ -67,7 +67,7 @@ public class SchedulerTest extends TestCase {
             var tasks = context.selectByKey(ShadowTask.IDX_EXECUTOR_IP, NetworkUtils.localIP);
             Assert.assertEquals(1, tasks.size());
         }
-        worker.waitFor(t -> t.idEquals(ref.task.getId()));
+        Assert.assertTrue(worker.waitFor(t -> t.idEquals(ref.task.getId()), 10));
         Assert.assertNull(instanceStore.get(TestConstants.APP_ID, ref.task.getId().getTreeId()));
     }
 

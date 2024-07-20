@@ -19,6 +19,7 @@ import org.metavm.object.version.VersionRepository;
 import org.metavm.object.version.Versions;
 import org.metavm.object.view.Mapping;
 import org.metavm.task.ForwardedFlagSetter;
+import org.metavm.task.Task;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionOperations;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -161,21 +163,26 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     private void handleDDL(long appId, Collection<Id> instanceIds) {
         if (instanceIds.isEmpty())
             return;
-        try (var context = newContext(appId)) {
-            var commit = context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
-            if (commit != null) {
-                transactionOperations.executeWithoutResult(s -> {
+        transactionOperations.executeWithoutResult(s -> {
+            try (var context = newContext(appId)) {
+                var commit = context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
+                List<Task> tasks = new ArrayList<>();
+                if (commit != null) {
                     try (var loadedContext = entityContextFactory.newLoadedContext(appId, commit.getWal(), true)) {
                         Iterable<ClassInstance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
                                 .filter(i -> i instanceof ClassInstance)
                                 .map(i -> (ClassInstance) i)
                                 .iterator();
-                        Instances.applyDDL(instances, commit, loadedContext);
+                        tasks = Instances.applyDDL(instances, commit, loadedContext);
                         loadedContext.finish();
                     }
-                });
+                }
+                if (!tasks.isEmpty()) {
+                    tasks.forEach(context::bind);
+                    context.finish();
+                }
             }
-        }
+        });
     }
 
     private void handleMigration(long appId, List<Id> migrated) {

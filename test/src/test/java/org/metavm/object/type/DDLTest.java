@@ -15,7 +15,7 @@ import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.task.ForwardedFlagSetter;
-import org.metavm.task.ReferenceRedirecter;
+import org.metavm.task.ReferenceRedirector;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,7 +130,7 @@ public class DDLTest extends TestCase {
                return invInst.getId();
            }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirecter, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirector, entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var boxInst = (ClassInstance) instCtx.get(Id.parse(boxId));
@@ -180,7 +180,7 @@ public class DDLTest extends TestCase {
                 }
             }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirecter, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirector, entityContextFactory);
         try(var context = newContext()) {
             try {
                 context.getInstanceContext().get(newInventorId);
@@ -262,6 +262,14 @@ public class DDLTest extends TestCase {
                         "currency", yuanId
                 )
         )));
+        var priceId = apiClient.getObject(shoesId).getString("price");
+        for (int i = 0; i < 32; i++) {
+            var _i = i;
+            TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                    "name", "Shoes" + _i,
+                    "price", priceId
+            )));
+        }
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_after.masm", typeManager, false, entityContextFactory);
         TestUtils.waitForDDLDone(entityContextFactory);
         TestUtils.doInTransactionWithoutResult(() -> {

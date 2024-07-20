@@ -6,23 +6,17 @@ import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.DurableInstanceVisitor;
 import org.metavm.object.instance.core.Id;
 
-public class ReferenceRedirecter extends Task {
+import java.util.List;
 
-    public static final int BATCH_SIZE = 256;
+public class ReferenceRedirector extends ReferenceScanner {
 
-    private final String id;
-    private long next;
-
-
-    protected ReferenceRedirecter(String id) {
-        super("MigrationForwardingTask-" + id);
-        this.id = id;
+    protected ReferenceRedirector(String id) {
+        super("ReferenceRedirector-" + id, id);
     }
 
     @Override
-    protected boolean run0(IEntityContext context) {
-        var id = Id.parse(this.id);
-        var referring = context.getInstanceContext().getByReferenceTargetId(id, next, BATCH_SIZE);
+    protected void process(List<DurableInstance> referring) {
+        var id = getTargetId();
         if(!referring.isEmpty()) {
             for (DurableInstance root : referring) {
                 root.accept(new DurableInstanceVisitor() {
@@ -38,17 +32,11 @@ public class ReferenceRedirecter extends Task {
                     }
                 });
             }
-            next = referring.get(referring.size() - 1).getTreeId() + 1;
         }
-        if(referring.size() < BATCH_SIZE) {
-            onTaskDone(context, id);
-            return true;
-        }
-        else
-            return false;
     }
 
-    public void onTaskDone(IEntityContext context, Id id) {
+    @Override
+    protected void onTaskDone(IEntityContext context, Id id) {
         try {
             var target = context.getInstanceContext().get(id);
             context.getInstanceContext().removeForwardingPointer(target);

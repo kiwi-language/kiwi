@@ -11,6 +11,8 @@ import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
+import org.metavm.task.EagerFlagSetter;
+import org.metavm.task.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -542,12 +544,13 @@ public class Instances {
             throw new IllegalArgumentException(listType + " is not a List type");
     }
 
-    public static void applyDDL(Iterable<ClassInstance> instances, Commit commit, IEntityContext context) {
+    public static List<Task> applyDDL(Iterable<ClassInstance> instances, Commit commit, IEntityContext context) {
         var newFields = NncUtils.map(commit.getNewFieldIds(), context::getField);
         var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
         var toChildFields = NncUtils.map(commit.getToChildFieldIds(), context::getField);
         var changingSuperKlasses = NncUtils.map(commit.getChangingSuperKlassIds(), context::getKlass);
         var toValueKlasses = NncUtils.map(commit.getToValueKlassIds(), context::getKlass);
+        var tasks = new ArrayList<Task>();
         for (ClassInstance instance : instances) {
             for (Field field : newFields) {
                 var k = instance.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
@@ -580,21 +583,27 @@ public class Instances {
             for (Klass klass : toValueKlasses) {
                 var k = instance.getKlass().findAncestorByTemplate(klass);
                 if(k != null)
-                    handleToValueKlass(instance, context);
+                    handleToValueKlass(instance, tasks, context);
             }
         }
+        return tasks;
     }
 
-    private static void handleToValueKlass(ClassInstance instance, IEntityContext context) {
-        var instCtx = context.getInstanceContext();
-        // TODO Initiate a task to flag references when their count exceeds 10.
-        var refs = instCtx.getByReferenceTargetId(instance.getId(), 0, 10);
-        for (DurableInstance ref : refs) {
+    private static final int MAX_REFS = 16;
+
+    private static void handleToValueKlass(ClassInstance instance, List<Task> tasks, IEntityContext context) {
+        var refs = context.getInstanceContext().getByReferenceTargetId(instance.getId(), 0, MAX_REFS);
+        if(refs.size() < MAX_REFS)
+            setEagerFlag(refs, instance.getId());
+        else
+            tasks.add(new EagerFlagSetter(instance.getStringId()));
+    }
+
+    public static void setEagerFlag(List<DurableInstance> referring, Id id) {
+        for (DurableInstance ref : referring) {
             ref.forEachReference(r -> {
-                if(r.idEquals(instance.getId())) {
-                    logger.debug("Marking reference {}->{} as eager", ref.getId(), r.getId());
+                if(r.idEquals(id))
                     r.setEager();
-                }
             });
         }
     }

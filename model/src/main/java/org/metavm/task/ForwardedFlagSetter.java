@@ -6,22 +6,17 @@ import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.DurableInstanceVisitor;
 import org.metavm.object.instance.core.Id;
 
-public class ForwardedFlagSetter extends Task {
+import java.util.List;
 
-    public static final int BATCH_SIZE = 256;
-
-    private final String id;
-    private long next;
+public class ForwardedFlagSetter extends ReferenceScanner {
 
     public ForwardedFlagSetter(String id) {
-        super("MigrationMarkingTask-" + id);
-        this.id = id;
+        super("MigrationMarkingTask-" + id, id);
     }
 
     @Override
-    protected boolean run0(IEntityContext context) {
-        var id = Id.parse(this.id);
-        var referring = context.getInstanceContext().getByReferenceTargetId(id, next, BATCH_SIZE);
+    protected void process(List<DurableInstance> referring) {
+        var id = getTargetId();
         if (!referring.isEmpty()) {
             for (DurableInstance root : referring) {
                 root.accept(new DurableInstanceVisitor() {
@@ -36,21 +31,15 @@ public class ForwardedFlagSetter extends Task {
                     }
                 });
             }
-            next = referring.get(referring.size() - 1).getTreeId() + 1;
         }
-        if(referring.size() < BATCH_SIZE) {
-            onTaskDone(context, id);
-            return true;
-        }
-        else
-            return false;
     }
 
-    private void onTaskDone(IEntityContext context, Id id) {
+    @Override
+    protected void onTaskDone(IEntityContext context, Id id) {
         try {
             var target = context.getInstanceContext().get(id);
             target.switchId();
-            context.bind(new ReferenceRedirecter(this.id));
+            context.bind(new ReferenceRedirector(id.toString()));
         }
         catch (TreeNotFoundException ignored) {
         }
