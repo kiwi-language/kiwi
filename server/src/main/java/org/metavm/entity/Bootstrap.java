@@ -143,7 +143,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
     private void ensureIdInitialized() {
         var defContext = ModelDefRegistry.getDefContext();
         for (var instance : defContext.instances()) {
-            if (instance.isDurable() && !instance.isValue() && instance.tryGetTreeId() == null)
+            if (instance.isDurable() && !instance.isInlineValue() && instance.tryGetTreeId() == null)
                 throw new InternalException("Detected a durable instance with uninitialized id. instance: " + instance);
         }
     }

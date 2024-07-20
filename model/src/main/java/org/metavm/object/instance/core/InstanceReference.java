@@ -31,13 +31,16 @@ Migration procedure
  */
 public class InstanceReference extends Instance {
 
+    public static final int FLAG_FORWARDED = 1;
+    public static final int FLAG_EAGER = 2;
+    public static final int FLAG_VIEW = 4;
+
     public static final Logger logger = LoggerFactory.getLogger(InstanceReference.class);
 
     private @Nullable Id id;
     private @Nullable DurableInstance target;
     private final Supplier<DurableInstance> resolver;
-    private boolean view;
-    private boolean forwarded;
+    private int flags = 0;
 
     public InstanceReference(DurableInstance resolved) {
         super(resolved.getType());
@@ -81,7 +84,7 @@ public class InstanceReference extends Instance {
     }
 
     public boolean isForwarded() {
-        return forwarded;
+        return (flags & FLAG_FORWARDED) != 0;
     }
 
     @Override
@@ -98,7 +101,7 @@ public class InstanceReference extends Instance {
     @Override
     public FieldValue toFieldValueDTO() {
         var target = resolve();
-        if(target.isValue() || target.isArray() || (target instanceof ClassInstance clsInst && clsInst.isList()))
+        if(target.isInlineValue() || target.isArray() || (target instanceof ClassInstance clsInst && clsInst.isList()))
             return new InstanceFieldValue(resolve().getTitle(), resolve().toDTO());
         else {
             return new ReferenceFieldValue(
@@ -120,10 +123,15 @@ public class InstanceReference extends Instance {
 
     @Override
     public void write(InstanceOutput output) {
-        if (isValueReference())
+        if (isInlineValueReference())
             resolve().writeRecord(output);
         else {
-            output.write(forwarded ? WireTypes.FORWARDED_REFERENCE : WireTypes.REFERENCE);
+            if(flags != 0) {
+                output.write(WireTypes.FLAGGED_REFERENCE);
+                output.write(flags);
+            }
+            else
+                output.write(WireTypes.REFERENCE);
             output.writeId(id instanceof PhysicalId ? id : resolve().getId());
         }
     }
@@ -168,11 +176,11 @@ public class InstanceReference extends Instance {
     }
 
     public boolean isView() {
-        return view;
+        return (flags & FLAG_VIEW) != 0;
     }
 
-    public void setView(boolean view) {
-        this.view = view;
+    public void setView() {
+        this.flags |= FLAG_VIEW;
     }
 
     public boolean isRemoved() {
@@ -187,14 +195,30 @@ public class InstanceReference extends Instance {
         return target != null;
     }
 
-    public void setForwarded(boolean forwarded) {
-        this.forwarded = forwarded;
+    public void setForwarded() {
+        flags |= FLAG_FORWARDED;
+    }
+
+    public void clearForwarded() {
+        flags &= ~FLAG_FORWARDED;
+    }
+
+    public boolean isEager() {
+        return (this.flags & FLAG_EAGER) != 0;
+    }
+
+    public void setEager() {
+        this.flags |= FLAG_EAGER;
+    }
+
+    public void setFlags(int flags) {
+        this.flags = flags;
     }
 
     public void forward() {
-        assert forwarded;
+        assert isForwarded();
         this.id = resolve().getId();
-        this.forwarded = false;
+        clearForwarded();
     }
 
     //    public IInstanceContext getContext() {
@@ -261,7 +285,7 @@ public class InstanceReference extends Instance {
         if (obj instanceof InstanceReference that) {
             if (id != null && id.equals(that.id))
                 return true;
-            if (id == null || that.id == null || forwarded || that.forwarded)
+            if (id == null || that.id == null || isForwarded() || that.isForwarded())
                 return resolve() == that.resolve();
             return false;
         } else
@@ -279,10 +303,19 @@ public class InstanceReference extends Instance {
     }
 
     public boolean isValueReference() {
-        return id == null && resolve().isValue();
+        return (id == null || target != null) && resolve().isValue();
+    }
+
+    public boolean isInlineValueReference() {
+        return id == null && resolve().isInlineValue();
     }
 
     public boolean isResolved() {
         return target != null;
     }
+
+    public boolean idEquals(Id id) {
+        return this.id != null && this.id.equals(id);
+    }
+
 }

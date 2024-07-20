@@ -29,7 +29,7 @@ public class ForwardedFlagSetter extends Task {
                     public void visitDurableInstance(DurableInstance instance) {
                         instance.forEachReference((ref, isChild) -> {
                             if (id.equals(ref.tryGetId()))
-                                ref.setForwarded(true);
+                                ref.setForwarded();
                             if (isChild)
                                 ref.resolve().accept(this);
                         });

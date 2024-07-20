@@ -205,6 +205,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public List<DurableInstance> batchGet(Collection<Id> ids) {
+        ids.forEach(this::buffer);
         return NncUtils.map(ids, this::get);
     }
 
@@ -276,7 +277,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private InstanceReference allocateView(ViewId viewId) {
         var ref = new InstanceReference(viewId, () -> initializeView(viewId));
-        ref.setView(true);
+        ref.setView();
         return ref;
 //        var viewType = viewId.getViewTypeKey(mappingProvider, typeDefProvider).toType(typeDefProvider);
 //        DurableInstance view;

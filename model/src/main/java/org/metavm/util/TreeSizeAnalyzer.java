@@ -77,9 +77,9 @@ public class TreeSizeAnalyzer extends StreamCopier {
     }
 
     @Override
-    protected void visitForwardedReference() {
+    protected void visitFlaggedReference() {
         var beforeSize = bout.size();
-        super.visitForwardedReference();
+        super.visitFlaggedReference();
         totalReferenceSize += bout.size() - beforeSize;
         numReferences++;
     }

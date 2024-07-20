@@ -58,18 +58,37 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     @Override
     protected void initializeInstance(Id id) {
+        var instances = initializeInstance0(id);
+        for (DurableInstance instance : instances) {
+            instance.accept(new DurableInstanceVisitor() {
+                @Override
+                public void visitDurableInstance(DurableInstance instance) {
+                    instance.forEachReference((r, isChild) -> {
+                        if (r.isEager())
+                            r.resolve();
+                        if(r.isResolved())
+                            r.resolve().accept(this);
+                    });
+                }
+            });
+        }
+    }
+
+    private List<DurableInstance> initializeInstance0(Id id) {
         try {
             var result = loadingBuffer.getTree(id);
             var trees = result.trees();
+            var instances = new ArrayList<DurableInstance>();
             for (Tree tree : trees) {
                 if (onTreeLoaded(tree)) {
                     var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
-                    readInstance(input);
+                    readInstance(input, instances);
                 }
             }
             if(result.migrated()) {
                 establishForwarding(result.forwardingPointers());
             }
+            return instances;
         } catch (TreeNotFoundException e) {
             throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id);
         }
@@ -100,12 +119,14 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         return loadedTreeIds.add(tree.id());
     }
 
-    private void readInstance(InstanceInput input) {
+    private void readInstance(InstanceInput input, List<DurableInstance> instances) {
         int numTrees = input.readInt();
         for (int i = 0; i < numTrees; i++) {
             var tree = input.readTree();
-            if(tree instanceof DurableInstance instance)
+            if(tree instanceof DurableInstance instance) {
                 onInstanceInitialized(instance);
+                instances.add(instance);
+            }
             else if(tree instanceof ForwardingPointer fp)
                 addForwardingPointer(fp);
             else

@@ -445,8 +445,11 @@ public class Assembler {
                                  Runnable processBody) {
             var code = getCompilationUnit().getDefinitionName(name);
             var klass = tryGetKlass(code);
+            var kind = ClassKind.fromTypeCategory(typeCategory);
             if (klass == null)
-                klass = createKlass(name, code, ClassKind.fromTypeCategory(typeCategory));
+                klass = createKlass(name, code, kind);
+            else
+                klass.setKind(kind);
             var classInfo = new ClassInfo(
                     scope,
                     klass,
@@ -521,7 +524,7 @@ public class Assembler {
         public Void visitEnumConstant(AssemblyParser.EnumConstantContext ctx) {
             var klass = ((ClassInfo) scope).klass;
             var name = ctx.IDENTIFIER().getText();
-            var field = klass.findField(f -> f.getName().equals(name));
+            var field = klass.findStaticField(f -> f.getName().equals(name));
             if (field == null) {
                 field = FieldBuilder.newBuilder(name, name, klass, klass.getType())
                         .tmpId(NncUtils.randomNonNegative())
@@ -546,8 +549,13 @@ public class Assembler {
             List<AssemblyParser.FormalParameterContext> params = formalParameterList != null ? formalParameterList.formalParameter() : List.of();
             Set<String> typeParamNames = typeParameters != null ?
                     NncUtils.mapUnique(typeParameters.typeParameter(), tv -> tv.IDENTIFIER().getText()) : Set.of();
-            var internalName = klass.getCodeNotNull() + "." + name + "(" +
-                    NncUtils.join(params, p -> getInternalName(p.typeType(), typeParamNames, scope)) + ")";
+            var paramTypeNames = new ArrayList<String>();
+            if(klass.isEnum() && isConstructor) {
+                paramTypeNames.add("String");
+                paramTypeNames.add("Long");
+            }
+            params.forEach(p -> paramTypeNames.add(getInternalName(p.typeType(), typeParamNames, scope)));
+            var internalName = klass.getCodeNotNull() + "." + name + "(" + String.join(",", paramTypeNames) + ")";
             var method = klass.findMethod(m -> m.getInternalName(null).equals(internalName));
             if (method != null)
                 method.clearNodes();

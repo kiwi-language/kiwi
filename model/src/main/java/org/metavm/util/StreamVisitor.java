@@ -34,7 +34,7 @@ public class StreamVisitor {
             case WireTypes.TIME -> visitTime();
             case WireTypes.PASSWORD -> visitPassword();
             case WireTypes.REFERENCE -> visitReference();
-            case WireTypes.FORWARDED_REFERENCE -> visitForwardedReference();
+            case WireTypes.FLAGGED_REFERENCE -> visitFlaggedReference();
             case WireTypes.RECORD -> visitRecord();
             case WireTypes.MIGRATING_RECORD -> visitMigratingRecord();
             case WireTypes.VALUE -> visitValue();
@@ -42,7 +42,8 @@ public class StreamVisitor {
         }
     }
 
-    protected void visitForwardedReference() {
+    protected void visitFlaggedReference() {
+        read();
         visitReference();
     }
 

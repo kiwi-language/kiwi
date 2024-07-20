@@ -71,10 +71,11 @@ public abstract class TypeFactory {
         try (var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveClassType")) {
             var klass = batch.getContext().getKlass(klassDTO.id());
             var context = batch.getContext();
+            var kind = ClassKind.fromCode(klassDTO.kind());
             if (klass == null) {
                 klass = KlassBuilder.newBuilder(klassDTO.name(), klassDTO.code())
                         .tmpId(klassDTO.tmpId())
-                        .kind(ClassKind.fromCode(klassDTO.kind()))
+                        .kind(kind)
                         .ephemeral(klassDTO.ephemeral())
                         .anonymous(klassDTO.anonymous())
                         .typeParameters(NncUtils.map(klassDTO.typeParameterIds(), batch::getTypeVariable))
@@ -91,6 +92,11 @@ public abstract class TypeFactory {
                 klass.setCode(klassDTO.code());
                 klass.setName(klassDTO.name());
                 klass.setDesc(klassDTO.desc());
+                if(kind != klass.getKind()) {
+                    klass.setKind(kind);
+                    if(kind == ClassKind.VALUE && !context.isNewEntity(klass))
+                        batch.addToValueKlass(klass);
+                }
                 klass.setStruct(klassDTO.struct());
                 klass.setAbstract(klassDTO.isAbstract());
                 batch.getContext().update(klass);

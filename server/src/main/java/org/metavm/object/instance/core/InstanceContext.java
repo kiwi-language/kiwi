@@ -200,17 +200,8 @@ public class InstanceContext extends BufferingInstanceContext {
 
     @Override
     public List<DurableInstance> getByReferenceTargetId(Id targetId, long startExclusive, long limit) {
-        return NncUtils.map(
-                instanceStore.getByReferenceTargetId(
-                        targetId,
-                        startExclusive,
-                        limit,
-                        this
-                ),
-                this::getRoot
-        );
+        return batchGetRoots(instanceStore.getByReferenceTargetId(targetId, startExclusive, limit, this));
     }
-
 
     public void initIds() {
         try (var ignored = getProfiler().enter("initIds")) {
@@ -601,7 +592,10 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private Migrations migrate() {
-        return new Migrations(merge(), extract());
+        var merged = merge();
+        var extracted = extract();
+        mergeDetachedValues();
+        return new Migrations(merged, extracted);
     }
 
     private List<DurableInstance> merge() {
@@ -620,6 +614,21 @@ public class InstanceContext extends BufferingInstanceContext {
             }
         });
         return merged;
+    }
+
+    private void mergeDetachedValues() {
+        forEachInitialized(instance -> {
+            if(!instance.isEphemeral() && !instance.isRemoved()) {
+                instance.transformReference(r -> {
+                    if(r.isValueReference()) {
+                        var v = r.resolve();
+                        if(v.isDetachedValue())
+                            return v.copy().getReference();
+                    }
+                    return r;
+                });
+            }
+        });
     }
 
     private List<DurableInstance> extract() {

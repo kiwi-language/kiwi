@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class BytesUtils {
 
@@ -115,6 +116,11 @@ public class BytesUtils {
         @Override
         public void forEachReference(BiConsumer<InstanceReference, Boolean> action) {
             
+        }
+
+        @Override
+        public void transformReference(Function<InstanceReference, InstanceReference> function) {
+
         }
 
         @Override

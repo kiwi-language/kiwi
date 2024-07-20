@@ -118,7 +118,7 @@ public class InstanceInput implements Closeable {
             case WireTypes.BOOLEAN -> new BooleanInstance(readBoolean(), Types.getBooleanType());
             case WireTypes.TIME -> new TimeInstance(readLong(), Types.getTimeType());
             case WireTypes.PASSWORD -> new PasswordInstance(readString(), Types.getPasswordType());
-            case WireTypes.FORWARDED_REFERENCE -> readForwardedReference();
+            case WireTypes.FLAGGED_REFERENCE -> readFlaggedReference();
             case WireTypes.REFERENCE -> readReference();
             case WireTypes.RECORD -> readRecord();
             case WireTypes.MIGRATING_RECORD -> readMigratingRecord();
@@ -135,9 +135,10 @@ public class InstanceInput implements Closeable {
         return resolveInstance(readId());
     }
 
-    public InstanceReference readForwardedReference() {
+    public InstanceReference readFlaggedReference() {
+        var flags = read();
         var ref = resolveInstance(readId());
-        ref.setForwarded(true);
+        ref.setFlags(flags);
         return ref;
     }
 

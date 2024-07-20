@@ -49,7 +49,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private String name;
     @Nullable
     private String code;
-    private final ClassKind kind;
+    private ClassKind kind;
     private boolean anonymous;
     private boolean ephemeral;
     @Nullable
@@ -1405,6 +1405,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public ClassKind getKind() {
         return kind;
+    }
+
+    public void setKind(ClassKind kind) {
+        this.kind = kind;
     }
 
     public boolean isAnonymous() {

@@ -20,6 +20,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class ClassInstance extends DurableInstance {
 
@@ -175,6 +176,17 @@ public class ClassInstance extends DurableInstance {
         });
     }
 
+    @Override
+    public void transformReference(Function<InstanceReference, InstanceReference> function) {
+        forEachField((f, v) -> {
+            if(v instanceof InstanceReference r) {
+                var r1 = function.apply(r);
+                if(r1 != r)
+                    setField(f, r1);
+            }
+        });
+    }
+
     public Object getField(List<Id> fieldPath) {
         ensureLoaded();
         var fieldId = fieldPath.get(0);
@@ -194,7 +206,7 @@ public class ClassInstance extends DurableInstance {
 
     @NoProxy
     public boolean isReference() {
-        return !isValue();
+        return !isInlineValue();
     }
 
     public Instance getInstanceField(Field field) {
@@ -561,13 +573,19 @@ public class ClassInstance extends DurableInstance {
 
     @Override
     public DurableInstance copy() {
-        var copy = new ClassInstance(null, null, klass);
-        forEachField((f, v) -> {
-            if(f.isChild())
-                copy.setField(f, v.resolveDurable().copy().getReference());
-            else
-                copy.setField(f, v);
-        });
+        var copy = ClassInstanceBuilder.newBuilder(getType()).initFieldTable(false).build();
+        copy.fieldTable.initializeFieldsArray();
+        for (FieldSubTable subTable : fieldTable.subTables) {
+            var st = copy.fieldTable.addSubTable(subTable.klassTag);
+            for (IInstanceField field : subTable.fields) {
+                if(field instanceof InstanceField f) {
+                    var v = f.getValue();
+                    if(f.getField().isChild() && v instanceof InstanceReference r)
+                        v = r.resolve().copy().getReference();
+                    st.add(new InstanceField(copy, f.getField(), v));
+                }
+            }
+        }
         return copy;
     }
 

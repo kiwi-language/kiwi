@@ -140,8 +140,9 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
-    protected void visitForwardedReference() {
-        output.write(WireTypes.FORWARDED_REFERENCE);
+    protected void visitFlaggedReference() {
+        output.write(WireTypes.FLAGGED_REFERENCE);
+        output.write(read());
         output.writeId(readId());
     }
 

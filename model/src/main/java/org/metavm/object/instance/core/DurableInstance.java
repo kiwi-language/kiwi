@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
@@ -269,7 +270,7 @@ public abstract class DurableInstance implements Message {
     }
 
     public boolean isRoot() {
-        return !isValue() && getRoot() == this;
+        return !isInlineValue() && getRoot() == this;
     }
 
     void setLoaded(boolean fromCache) {
@@ -364,7 +365,7 @@ public abstract class DurableInstance implements Message {
     }
 
     public void writeRecord(InstanceOutput output) {
-        if (isValue())
+        if (isInlineValue())
             output.write(WireTypes.VALUE);
         else {
             if (oldId != null) {
@@ -570,6 +571,14 @@ public abstract class DurableInstance implements Message {
         return getType().isValue();
     }
 
+    public boolean isInlineValue() {
+        return id == null && isValue();
+    }
+
+    public boolean isDetachedValue() {
+        return id != null && isValue();
+    }
+
     public Id getOldId() {
         return Objects.requireNonNull(oldId);
     }
@@ -694,6 +703,8 @@ public abstract class DurableInstance implements Message {
     public abstract void forEachReference(Consumer<InstanceReference> action);
 
     public abstract void forEachReference(BiConsumer<InstanceReference, Boolean> action);
+
+    public abstract void transformReference(Function<InstanceReference, InstanceReference> function);
 
     public void visitGraph(Predicate<DurableInstance> action) {
         visitGraph(action, r -> true, new IdentitySet<>());

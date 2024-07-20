@@ -1,6 +1,8 @@
 package org.metavm.object.type;
 
 import junit.framework.TestCase;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
@@ -9,6 +11,7 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.entity.MemInstanceStore;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.task.ForwardedFlagSetter;
@@ -246,6 +249,33 @@ public class DDLTest extends TestCase {
             Assert.fail("DDL should have failed");
         }
         catch (IllegalStateException ignored) {}
+    }
+
+    public void testClassToValue() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_before.masm", typeManager, entityContextFactory);
+        var currencyClass = typeManager.getTypeByCode("Currency").type();
+        var yuanId = TestUtils.getEnumConstantByName(currencyClass, "YUAN").getIdNotNull();
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "Shoes",
+                "price", Map.of(
+                        "amount", 100,
+                        "currency", yuanId
+                )
+        )));
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_after.masm", typeManager, false, entityContextFactory);
+        TestUtils.waitForDDLDone(entityContextFactory);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                context.getInstanceContext().get(Id.parse(shoesId));
+                context.finish();
+            }
+        });
+        var priceClass = typeManager.getTypeByCode("Price").type();
+        Assert.assertEquals(ClassKind.VALUE.code(), priceClass.kind());
+        var shoes = apiClient.getObject(shoesId);
+        MatcherAssert.assertThat(shoes.getObject("price"), CoreMatchers.instanceOf(ClassInstanceWrap.class));
+        var price = (ClassInstanceWrap) shoes.get("price");
+        Assert.assertNull(price.get("$id"));
     }
 
     private IEntityContext newContext() {

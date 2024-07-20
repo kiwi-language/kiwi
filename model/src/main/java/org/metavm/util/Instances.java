@@ -547,6 +547,7 @@ public class Instances {
         var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
         var toChildFields = NncUtils.map(commit.getToChildFieldIds(), context::getField);
         var changingSuperKlasses = NncUtils.map(commit.getChangingSuperKlassIds(), context::getKlass);
+        var toValueKlasses = NncUtils.map(commit.getToValueKlassIds(), context::getKlass);
         for (ClassInstance instance : instances) {
             for (Field field : newFields) {
                 var k = instance.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
@@ -576,6 +577,25 @@ public class Instances {
                 if (k != null)
                     initializeSuper(instance, k, context);
             }
+            for (Klass klass : toValueKlasses) {
+                var k = instance.getKlass().findAncestorByTemplate(klass);
+                if(k != null)
+                    handleToValueKlass(instance, context);
+            }
+        }
+    }
+
+    private static void handleToValueKlass(ClassInstance instance, IEntityContext context) {
+        var instCtx = context.getInstanceContext();
+        // TODO Initiate a task to flag references when their count exceeds 10.
+        var refs = instCtx.getByReferenceTargetId(instance.getId(), 0, 10);
+        for (DurableInstance ref : refs) {
+            ref.forEachReference(r -> {
+                if(r.idEquals(instance.getId())) {
+                    logger.debug("Marking reference {}->{} as eager", ref.getId(), r.getId());
+                    r.setEager();
+                }
+            });
         }
     }
 

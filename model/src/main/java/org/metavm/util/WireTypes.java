@@ -12,7 +12,7 @@ public class WireTypes {
     public static final int REFERENCE = 10;
     public static final int RECORD = 11;
     public static final int VALUE = 12;
-    public static final int FORWARDED_REFERENCE = 13;
+    public static final int FLAGGED_REFERENCE = 13;
     public static final int MIGRATING_RECORD = 14;
     
 

@@ -1,3 +1,3 @@
-Disregarding mappings when creating version because mappings are always children of klass
-
-Remove the DurableInstance.write(InstanceOutput) method
+1 Assembler supports implicit default constructor.
+2 Disregarding mappings when creating version because mappings are always children of klass.
+3 Remove fields migrated and forwardingPointers from TreeLoadResult.
