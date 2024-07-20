@@ -10,10 +10,7 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.MemInstanceStore;
 import org.metavm.object.instance.ApiService;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.ClassInstanceWrap;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.*;
 import org.metavm.task.ForwardedFlagSetter;
 import org.metavm.task.ReferenceRedirector;
 import org.metavm.util.*;
@@ -21,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -253,8 +251,10 @@ public class DDLTest extends TestCase {
 
     public void testClassToValue() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_before.masm", typeManager, entityContextFactory);
-        var currencyClass = typeManager.getTypeByCode("Currency").type();
-        var yuanId = TestUtils.getEnumConstantByName(currencyClass, "YUAN").getIdNotNull();
+        var currencyKlass = typeManager.getTypeByCode("Currency").type();
+        var priceKlass = typeManager.getTypeByCode("Price").type();
+        var productKlass = typeManager.getTypeByCode("Product").type();
+        var yuanId = TestUtils.getEnumConstantByName(currencyKlass, "YUAN").getIdNotNull();
         var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
@@ -263,27 +263,67 @@ public class DDLTest extends TestCase {
                 )
         )));
         var priceId = apiClient.getObject(shoesId).getString("price");
-        for (int i = 0; i < 32; i++) {
+        var productIds = new ArrayList<>(List.of(shoesId));
+        for (int i = 0; i < 16; i++) {
             var _i = i;
-            TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+            productIds.add(TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
                     "name", "Shoes" + _i,
                     "price", priceId
-            )));
+            ))));
         }
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_after.masm", typeManager, false, entityContextFactory);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var productKlass1 = context.getKlass(productKlass.id());
+                var priceKlass1 = context.getKlass(priceKlass.id());
+                var currencyKlass1 = context.getKlass(currencyKlass.id());
+                var yuan = currencyKlass1.getEnumConstants().get(0);
+                var instCtx = context.getInstanceContext();
+                var price = ClassInstanceBuilder.newBuilder(priceKlass1.getType())
+                        .data(Map.of(
+                                priceKlass1.getFieldByCode("amount"),
+                                Instances.doubleInstance(100.0),
+                                priceKlass1.getFieldByCode("currency"),
+                                yuan.getReference()
+                        ))
+                        .build();
+                instCtx.bind(price);
+                var nameField = productKlass1.getFieldByCode("name");
+                var priceField = productKlass1.getFieldByCode("price");
+                var products = new ArrayList<ClassInstance>();
+                for (int i = 0; i < 16; i++) {
+                    var product = ClassInstanceBuilder.newBuilder(productKlass1.getType())
+                            .data(Map.of(
+                                    nameField,
+                                    Instances.stringInstance("Hat" + i),
+                                    priceField,
+                                    price.getReference()
+                            ))
+                            .build();
+                    products.add(product);
+                    instCtx.bind(product);
+                }
+                context.finish();
+                products.forEach(p -> productIds.add(p.getStringId()));
+            }
+        });
         TestUtils.waitForDDLDone(entityContextFactory);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
-                context.getInstanceContext().get(Id.parse(shoesId));
+                for (String productId : productIds) {
+                    context.getInstanceContext().get(Id.parse(productId));
+                }
                 context.finish();
             }
         });
-        var priceClass = typeManager.getTypeByCode("Price").type();
-        Assert.assertEquals(ClassKind.VALUE.code(), priceClass.kind());
-        var shoes = apiClient.getObject(shoesId);
-        MatcherAssert.assertThat(shoes.getObject("price"), CoreMatchers.instanceOf(ClassInstanceWrap.class));
-        var price = (ClassInstanceWrap) shoes.get("price");
-        Assert.assertNull(price.get("$id"));
+        var priceKlass2 = typeManager.getTypeByCode("Price").type();
+        Assert.assertEquals(ClassKind.VALUE.code(), priceKlass2.kind());
+        for (String productId : productIds) {
+            var product = apiClient.getObject(productId);
+            MatcherAssert.assertThat(product.getObject("price"), CoreMatchers.instanceOf(ClassInstanceWrap.class));
+            var price = (ClassInstanceWrap) product.get("price");
+            Assert.assertNull(price.get("$id"));
+        }
     }
 
     private IEntityContext newContext() {
