@@ -211,6 +211,10 @@ public class InstanceReference extends Instance {
         this.flags |= FLAG_EAGER;
     }
 
+    public void clearEager() {
+        flags &= ~FLAG_EAGER;
+    }
+
     public void setFlags(int flags) {
         this.flags = flags;
     }

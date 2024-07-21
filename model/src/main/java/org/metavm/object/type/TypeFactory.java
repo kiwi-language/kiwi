@@ -93,9 +93,13 @@ public abstract class TypeFactory {
                 klass.setName(klassDTO.name());
                 klass.setDesc(klassDTO.desc());
                 if(kind != klass.getKind()) {
+                    if(!context.isNewEntity(klass)) {
+                        if(kind == ClassKind.VALUE)
+                            batch.addToValueKlass(klass);
+                        else if (klass.getKind() == ClassKind.VALUE)
+                            batch.addValueToEntityKlass(klass);
+                    }
                     klass.setKind(kind);
-                    if(kind == ClassKind.VALUE && !context.isNewEntity(klass))
-                        batch.addToValueKlass(klass);
                 }
                 klass.setStruct(klassDTO.struct());
                 klass.setAbstract(klassDTO.isAbstract());

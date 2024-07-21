@@ -2,7 +2,6 @@ package org.metavm.task;
 
 import org.metavm.ddl.Commit;
 import org.metavm.entity.IEntityContext;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.instance.core.WAL;
@@ -36,8 +35,6 @@ public class DDL extends ScanTask implements WalTask, ParentTask {
         var tasks = Instances.applyDDL(
                 () -> batch.stream()
                         .map(InstanceReference::resolve)
-                        .filter(i -> i instanceof ClassInstance)
-                        .map(i -> (ClassInstance) i)
                         .iterator(),
                 commit, context);
         for (Task task : tasks) {
@@ -58,11 +55,13 @@ public class DDL extends ScanTask implements WalTask, ParentTask {
     protected void onScanOver(IEntityContext context) {
         if(activeSubTaskCount <= 0) {
             commit();
+            if(!commit.getValueToEntityKlassIds().isEmpty())
+                taskContext.bind(new DDLCleanUpTaskGroup(commit));
         }
     }
 
     public void commit() {
-        commit.finish();
+        commit.submit();
     }
 
     @Override

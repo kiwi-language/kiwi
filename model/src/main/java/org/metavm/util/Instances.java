@@ -544,46 +544,61 @@ public class Instances {
             throw new IllegalArgumentException(listType + " is not a List type");
     }
 
-    public static List<Task> applyDDL(Iterable<ClassInstance> instances, Commit commit, IEntityContext context) {
+    public static List<Task> applyDDL(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
         var newFields = NncUtils.map(commit.getNewFieldIds(), context::getField);
         var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
         var toChildFields = NncUtils.map(commit.getToChildFieldIds(), context::getField);
         var changingSuperKlasses = NncUtils.map(commit.getChangingSuperKlassIds(), context::getKlass);
         var toValueKlasses = NncUtils.map(commit.getToValueKlassIds(), context::getKlass);
+        var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
         var tasks = new ArrayList<Task>();
-        for (ClassInstance instance : instances) {
-            for (Field field : newFields) {
-                var k = instance.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
-                if (k != null) {
-                    var pf = k.findField(f -> f.getEffectiveTemplate() == field);
-                    initializeField(instance, pf, context);
+        for (DurableInstance instance : instances) {
+            if(instance instanceof ClassInstance clsInst) {
+                for (Field field : newFields) {
+                    var k = clsInst.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
+                    if (k != null) {
+                        var pf = k.findField(f -> f.getEffectiveTemplate() == field);
+                        initializeField(clsInst, pf, context);
+                    }
+                }
+                for (Field field : convertingFields) {
+                    var k = clsInst.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
+                    if (k != null) {
+                        var pf = k.findField(f -> f.getEffectiveTemplate() == field);
+                        convertField(clsInst, pf, context);
+                    }
+                }
+                for (Field field : toChildFields) {
+                    var k = clsInst.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
+                    if (k != null) {
+                        var pf = k.findField(f -> f.getEffectiveTemplate() == field);
+                        var value = clsInst.getField(pf);
+                        if (value instanceof InstanceReference r)
+                            r.resolve().setParent(clsInst, pf);
+                    }
+                }
+                for (Klass klass : changingSuperKlasses) {
+                    var k = clsInst.getKlass().findAncestorKlassByTemplate(klass);
+                    if (k != null)
+                        initializeSuper(clsInst, k, context);
+                }
+                for (Klass klass : toValueKlasses) {
+                    var k = clsInst.getKlass().findAncestorByTemplate(klass);
+                    if (k != null)
+                        handleToValueKlass(clsInst, tasks, context);
                 }
             }
-            for (Field field : convertingFields) {
-                var k = instance.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
-                if (k != null) {
-                    var pf = k.findField(f -> f.getEffectiveTemplate() == field);
-                    convertField(instance, pf, context);
-                }
-            }
-            for (Field field : toChildFields) {
-                var k = instance.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
-                if (k != null) {
-                    var pf = k.findField(f -> f.getEffectiveTemplate() == field);
-                    var value = instance.getField(pf);
-                    if(value instanceof InstanceReference r)
-                        r.resolve().setParent(instance, pf);
-                }
-            }
-            for (Klass klass : changingSuperKlasses) {
-                var k = instance.getKlass().findAncestorKlassByTemplate(klass);
-                if (k != null)
-                    initializeSuper(instance, k, context);
-            }
-            for (Klass klass : toValueKlasses) {
-                var k = instance.getKlass().findAncestorByTemplate(klass);
-                if(k != null)
-                    handleToValueKlass(instance, tasks, context);
+            for (Klass klass : valueToEntityKlasses) {
+               instance.forEachReference(r -> {
+                   if(r.isResolved()) {
+                       var resolved = r.resolve();
+                       if(resolved instanceof ClassInstance clsInst) {
+                           var k = clsInst.getKlass().findAncestorByTemplate(klass);
+                           if(k != null)
+                               r.setEager();
+                       }
+                   }
+               });
             }
         }
         return tasks;

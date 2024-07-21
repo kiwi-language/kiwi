@@ -1,3 +1,6 @@
 1 Assembler supports implicit default constructor.
 2 Disregarding mappings when creating version because mappings are always children of klass.
-3 Remove fields migrated and forwardingPointers from TreeLoadResult.
+3 Rename toValueKlasses field in SaveTypeBatch to entityToValueKlasses and toValueKlassIds in Commit to entityToValueKlassIds
+4 Rollback of a DDL task
+5 Support value-to-enum conversion and entity-to-enum conversion.
+6 BUG: InstanceContext.scan flattens the trees and returns all instance, making the exit condition of the ScanTask incorrect.

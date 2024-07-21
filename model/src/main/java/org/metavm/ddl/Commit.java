@@ -30,6 +30,8 @@ public class Commit extends Entity {
     private final ReadWriteArray<String> changingSuperKlassIds = addChild(new ReadWriteArray<>(String.class), "changingSuperKlassIds");
     @ChildEntity
     private final ReadWriteArray<String> toValueKlassIds = addChild(new ReadWriteArray<>(String.class), "toValueKlassIds");
+    @ChildEntity
+    private final ReadWriteArray<String> valueToEntityKlassIds = addChild(new ReadWriteArray<>(String.class), "valueToEntityKlassIds");
 
     private CommitState state = CommitState.RUNNING;
 
@@ -41,7 +43,8 @@ public class Commit extends Entity {
                   List<String> convertingFieldIds,
                   List<String> toChildFieldIds,
                   List<String> changingSuperKlassIds,
-                  List<String> toValueKlassIds) {
+                  List<String> toValueKlassIds,
+                  List<String> valueToEntityKlassIds) {
         this.wal = wal;
         this.requestJSON = NncUtils.toJSONString(request);
         this.request = request;
@@ -50,6 +53,7 @@ public class Commit extends Entity {
         this.toChildFieldIds.addAll(toChildFieldIds);
         this.changingSuperKlassIds.addAll(changingSuperKlassIds);
         this.toValueKlassIds.addAll(toValueKlassIds);
+        this.valueToEntityKlassIds.addAll(valueToEntityKlassIds);
     }
 
     public BatchSaveRequest getRequest() {
@@ -58,11 +62,21 @@ public class Commit extends Entity {
         return request;
     }
 
-    public void finish() {
-        if (state == CommitState.FINISHED)
-            throw new IllegalStateException("Commit already finished");
-        this.state = CommitState.FINISHED;
+    public void submit() {
+        if (state != CommitState.RUNNING)
+            throw new IllegalStateException("Commit is already submitted");
+        this.state = hasCleanUpWorks() ? CommitState.CLEANING_UP : CommitState.FINISHED;
         wal.commit();
+    }
+
+    public boolean hasCleanUpWorks() {
+        return !valueToEntityKlassIds.isEmpty();
+    }
+
+    public void finish() {
+        if(state == CommitState.FINISHED)
+            throw new IllegalStateException("Commit is already finished");
+        this.state = CommitState.FINISHED;
     }
 
     public Date getTime() {
@@ -91,6 +105,10 @@ public class Commit extends Entity {
 
     public List<String> getToValueKlassIds() {
         return toValueKlassIds.toList();
+    }
+
+    public List<String> getValueToEntityKlassIds() {
+        return valueToEntityKlassIds.toList();
     }
 
     public WAL getWal() {

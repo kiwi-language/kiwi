@@ -6,11 +6,13 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
+import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.MemInstanceStore;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.*;
+import org.metavm.task.EagerFlagClearer;
 import org.metavm.task.ForwardedFlagSetter;
 import org.metavm.task.ReferenceRedirector;
 import org.metavm.util.*;
@@ -323,6 +325,37 @@ public class DDLTest extends TestCase {
             MatcherAssert.assertThat(product.getObject("price"), CoreMatchers.instanceOf(ClassInstanceWrap.class));
             var price = (ClassInstanceWrap) product.get("price");
             Assert.assertNull(price.get("$id"));
+        }
+        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_before.masm", typeManager, false, entityContextFactory);
+        TestUtils.runTasks(1, 16, entityContextFactory);
+        var shoes1 = apiClient.getObject(shoesId);
+        var price1 = shoes1.get("price");
+        MatcherAssert.assertThat(price1, CoreMatchers.instanceOf(ClassInstanceWrap.class));
+        TestUtils.waitForDDLDone(entityContextFactory);
+        try(var context = newContext()) {
+            var commit = context.getEntity(Commit.class, commitId);
+            Assert.assertEquals(CommitState.CLEANING_UP, commit.getState());
+        }
+        var priceKlass3 = typeManager.getTypeByCode("Price").type();
+        Assert.assertEquals(ClassKind.CLASS.code(), priceKlass3.kind());
+        for (String productId : productIds) {
+            var product = apiClient.getObject(productId);
+            MatcherAssert.assertThat(product.get("price"), CoreMatchers.instanceOf(String.class));
+        }
+        TestUtils.waitForTaskDone(t -> t instanceof EagerFlagClearer, entityContextFactory);
+        try (var context = newContext()){
+            var commit = context.getEntity(Commit.class, commitId);
+            Assert.assertEquals(CommitState.FINISHED, commit.getState());
+            var instCtx = context.getInstanceContext();
+            var productKlass1 = context.getKlass(productKlass.id());
+            var priceField = productKlass1.getFieldByCode("price");
+            for (String productId : productIds) {
+                var productInst = (ClassInstance) instCtx.get(Id.parse(productId));
+                var priceRef = (InstanceReference) productInst.getField(priceField);
+                Assert.assertFalse(priceRef.isResolved());
+                Assert.assertFalse(priceRef.isEager());
+                Assert.assertFalse(priceRef.isValueReference());
+            }
         }
     }
 

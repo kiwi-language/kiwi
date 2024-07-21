@@ -200,13 +200,23 @@ public class ApiService extends EntityContextFactoryAware {
         return switch (instance) {
             case null -> null;
             case PrimitiveInstance primitiveInstance -> primitiveInstance.getValue();
-            case InstanceReference classInstance when classInstance.isObject() -> {
-                if (classInstance.resolveObject().isList())
-                    yield formatList(classInstance.resolveObject());
+            case InstanceReference reference -> {
+                if(asValue || reference.isValueReference()) {
+                    var resolved = reference.resolve();
+                    if(resolved instanceof ClassInstance clsInst) {
+                        if(clsInst.isList())
+                            yield formatList(clsInst);
+                        else
+                            yield formatValueObject(clsInst);
+                    }
+                    else if(resolved instanceof ArrayInstance array)
+                        yield formatArray(array);
+                    else
+                        throw new IllegalStateException("Unrecognized DurableInstance: " + resolved);
+                }
                 else
-                    yield classInstance.isValueReference() || asValue ? formatValueObject(classInstance.resolveObject()) : classInstance.getStringId();
+                    yield reference.getStringId();
             }
-            case InstanceReference arrayInstance when arrayInstance.isArray() -> formatArray(arrayInstance.resolveArray());
             default -> throw new BusinessException(ErrorCode.FAILED_TO_FORMAT_VALUE, instance);
         };
     }

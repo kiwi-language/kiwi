@@ -8,10 +8,7 @@ import org.metavm.event.rest.dto.FunctionChangeEvent;
 import org.metavm.event.rest.dto.TypeChangeEvent;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.IInstanceStore;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.TaggedPhysicalId;
-import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.type.TypeDef;
 import org.metavm.object.version.Version;
@@ -169,9 +166,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                 List<Task> tasks = new ArrayList<>();
                 if (commit != null) {
                     try (var loadedContext = entityContextFactory.newLoadedContext(appId, commit.getWal(), true)) {
-                        Iterable<ClassInstance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
-                                .filter(i -> i instanceof ClassInstance)
-                                .map(i -> (ClassInstance) i)
+                        Iterable<DurableInstance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
                                 .iterator();
                         tasks = Instances.applyDDL(instances, commit, loadedContext);
                         loadedContext.finish();

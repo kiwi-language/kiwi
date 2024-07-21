@@ -512,6 +512,22 @@ public class TestUtils {
         throw new IllegalStateException("Condition not met after " + 15 + " runs");
     }
 
+    public static void runTasks(int numRuns, int scanBatchSize, EntityContextFactory entityContextFactory) {
+        var transactionOps = new MockTransactionOperations();
+        var scheduler = new Scheduler(entityContextFactory, transactionOps);
+        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
+        scheduler.sendHeartbeat();
+        worker.sendHeartbeat();
+        scheduler.schedule();
+        ScanTask.BATCH_SIZE = scanBatchSize;
+        try {
+            worker.waitFor(t -> false, numRuns);
+        }
+        finally {
+            ScanTask.BATCH_SIZE = 256;
+        }
+    }
+
     private static long nextKlassTag() {
         return nextKlassTag++;
     }
