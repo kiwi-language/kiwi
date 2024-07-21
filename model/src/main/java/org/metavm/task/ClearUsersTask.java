@@ -1,8 +1,8 @@
 package org.metavm.task;
 
+import org.metavm.api.EntityType;
 import org.metavm.application.Application;
 import org.metavm.entity.EntityIndexKey;
-import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.user.PlatformUser;
 import org.metavm.user.PlatformUsers;
@@ -20,7 +20,7 @@ public class ClearUsersTask extends Task {
     }
 
     @Override
-    protected boolean run0(IEntityContext context) {
+    protected boolean run0(IEntityContext context, IEntityContext taskContext) {
         var app = context.getEntity(Application.class, appId);
         var users = context.query(
                 PlatformUser.IDX_APP.newQueryBuilder()

@@ -1,7 +1,7 @@
 package org.metavm.task;
 
-import org.metavm.application.Application;
 import org.metavm.api.EntityType;
+import org.metavm.application.Application;
 import org.metavm.entity.IEntityContext;
 
 import java.util.List;
@@ -25,7 +25,7 @@ public class RemoveAppTaskGroup extends TaskGroup {
     }
 
     @Override
-    protected void onTasksDone(IEntityContext context) {
+    protected void onTasksDone(IEntityContext context, IEntityContext taskContext) {
         context.remove(context.getEntity(Application.class, appId));
     }
 }

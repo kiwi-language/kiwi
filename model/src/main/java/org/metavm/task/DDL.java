@@ -1,5 +1,6 @@
 package org.metavm.task;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -11,16 +12,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Objects;
 
-public class DDL extends ScanTask implements WalTask, ParentTask {
+public class DDL extends ScanTask implements WalTask {
 
     private static final Logger logger = LoggerFactory.getLogger(DDL.class);
 
-    private int activeSubTaskCount;
     private final Commit commit;
-    private transient IEntityContext taskContext;
 
-    public DDL(Commit commit) {
+    DDL(Commit commit) {
         super("DDL " + NncUtils.formatDate(commit.getTime()));
         this.commit = commit;
     }
@@ -31,7 +31,7 @@ public class DDL extends ScanTask implements WalTask, ParentTask {
     }
 
     @Override
-    protected void process(List<InstanceReference> batch, IEntityContext context) {
+    protected void process(List<InstanceReference> batch, IEntityContext context, IEntityContext taskContext) {
         var tasks = Instances.applyDDL(
                 () -> batch.stream()
                         .map(InstanceReference::resolve)
@@ -39,25 +39,13 @@ public class DDL extends ScanTask implements WalTask, ParentTask {
                 commit, context);
         for (Task task : tasks) {
             taskContext.bind(task);
-            if(task instanceof SubTask subTask) {
-                activeSubTaskCount++;
-                subTask.setParentTask(this);
-            }
+            getGroup().addTask(task);
         }
     }
 
     @Override
-    public void setTaskContext(IEntityContext context) {
-        this.taskContext = context;
-    }
-
-    @Override
-    protected void onScanOver(IEntityContext context) {
-        if(activeSubTaskCount <= 0) {
-            commit();
-            if(!commit.getValueToEntityKlassIds().isEmpty())
-                taskContext.bind(new DDLCleanUpTaskGroup(commit));
-        }
+    public @NotNull DDLTaskGroup getGroup() {
+        return (DDLTaskGroup) Objects.requireNonNull(super.getGroup());
     }
 
     public void commit() {
@@ -74,15 +62,4 @@ public class DDL extends ScanTask implements WalTask, ParentTask {
         return true;
     }
 
-    @Override
-    public void onSubTaskFinished(Task task) {
-        if(--activeSubTaskCount <= 0 && isFinished()) {
-            commit();
-        }
-    }
-
-    @Override
-    public int getActiveSubTaskCount() {
-        return activeSubTaskCount;
-    }
 }

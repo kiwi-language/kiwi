@@ -20,35 +20,31 @@ public abstract class ScanTask extends Task {
         super(title);
     }
 
-    public final void processNewInstances(List<InstanceReference> newInstances, IEntityContext context) {
-        process(newInstances, context);
-    }
-
     @Override
-    protected boolean run0(IEntityContext context) {
+    protected boolean run0(IEntityContext context, IEntityContext taskContext) {
         ContextUtil.setEntityContext(context);
         var batch = scan(context.getInstanceContext(), cursor, BATCH_SIZE);
         if(NncUtils.isEmpty(batch)) {
-            onScanOver(context);
+            onScanOver(context, taskContext);
             return true;
         }
-        process(batch, context);
+        process(batch, context, taskContext);
         if(batch.size() >= BATCH_SIZE) {
             cursor = batch.get(batch.size() - 1).getTreeId();
             return false;
         }
         else {
-            onScanOver(context);
+            onScanOver(context, taskContext);
             return true;
         }
     }
 
-    protected void onScanOver(IEntityContext context) {}
+    protected void onScanOver(IEntityContext context, IEntityContext taskContext) {}
 
     protected abstract List<InstanceReference> scan(IInstanceContext context,
                                                     long cursor,
                                                     @SuppressWarnings("SameParameterValue") long limit);
 
-    protected abstract void process(List<InstanceReference> batch, IEntityContext context);
+    protected abstract void process(List<InstanceReference> batch, IEntityContext context, IEntityContext taskContext);
 
 }

@@ -20,10 +20,10 @@ public abstract class TaskGroup extends Entity {
         System.out.println(tasks);
     }
 
-    public void onDone(Task task, IEntityContext context) {
+    public void onDone(Task task, IEntityContext context, IEntityContext taskContext) {
         numDone++;
-        if(numDone == tasks.size()) {
-            onTasksDone(context);
+        if(isDone()) {
+            onTasksDone(context, taskContext);
         }
     }
 
@@ -34,7 +34,7 @@ public abstract class TaskGroup extends Entity {
             job.setGroup(this);
         }
         if(tasks.isEmpty()) {
-            onTasksDone(context);
+            onTasksDone(context, context);
         }
     }
 
@@ -44,7 +44,7 @@ public abstract class TaskGroup extends Entity {
 
     public abstract List<Task> createTasks(IEntityContext context);
 
-    protected abstract void onTasksDone(IEntityContext context);
+    protected abstract void onTasksDone(IEntityContext context, IEntityContext taskContext);
 
     public List<Task> getTasks() {
         return tasks.toList();

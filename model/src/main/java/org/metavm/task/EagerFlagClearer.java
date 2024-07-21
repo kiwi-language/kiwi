@@ -28,7 +28,7 @@ public class EagerFlagClearer extends ScanTask {
     }
 
     @Override
-    protected void process(List<InstanceReference> batch, IEntityContext context) {
+    protected void process(List<InstanceReference> batch, IEntityContext context, IEntityContext taskContext) {
         var valueToEntityKlasses = NncUtils.map(valueToEntityKlassIds, context::getKlass);
         for (InstanceReference reference : batch) {
             for (Klass klass : valueToEntityKlasses) {

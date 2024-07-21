@@ -41,7 +41,7 @@ public abstract class ScanByTypeTask extends ScanTask {
     }
 
     @Override
-    protected final void process(List<InstanceReference> batch, IEntityContext context) {
+    protected final void process(List<InstanceReference> batch, IEntityContext context, IEntityContext taskContext) {
         for (Instance instance : batch) {
             processInstance(instance, context);
         }

@@ -1,7 +1,9 @@
 package org.metavm.task;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.Entity;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.IndexDef;
 
 import javax.annotation.Nullable;
 
@@ -25,13 +27,13 @@ public abstract class Task extends Entity {
         this.title = title;
     }
 
-    protected abstract boolean run0(IEntityContext context);
+    protected abstract boolean run0(IEntityContext context, IEntityContext taskContext);
 
-    public void run(IEntityContext context) {
+    public void run(IEntityContext executionContext, IEntityContext taskContext) {
         numRuns++;
-        if(run0(context)) {
+        if(run0(executionContext, taskContext)) {
             if(group != null) {
-                group.onDone(this, context);
+                group.onDone(this, executionContext, taskContext);
             }
             state = TaskState.FINISHED;
         }

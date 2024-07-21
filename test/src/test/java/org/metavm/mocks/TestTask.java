@@ -14,7 +14,7 @@ public class TestTask extends Task {
     }
 
     @Override
-    protected boolean run0(IEntityContext context) {
+    protected boolean run0(IEntityContext context, IEntityContext taskContext) {
         return ++count >= 10;
     }
 

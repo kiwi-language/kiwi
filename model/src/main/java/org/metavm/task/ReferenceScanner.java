@@ -18,7 +18,7 @@ public abstract class ReferenceScanner extends Task {
     }
 
     @Override
-    protected boolean run0(IEntityContext context) {
+    protected boolean run0(IEntityContext context, IEntityContext taskContext) {
         var id = Id.parse(this.targetId);
         var referring = context.getInstanceContext().getByReferenceTargetId(id, next, BATCH_SIZE);
         if (!referring.isEmpty()) {

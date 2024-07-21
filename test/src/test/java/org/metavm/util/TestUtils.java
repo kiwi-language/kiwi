@@ -491,7 +491,7 @@ public class TestUtils {
         var transactionOps = new MockTransactionOperations();
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
         var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
-        waitForTaskDone(scheduler, worker, t -> t instanceof DDL);
+        waitForTaskGroupDone(scheduler, worker, t -> t instanceof DDLTaskGroup);
     }
 
     public static void waitForTaskDone(Predicate<Task> predicate, EntityContextFactory entityContextFactory) {
@@ -507,6 +507,17 @@ public class TestUtils {
         for (int i = 0; i < 3; i++) {
             scheduler.schedule();
             if(worker.waitFor(predicate, 5))
+                return;
+        }
+        throw new IllegalStateException("Condition not met after " + 15 + " runs");
+    }
+
+    public static void waitForTaskGroupDone(Scheduler scheduler, Worker worker, Predicate<TaskGroup> predicate) {
+        scheduler.sendHeartbeat();
+        worker.sendHeartbeat();
+        for (int i = 0; i < 3; i++) {
+            scheduler.schedule();
+            if(worker.waitForGroup(predicate, 5))
                 return;
         }
         throw new IllegalStateException("Condition not met after " + 15 + " runs");

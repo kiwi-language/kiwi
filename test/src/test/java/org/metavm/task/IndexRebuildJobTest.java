@@ -47,7 +47,7 @@ public class IndexRebuildJobTest extends TestCase {
             try (var context = newContext()) {
                 var job2 = context.getEntity(IndexRebuildTask.class, job.getId());
                 for (int i = 0; i < 50; i++) {
-                    if (job2.run0(context))
+                    if (job2.run0(context, context))
                         break;
                 }
                 context.finish();

@@ -23,7 +23,7 @@ public class ReferenceCleanupTask extends Task {
     }
 
     @Override
-    public boolean run0(IEntityContext context) {
+    public boolean run0(IEntityContext context, IEntityContext taskContext) {
         var instanceContext = context.getInstanceContext();
         var instances = instanceContext.getByReferenceTargetId(Id.parse(targetId), nextTreeId, BATCH_SIZE);
         for (var instance : instances) {

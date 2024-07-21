@@ -20,7 +20,7 @@ public class IndexRebuildTask extends ScanTask {
     }
 
     @Override
-    protected void process(List<InstanceReference> batch, IEntityContext context) {
+    protected void process(List<InstanceReference> batch, IEntityContext context, IEntityContext taskContext) {
         batch.forEach(i -> i.resolve().incVersion());
     }
 

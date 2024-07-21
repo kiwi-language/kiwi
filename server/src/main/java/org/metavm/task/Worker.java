@@ -57,41 +57,19 @@ public class Worker extends EntityContextFactoryAware {
     public boolean waitFor(Predicate<Task> predicate, int maxRuns) {
         for (int i = 0; i < maxRuns; i++) {
             var tasks = run0();
-            if (NncUtils.anyMatch(tasks, t -> isTaskFinished(t, predicate)))
+            if (NncUtils.anyMatch(tasks, t -> t.isFinished() && predicate.test(t)))
                 return true;
         }
         return false;
     }
 
-    private boolean isTaskFinished(Task task, Predicate<Task> predicate) {
-        var t = task;
-        do {
-            if (!areAllTasksFinished(t))
-                return false;
-            if (predicate.test(t))
+    public boolean waitForGroup(Predicate<TaskGroup> predicate, int maxRuns) {
+        for (int i = 0; i < maxRuns; i++) {
+            var tasks = run0();
+            if (NncUtils.anyMatch(tasks, t -> t.getGroup() != null && t.getGroup().isDone() && predicate.test(t.getGroup())))
                 return true;
-            if (t instanceof SubTask subTask)
-                t = (Task) subTask.getParentTask();
-            else
-                t = null;
-        } while (t != null);
-        return false;
-    }
-
-    private void handleTaskFinish(Task task, IEntityContext context) {
-        if (task instanceof SubTask subTask && subTask.getParentTask() != null) {
-            var parentTask = (Task & ParentTask) subTask.getParentTask();
-            parentTask.onSubTaskFinished(task);
-            if(areAllTasksFinished(parentTask))
-                handleTaskFinish(parentTask, context);
         }
-        context.remove(task);
-    }
-
-    private boolean areAllTasksFinished(Task task) {
-        if(!task.isFinished())
-            return false;
-        return !(task instanceof ParentTask parentTask) || parentTask.getActiveSubTaskCount() == 0;
+        return false;
     }
 
     public List<Task> run0() {
@@ -121,13 +99,12 @@ public class Worker extends EntityContextFactoryAware {
                 boolean done;
                 try {
                     if (appTask instanceof WalTask walTask) {
-                        walTask.setTaskContext(appContext);
                         try (var walContext = entityContextFactory.newLoadedContext(shadowTask.getAppId(), walTask.getWAL(), walTask.isMigrationDisabled())) {
-                            done = runTask0(appTask, walContext);
+                            done = runTask0(appTask, walContext, appContext);
                             walContext.finish();
                         }
                     } else
-                        done = runTask0(appTask, appContext);
+                        done = runTask0(appTask, appContext, appContext);
                 }
                 catch (Exception e) {
                     logger.error("Failed to execute task {}", appTask.getTitle(), e);
@@ -138,8 +115,8 @@ public class Worker extends EntityContextFactoryAware {
                     if (group != null) {
                         if (group.isDone())
                             appContext.remove(group);
-                    } else if(areAllTasksFinished(appTask))
-                        handleTaskFinish(appTask, appContext);
+                    } else
+                        appContext.remove(appTask);
                     try (var context = newPlatformContext()) {
                         context.remove(context.getEntity(ShadowTask.class, shadowTask.getId()));
                         context.finish();
@@ -151,8 +128,8 @@ public class Worker extends EntityContextFactoryAware {
         });
     }
 
-    private boolean runTask0(Task appTask, IEntityContext appContext) {
-        appTask.run(appContext);
+    private boolean runTask0(Task appTask, IEntityContext executionContext, IEntityContext taskContext) {
+        appTask.run(executionContext, taskContext);
         return appTask.isFinished();
     }
 
