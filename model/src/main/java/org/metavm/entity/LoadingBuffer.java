@@ -51,7 +51,7 @@ public class LoadingBuffer {
         var trees = tryGetTree(id);
         if(trees.isEmpty())
             throw new TreeNotFoundException();
-        return new TreeLoadResult(trees, false, List.of());
+        return new TreeLoadResult(trees);
     }
 
     public List<Id> getIdsInTree(long treeId) {

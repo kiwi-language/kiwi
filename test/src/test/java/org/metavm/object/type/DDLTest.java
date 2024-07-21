@@ -249,7 +249,7 @@ public class DDLTest extends TestCase {
         catch (IllegalStateException ignored) {}
     }
 
-    public void testClassToValue() {
+    public void testEntityToValueConversion() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_before.masm", typeManager, entityContextFactory);
         var currencyKlass = typeManager.getTypeByCode("Currency").type();
         var priceKlass = typeManager.getTypeByCode("Price").type();

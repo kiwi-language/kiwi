@@ -85,9 +85,6 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
                     readInstance(input, instances);
                 }
             }
-            if(result.migrated()) {
-                establishForwarding(result.forwardingPointers());
-            }
             return instances;
         } catch (TreeNotFoundException e) {
             throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id);
