@@ -7,21 +7,24 @@ import org.metavm.entity.IEntityContext;
 import java.util.List;
 
 @EntityType
-public class DDLCleanUpTaskGroup extends TaskGroup {
+public class DDLPreparationTaskGroup extends DynamicTaskGroup {
 
     private final Commit commit;
 
-    public DDLCleanUpTaskGroup(Commit commit) {
+    public DDLPreparationTaskGroup(Commit commit) {
         this.commit = commit;
     }
 
     @Override
     public List<Task> createTasks(IEntityContext context) {
-        return List.of(new EagerFlagClearer(commit));
+        return List.of(new DDLPreparationTask(commit));
     }
 
     @Override
     protected void onCompletion(IEntityContext context, IEntityContext taskContext) {
-        commit.finish();
+        commit.submit();
+        if(!commit.getValueToEntityKlassIds().isEmpty())
+            taskContext.bind(new DDLFinalizationTaskGroup(commit));
     }
+
 }

@@ -22,7 +22,7 @@ import org.metavm.object.type.rest.dto.*;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.version.Versions;
 import org.metavm.task.AddFieldTaskGroup;
-import org.metavm.task.DDLTaskGroup;
+import org.metavm.task.DDLPreparationTaskGroup;
 import org.metavm.task.TaskManager;
 import org.metavm.util.BusinessException;
 import org.metavm.util.DebugEnv;
@@ -288,7 +288,7 @@ public class TypeManager extends EntityContextFactoryAware {
                 bufferingContext.finish();
             }
             var commit = context.bind(batch.buildCommit(wal));
-            context.bind(new DDLTaskGroup(commit));
+            context.bind(new DDLPreparationTaskGroup(commit));
             context.finish();
             return commit.getStringId();
         }

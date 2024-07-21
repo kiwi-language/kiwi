@@ -14,13 +14,13 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Objects;
 
-public class DDL extends ScanTask implements WalTask {
+public class DDLPreparationTask extends ScanTask implements WalTask {
 
-    private static final Logger logger = LoggerFactory.getLogger(DDL.class);
+    private static final Logger logger = LoggerFactory.getLogger(DDLPreparationTask.class);
 
     private final Commit commit;
 
-    DDL(Commit commit) {
+    DDLPreparationTask(Commit commit) {
         super("DDL " + NncUtils.formatDate(commit.getTime()));
         this.commit = commit;
     }
@@ -49,8 +49,8 @@ public class DDL extends ScanTask implements WalTask {
     }
 
     @Override
-    public @NotNull DDLTaskGroup getGroup() {
-        return (DDLTaskGroup) Objects.requireNonNull(super.getGroup());
+    public @NotNull DDLPreparationTaskGroup getGroup() {
+        return (DDLPreparationTaskGroup) Objects.requireNonNull(super.getGroup());
     }
 
     public void commit() {

@@ -12,11 +12,11 @@ import org.metavm.util.NncUtils;
 import java.util.List;
 
 @EntityType
-public class EagerFlagClearer extends ScanTask {
+public class DDLFinalizationTask extends ScanTask {
 
     private final Commit commit;
 
-    protected EagerFlagClearer(Commit commit) {
+    protected DDLFinalizationTask(Commit commit) {
         super("DDLFinalizationTask");
         this.commit = commit;
     }

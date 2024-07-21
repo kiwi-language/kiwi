@@ -7,24 +7,21 @@ import org.metavm.entity.IEntityContext;
 import java.util.List;
 
 @EntityType
-public class DDLTaskGroup extends DynamicTaskGroup {
+public class DDLFinalizationTaskGroup extends TaskGroup {
 
     private final Commit commit;
 
-    public DDLTaskGroup(Commit commit) {
+    public DDLFinalizationTaskGroup(Commit commit) {
         this.commit = commit;
     }
 
     @Override
     public List<Task> createTasks(IEntityContext context) {
-        return List.of(new DDL(commit));
+        return List.of(new DDLFinalizationTask(commit));
     }
 
     @Override
     protected void onCompletion(IEntityContext context, IEntityContext taskContext) {
-        commit.submit();
-        if(!commit.getValueToEntityKlassIds().isEmpty())
-            taskContext.bind(new DDLCleanUpTaskGroup(commit));
+        commit.finish();
     }
-
 }

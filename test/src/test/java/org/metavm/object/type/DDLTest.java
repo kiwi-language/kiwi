@@ -12,7 +12,7 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.entity.MemInstanceStore;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.*;
-import org.metavm.task.EagerFlagClearer;
+import org.metavm.task.DDLFinalizationTask;
 import org.metavm.task.DDLRollbackTaskGroup;
 import org.metavm.task.ForwardedFlagSetter;
 import org.metavm.task.ReferenceRedirector;
@@ -340,7 +340,7 @@ public class DDLTest extends TestCase {
             var product = apiClient.getObject(productId);
             MatcherAssert.assertThat(product.get("price"), CoreMatchers.instanceOf(String.class));
         }
-        TestUtils.waitForTaskDone(t -> t instanceof EagerFlagClearer, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof DDLFinalizationTask, entityContextFactory);
         try (var context = newContext()){
             var commit = context.getEntity(Commit.class, commitId);
             Assert.assertEquals(CommitState.FINISHED, commit.getState());

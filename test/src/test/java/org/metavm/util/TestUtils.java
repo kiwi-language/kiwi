@@ -488,7 +488,7 @@ public class TestUtils {
     }
 
     public static void waitForDDLDone(EntityContextFactory entityContextFactory) {
-        waitForTaskGroupDone(t -> t instanceof DDLTaskGroup, entityContextFactory);
+        waitForTaskGroupDone(t -> t instanceof DDLPreparationTaskGroup, entityContextFactory);
     }
 
     public static void waitForTaskDone(Predicate<Task> predicate, EntityContextFactory entityContextFactory) {
