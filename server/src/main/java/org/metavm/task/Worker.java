@@ -57,7 +57,7 @@ public class Worker extends EntityContextFactoryAware {
     public boolean waitFor(Predicate<Task> predicate, int maxRuns) {
         for (int i = 0; i < maxRuns; i++) {
             var tasks = run0();
-            if (NncUtils.anyMatch(tasks, t -> t.isFinished() && predicate.test(t)))
+            if (NncUtils.anyMatch(tasks, t -> t.isCompleted() && predicate.test(t)))
                 return true;
         }
         return false;
@@ -66,7 +66,7 @@ public class Worker extends EntityContextFactoryAware {
     public boolean waitForGroup(Predicate<TaskGroup> predicate, int maxRuns) {
         for (int i = 0; i < maxRuns; i++) {
             var tasks = run0();
-            if (NncUtils.anyMatch(tasks, t -> t.getGroup() != null && t.getGroup().isDone() && predicate.test(t.getGroup())))
+            if (NncUtils.anyMatch(tasks, t -> t.getGroup() != null && t.getGroup().isCompleted() && predicate.test(t.getGroup())))
                 return true;
         }
         return false;
@@ -113,7 +113,7 @@ public class Worker extends EntityContextFactoryAware {
                 if (done) {
                     var group = appTask.getGroup();
                     if (group != null) {
-                        if (group.isDone())
+                        if (group.isCompleted())
                             appContext.remove(group);
                     } else
                         appContext.remove(appTask);
@@ -130,7 +130,7 @@ public class Worker extends EntityContextFactoryAware {
 
     private boolean runTask0(Task appTask, IEntityContext executionContext, IEntityContext taskContext) {
         appTask.run(executionContext, taskContext);
-        return appTask.isFinished();
+        return appTask.isCompleted();
     }
 
 }

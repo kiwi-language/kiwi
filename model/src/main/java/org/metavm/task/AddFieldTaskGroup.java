@@ -33,7 +33,7 @@ public class AddFieldTaskGroup extends TaskGroup {
     }
 
     @Override
-    public void onTasksDone(IEntityContext context, IEntityContext taskContext) {
+    public void onCompletion(IEntityContext context, IEntityContext taskContext) {
         field.setState(MetadataState.READY);
     }
 

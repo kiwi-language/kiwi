@@ -11,7 +11,7 @@ import java.util.List;
 @EntityType
 public abstract class TaskGroup extends Entity {
 
-    private long numDone;
+    private long completedTaskCount;
 
     @ChildEntity
     private final ChildArray<Task> tasks = addChild(new ChildArray<>(Task.class), "tasks");
@@ -20,10 +20,10 @@ public abstract class TaskGroup extends Entity {
         System.out.println(tasks);
     }
 
-    public void onDone(Task task, IEntityContext context, IEntityContext taskContext) {
-        numDone++;
-        if(isDone()) {
-            onTasksDone(context, taskContext);
+    public void onTaskCompletion(Task task, IEntityContext context, IEntityContext taskContext) {
+        completedTaskCount++;
+        if(isCompleted()) {
+            onCompletion(context, taskContext);
         }
     }
 
@@ -34,17 +34,17 @@ public abstract class TaskGroup extends Entity {
             job.setGroup(this);
         }
         if(tasks.isEmpty()) {
-            onTasksDone(context, context);
+            onCompletion(context, context);
         }
     }
 
-    public boolean isDone() {
-        return numDone == tasks.size();
+    public boolean isCompleted() {
+        return completedTaskCount == tasks.size();
     }
 
     public abstract List<Task> createTasks(IEntityContext context);
 
-    protected abstract void onTasksDone(IEntityContext context, IEntityContext taskContext);
+    protected abstract void onCompletion(IEntityContext context, IEntityContext taskContext);
 
     public List<Task> getTasks() {
         return tasks.toList();

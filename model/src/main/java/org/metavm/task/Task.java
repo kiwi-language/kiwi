@@ -11,15 +11,15 @@ import javax.annotation.Nullable;
 public abstract class Task extends Entity {
 
     public static final IndexDef<Task> IDX_STATE_LAST_RUN_AT = new IndexDef<>(
-            Task.class,false, "state", "lastRunAt"
+            Task.class,false, "state", "lastRunTimestamp"
     );
 
     protected static final int BATCH_SIZE = 1000;
 
     private final String title;
     private TaskState state = TaskState.RUNNABLE;
-    private long lastRunAt;
-    private long numRuns;
+    private long lastRunTimestamp;
+    private long runCount;
     @Nullable
     private TaskGroup group;
 
@@ -30,12 +30,12 @@ public abstract class Task extends Entity {
     protected abstract boolean run0(IEntityContext context, IEntityContext taskContext);
 
     public void run(IEntityContext executionContext, IEntityContext taskContext) {
-        numRuns++;
+        runCount++;
         if(run0(executionContext, taskContext)) {
             if(group != null) {
-                group.onDone(this, executionContext, taskContext);
+                group.onTaskCompletion(this, executionContext, taskContext);
             }
-            state = TaskState.FINISHED;
+            state = TaskState.COMPLETED;
         }
         else {state = TaskState.RUNNABLE;}
     }
@@ -54,12 +54,12 @@ public abstract class Task extends Entity {
         return title;
     }
 
-    public long getNumRuns() {
-        return numRuns;
+    public long getRunCount() {
+        return runCount;
     }
 
-    public void setLastRunAt(long lastRunAt) {
-        this.lastRunAt = lastRunAt;
+    public void setLastRunTimestamp(long lastRunTimestamp) {
+        this.lastRunTimestamp = lastRunTimestamp;
     }
 
     public TaskState getState() {
@@ -74,16 +74,16 @@ public abstract class Task extends Entity {
         return state == TaskState.RUNNING;
     }
 
-    public boolean isFinished() {
-        return state == TaskState.FINISHED;
+    public boolean isCompleted() {
+        return state == TaskState.COMPLETED;
     }
 
     public void setState(TaskState state) {
         this.state = state;
     }
 
-    public long getLastRunAt() {
-        return lastRunAt;
+    public long getLastRunTimestamp() {
+        return lastRunTimestamp;
     }
 
 }

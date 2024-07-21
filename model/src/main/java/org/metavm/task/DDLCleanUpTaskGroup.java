@@ -25,7 +25,7 @@ public class DDLCleanUpTaskGroup extends TaskGroup {
     }
 
     @Override
-    protected void onTasksDone(IEntityContext context, IEntityContext taskContext) {
+    protected void onCompletion(IEntityContext context, IEntityContext taskContext) {
         commit.finish();
     }
 }

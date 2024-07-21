@@ -25,7 +25,7 @@ public class RemoveAppTaskGroup extends TaskGroup {
     }
 
     @Override
-    protected void onTasksDone(IEntityContext context, IEntityContext taskContext) {
+    protected void onCompletion(IEntityContext context, IEntityContext taskContext) {
         context.remove(context.getEntity(Application.class, appId));
     }
 }

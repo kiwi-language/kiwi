@@ -8,7 +8,7 @@ public enum TaskState {
 
     RUNNABLE(1),
     RUNNING(2),
-    FINISHED(9);
+    COMPLETED(9);
 
     private final int code;
 

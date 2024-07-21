@@ -21,13 +21,10 @@ public class DDLTaskGroup extends DynamicTaskGroup {
     }
 
     @Override
-    protected void onTasksDone(IEntityContext context, IEntityContext taskContext) {
-        commit();
+    protected void onCompletion(IEntityContext context, IEntityContext taskContext) {
+        commit.submit();
         if(!commit.getValueToEntityKlassIds().isEmpty())
             taskContext.bind(new DDLCleanUpTaskGroup(commit));
     }
 
-    public void commit() {
-        commit.submit();
-    }
 }

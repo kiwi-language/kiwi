@@ -13,19 +13,19 @@ public abstract class DynamicTaskGroup extends TaskGroup {
     }
 
     @Override
-    public void onDone(Task task, IEntityContext context, IEntityContext taskContext) {
+    public void onTaskCompletion(Task task, IEntityContext context, IEntityContext taskContext) {
         activeTaskCount--;
         if(getTasks().contains(task))
-            super.onDone(task, context, taskContext);
+            super.onTaskCompletion(task, context, taskContext);
         else {
             taskContext.remove(task);
-            if(isDone())
-                onTasksDone(context, taskContext);
+            if(isCompleted())
+                onCompletion(context, taskContext);
         }
     }
 
     @Override
-    public boolean isDone() {
+    public boolean isCompleted() {
         return activeTaskCount <= 0;
     }
 
