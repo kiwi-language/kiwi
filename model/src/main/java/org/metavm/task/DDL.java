@@ -44,6 +44,11 @@ public class DDL extends ScanTask implements WalTask {
     }
 
     @Override
+    protected void onFailure(IEntityContext context, IEntityContext taskContext) {
+        taskContext.bind(new DDLRollbackTaskGroup());
+    }
+
+    @Override
     public @NotNull DDLTaskGroup getGroup() {
         return (DDLTaskGroup) Objects.requireNonNull(super.getGroup());
     }

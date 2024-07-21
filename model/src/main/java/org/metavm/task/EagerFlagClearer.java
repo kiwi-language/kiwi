@@ -1,9 +1,8 @@
 package org.metavm.task;
 
-import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
+import org.metavm.ddl.Commit;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.InstanceReference;
@@ -14,12 +13,12 @@ import java.util.List;
 
 @EntityType
 public class EagerFlagClearer extends ScanTask {
-    @ChildEntity
-    private final ReadWriteArray<String> valueToEntityKlassIds = addChild(new ReadWriteArray<>(String.class), "valueToEntityKlassIds");
 
-    protected EagerFlagClearer(List<String> valueToEntityKlassIds) {
-        super("EagerFlagClearer");
-        this.valueToEntityKlassIds.addAll(valueToEntityKlassIds);
+    private final Commit commit;
+
+    protected EagerFlagClearer(Commit commit) {
+        super("DDLFinalizationTask");
+        this.commit = commit;
     }
 
     @Override
@@ -29,7 +28,7 @@ public class EagerFlagClearer extends ScanTask {
 
     @Override
     protected void process(List<InstanceReference> batch, IEntityContext context, IEntityContext taskContext) {
-        var valueToEntityKlasses = NncUtils.map(valueToEntityKlassIds, context::getKlass);
+        var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
         for (InstanceReference reference : batch) {
             for (Klass klass : valueToEntityKlasses) {
                 var instance = reference.resolve();

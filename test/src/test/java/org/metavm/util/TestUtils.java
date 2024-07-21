@@ -488,10 +488,7 @@ public class TestUtils {
     }
 
     public static void waitForDDLDone(EntityContextFactory entityContextFactory) {
-        var transactionOps = new MockTransactionOperations();
-        var scheduler = new Scheduler(entityContextFactory, transactionOps);
-        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
-        waitForTaskGroupDone(scheduler, worker, t -> t instanceof DDLTaskGroup);
+        waitForTaskGroupDone(t -> t instanceof DDLTaskGroup, entityContextFactory);
     }
 
     public static void waitForTaskDone(Predicate<Task> predicate, EntityContextFactory entityContextFactory) {
@@ -512,7 +509,10 @@ public class TestUtils {
         throw new IllegalStateException("Condition not met after " + 15 + " runs");
     }
 
-    public static void waitForTaskGroupDone(Scheduler scheduler, Worker worker, Predicate<TaskGroup> predicate) {
+    public static void waitForTaskGroupDone(Predicate<TaskGroup> predicate, EntityContextFactory entityContextFactory) {
+        var transactionOps = new MockTransactionOperations();
+        var scheduler = new Scheduler(entityContextFactory, transactionOps);
+        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
         scheduler.sendHeartbeat();
         worker.sendHeartbeat();
         for (int i = 0; i < 3; i++) {

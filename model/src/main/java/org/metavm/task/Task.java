@@ -30,14 +30,29 @@ public abstract class Task extends Entity {
     protected abstract boolean run0(IEntityContext context, IEntityContext taskContext);
 
     public void run(IEntityContext executionContext, IEntityContext taskContext) {
-        runCount++;
-        if(run0(executionContext, taskContext)) {
-            if(group != null) {
-                group.onTaskCompletion(this, executionContext, taskContext);
+        try {
+            runCount++;
+            if (run0(executionContext, taskContext)) {
+                if (group != null) {
+                    group.onTaskCompletion(this, executionContext, taskContext);
+                }
+                state = TaskState.COMPLETED;
+            } else {
+                state = TaskState.RUNNABLE;
             }
-            state = TaskState.COMPLETED;
         }
-        else {state = TaskState.RUNNABLE;}
+        catch (Exception e) {
+            logger.error("Failed to run task {}-{}", getTitle(), getStringId(), e);
+            try {
+                onFailure(executionContext, taskContext);
+            }
+            catch (Exception e1) {
+                logger.error("Failed to execute onFailure for task {}-{}", getTitle(), getStringId(), e1);
+            }
+            state = TaskState.FAILED;
+            if(group != null)
+                group.onTaskFailure(this, executionContext, taskContext);
+        }
     }
 
 
@@ -78,6 +93,14 @@ public abstract class Task extends Entity {
         return state == TaskState.COMPLETED;
     }
 
+    public boolean isFailed() {
+        return state == TaskState.FAILED;
+    }
+
+    public boolean isTerminated() {
+        return isCompleted() || isFailed();
+    }
+
     public void setState(TaskState state) {
         this.state = state;
     }
@@ -86,4 +109,6 @@ public abstract class Task extends Entity {
         return lastRunTimestamp;
     }
 
+    protected void onFailure(IEntityContext context, IEntityContext taskContext) {
+    }
 }

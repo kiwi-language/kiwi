@@ -96,24 +96,30 @@ public class Worker extends EntityContextFactoryAware {
             try (var appContext = newContext(shadowTask.getAppId())) {
                 var appTask = appContext.getEntity(Task.class, shadowTask.getAppTaskId());
                 logger.info("Running task {}", EntityUtils.getRealType(appTask).getSimpleName());
-                boolean done;
+                boolean terminated;
                 try {
                     if (appTask instanceof WalTask walTask) {
                         try (var walContext = entityContextFactory.newLoadedContext(shadowTask.getAppId(), walTask.getWAL(), walTask.isMigrationDisabled())) {
-                            done = runTask0(appTask, walContext, appContext);
-                            walContext.finish();
+                            terminated = runTask0(appTask, walContext, appContext);
+                            if(!appTask.isFailed())
+                                walContext.finish();
                         }
-                    } else
-                        done = runTask0(appTask, appContext, appContext);
+                    } else {
+                        try (var executionContext = newContext(shadowTask.getAppId())) {
+                            terminated = runTask0(appTask, executionContext, appContext);
+                            if(!appTask.isFailed())
+                                executionContext.finish();
+                        }
+                    }
                 }
                 catch (Exception e) {
                     logger.error("Failed to execute task {}", appTask.getTitle(), e);
-                    done = true;
+                    terminated = true;
                 }
-                if (done) {
+                if (terminated) {
                     var group = appTask.getGroup();
                     if (group != null) {
-                        if (group.isCompleted())
+                        if (group.isTerminated())
                             appContext.remove(group);
                     } else
                         appContext.remove(appTask);
@@ -130,7 +136,7 @@ public class Worker extends EntityContextFactoryAware {
 
     private boolean runTask0(Task appTask, IEntityContext executionContext, IEntityContext taskContext) {
         appTask.run(executionContext, taskContext);
-        return appTask.isCompleted();
+        return appTask.isTerminated();
     }
 
 }

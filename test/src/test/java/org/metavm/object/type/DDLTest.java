@@ -13,6 +13,7 @@ import org.metavm.entity.MemInstanceStore;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.*;
 import org.metavm.task.EagerFlagClearer;
+import org.metavm.task.DDLRollbackTaskGroup;
 import org.metavm.task.ForwardedFlagSetter;
 import org.metavm.task.ReferenceRedirector;
 import org.metavm.util.*;
@@ -244,11 +245,8 @@ public class DDLTest extends TestCase {
                 "inventory", inventoryId,
                 "price", 20
         )));
-        try {
-            MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, entityContextFactory);
-            Assert.fail("DDL should have failed");
-        }
-        catch (IllegalStateException ignored) {}
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
+        TestUtils.waitForTaskGroupDone(g -> g instanceof DDLRollbackTaskGroup, entityContextFactory);
     }
 
     public void testEntityToValueConversion() {

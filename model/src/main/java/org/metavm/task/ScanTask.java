@@ -24,16 +24,15 @@ public abstract class ScanTask extends Task {
     protected boolean run0(IEntityContext context, IEntityContext taskContext) {
         ContextUtil.setEntityContext(context);
         var batch = scan(context.getInstanceContext(), cursor, BATCH_SIZE);
-        if(NncUtils.isEmpty(batch)) {
+        if (NncUtils.isEmpty(batch)) {
             onScanOver(context, taskContext);
             return true;
         }
         process(batch, context, taskContext);
-        if(batch.size() >= BATCH_SIZE) {
+        if (batch.size() >= BATCH_SIZE) {
             cursor = batch.get(batch.size() - 1).getTreeId();
             return false;
-        }
-        else {
+        } else {
             onScanOver(context, taskContext);
             return true;
         }

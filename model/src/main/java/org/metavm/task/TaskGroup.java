@@ -12,6 +12,7 @@ import java.util.List;
 public abstract class TaskGroup extends Entity {
 
     private long completedTaskCount;
+    private boolean failed;
 
     @ChildEntity
     private final ChildArray<Task> tasks = addChild(new ChildArray<>(Task.class), "tasks");
@@ -27,6 +28,10 @@ public abstract class TaskGroup extends Entity {
         }
     }
 
+    public void onTaskFailure(Task task, IEntityContext context, IEntityContext taskContext) {
+        failed = true;
+    }
+
     @Override
     public void onBind(IEntityContext context) {
         tasks.addChildren(createTasks(context));
@@ -40,6 +45,14 @@ public abstract class TaskGroup extends Entity {
 
     public boolean isCompleted() {
         return completedTaskCount == tasks.size();
+    }
+
+    public boolean isFailed() {
+        return failed;
+    }
+
+    public boolean isTerminated() {
+        return isCompleted() || isFailed();
     }
 
     public abstract List<Task> createTasks(IEntityContext context);
