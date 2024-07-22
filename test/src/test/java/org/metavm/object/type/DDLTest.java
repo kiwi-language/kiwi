@@ -229,7 +229,7 @@ public class DDLTest extends TestCase {
 
     }
 
-    public void testDDLFailure() {
+    public void testDDLRollback() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
         var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
                 "name", "Shoes",
