@@ -151,4 +151,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     InstanceInput createInstanceInput(InputStream stream);
 
+    long getTimeout();
+
+    void setTimeout(long timeout);
 }

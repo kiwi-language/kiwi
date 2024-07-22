@@ -5,6 +5,7 @@ import org.metavm.object.instance.TreeNotFoundException;
 import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.DurableInstanceVisitor;
 import org.metavm.object.instance.core.Id;
+import org.metavm.util.Constants;
 
 import java.util.List;
 
@@ -39,7 +40,10 @@ public class ForwardedFlagSetter extends ReferenceScanner {
         try {
             var target = context.getInstanceContext().get(id);
             target.switchId();
-            context.bind(new ReferenceRedirector(id.toString()));
+            var redirector = new ReferenceRedirector(id.toString());
+            if(Constants.SESSION_TIMEOUT != -1)
+                redirector.setStartAt(System.currentTimeMillis() + (Constants.SESSION_TIMEOUT << 1));
+            context.bind(redirector);
         }
         catch (TreeNotFoundException ignored) {
         }

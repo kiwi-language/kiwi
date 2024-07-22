@@ -19,7 +19,7 @@ public class DebugEnv {
 
     public static volatile boolean removeCheckVerbose = false;
 
-    public static volatile boolean recordPath = true;
+    public static volatile boolean recordPath = false;
 
     public static volatile boolean logApiParsing = true;
 

@@ -117,7 +117,7 @@ public class DDLTest extends TestCase {
                 Assert.assertFalse(invInst.isRoot());
             }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof ForwardedFlagSetter, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof ForwardedFlagSetter, 60L, entityContextFactory);
         var newInventorId = TestUtils.doInTransaction(() -> {
            try(var context = newContext()) {
                var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
@@ -131,7 +131,7 @@ public class DDLTest extends TestCase {
                return invInst.getId();
            }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirector, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirector, 60L, entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var boxInst = (ClassInstance) instCtx.get(Id.parse(boxId));
@@ -164,7 +164,7 @@ public class DDLTest extends TestCase {
                 Assert.assertEquals(newInventorId, invInst.getId());
             }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof ForwardedFlagSetter, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof ForwardedFlagSetter, 60L, entityContextFactory);
         // Ensure removal of a referenced object is prevented even when the object is migrating.
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
@@ -181,7 +181,7 @@ public class DDLTest extends TestCase {
                 }
             }
         });
-        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirector, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirector, 60L, entityContextFactory);
         try(var context = newContext()) {
             try {
                 context.getInstanceContext().get(newInventorId);
@@ -355,6 +355,82 @@ public class DDLTest extends TestCase {
                 Assert.assertFalse(priceRef.isValueReference());
             }
         }
+    }
+
+    public void testRaceCondition() throws InterruptedException {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "Shoes",
+                "inventory", Map.of(
+                        "quantity", 100
+                ),
+                "price", 100
+        )));
+        var shoes = apiClient.getObject(shoesId);
+        var inventoryId = shoes.getString("inventory");
+        var boxIds = new ArrayList<String>();
+        for (int i = 0; i < 16; i++) {
+            var boxId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Box<Inventory>", Map.of(
+                    "item", inventoryId
+            )));
+            boxIds.add(boxId);
+        }
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, entityContextFactory);
+//        Constants.SESSION_TIMEOUT = 300;
+        var newInventoryId = TestUtils.doInTransaction(() -> {
+            try(var context = newContext()) {
+                var instCtx = context.getInstanceContext();
+                var invInst = instCtx.get(Id.parse(inventoryId));
+                context.finish();
+                return invInst.getCurrentId().toString();
+            }
+        });
+        Assert.assertNotEquals(inventoryId, newInventoryId);
+        var monitor = new Object();
+        var ref = new Object() {
+          boolean timeout;
+        };
+        var thread = new Thread(() -> TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = newContext()) {
+                var instCtx = context.getInstanceContext();
+                var invInst = instCtx.get(Id.parse(inventoryId));
+                var boxKlass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "Box"));
+                var boxOfInvKlass = boxKlass.getParameterized(List.of(invInst.getType()));
+                var boxInst = ClassInstanceBuilder.newBuilder(boxOfInvKlass.getType())
+                        .data(Map.of(
+                                boxOfInvKlass.getFieldByCode("item"), invInst.getReference(),
+                                boxOfInvKlass.getFieldByCode("count"), Instances.longInstance(1)
+                        ))
+                        .build();
+                instCtx.bind(boxInst);
+                synchronized (monitor) {
+                    try {
+                        monitor.wait();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                try {
+                    context.finish();
+                }
+                catch (SessionTimeoutException e) {
+                    ref.timeout = true;
+                    throw e;
+                }
+            }
+        }));
+        thread.start();
+        TestUtils.waitForTaskDone(t -> t instanceof ReferenceRedirector, 100L, entityContextFactory);
+        synchronized (monitor) {
+            monitor.notify();
+        }
+        for (String boxId : boxIds) {
+            var box = apiClient.getObject(boxId);
+            Assert.assertEquals(newInventoryId, box.getString("item"));
+        }
+//        Constants.SESSION_TIMEOUT = -1;
+        thread.join();
+        Assert.assertTrue(ref.timeout);
     }
 
     private IEntityContext newContext() {

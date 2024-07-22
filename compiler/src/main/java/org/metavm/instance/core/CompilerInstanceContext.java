@@ -28,7 +28,7 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
                 indexSource, idService,
                 parent,
                 typeDefProvider,
-                mappingProvider, readonly);
+                mappingProvider, readonly, 0);
     }
 
     @Override

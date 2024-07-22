@@ -492,18 +492,26 @@ public class TestUtils {
     }
 
     public static void waitForTaskDone(Predicate<Task> predicate, EntityContextFactory entityContextFactory) {
+        waitForTaskDone(predicate, 0L, entityContextFactory);
+    }
+
+    public static void waitForTaskDone(Predicate<Task> predicate, long delay, EntityContextFactory entityContextFactory) {
         var transactionOps = new MockTransactionOperations();
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
         var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
-        waitForTaskDone(scheduler, worker, predicate);
+        waitForTaskDone(scheduler, worker, predicate, delay);
     }
 
     public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate) {
+        waitForTaskDone(scheduler, worker, predicate, 0);
+    }
+
+    public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate, long delay) {
         scheduler.sendHeartbeat();
         worker.sendHeartbeat();
         for (int i = 0; i < 3; i++) {
             scheduler.schedule();
-            if(worker.waitFor(predicate, 5))
+            if(worker.waitFor(predicate, 5, delay))
                 return;
         }
         throw new IllegalStateException("Condition not met after " + 15 + " runs");
@@ -532,7 +540,7 @@ public class TestUtils {
         scheduler.schedule();
         ScanTask.BATCH_SIZE = scanBatchSize;
         try {
-            worker.waitFor(t -> false, numRuns);
+            worker.waitFor(t -> false, numRuns, 0);
         }
         finally {
             ScanTask.BATCH_SIZE = 256;

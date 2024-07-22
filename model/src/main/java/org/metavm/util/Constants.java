@@ -38,6 +38,8 @@ public class Constants {
     public static final int BATCH_SIZE = 3000;
     public static EmailSender emailSender;
 
+    public static long SESSION_TIMEOUT = 300L;
+
     private Constants() {}
 
     public static Id getRootAppId() {

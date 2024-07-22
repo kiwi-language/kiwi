@@ -4,6 +4,8 @@ import org.metavm.object.instance.IInstanceStore;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 
+import java.util.function.Consumer;
+
 public class EntityContextFactoryAware {
 
     protected final EntityContextFactory entityContextFactory;
@@ -14,6 +16,14 @@ public class EntityContextFactoryAware {
 
     public IEntityContext newContext() {
         return entityContextFactory.newContext();
+    }
+
+    public IEntityContext newContext(long appId, Consumer<InstanceContextBuilder> customizer) {
+        return entityContextFactory.newContext(appId, customizer);
+    }
+
+    public IEntityContext newContext(Consumer<InstanceContextBuilder> customizer) {
+        return entityContextFactory.newContext(ContextUtil.getAppId(), customizer);
     }
 
     public IEntityContext newContext(long appId) {

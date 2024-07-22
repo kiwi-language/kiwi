@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -45,12 +45,10 @@ public class Scheduler extends EntityContextFactoryAware {
                 active = false;
                 return;
             }
-            var nulls = new ArrayList<>();
-            nulls.add(null);
             var tasks = context.query(new EntityIndexQuery<>(
-                    ShadowTask.IDX_EXECUTOR_IP,
-                    new EntityIndexKey(nulls),
-                    new EntityIndexKey(nulls),
+                    ShadowTask.IDX_EXECUTOR_IP_START_AT,
+                    new EntityIndexKey(Arrays.asList(null, 0L)),
+                    new EntityIndexKey(Arrays.asList(null, Long.MAX_VALUE)),
                     false,
                     200
             ));

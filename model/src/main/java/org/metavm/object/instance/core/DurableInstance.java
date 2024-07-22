@@ -679,7 +679,10 @@ public abstract class DurableInstance implements Message {
     }
 
     public InstanceReference getReference() {
-        return new InstanceReference(this);
+        var ref = new InstanceReference(this);
+        if(oldId != null && useOldId)
+            ref.setForwarded();
+        return ref;
     }
 
     public abstract boolean isArray();

@@ -64,10 +64,10 @@ public class SchedulerTest extends TestCase {
         }
         scheduler.schedule();
         try(var context = newPlatformContext()) {
-            var tasks = context.selectByKey(ShadowTask.IDX_EXECUTOR_IP, NetworkUtils.localIP);
+            var tasks = context.selectByKey(ShadowTask.IDX_EXECUTOR_IP_START_AT, NetworkUtils.localIP, 0);
             Assert.assertEquals(1, tasks.size());
         }
-        Assert.assertTrue(worker.waitFor(t -> t.idEquals(ref.task.getId()), 10));
+        Assert.assertTrue(worker.waitFor(t -> t.idEquals(ref.task.getId()), 10, 0));
         Assert.assertNull(instanceStore.get(TestConstants.APP_ID, ref.task.getId().getTreeId()));
     }
 

@@ -5,6 +5,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ChildArray;
 import org.metavm.entity.Entity;
 import org.metavm.entity.IEntityContext;
+import org.metavm.util.Constants;
 
 import java.util.List;
 
@@ -62,4 +63,9 @@ public abstract class TaskGroup extends Entity {
     public List<Task> getTasks() {
         return tasks.toList();
     }
+
+    public long getSessionTimeout() {
+        return Constants.SESSION_TIMEOUT;
+    }
+
 }

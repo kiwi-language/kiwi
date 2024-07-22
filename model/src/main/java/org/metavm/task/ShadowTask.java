@@ -10,17 +10,19 @@ import javax.annotation.Nullable;
 public class ShadowTask extends Entity {
 
     public static final IndexDef<ShadowTask> IDX_RUN_AT = IndexDef.create(ShadowTask.class,"runAt");
-    public static final IndexDef<ShadowTask> IDX_EXECUTOR_IP = IndexDef.create(ShadowTask.class, "executorIP");
+    public static final IndexDef<ShadowTask> IDX_EXECUTOR_IP_START_AT = IndexDef.create(ShadowTask.class, "executorIP", "startAt");
 
     private TaskState state = TaskState.RUNNABLE;
     private @Nullable String executorIP;
+    private final long startAt;
     private long runAt;
     private final long appId;
     private final String appTaskId;
 
-    public ShadowTask(long appId, String appTaskId) {
+    public ShadowTask(long appId, String appTaskId, long startAt) {
         this.appId = appId;
         this.appTaskId = appTaskId;
+        this.startAt = startAt;
     }
 
     public long getAppId() {

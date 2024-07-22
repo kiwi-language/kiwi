@@ -9,6 +9,7 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
+import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.NncUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -123,9 +124,13 @@ public class EntityContextFactory {
                 .parent(parent)
                 .migrationDisabled(migrationDisabled)
                 .readWAL(cachingWAL)
-                .writeWAL(bufferingWAL);
+                .writeWAL(bufferingWAL)
+                .timeout(Constants.SESSION_TIMEOUT);
         if (store != null)
             builder.instanceStore(store);
+        if (idProvider != null)
+            builder.idInitializer(idProvider);
+        customizer.accept(builder);
         builder.plugins(
                 currentStore -> List.of(
 //                        new MetaVersionPlugin(bridge, bridge),
@@ -133,9 +138,6 @@ public class EntityContextFactory {
                         new IndexConstraintPlugin(currentStore, bridge),
                         new ChangeLogPlugin(currentStore, instanceLogService)
                 ));
-        if (idProvider != null)
-            builder.idInitializer(idProvider);
-        customizer.accept(builder);
         return builder.build();
     }
 

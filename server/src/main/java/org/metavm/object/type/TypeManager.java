@@ -278,9 +278,9 @@ public class TypeManager extends EntityContextFactoryAware {
         var typeDefDTOs = request.typeDefs();
         FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
         SaveTypeBatch batch;
-        try (var context = newContext()) {
+        try (var context = newContext(builder -> builder.timeout(5000))) {
             var wal = context.bind(new WAL(context.getAppId()));
-            try (var bufferingContext = entityContextFactory.newBufferingContext(wal)) {
+            try (var bufferingContext = newContext(builder -> builder.timeout(5000).writeWAL(wal))) {
                 var runningCommit = bufferingContext.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
                 if (runningCommit != null)
                     throw new BusinessException(ErrorCode.COMMIT_RUNNING);

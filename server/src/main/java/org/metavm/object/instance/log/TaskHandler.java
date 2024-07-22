@@ -35,7 +35,7 @@ public class TaskHandler extends EntityContextFactoryAware implements LogHandler
         transactionOperations.executeWithoutResult(s -> {
             try (var platformContext = newPlatformContext()) {
                 for (Task task : created) {
-                    platformContext.bind(new ShadowTask(context.getAppId(), task.getStringId()));
+                    platformContext.bind(new ShadowTask(context.getAppId(), task.getStringId(), task.getStartAt()));
                 }
                 platformContext.finish();
             }

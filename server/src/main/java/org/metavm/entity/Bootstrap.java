@@ -47,8 +47,9 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
             var bridge = new EntityInstanceContextBridge();
             var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
                     ROOT_APP_ID, false, null, null,
-                    idInitializer, bridge, null, null, null, false, builder -> {
-                    });
+                    idInitializer, bridge, null, null, null, false,
+                    builder -> builder.timeout(0L)
+                    );
             var defContext = new DefContext(
                     new StdIdProvider(stdIdStore),
                     standardInstanceContext, columnStore, typeTagStore, identityContext);
@@ -96,7 +97,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
         try (var ignoredEntry = defContext.getProfiler().enter("Bootstrap.save")) {
             if (defContext.isFinished())
                 return;
-            try (var tempContext = newContext(ROOT_APP_ID)) {
+            try (var tempContext = entityContextFactory.newContext(ROOT_APP_ID, builder -> builder.timeout(0))) {
 //                var klass = defContext.getKlass(Constraint.class);
 //                DebugEnv.instance = defContext.getInstance(klass.getDefaultMapping());
                 var stdInstanceContext = (InstanceContext) defContext.getInstanceContext();

@@ -4,6 +4,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
+import org.metavm.util.Constants;
 
 import javax.annotation.Nullable;
 
@@ -20,6 +21,7 @@ public abstract class Task extends Entity {
     private TaskState state = TaskState.RUNNABLE;
     private long lastRunTimestamp;
     private long runCount;
+    private long startAt;
     @Nullable
     private TaskGroup group;
 
@@ -111,4 +113,17 @@ public abstract class Task extends Entity {
 
     protected void onFailure(IEntityContext context, IEntityContext taskContext) {
     }
+
+    public long getStartAt() {
+        return startAt;
+    }
+
+    public void setStartAt(long startAt) {
+        this.startAt = startAt;
+    }
+
+    public long getTimeout() {
+        return group != null ? group.getSessionTimeout() : Constants.SESSION_TIMEOUT;
+    }
+
 }

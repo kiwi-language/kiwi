@@ -17,6 +17,7 @@ import org.metavm.object.version.Versions;
 import org.metavm.object.view.Mapping;
 import org.metavm.task.ForwardedFlagSetter;
 import org.metavm.task.Task;
+import org.metavm.util.Constants;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -117,7 +118,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                 || !changedMappingIds.isEmpty() || !removedMappingIds.isEmpty()
                 || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
             var version = transactionOperations.execute(s -> {
-                try (var context = newContext(appId)) {
+                try (var context = newContext(appId, builder -> builder.timeout(0))) {
                     var v = Versions.create(
                             changedTypeDefIds,
                             removedTypeDefIds,
@@ -161,11 +162,16 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         if (instanceIds.isEmpty())
             return;
         transactionOperations.executeWithoutResult(s -> {
-            try (var context = newContext(appId)) {
+            try (var context = newContext(appId, builder -> builder.timeout(0))) {
                 var commit = context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
                 List<Task> tasks = new ArrayList<>();
                 if (commit != null) {
-                    try (var loadedContext = entityContextFactory.newLoadedContext(appId, commit.getWal(), true)) {
+                    try (var loadedContext = newContext(appId, builder -> builder
+                            .readWAL(commit.getWal())
+                            .migrationDisabled(true)
+                            .timeout(0)
+                    )
+                    ) {
                         Iterable<DurableInstance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
                                 .iterator();
                         tasks = Instances.applyDDL(instances, commit, loadedContext);
@@ -184,9 +190,12 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         if(migrated.isEmpty())
             return;
         transactionOperations.executeWithoutResult(s -> {
-            try(var context = newContext(appId)) {
+            try(var context = newContext(appId, builder -> builder.timeout(0))) {
                 for (Id id : migrated) {
-                    context.bind(new ForwardedFlagSetter(id.toString()));
+                    var task = new ForwardedFlagSetter(id.toString());
+                    if(Constants.SESSION_TIMEOUT != -1)
+                        task.setStartAt(System.currentTimeMillis() + (Constants.SESSION_TIMEOUT << 1));
+                    context.bind(task);
                 }
                 context.finish();
             }

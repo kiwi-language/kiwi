@@ -1,9 +1,6 @@
 package org.metavm.task;
 
-import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.EntityContextFactoryAware;
-import org.metavm.entity.EntityUtils;
-import org.metavm.entity.IEntityContext;
+import org.metavm.entity.*;
 import org.metavm.util.InternalException;
 import org.metavm.util.NetworkUtils;
 import org.metavm.util.NncUtils;
@@ -54,11 +51,18 @@ public class Worker extends EntityContextFactoryAware {
         run0();
     }
 
-    public boolean waitFor(Predicate<Task> predicate, int maxRuns) {
+    public boolean waitFor(Predicate<Task> predicate, int maxRuns, long delay) {
         for (int i = 0; i < maxRuns; i++) {
             var tasks = run0();
             if (NncUtils.anyMatch(tasks, t -> t.isCompleted() && predicate.test(t)))
                 return true;
+            if(delay > 0) {
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
         return false;
     }
@@ -74,7 +78,15 @@ public class Worker extends EntityContextFactoryAware {
 
     public List<Task> run0() {
         try (var context = newPlatformContext()) {
-            var tasks = context.selectByKey(ShadowTask.IDX_EXECUTOR_IP, NetworkUtils.localIP);
+            var tasks = context.query(
+                    new EntityIndexQuery<>(
+                            ShadowTask.IDX_EXECUTOR_IP_START_AT,
+                            new EntityIndexKey(List.of(NetworkUtils.localIP, 0)),
+                            new EntityIndexKey(List.of(NetworkUtils.localIP, System.currentTimeMillis())),
+                            false,
+                            16
+                    )
+            );
             var futures = new ArrayList<Future<Task>>();
             tasks.forEach(t -> futures.add(taskRunner.run(() -> runTask(t))));
             var appTasks = new ArrayList<Task>();
@@ -95,11 +107,15 @@ public class Worker extends EntityContextFactoryAware {
         return transactionOperations.execute(s -> {
             try (var appContext = newContext(shadowTask.getAppId())) {
                 var appTask = appContext.getEntity(Task.class, shadowTask.getAppTaskId());
+                appContext.getInstanceContext().setTimeout(appTask.getTimeout());
                 logger.info("Running task {}", EntityUtils.getRealType(appTask).getSimpleName());
                 boolean terminated;
                 try {
                     if (appTask instanceof WalTask walTask) {
-                        try (var walContext = entityContextFactory.newLoadedContext(shadowTask.getAppId(), walTask.getWAL(), walTask.isMigrationDisabled())) {
+                        try (var walContext = newContext(shadowTask.getAppId(),
+                                builder -> builder.readWAL(walTask.getWAL())
+                                        .migrationDisabled(walTask.isMigrationDisabled())
+                                        .timeout(appTask.getTimeout()))) {
                             terminated = runTask0(appTask, walContext, appContext);
                             if(!appTask.isFailed())
                                 walContext.finish();

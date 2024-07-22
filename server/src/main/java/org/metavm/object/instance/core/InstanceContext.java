@@ -59,13 +59,14 @@ public class InstanceContext extends BufferingInstanceContext {
                            @Nullable EventQueue eventQueue,
                            boolean readonly,
                            boolean skipPostprocessing,
-                           boolean migrationDisabled
+                           boolean migrationDisabled,
+                           long timeout
     ) {
         super(appId,
                 List.of(/*new CacheTreeSource(cache),*/new StoreTreeSource(instanceStore)),
                 new StoreVersionSource(instanceStore),
                 new StoreIndexSource(instanceStore), idInitializer,
-                parent, typeDefProvider, mappingProvider, readonly);
+                parent, typeDefProvider, mappingProvider, readonly, timeout);
         headContext = new SubContext(appId);
         this.asyncPostProcessing = asyncPostProcessing;
         this.plugins = plugins;
@@ -551,7 +552,8 @@ public class InstanceContext extends BufferingInstanceContext {
                 eventQueue,
                 isReadonly(),
                 skipPostprocessing,
-                migrationDisabled
+                migrationDisabled,
+                getTimeout()
         );
     }
 

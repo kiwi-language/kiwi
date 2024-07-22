@@ -9,15 +9,13 @@ import org.metavm.object.type.TypeExpressions;
 import org.metavm.object.type.rest.dto.GetTypeRequest;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.view.rest.dto.DirectMappingKey;
-import org.metavm.util.BusinessException;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.DebugEnv;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 import static org.metavm.util.TestUtils.doInTransaction;
 import static org.metavm.util.TestUtils.doInTransactionWithoutResult;
@@ -28,6 +26,18 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
 
     public static final String USER_NAME = "leen";
     public static final String PASSWORD = "123456";
+
+    @Override
+    protected void setUp() throws ExecutionException, InterruptedException {
+        super.setUp();
+        Constants.SESSION_TIMEOUT = 1000;
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        Constants.SESSION_TIMEOUT = 300;
+    }
 
     public void test() {
         compileTwice(SOURCE_ROOT);

@@ -27,4 +27,8 @@ public class DDLPreparationTaskGroup extends DynamicTaskGroup {
             taskContext.bind(new DDLFinalizationTaskGroup(commit));
     }
 
+    @Override
+    public long getSessionTimeout() {
+        return 5000L;
+    }
 }

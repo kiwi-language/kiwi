@@ -49,13 +49,16 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final IndexSource indexSource;
     private final MappingProvider mappingProvider;
     private int seq;
+    private final long startAt = System.currentTimeMillis();
+    private long timeout;
 
     public BaseInstanceContext(long appId,
                                IInstanceContext parent,
                                boolean readonly,
                                IndexSource indexSource,
                                TypeDefProvider typeDefProvider,
-                               MappingProvider mappingProvider) {
+                               MappingProvider mappingProvider,
+                               long timeout) {
         this.appId = appId;
         this.readonly = readonly;
         this.parent = parent;
@@ -64,6 +67,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         this.typeDefProvider = typeDefProvider;
         this.mappingProvider = mappingProvider;
         memIndex = new InstanceMemoryIndex();
+        this.timeout = timeout;
     }
 
 
@@ -404,6 +408,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 if (instance.isNew())
                     instance.setLoaded(false);
             }
+        }
+        if(timeout > 0) {
+            var elapsed = System.currentTimeMillis() - startAt;
+            if (elapsed > timeout)
+                throw new SessionTimeoutException("Timeout: " + timeout + ". Elapsed: " + elapsed);
         }
     }
 
@@ -784,6 +793,16 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 return i;
             }
         };
+    }
+
+    @Override
+    public long getTimeout() {
+        return timeout;
+    }
+
+    @Override
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
     }
 
 }
