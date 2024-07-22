@@ -29,7 +29,7 @@ public class Commit extends Entity {
     @ChildEntity
     private final ReadWriteArray<String> changingSuperKlassIds = addChild(new ReadWriteArray<>(String.class), "changingSuperKlassIds");
     @ChildEntity
-    private final ReadWriteArray<String> toValueKlassIds = addChild(new ReadWriteArray<>(String.class), "toValueKlassIds");
+    private final ReadWriteArray<String> entityToValueKlassIds = addChild(new ReadWriteArray<>(String.class), "entityToValueKlassIds");
     @ChildEntity
     private final ReadWriteArray<String> valueToEntityKlassIds = addChild(new ReadWriteArray<>(String.class), "valueToEntityKlassIds");
 
@@ -43,7 +43,7 @@ public class Commit extends Entity {
                   List<String> convertingFieldIds,
                   List<String> toChildFieldIds,
                   List<String> changingSuperKlassIds,
-                  List<String> toValueKlassIds,
+                  List<String> entityToValueKlassIds,
                   List<String> valueToEntityKlassIds) {
         this.wal = wal;
         this.requestJSON = NncUtils.toJSONString(request);
@@ -52,7 +52,7 @@ public class Commit extends Entity {
         this.convertingFieldIds.addAll(convertingFieldIds);
         this.toChildFieldIds.addAll(toChildFieldIds);
         this.changingSuperKlassIds.addAll(changingSuperKlassIds);
-        this.toValueKlassIds.addAll(toValueKlassIds);
+        this.entityToValueKlassIds.addAll(entityToValueKlassIds);
         this.valueToEntityKlassIds.addAll(valueToEntityKlassIds);
     }
 
@@ -103,8 +103,8 @@ public class Commit extends Entity {
         return changingSuperKlassIds.toList();
     }
 
-    public List<String> getToValueKlassIds() {
-        return toValueKlassIds.toList();
+    public List<String> getEntityToValueKlassIds() {
+        return entityToValueKlassIds.toList();
     }
 
     public List<String> getValueToEntityKlassIds() {

@@ -549,7 +549,7 @@ public class Instances {
         var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
         var toChildFields = NncUtils.map(commit.getToChildFieldIds(), context::getField);
         var changingSuperKlasses = NncUtils.map(commit.getChangingSuperKlassIds(), context::getKlass);
-        var toValueKlasses = NncUtils.map(commit.getToValueKlassIds(), context::getKlass);
+        var toValueKlasses = NncUtils.map(commit.getEntityToValueKlassIds(), context::getKlass);
         var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
         var tasks = new ArrayList<Task>();
         for (DurableInstance instance : instances) {

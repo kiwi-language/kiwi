@@ -95,7 +95,7 @@ public abstract class TypeFactory {
                 if(kind != klass.getKind()) {
                     if(!context.isNewEntity(klass)) {
                         if(kind == ClassKind.VALUE)
-                            batch.addToValueKlass(klass);
+                            batch.addEntityToValueKlass(klass);
                         else if (klass.getKind() == ClassKind.VALUE)
                             batch.addValueToEntityKlass(klass);
                     }
