@@ -13,6 +13,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.hamcrest.MatcherAssert;
 import org.metavm.api.Value;
+import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowExecutionService;
@@ -487,8 +488,21 @@ public class TestUtils {
         return ((DefaultViewId) Id.parse(viewId)).getSourceId().toString();
     }
 
-    public static void waitForDDLDone(EntityContextFactory entityContextFactory) {
-        waitForTaskGroupDone(t -> t instanceof DDLPreparationTaskGroup, entityContextFactory);
+    public static void waitForDDLState(CommitState commitState, EntityContextFactory entityContextFactory) {
+        waitForTaskDone(t -> t instanceof DDLTask d && d.getCommit().getState().ordinal() >= commitState.ordinal(), 100, entityContextFactory);
+    }
+
+    public static void waitForDDLCompleted(EntityContextFactory entityContextFactory) {
+        waitForDDLState(CommitState.COMPLETED, entityContextFactory);
+    }
+
+    public static void waitForDDLPrepared(EntityContextFactory entityContextFactory) {
+//        waitForTaskGroupDone(t -> t instanceof DDLPreparationTaskGroup, entityContextFactory);
+        waitForDDLState(CommitState.MIGRATING, entityContextFactory);
+    }
+
+    public static void waitForDDLAborted(EntityContextFactory entityContextFactory) {
+        waitForDDLState(CommitState.ABORTED, entityContextFactory);
     }
 
     public static void waitForTaskDone(Predicate<Task> predicate, EntityContextFactory entityContextFactory) {
@@ -509,7 +523,7 @@ public class TestUtils {
     public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate, long delay) {
         scheduler.sendHeartbeat();
         worker.sendHeartbeat();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 10; i++) {
             scheduler.schedule();
             if(worker.waitFor(predicate, 5, delay))
                 return;

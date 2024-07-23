@@ -2,10 +2,7 @@ package org.metavm.task;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
@@ -24,26 +21,27 @@ public abstract class ScanByTypeTask extends ScanTask {
     }
 
     @Override
-    protected List<InstanceReference> scan(IInstanceContext context, long cursor, long limit) {
-        return NncUtils.filter(context.scan(cursor, limit), this::filer);
+    protected ScanResult scan(IInstanceContext context, long cursor, long limit) {
+        var r = context.scan(cursor, limit);
+        return new ScanResult(NncUtils.filter(r.instances(), this::filer), r.completed());
     }
 
-    private boolean filer(InstanceReference instance) {
+    private boolean filer(DurableInstance instance) {
         Klass klass;
         if(type instanceof ClassType classType && (klass = classType.resolve()).isTemplate()) {
-            if(instance.resolve() instanceof ClassInstance classInstance)
+            if(instance instanceof ClassInstance classInstance)
                 return classInstance.getKlass().findAncestorByTemplate(klass) != null;
             else
                 return false;
         }
         else
-            return type.isInstance(instance);
+            return type.isInstance(instance.getReference());
     }
 
     @Override
-    protected final void process(List<InstanceReference> batch, IEntityContext context, IEntityContext taskContext) {
-        for (Instance instance : batch) {
-            processInstance(instance, context);
+    protected final void process(List<DurableInstance> batch, IEntityContext context, IEntityContext taskContext) {
+        for (var instance : batch) {
+            processInstance(instance.getReference(), context);
         }
     }
 

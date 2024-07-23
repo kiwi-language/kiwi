@@ -2,10 +2,7 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.ContextAttributeKey;
-import org.metavm.entity.EntityUtils;
-import org.metavm.entity.InstanceIndexQuery;
-import org.metavm.entity.LockMode;
+import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;

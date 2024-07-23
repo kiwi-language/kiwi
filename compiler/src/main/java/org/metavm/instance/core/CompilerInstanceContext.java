@@ -37,7 +37,7 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public List<InstanceReference> scan(long start, long limit) {
+    public ScanResult scan(long start, long limit) {
         throw new UnsupportedOperationException();
     }
 

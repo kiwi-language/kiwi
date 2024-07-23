@@ -3,8 +3,9 @@ package org.metavm.task;
 import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ModelDefRegistry;
+import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.ScanResult;
 import org.metavm.util.NncUtils;
 
 import java.lang.reflect.Type;
@@ -24,13 +25,17 @@ public abstract class EntityScanTask<T> extends ScanTask {
     }
 
     @Override
-    protected List<InstanceReference> scan(IInstanceContext context, long cursor, long limit) {
+    protected ScanResult scan(IInstanceContext context, long cursor, long limit) {
         org.metavm.object.type.Type metaType = ModelDefRegistry.getType(entityType);
-        return context.scan(cursor, limit).stream().filter(metaType::isInstance).collect(Collectors.toList());
+        var r = context.scan(cursor, limit);
+        return new ScanResult(
+                r.instances().stream().filter(i -> metaType.isInstance(i.getReference())).collect(Collectors.toList()),
+                r.completed()
+        );
     }
 
     @Override
-    protected void process(List<InstanceReference> batch, IEntityContext context, IEntityContext taskContext) {
+    protected void process(List<DurableInstance> batch, IEntityContext context, IEntityContext taskContext) {
         List<T> models = NncUtils.map(
                 batch, instance -> context.getEntity(entityType, instance.getId())
         );

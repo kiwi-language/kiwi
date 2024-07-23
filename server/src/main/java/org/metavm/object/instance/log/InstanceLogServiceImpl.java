@@ -1,7 +1,6 @@
 package org.metavm.object.instance.log;
 
 import org.metavm.ddl.Commit;
-import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.event.EventQueue;
 import org.metavm.event.rest.dto.FunctionChangeEvent;
@@ -15,10 +14,6 @@ import org.metavm.object.version.Version;
 import org.metavm.object.version.VersionRepository;
 import org.metavm.object.version.Versions;
 import org.metavm.object.view.Mapping;
-import org.metavm.task.ForwardedFlagSetter;
-import org.metavm.task.Task;
-import org.metavm.util.Constants;
-import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +21,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionOperations;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -65,7 +59,6 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         List<Id> idsToLoad = NncUtils.filterAndMap(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getId);
         var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
         handleDDL(appId, newInstanceIds);
-        handleMigration(appId, migrated);
         handleMetaChanges(appId, logs, clientId);
         try (var context = newContextWithStore(appId, instanceStore)) {
             var instanceContext = context.getInstanceContext();
@@ -163,41 +156,21 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             return;
         transactionOperations.executeWithoutResult(s -> {
             try (var context = newContext(appId, builder -> builder.timeout(0))) {
-                var commit = context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
-                List<Task> tasks = new ArrayList<>();
+                var commit = context.selectFirstByKey(Commit.IDX_RUNNING, true);
                 if (commit != null) {
+                    var commitState = commit.getState();
                     try (var loadedContext = newContext(appId, builder -> builder
-                            .readWAL(commit.getWal())
-                            .migrationDisabled(true)
+                            .readWAL(commitState.isPreparing() ? commit.getWal() : null)
+                            .migrationEnabled(commitState.isMigrationEnabled())
                             .timeout(0)
                     )
                     ) {
                         Iterable<DurableInstance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
                                 .iterator();
-                        tasks = Instances.applyDDL(instances, commit, loadedContext);
+                        commit.getState().process(instances, commit, loadedContext);
                         loadedContext.finish();
                     }
                 }
-                if (!tasks.isEmpty()) {
-                    tasks.forEach(context::bind);
-                    context.finish();
-                }
-            }
-        });
-    }
-
-    private void handleMigration(long appId, List<Id> migrated) {
-        if(migrated.isEmpty())
-            return;
-        transactionOperations.executeWithoutResult(s -> {
-            try(var context = newContext(appId, builder -> builder.timeout(0))) {
-                for (Id id : migrated) {
-                    var task = new ForwardedFlagSetter(id.toString());
-                    if(Constants.SESSION_TIMEOUT != -1)
-                        task.setStartAt(System.currentTimeMillis() + (Constants.SESSION_TIMEOUT << 1));
-                    context.bind(task);
-                }
-                context.finish();
             }
         });
     }

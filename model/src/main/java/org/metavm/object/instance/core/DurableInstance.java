@@ -595,6 +595,10 @@ public abstract class DurableInstance implements Message {
         this.useOldId = useOldId;
     }
 
+    public boolean isUseOldId() {
+        return useOldId;
+    }
+
     void clearOldId() {
         assert oldId != null;
         this.oldId = null;

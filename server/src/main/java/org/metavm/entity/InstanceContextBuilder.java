@@ -47,7 +47,7 @@ public class InstanceContextBuilder {
     private @Nullable WAL readWAL;
     private @Nullable WAL writeWAL;
     private boolean skipPostprocessing;
-    private boolean migrationDisabled;
+    private boolean migrationEnabled;
     private long timeout;
 
     public InstanceContextBuilder(long appId,
@@ -142,8 +142,8 @@ public class InstanceContextBuilder {
         return this;
     }
 
-    public InstanceContextBuilder migrationDisabled(boolean migrationDisabled) {
-        this.migrationDisabled = migrationDisabled;
+    public InstanceContextBuilder migrationEnabled(boolean migrationEnabled) {
+        this.migrationEnabled = migrationEnabled;
         return this;
     }
 
@@ -160,7 +160,7 @@ public class InstanceContextBuilder {
                 appId, instanceStore, idInitializer, executor, asyncPostProcess,
                 plugins, parent, typeDefProvider, mappingProvider,
                 childLazyLoading, cache,
-                eventQueue, readonly, skipPostprocessing, migrationDisabled, timeout);
+                eventQueue, readonly, skipPostprocessing, migrationEnabled, timeout);
     }
 
 }

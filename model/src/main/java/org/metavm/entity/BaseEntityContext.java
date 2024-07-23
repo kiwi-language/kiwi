@@ -841,7 +841,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     @Override
     public List<Object> scan(long start, long limit) {
         return NncUtils.map(
-                instanceContext.scan(start, limit),
+                instanceContext.scan(start, limit).instances(),
                 inst -> getEntity(Object.class, inst.getId())
         );
     }

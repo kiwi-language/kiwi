@@ -108,13 +108,13 @@ public class Worker extends EntityContextFactoryAware {
             try (var appContext = newContext(shadowTask.getAppId())) {
                 var appTask = appContext.getEntity(Task.class, shadowTask.getAppTaskId());
                 appContext.getInstanceContext().setTimeout(appTask.getTimeout());
-                logger.info("Running task {}", EntityUtils.getRealType(appTask).getSimpleName());
+                logger.info("Running task {}-{}", EntityUtils.getRealType(appTask).getSimpleName(), appTask.getTitle());
                 boolean terminated;
                 try {
                     if (appTask instanceof WalTask walTask) {
                         try (var walContext = newContext(shadowTask.getAppId(),
                                 builder -> builder.readWAL(walTask.getWAL())
-                                        .migrationDisabled(walTask.isMigrationDisabled())
+                                        .migrationEnabled(walTask.isMigrationEnabled())
                                         .timeout(appTask.getTimeout()))) {
                             terminated = runTask0(appTask, walContext, appContext);
                             if(!appTask.isFailed())

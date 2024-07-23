@@ -185,7 +185,7 @@ public abstract class CompilerTestBase extends TestCase  {
     protected void compile(String sourceRoot) {
         ContextUtil.resetProfiler();
         new Main(HOME, sourceRoot, APP_ID, "__fake_token__", typeClient, allocatorStore, columnStore, typeTagStore).run();
-        submit(() -> TestUtils.waitForDDLDone(entityContextFactory));
+        submit(() -> TestUtils.waitForDDLPrepared(entityContextFactory));
     }
 
 

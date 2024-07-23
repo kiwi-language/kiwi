@@ -2,6 +2,7 @@ package org.metavm.task;
 
 import org.metavm.entity.EntityUtils;
 import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Field;
 import org.metavm.util.NncUtils;
@@ -19,12 +20,12 @@ public class FieldRemovalTask {
     }
 
     public boolean executeBatch(IEntityContext context) {
-        var instances = context.getInstanceContext().scan(cursor, BATCH_SIZE);
+        var instances = context.getInstanceContext().scan(cursor, BATCH_SIZE).instances();
         if(NncUtils.isEmpty(instances)) {
             doFinally(context);
             return true;
         }
-        instances.stream().filter(field.getDeclaringType().getType()::isInstance)
+        instances.stream().map(DurableInstance::getReference).filter(field.getDeclaringType().getType()::isInstance)
                 .forEach(this::processInstance);
         cursor = instances.get(instances.size() - 1).getTreeId();
         return false;

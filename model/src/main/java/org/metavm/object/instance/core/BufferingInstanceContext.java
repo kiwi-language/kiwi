@@ -81,14 +81,23 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
             var trees = result.trees();
             var instances = new ArrayList<DurableInstance>();
             for (Tree tree : trees) {
-                if (onTreeLoaded(tree)) {
-                    var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
-                    readInstance(input, instances);
-                }
+                loadTree(tree, instances);
             }
             return instances;
         } catch (TreeNotFoundException e) {
             throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id);
+        }
+    }
+
+    @Override
+    public void loadTree(long id) {
+        loadTree(loadingBuffer.loadTree(id), new ArrayList<>());
+    }
+
+    private void loadTree(Tree tree, List<DurableInstance> instances) {
+        if (onTreeLoaded(tree)) {
+            var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
+            readInstance(input, instances);
         }
     }
 

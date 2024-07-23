@@ -1,6 +1,7 @@
 package org.metavm.util;
 
 import org.metavm.asm.AssemblerFactory;
+import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.FlowSavingContext;
@@ -479,7 +480,7 @@ public class MockUtils {
             FlowSavingContext.initConfig();
             var commitId = TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true)));
             if (waitForDDLDone)
-                TestUtils.waitForDDLDone(entityContextFactory);
+                TestUtils.waitForDDLState(CommitState.COMPLETED, entityContextFactory);
             return commitId;
         }
     }
@@ -723,7 +724,7 @@ public class MockUtils {
         TestUtils.doInTransaction(() -> typeManager.batchSave(
                 new BatchSaveRequest(List.of(platformUserTypeDTO, applicationTypeDTO), List.of(), false)
         ));
-        TestUtils.waitForDDLDone(entityContextFactory);
+        TestUtils.waitForDDLPrepared(entityContextFactory);
         var applicationType = typeManager.getTypeByCode(applicationTypeDTO.code()).type();
         var applicationNameFieldId = TestUtils.getFieldIdByCode(applicationType, "name");
         var applicationOwnerFieldId = TestUtils.getFieldIdByCode(applicationType, "owner");

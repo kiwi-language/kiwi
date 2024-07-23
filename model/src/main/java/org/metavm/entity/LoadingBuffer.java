@@ -83,6 +83,12 @@ public class LoadingBuffer {
             return List.of();
     }
 
+    public Tree loadTree(long id) {
+        buffer(id);
+        flush();
+        return Objects.requireNonNull(trees.get(id), () -> "Tree " + id + " not found");
+    }
+
     public void flush() {
         if (bufferedIds.isEmpty())
             return;

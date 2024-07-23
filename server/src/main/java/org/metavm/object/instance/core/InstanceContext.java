@@ -42,7 +42,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private final IInstanceStore instanceStore;
     private final Cache cache;
     private final boolean skipPostprocessing;
-    private final boolean migrationDisabled;
+    private final boolean migrationEnabled;
     private final List<DurableInstance> migrated = new ArrayList<>();
 
     public InstanceContext(long appId,
@@ -59,7 +59,7 @@ public class InstanceContext extends BufferingInstanceContext {
                            @Nullable EventQueue eventQueue,
                            boolean readonly,
                            boolean skipPostprocessing,
-                           boolean migrationDisabled,
+                           boolean migrationEnabled,
                            long timeout
     ) {
         super(appId,
@@ -81,7 +81,7 @@ public class InstanceContext extends BufferingInstanceContext {
 //        );
         this.cache = cache;
         this.skipPostprocessing = skipPostprocessing;
-        this.migrationDisabled = migrationDisabled;
+        this.migrationEnabled = migrationEnabled;
     }
 
     @Override
@@ -103,7 +103,7 @@ public class InstanceContext extends BufferingInstanceContext {
         if (DebugEnv.debugging)
             debugLogger.info("InstanceContext.finish");
         headContext.freeze();
-        var migrationResult = migrationDisabled ? Migrations.EMPTY : migrate();
+        var migrationResult = migrationEnabled ? migrate() : Migrations.EMPTY;
         var patchContext = new PatchContext(migrationResult);
         var patch = buildPatch(null, patchContext);
         validateRemoval();
@@ -552,18 +552,18 @@ public class InstanceContext extends BufferingInstanceContext {
                 eventQueue,
                 isReadonly(),
                 skipPostprocessing,
-                migrationDisabled,
+                migrationEnabled,
                 getTimeout()
         );
     }
 
     @Override
-    public List<InstanceReference> scan(long start, long limit) {
+    public ScanResult scan(long start, long limit) {
         var treeIds = instanceStore.scan(getAppId(), start, limit);
         treeIds.forEach(loadingBuffer::buffer);
         loadingBuffer.flush();
         var ids = NncUtils.flatMap(treeIds, loadingBuffer::getIdsInTree);
-        return NncUtils.map(ids, this::createReference);
+        return new ScanResult(NncUtils.map(ids, this::get), treeIds.size() < limit);
     }
 
     public record Migrations(

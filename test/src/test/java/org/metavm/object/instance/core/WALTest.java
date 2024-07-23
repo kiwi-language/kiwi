@@ -17,7 +17,7 @@ import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
-import org.metavm.task.DDLPreparationTaskGroup;
+import org.metavm.task.DDLTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,8 +132,8 @@ public class WALTest extends TestCase {
                     fieldId = field.getStringId();
                 }
                 var commit = new Commit(wal, new BatchSaveRequest(List.of(), List.of(), true),
-                        List.of(fieldId), List.of(), List.of(), List.of(), List.of(), List.of());
-                context.bind(new DDLPreparationTaskGroup(commit));
+                        List.of(fieldId), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                context.bind(new DDLTask(commit, CommitState.PREPARING0));
                 context.finish();
                 return new Id[] {wal.getId(), commit.getId()};
             }
@@ -171,15 +171,15 @@ public class WALTest extends TestCase {
         try (var context = newContext()) {
             var wal = context.getEntity(WAL.class, walId);
             var commit = context.getEntity(Commit.class, commitId);
-            Assert.assertEquals(CommitState.RUNNING, commit.getState());
-            Assert.assertEquals(commit, context.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING));
+            Assert.assertEquals(CommitState.PREPARING0, commit.getState());
+            Assert.assertEquals(commit, context.selectFirstByKey(Commit.IDX_RUNNING, true));
             try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
                 var inst = (ClassInstance) loadedContext.getInstanceContext().get(instanceId2);
                 Assert.assertEquals(Instances.longInstance(0L), inst.getField("version"));
             }
         }
         // check the old instance
-        TestUtils.waitForDDLDone(entityContextFactory);
+        TestUtils.waitForDDLPrepared(entityContextFactory);
         try (var context = newContext()) {
             var inst = (ClassInstance) context.getInstanceContext().get(instId);
             Assert.assertEquals(Instances.longInstance(0L), inst.getField("version"));

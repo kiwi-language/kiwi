@@ -22,7 +22,7 @@ import org.metavm.object.type.rest.dto.*;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.version.Versions;
 import org.metavm.task.AddFieldTaskGroup;
-import org.metavm.task.DDLPreparationTaskGroup;
+import org.metavm.task.DDLTask;
 import org.metavm.task.TaskManager;
 import org.metavm.util.BusinessException;
 import org.metavm.util.DebugEnv;
@@ -281,14 +281,14 @@ public class TypeManager extends EntityContextFactoryAware {
         try (var context = newContext(builder -> builder.timeout(5000))) {
             var wal = context.bind(new WAL(context.getAppId()));
             try (var bufferingContext = newContext(builder -> builder.timeout(5000).writeWAL(wal))) {
-                var runningCommit = bufferingContext.selectFirstByKey(Commit.IDX_STATE, CommitState.RUNNING);
+                var runningCommit = bufferingContext.selectFirstByKey(Commit.IDX_RUNNING, true);
                 if (runningCommit != null)
                     throw new BusinessException(ErrorCode.COMMIT_RUNNING);
                 batch = batchSave(typeDefDTOs, request.functions(), bufferingContext);
                 bufferingContext.finish();
             }
             var commit = context.bind(batch.buildCommit(wal));
-            context.bind(new DDLPreparationTaskGroup(commit));
+            context.bind(new DDLTask(commit, CommitState.PREPARING0));
             context.finish();
             return commit.getStringId();
         }

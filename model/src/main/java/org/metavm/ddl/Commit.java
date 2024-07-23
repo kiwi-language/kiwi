@@ -15,7 +15,7 @@ import java.util.List;
 @EntityType
 public class Commit extends Entity {
 
-    public static final IndexDef<Commit> IDX_STATE = IndexDef.create(Commit.class, "state");
+    public static final IndexDef<Commit> IDX_RUNNING = IndexDef.create(Commit.class, "running");
 
     private final String requestJSON;
     private final Date time = new Date();
@@ -27,13 +27,17 @@ public class Commit extends Entity {
     @ChildEntity
     private final ReadWriteArray<String> toChildFieldIds = addChild(new ReadWriteArray<>(String.class), "toChildFieldIds");
     @ChildEntity
+    private final ReadWriteArray<String> toNonChildFieldIds = addChild(new ReadWriteArray<>(String.class), "toNonChildFieldIds");
+    @ChildEntity
     private final ReadWriteArray<String> changingSuperKlassIds = addChild(new ReadWriteArray<>(String.class), "changingSuperKlassIds");
     @ChildEntity
     private final ReadWriteArray<String> entityToValueKlassIds = addChild(new ReadWriteArray<>(String.class), "entityToValueKlassIds");
     @ChildEntity
     private final ReadWriteArray<String> valueToEntityKlassIds = addChild(new ReadWriteArray<>(String.class), "valueToEntityKlassIds");
 
-    private CommitState state = CommitState.RUNNING;
+    private CommitState state = CommitState.PREPARING0;
+    private boolean running = true;
+    private boolean submitted;
 
     private transient BatchSaveRequest request;
 
@@ -42,6 +46,7 @@ public class Commit extends Entity {
                   List<String> newFieldIds,
                   List<String> convertingFieldIds,
                   List<String> toChildFieldIds,
+                  List<String> toNonChildFieldIds,
                   List<String> changingSuperKlassIds,
                   List<String> entityToValueKlassIds,
                   List<String> valueToEntityKlassIds) {
@@ -51,6 +56,7 @@ public class Commit extends Entity {
         this.newFieldIds.addAll(newFieldIds);
         this.convertingFieldIds.addAll(convertingFieldIds);
         this.toChildFieldIds.addAll(toChildFieldIds);
+        this.toNonChildFieldIds.addAll(toNonChildFieldIds);
         this.changingSuperKlassIds.addAll(changingSuperKlassIds);
         this.entityToValueKlassIds.addAll(entityToValueKlassIds);
         this.valueToEntityKlassIds.addAll(valueToEntityKlassIds);
@@ -63,9 +69,9 @@ public class Commit extends Entity {
     }
 
     public void submit() {
-        if (state != CommitState.RUNNING)
+        if(submitted)
             throw new IllegalStateException("Commit is already submitted");
-        this.state = hasCleanUpWorks() ? CommitState.CLEANING_UP : CommitState.FINISHED;
+        this.submitted = true;
         wal.commit();
     }
 
@@ -74,9 +80,17 @@ public class Commit extends Entity {
     }
 
     public void finish() {
-        if(state == CommitState.FINISHED)
+        if(state == CommitState.COMPLETED)
             throw new IllegalStateException("Commit is already finished");
-        this.state = CommitState.FINISHED;
+        this.state = CommitState.COMPLETED;
+    }
+
+    public void setState(CommitState state) {
+        if(state.ordinal() <= this.state.ordinal())
+            throw new IllegalStateException("Invalid state transition");
+        this.state = state;
+        if(state == CommitState.COMPLETED)
+            running = false;
     }
 
     public Date getTime() {
@@ -93,6 +107,10 @@ public class Commit extends Entity {
 
     public List<String> getConvertingFieldIds() {
         return convertingFieldIds.toList();
+    }
+
+    public ReadWriteArray<String> getToNonChildFieldIds() {
+        return toNonChildFieldIds;
     }
 
     public List<String> getToChildFieldIds() {
@@ -115,4 +133,11 @@ public class Commit extends Entity {
         return wal;
     }
 
+    public boolean isRunning() {
+        return running;
+    }
+
+    public boolean isSubmitted() {
+        return submitted;
+    }
 }

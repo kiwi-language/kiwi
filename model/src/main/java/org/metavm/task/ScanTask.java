@@ -2,10 +2,10 @@ package org.metavm.task;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.ScanResult;
 import org.metavm.util.ContextUtil;
-import org.metavm.util.NncUtils;
 
 import java.util.List;
 
@@ -23,13 +23,10 @@ public abstract class ScanTask extends Task {
     @Override
     protected boolean run0(IEntityContext context, IEntityContext taskContext) {
         ContextUtil.setEntityContext(context);
-        var batch = scan(context.getInstanceContext(), cursor, BATCH_SIZE);
-        if (NncUtils.isEmpty(batch)) {
-            onScanOver(context, taskContext);
-            return true;
-        }
+        var r = scan(context.getInstanceContext(), cursor, BATCH_SIZE);
+        var batch = r.instances();
         process(batch, context, taskContext);
-        if (batch.size() >= BATCH_SIZE) {
+        if (!r.completed()) {
             cursor = batch.get(batch.size() - 1).getTreeId();
             return false;
         } else {
@@ -40,10 +37,12 @@ public abstract class ScanTask extends Task {
 
     protected void onScanOver(IEntityContext context, IEntityContext taskContext) {}
 
-    protected abstract List<InstanceReference> scan(IInstanceContext context,
-                                                    long cursor,
-                                                    @SuppressWarnings("SameParameterValue") long limit);
+    protected ScanResult scan(IInstanceContext context,
+                              long cursor,
+                              @SuppressWarnings("SameParameterValue") long limit) {
+        return context.scan(cursor, limit);
+    }
 
-    protected abstract void process(List<InstanceReference> batch, IEntityContext context, IEntityContext taskContext);
+    protected abstract void process(List<DurableInstance> batch, IEntityContext context, IEntityContext taskContext);
 
 }

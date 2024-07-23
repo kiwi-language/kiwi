@@ -1,9 +1,6 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.entity.ContextAttributeKey;
-import org.metavm.entity.InstanceIndexQuery;
-import org.metavm.entity.InstanceSink;
-import org.metavm.entity.LockMode;
+import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.event.EventQueue;
 import org.metavm.object.instance.IndexKeyRT;
@@ -70,7 +67,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
 //    boolean existsInstances(Type type, boolean persistedOnly);
 
-    List<InstanceReference> scan(long start, long limit);
+    ScanResult scan(long start, long limit);
 
     @Override
     default InstanceRepository instanceRepository() {
@@ -78,6 +75,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     }
 
 //    TypeProvider getTypeProvider();
+
+    void loadTree(long id);
 
     TypeDefProvider getTypeDefProvider();
 

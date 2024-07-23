@@ -526,9 +526,8 @@ public class InstanceManagerTest extends TestCase {
         });
         var productId = ids[0];
         var inventoryId = ids[1];
-        DebugEnv.inventoryId = inventoryId;
         TestUtils.doInTransactionWithoutResult(() -> {
-            try (var context = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.migrationDisabled(true))) {
+            try (var context = newContext()) {
                 var product = (ClassInstance) context.getInstanceContext().get(productId);
                 var inventory = context.getInstanceContext().get(inventoryId);
 //                context.getInstanceContext().remove(product);
@@ -539,7 +538,7 @@ public class InstanceManagerTest extends TestCase {
             }
         });
         TestUtils.doInTransactionWithoutResult(() -> {
-            try (var context = newContext()) {
+            try (var context = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.migrationEnabled(true))) {
                 var product = (ClassInstance) context.getInstanceContext().get(productId);
                 var inventory = context.getInstanceContext().get(inventoryId);
 //                context.getInstanceContext().remove(product);

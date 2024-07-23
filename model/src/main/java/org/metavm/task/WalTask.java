@@ -2,11 +2,13 @@ package org.metavm.task;
 
 import org.metavm.object.instance.core.WAL;
 
+import javax.annotation.Nullable;
+
 public interface WalTask {
 
-    WAL getWAL();
+    @Nullable WAL getWAL();
 
-    default boolean isMigrationDisabled() {
+    default boolean isMigrationEnabled() {
         return false;
     }
 

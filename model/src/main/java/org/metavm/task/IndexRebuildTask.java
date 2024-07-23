@@ -2,8 +2,7 @@ package org.metavm.task;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.DurableInstance;
 
 import java.util.List;
 
@@ -15,13 +14,8 @@ public class IndexRebuildTask extends ScanTask {
     }
 
     @Override
-    protected List<InstanceReference> scan(IInstanceContext context, long cursor, long limit) {
-        return context.scan(cursor, limit);
-    }
-
-    @Override
-    protected void process(List<InstanceReference> batch, IEntityContext context, IEntityContext taskContext) {
-        batch.forEach(i -> i.resolve().incVersion());
+    protected void process(List<DurableInstance> batch, IEntityContext context, IEntityContext taskContext) {
+        batch.forEach(DurableInstance::incVersion);
     }
 
 }
