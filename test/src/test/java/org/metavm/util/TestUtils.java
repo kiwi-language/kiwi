@@ -489,7 +489,14 @@ public class TestUtils {
     }
 
     public static void waitForDDLState(CommitState commitState, EntityContextFactory entityContextFactory) {
-        waitForTaskDone(t -> t instanceof DDLTask d && d.getCommit().getState().ordinal() >= commitState.ordinal(), 100, entityContextFactory);
+        waitForDDLState(commitState, ScanTask.DEFAULT_BATCH_SIZE, entityContextFactory);
+    }
+
+    public static void waitForDDLState(CommitState commitState, int batchSize, EntityContextFactory entityContextFactory) {
+        waitForTaskDone(t -> t instanceof DDLTask d && d.getCommit().getState().ordinal() >= commitState.ordinal(),
+                100,
+                batchSize,
+                entityContextFactory);
     }
 
     public static void waitForDDLCompleted(EntityContextFactory entityContextFactory) {
@@ -506,29 +513,35 @@ public class TestUtils {
     }
 
     public static void waitForTaskDone(Predicate<Task> predicate, EntityContextFactory entityContextFactory) {
-        waitForTaskDone(predicate, 0L, entityContextFactory);
+        waitForTaskDone(predicate, 0L, ScanTask.DEFAULT_BATCH_SIZE, entityContextFactory);
     }
 
-    public static void waitForTaskDone(Predicate<Task> predicate, long delay, EntityContextFactory entityContextFactory) {
+    public static void waitForTaskDone(Predicate<Task> predicate, long delay, int batchSize, EntityContextFactory entityContextFactory) {
         var transactionOps = new MockTransactionOperations();
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
         var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
-        waitForTaskDone(scheduler, worker, predicate, delay);
+        waitForTaskDone(scheduler, worker, predicate, delay, batchSize);
     }
 
     public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate) {
-        waitForTaskDone(scheduler, worker, predicate, 0);
+        waitForTaskDone(scheduler, worker, predicate, 0, ScanTask.BATCH_SIZE);
     }
 
-    public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate, long delay) {
-        scheduler.sendHeartbeat();
-        worker.sendHeartbeat();
-        for (int i = 0; i < 10; i++) {
-            scheduler.schedule();
-            if(worker.waitFor(predicate, 5, delay))
-                return;
+    public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate, long delay, long batchSize) {
+        try {
+            ScanTask.BATCH_SIZE = batchSize;
+            scheduler.sendHeartbeat();
+            worker.sendHeartbeat();
+            for (int i = 0; i < 10; i++) {
+                scheduler.schedule();
+                if (worker.waitFor(predicate, 5, delay))
+                    return;
+            }
+            throw new IllegalStateException("Condition not met after " + 15 + " runs");
         }
-        throw new IllegalStateException("Condition not met after " + 15 + " runs");
+        finally {
+            ScanTask.BATCH_SIZE = ScanTask.DEFAULT_BATCH_SIZE;
+        }
     }
 
     public static void waitForTaskGroupDone(Predicate<TaskGroup> predicate, EntityContextFactory entityContextFactory) {

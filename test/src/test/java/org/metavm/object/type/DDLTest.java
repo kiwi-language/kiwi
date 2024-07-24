@@ -245,7 +245,6 @@ public class DDLTest extends TestCase {
                 "inventory", inventoryId,
                 "price", 20
         )));
-        ScanTask.BATCH_SIZE = 16;
         var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
         Field availableField;
         try(var context = newContext()) {
@@ -255,7 +254,7 @@ public class DDLTest extends TestCase {
                 availableField = productKlass.getFieldByCode("available");
             }
         }
-        TestUtils.waitForDDLAborted(entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.ABORTED, 16, entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
@@ -268,7 +267,6 @@ public class DDLTest extends TestCase {
             Assert.assertNull(invInst.getParent());
             Assert.assertNull(invInst.getParentField());
         }
-        ScanTask.BATCH_SIZE = 256;
     }
 
     public void testEntityToValueConversion() {

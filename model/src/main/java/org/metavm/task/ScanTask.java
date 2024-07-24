@@ -12,7 +12,9 @@ import java.util.List;
 @EntityType
 public abstract class ScanTask extends Task {
 
-    public static long BATCH_SIZE = 256L;
+    public static final int DEFAULT_BATCH_SIZE = 256;
+
+    public static long BATCH_SIZE = DEFAULT_BATCH_SIZE;
 
     private long cursor;
 
