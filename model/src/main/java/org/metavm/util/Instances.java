@@ -2,6 +2,7 @@ package org.metavm.util;
 
 import org.metavm.api.ReadonlyList;
 import org.metavm.ddl.Commit;
+import org.metavm.ddl.FieldChange;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ListNative;
@@ -11,8 +12,6 @@ import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
-import org.metavm.task.EagerFlagSetter;
-import org.metavm.task.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,12 +178,11 @@ public class Instances {
 
     public static String getInstanceDesc(Instance instance) {
         if (instance instanceof InstanceReference r) {
-            if(r.resolve().getMappedEntity() != null)
+            if (r.resolve().getMappedEntity() != null)
                 return EntityUtils.getEntityDesc(r.resolve().getMappedEntity());
             else
                 return r.resolve().toString();
-        }
-        else
+        } else
             return instance.toString();
     }
 
@@ -544,16 +542,15 @@ public class Instances {
             throw new IllegalArgumentException(listType + " is not a List type");
     }
 
-    public static List<Task> applyDDL(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
+    public static void applyDDL(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
         var newFields = NncUtils.map(commit.getNewFieldIds(), context::getField);
         var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
         var toChildFields = NncUtils.map(commit.getToChildFieldIds(), context::getField);
         var changingSuperKlasses = NncUtils.map(commit.getChangingSuperKlassIds(), context::getKlass);
         var toValueKlasses = NncUtils.map(commit.getEntityToValueKlassIds(), context::getKlass);
         var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
-        var tasks = new ArrayList<Task>();
         for (DurableInstance instance : instances) {
-            if(instance instanceof ClassInstance clsInst) {
+            if (instance instanceof ClassInstance clsInst) {
                 for (Field field : newFields) {
                     var k = clsInst.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
                     if (k != null) {
@@ -583,41 +580,38 @@ public class Instances {
                         initializeSuper(clsInst, k, context);
                 }
                 for (Klass klass : toValueKlasses) {
-                    var k = clsInst.getKlass().findAncestorByTemplate(klass);
-                    if (k != null)
-                        handleToValueKlass(clsInst, tasks, context);
+                    handleEntityToValueConversion(clsInst, klass);
                 }
             }
             for (Klass klass : valueToEntityKlasses) {
-               instance.forEachReference(r -> {
-                   if(r.isResolved()) {
-                       var resolved = r.resolve();
-                       if(resolved instanceof ClassInstance clsInst) {
-                           var k = clsInst.getKlass().findAncestorByTemplate(klass);
-                           if(k != null)
-                               r.setEager();
-                       }
-                   }
-               });
+                instance.forEachReference(r -> {
+                    if (r.isResolved()) {
+                        var resolved = r.resolve();
+                        if (resolved instanceof ClassInstance clsInst) {
+                            var k = clsInst.getKlass().findAncestorByTemplate(klass);
+                            if (k != null)
+                                r.setEager();
+                        }
+                    }
+                });
             }
         }
-        return tasks;
     }
 
-    private static final int MAX_REFS = 16;
-
-    private static void handleToValueKlass(ClassInstance instance, List<Task> tasks, IEntityContext context) {
-        var refs = context.getInstanceContext().getByReferenceTargetId(instance.getId(), 0, MAX_REFS);
-        if(refs.size() < MAX_REFS)
-            setEagerFlag(refs, instance.getId());
-        else
-            tasks.add(new EagerFlagSetter(instance.getStringId()));
+    private static void handleEntityToValueConversion(ClassInstance instance, Klass klass) {
+        instance.forEachReference((r, isChild, type) -> {
+            if(type.isAssignableFrom(klass.getType())) {
+                var referent = r.resolve();
+                if(referent instanceof ClassInstance object && object.getKlass().findAncestorKlassByTemplate(klass) != null)
+                    r.setEager();
+            }
+        });
     }
 
     public static void setEagerFlag(List<DurableInstance> referring, Id id) {
         for (DurableInstance ref : referring) {
             ref.forEachReference(r -> {
-                if(r.idEquals(id))
+                if (r.idEquals(id))
                     r.setEager();
             });
         }
@@ -669,7 +663,7 @@ public class Instances {
 
     public static Instance computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {
         var converter = Objects.requireNonNull(findTypeConverter(field));
-        var originalValue = instance.getUnknownField(field.getOriginalTag());
+        var originalValue = instance.getUnknownField(field.getDeclaringType().getTag(), field.getOriginalTag());
         return Flows.invoke(converter, instance, List.of(originalValue), context);
     }
 
@@ -694,6 +688,46 @@ public class Instances {
         var s = Objects.requireNonNull(Flows.invoke(initializer, instance, List.of(), callContext)).resolveObject();
         s.setEphemeral();
         return s;
+    }
+
+    public static void rollbackDDL(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
+        for (FieldChange fieldChange : commit.getFieldChanges()) {
+            var klass = context.getKlass(fieldChange.klassId());
+            for (DurableInstance instance : instances) {
+                if(instance instanceof ClassInstance object) {
+                    var k = object.getKlass().findAncestorByTemplate(klass);
+                    if(k != null)
+                        object.tryClearUnknownField(k, fieldChange.newTag());
+                }
+            }
+        }
+        for (String toChildFieldId : commit.getToChildFieldIds()) {
+            var field = context.getField(toChildFieldId);
+            for (DurableInstance instance : instances) {
+                if (instance instanceof ClassInstance object) {
+                  var k = object.getKlass().findAncestorByTemplate(field.getDeclaringType());
+                  if(k != null) {
+                      var value = object.getField(field);
+                      if(value instanceof InstanceReference ref)
+                          ref.resolve().clearParent();
+                  }
+                }
+            }
+        }
+        for (List<String> klassIdsList : List.of(commit.getEntityToValueKlassIds(), commit.getValueToEntityKlassIds())) {
+            for (String klassId : klassIdsList) {
+                var klass = context.getKlass(klassId);
+                for (DurableInstance instance : instances) {
+                    instance.forEachReference(r -> {
+                        if(r.isEager()) {
+                            var referent = r.resolve();
+                            if(referent instanceof ClassInstance object && object.getKlass().findAncestorKlassByTemplate(klass) != null)
+                                r.clearEager();
+                        }
+                    });
+                }
+            }
+        }
     }
 
 }

@@ -355,6 +355,16 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     }
 
     @Override
+    public void forEachReference(TriConsumer<InstanceReference, Boolean, Type> action) {
+        var isChild = isChildArray();
+        var elementType = getType().getElementType();
+        elements.forEach(e -> {
+            if(e instanceof InstanceReference r)
+                action.accept(r, isChild, elementType);
+        });
+    }
+
+    @Override
     public void transformReference(Function<InstanceReference, InstanceReference> function) {
         var it = elements.listIterator();
         while (it.hasNext()) {

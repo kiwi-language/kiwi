@@ -34,9 +34,12 @@ public class Commit extends Entity {
     private final ReadWriteArray<String> entityToValueKlassIds = addChild(new ReadWriteArray<>(String.class), "entityToValueKlassIds");
     @ChildEntity
     private final ReadWriteArray<String> valueToEntityKlassIds = addChild(new ReadWriteArray<>(String.class), "valueToEntityKlassIds");
+    @ChildEntity
+    private final ReadWriteArray<FieldChange> fieldChanges = addChild(new ReadWriteArray<>(FieldChange.class), "fieldChanges");
 
     private CommitState state = CommitState.PREPARING0;
     private boolean running = true;
+    private boolean cancelled = false;
     private boolean submitted;
 
     private transient BatchSaveRequest request;
@@ -49,7 +52,8 @@ public class Commit extends Entity {
                   List<String> toNonChildFieldIds,
                   List<String> changingSuperKlassIds,
                   List<String> entityToValueKlassIds,
-                  List<String> valueToEntityKlassIds) {
+                  List<String> valueToEntityKlassIds,
+                  List<FieldChange> fieldChanges) {
         this.wal = wal;
         this.requestJSON = NncUtils.toJSONString(request);
         this.request = request;
@@ -60,6 +64,7 @@ public class Commit extends Entity {
         this.changingSuperKlassIds.addAll(changingSuperKlassIds);
         this.entityToValueKlassIds.addAll(entityToValueKlassIds);
         this.valueToEntityKlassIds.addAll(valueToEntityKlassIds);
+        this.fieldChanges.addAll(fieldChanges);
     }
 
     public BatchSaveRequest getRequest() {
@@ -87,7 +92,7 @@ public class Commit extends Entity {
 
     public void setState(CommitState state) {
         if(state.ordinal() <= this.state.ordinal())
-            throw new IllegalStateException("Invalid state transition");
+            throw new IllegalStateException("Invalid state transition from " + this.state + " to " + state);
         this.state = state;
         if(state == CommitState.COMPLETED)
             running = false;
@@ -129,6 +134,18 @@ public class Commit extends Entity {
         return valueToEntityKlassIds.toList();
     }
 
+    public ReadWriteArray<FieldChange> getFieldChanges() {
+        return fieldChanges;
+    }
+
+    public void cancel() {
+        if(cancelled)
+            throw new IllegalStateException("The commit has already been cancelled");
+        if(!state.isPreparing())
+            throw new IllegalStateException("Cannot cancel a prepared commit");
+        cancelled = true;
+    }
+
     public WAL getWal() {
         return wal;
     }
@@ -139,5 +156,9 @@ public class Commit extends Entity {
 
     public boolean isSubmitted() {
         return submitted;
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
     }
 }

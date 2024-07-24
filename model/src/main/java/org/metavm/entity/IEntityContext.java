@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.ddl.Commit;
 import org.metavm.event.EventQueue;
 import org.metavm.flow.*;
 import org.metavm.object.instance.ObjectInstanceMap;
@@ -151,6 +152,14 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     default Field getField(String id) {
         return getEntity(Field.class, id);
+    }
+
+    default Commit getCommit(Id id) {
+        return getEntity(Commit.class, id);
+    }
+
+    default Commit getCommit(String id) {
+        return getEntity(Commit.class, id);
     }
 
     default TypeVariable getTypeVariable(Id id) {

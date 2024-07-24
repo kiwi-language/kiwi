@@ -19,46 +19,6 @@ public enum CommitState {
 
         @Override
         public void onCompletion(Commit commit) {
-            if(PREPARING1.shouldSkip(commit))
-                commit.submit();
-        }
-
-        @Override
-        public boolean isPreparing() {
-            return true;
-        }
-
-        @Override
-        public long getSessionTimeout() {
-            return 5000L;
-        }
-    },
-    PREPARING1 {
-        @Override
-        public void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
-            var instCtx = context.getInstanceContext();
-            for (DurableInstance instance : instances) {
-                instance.forEachReference(r -> {
-                    if(!r.isResolved())
-                        instCtx.buffer(r.getId());
-                });
-            }
-            for (DurableInstance instance : instances) {
-                instance.forEachReference(r -> {
-                    var referent = r.resolve();
-                    if(referent.isValue() && referent.tryGetId() != null)
-                        r.setEager();
-                });
-            }
-        }
-
-        @Override
-        public boolean shouldSkip(Commit commit) {
-            return commit.getEntityToValueKlassIds().isEmpty();
-        }
-
-        @Override
-        public void onCompletion(Commit commit) {
             commit.submit();
         }
 
@@ -194,7 +154,7 @@ public enum CommitState {
     ABORTING {
         @Override
         public void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
-
+            Instances.rollbackDDL(instances, commit, context);
         }
     },
     ABORTED {

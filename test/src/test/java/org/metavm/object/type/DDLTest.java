@@ -13,6 +13,7 @@ import org.metavm.entity.MemInstanceStore;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.*;
 import org.metavm.task.DDLTask;
+import org.metavm.task.ScanTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -227,6 +228,16 @@ public class DDLTest extends TestCase {
                 ),
                 "price", 100
         )));
+        for (int i = 0; i < 16; i++) {
+            var _i = i;
+            TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                    "name", "Product" + _i,
+                    "inventory", Map.of(
+                            "quantity", 100
+                    ),
+                    "price", 100
+            )));
+        }
         var shoes = apiClient.getObject(shoesId);
         var inventoryId = shoes.getString("inventory");
         TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
@@ -234,8 +245,30 @@ public class DDLTest extends TestCase {
                 "inventory", inventoryId,
                 "price", 20
         )));
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
+        ScanTask.BATCH_SIZE = 16;
+        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
+        Field availableField;
+        try(var context = newContext()) {
+            var commit = context.getEntity(Commit.class, commitId);
+            try(var walContext = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.readWAL(commit.getWal()))) {
+                var productKlass = Objects.requireNonNull(walContext.selectFirstByKey(Klass.UNIQUE_CODE, "Product"));
+                availableField = productKlass.getFieldByCode("available");
+            }
+        }
         TestUtils.waitForDDLAborted(entityContextFactory);
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
+            try {
+                shoesInst.getUnknownField(availableField.getDeclaringType().getTag(), availableField.getTag());
+                Assert.fail("Field should have been rolled back");
+            }
+            catch (IllegalStateException ignored) {}
+            var invInst = instCtx.get(Id.parse(inventoryId));
+            Assert.assertNull(invInst.getParent());
+            Assert.assertNull(invInst.getParentField());
+        }
+        ScanTask.BATCH_SIZE = 256;
     }
 
     public void testEntityToValueConversion() {
@@ -344,6 +377,78 @@ public class DDLTest extends TestCase {
                 Assert.assertFalse(priceRef.isEager());
                 Assert.assertFalse(priceRef.isValueReference());
             }
+        }
+    }
+
+    public void testRollbackEntityToValueConversion() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_before.masm", typeManager, entityContextFactory);
+        var currencyKlass = typeManager.getTypeByCode("Currency").type();
+        var yuanId = TestUtils.getEnumConstantByName(currencyKlass, "YUAN").getIdNotNull();
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "Shoes",
+                "price", Map.of(
+                        "amount", 100,
+                        "currency", yuanId
+                )
+        )));
+        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_after.masm", typeManager, false, entityContextFactory);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var commit = context.getCommit(commitId);
+                commit.cancel();
+                context.finish();
+            }
+        });
+        TestUtils.waitForDDLState(CommitState.ABORTING, entityContextFactory);
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
+            var priceRef = (InstanceReference) shoesInst.getField("price");
+            Assert.assertTrue(priceRef.isEager());
+        }
+        TestUtils.waitForDDLAborted(entityContextFactory);
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
+            var priceRef = (InstanceReference) shoesInst.getField("price");
+            Assert.assertFalse(priceRef.isEager());
+        }
+    }
+
+    public void testRollbackValueToEntityConversion() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_after.masm", typeManager, entityContextFactory);
+        var currencyKlass = typeManager.getTypeByCode("Currency").type();
+        var yuanId = TestUtils.getEnumConstantByName(currencyKlass, "YUAN").getIdNotNull();
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "Shoes",
+                "price", Map.of(
+                        "amount", 100,
+                        "currency", yuanId
+                )
+        )));
+        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_before.masm", typeManager, false, entityContextFactory);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var commit = context.getCommit(commitId);
+                commit.cancel();
+                context.finish();
+            }
+        });
+        TestUtils.waitForDDLState(CommitState.ABORTING, entityContextFactory);
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
+            var priceRef = (InstanceReference) shoesInst.getField("price");
+            Assert.assertFalse(priceRef.isValueReference());
+        }
+        TestUtils.waitForDDLAborted(entityContextFactory);
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
+            var priceRef = (InstanceReference) shoesInst.getField("price");
+            Assert.assertFalse(priceRef.isValueReference());
+            Assert.assertFalse(priceRef.isEager());
+            Assert.assertFalse(priceRef.isResolved());
         }
     }
 

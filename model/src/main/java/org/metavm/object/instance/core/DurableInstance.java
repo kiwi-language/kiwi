@@ -258,6 +258,11 @@ public abstract class DurableInstance implements Message {
         }
     }
 
+    public void clearParent() {
+        this.parent = null;
+        this.parentField = null;
+    }
+
     public void ensureLoaded() {
         if (!loaded && load != null) {
             load.accept(this);
@@ -710,6 +715,8 @@ public abstract class DurableInstance implements Message {
     public abstract void forEachReference(Consumer<InstanceReference> action);
 
     public abstract void forEachReference(BiConsumer<InstanceReference, Boolean> action);
+
+    public abstract void forEachReference(TriConsumer<InstanceReference, Boolean, Type> action);
 
     public abstract void transformReference(Function<InstanceReference, InstanceReference> function);
 

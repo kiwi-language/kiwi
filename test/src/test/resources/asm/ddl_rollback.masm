@@ -1,5 +1,5 @@
 class Product {
-    private string name;
+    private title string name;
     private int price;
     private Inventory inventory;
 

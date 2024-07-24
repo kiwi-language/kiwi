@@ -3,6 +3,8 @@ package org.metavm.object.type;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.ddl.Commit;
+import org.metavm.ddl.FieldChange;
+import org.metavm.ddl.FieldChangeKind;
 import org.metavm.entity.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.flow.Method;
@@ -272,6 +274,33 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public Commit buildCommit(WAL wal) {
         checkForDDL();
+        var fieldChanges = new ArrayList<FieldChange>();
+        for (Field f : newFields) {
+            fieldChanges.add(new FieldChange(
+                    f.getDeclaringType().getStringId(),
+                    f.getStringId(),
+                    f.getTag(),
+                    f.getTag(),
+                    FieldChangeKind.CREATION));
+        }
+        for (Field f : typeChangedFields) {
+            fieldChanges.add(new FieldChange(
+                    f.getDeclaringType().getStringId(),
+                    f.getStringId(),
+                    f.getOriginalTag(),
+                    f.getTag(),
+                    FieldChangeKind.TYPE_CHANGE));
+        }
+        for (Klass k : changingSuperKlasses) {
+            var s = Objects.requireNonNull(k.getSuperType()).resolve();
+            s.forEachField(f -> fieldChanges.add(new FieldChange(
+                    k.getStringId(),
+                    f.getStringId(),
+                    f.getTag(),
+                    f.getTag(),
+                    FieldChangeKind.SUPER_CLASS_ADDED
+            )));
+        }
         return new Commit(
                 wal,
                 new BatchSaveRequest(
@@ -285,7 +314,8 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                 NncUtils.map(toNonChildFields, Entity::getStringId),
                 NncUtils.map(changingSuperKlasses, Entity::getStringId),
                 NncUtils.map(entityToValueKlasses, Entity::getStringId),
-                NncUtils.map(valueToEntityKlasses, Entity::getStringId)
+                NncUtils.map(valueToEntityKlasses, Entity::getStringId),
+                fieldChanges
         );
     }
 

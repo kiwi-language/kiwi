@@ -32,9 +32,14 @@ public class DDLTask extends ScanTask implements WalTask {
     @Override
     protected void onScanOver(IEntityContext context, IEntityContext taskContext) {
         commitState.onCompletion(commit);
-        var nextState = commitState.nextState();
-        while (!nextState.isTerminal() && nextState.shouldSkip(commit))
-            nextState = nextState.nextState();
+        CommitState nextState;
+        if(commitState.isPreparing() && commit.isCancelled())
+            nextState = CommitState.ABORTING;
+        else {
+            nextState = commitState.nextState();
+            while (!nextState.isTerminal() && nextState.shouldSkip(commit))
+                nextState = nextState.nextState();
+        }
         commit.setState(nextState);
         if(!nextState.isTerminal()) {
             if(DISABLE_DELAY)
@@ -46,8 +51,12 @@ public class DDLTask extends ScanTask implements WalTask {
 
     @Override
     protected void onFailure(IEntityContext context, IEntityContext taskContext) {
-        commit.setState(CommitState.ABORTING);
-        taskContext.bind(new DDLTask(commit, CommitState.ABORTING));
+        if (commit.getState() != CommitState.ABORTING) {
+            commit.setState(CommitState.ABORTING);
+            taskContext.bind(new DDLTask(commit, CommitState.ABORTING));
+        }
+        else
+            logger.error("Failed to rollback DDL {}", commit.getId());
     }
 
     public CommitState getCommitState() {

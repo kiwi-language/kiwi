@@ -9,7 +9,7 @@ class Product extends Versioned {
         return found;
     }
 
-    private string name;
+    private title string name;
     private double price;
     private child Inventory inventory;
     private boolean available;

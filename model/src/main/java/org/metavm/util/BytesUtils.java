@@ -5,6 +5,7 @@ import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.AnyType;
+import org.metavm.object.type.Type;
 import org.metavm.object.type.rest.dto.TypeKey;
 
 import java.io.ByteArrayInputStream;
@@ -116,6 +117,11 @@ public class BytesUtils {
         @Override
         public void forEachReference(BiConsumer<InstanceReference, Boolean> action) {
             
+        }
+
+        @Override
+        public void forEachReference(TriConsumer<InstanceReference, Boolean, Type> action) {
+
         }
 
         @Override

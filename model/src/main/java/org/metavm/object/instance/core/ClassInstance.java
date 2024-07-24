@@ -177,6 +177,14 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
+    public void forEachReference(TriConsumer<InstanceReference, Boolean, Type> action) {
+        forEachField((f, v) -> {
+            if(v instanceof InstanceReference r)
+                action.accept(r, f.isChild(), f.getType());
+        });
+    }
+
+    @Override
     public void transformReference(Function<InstanceReference, InstanceReference> function) {
         forEachField((f, v) -> {
             if(v instanceof InstanceReference r) {
@@ -418,8 +426,12 @@ public class ClassInstance extends DurableInstance {
         return field(field).getValue();
     }
 
-    public Instance getUnknownField(int tag) {
-        return fieldTable.getUnknown(tag);
+    public void tryClearUnknownField(Klass klass, int tag) {
+        fieldTable.tryClearUnknownField(klass, tag);
+    }
+
+    public Instance getUnknownField(long klassTag, int tag) {
+        return fieldTable.getUnknown(klassTag, tag);
     }
 
     public FlowInstance getFunction(Method method) {
@@ -620,6 +632,15 @@ public class ClassInstance extends DurableInstance {
             fields[field.getField().getOffset()] = field;
         }
 
+        void tryClearUnknownField(Klass klass, int tag) {
+            for (FieldSubTable subTable : subTables) {
+                if(subTable.klassTag == klass.getTag()) {
+                    subTable.clearUnknown(tag);
+                    return;
+                }
+            }
+        }
+
         InstanceField get(Field field) {
             return fields[field.getOffset()];
         }
@@ -683,9 +704,9 @@ public class ClassInstance extends DurableInstance {
             };
         }
 
-        public Instance getUnknown(int tag) {
+        public Instance getUnknown(long klassTag, int tag) {
             for (var f : this) {
-               if(f instanceof UnknownField uf && uf.getTag() == tag)
+               if(f instanceof UnknownField uf && uf.getKlassTag() == klassTag && uf.getTag() == tag)
                    return uf.getValue();
             }
             throw new IllegalStateException("Can not find unknown field for tag " + tag);
@@ -732,6 +753,10 @@ public class ClassInstance extends DurableInstance {
         @Override
         public Iterator<IInstanceField> iterator() {
             return fields.iterator();
+        }
+
+        public boolean clearUnknown(int tag) {
+            return fields.removeIf(f -> f instanceof UnknownField && f.getTag() == tag);
         }
     }
 
