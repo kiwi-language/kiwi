@@ -70,6 +70,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private final ChildArray<Field> staticFields = addChild(new ChildArray<>(Field.class), "staticFields");
     @ChildEntity
     private final ChildArray<Constraint> constraints = addChild(new ChildArray<>(Constraint.class), "constraints");
+    @ChildEntity
+    private final ChildArray<EnumConstantDef> enumConstantDefs = addChild(new ChildArray<>(EnumConstantDef.class), "enumConstantDefs");
     @Nullable
     private Klass template;
     // Don't remove, for search
@@ -1143,6 +1145,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.map(constraints, Constraint::toDTO),
                 NncUtils.map(methods, f -> f.toDTO(serializeContext.shouldWriteCode(this), serializeContext)),
                 NncUtils.map(mappings, m -> m.toDTO(serializeContext)),
+                NncUtils.map(enumConstantDefs, ec -> ec.toDTO(serializeContext)),
                 NncUtils.get(defaultMapping, serializeContext::getStringId),
                 desc,
                 getExtra(),
@@ -1631,9 +1634,36 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public void saveMapping(IEntityContext context) {
-        if (!(context instanceof DefContext) && shouldGenerateBuiltinMapping()) {
-            MappingSaver.create(context).saveBuiltinMapping(this, true);
+        if (!(context instanceof DefContext)) {
+            if(shouldGenerateBuiltinMapping())
+                MappingSaver.create(context).saveBuiltinMapping(this, true);
+            else {
+                clearMapping();
+            }
         }
+    }
+
+    private void clearMapping() {
+        defaultMapping = null;
+        mappings.clear();
+        methods.removeIf(Klass::isMappingMethod);
+    }
+
+    public static final String[] MAPPING_METHOD_PREFIXES = new String[] {
+            "getView", "saveView", "map", "unmap", "fromView"
+    };
+
+    private static boolean isMappingMethod(Method method) {
+        if(method.isSynthetic()) {
+            var methodName = method.getName();
+            for (String prefix : MAPPING_METHOD_PREFIXES) {
+                if(methodName.startsWith(prefix))
+                    return true;
+            }
+            return false;
+        }
+        else
+            return false;
     }
 
     public boolean shouldGenerateBuiltinMapping() {
@@ -1761,6 +1791,22 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         mappings.removeIf(ObjectMapping::isBuiltin);
         if(defaultMapping != null && defaultMapping.isBuiltin())
             defaultMapping = null;
+    }
+
+    public List<EnumConstantDef> getEnumConstantDefs() {
+        return enumConstantDefs.toList();
+    }
+
+    public @Nullable EnumConstantDef findEnumConstantDef(Predicate<EnumConstantDef> predicate) {
+        return NncUtils.find(enumConstantDefs, predicate);
+    }
+
+    public void addEnumConstantDef(EnumConstantDef enumConstantDef) {
+        this.enumConstantDefs.addChild(enumConstantDef);
+    }
+
+    public void setEnumConstantDefs(List<EnumConstantDef> enumConstantDefs) {
+        this.enumConstantDefs.resetChildren(enumConstantDefs);
     }
 
 }

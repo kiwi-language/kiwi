@@ -25,6 +25,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processGenericOverride();
             processValueTypes();
             processInterceptor();
+            processEnums();
         });
     }
 
@@ -141,6 +142,12 @@ public class BasicCompilingTest extends CompilerTestBase {
         );
         var tel = (String) user.get("telephone");
         Assert.assertEquals("123******12", tel);
+    }
+
+    private void processEnums() {
+        var kindId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("enums.ProductKind", "fromCode", List.of(0)));
+        var kind = apiClient.getObject(kindId);
+        Assert.assertEquals("DEFAULT", kind.getString("name"));
     }
 
 }

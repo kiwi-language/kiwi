@@ -172,6 +172,8 @@ public enum CommitState {
 
     public abstract void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context);
 
+    public void onStart(IEntityContext context, Commit commit) {}
+
     public void onCompletion(Commit commit) {}
 
     public boolean shouldSkip(Commit commit) {

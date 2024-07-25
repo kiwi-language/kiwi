@@ -843,6 +843,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     public void postProcess() {
         StdKlass.initialize(this);
         StdMethod.initialize(this);
+        StdField.initialize(this);
         standardDefBuilder.initUserFunctions();
     }
 

@@ -203,6 +203,9 @@ public class Assembler {
         private final boolean isEnum;
         private @Nullable ClassType superType;
         int enumConstantOrdinal;
+        private final Set<Method> visitedMethods = new HashSet<>();
+        private final Set<Field> visitedFields = new HashSet<>();
+        private final Set<EnumConstantDef> visitEnumConstantDefs = new HashSet<>();
 
         private ClassInfo(
                 @Nullable AsmScope parent,
@@ -497,11 +500,27 @@ public class Assembler {
         }
 
         @Override
+        public void visitTypeDef(String name, TypeCategory typeCategory, boolean isStruct, @Nullable AssemblyParser.TypeTypeContext superType, @Nullable AssemblyParser.TypeListContext interfaces, @Nullable AssemblyParser.TypeParametersContext typeParameters, ParserRuleContext ctx, Runnable processBody) {
+            var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
+            scope = classInfo;
+            var klass = classInfo.klass;
+            processBody.run();
+            if(klass.isEnum())
+                classInfo.visitedMethods.add(Flows.saveValuesMethod(klass));
+            var removedMethods = NncUtils.exclude(klass.getMethods(), classInfo.visitedMethods::contains);
+            removedMethods.forEach(klass::removeMethod);
+            var removedFields = NncUtils.exclude(klass.getFields(), classInfo.visitedFields::contains);
+            removedFields.forEach(klass::removeField);
+            scope = classInfo.parent;
+        }
+
+        @Override
         public Void visitFieldDeclaration(AssemblyParser.FieldDeclarationContext ctx) {
             var type = parseType(ctx.typeType(), scope, getCompilationUnit());
             var name = ctx.IDENTIFIER().getText();
             var mods = currentMods();
-            var klass = ((ClassInfo) scope).klass;
+            var classInfo = (ClassInfo) scope;
+            var klass = classInfo.klass;
             var field = klass.findField(f -> f.getCodeNotNull().equals(name));
             if (field == null) {
                 field = FieldBuilder.newBuilder(name, name, klass, type)
@@ -517,12 +536,14 @@ public class Assembler {
             field.setStatic(mods.contains(Modifiers.STATIC));
             if (mods.contains(Modifiers.TITLE))
                 klass.setTitleField(field);
+            classInfo.visitedFields.add(field);
             return null;
         }
 
         @Override
         public Void visitEnumConstant(AssemblyParser.EnumConstantContext ctx) {
-            var klass = ((ClassInfo) scope).klass;
+            var classInfo = (ClassInfo) scope;
+            var klass = classInfo.klass;
             var name = ctx.IDENTIFIER().getText();
             var field = klass.findStaticField(f -> f.getName().equals(name));
             if (field == null) {
@@ -531,7 +552,19 @@ public class Assembler {
                         .isStatic(true)
                         .build();
             }
+            var enumConstantDef = klass.findEnumConstantDef(ec -> ec.getName().equals(name));
+            List<AssemblyParser.ExpressionContext> argCtx =
+                    ctx.arguments() != null ? ctx.arguments().expressionList().expression() : List.of();
+            var args = NncUtils.map(argCtx, arg -> Values.expression(parseExpression(arg.getText(), new EmptyParsingContext())));
+            if(enumConstantDef == null) {
+                enumConstantDef = new EnumConstantDef(klass, name, classInfo.nextEnumConstantOrdinal(), args);
+            }
+            else {
+                enumConstantDef.setOrdinal(classInfo.nextEnumConstantOrdinal());
+                enumConstantDef.setArguments(args);
+            }
             setAttribute(ctx, AsmAttributeKey.field, field);
+            setAttribute(ctx, AsmAttributeKey.enumConstantDef, enumConstantDef);
             return super.visitEnumConstant(ctx);
         }
 
@@ -557,14 +590,16 @@ public class Assembler {
             params.forEach(p -> paramTypeNames.add(getInternalName(p.typeType(), typeParamNames, scope)));
             var internalName = klass.getCodeNotNull() + "." + name + "(" + String.join(",", paramTypeNames) + ")";
             var method = klass.findMethod(m -> m.getInternalName(null).equals(internalName));
-            if (method != null)
+            if (method != null) {
                 method.clearNodes();
+            }
             else {
                 method = MethodBuilder.newBuilder(klass, name, name)
                         .tmpId(NncUtils.randomNonNegative())
                         .isConstructor(isConstructor)
                         .build();
             }
+            classInfo.visitedMethods.add(method);
             var methodInfo = new MethodInfo(classInfo, name, method);
             setAttribute(ctx, AsmAttributeKey.methodInfo, methodInfo);
             super.visitFunction(name, typeParameters, formalParameterList, returnType, block, ctx, isConstructor, processBody);
@@ -763,6 +798,8 @@ public class Assembler {
                         .returnType(PrimitiveType.voidType)
                         .build();
             }
+            if(klass.isEnum())
+                Flows.generateValuesMethodBody(klass);
             cinits.push(cinit);
             processBody.run();
             Nodes.ret(nextNodeName(), cinit.getRootScope(), null);
@@ -780,51 +817,6 @@ public class Assembler {
                 s = s.parent();
             }
             return Objects.requireNonNull((ClassInfo) s, "Not in any class scope");
-        }
-
-        @Override
-        public Void visitEnumConstant(AssemblyParser.EnumConstantContext ctx) {
-            var cinit = cinit();
-            var name = ctx.IDENTIFIER().getText();
-            var klass = currentClass().klass;
-            var field = getAttribute(ctx, AsmAttributeKey.field);
-            var args = new ArrayList<Value>();
-            args.add(Values.constantString(name));
-            args.add(Values.constantLong(currentClass().nextEnumConstantOrdinal()));
-            if (ctx.arguments() != null && ctx.arguments().expressionList() != null) {
-                var expressions = ctx.arguments().expressionList().expression();
-                for (var expression : expressions)
-                    args.add(parseValue(expression, new EmptyParsingContext()));
-            }
-            var constructor = klass.resolveMethod(klass.getCode(), NncUtils.map(args, Value::getType), List.of(), false);
-            var cinitScope = cinit.getRootScope();
-            var value = new NewObjectNode(
-                    NncUtils.randomNonNegative(),
-                    "value" + name,
-                    null,
-                    constructor.getRef(),
-                    NncUtils.biMap(constructor.getParameters(), args, (p, v) -> new Argument(NncUtils.randomNonNegative(), p.getRef(), v)),
-                    cinitScope.getLastNode(),
-                    cinitScope,
-                    null,
-                    false,
-                    false
-            );
-            new UpdateStaticNode(
-                    NncUtils.randomNonNegative(),
-                    "update" + name,
-                    null,
-                    cinitScope.getLastNode(),
-                    cinitScope,
-                    klass,
-                    List.of(
-                            new UpdateField(
-                                    field.getRef(),
-                                    UpdateOp.SET,
-                                    Values.reference(new NodeExpression(value))
-                            )
-                    ));
-            return super.visitEnumConstant(ctx);
         }
 
         @Override
@@ -1471,6 +1463,8 @@ public class Assembler {
         public static final AsmAttributeKey<Index> index = new AsmAttributeKey<>("index", Index.class);
 
         public static final AsmAttributeKey<CompilationUit> compilationUnit = new AsmAttributeKey<>("compilationUnit", CompilationUit.class);
+
+        public static final AsmAttributeKey<EnumConstantDef> enumConstantDef = new AsmAttributeKey<>("enumConstantDef", EnumConstantDef.class);
 
         T cast(Object value) {
             return klass.cast(value);

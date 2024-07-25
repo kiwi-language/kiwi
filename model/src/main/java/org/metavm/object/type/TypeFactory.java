@@ -5,6 +5,7 @@ import org.metavm.entity.Attribute;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.StdKlass;
+import org.metavm.expression.TypeParsingContext;
 import org.metavm.flow.*;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.flow.rest.FunctionParam;
@@ -12,10 +13,7 @@ import org.metavm.flow.rest.MethodParam;
 import org.metavm.flow.rest.ParameterDTO;
 import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.rest.dto.CapturedTypeVariableDTO;
-import org.metavm.object.type.rest.dto.FieldDTO;
-import org.metavm.object.type.rest.dto.KlassDTO;
-import org.metavm.object.type.rest.dto.TypeVariableDTO;
+import org.metavm.object.type.rest.dto.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Instances;
@@ -133,6 +131,8 @@ public abstract class TypeFactory {
                     klass.setStaticFields(NncUtils.map(klassDTO.staticFields(), f -> saveField(declaringType, f, batch)));
                 if (klassDTO.constraints() != null)
                     klass.setConstraints(NncUtils.map(klassDTO.constraints(), c -> ConstraintFactory.save(c, context)));
+                if(klassDTO.enumConstantDefs() != null)
+                    klass.setEnumConstantDefs(NncUtils.map(klassDTO.enumConstantDefs(), ec -> saveEnumConstantDef(declaringType, ec, stage, batch)));
                 if (klassDTO.flows() != null) {
                     var methods = NncUtils.filterAndMap(klassDTO.flows(), f -> !f.synthetic(), f -> saveMethod(f, stage, batch));
                     klass.getMethods().forEach(m -> {
@@ -182,7 +182,7 @@ public abstract class TypeFactory {
                     .tag(declaringType.nextFieldTag())
                     .state(context.isNewEntity(declaringType) ? MetadataState.READY : MetadataState.INITIALIZING)
                     .build();
-            if(!context.isNewEntity(declaringType))
+            if(!context.isNewEntity(declaringType) && !field.isStatic())
                 batch.addNewField(field);
             context.bind(field);
         } else {
@@ -238,6 +238,33 @@ public abstract class TypeFactory {
         method.setOverridden(NncUtils.map(param.overriddenRefs(), r -> MethodRef.create(r, context).resolve()));
         method.setAbstract(param.isAbstract());
         return method;
+    }
+
+    public EnumConstantDef saveEnumConstantDef(Klass declaringKlass, EnumConstantDefDTO enumConstantDefDTO, ResolutionStage stage, SaveTypeBatch saveTypeBatch) {
+        var id = enumConstantDefDTO.id() != null ? Id.parse(enumConstantDefDTO.id()) : null;
+        EnumConstantDef ec = id != null ? declaringKlass.findEnumConstantDef(e -> e.idEquals(id)) : null;
+        var context = saveTypeBatch.getContext();
+        var parsingContext = new TypeParsingContext(context.getInstanceContext(), new ContextTypeDefRepository(context), declaringKlass);
+        var args = NncUtils.map(enumConstantDefDTO.arguments(), a -> ValueFactory.create(a, parsingContext));
+        if(ec == null) {
+            ec = new EnumConstantDef(
+                    declaringKlass,
+                    enumConstantDefDTO.name(),
+                    enumConstantDefDTO.ordinal(),
+                    args
+            );
+            saveTypeBatch.addNewEnumConstantDef(ec);
+        }
+        else {
+            if(enumConstantDefDTO.name().equals(ec.getName()) || enumConstantDefDTO.ordinal() != ec.getOrdinal()
+                    || !args.equals(ec.getArguments())) {
+                ec.setName(enumConstantDefDTO.name());
+                ec.setOrdinal(enumConstantDefDTO.ordinal());
+                ec.setArguments(args);
+                saveTypeBatch.addChangedEnumConstantDef(ec);
+            }
+        }
+        return ec;
     }
 
     public Function saveFunction(FlowDTO flowDTO, ResolutionStage stage, SaveTypeBatch batch) {

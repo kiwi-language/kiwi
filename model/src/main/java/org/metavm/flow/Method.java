@@ -378,6 +378,8 @@ public class Method extends Flow implements Property, GenericElement {
             else {
                 if (!isRootScopePresent())
                     throw new InternalException("fail to invoke method: " + getQualifiedName() + ". root scope not present");
+                if(getRootNode() == null)
+                    throw new IllegalStateException("Failed to invoke method " + getQualifiedSignature() + ": empty method body");
                 try {
                     result = new MetaFrame(this.getRootNode(), declaringType, self,
                             arguments, callContext.instanceRepository()).execute();

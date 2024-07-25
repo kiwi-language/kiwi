@@ -36,6 +36,10 @@ public class Commit extends Entity {
     private final ReadWriteArray<String> valueToEntityKlassIds = addChild(new ReadWriteArray<>(String.class), "valueToEntityKlassIds");
     @ChildEntity
     private final ReadWriteArray<FieldChange> fieldChanges = addChild(new ReadWriteArray<>(FieldChange.class), "fieldChanges");
+    @ChildEntity
+    private final ReadWriteArray<String> newEnumConstantIds = addChild(new ReadWriteArray<>(String.class), "newEnumConstantIds");
+    @ChildEntity
+    private final ReadWriteArray<String> changedEnumConstantIds = addChild(new ReadWriteArray<>(String.class), "changedEnumConstantIds");
 
     private CommitState state = CommitState.PREPARING0;
     private boolean running = true;
@@ -114,8 +118,8 @@ public class Commit extends Entity {
         return convertingFieldIds.toList();
     }
 
-    public ReadWriteArray<String> getToNonChildFieldIds() {
-        return toNonChildFieldIds;
+    public List<String> getToNonChildFieldIds() {
+        return toNonChildFieldIds.toList();
     }
 
     public List<String> getToChildFieldIds() {
@@ -134,8 +138,16 @@ public class Commit extends Entity {
         return valueToEntityKlassIds.toList();
     }
 
-    public ReadWriteArray<FieldChange> getFieldChanges() {
-        return fieldChanges;
+    public List<FieldChange> getFieldChanges() {
+        return fieldChanges.toList();
+    }
+
+    public List<String> getNewEnumConstantIds() {
+        return newEnumConstantIds.toList();
+    }
+
+    public List<String> getChangedEnumConstantIds() {
+        return changedEnumConstantIds.toList();
     }
 
     public void cancel() {

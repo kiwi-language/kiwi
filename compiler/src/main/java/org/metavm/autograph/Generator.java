@@ -18,7 +18,6 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 import static java.util.Objects.requireNonNull;
-import static org.metavm.autograph.TranspileUtils.getEnumConstantName;
 import static org.metavm.expression.Expressions.trueExpression;
 
 public class Generator extends CodeGenVisitor {
@@ -96,25 +95,20 @@ public class Generator extends CodeGenVisitor {
             constructorGen.createReturn(new NodeExpression(constructorGen.createSelf()));
             constructorGen.exitScope();
         }
+        if(klass.isEnum())
+            Flows.generateValuesMethodBody(klass);
         exitClass();
         klass.setStage(ResolutionStage.DEFINITION);
     }
 
     @Override
     public void visitEnumConstant(PsiEnumConstant enumConstant) {
-        var field = NncUtils.requireNonNull(enumConstant.getUserData(Keys.FIELD));
+        var ecd = Objects.requireNonNull(enumConstant.getUserData(Keys.ENUM_CONSTANT_DEF));
         var builder = currentClassInfo().staticBuilder;
-        List<Expression> args = new ArrayList<>();
-        args.add(Expressions.constantString(getEnumConstantName(enumConstant)));
-        args.add(Expressions.constantLong(currentClassInfo().nextEnumConstantOrdinal()));
-        args.addAll(NncUtils.map(
+        ecd.setArguments(NncUtils.map(
                 requireNonNull(enumConstant.getArgumentList()).getExpressions(),
-                expr -> builder.getExpressionResolver().resolve(expr)
+                expr -> Values.expression(builder.getExpressionResolver().resolve(expr))
         ));
-        var expr = builder.getExpressionResolver().newInstance(currentClass(), args,
-                List.of(TranspileUtils.createClassType(String.class), TranspileUtils.createClassType(Long.class)),
-                enumConstant, new ExpressionResolver.ResolutionContext());
-        builder.createUpdateStatic(currentClass(), Map.of(field, expr));
     }
 
     @Override

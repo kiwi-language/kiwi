@@ -30,6 +30,11 @@ public class DDLTask extends ScanTask implements WalTask {
     }
 
     @Override
+    protected void onStart(IEntityContext context, IEntityContext taskContext) {
+        commitState.onStart(context, commit);
+    }
+
+    @Override
     protected void onScanOver(IEntityContext context, IEntityContext taskContext) {
         commitState.onCompletion(commit);
         CommitState nextState;

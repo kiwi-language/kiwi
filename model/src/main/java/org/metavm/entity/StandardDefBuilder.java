@@ -127,6 +127,7 @@ public class StandardDefBuilder {
                 enumDef
         );
         enumKlass.setTitleField(enumNameDef.getField());
+        createEnumMethods(enumKlass);
         enumKlass.setStage(ResolutionStage.DEFINITION);
 
         var enumTypeParamDef = new TypeVariableDef(Enum.class.getTypeParameters()[0], enumTypeParam);
@@ -207,6 +208,17 @@ public class StandardDefBuilder {
         createNullPointerExceptionFlows(nullPointerExceptionKlass);
         defContext.addDef(new DirectDef<>(
                 NullPointerException.class, nullPointerExceptionKlass));
+    }
+
+    private void createEnumMethods(Klass enumKlass) {
+        MethodBuilder.newBuilder(enumKlass, "name", "name")
+                .isNative(true)
+                .returnType(Types.getStringType())
+                .build();
+        MethodBuilder.newBuilder(enumKlass, "ordinal", "ordinal")
+                .isNative(true)
+                .returnType(Types.getLongType())
+                .build();
     }
 
     private Klass createConsumerKlass() {

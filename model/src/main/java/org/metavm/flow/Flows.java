@@ -6,11 +6,10 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.expression.Expression;
+import org.metavm.expression.StaticPropertyExpression;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.type.FunctionType;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
@@ -98,6 +97,41 @@ public class Flows {
         var result = execute(setter, instance, List.of(value), context);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
+    }
+
+    public static boolean isValuesMethod(Method method) {
+        return method.isStatic() && method.getName().equals("values") && method.getParameters().isEmpty();
+    }
+
+    public static Method saveValuesMethod(Klass klass) {
+        assert klass.isEnum();
+        var m = klass.findMethod(Flows::isValuesMethod);
+        if(m == null) {
+            m = MethodBuilder.newBuilder(klass, "values", "values")
+                    .isStatic(true)
+                    .returnType(new ArrayType(klass.getType(), ArrayKind.READ_WRITE))
+                    .build();
+        }
+        return m;
+    }
+
+    public static void generateValuesMethodBody(Klass klass) {
+        assert klass.isEnum();
+        var valuesMethod = klass.getMethod(Flows::isValuesMethod);
+        valuesMethod.clearContent();
+        var scope = valuesMethod.getRootScope();
+        var values = Nodes.newArray("values", null, new ArrayType(klass.getType(), ArrayKind.READ_WRITE),
+                null, null, scope);
+        for (var ecd : klass.getEnumConstantDefs()) {
+            Nodes.addElement(
+                    "add_" + ecd.getName(),
+                    null,
+                    Values.node(values),
+                    Values.expression(new StaticPropertyExpression(ecd.getField().getRef())),
+                    scope
+            );
+        }
+        Nodes.ret("return", scope, Values.node(values));
     }
 
 }

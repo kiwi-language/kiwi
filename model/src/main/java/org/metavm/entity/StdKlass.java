@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 public enum StdKlass implements ValueHolderOwner<Klass> {
 
     entity(Entity.class),
-    enum_(Enum.class),
+    enum_(Enum.class, false, EnumNative.class),
     record(Record.class),
     collection(Collection.class),
     list(List.class, false, ListNative.class),

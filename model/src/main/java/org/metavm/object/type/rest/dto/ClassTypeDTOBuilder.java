@@ -44,6 +44,7 @@ public class ClassTypeDTOBuilder {
     private List<ConstraintDTO> constraints = new ArrayList<>();
     private List<FlowDTO> flows = new ArrayList<>();
     private List<ObjectMappingDTO> mappings = new ArrayList<>();
+    private List<EnumConstantDefDTO> enumConstantDefs = new ArrayList<>();
     private String defaultMappingId;
     private int source = ClassSourceCodes.RUNTIME;
     private boolean isAbstract;
@@ -163,6 +164,11 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
+    public ClassTypeDTOBuilder enumConstantDefs(List<EnumConstantDefDTO> enumConstantDefs) {
+        this.enumConstantDefs = enumConstantDefs != null ? new ArrayList<>(enumConstantDefs) : null;
+        return this;
+    }
+
     public ClassTypeDTOBuilder defaultMappingId(String defaultMappingId) {
         this.defaultMappingId = defaultMappingId;
         return this;
@@ -261,6 +267,7 @@ public class ClassTypeDTOBuilder {
                 constraints,
                 flows,
                 mappings,
+                enumConstantDefs,
                 defaultMappingId,
                 desc,
                 extra,

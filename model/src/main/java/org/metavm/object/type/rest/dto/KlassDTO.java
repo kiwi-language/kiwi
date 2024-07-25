@@ -30,6 +30,7 @@ public record KlassDTO(
         List<ConstraintDTO> constraints,
         List<FlowDTO> flows,
         List<ObjectMappingDTO> mappings,
+        List<EnumConstantDefDTO> enumConstantDefs,
         @Nullable String defaultMappingId,
         String desc,
         Object extra,

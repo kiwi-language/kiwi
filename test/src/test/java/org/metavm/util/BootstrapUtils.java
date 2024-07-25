@@ -45,6 +45,7 @@ public class BootstrapUtils {
             StdFunction.setEmailSender(MockEmailSender.INSTANCE);
             StdKlass.initialize(defContext);
             StdMethod.initialize(defContext);
+            StdField.initialize(defContext);
             var state = BootstrapUtils.state.copy();
             var instanceStore = new MemInstanceStore(
                     state.instanceMapper(),

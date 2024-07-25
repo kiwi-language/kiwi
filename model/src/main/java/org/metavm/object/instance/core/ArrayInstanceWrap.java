@@ -22,4 +22,8 @@ public class ArrayInstanceWrap extends InstanceWrap {
         return (ArrayInstanceWrap) get(i);
     }
 
+    @Override
+    public String toString() {
+        return list.toString();
+    }
 }

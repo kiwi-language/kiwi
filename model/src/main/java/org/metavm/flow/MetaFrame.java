@@ -40,7 +40,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
     private final Map<TryNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
 
-    public MetaFrame(NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<? extends Instance> arguments,
+    public MetaFrame(@NotNull NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<? extends Instance> arguments,
                      InstanceRepository instanceRepository) {
         this.entry = entry;
         this.owner = owner;

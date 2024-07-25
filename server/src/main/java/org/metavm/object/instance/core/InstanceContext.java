@@ -375,6 +375,8 @@ public class InstanceContext extends BufferingInstanceContext {
             if (!root.isRemoved() && !root.isEphemeral()) {
                 root.visitGraph(i -> {
                     if (i.isRemoved()) {
+                        if(DebugEnv.recordPath)
+                            logger.debug("Reference path: {}", NncUtils.join(DebugEnv.path));
                         throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(i.getReference()));
                     }
                     return true;

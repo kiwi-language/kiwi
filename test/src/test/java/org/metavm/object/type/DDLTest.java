@@ -13,7 +13,6 @@ import org.metavm.entity.MemInstanceStore;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.*;
 import org.metavm.task.DDLTask;
-import org.metavm.task.ScanTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -448,6 +447,27 @@ public class DDLTest extends TestCase {
             Assert.assertFalse(priceRef.isEager());
             Assert.assertFalse(priceRef.isResolved());
         }
+    }
+
+    public void testEntityToEnumConversion() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_before.masm", typeManager, entityContextFactory);
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "Shoes",
+                "kind", Map.of(
+                        "name", "DEFAULT",
+                        "code", 0
+                )
+        )));
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_after.masm", typeManager, entityContextFactory);
+        var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        var defaultKind = TestUtils.getEnumConstantByName(productKindKlass, "DEFAULT");
+        var shoes = apiClient.getObject(shoesId);
+        var kindId = shoes.getString("kind");
+
+        var mappedKindId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("ProductKind", "__map__", List.of(kindId)));
+        Assert.assertEquals(mappedKindId, defaultKind.id());
+
+//        Assert.assertEquals(defaultKind.id(), kindId);
     }
 
     public void testRaceCondition() throws InterruptedException {

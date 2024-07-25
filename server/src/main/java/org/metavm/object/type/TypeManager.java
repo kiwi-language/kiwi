@@ -325,7 +325,13 @@ public class TypeManager extends EntityContextFactoryAware {
             if (!newClass.isInterface())
                 initClass(newClass, context);
         }
+        batch.getNewEnumConstantDefs().forEach(ecd -> createEnumConstant(ecd, context));
         return batch;
+    }
+
+    private void createEnumConstant(EnumConstantDef enumConstantDef, IEntityContext context) {
+        var value = enumConstantDef.createEnumConstant(context.getInstanceContext());
+        enumConstantDef.getField().setStaticValue(value.getReference());
     }
 
     private void createOverridingFlows(Klass type, IEntityContext context) {

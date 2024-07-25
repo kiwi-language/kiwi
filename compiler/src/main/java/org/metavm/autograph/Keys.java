@@ -2,10 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.util.Key;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.Index;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.TypeVariable;
+import org.metavm.object.type.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -14,7 +11,7 @@ import java.util.Set;
 public class Keys {
 
     public static final Set<Key<?>> KEYS = new HashSet<>();
-    
+
     private static <T> Key<T> createKey(String name) {
         var key = new Key<T>(name);
         KEYS.add(key);
@@ -70,6 +67,8 @@ public class Keys {
     public static final Key<Block> CONTAINING_BLOCK = createKey("ContainingBlock");
 
     public static final Key<Index> INDEX = createKey("Index");
+
+    public static final Key<EnumConstantDef> ENUM_CONSTANT_DEF = createKey("EnumConstantDef");
 
     public static Set<Key<?>> getKeys() {
         return new HashSet<>(KEYS);

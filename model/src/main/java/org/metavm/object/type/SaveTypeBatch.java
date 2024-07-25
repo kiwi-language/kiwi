@@ -47,6 +47,8 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     private final Set<Klass> changingSuperKlasses = new HashSet<>();
     private final Set<Klass> entityToValueKlasses = new HashSet<>();
     private final Set<Klass> valueToEntityKlasses = new HashSet<>();
+    private final Set<EnumConstantDef> newEnumConstantDefs = new HashSet<>();
+    private final Set<EnumConstantDef> changedEnumConstantDefs = new HashSet<>();
 
     private SaveTypeBatch(IEntityContext context, List<? extends TypeDefDTO> typeDefDTOs, List<FlowDTO> functions) {
         this.context = context;
@@ -89,6 +91,22 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public void addValueToEntityKlass(Klass klass) {
         valueToEntityKlasses.add(klass);
+    }
+
+    public void addNewEnumConstantDef(EnumConstantDef newEnumConstantDef) {
+        newEnumConstantDefs.add(newEnumConstantDef);
+    }
+
+    public void addChangedEnumConstantDef(EnumConstantDef changedEnumConstantDef) {
+        changedEnumConstantDefs.add(changedEnumConstantDef);
+    }
+
+    public Set<EnumConstantDef> getNewEnumConstantDefs() {
+        return newEnumConstantDefs;
+    }
+
+    public Set<EnumConstantDef> getChangedEnumConstantDefs() {
+        return changedEnumConstantDefs;
     }
 
     private record SaveStage(ResolutionStage stage, Function<TypeDefDTO, Set<String>> getDependencies) {

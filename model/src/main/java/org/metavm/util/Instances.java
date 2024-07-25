@@ -10,6 +10,7 @@ import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
 import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 import org.slf4j.Logger;
@@ -727,6 +728,16 @@ public class Instances {
                     });
                 }
             }
+        }
+    }
+
+    public static void saveEnumConstants(Commit commit, IEntityContext context) {
+        for (String newEnumConstantId : commit.getNewEnumConstantIds()) {
+            var ecd = context.getEntity(EnumConstantDef.class, newEnumConstantId);
+            var klass = ecd.getKlass();
+            var field = klass.getStaticFieldByName(ecd.getName());
+            var value = ecd.createEnumConstant(context.getInstanceContext());
+            field.setStaticValue(value.getReference());
         }
     }
 

@@ -5,10 +5,7 @@ import org.metavm.api.*;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
 import org.metavm.entity.IEntityContext;
-import org.metavm.flow.Method;
-import org.metavm.flow.MethodBuilder;
-import org.metavm.flow.Parameter;
-import org.metavm.flow.Values;
+import org.metavm.flow.*;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.*;
 import org.metavm.util.CompilerConfig;
@@ -32,7 +29,7 @@ public class Declarator extends CodeGenVisitor {
 
     private final IEntityContext context;
 
-    private final LinkedList<Klass> classStack = new LinkedList<>();
+    private final LinkedList<ClassInfo> classStack = new LinkedList<>();
 
     private @Nullable Index currentIndex;
 
@@ -52,10 +49,11 @@ public class Declarator extends CodeGenVisitor {
     @Override
     public void visitClass(PsiClass psiClass) {
         if (TranspileUtils.hasAnnotation(psiClass, EntityIndex.class)) {
-            Index index = NncUtils.find(currentClass().getIndices(), idx -> Objects.equals(idx.getCode(), psiClass.getName()));
+            var klass = currentClass().klass;
+            Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getCode(), psiClass.getName()));
             if (index == null) {
                 index = new Index(
-                        currentClass(),
+                        klass,
                         TranspileUtils.getIndexName(psiClass),
                         psiClass.getName(),
                         "",
@@ -105,9 +103,11 @@ public class Declarator extends CodeGenVisitor {
             klass.setAttribute(AttributeNames.BEAN_NAME,
                     (String) TranspileUtils.getAnnotationAttribute(configurationAnno, "value", getDefaultBeanName(klass)));
         }
-        classStack.push(klass);
+        classStack.push(new ClassInfo(klass));
         super.visitClass(psiClass);
         classStack.pop();
+        if(klass.isEnum())
+            visitedMethods.add(Flows.saveValuesMethod(klass));
         var removedFields = NncUtils.exclude(klass.getFields(), visitedFields::contains);
         removedFields.forEach(klass::removeField);
         var removedMethods = NncUtils.filter(klass.getMethods(),
@@ -154,18 +154,19 @@ public class Declarator extends CodeGenVisitor {
                     overriddenMethod, typeResolver)
             );
         }
-        List<PsiType> implicitTypeArgs = method.isConstructor() && currentClass().isEnum() ?
+        var klass = currentClass().klass;
+        List<PsiType> implicitTypeArgs = method.isConstructor() && klass.isEnum() ?
                 List.of(TranspileUtils.createType(String.class), TranspileUtils.createPrimitiveType(int.class)) : List.of();
         var internalName = TranspileUtils.getInternalName(method, implicitTypeArgs);
-        var flow = NncUtils.find(currentClass().getMethods(), f -> f.getInternalName(null).equals(internalName));
+        var flow = NncUtils.find(klass.getMethods(), f -> f.getInternalName(null).equals(internalName));
         if (flow != null)
             method.putUserData(Keys.Method, flow);
         List<Parameter> resolvedParams = new ArrayList<>();
-        if (method.isConstructor() && currentClass().isEnum())
+        if (method.isConstructor() && klass.isEnum())
             resolvedParams.addAll(getEnumConstructorParams());
         resolvedParams.addAll(processParameters(method.getParameterList()));
         if (flow == null) {
-            flow = MethodBuilder.newBuilder(currentClass(), getFlowName(method), getFlowCode(method))
+            flow = MethodBuilder.newBuilder(klass, getFlowName(method), getFlowCode(method))
                     .isConstructor(method.isConstructor())
                     .isStatic(method.getModifierList().hasModifierProperty(PsiModifier.STATIC))
                     .access(resolveAccess(method.getModifierList()))
@@ -249,13 +250,13 @@ public class Declarator extends CodeGenVisitor {
         var type = resolveType(psiField.getType());
         if (TranspileUtils.getAnnotation(psiField, Nullable.class) != null)
             type = Types.getNullableType(type);
-        var klass = currentClass();
+        var klass = currentClass().klass;
         var field = TranspileUtils.isStatic(psiField) ?
                 klass.findSelfStaticFieldByCode(psiField.getName())
                 : klass.findSelfFieldByCode(psiField.getName());
         if (field == null) {
             field = FieldBuilder
-                    .newBuilder(getBizFieldName(psiField), psiField.getName(), currentClass(), type)
+                    .newBuilder(getBizFieldName(psiField), psiField.getName(), klass, type)
                     .access(getAccess(psiField))
                     .unique(TranspileUtils.isUnique(psiField))
                     .isChild(TranspileUtils.isChild(psiField))
@@ -270,25 +271,33 @@ public class Declarator extends CodeGenVisitor {
         }
         visitedFields.add(field);
         if (TranspileUtils.isTitleField(psiField))
-            currentClass().setTitleField(field);
+            klass.setTitleField(field);
         psiField.putUserData(Keys.FIELD, field);
     }
 
     @Override
     public void visitEnumConstant(PsiEnumConstant enumConstant) {
-        var field = currentClass().findSelfStaticFieldByCode(enumConstant.getName());
+        var classInfo = currentClass();
+        var klass = classInfo.klass;
+        var field = klass.findSelfStaticFieldByCode(enumConstant.getName());
         if (field == null) {
             field = FieldBuilder
-                    .newBuilder(getEnumConstantName(enumConstant), enumConstant.getName(), currentClass(), currentClass().getType())
+                    .newBuilder(getEnumConstantName(enumConstant), enumConstant.getName(), klass, klass.getType())
                     .isChild(true)
                     .isStatic(true)
                     .build();
         } else
             field.setName(getEnumConstantName(enumConstant));
+        var ecd = klass.findEnumConstantDef(e -> e.getName().equals(enumConstant.getName()));
+        if(ecd == null)
+            ecd = new EnumConstantDef(klass, enumConstant.getName(), classInfo.nextEnumConstantOrdinal(), List.of());
+        else
+            ecd.setOrdinal(classInfo.nextEnumConstantOrdinal());
         enumConstant.putUserData(Keys.FIELD, field);
+        enumConstant.putUserData(Keys.ENUM_CONSTANT_DEF, ecd);
     }
 
-    private Klass currentClass() {
+    private ClassInfo currentClass() {
         return NncUtils.requireNonNull(classStack.peek());
     }
 
@@ -305,6 +314,19 @@ public class Declarator extends CodeGenVisitor {
 
     private Type resolveType(PsiType psiType) {
         return typeResolver.resolveTypeOnly(psiType);
+    }
+
+    private static class ClassInfo {
+        private final Klass klass;
+        private int nextEnumConstantOrdinal;
+
+        private ClassInfo(Klass klass) {
+            this.klass = klass;
+        }
+
+        private int nextEnumConstantOrdinal() {
+            return nextEnumConstantOrdinal++;
+        }
     }
 
 }

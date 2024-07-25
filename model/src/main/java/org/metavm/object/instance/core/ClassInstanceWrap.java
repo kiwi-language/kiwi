@@ -38,4 +38,8 @@ public class ClassInstanceWrap extends InstanceWrap {
             throw new IllegalStateException("Field '" + fieldName + "' is not an array: " + value);
     }
 
+    @Override
+    public String toString() {
+        return map.toString();
+    }
 }
