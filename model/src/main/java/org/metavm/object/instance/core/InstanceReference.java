@@ -3,12 +3,14 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.IEntityContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
+import org.metavm.util.Constants;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.NncUtils;
 import org.metavm.util.WireTypes;
@@ -58,8 +60,13 @@ public class InstanceReference extends Instance {
     }
 
     public DurableInstance resolve() {
-        if (target == null)
+        if (target == null) {
             target = resolver.get();
+            if (isForwarded() && target instanceof ClassInstance object && object.getKlass().isEnum()) {
+                var forwarded = (InstanceReference) object.getUnknownField(StdKlass.enum_.get().getTag(), Constants.ENUM_CONSTANT_FP_TAG);
+                target = forwarded.resolve();
+            }
+        }
         return target;
     }
 

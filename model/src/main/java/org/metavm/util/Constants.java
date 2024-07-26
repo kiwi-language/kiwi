@@ -40,6 +40,8 @@ public class Constants {
 
     public static long SESSION_TIMEOUT = 300L;
 
+    public static final int ENUM_CONSTANT_FP_TAG = 100;
+
     private Constants() {}
 
     public static Id getRootAppId() {

@@ -52,6 +52,7 @@ public enum CommitState {
         @Override
         public void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
             var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
+            var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
             for (var instance : instances) {
                 instance.forEachReference(r -> {
                     if(!r.isResolved())
@@ -74,12 +75,23 @@ public enum CommitState {
                         }
                     });
                 }
+                for (Klass klass : toEnumKlasses) {
+                    instance.transformReference(ref -> {
+                        if(ref.isForwarded()) {
+                            var referent = ref.resolve();
+                            if (referent instanceof ClassInstance object && object.getKlass() == klass)
+                                return object.getReference();
+                        }
+                        return ref;
+                    });
+                }
             }
         }
 
         @Override
         public boolean shouldSkip(Commit commit) {
-            return commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty() && commit.getValueToEntityKlassIds().isEmpty();
+            return commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty()
+                    && commit.getValueToEntityKlassIds().isEmpty() && commit.getToEnumKlassIds().isEmpty();
         }
     },
     SWITCHING_ID {

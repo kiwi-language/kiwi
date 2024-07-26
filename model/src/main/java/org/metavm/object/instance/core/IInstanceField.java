@@ -1,8 +1,9 @@
 package org.metavm.object.instance.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.util.InstanceOutput;
 
-public interface IInstanceField {
+public interface IInstanceField extends Comparable<IInstanceField> {
 
     long getKlassTag();
 
@@ -17,4 +18,9 @@ public interface IInstanceField {
     void writeValue(InstanceOutput output);
 
     boolean isFieldInitialized();
+
+    @Override
+    default int compareTo(@NotNull IInstanceField o) {
+        return Integer.compare(getTag(), o.getTag());
+    }
 }

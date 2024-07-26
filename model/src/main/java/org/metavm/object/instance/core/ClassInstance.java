@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -601,6 +602,14 @@ public class ClassInstance extends DurableInstance {
         return copy;
     }
 
+    public void setUnknown(long classTag, int fieldTag, Instance value) {
+        var bout = new ByteArrayOutputStream();
+        var out = new InstanceOutput(bout);
+        out.writeInstance(value);
+        UnknownField uf = new UnknownField(this, classTag, fieldTag, bout.toByteArray());
+        fieldTable.addUnknownField(uf);
+    }
+
     private static class FieldTable implements Iterable<IInstanceField> {
 
         private final ClassInstance owner;
@@ -709,7 +718,25 @@ public class ClassInstance extends DurableInstance {
                if(f instanceof UnknownField uf && uf.getKlassTag() == klassTag && uf.getTag() == tag)
                    return uf.getValue();
             }
-            throw new IllegalStateException("Can not find unknown field for tag " + tag);
+            throw new IllegalStateException("Can not find unknown field " + klassTag + "." + tag + " in " + owner.getId());
+        }
+
+        public void addUnknownField(UnknownField unknownField) {
+            var it = subTables.listIterator();
+            while (it.hasNext()) {
+                var st = it.next();
+                if(st.klassTag == unknownField.getKlassTag()) {
+                    st.add(unknownField);
+                    return;
+                }
+                else if(st.klassTag > unknownField.getKlassTag()) {
+                    it.previous();
+                    break;
+                }
+            }
+            var st = new FieldSubTable(this, unknownField.getKlassTag());
+            it.add(st);
+            st.addUnknownField(unknownField);
         }
     }
 
@@ -733,6 +760,13 @@ public class ClassInstance extends DurableInstance {
             fields.add(field);
             if (field instanceof InstanceField f)
                 table.onFieldAdded(f);
+        }
+
+        void addUnknownField(UnknownField unknownField) {
+            var index = Collections.binarySearch(fields, unknownField);
+            if(index >= 0)
+                throw new IllegalStateException("Field " + unknownField.getKlassTag() + "." + unknownField.getTag() + " already exists in the field table");
+            fields.add(-(index + 1), unknownField);
         }
 
         int countFieldsForWriting() {

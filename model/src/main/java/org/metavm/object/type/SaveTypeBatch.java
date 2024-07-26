@@ -47,6 +47,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     private final Set<Klass> changingSuperKlasses = new HashSet<>();
     private final Set<Klass> entityToValueKlasses = new HashSet<>();
     private final Set<Klass> valueToEntityKlasses = new HashSet<>();
+    private final Set<Klass> toEnumKlasses = new HashSet<>();
     private final Set<EnumConstantDef> newEnumConstantDefs = new HashSet<>();
     private final Set<EnumConstantDef> changedEnumConstantDefs = new HashSet<>();
 
@@ -91,6 +92,10 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public void addValueToEntityKlass(Klass klass) {
         valueToEntityKlasses.add(klass);
+    }
+
+    public void addToEnumKlass(Klass klass) {
+        toEnumKlasses.add(klass);
     }
 
     public void addNewEnumConstantDef(EnumConstantDef newEnumConstantDef) {
@@ -333,6 +338,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                 NncUtils.map(changingSuperKlasses, Entity::getStringId),
                 NncUtils.map(entityToValueKlasses, Entity::getStringId),
                 NncUtils.map(valueToEntityKlasses, Entity::getStringId),
+                NncUtils.map(toEnumKlasses, Entity::getStringId),
                 fieldChanges
         );
     }

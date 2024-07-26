@@ -1203,6 +1203,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return getConstraint(Index.class, id);
     }
 
+    public List<InstanceReference> getEnumConstantRefs() {
+        assert isEnum();
+        return NncUtils.map(
+                enumConstantDefs,
+                ecd -> (InstanceReference) ecd.getField().getStaticValue()
+        );
+    }
+
     public List<ClassInstance> getEnumConstants() {
         if (!isEnum())
             throw new InternalException("type " + this + " is not a enum type");
@@ -1564,6 +1572,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public boolean isParameterized() {
         return template != null && template != this;
+    }
+
+    public boolean isEnumConstant(InstanceReference reference) {
+        assert isEnum();
+        return getEnumConstantRefs().contains(reference);
     }
 
     @Override

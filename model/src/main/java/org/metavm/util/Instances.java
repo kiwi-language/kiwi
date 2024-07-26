@@ -550,6 +550,7 @@ public class Instances {
         var changingSuperKlasses = NncUtils.map(commit.getChangingSuperKlassIds(), context::getKlass);
         var toValueKlasses = NncUtils.map(commit.getEntityToValueKlassIds(), context::getKlass);
         var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
+        var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
         for (DurableInstance instance : instances) {
             if (instance instanceof ClassInstance clsInst) {
                 for (Field field : newFields) {
@@ -596,6 +597,9 @@ public class Instances {
                     }
                 });
             }
+            for (Klass klass : toEnumKlasses) {
+                handleEnumConversion(instance, klass, context);
+            }
         }
     }
 
@@ -607,6 +611,35 @@ public class Instances {
                     r.setEager();
             }
         });
+    }
+
+    private static void handleEnumConversion(DurableInstance instance, Klass enumClass, IEntityContext context) {
+        instance.forEachReference((r, isChild, type) -> {
+            if(type.isAssignableFrom(enumClass.getType())) {
+                var referent = r.resolve();
+                if(referent instanceof ClassInstance object && object.getKlass() == enumClass && !enumClass.isEnumConstant(object.getReference())) {
+                    var r1 = object.getReference();
+                    logger.debug("r1 forwarded: {}", r1.isForwarded());
+                    var forwarded = mapEnumConstant(r1 ,enumClass, context);
+                    object.setUnknown(StdKlass.enum_.get().getTag(), Constants.ENUM_CONSTANT_FP_TAG, forwarded);
+                    r.setForwarded();
+//                    object.getUnknownField(enumClass.getTag(), Constants.ENUM_CONSTANT_FP_TAG);
+                    logger.debug("Forwarding enum instance {} to {}", object.getId(), forwarded.getId());
+                }
+            }
+        });
+    }
+
+    private static InstanceReference mapEnumConstant(InstanceReference instance, Klass enumClass, IEntityContext context) {
+        var mapper = getEnumConstantMapper(enumClass);
+        return (InstanceReference) Objects.requireNonNull(Flows.invoke(mapper, null, List.of(instance), context.getInstanceContext()));
+    }
+
+    private static Method getEnumConstantMapper(Klass enumClass) {
+        var found = enumClass.findMethod(m -> m.isStatic() && m.getName().equals("__map__") && m.getParameterTypes().equals(List.of(enumClass.getType())));
+        if(found == null)
+            throw new IllegalStateException("Failed to find an enum constant mapper in class " + enumClass.getName());
+        return found;
     }
 
     public static void setEagerFlag(List<DurableInstance> referring, Id id) {

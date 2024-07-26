@@ -96,6 +96,8 @@ public abstract class TypeFactory {
                             batch.addEntityToValueKlass(klass);
                         else if (klass.getKind() == ClassKind.VALUE)
                             batch.addValueToEntityKlass(klass);
+                        if(kind == ClassKind.ENUM)
+                            batch.addToEnumKlass(klass);
                     }
                     klass.setKind(kind);
                 }

@@ -458,16 +458,16 @@ public class DDLTest extends TestCase {
                         "code", 0
                 )
         )));
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_after.masm", typeManager, entityContextFactory);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_after.masm", typeManager, false, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.MIGRATING, entityContextFactory);
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
-        var defaultKind = TestUtils.getEnumConstantByName(productKindKlass, "DEFAULT");
+        var isDefaultProduct = TestUtils.doInTransaction(() -> apiClient.callMethod(shoesId, "isDefaultKind", List.of()));
+        Assert.assertEquals(true, isDefaultProduct);
+        TestUtils.waitForDDLCompleted(entityContextFactory);
         var shoes = apiClient.getObject(shoesId);
+        var defaultKind = TestUtils.getEnumConstantByName(productKindKlass, "DEFAULT");
         var kindId = shoes.getString("kind");
-
-        var mappedKindId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("ProductKind", "__map__", List.of(kindId)));
-        Assert.assertEquals(mappedKindId, defaultKind.id());
-
-//        Assert.assertEquals(defaultKind.id(), kindId);
+        Assert.assertEquals(defaultKind.id(), kindId);
     }
 
     public void testRaceCondition() throws InterruptedException {

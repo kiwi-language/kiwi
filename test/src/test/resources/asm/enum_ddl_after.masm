@@ -25,6 +25,11 @@ class Product {
         this.kind = kind;
     }
 
+    public boolean isDefaultKind() {
+        r: this.kind.isDefault();
+        return r;
+    }
+
 }
 
 enum ProductKind {
@@ -47,6 +52,10 @@ enum ProductKind {
 
     public int getCode() {
         return this.code;
+    }
+
+    public boolean isDefault() {
+        return this == ProductKind.DEFAULT;
     }
 
     public static ProductKind __map__(ProductKind kind) {
