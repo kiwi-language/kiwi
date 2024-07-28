@@ -53,6 +53,7 @@ ANY:                'any';
 NEVER:              'never';
 SELECT:             'select';
 SELECT_FIRST:       'selectFirst';
+DELETED:            'deleted';
 
 // Operators
 

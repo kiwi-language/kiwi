@@ -503,4 +503,13 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     public void setOffset(int offset) {
         this.offset = offset;
     }
+
+    public void setMetadataRemoved() {
+        this.state = MetadataState.REMOVED;
+    }
+
+    public boolean isMetadataRemoved() {
+        return state == MetadataState.REMOVED;
+    }
+
 }

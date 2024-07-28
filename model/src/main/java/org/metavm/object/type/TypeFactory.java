@@ -145,6 +145,8 @@ public abstract class TypeFactory {
                 }
                 if (klassDTO.titleFieldId() != null)
                     klass.setTitleField(NncUtils.find(klass.getFields(), f -> f.getStringId().equals(klassDTO.titleFieldId())));
+                else
+                    klass.setTitleField(null);
                 klass.setStage(ResolutionStage.DECLARATION);
             }
             if (stage.isAfterOrAt(ResolutionStage.DEFINITION) && curStage.isBefore(ResolutionStage.DEFINITION)) {
@@ -206,6 +208,7 @@ public abstract class TypeFactory {
             }
             field.setDefaultValue(defaultValue);
             field.setAccess(access);
+            field.setState(MetadataState.fromCode(fieldDTO.state()));
         }
         return field;
     }

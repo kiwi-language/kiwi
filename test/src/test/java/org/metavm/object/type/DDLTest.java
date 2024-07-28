@@ -461,6 +461,8 @@ public class DDLTest extends TestCase {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_after.masm", typeManager, false, entityContextFactory);
         TestUtils.waitForDDLState(CommitState.MIGRATING, entityContextFactory);
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        var nameField = NncUtils.find(productKindKlass.fields(), f -> f.name().equals("name") && f.state() == MetadataState.REMOVED.code());
+        Assert.assertNotNull(nameField);
         var isDefaultProduct = TestUtils.doInTransaction(() -> apiClient.callMethod(shoesId, "isDefaultKind", List.of()));
         Assert.assertEquals(true, isDefaultProduct);
         TestUtils.waitForDDLCompleted(entityContextFactory);

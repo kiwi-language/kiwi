@@ -45,7 +45,7 @@ public class InstanceField implements IInstanceField {
 
     @Override
     public boolean shouldSkipWrite() {
-        return value != null && value.shouldSkipWrite();
+        return value == null || value.shouldSkipWrite();
     }
 
     @Override

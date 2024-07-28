@@ -39,6 +39,7 @@ public class Constants {
     public static EmailSender emailSender;
 
     public static long SESSION_TIMEOUT = 300L;
+    public static long DDL_SESSION_TIMEOUT = 6000L;
 
     public static final int ENUM_CONSTANT_FP_TAG = 100;
 

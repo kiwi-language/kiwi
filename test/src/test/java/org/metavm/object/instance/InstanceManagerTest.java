@@ -14,10 +14,7 @@ import org.metavm.flow.rest.MethodParam;
 import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.flow.rest.UpdateFieldDTO;
 import org.metavm.mocks.*;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.DefaultViewId;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.TmpId;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
@@ -572,6 +569,66 @@ public class InstanceManagerTest extends TestCase {
                 Assert.assertNotNull(fooByState);
             }
         });
+    }
+
+    public void testDeletedField() {
+        var klassId = TestUtils.doInTransaction(() -> {
+            try(var context = newContext()) {
+                var klass = TestUtils.newKlassBuilder("Foo").build();
+                FieldBuilder.newBuilder("name", "name", klass, Types.getStringType()).build();
+                context.bind(klass);
+                context.finish();
+                return klass.getId();
+            }
+        });
+        var instId = TestUtils.doInTransaction(() -> {
+            try(var context = newContext()) {
+                var klass = context.getKlass(klassId);
+                var instCtx = context.getInstanceContext();
+                var inst = ClassInstanceBuilder.newBuilder(klass.getType())
+                        .data(Map.of(
+                                klass.getFieldByCode("name"),
+                                Instances.stringInstance("Leen")
+                        )).build();
+                instCtx.bind(inst);
+                context.finish();
+                return inst.getId();
+            }
+        });
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var klass = context.getKlass(klassId);
+                var nameField = klass.getFieldByCode("name");
+                nameField.setMetadataRemoved();
+                context.finish();
+            }
+        });
+        var instId2 = TestUtils.doInTransaction(() -> {
+            try(var context = newContext()) {
+                var klass = context.getKlass(klassId);
+                var nameField = klass.getFieldByCode("name");
+                Assert.assertTrue(nameField.isMetadataRemoved());
+                var instCtx = context.getInstanceContext();
+                var inst = (ClassInstance) instCtx.get(instId);
+                Assert.assertTrue(inst.isFieldInitialized(nameField));
+                inst.setField(nameField, Instances.stringInstance("Leen2"));
+                var inst2 = ClassInstanceBuilder.newBuilder(klass.getType())
+                        .data(Map.of())
+                        .build();
+                instCtx.bind(inst2);
+                context.finish();
+                return inst2.getId();
+            }
+        });
+        try(var context = newContext()) {
+            var klass = context.getKlass(klassId);
+            var nameField = klass.getFieldByCode("name");
+            var instCtx = context.getInstanceContext();
+            var inst = (ClassInstance) instCtx.get(instId);
+            Assert.assertEquals(Instances.stringInstance("Leen2"), inst.getField(nameField));
+            var inst2 = (ClassInstance) instCtx.get(instId2);
+            Assert.assertEquals(Instances.nullInstance(), inst2.getField(nameField));
+        }
     }
 
 }

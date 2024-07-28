@@ -13,11 +13,11 @@ public class EnumNative extends NativeBase {
         this.instance = instance;
     }
 
-    public StringInstance name() {
+    public StringInstance name(CallContext callContext) {
         return (StringInstance) instance.getField(StdField.enumName.get());
     }
 
-    public LongInstance ordinal() {
+    public LongInstance ordinal(CallContext callContext) {
         return (LongInstance) instance.getField(StdField.enumOrdinal.get());
     }
 

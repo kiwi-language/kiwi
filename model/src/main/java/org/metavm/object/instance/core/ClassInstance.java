@@ -391,7 +391,7 @@ public class ClassInstance extends DurableInstance {
     public @Nullable Field findUninitializedField(Klass type) {
         ensureLoaded();
         NncUtils.requireTrue(type.isAssignableFrom(klass));
-        return type.findField(f -> !isFieldInitialized(f));
+        return type.findField(f -> !f.isMetadataRemoved() && !isFieldInitialized(f));
     }
 
     public void initField(Field field, Instance value) {
@@ -656,7 +656,8 @@ public class ClassInstance extends DurableInstance {
 
         void forEachField(BiConsumer<Field, Instance> action) {
             for (InstanceField field : fields) {
-                action.accept(field.getField(), field.getValue());
+                if(!field.getField().isMetadataRemoved())
+                    action.accept(field.getField(), field.getValue());
             }
         }
 

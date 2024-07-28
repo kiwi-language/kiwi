@@ -29,7 +29,7 @@ public enum CommitState {
 
         @Override
         public long getSessionTimeout() {
-            return 5000L;
+            return Constants.DDL_SESSION_TIMEOUT;
         }
     },
     MIGRATING {

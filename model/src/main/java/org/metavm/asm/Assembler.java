@@ -7,13 +7,11 @@ import org.antlr.v4.runtime.RuleContext;
 import org.metavm.asm.antlr.AssemblyLexer;
 import org.metavm.asm.antlr.AssemblyParser;
 import org.metavm.asm.antlr.AssemblyParserBaseVisitor;
-import org.metavm.entity.Entity;
-import org.metavm.entity.GenericDeclaration;
-import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
+import org.metavm.entity.*;
 import org.metavm.expression.*;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.KlassDTO;
@@ -178,6 +176,7 @@ public class Assembler {
         public static final String ABSTRACT = "abstract";
         public static final String CHILD = "child";
         public static final String TITLE = "title";
+        public static final String DELETED = "deleted";
     }
 
     private interface AsmScope {
@@ -536,6 +535,11 @@ public class Assembler {
             field.setStatic(mods.contains(Modifiers.STATIC));
             if (mods.contains(Modifiers.TITLE))
                 klass.setTitleField(field);
+            else if(klass.getTitleField() == field)
+                klass.setTitleField(null);
+            if(mods.contains(Modifiers.DELETED)) {
+                field.setState(MetadataState.REMOVED);
+            }
             classInfo.visitedFields.add(field);
             return null;
         }
@@ -898,12 +902,12 @@ public class Assembler {
                                 Values.node(selfNode),
                                 List.of(
                                         new UpdateField(
-                                                klass.getFieldByCode("name").getRef(),
+                                                klass.getField(f -> f.getEffectiveTemplate() == StdField.enumName.get()).getRef(),
                                                 UpdateOp.SET,
                                                 Values.nodeProperty(inputNode, inputNode.getKlass().getFieldByCode("_name"))
                                         ),
                                         new UpdateField(
-                                                klass.getFieldByCode("ordinal").getRef(),
+                                                klass.getField(f -> f.getEffectiveTemplate() == StdField.enumOrdinal.get()).getRef(),
                                                 UpdateOp.SET,
                                                 Values.nodeProperty(inputNode, inputNode.getKlass().getFieldByCode("_ordinal"))
                                         )

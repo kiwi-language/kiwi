@@ -392,6 +392,7 @@ modifier
     | CHILD
     | TITLE
     | UNIQUE
+    | DELETED
     ;
 
 classOrInterfaceModifier

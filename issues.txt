@@ -1,8 +1,6 @@
-1 Assembler supports implicit default constructor.
-2 Disregarding mappings when creating version because mappings are always children of klass.
-3 Rename toValueKlasses field in SaveTypeBatch to entityToValueKlasses and toValueKlassIds in Commit to entityToValueKlassIds
-5 Support value-to-enum conversion and entity-to-enum conversion.
-6 BUG: InstanceContext.scan flattens the trees and returns all instance, making the exit condition of the ScanTask incorrect.
-7 Support duplicate field names within a class hierarchy.
-8 Support DDL initializers involving removed fields.
-8 Implement Enum.values method
+- Assembler supports implicit default constructor.
+- Disregarding mappings when creating version because mappings are always children of klass.
+- Rename toValueKlasses field in SaveTypeBatch to entityToValueKlasses and toValueKlassIds in Commit to entityToValueKlassIds
+- Support value-to-enum conversion and entity-to-enum conversion.
+- Support duplicate field names within a class hierarchy.
+- Add a ContextTestBase class that provides utility methods for executing actions within contexts.

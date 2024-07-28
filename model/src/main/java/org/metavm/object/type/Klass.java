@@ -263,7 +263,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (superType != null)
             superType.resolve().forEachField(action);
         for (Field field : fields) {
-            action.accept(field);
+            if(!field.isMetadataRemoved())
+                action.accept(field);
         }
     }
 
