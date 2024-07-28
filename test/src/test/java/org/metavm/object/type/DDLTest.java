@@ -465,11 +465,20 @@ public class DDLTest extends TestCase {
         Assert.assertNotNull(nameField);
         var isDefaultProduct = TestUtils.doInTransaction(() -> apiClient.callMethod(shoesId, "isDefaultKind", List.of()));
         Assert.assertEquals(true, isDefaultProduct);
+        var shoes0 = apiClient.getObject(shoesId);
+        var kindId0 = shoes0.getString("kind");
         TestUtils.waitForDDLCompleted(entityContextFactory);
         var shoes = apiClient.getObject(shoesId);
         var defaultKind = TestUtils.getEnumConstantByName(productKindKlass, "DEFAULT");
         var kindId = shoes.getString("kind");
         Assert.assertEquals(defaultKind.id(), kindId);
+        try {
+            apiClient.getObject(kindId0);
+            Assert.fail("Should have been removed");
+        }
+        catch (BusinessException e) {
+            Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
     }
 
     public void testRaceCondition() throws InterruptedException {
