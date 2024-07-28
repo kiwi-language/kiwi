@@ -619,12 +619,11 @@ public class Instances {
                 var referent = r.resolve();
                 if(referent instanceof ClassInstance object && object.getKlass() == enumClass && !enumClass.isEnumConstant(object.getReference())) {
                     var r1 = object.getReference();
-                    logger.debug("r1 forwarded: {}", r1.isForwarded());
+                    object.setField(enumClass.getFieldByTemplate(StdField.enumName.get()), Instances.stringInstance(""));
+                    object.setField(enumClass.getFieldByTemplate(StdField.enumOrdinal.get()), Instances.longInstance(-1L));
                     var forwarded = mapEnumConstant(r1 ,enumClass, context);
                     object.setUnknown(StdKlass.enum_.get().getTag(), Constants.ENUM_CONSTANT_FP_TAG, forwarded);
                     r.setForwarded();
-//                    object.getUnknownField(enumClass.getTag(), Constants.ENUM_CONSTANT_FP_TAG);
-                    logger.debug("Forwarding enum instance {} to {}", object.getId(), forwarded.getId());
                 }
             }
         });

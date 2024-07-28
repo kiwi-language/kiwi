@@ -776,6 +776,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         throw new NullPointerException("Fail to find field satisfying the specified criteria in klass: " + this);
     }
 
+    public Field getFieldByTemplate(Field template) {
+        return getField(f -> f.getEffectiveTemplate() == template);
+    }
+
     public @Nullable Field findStaticField(Predicate<Field> predicate) {
         var field = NncUtils.find(staticFields, predicate);
         if (field != null)
