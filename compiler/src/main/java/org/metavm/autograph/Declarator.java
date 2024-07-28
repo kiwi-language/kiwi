@@ -272,6 +272,10 @@ public class Declarator extends CodeGenVisitor {
         visitedFields.add(field);
         if (TranspileUtils.isTitleField(psiField))
             klass.setTitleField(field);
+        else if(klass.getTitleField() == field)
+            klass.setTitleField(null);
+        if((Boolean) TranspileUtils.getAnnotationAttribute(psiField, EntityField.class, "removed", false))
+            field.setMetadataRemoved();
         psiField.putUserData(Keys.FIELD, field);
     }
 

@@ -21,4 +21,6 @@ public @interface EntityField {
 
     String code() default "";
 
+    boolean removed() default false;
+
 }

@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.type.ClassKind;
+import org.metavm.object.type.MetadataState;
 import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processValueTypes();
             processInterceptor();
             processEnums();
+            processRemovedField();
         });
     }
 
@@ -148,6 +150,12 @@ public class BasicCompilingTest extends CompilerTestBase {
         var kindId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("enums.ProductKind", "fromCode", List.of(0)));
         var kind = apiClient.getObject(kindId);
         Assert.assertEquals("DEFAULT", kind.getString("name"));
+    }
+
+    private void processRemovedField() {
+        var klass = getClassTypeByCode("removal.RemovedFieldFoo");
+        var field = TestUtils.getFieldByName(klass, "name");
+        Assert.assertEquals(MetadataState.REMOVED.code(), field.state());
     }
 
 }

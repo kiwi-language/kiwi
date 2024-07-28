@@ -951,10 +951,14 @@ public class TranspileUtils {
     }
 
     public static Object getAnnotationAttribute(PsiModifierListOwner element, Class<? extends Annotation> annotationClass, String attributeName) {
+        return getAnnotationAttribute(element, annotationClass, attributeName, null);
+    }
+
+    public static Object getAnnotationAttribute(PsiModifierListOwner element, Class<? extends Annotation> annotationClass, String attributeName, Object defaultValue) {
         var annotation = getAnnotation(element, annotationClass);
         if (annotation != null)
-            return getAnnotationAttribute(annotation, attributeName, null);
-        return null;
+            return getAnnotationAttribute(annotation, attributeName, defaultValue);
+        return defaultValue;
     }
 
     public static Object getAnnotationAttribute(PsiAnnotation annotation, String attributeName, @Nullable Object defaultValue) {
