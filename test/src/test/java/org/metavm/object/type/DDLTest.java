@@ -7,9 +7,7 @@ import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
-import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.MemInstanceStore;
+import org.metavm.entity.*;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.*;
 import org.metavm.task.DDLTask;
@@ -436,16 +434,17 @@ public class DDLTest extends TestCase {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
             var priceRef = (InstanceReference) shoesInst.getField("price");
-            Assert.assertFalse(priceRef.isValueReference());
+            Assert.assertTrue(priceRef.isValueReference());
         }
         TestUtils.waitForDDLAborted(entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
             var priceRef = (InstanceReference) shoesInst.getField("price");
-            Assert.assertFalse(priceRef.isValueReference());
             Assert.assertFalse(priceRef.isEager());
-            Assert.assertFalse(priceRef.isResolved());
+            Assert.assertTrue(priceRef.isValueReference());
+            Assert.assertTrue(priceRef.isInlineValueReference());
+            Assert.assertTrue(priceRef.isResolved());
         }
     }
 
@@ -478,6 +477,38 @@ public class DDLTest extends TestCase {
         }
         catch (BusinessException e) {
             Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+    }
+
+    public void testEnumConversionRollback() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_before.masm", typeManager, entityContextFactory);
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "Shoes",
+                "kind", Map.of(
+                        "name", "DEFAULT",
+                        "code", 0
+                )
+        )));
+        var kindId = apiClient.getObject(shoesId).getString("kind");
+        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_after.masm", typeManager, false, entityContextFactory);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var commit = context.getCommit(commitId);
+                commit.cancel();
+                context.finish();
+            }
+        });
+        TestUtils.waitForDDLAborted(entityContextFactory);
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
+            var kindRef = (InstanceReference) shoesInst.getField("kind");
+            Assert.assertFalse(kindRef.isForwarded());
+            var kind = (ClassInstance) instCtx.get(Id.parse(kindId));
+            Assert.assertSame(kind, kindRef.resolve());
+            Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), Constants.ENUM_CONSTANT_FP_TAG));
+            Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag()));
+            Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag()));
         }
     }
 

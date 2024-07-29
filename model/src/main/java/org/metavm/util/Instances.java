@@ -730,7 +730,7 @@ public class Instances {
                 if(instance instanceof ClassInstance object) {
                     var k = object.getKlass().findAncestorByTemplate(klass);
                     if(k != null)
-                        object.tryClearUnknownField(k, fieldChange.newTag());
+                        object.tryClearUnknownField(k.getTag(), fieldChange.newTag());
                 }
             }
         }
@@ -759,6 +759,22 @@ public class Instances {
                         }
                     });
                 }
+            }
+        }
+        for (String klassId : commit.getToEnumKlassIds()) {
+            var klass = context.getKlass(klassId);
+            for (DurableInstance instance : instances) {
+                instance.forEachReference((r, isChild, type) -> {
+                    if(r.isForwarded() && type.isAssignableFrom(klass.getType())) {
+                        var resolved = r.resolve();
+                        if(resolved instanceof ClassInstance object && object.getKlass() == klass) {
+                            r.clearForwarded();
+                            object.tryClearUnknownField(StdKlass.enum_.get().getTag(), Constants.ENUM_CONSTANT_FP_TAG);
+                            object.tryClearUnknownField(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag());
+                            object.tryClearUnknownField(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag());
+                        }
+                    }
+                });
             }
         }
     }

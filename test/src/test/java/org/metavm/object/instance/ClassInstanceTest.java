@@ -146,7 +146,7 @@ public class ClassInstanceTest extends TestCase {
                     throw new NullPointerException("Can not find type def for id: " + id);
                 });
         var loadedFlow = (ClassInstance) input.readSingleMessageGrove();
-        loadedFlow.logFieldTable();
+        loadedFlow.logFields();
         Assert.assertTrue(loadedFlow.getField(rootScopeField).isNull());
     }
 

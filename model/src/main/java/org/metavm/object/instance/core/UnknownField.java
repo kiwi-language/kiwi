@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
@@ -51,7 +52,8 @@ public class UnknownField implements IInstanceField {
         return bytes;
     }
 
-    public Instance getValue() {
+    @Override
+    public @NotNull Instance getValue() {
         if(value == null) {
             var input = owner.getContext().createInstanceInput(new ByteArrayInputStream(bytes));
             value = input.readInstance();

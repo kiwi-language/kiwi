@@ -8,6 +8,8 @@ import org.metavm.object.type.Klass;
 import org.metavm.util.Constants;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @EntityType
 public enum CommitState {
@@ -175,6 +177,11 @@ public enum CommitState {
         public void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
             Instances.rollbackDDL(instances, commit, context);
         }
+
+        @Override
+        public boolean isMigrationEnabled() {
+            return true;
+        }
     },
     ABORTED {
         @Override
@@ -188,6 +195,8 @@ public enum CommitState {
         }
     }
     ;
+
+    public static final Logger logger = LoggerFactory.getLogger(CommitState.class);
 
     public abstract void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context);
 

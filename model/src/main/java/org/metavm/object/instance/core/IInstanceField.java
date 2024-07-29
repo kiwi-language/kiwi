@@ -17,6 +17,8 @@ public interface IInstanceField extends Comparable<IInstanceField> {
 
     void writeValue(InstanceOutput output);
 
+    @NotNull Instance getValue();
+
     boolean isFieldInitialized();
 
     @Override

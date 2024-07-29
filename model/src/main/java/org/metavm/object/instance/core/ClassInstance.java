@@ -108,8 +108,15 @@ public class ClassInstance extends DurableInstance {
         fieldTable.clear();
     }
 
-    public void logFieldTable() {
+    public void logFields() {
         fieldTable.forEachField((field, value) -> logger.info("Field: {}, Value: {}", field.getName(), value));
+    }
+
+    public void logFieldTable() {
+        for (IInstanceField field : fieldTable) {
+            logger.debug("Klass tag {}, field tag {}, value {}, unknown: {}",
+                    field.getKlassTag(), field.getTag(), field.getValue(), field instanceof UnknownField);
+        }
     }
 
     public void forEachField(BiConsumer<Field, Instance> action) {
@@ -427,12 +434,16 @@ public class ClassInstance extends DurableInstance {
         return field(field).getValue();
     }
 
-    public void tryClearUnknownField(Klass klass, int tag) {
-        fieldTable.tryClearUnknownField(klass, tag);
+    public void tryClearUnknownField(long klassTag, int tag) {
+        fieldTable.tryClearUnknownField(klassTag, tag);
     }
 
     public Instance getUnknownField(long klassTag, int tag) {
         return fieldTable.getUnknown(klassTag, tag);
+    }
+
+    public @Nullable Instance tryGetUnknown(long klassId, int tag) {
+        return fieldTable.tryGetUnknown(klassId, tag);
     }
 
     public FlowInstance getFunction(Method method) {
@@ -641,9 +652,9 @@ public class ClassInstance extends DurableInstance {
             fields[field.getField().getOffset()] = field;
         }
 
-        void tryClearUnknownField(Klass klass, int tag) {
+        void tryClearUnknownField(long classTag, int tag) {
             for (FieldSubTable subTable : subTables) {
-                if(subTable.klassTag == klass.getTag()) {
+                if(subTable.klassTag == classTag) {
                     subTable.clearUnknown(tag);
                     return;
                 }
@@ -715,11 +726,18 @@ public class ClassInstance extends DurableInstance {
         }
 
         public Instance getUnknown(long klassTag, int tag) {
-            for (var f : this) {
-               if(f instanceof UnknownField uf && uf.getKlassTag() == klassTag && uf.getTag() == tag)
-                   return uf.getValue();
-            }
+            var r = tryGetUnknown(klassTag, tag);
+            if(r != null)
+                return r;
             throw new IllegalStateException("Can not find unknown field " + klassTag + "." + tag + " in " + owner.getId());
+        }
+
+        public @Nullable Instance tryGetUnknown(long klassTag, int tag) {
+            for (var f : this) {
+                if(f instanceof UnknownField uf && uf.getKlassTag() == klassTag && uf.getTag() == tag)
+                    return uf.getValue();
+            }
+            return null;
         }
 
         public void addUnknownField(UnknownField unknownField) {
