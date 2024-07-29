@@ -380,10 +380,11 @@ public class TypeResolverImpl implements TypeResolver {
                             .build()));
             if (klass != null) {
                 klass.setName(name);
-                if (klass.getKind() != kind)
-                    throw new BusinessException(ErrorCode.CHANGING_CATEGORY);
                 if (klass.isTemplate() != isTemplate)
                     throw new BusinessException(ErrorCode.CHANGING_IS_TEMPLATE);
+                if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
+                    klass.clearEnumConstantDefs();
+                klass.setKind(kind);
             } else {
                 klass = KlassBuilder.newBuilder(name, psiClass.getQualifiedName())
                         .kind(kind)
@@ -404,6 +405,8 @@ public class TypeResolverImpl implements TypeResolver {
                     !Objects.equals(psiClass.getSuperClass().getQualifiedName(), Object.class.getName())) {
                 klass.setSuperType(((ClassType) resolveTypeOnly(TranspileUtils.getSuperClassType(psiClass))));
             }
+            else if(!klass.isEnum())
+                klass.setSuperType(null);
             klass.setInterfaces(
                     NncUtils.map(
                             TranspileUtils.getInterfaceTypes(psiClass),

@@ -478,6 +478,7 @@ public class DDLTest extends TestCase {
         TestUtils.waitForDDLCompleted(entityContextFactory);
         var shoes = apiClient.getObject(shoesId);
         var defaultKind = TestUtils.getEnumConstantByName(productKindKlass, "DEFAULT");
+        var hotelKind = TestUtils.getEnumConstantByName(productKindKlass, "HOTEL");
         var kindId = shoes.getString("kind");
         Assert.assertEquals(defaultKind.id(), kindId);
         try {
@@ -486,6 +487,22 @@ public class DDLTest extends TestCase {
         }
         catch (BusinessException e) {
             Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_rollback.masm", typeManager, entityContextFactory);
+        try (var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
+            var kind = shoesInst.getField("kind").resolveObject();
+            Assert.assertFalse(kind.getKlass().isEnum());
+            Assert.assertEquals(Instances.stringInstance("DEFAULT"), kind.getField("name"));
+            Assert.assertEquals(Instances.longInstance(0), kind.getField("code"));
+            try {
+                instCtx.get(Id.parse(hotelKind.id()));
+                Assert.fail("Should have been removed");
+            }
+            catch (BusinessException e) {
+                Assert.assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+            }
         }
     }
 

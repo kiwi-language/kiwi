@@ -98,6 +98,8 @@ public abstract class TypeFactory {
                             batch.addValueToEntityKlass(klass);
                         if(kind == ClassKind.ENUM)
                             batch.addToEnumKlass(klass);
+                        else if(klass.getKind() == ClassKind.ENUM)
+                            batch.addFromEnumKlass(klass);
                     }
                     klass.setKind(kind);
                 }
@@ -115,7 +117,7 @@ public abstract class TypeFactory {
                 } else {
                     var superType = NncUtils.get(klassDTO.superType(), t -> (ClassType) TypeParser.parseType(t, batch));
                     if(!Objects.equals(superType, klass.getSuperType())) {
-                        if (!context.isNewEntity(klass))
+                        if (!context.isNewEntity(klass) && superType != null)
                             batch.addChangingSuperKlass(klass);
                         klass.setSuperType(superType);
                     }
@@ -208,7 +210,12 @@ public abstract class TypeFactory {
             }
             field.setDefaultValue(defaultValue);
             field.setAccess(access);
-            field.setState(MetadataState.fromCode(fieldDTO.state()));
+            var state = MetadataState.fromCode(fieldDTO.state());
+            if(state != field.getState()) {
+                if(field.getState() == MetadataState.REMOVED)
+                    batch.addNewField(field);
+                field.setState(state);
+            }
         }
         return field;
     }

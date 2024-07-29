@@ -655,10 +655,13 @@ public class Instances {
         instance.setField(field, initialValue);
     }
 
-    public static @Nullable Method findFieldInitializer(Field field) {
+    public static @Nullable Method findFieldInitializer(Field field, boolean includeFromEnum) {
         var klass = field.getDeclaringType();
         var initMethodName = "__" + field.getCodeNotNull() + "__";
-        return klass.findMethodByCodeAndParamTypes(initMethodName, List.of());
+        var found = klass.findMethodByCodeAndParamTypes(initMethodName, List.of());
+        if(found != null || !includeFromEnum)
+            return found;
+        return klass.findMethodByCodeAndParamTypes(initMethodName, List.of(Types.getStringType(), Types.getLongType()));
     }
 
     public static @Nullable Instance getDefaultValue(Field field) {
@@ -672,9 +675,24 @@ public class Instances {
     }
 
     public static Instance computeFieldInitialValue(ClassInstance instance, Field field, CallContext callContext) {
-        var initMethod = findFieldInitializer(field);
-        if (initMethod != null)
-            return Flows.invoke(initMethod, instance, List.of(), callContext);
+        var initMethod = findFieldInitializer(field, true);
+        if (initMethod != null) {
+            if(initMethod.getParameters().isEmpty())
+                return Flows.invoke(initMethod, instance, List.of(), callContext);
+            else {
+                assert initMethod.getParameterTypes().equals(List.of(Types.getStringType(), Types.getLongType()));
+                return Flows.invoke(
+                        initMethod,
+                        instance,
+                        List.of(
+                                instance.getUnknownField(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag()),
+                                instance.getUnknownField(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag())
+                        ),
+                        callContext
+                );
+            }
+
+        }
         else
             return Objects.requireNonNull(getDefaultValue(field), "Can not find a default value for field " + field.getQualifiedName());
     }

@@ -37,12 +37,22 @@ public enum CommitState {
     MIGRATING {
         @Override
         public void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
+            var fromEnumKlasses = NncUtils.mapUnique(commit.getFromEnumKlassIds(), context::getKlass);
+            var instCtx = context.getInstanceContext();
+            for (DurableInstance instance : instances) {
+                if(instance instanceof ClassInstance clsInst && fromEnumKlasses.contains(clsInst.getKlass())) {
+                    var refs = instCtx.getByReferenceTargetId(instance.getId(), 0, 10);
+                    if(refs.isEmpty())
+                        instCtx.remove(instance);
+                }
+            }
         }
 
         @Override
         public boolean shouldSkip(Commit commit) {
             return commit.getValueToEntityKlassIds().isEmpty() && commit.getEntityToValueKlassIds().isEmpty()
-                    && commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty();
+                    && commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty()
+                    && commit.getFromEnumKlassIds().isEmpty();
         }
 
         @Override

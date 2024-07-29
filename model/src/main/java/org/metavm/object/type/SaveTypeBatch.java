@@ -48,6 +48,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     private final Set<Klass> entityToValueKlasses = new HashSet<>();
     private final Set<Klass> valueToEntityKlasses = new HashSet<>();
     private final Set<Klass> toEnumKlasses = new HashSet<>();
+    private final Set<Klass> fromEnumKlasses = new HashSet<>();
     private final Set<EnumConstantDef> newEnumConstantDefs = new HashSet<>();
     private final Set<EnumConstantDef> changedEnumConstantDefs = new HashSet<>();
 
@@ -96,6 +97,10 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public void addToEnumKlass(Klass klass) {
         toEnumKlasses.add(klass);
+    }
+
+    public void addFromEnumKlass(Klass klass) {
+        fromEnumKlasses.add(klass);
     }
 
     public void addNewEnumConstantDef(EnumConstantDef newEnumConstantDef) {
@@ -339,13 +344,14 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                 NncUtils.map(entityToValueKlasses, Entity::getStringId),
                 NncUtils.map(valueToEntityKlasses, Entity::getStringId),
                 NncUtils.map(toEnumKlasses, Entity::getStringId),
+                NncUtils.map(fromEnumKlasses, Entity::getStringId),
                 fieldChanges
         );
     }
 
     private void checkForDDL() {
         for (Field field : newFields) {
-            if (Instances.findFieldInitializer(field) == null && Instances.getDefaultValue(field) == null)
+            if (Instances.findFieldInitializer(field, fromEnumKlasses.contains(field.getDeclaringType())) == null && Instances.getDefaultValue(field) == null)
                 throw new BusinessException(ErrorCode.MISSING_FIELD_INITIALIZER, field.getQualifiedName());
         }
         for (Field field : typeChangedFields) {

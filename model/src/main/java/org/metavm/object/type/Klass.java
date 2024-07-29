@@ -1827,5 +1827,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.enumConstantDefs.resetChildren(enumConstantDefs);
     }
 
+    public void clearEnumConstantDefs() {
+        enumConstantDefs.forEach(ecd -> removeField(ecd.getField()));
+        enumConstantDefs.clear();
+    }
+
 }
 

@@ -42,6 +42,8 @@ public class Commit extends Entity {
     private final ReadWriteArray<String> changedEnumConstantIds = addChild(new ReadWriteArray<>(String.class), "changedEnumConstantIds");
     @ChildEntity
     private final ReadWriteArray<String> toEnumKlassIds = addChild(new ReadWriteArray<>(String.class), "toEnumKlassIds");
+    @ChildEntity
+    private final ReadWriteArray<String> fromEnumKlassIds = addChild(new ReadWriteArray<>(String.class), "fromEnumKlassIds");
 
     private CommitState state = CommitState.PREPARING0;
     private boolean running = true;
@@ -60,6 +62,7 @@ public class Commit extends Entity {
                   List<String> entityToValueKlassIds,
                   List<String> valueToEntityKlassIds,
                   List<String> toEnumKlassIds,
+                  List<String> fromEnumKlassIds,
                   List<FieldChange> fieldChanges) {
         this.wal = wal;
         this.requestJSON = NncUtils.toJSONString(request);
@@ -72,6 +75,7 @@ public class Commit extends Entity {
         this.entityToValueKlassIds.addAll(entityToValueKlassIds);
         this.valueToEntityKlassIds.addAll(valueToEntityKlassIds);
         this.toEnumKlassIds.addAll(toEnumKlassIds);
+        this.fromEnumKlassIds.addAll(fromEnumKlassIds);
         this.fieldChanges.addAll(fieldChanges);
     }
 
@@ -156,6 +160,10 @@ public class Commit extends Entity {
 
     public List<String> getToEnumKlassIds() {
         return toEnumKlassIds.toList();
+    }
+
+    public ReadWriteArray<String> getFromEnumKlassIds() {
+        return fromEnumKlassIds;
     }
 
     public void cancel() {

@@ -22,7 +22,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -543,12 +542,10 @@ public class MappingSaver {
     private static @Nullable Accessor getAccessor(Method getter) {
         if (!getter.isSynthetic() && getter.isPublic() && getter.getCode() != null
                 && !getter.getReturnType().isVoid() && getter.getParameters().isEmpty()) {
-            var code2field = getter.getDeclaringType().getAllFields().stream()
-                    .filter(f -> f.getCode() != null)
-                    .collect(Collectors.toMap(Field::getCode, Function.identity()));
-            var field = code2field.get(getter.getCode());
-            if (field != null)
-                return new Accessor(getter, null, field, field.getName(), field.getCode());
+            for (Field field : getter.getDeclaringType().getFields()) {
+                if(getter.getCode().equals(field.getCode()))
+                    return new Accessor(getter, null, field, field.getName(), field.getCode());
+            }
             var matcher = GETTER_CODE_PATTERN.matcher(getter.getCode());
             if (matcher.matches()) {
                 return getAccessor0(matcher, getter, "get");

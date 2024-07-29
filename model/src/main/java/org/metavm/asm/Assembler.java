@@ -450,8 +450,11 @@ public class Assembler {
             var kind = ClassKind.fromTypeCategory(typeCategory);
             if (klass == null)
                 klass = createKlass(name, code, kind);
-            else
+            else {
+                if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
+                    klass.clearEnumConstantDefs();
                 klass.setKind(kind);
+            }
             var classInfo = new ClassInfo(
                     scope,
                     klass,
@@ -537,9 +540,10 @@ public class Assembler {
                 klass.setTitleField(field);
             else if(klass.getTitleField() == field)
                 klass.setTitleField(null);
-            if(mods.contains(Modifiers.DELETED)) {
+            if(mods.contains(Modifiers.DELETED))
                 field.setState(MetadataState.REMOVED);
-            }
+            else
+                field.setState(MetadataState.READY);
             classInfo.visitedFields.add(field);
             return null;
         }
@@ -789,6 +793,8 @@ public class Assembler {
                 currentClass.superType = (ClassType) parseType(superType, currentClass, getCompilationUnit());
             if (currentClass.superType != null)
                 klass.setSuperType(currentClass.superType);
+            else if(!klass.isEnum())
+                klass.setSuperType(null);
             if (interfaces != null)
                 klass.setInterfaces(NncUtils.map(interfaces.typeType(), t -> (ClassType) parseType(t, scope, getCompilationUnit())));
             var cinit = klass.findMethodByCodeAndParamTypes("<cinit>", List.of());
