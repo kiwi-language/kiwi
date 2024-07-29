@@ -430,11 +430,13 @@ public class DDLTest extends TestCase {
             }
         });
         TestUtils.waitForDDLState(CommitState.ABORTING, entityContextFactory);
+        Id priceId;
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
             var priceRef = (InstanceReference) shoesInst.getField("price");
             Assert.assertTrue(priceRef.isValueReference());
+            priceId = priceRef.getId();
         }
         TestUtils.waitForDDLAborted(entityContextFactory);
         try(var context = newContext()) {
@@ -445,6 +447,13 @@ public class DDLTest extends TestCase {
             Assert.assertTrue(priceRef.isValueReference());
             Assert.assertTrue(priceRef.isInlineValueReference());
             Assert.assertTrue(priceRef.isResolved());
+            try {
+                instCtx.get(priceId);
+                Assert.fail("Should have been removed");
+            }
+            catch (BusinessException e) {
+                Assert.assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+            }
         }
     }
 

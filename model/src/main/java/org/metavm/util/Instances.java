@@ -754,8 +754,12 @@ public class Instances {
                     instance.forEachReference(r -> {
                         if(r.isEager()) {
                             var referent = r.resolve();
-                            if(referent instanceof ClassInstance object && object.getKlass().findAncestorKlassByTemplate(klass) != null)
-                                r.clearEager();
+                            if(referent instanceof ClassInstance object && object.getKlass().findAncestorKlassByTemplate(klass) != null) {
+                                if(object.isValue())
+                                    context.getInstanceContext().remove(object);
+                                else
+                                    r.clearEager();
+                            }
                         }
                     });
                 }
