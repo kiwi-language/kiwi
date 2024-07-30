@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -126,6 +127,11 @@ public class BytesUtils {
 
         @Override
         public void transformReference(Function<InstanceReference, InstanceReference> function) {
+
+        }
+
+        @Override
+        public void transformReference(BiFunction<InstanceReference, Boolean, InstanceReference> function) {
 
         }
 

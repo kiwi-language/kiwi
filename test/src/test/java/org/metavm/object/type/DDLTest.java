@@ -538,6 +538,40 @@ public class DDLTest extends TestCase {
         }
     }
 
+    public void testValueToChildConversion() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_to_child_ddl_before.masm", typeManager, entityContextFactory);
+        var currencyKlass = typeManager.getTypeByCode("Currency").type();
+        var yuanId = TestUtils.getEnumConstantIdByName(currencyKlass, "YUAN");
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "shoes",
+                "price", Map.of(
+                        "amount", 100,
+                        "currency", yuanId
+                )
+        )));
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_to_child_ddl_after.masm", typeManager, entityContextFactory);
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
+            var priceRef = (InstanceReference) shoesInst.getField("price");
+            Assert.assertFalse(priceRef.isValueReference());
+            var price = (ClassInstance) priceRef.resolve();
+            Assert.assertNotNull(price.tryGetId());
+            Assert.assertEquals(price.getTreeId(), shoesInst.getTreeId());
+        }
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_to_child_ddl_before.masm", typeManager, entityContextFactory);
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
+            var priceRef = (InstanceReference) shoesInst.getField("price");
+            Assert.assertTrue(priceRef.isValueReference());
+            var price = (ClassInstance) priceRef.resolve();
+            Assert.assertNull(price.tryGetId());
+            Assert.assertNull(price.getParent());
+            Assert.assertNull(price.getParentField());
+        }
+    }
+
     public void testRaceCondition() throws InterruptedException {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
         var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(

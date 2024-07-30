@@ -623,8 +623,8 @@ public class InstanceContext extends BufferingInstanceContext {
     private void mergeDetachedValues() {
         forEachInitialized(instance -> {
             if(!instance.isEphemeral() && !instance.isRemoved()) {
-                instance.transformReference(r -> {
-                    if(r.isValueReference()) {
+                instance.transformReference((r, isChild) -> {
+                    if(r.isValueReference() && !isChild) {
                         var v = r.resolve();
                         if(v.isDetachedValue())
                             return v.copy().getReference();

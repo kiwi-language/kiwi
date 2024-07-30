@@ -1,0 +1,61 @@
+class Product {
+    private title string name;
+    private child Price price;
+
+    public Product(string name, Price price) {
+        this.name = name;
+        this.price = price;
+    }
+
+    public string getName() {
+        return this.name;
+    }
+
+    public void setName(string name) {
+        this.name = name;
+    }
+
+    public Price getPrice() {
+        return this.price;
+    }
+
+    public void setPrice(Price price) {
+        this.price = price;
+    }
+}
+
+class Price {
+    private double amount;
+    private Currency currency;
+
+    public Price(double amount, Currency currency) {
+        this.amount = amount;
+        this.currency = currency;
+    }
+
+    public double getAmount() {
+        return this.amount;
+    }
+
+    public void setAmount(double amount) {
+        this.amount = amount;
+    }
+
+    public Currency getCurrency() {
+        return this.currency;
+    }
+
+    public void setCurrency(Currency currency) {
+        this.currency = currency;
+    }
+
+}
+
+enum Currency {
+    YUAN,
+    DOLLAR,
+    POUND;
+
+    Currency() {
+    }
+}

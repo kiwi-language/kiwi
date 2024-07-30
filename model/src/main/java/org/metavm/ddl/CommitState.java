@@ -72,10 +72,13 @@ public enum CommitState {
                 });
             }
             for (var instance : instances) {
-                instance.forEachReference(ref -> {
+                instance.transformReference((ref, isChild) -> {
                     var referent = ref.resolve();
+                    if(isChild && referent.isValue())
+                        return referent.copy().getReference();
                     if(referent.tryGetOldId() != null && referent.isUseOldId())
                         ref.setForwarded();
+                    return ref;
                 });
                 for (Klass klass : valueToEntityKlasses) {
                     instance.forEachReference(ref -> {
@@ -103,7 +106,8 @@ public enum CommitState {
         @Override
         public boolean shouldSkip(Commit commit) {
             return commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty()
-                    && commit.getValueToEntityKlassIds().isEmpty() && commit.getToEnumKlassIds().isEmpty();
+                    && commit.getValueToEntityKlassIds().isEmpty() && commit.getToEnumKlassIds().isEmpty()
+                    && commit.getEntityToValueKlassIds().isEmpty();
         }
     },
     SWITCHING_ID {

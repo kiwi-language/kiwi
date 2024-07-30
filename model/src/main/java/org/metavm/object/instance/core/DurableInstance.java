@@ -18,10 +18,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 import static java.util.Objects.requireNonNull;
 
@@ -310,7 +307,7 @@ public abstract class DurableInstance implements Message {
     }
 
     public boolean canExtract() {
-        return !isRoot() && parent != null && parentField != null && !parentField.isChild();
+        return !isValue() && !isRoot() && parent != null && parentField != null && !parentField.isChild();
     }
 
     @Nullable
@@ -718,7 +715,11 @@ public abstract class DurableInstance implements Message {
 
     public abstract void forEachReference(TriConsumer<InstanceReference, Boolean, Type> action);
 
-    public abstract void transformReference(Function<InstanceReference, InstanceReference> function);
+    public void transformReference(Function<InstanceReference, InstanceReference> function) {
+        transformReference((r, isChild) -> function.apply(r));
+    }
+
+    public abstract void transformReference(BiFunction<InstanceReference, Boolean, InstanceReference> function);
 
     public void visitGraph(Predicate<DurableInstance> action) {
         visitGraph(action, r -> true, new IdentitySet<>());
