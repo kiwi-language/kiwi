@@ -1,6 +1,9 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.entity.*;
+import org.metavm.entity.ContextAttributeKey;
+import org.metavm.entity.InstanceIndexQuery;
+import org.metavm.entity.InstanceSink;
+import org.metavm.entity.LockMode;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.event.EventQueue;
 import org.metavm.object.instance.IndexKeyRT;
@@ -92,7 +95,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void buffer(Id id);
 
-    void removeForwardingPointer(DurableInstance instance);
+    void removeForwardingPointer(DurableInstance instance, boolean clearingOldId);
 
     default void buffer(Collection<? extends Id> ids) {
         ids.forEach(this::buffer);

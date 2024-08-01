@@ -166,9 +166,10 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    public void removeForwardingPointer(DurableInstance instance) {
+    public void removeForwardingPointer(DurableInstance instance, boolean clearingOldId) {
         Objects.requireNonNull(forwardingPointers.get(instance.getOldId().getTreeId()))
                 .remove(new ForwardingPointer(instance.getOldId(), instance.getCurrentId()));
-        instance.clearOldId();
+        if(clearingOldId)
+            instance.clearOldId();
     }
 }

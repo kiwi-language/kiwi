@@ -640,6 +640,11 @@ public class InstanceContext extends BufferingInstanceContext {
         forEachInitialized(instance -> {
             if (!instance.isRemoved() && !instance.isEphemeral() && instance.canExtract()) {
                 //                    allExtracted.add(i);
+                var ref = instance.getReference();
+                Objects.requireNonNull(instance.getParent()).forEachReference(r -> {
+                    if(r.equals(ref))
+                        r.setForwarded();
+                });
                 instance.forEachDescendant(i -> {
                     i.extract(i == instance);
                     extracted.add(i);

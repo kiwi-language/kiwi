@@ -39,7 +39,7 @@ public class ReferenceRedirector extends ReferenceScanner {
     protected void onTaskDone(IEntityContext context, Id id) {
         try {
             var target = context.getInstanceContext().get(id);
-            context.getInstanceContext().removeForwardingPointer(target);
+            context.getInstanceContext().removeForwardingPointer(target, true);
         }
         catch (TreeNotFoundException ignored) {}
     }

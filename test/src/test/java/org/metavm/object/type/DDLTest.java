@@ -572,6 +572,36 @@ public class DDLTest extends TestCase {
         }
     }
 
+    public void testChildToEnumConversion() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_before.masm", typeManager, entityContextFactory);
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "shoes",
+                "kind", Map.of("name", "DEFAULT")
+        )));
+        var kindId = apiClient.getObject(shoesId).getObject("kind").getString("$id");
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_after.masm", typeManager, entityContextFactory);
+        var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        Assert.assertEquals(ClassKind.ENUM.code(), productKindKlass.kind());
+        var defaultKindId = TestUtils.getEnumConstantIdByName(productKindKlass, "DEFAULT");
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
+            var kindRef = (InstanceReference) shoesInst.getField("kind");
+            Assert.assertEquals(defaultKindId, kindRef.getStringId());
+            try {
+                instCtx.get(Id.parse(kindId));
+                Assert.fail("Should have been removed");
+            }
+            catch (BusinessException e) {
+                Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+            }
+        }
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_rollback.masm", typeManager, entityContextFactory);
+        var kind = apiClient.getObject(shoesId).getObject("kind");
+        Assert.assertEquals("DEFAULT", kind.getString("name"));
+        Assert.assertEquals(Id.parse(shoesId).getTreeId(), Id.parse(kind.getString("$id")).getTreeId());
+    }
+
     public void testRaceCondition() throws InterruptedException {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
         var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(

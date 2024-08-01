@@ -165,7 +165,7 @@ public enum CommitState {
             for (var instance : instances) {
                 if(instance.tryGetOldId() != null && !instance.isUseOldId()) {
                     instCtx.loadTree(instance.getOldId().getTreeId());
-                    instCtx.removeForwardingPointer(instance);
+                    instCtx.removeForwardingPointer(instance, true);
                 }
             }
         }
