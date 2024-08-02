@@ -2,8 +2,8 @@ package org.metavm.entity;
 
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.NullInstance;
+import org.metavm.object.instance.core.NullValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
@@ -30,17 +30,17 @@ public class InstanceFieldDef implements IFieldDef {
     }
 
     @Override
-    public Instance getModelFieldValue(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+    public Value getModelFieldValue(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         var value = instance.getField(field);
         if(value.isNull())
-            return javaField.getType().isAssignableFrom(NullInstance.class) ? value : null;
+            return javaField.getType().isAssignableFrom(NullValue.class) ? value : null;
         else
             return value;
     }
 
     @Override
-    public Instance getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
-        return (Instance) NncUtils.orElse(ReflectionUtils.get(model, javaField), Instances.nullInstance());
+    public Value getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
+        return (Value) NncUtils.orElse(ReflectionUtils.get(model, javaField), Instances.nullInstance());
     }
 
     @Override

@@ -8,7 +8,7 @@ import org.metavm.flow.rest.LambdaNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.LambdaInstance;
+import org.metavm.object.instance.core.Lambda;
 import org.metavm.object.type.*;
 import org.metavm.util.NncUtils;
 
@@ -129,7 +129,7 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var func = new LambdaInstance(this, frame);
+        var func = new Lambda(this, frame);
         if (functionInterfaceImpl == null) {
             return next(func);
         } else {

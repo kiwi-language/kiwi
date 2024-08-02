@@ -22,7 +22,7 @@ public class ValueFormatter {
 
     public static final DateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public static InstanceReference parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
+    public static Reference parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
         Type actualType;
         if (!instanceDTO.isNew())
             actualType = context.get(instanceDTO.parseId()).getType();
@@ -49,7 +49,7 @@ public class ValueFormatter {
                 }
                 return list.getReference();
             } else {
-                Map<Field, Instance> fieldValueMap = new HashMap<>();
+                Map<Field, Value> fieldValueMap = new HashMap<>();
                 ClassInstanceParam param = (ClassInstanceParam) instanceDTO.param();
                 Map<String, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(
                         param.fields(),
@@ -64,7 +64,7 @@ public class ValueFormatter {
                 }
                 for (Field field : klass.getAllFields()) {
                     FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getStringTag()), InstanceFieldDTO::value);
-                    Instance fieldValue = rawValue != null ?
+                    Value fieldValue = rawValue != null ?
                             parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance.getReference(), field), context)
                             : Instances.nullInstance();
                     fieldValueMap.put(field, fieldValue);
@@ -89,7 +89,7 @@ public class ValueFormatter {
             } else {
                 array = new ArrayInstance(arrayType);
             }
-            List<Instance> elements = new ArrayList<>();
+            List<Value> elements = new ArrayList<>();
             for (FieldValue element : param.elements()) {
                 elements.add(
                         parseOne(element, arrayType.getElementType(),
@@ -104,28 +104,28 @@ public class ValueFormatter {
         }
     }
 
-    private static Instance parseOne(FieldValue rawValue, Type type,
-                                     @Nullable InstanceParentRef parentRef, IInstanceContext context) {
-        Instance value = InstanceFactory.resolveValue(
+    private static Value parseOne(FieldValue rawValue, Type type,
+                                  @Nullable InstanceParentRef parentRef, IInstanceContext context) {
+        Value value = InstanceFactory.resolveValue(
                 rawValue, type, parentRef, context
         );
-        if (value instanceof InstanceReference r && r.tryGetId() == null && !context.containsInstance(r.resolve()))
+        if (value instanceof Reference r && r.tryGetId() == null && !context.containsInstance(r.resolve()))
             context.bind(r.resolve());
         return value;
     }
 
-    public static Object format(Instance value) {
+    public static Object format(Value value) {
         if (value == null) {
             return null;
         }
-        if (value instanceof PrimitiveInstance primitiveInstance) {
-            if (primitiveInstance.getType().isPassword()) {
+        if (value instanceof PrimitiveValue primitiveValue) {
+            if (primitiveValue.getType().isPassword()) {
                 return null;
             } else {
-                return primitiveInstance.getValue();
+                return primitiveValue.getValue();
             }
         } else {
-            var d = (DurableInstance) value.resolveDurable();
+            var d = (Instance) value.resolveDurable();
             if (value.getType().isValue()) {
                 return value.toDTO();
             } else if (d.tryGetTreeId() != null) {

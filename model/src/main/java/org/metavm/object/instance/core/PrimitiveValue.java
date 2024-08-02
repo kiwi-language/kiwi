@@ -10,9 +10,9 @@ import org.metavm.util.InstanceOutput;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public abstract class PrimitiveInstance extends Instance implements Comparable<PrimitiveInstance> {
+public abstract class PrimitiveValue extends Value implements Comparable<PrimitiveValue> {
 
-    public PrimitiveInstance(PrimitiveType type) {
+    public PrimitiveValue(PrimitiveType type) {
         super(type);
     }
 
@@ -37,11 +37,11 @@ public abstract class PrimitiveInstance extends Instance implements Comparable<P
     }
 
     @Override
-    public <R> void acceptReferences(InstanceVisitor<R> visitor) {
+    public <R> void acceptReferences(ValueVisitor<R> visitor) {
     }
 
     @Override
-    public <R> void acceptChildren(InstanceVisitor<R> visitor) {
+    public <R> void acceptChildren(ValueVisitor<R> visitor) {
     }
 
     @Override
@@ -59,7 +59,7 @@ public abstract class PrimitiveInstance extends Instance implements Comparable<P
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PrimitiveInstance that = (PrimitiveInstance) o;
+        PrimitiveValue that = (PrimitiveValue) o;
         return Objects.equals(getValue(), that.getValue()) && Objects.equals(getType(), that.getType());
     }
 
@@ -83,12 +83,12 @@ public abstract class PrimitiveInstance extends Instance implements Comparable<P
     }
 
     @Override
-    public void writeRecord(InstanceOutput output) {
+    public void writeInstance(InstanceOutput output) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int compareTo(@NotNull PrimitiveInstance o) {
+    public int compareTo(@NotNull PrimitiveValue o) {
         int cmp = Integer.compare(getType().getKind().code(), o.getType().getKind().code());
         if(cmp != 0)
             return cmp;

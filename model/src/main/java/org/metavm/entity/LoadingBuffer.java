@@ -127,7 +127,7 @@ public class LoadingBuffer {
         new StreamVisitor(new ByteArrayInputStream(tree.data())) {
 
             @Override
-            public void visitRecordBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+            public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
                 var id = PhysicalId.of(treeId, nodeId, typeOrTypeKey);
                 invertedIndex.put(id, tree);
                 if(oldTreeId != -1L) {
@@ -135,7 +135,7 @@ public class LoadingBuffer {
                     invertedIndex.put(oldId, tree);
                 }
                 ids.add(id);
-                super.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
+                super.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
             }
 
             @Override

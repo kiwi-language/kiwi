@@ -8,7 +8,7 @@ import org.metavm.util.NncUtils;
 
 import java.util.List;
 
-public record InstanceIndexKey(Index index, List<Instance> values) {
+public record InstanceIndexKey(Index index, List<Value> values) {
 
     public IndexKeyPO toPO() {
         var columns = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];

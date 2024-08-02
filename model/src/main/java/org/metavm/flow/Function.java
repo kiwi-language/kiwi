@@ -7,7 +7,7 @@ import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.FunctionImpl;
 import org.metavm.flow.rest.FunctionParam;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
@@ -69,7 +69,7 @@ public class Function extends Flow implements GlobalKey {
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
+    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         NncUtils.requireNull(self);
         arguments = checkArguments(arguments);
         if (isNative()) {

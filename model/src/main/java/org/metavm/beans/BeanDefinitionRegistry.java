@@ -6,8 +6,8 @@ import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -86,8 +86,8 @@ public class BeanDefinitionRegistry extends Entity {
         return NncUtils.filterAndMap(beanDefinitions, b -> type.isAssignableFrom(b.getBeanType()), BeanDefinition::getBean);
     }
 
-    public List<Instance> getFlowArguments(Flow method) {
-        var arguments = new ArrayList<Instance>();
+    public List<Value> getFlowArguments(Flow method) {
+        var arguments = new ArrayList<Value>();
         for (Parameter parameter : method.getParameters()) {
             var beanName = parameter.getAttribute(AttributeNames.BEAN_NAME);
             if (beanName != null) {
@@ -101,7 +101,7 @@ public class BeanDefinitionRegistry extends Entity {
             if (parameter.getType() instanceof ClassType paramType) {
                 if (paramType.isList()) {
                     if(paramType.getFirstTypeArgument() instanceof ClassType beanType)
-                        arguments.add(Instances.createList(paramType, NncUtils.map(getBeansOfType(beanType), DurableInstance::getReference)).getReference());
+                        arguments.add(Instances.createList(paramType, NncUtils.map(getBeansOfType(beanType), Instance::getReference)).getReference());
                     else
                         throw new InternalException("Unsupported list element type " + paramType.getFirstTypeArgument() + " in bean factory method " + method.getName());
                 } else {

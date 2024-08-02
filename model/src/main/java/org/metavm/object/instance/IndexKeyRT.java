@@ -19,24 +19,24 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
 
     private static final Klass DUMMY_TYPE = KlassBuilder.newBuilder("Dummy", "Dummy").build();
 
-    public  static final InstanceReference MIN_INSTANCE;
+    public  static final Reference MIN_INSTANCE;
 
-    public static final InstanceReference MAX_INSTANCE;
+    public static final Reference MAX_INSTANCE;
 
     static {
         var i1 = ClassInstance.allocate(DUMMY_TYPE.getType());
         i1.initId(new NullId());
-        MIN_INSTANCE = new InstanceReference(i1);
+        MIN_INSTANCE = new Reference(i1);
         var i2 = ClassInstance.allocate(DUMMY_TYPE.getType());
         i2.initId(new MockId(Long.MAX_VALUE));
         i2.setSeq(Integer.MAX_VALUE);
-        MAX_INSTANCE = new InstanceReference(i2);
+        MAX_INSTANCE = new Reference(i2);
     }
 
     private final Index index;
-    private final Map<IndexField, Instance> fields;
+    private final Map<IndexField, Value> fields;
 
-    public IndexKeyRT(Index index, Map<IndexField, Instance> fields) {
+    public IndexKeyRT(Index index, Map<IndexField, Value> fields) {
         this.index = index;
         this.fields = new HashMap<>();
         for (int i = 0; i < fields.size(); i++) {
@@ -61,7 +61,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
         return key;
     }
 
-    private static void setKeyItem(IndexField field, IndexKeyPO key, Instance fieldValue) {
+    private static void setKeyItem(IndexField field, IndexKeyPO key, Value fieldValue) {
         key.setColumn(field.getIndex().getFieldIndex(field), BytesUtils.toIndexBytes(fieldValue));
     }
 
@@ -69,11 +69,11 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
         return index;
     }
 
-    public Map<IndexField, Instance> getFields() {
+    public Map<IndexField, Value> getFields() {
         return fields;
     }
 
-    public Instance getField(IndexField field) {
+    public Value getField(IndexField field) {
         return fields.get(field);
     }
 
@@ -113,7 +113,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
         return 0;
     }
 
-    private int compare(Instance first, Instance second) {
+    private int compare(Value first, Value second) {
         if(first == second)
             return 0;
         if(first == MIN_INSTANCE)
@@ -124,14 +124,14 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
             return 1;
         if(second == MAX_INSTANCE)
             return -1;
-        if(first instanceof PrimitiveInstance p1 && second instanceof PrimitiveInstance p2)
+        if(first instanceof PrimitiveValue p1 && second instanceof PrimitiveValue p2)
             return p1.compareTo(p2);
-        if(first instanceof NullInstance)
+        if(first instanceof NullValue)
             return -1;
-        if(second instanceof NullInstance)
+        if(second instanceof NullValue)
             return 1;
-        if(first instanceof InstanceReference d1 && !d1.isView()
-                && second instanceof InstanceReference d2 && !d2.isView()) {
+        if(first instanceof Reference d1 && !d1.isView()
+                && second instanceof Reference d2 && !d2.isView()) {
             if(d1.isNew() && d2.isNew())
                 return Integer.compare(d1.getSeq(), d2.getSeq());
             if(d1.isNew())

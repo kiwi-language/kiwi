@@ -7,7 +7,7 @@ import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.ColumnKind;
-import org.metavm.object.instance.core.NullInstance;
+import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 
@@ -308,8 +308,8 @@ public class StandardDefBuilder {
                 .column(column)
                 .tag(tag)
                 .access(access)
-                .defaultValue(new NullInstance(Types.getNullType()))
-                .staticValue(new NullInstance(Types.getNullType()))
+                .defaultValue(new NullValue(Types.getNullType()))
+                .staticValue(new NullValue(Types.getNullType()))
                 .build();
     }
 

@@ -2,8 +2,8 @@ package org.metavm.entity.natives;
 
 import org.metavm.entity.StdField;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.LongInstance;
-import org.metavm.object.instance.core.StringInstance;
+import org.metavm.object.instance.core.LongValue;
+import org.metavm.object.instance.core.StringValue;
 
 public class EnumNative extends NativeBase {
 
@@ -13,12 +13,12 @@ public class EnumNative extends NativeBase {
         this.instance = instance;
     }
 
-    public StringInstance name(CallContext callContext) {
-        return (StringInstance) instance.getField(StdField.enumName.get());
+    public StringValue name(CallContext callContext) {
+        return (StringValue) instance.getField(StdField.enumName.get());
     }
 
-    public LongInstance ordinal(CallContext callContext) {
-        return (LongInstance) instance.getField(StdField.enumOrdinal.get());
+    public LongValue ordinal(CallContext callContext) {
+        return (LongValue) instance.getField(StdField.enumOrdinal.get());
     }
 
 }

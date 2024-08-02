@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
@@ -8,16 +8,16 @@ import javax.annotation.Nullable;
 public class SubEvaluationContext implements EvaluationContext {
 
     private final EvaluationContext parent;
-    private final Instance instance;
+    private final Value instance;
 
-    public SubEvaluationContext(EvaluationContext parent, Instance instance) {
+    public SubEvaluationContext(EvaluationContext parent, Value instance) {
         this.parent = parent;
         this.instance = instance;
     }
 
     @Override
     @Nullable
-    public Instance evaluate(Expression expression) {
+    public Value evaluate(Expression expression) {
         if (isSelfContextExpression(expression))
             return instance;
         else if (parent != null && this.parent.isContextExpression(expression))

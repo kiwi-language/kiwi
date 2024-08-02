@@ -5,15 +5,15 @@ import org.metavm.entity.natives.ListNative;
 public abstract class CollectionAwareStructuralVisitor extends StructuralInstanceVisitor {
 
     @Override
-    public void visitDurableInstance(DurableInstance instance) {
+    public void visitInstance(Instance instance) {
         if(instance instanceof ClassInstance classInstance && classInstance.isList()) {
             if(classInstance.isChildList())
-                for (Instance element : new ListNative(classInstance).toArray().getElements()) {
-                    if(element instanceof InstanceReference r)
+                for (Value element : new ListNative(classInstance).toArray().getElements()) {
+                    if(element instanceof Reference r)
                         r.resolve().accept(this);
                 }
         }
         else
-            super.visitDurableInstance(instance);
+            super.visitInstance(instance);
     }
 }

@@ -1,7 +1,7 @@
 package org.metavm.object.instance.query;
 
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Klass;
 import org.metavm.util.NncUtils;
 
@@ -10,7 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ObjectNode extends InstanceNode<InstanceReference> {
+public class ObjectNode extends InstanceNode<Reference> {
 
     private final Klass type;
     private final Map<String, InstanceNode<?>> children = new LinkedHashMap<>();
@@ -27,7 +27,7 @@ public class ObjectNode extends InstanceNode<InstanceReference> {
     }
 
     @Override
-    public List<NodeInstancePair> getNodeInstancePairsForChildren0(InstanceReference instance) {
+    public List<NodeInstancePair> getNodeInstancePairsForChildren0(Reference instance) {
         return NncUtils.map(
                 getChildren(),
                 child -> new NodeInstancePair(child, instance.resolveObject().getField(child.getName()))
@@ -40,19 +40,19 @@ public class ObjectNode extends InstanceNode<InstanceReference> {
     }
 
     @Override
-    public Instance getByPath0(InstanceReference instance, Path path) {
+    public Value getByPath0(Reference instance, Path path) {
         InstanceNode<?> child = children.get(path.firstItem());
-        Instance fieldValue = instance.resolveObject().getField(path.firstItem());
+        Value fieldValue = instance.resolveObject().getField(path.firstItem());
         return child.getByPath(fieldValue, path.subPath());
     }
 
     @Override
-    protected void fetch0(InstanceReference instance, Path path, List<Instance> result) {
+    protected void fetch0(Reference instance, Path path, List<Value> result) {
         children.get(path.firstItem()).fetch(instance.resolveObject().getField(path.firstItem()), path.subPath(), result);
     }
 
     @Override
-    protected Class<InstanceReference> getInstanceClass() {
-        return InstanceReference.class;
+    protected Class<Reference> getInstanceClass() {
+        return Reference.class;
     }
 }

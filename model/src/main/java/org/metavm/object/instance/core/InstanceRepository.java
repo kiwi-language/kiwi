@@ -7,22 +7,22 @@ import java.util.List;
 
 public interface InstanceRepository extends InstanceProvider {
 
-    DurableInstance get(Id id);
+    Instance get(Id id);
 
     @Nullable
-    InstanceReference selectFirstByKey(IndexKeyRT key);
+    Reference selectFirstByKey(IndexKeyRT key);
 
-    List<InstanceReference> indexScan(IndexKeyRT from, IndexKeyRT to);
+    List<Reference> indexScan(IndexKeyRT from, IndexKeyRT to);
 
     long indexCount(IndexKeyRT from, IndexKeyRT to);
 
-    List<InstanceReference> indexSelect(IndexKeyRT key);
+    List<Reference> indexSelect(IndexKeyRT key);
 
     boolean contains(Id id);
 
-    void bind(DurableInstance instance);
+    void bind(Instance instance);
 
-    boolean remove(DurableInstance instance);
+    boolean remove(Instance instance);
 
     List<Id> filterAlive(List<Id> ids);
 

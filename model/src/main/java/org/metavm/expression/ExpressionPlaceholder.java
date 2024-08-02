@@ -2,7 +2,7 @@ package org.metavm.expression;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.NeverType;
 import org.metavm.object.type.Type;
 
@@ -36,7 +36,7 @@ public class ExpressionPlaceholder extends Expression {
     }
 
     @Override
-    protected Instance evaluateSelf(EvaluationContext context) {
+    protected Value evaluateSelf(EvaluationContext context) {
         throw new UnsupportedOperationException();
     }
 }

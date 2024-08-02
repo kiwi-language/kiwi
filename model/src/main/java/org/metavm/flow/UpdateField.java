@@ -2,13 +2,16 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.BuildKeyContext;
+import org.metavm.entity.Entity;
+import org.metavm.entity.LocalKey;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.flow.rest.UpdateFieldDTO;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.DoubleInstance;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.LongInstance;
+import org.metavm.object.instance.core.DoubleValue;
+import org.metavm.object.instance.core.LongValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Types;
 import org.metavm.util.InternalException;
@@ -21,26 +24,26 @@ import java.util.Objects;
 public class UpdateField extends Entity implements LocalKey {
     private final FieldRef fieldRef;
     private UpdateOp op;
-    private Value value;
+    private org.metavm.flow.Value value;
 
-    public UpdateField(FieldRef fieldRef, UpdateOp op, Value value) {
+    public UpdateField(FieldRef fieldRef, UpdateOp op, org.metavm.flow.Value value) {
         this.fieldRef = fieldRef;
         this.op = op;
         this.value = value;
     }
 
     public void execute(@Nullable ClassInstance instance, EvaluationContext context, boolean inConstructor) {
-        Instance evaluatedValue = value.evaluate(context);
-        Instance updateValue;
+        Value evaluatedValue = value.evaluate(context);
+        Value updateValue;
         var field = fieldRef.resolve();
         if(op == UpdateOp.SET)
             updateValue = evaluatedValue;
         else if(op == UpdateOp.INC) {
             if(Types.isDouble(field.getType())) {
-                updateValue = field.getDouble(instance).add((DoubleInstance) evaluatedValue);
+                updateValue = field.getDouble(instance).add((DoubleValue) evaluatedValue);
             }
             else if(Types.isLong(field.getType())) {
-                updateValue = field.getLong(instance).add((LongInstance) evaluatedValue);
+                updateValue = field.getLong(instance).add((LongValue) evaluatedValue);
             }
             else {
                 throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
@@ -48,10 +51,10 @@ public class UpdateField extends Entity implements LocalKey {
         }
         else if(op == UpdateOp.DEC) {
             if(Types.isDouble(field.getType())) {
-                updateValue = field.getDouble(instance).minus((DoubleInstance) evaluatedValue);
+                updateValue = field.getDouble(instance).minus((DoubleValue) evaluatedValue);
             }
             else if(Types.isLong(field.getType())) {
-                updateValue = field.getLong(instance).minus((LongInstance) evaluatedValue);
+                updateValue = field.getLong(instance).minus((LongValue) evaluatedValue);
             }
             else {
                 throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType().toExpression());
@@ -77,7 +80,7 @@ public class UpdateField extends Entity implements LocalKey {
         return fieldRef;
     }
 
-    public void setValue(Value value) {
+    public void setValue(org.metavm.flow.Value value) {
         this.value = value;
     }
 
@@ -100,7 +103,7 @@ public class UpdateField extends Entity implements LocalKey {
         return op;
     }
 
-    public Value getValue() {
+    public org.metavm.flow.Value getValue() {
         return value;
     }
 

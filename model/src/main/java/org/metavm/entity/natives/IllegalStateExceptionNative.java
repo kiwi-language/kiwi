@@ -1,8 +1,8 @@
 package org.metavm.entity.natives;
 
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
 
 public class IllegalStateExceptionNative extends RuntimeExceptionNative {
 
@@ -10,15 +10,15 @@ public class IllegalStateExceptionNative extends RuntimeExceptionNative {
         super(instance);
     }
 
-    public InstanceReference IllegalStateException(CallContext callContext) {
+    public Reference IllegalStateException(CallContext callContext) {
         return RuntimeException(callContext);
     }
 
-    public InstanceReference IllegalStateException(Instance causeOrMessage, CallContext callContext) {
+    public Reference IllegalStateException(Value causeOrMessage, CallContext callContext) {
         return RuntimeException(causeOrMessage, callContext);
     }
 
-    public InstanceReference IllegalStateException(Instance message, Instance cause, CallContext callContext) {
+    public Reference IllegalStateException(Value message, Value cause, CallContext callContext) {
         return RuntimeException(message, cause, callContext);
     }
 

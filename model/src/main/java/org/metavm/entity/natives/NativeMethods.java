@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.InternalException;
@@ -22,14 +22,14 @@ public class NativeMethods {
 
     public static final Logger logger = LoggerFactory.getLogger(NativeMethods.class);
 
-    public static @NotNull FlowExecResult invoke(Method method, @Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
+    public static @NotNull FlowExecResult invoke(Method method, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         if (method.isStatic()) {
             var nativeClass = tryGetNativeClass(method.getDeclaringType());
             NncUtils.requireNonNull(nativeClass,
                     "Native class not available for type '" + method.getDeclaringType().getName() + "'");
             List<Class<?>> paramTypes = new ArrayList<>();
             paramTypes.add(Klass.class);
-            paramTypes.addAll(NncUtils.multipleOf(Instance.class, method.getParameters().size()));
+            paramTypes.addAll(NncUtils.multipleOf(Value.class, method.getParameters().size()));
             paramTypes.add(CallContext.class);
             Object[] args = new Object[2 + arguments.size()];
             args[0] = method.getDeclaringType();
@@ -38,7 +38,7 @@ public class NativeMethods {
             }
             args[arguments.size() + 1] = callContext;
             var javaMethod = ReflectionUtils.getMethod(nativeClass, method.getCode(), paramTypes);
-            var result = (Instance) ReflectionUtils.invoke(null, javaMethod, args);
+            var result = (Value) ReflectionUtils.invoke(null, javaMethod, args);
             if (method.getReturnType().isVoid()) {
                 return new FlowExecResult(null, null);
             } else {
@@ -48,7 +48,7 @@ public class NativeMethods {
             if (self instanceof ClassInstance classInstance) {
                 Object nativeObject = getNativeObject(classInstance);
                 var instanceClass = nativeObject.getClass();
-                List<Class<?>> paramTypes = new ArrayList<>(NncUtils.multipleOf(Instance.class, method.getParameters().size()));
+                List<Class<?>> paramTypes = new ArrayList<>(NncUtils.multipleOf(Value.class, method.getParameters().size()));
                 paramTypes.add(CallContext.class);
                 var args = new Object[arguments.size() + 1];
                 for (int i = 0; i < arguments.size(); i++) {
@@ -56,7 +56,7 @@ public class NativeMethods {
                 }
                 args[arguments.size()] = callContext;
                 var javaMethod = ReflectionUtils.getMethod(instanceClass, method.getCode(), paramTypes);
-                var result = (Instance) ReflectionUtils.invoke(nativeObject, javaMethod, args);
+                var result = (Value) ReflectionUtils.invoke(nativeObject, javaMethod, args);
                 if (method.getReturnType().isVoid()) {
                     return new FlowExecResult(null, null);
                 } else {

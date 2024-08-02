@@ -10,7 +10,7 @@ import org.metavm.flow.rest.InputNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -53,14 +53,14 @@ public class InputNode extends ChildTypeNode {
                     serContext.getStringId(field),
                     field.getName(),
                     field.getType().toExpression(serContext),
-                    NncUtils.get(field.getDefaultValue(), Instance::toFieldValueDTO),
-                    NncUtils.get(getFieldCondition(field), Value::toDTO)
+                    NncUtils.get(field.getDefaultValue(), Value::toFieldValueDTO),
+                    NncUtils.get(getFieldCondition(field), org.metavm.flow.Value::toDTO)
             );
         }
     }
 
     @Nullable
-    public Value getFieldCondition(Field field) {
+    public org.metavm.flow.Value getFieldCondition(Field field) {
         var klass = getKlass();
         var constraints = klass.getFieldCheckConstraints(field);
         if (constraints.isEmpty()) {
@@ -73,7 +73,7 @@ public class InputNode extends ChildTypeNode {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         try(var ignored = ContextUtil.getProfiler().enter("InputNode.execute")) {
-            Map<Field, Instance> fieldValues = new HashMap<>();
+            Map<Field, Value> fieldValues = new HashMap<>();
             NncUtils.biForEach(getKlass().getReadyFields(), frame.getArguments(), fieldValues::put);
             return next(ClassInstance.create(fieldValues, getType()).getReference());
         }

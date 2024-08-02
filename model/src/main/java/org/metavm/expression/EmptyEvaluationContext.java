@@ -1,13 +1,13 @@
 package org.metavm.expression;
 
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 
 import javax.annotation.Nullable;
 
 public class EmptyEvaluationContext implements EvaluationContext{
     @Nullable
     @Override
-    public Instance evaluate(Expression expression) {
+    public Value evaluate(Expression expression) {
         return null;
     }
 

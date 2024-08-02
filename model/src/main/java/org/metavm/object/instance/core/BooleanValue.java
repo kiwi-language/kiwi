@@ -5,11 +5,11 @@ import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.WireTypes;
 
-public class BooleanInstance extends PrimitiveInstance {
+public class BooleanValue extends PrimitiveValue {
 
     private final boolean value;
 
-    public BooleanInstance(boolean value, PrimitiveType type) {
+    public BooleanValue(boolean value, PrimitiveType type) {
         super(type);
         this.value = value;
     }
@@ -33,16 +33,16 @@ public class BooleanInstance extends PrimitiveInstance {
         return !value;
     }
 
-    public BooleanInstance not() {
-        return new BooleanInstance(!value, getType());
+    public BooleanValue not() {
+        return new BooleanValue(!value, getType());
     }
 
-    public BooleanInstance and(BooleanInstance that) {
-        return new BooleanInstance(value && that.value, getType());
+    public BooleanValue and(BooleanValue that) {
+        return new BooleanValue(value && that.value, getType());
     }
 
-    public BooleanInstance or(BooleanInstance that) {
-        return new BooleanInstance(value || that.value, getType());
+    public BooleanValue or(BooleanValue that) {
+        return new BooleanValue(value || that.value, getType());
     }
 
     @Override
@@ -51,8 +51,8 @@ public class BooleanInstance extends PrimitiveInstance {
     }
 
     @Override
-    public <R> R accept(InstanceVisitor<R> visitor) {
-        return visitor.visitBooleanInstance(this);
+    public <R> R accept(ValueVisitor<R> visitor) {
+        return visitor.visitBooleanValue(this);
     }
 
     @Override

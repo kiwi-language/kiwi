@@ -8,6 +8,7 @@ import org.metavm.flow.ScopeRT;
 import org.metavm.object.instance.DefaultObjectInstanceMap;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.ObjectInstanceMap;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
@@ -33,7 +34,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     private final IInstanceContext instanceContext;
     private final IdentitySet<Object> entities = new IdentitySet<>();
-    private final IdentityHashMap<Object, DurableInstance> model2instance = new IdentityHashMap<>();
+    private final IdentityHashMap<Object, Instance> model2instance = new IdentityHashMap<>();
     //    private final IdentitySet<Object> removedEntities = new IdentitySet<>();
 //    private final Map<Long, Object> removedEntityMap = new HashMap<>();
     @Nullable
@@ -49,7 +50,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     protected abstract TypeFactory getTypeFactory();
 
     @Override
-    public <T> T getEntity(Class<T> klass, DurableInstance instance) {
+    public <T> T getEntity(Class<T> klass, Instance instance) {
         return getEntity(klass, instance, null);
     }
 
@@ -58,7 +59,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> T getEntity(Class<T> entityClass, DurableInstance instance, @Nullable Mapper<T, ?> mapper) {
+    public <T> T getEntity(Class<T> entityClass, Instance instance, @Nullable Mapper<T, ?> mapper) {
         var entity = instance.getMappedEntity();
         if(entity != null)
             return entityClass.cast(entity);
@@ -90,7 +91,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public void onInstanceIdInit(DurableInstance instance) {
+    public void onInstanceIdInit(Instance instance) {
         Object model = instance.getMappedEntity();
         if (model != null && model2instance.containsKey(model)) {
             entityMap.put(instance.getId(), model);
@@ -101,15 +102,15 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
-    public void onInstanceInitialized(DurableInstance instance) {
+    public void onInstanceInitialized(Instance instance) {
         if(!TypeTags.isSystemTypeTag(instance.getType().getTypeTag()))
             return;
         var loadAware = new ArrayList<LoadAware>();
         instance.accept(new StructuralInstanceVisitor() {
 
             @Override
-            public void visitDurableInstance(DurableInstance instance) {
-                super.visitDurableInstance(instance);
+            public void visitInstance(Instance instance) {
+                super.visitInstance(instance);
                 var entity = onInstanceInitialized0(instance);
                 if(entity instanceof LoadAware l)
                     loadAware.add(l);
@@ -120,7 +121,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private @Nullable Object onInstanceInitialized0(DurableInstance instance) {
+    private @Nullable Object onInstanceInitialized0(Instance instance) {
         if(instance.getMappedEntity() != null)
             return instance.getMappedEntity();
         var typeTag = instance.getType().getTypeTag();
@@ -147,7 +148,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public void onInstanceRemoved(DurableInstance instance) {
+    public void onInstanceRemoved(Instance instance) {
         Object model = instance.getMappedEntity();
         if (model != null && model2instance.containsKey(model)) {
             if (model instanceof Entity entity)
@@ -186,7 +187,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return !isNewEntity(entity);
     }
 
-    protected <T> void beforeGetModel(Class<T> klass, DurableInstance instance) {
+    protected <T> void beforeGetModel(Class<T> klass, Instance instance) {
     }
 
     @Override
@@ -199,7 +200,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> T createEntity(DurableInstance instance, Mapper<T, ?> mapper) {
+    public <T> T createEntity(Instance instance, Mapper<T, ?> mapper) {
         NncUtils.requireNull(instance.getMappedEntity(), "Entity was already created");
         var entity = instance.tryGetId() != null ? entityMap.get(instance.getId()) : null;
         if(entity == null && mapper.isProxySupported()) {
@@ -227,7 +228,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public boolean onChange(DurableInstance instance) {
+    public boolean onChange(Instance instance) {
         if (instance instanceof ClassInstance classInstance && classInstance.getType().getTypeTag() > 0) {
             var entity = getEntity(Object.class, classInstance);
             if (entity instanceof ChangeAware changeAware && changeAware.isChangeAware()) {
@@ -239,7 +240,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public boolean onRemove(DurableInstance instance) {
+    public boolean onRemove(Instance instance) {
         var entity = instance.getMappedEntity();
         if (entity instanceof PostRemovalAware removalAware) {
             removalAware.postRemove(this);
@@ -260,14 +261,14 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
-    private void initializeModel(Object model, DurableInstance instance, Mapper<?, ?> mapper) {
+    private void initializeModel(Object model, Instance instance, Mapper<?, ?> mapper) {
 //        EntityUtils.ensureProxyInitialized(instance);
         if (!EntityUtils.isModelInitialized(model)) {
             initializeModel0(model, instance, mapper);
         }
     }
 
-    private void initializeModel0(Object model, DurableInstance instance, Mapper<?, ?> def) {
+    private void initializeModel0(Object model, Instance instance, Mapper<?, ?> def) {
         instance.setMappedEntity(model);
         model2instance.put(model, instance);
         def.initEntityHelper(model, instance, objectInstanceMap);
@@ -512,7 +513,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
-    private void forEachEntityInstancePair(BiConsumer<Object, DurableInstance> action) {
+    private void forEachEntityInstancePair(BiConsumer<Object, Instance> action) {
         instanceContext.forEach(instance -> {
             var entity = instance.getMappedEntity();
             if (entity != null)
@@ -525,7 +526,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         updateInstance(object, getInstance(object));
     }
 
-    private void updateInstance(Object object, DurableInstance instance) {
+    private void updateInstance(Object object, Instance instance) {
 //        try(var ignored = getProfiler().enter("updateInstance")) {
         if (isModelInitialized(object) && !instance.isRemoved()) {
             var mapper = getDefContext().getMapper(instance.getType());
@@ -605,7 +606,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public Instance resolveInstance(Object value) {
+    public Value resolveInstance(Object value) {
         if (value == null) {
             return Instances.nullInstance();
         }
@@ -618,7 +619,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return Instances.serializePrimitive(value, getDefContext()::getType);
     }
 
-    private <T> List<T> createEntityList(Class<T> javaType, List<? extends InstanceReference> instances) {
+    private <T> List<T> createEntityList(Class<T> javaType, List<? extends Reference> instances) {
         return EntityProxyFactory.getProxy(
                 new TypeReference<ReadonlyArray<T>>() {
                 },
@@ -664,16 +665,16 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             instances.forEach(this::onInstanceRemoved);
     }
 
-    private Set<DurableInstance> beforeRemove(List<?> entities) {
-        var instancesToRemove = new IdentitySet<DurableInstance>();
+    private Set<Instance> beforeRemove(List<?> entities) {
+        var instancesToRemove = new IdentitySet<Instance>();
         for (Object entity : entities) {
             beforeRemove0(entity, instancesToRemove);
         }
         return instancesToRemove;
     }
 
-    private void beforeRemove0(Object object, Set<DurableInstance> instancesToRemove) {
-        if (object instanceof DurableInstance instance) {
+    private void beforeRemove0(Object object, Set<Instance> instancesToRemove) {
+        if (object instanceof Instance instance) {
             instancesToRemove.add(instance);
             return;
         }
@@ -745,7 +746,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public DurableInstance getInstance(Object entity) {
+    public Instance getInstance(Object entity) {
         EntityUtils.ensureProxyInitialized(entity);
         if (parent != null && parent.containsEntity(entity)) {
             return parent.getInstance(entity);
@@ -765,13 +766,13 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     /**
      * Bind a new entity to the context with the mapped instance
      */
-    protected final void addBinding(Object model, DurableInstance instance) {
+    protected final void addBinding(Object model, Instance instance) {
         addMapping(model, instance);
         if (model instanceof BindAware bindAware)
             bindAware.onBind(this);
     }
 
-    private DurableInstance newInstance(Object object) {
+    private Instance newInstance(Object object) {
         Mapper<?, ?> mapper = getDefContext().getMapperByEntity(object);
 //        if (mapper.isProxySupported()) {
 //            var instance = mapper.allocateInstanceHelper(object, objectInstanceMap, EntityUtils.tryGetId(object));
@@ -787,7 +788,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 //        }
     }
 
-    public Collection<DurableInstance> instances() {
+    public Collection<Instance> instances() {
         return model2instance.values();
     }
 
@@ -795,7 +796,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     Add a mapping between an entity and an instance. Client shouldn't call this method directly if the
     entity is new, use addBinding instead.
      */
-    protected void addMapping(Object model, DurableInstance instance) {
+    protected void addMapping(Object model, Instance instance) {
         if (instance.getMappedEntity() != null)
             throw new IllegalStateException("Entity " + model + " is already mapped");
         model2instance.put(model, instance);

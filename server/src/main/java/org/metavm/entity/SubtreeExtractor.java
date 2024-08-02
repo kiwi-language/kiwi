@@ -28,10 +28,10 @@ public class SubtreeExtractor extends StreamVisitor {
     }
 
     @Override
-    public void visitRecordBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
-        output.write(WireTypes.RECORD);
+        output.write(WireTypes.INSTANCE);
         output.writeLong(nodeId);
         typeOrTypeKey.write(output);
         var oldParentId = parentId;
@@ -43,17 +43,17 @@ public class SubtreeExtractor extends StreamVisitor {
             @Override
             public void visitField() {
                 writeLong(parentFieldTag = readLong());
-                visit();
+                visitValue();
             }
 
             @Override
-            public void visitRecord(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
+            public void visitInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
                 var typeKey = readTypeKey();
                 write(WireTypes.REFERENCE);
                 writeId(PhysicalId.of(treeId, nodeId, typeKey));
-                SubtreeExtractor.this.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeKey);
+                SubtreeExtractor.this.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeKey);
             }
-        }.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
+        }.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
         parentId = oldParentId;
         parentFieldTag = oldParentFieldTag;
         var oldId = oldTreeId != -1L ? PhysicalId.of(oldTreeId, oldNodeId, typeOrTypeKey) : null;

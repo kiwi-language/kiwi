@@ -77,7 +77,7 @@ public class ExpressionEvaluatorTest extends TestCase {
                         )
                 )
                 .build();
-        Instance result = expression.evaluate(new InstanceEvaluationContext(fooInst));
+        Value result = expression.evaluate(new InstanceEvaluationContext(fooInst));
         Assert.assertTrue(Instances.isTrue(result));
     }
 
@@ -109,7 +109,7 @@ public class ExpressionEvaluatorTest extends TestCase {
         Expression expression = ExpressionParser.parse(
                 str, new TypeParsingContext(instanceProvider, typeDefProvider, fooType)
         );
-        Instance result = expression.evaluate(new InstanceEvaluationContext(foo));
+        Value result = expression.evaluate(new InstanceEvaluationContext(foo));
         Assert.assertTrue(Instances.isTrue(result));
     }
 

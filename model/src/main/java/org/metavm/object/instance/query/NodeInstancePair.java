@@ -1,9 +1,9 @@
 package org.metavm.object.instance.query;
 
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 
 public record NodeInstancePair(
         InstanceNode<?> node,
-        Instance instance
+        Value instance
 ) {
 }

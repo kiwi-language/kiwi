@@ -9,13 +9,13 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class TimeInstance extends PrimitiveInstance /*implements Comparable<TimeInstance>*/ {
+public class TimeValue extends PrimitiveValue /*implements Comparable<TimeInstance>*/ {
 
     public static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private final long value;
 
-    public TimeInstance(long value, PrimitiveType type) {
+    public TimeValue(long value, PrimitiveType type) {
         super(type);
         this.value = value;
     }
@@ -26,19 +26,19 @@ public class TimeInstance extends PrimitiveInstance /*implements Comparable<Time
         output.writeLong(value);
     }
 
-    public BooleanInstance before(TimeInstance that) {
+    public BooleanValue before(TimeValue that) {
         return Instances.booleanInstance(value < that.value);
     }
 
-    public BooleanInstance beforeOrEqual(TimeInstance that) {
+    public BooleanValue beforeOrEqual(TimeValue that) {
         return Instances.booleanInstance(value <= that.value);
     }
 
-    public BooleanInstance after(TimeInstance that) {
+    public BooleanValue after(TimeValue that) {
         return Instances.booleanInstance(value > that.value);
     }
 
-    public BooleanInstance afterOrEqual(TimeInstance that) {
+    public BooleanValue afterOrEqual(TimeValue that) {
         return Instances.booleanInstance(value >= that.value);
     }
 
@@ -53,8 +53,8 @@ public class TimeInstance extends PrimitiveInstance /*implements Comparable<Time
     }
 
     @Override
-    public <R> R accept(InstanceVisitor<R> visitor) {
-        return visitor.visitTimeInstance(this);
+    public <R> R accept(ValueVisitor<R> visitor) {
+        return visitor.visitTimeValue(this);
     }
 
 //    @Override

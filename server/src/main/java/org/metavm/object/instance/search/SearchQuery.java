@@ -3,7 +3,7 @@ package org.metavm.object.instance.search;
 
 import org.metavm.expression.Expression;
 import org.metavm.expression.InstanceEvaluationContext;
-import org.metavm.object.instance.core.BooleanInstance;
+import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.ClassInstance;
 
 import java.util.Set;
@@ -37,7 +37,7 @@ public record SearchQuery(
 
     public boolean match(ClassInstance instance) {
         return types.contains(instance.getType().toExpression()) &&
-                (condition == null || ((BooleanInstance) condition.evaluate(new InstanceEvaluationContext(instance))).isTrue());
+                (condition == null || ((BooleanValue) condition.evaluate(new InstanceEvaluationContext(instance))).isTrue());
     }
 
 }

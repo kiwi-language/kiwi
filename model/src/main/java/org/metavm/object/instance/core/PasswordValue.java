@@ -6,11 +6,11 @@ import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.WireTypes;
 
-public class PasswordInstance extends PrimitiveInstance {
+public class PasswordValue extends PrimitiveValue {
 
     private final String value;
 
-    public PasswordInstance(String value, PrimitiveType type) {
+    public PasswordValue(String value, PrimitiveType type) {
         super(type);
         this.value = value;
     }
@@ -41,7 +41,7 @@ public class PasswordInstance extends PrimitiveInstance {
     }
 
     @Override
-    public <R> R accept(InstanceVisitor<R> visitor) {
-        return visitor.visitPasswordInstance(this);
+    public <R> R accept(ValueVisitor<R> visitor) {
+        return visitor.visitPasswordValue(this);
     }
 }

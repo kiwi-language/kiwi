@@ -1,10 +1,10 @@
 package org.metavm.object.instance.core.mocks;
 
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceRepository;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.NncUtils;
 
@@ -14,21 +14,21 @@ import java.util.Map;
 
 public class MockInstanceRepository implements InstanceRepository {
 
-    private final Map<Id, DurableInstance> instanceMap = new HashMap<>();
-    private final IdentitySet<DurableInstance> instances = new IdentitySet<>();
+    private final Map<Id, Instance> instanceMap = new HashMap<>();
+    private final IdentitySet<Instance> instances = new IdentitySet<>();
 
     @Override
-    public DurableInstance get(Id id) {
+    public Instance get(Id id) {
         return instanceMap.get(id);
     }
 
     @Override
-    public InstanceReference selectFirstByKey(IndexKeyRT key) {
+    public Reference selectFirstByKey(IndexKeyRT key) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<InstanceReference> indexScan(IndexKeyRT from, IndexKeyRT to) {
+    public List<Reference> indexScan(IndexKeyRT from, IndexKeyRT to) {
         throw new UnsupportedOperationException();
     }
 
@@ -38,7 +38,7 @@ public class MockInstanceRepository implements InstanceRepository {
     }
 
     @Override
-    public List<InstanceReference> indexSelect(IndexKeyRT key) {
+    public List<Reference> indexSelect(IndexKeyRT key) {
         return List.of();
     }
 
@@ -48,14 +48,14 @@ public class MockInstanceRepository implements InstanceRepository {
     }
 
     @Override
-    public void bind(DurableInstance instance) {
+    public void bind(Instance instance) {
         var id = instance.tryGetId();
         if (id != null)
             instanceMap.put(id, instance);
     }
 
     @Override
-    public boolean remove(DurableInstance instance) {
+    public boolean remove(Instance instance) {
         var removed = instances.remove(instance);
         if (removed) {
             var id = instance.tryGetId();

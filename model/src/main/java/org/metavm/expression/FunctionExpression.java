@@ -1,9 +1,9 @@
 package org.metavm.expression;
 
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ValueArray;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
 
@@ -56,7 +56,7 @@ public class FunctionExpression extends Expression {
     }
 
     @Override
-    protected Instance evaluateSelf(EvaluationContext context) {
+    protected Value evaluateSelf(EvaluationContext context) {
         return function.evaluate(NncUtils.map(arguments, arg -> arg.evaluate(context)));
     }
 

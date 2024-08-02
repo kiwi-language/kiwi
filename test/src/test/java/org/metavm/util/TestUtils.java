@@ -26,8 +26,8 @@ import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.cache.MockCache;
 import org.metavm.object.instance.core.DefaultViewId;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
@@ -291,16 +291,16 @@ public class TestUtils {
         });
     }
 
-    public static void initInstanceIds(DurableInstance instance) {
+    public static void initInstanceIds(Instance instance) {
         initInstanceIds(List.of(instance));
     }
 
-    public static void initInstanceIds(List<DurableInstance> instances) {
+    public static void initInstanceIds(List<Instance> instances) {
         initInstanceIds(instances, new MockIdProvider());
     }
 
-    public static void initInstanceIds(List<DurableInstance> instances, EntityIdProvider idProvider) {
-        var roots = new IdentitySet<DurableInstance>();
+    public static void initInstanceIds(List<Instance> instances, EntityIdProvider idProvider) {
+        var roots = new IdentitySet<Instance>();
         instances.forEach(r -> r.visitGraph(i -> {
             var root = i.getRoot();
             if (!root.isIdInitialized())
@@ -505,7 +505,7 @@ public class TestUtils {
 
     public static void waitForDDLPrepared(EntityContextFactory entityContextFactory) {
 //        waitForTaskGroupDone(t -> t instanceof DDLPreparationTaskGroup, entityContextFactory);
-        waitForDDLState(CommitState.MIGRATING, entityContextFactory);
+        waitForDDLState(CommitState.RELOCATING, entityContextFactory);
     }
 
     public static void waitForDDLAborted(EntityContextFactory entityContextFactory) {

@@ -1,8 +1,8 @@
 package org.metavm.object.instance;
 
 import org.metavm.entity.EntityChange;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.VersionRT;
@@ -51,11 +51,11 @@ public class ChangeLogPlugin implements ContextPlugin {
     @Override
     public void postProcess(IInstanceContext context) {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
-        if (NncUtils.isNotEmpty(logs) || !context.getMigrated().isEmpty()) {
+        if (NncUtils.isNotEmpty(logs) || !context.getRelocated().isEmpty()) {
             if(NncUtils.isNotEmpty(logs))
                 instanceStore.saveInstanceLogs(logs);
             instanceLogService.process(context.getAppId(), logs,
-                    instanceStore, NncUtils.map(context.getMigrated(), DurableInstance::getId), context.getClientId());
+                    instanceStore, NncUtils.map(context.getRelocated(), Instance::getId), context.getClientId());
         }
     }
 

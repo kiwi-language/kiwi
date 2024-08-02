@@ -4,9 +4,9 @@ import junit.framework.TestCase;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.DurableInstance;
-import org.metavm.object.instance.core.LongInstance;
-import org.metavm.object.instance.core.StringInstance;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.LongValue;
+import org.metavm.object.instance.core.StringValue;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Types;
@@ -43,8 +43,8 @@ public class TreeSizeTest extends TestCase {
             var numField = FieldBuilder.newBuilder("num", "num", klass, Types.getLongType()).build();
             context.bind(klass);
             var inst = ClassInstance.create(Map.of(
-                    nameField, new StringInstance("foo", Types.getStringType()),
-                    numField, new LongInstance(1, Types.getLongType())
+                    nameField, new StringValue("foo", Types.getStringType()),
+                    numField, new LongValue(1, Types.getLongType())
             ), klass.getType());
             context.getInstanceContext().bind(inst);
             context.initIds();
@@ -54,7 +54,7 @@ public class TreeSizeTest extends TestCase {
         }
     }
 
-    private static void logTreeSize(String title, DurableInstance instance) {
+    private static void logTreeSize(String title, Instance instance) {
         logger.info("{} tree size: {}", title, InstanceOutput.toBytes(instance).length);
     }
 

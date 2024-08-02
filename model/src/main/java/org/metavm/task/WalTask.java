@@ -8,7 +8,7 @@ public interface WalTask {
 
     @Nullable WAL getWAL();
 
-    default boolean isMigrationEnabled() {
+    default boolean isRelocationEnabled() {
         return false;
     }
 

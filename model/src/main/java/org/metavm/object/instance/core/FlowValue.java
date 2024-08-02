@@ -9,20 +9,20 @@ import org.metavm.util.InstanceOutput;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class FlowInstance extends FunctionInstance {
+public class FlowValue extends FunctionValue {
 
     private final Flow flow;
     @Nullable
     private final ClassInstance boundSelf;
 
-    public FlowInstance(Flow flow, @Nullable ClassInstance boundSelf) {
+    public FlowValue(Flow flow, @Nullable ClassInstance boundSelf) {
         super(!Flows.isInstanceMethod(flow) || boundSelf != null ? flow.getType() : Flows.getStaticType(flow));
         this.flow = flow;
         this.boundSelf = boundSelf;
     }
 
     @Override
-    public FlowExecResult execute(List<Instance> arguments, CallContext callContext) {
+    public FlowExecResult execute(List<Value> arguments, CallContext callContext) {
         if(boundSelf != null)
             return flow.execute(boundSelf, arguments, callContext);
         else
@@ -37,7 +37,7 @@ public class FlowInstance extends FunctionInstance {
 //    }
 
     @Override
-    public void writeRecord(InstanceOutput output) {
+    public void writeInstance(InstanceOutput output) {
         throw new UnsupportedOperationException();
     }
 
@@ -47,7 +47,7 @@ public class FlowInstance extends FunctionInstance {
     }
 
     @Override
-    public <R> R accept(InstanceVisitor<R> visitor) {
+    public <R> R accept(ValueVisitor<R> visitor) {
         return visitor.visitFlowInstance(this);
     }
 

@@ -3,7 +3,7 @@ package org.metavm.entity;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -133,9 +133,9 @@ public abstract class PojoDef<T> extends ModelDef<T> {
         return subDef;
     }
 
-    protected Map<Field, Instance> getInstanceFields(Object object, ObjectInstanceMap instanceMap) {
+    protected Map<Field, Value> getInstanceFields(Object object, ObjectInstanceMap instanceMap) {
 //        try(var ignored = ContextUtil.getProfiler().enter("PojoDef.getInstanceFields")) {
-            Map<Field, Instance> fieldData = new HashMap<>();
+            Map<Field, Value> fieldData = new HashMap<>();
             if (superDef != null)
                 fieldData.putAll(superDef.getInstanceFields(object, instanceMap));
             for (IFieldDef fieldDef : fieldDefList) {

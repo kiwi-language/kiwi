@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.metavm.entity.EntityUtils;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
@@ -53,13 +53,13 @@ public class FunctionDesc {
         }
     }
 
-    public void checkArguments(List<Instance> arguments) {
+    public void checkArguments(List<Value> arguments) {
         Class<?>[] paramTypes = getParamTypes();
         if(arguments.size() != paramTypes.length) {
             throw BusinessException.invalidFuncArguments(function);
         }
         int i = 0;
-        for (Instance argument : arguments) {
+        for (Value argument : arguments) {
             if(argument != null && !Instances.getTypeByInstanceClass(paramTypes[i]).isInstance(argument)) {
                 throw BusinessException.invalidFuncArguments(function);
             }
@@ -67,12 +67,12 @@ public class FunctionDesc {
         }
     }
 
-    public Instance evaluate(List<Instance> arguments) {
+    public Value evaluate(List<Value> arguments) {
         checkArguments(arguments);
         try {
             Object[] args = new Object[arguments.size()];
             arguments.toArray(args);
-            return (Instance) method.invoke(null, args);
+            return (Value) method.invoke(null, args);
         } catch (Exception e) {
             throw new RuntimeException("Fail to evaluate function " + function.name(), e);
         }

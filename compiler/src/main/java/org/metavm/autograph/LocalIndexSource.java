@@ -54,7 +54,7 @@ public class LocalIndexSource implements IndexSource {
         var fields = indexKeyRT.getIndex().getFields();
         byte[][] bytes = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
         for (int i = 0; i < IndexKeyPO.MAX_KEY_COLUMNS; i++) {
-            Instance value;
+            Value value;
             if (i < fields.size())
                 value = indexKeyRT.getField(fields.get(i));
             else

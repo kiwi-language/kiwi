@@ -12,10 +12,10 @@ import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.LoopFieldDTO;
 import org.metavm.flow.rest.LoopNodeParam;
-import org.metavm.object.instance.core.BooleanInstance;
+import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -33,12 +33,12 @@ public abstract class LoopNode extends ScopeNode {
 
     @ChildEntity
     private final ChildArray<LoopField> fields = addChild(new ChildArray<>(LoopField.class), "fields");
-    private Value condition;
+    private org.metavm.flow.Value condition;
     @ChildEntity
     private final Klass klass;
 
     protected LoopNode(Long tmpId, String name, @Nullable String code, @NotNull Klass klass, NodeRT previous,
-                       @NotNull ScopeRT scope, @NotNull Value condition) {
+                       @NotNull ScopeRT scope, @NotNull org.metavm.flow.Value condition) {
         super(tmpId, name, code, null, previous, scope, true);
         this.klass = addChild(klass, "klass");
         this.condition = condition;
@@ -76,7 +76,7 @@ public abstract class LoopNode extends ScopeNode {
         return fields;
     }
 
-    public void setField(Field field, Value initialValue, Value updatedValue) {
+    public void setField(Field field, org.metavm.flow.Value initialValue, org.metavm.flow.Value updatedValue) {
         var loopField = fields.get(LoopField::getField, field);
         if (loopField == null) {
             fields.addChild(new LoopField(field, initialValue, updatedValue));
@@ -97,7 +97,7 @@ public abstract class LoopNode extends ScopeNode {
             loopObject = frame.getOutput(this).resolveObject();
             updateLoopObject(loopObject, frame);
         }
-        var extraCondValue = (BooleanInstance) condition.evaluate(frame);
+        var extraCondValue = (BooleanValue) condition.evaluate(frame);
         if (!extraCondValue.getValue() || !checkExtraCondition(loopObject, frame)) {
             frame.exitLoop(this);
             return next(loopObject.getReference());
@@ -110,7 +110,7 @@ public abstract class LoopNode extends ScopeNode {
     }
 
     private ClassInstance initLoopObject(MetaFrame frame) {
-        Map<Field, Instance> fieldValues = new HashMap<>(getExtraLoopFields(frame));
+        Map<Field, Value> fieldValues = new HashMap<>(getExtraLoopFields(frame));
         for (LoopField field : fields) {
             fieldValues.put(field.getField(), field.getInitialValue().evaluate(frame));
         }
@@ -124,7 +124,7 @@ public abstract class LoopNode extends ScopeNode {
         }
     }
 
-    protected Map<Field, Instance> getExtraLoopFields(MetaFrame frame) {
+    protected Map<Field, Value> getExtraLoopFields(MetaFrame frame) {
         return Map.of();
     }
 
@@ -135,11 +135,11 @@ public abstract class LoopNode extends ScopeNode {
         return true;
     }
 
-    public Value getCondition() {
+    public org.metavm.flow.Value getCondition() {
         return condition;
     }
 
-    public void setCondition(@Nullable Value condition) {
+    public void setCondition(@Nullable org.metavm.flow.Value condition) {
         this.condition = condition;
     }
 

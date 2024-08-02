@@ -12,6 +12,7 @@ import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.flow.Parameter;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
@@ -52,7 +53,7 @@ public class ApiService extends EntityContextFactoryAware {
     @Transactional
     public Object handleMethodCall(String qualifier, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
-            Instance result;
+            Value result;
             if (qualifier.startsWith("0")) {
                 var self = (ClassInstance) context.getInstanceContext().get(Id.parse(qualifier));
                 result = executeInstanceMethod(self, methodCode, rawArguments, request, response, context);
@@ -84,12 +85,12 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    private Instance executeInstanceMethod(ClassInstance self,
-                                           String methodCode,
-                                           List<Object> rawArguments,
-                                           HttpRequest request,
-                                           HttpResponse response,
-                                           IEntityContext context) {
+    private Value executeInstanceMethod(ClassInstance self,
+                                        String methodCode,
+                                        List<Object> rawArguments,
+                                        HttpRequest request,
+                                        HttpResponse response,
+                                        IEntityContext context) {
         var r = resolveMethod(self.getKlass(), methodCode, rawArguments, false, false, context);
         return execute(r.method, self, r.arguments, request, response, context);
     }
@@ -105,12 +106,12 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    private Instance execute(Method method,
-                             @Nullable ClassInstance self,
-                             List<Instance> arguments,
-                             HttpRequest request,
-                             HttpResponse response,
-                             IEntityContext context) {
+    private Value execute(Method method,
+                          @Nullable ClassInstance self,
+                          List<Value> arguments,
+                          HttpRequest request,
+                          HttpResponse response,
+                          IEntityContext context) {
         return doIntercepted(
                 () -> handleExecutionResult(Flows.execute(method, self, arguments, context)),
                 request,
@@ -119,7 +120,7 @@ public class ApiService extends EntityContextFactoryAware {
         );
     }
 
-    private Instance doIntercepted(Supplier<Instance> action, HttpRequest request, HttpResponse response, IEntityContext context) {
+    private Value doIntercepted(Supplier<Value> action, HttpRequest request, HttpResponse response, IEntityContext context) {
         var registry = BeanDefinitionRegistry.getInstance(context);
         var beforeMethod = StdMethod.interceptorBefore.get();
         var afterMethod = StdMethod.interceptorAfter.get();
@@ -172,7 +173,7 @@ public class ApiService extends EntityContextFactoryAware {
             var inst = doIntercepted(() -> {
                 var r = tryResolveValue(object, klass.getType(), true, null, context);
                 if (r.successful()) {
-                    var i = (InstanceReference) r.resolved();
+                    var i = (Reference) r.resolved();
                     var instanceContext = context.getInstanceContext();
                     if (!instanceContext.containsInstance(i.resolve()))
                         instanceContext.bind(i.resolve());
@@ -188,7 +189,7 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    private Instance handleExecutionResult(FlowExecResult result) {
+    private Value handleExecutionResult(FlowExecResult result) {
         if (result.exception() != null) {
             var throwableNative = new ThrowableNative(result.exception());
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, throwableNative.getMessage().getTitle());
@@ -196,11 +197,11 @@ public class ApiService extends EntityContextFactoryAware {
             return result.ret();
     }
 
-    private Object formatInstance(@Nullable Instance instance, boolean asValue) {
+    private Object formatInstance(@Nullable Value instance, boolean asValue) {
         return switch (instance) {
             case null -> null;
-            case PrimitiveInstance primitiveInstance -> primitiveInstance.getValue();
-            case InstanceReference reference -> {
+            case PrimitiveValue primitiveValue -> primitiveValue.getValue();
+            case Reference reference -> {
                 if(asValue || reference.isValueReference()) {
                     var resolved = reference.resolve();
                     if(resolved instanceof ClassInstance clsInst) {
@@ -265,8 +266,8 @@ public class ApiService extends EntityContextFactoryAware {
         throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getCode() + "." + methodCode);
     }
 
-    private List<Instance> tryResolveArguments(Method method, List<Object> rawArguments, IEntityContext context) {
-        var resolvedArgs = new ArrayList<Instance>();
+    private List<Value> tryResolveArguments(Method method, List<Object> rawArguments, IEntityContext context) {
+        var resolvedArgs = new ArrayList<Value>();
         for (int i = 0; i < method.getParameters().size(); i++) {
             var r = tryResolveValue(rawArguments.get(i), method.getParameters().get(i).getType(), false, null, context);
             if (!r.successful())
@@ -276,7 +277,7 @@ public class ApiService extends EntityContextFactoryAware {
         return resolvedArgs;
     }
 
-    private Instance resolveValue(Object rawValue, Type type, @SuppressWarnings("SameParameterValue") boolean asValue, @Nullable Instance currentValue, IEntityContext context) {
+    private Value resolveValue(Object rawValue, Type type, @SuppressWarnings("SameParameterValue") boolean asValue, @Nullable Value currentValue, IEntityContext context) {
         var r = tryResolveValue(rawValue, type, asValue, currentValue, context);
         if (r.successful())
             return r.resolved();
@@ -284,7 +285,7 @@ public class ApiService extends EntityContextFactoryAware {
             throw new InternalException("Failed to resolve value " + rawValue + " for type " + type.getTypeDesc());
     }
 
-    private ValueResolutionResult tryResolveValue(Object rawValue, Type type, boolean asValue, @Nullable Instance currentValue, IEntityContext context) {
+    private ValueResolutionResult tryResolveValue(Object rawValue, Type type, boolean asValue, @Nullable Value currentValue, IEntityContext context) {
         return switch (type) {
             case PrimitiveType primitiveType -> tryResolvePrimitive(rawValue, primitiveType);
             case ClassType classType -> switch (rawValue) {
@@ -362,11 +363,11 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    private ValueResolutionResult tryResolveArray(Object rawValue, ArrayType type, @Nullable Instance currentValue, IEntityContext context) {
+    private ValueResolutionResult tryResolveArray(Object rawValue, ArrayType type, @Nullable Value currentValue, IEntityContext context) {
         if (!type.isValue() && rawValue instanceof String s)
             return tryResolveReference(s, type, context);
         else if (rawValue instanceof List<?> list) {
-            var elements = new ArrayList<Instance>();
+            var elements = new ArrayList<Value>();
             var isChildArray = type.isChildArray();
             for (Object o : list) {
                 var r = tryResolveValue(o, type.getElementType(), isChildArray, null, context);
@@ -388,7 +389,7 @@ public class ApiService extends EntityContextFactoryAware {
             return ValueResolutionResult.failed;
     }
 
-    private ValueResolutionResult tryResolveList(List<?> list, ClassType type, @Nullable Instance currentValue, IEntityContext context) {
+    private ValueResolutionResult tryResolveList(List<?> list, ClassType type, @Nullable Value currentValue, IEntityContext context) {
         ListNative listNative;
         if (currentValue != null && currentValue.isObject() && type.isInstance(currentValue)) {
             listNative = new ListNative(currentValue.resolveObject());
@@ -411,7 +412,7 @@ public class ApiService extends EntityContextFactoryAware {
             listNative = new ListNative(ClassInstance.allocate(concreteType));
             listNative.List();
         }
-        var elements = new ArrayList<Instance>();
+        var elements = new ArrayList<Value>();
         var actualType = listNative.getInstance().getType();
         var isChildList = actualType.resolve().isChildList();
         var elementType = actualType.getFirstTypeArgument();
@@ -437,7 +438,7 @@ public class ApiService extends EntityContextFactoryAware {
         return ValueResolutionResult.failed;
     }
 
-    private Instance resolveAny(Object rawValue, IEntityContext context) {
+    private Value resolveAny(Object rawValue, IEntityContext context) {
         if (rawValue == null)
             return Instances.nullInstance();
         if (rawValue instanceof String str) {
@@ -509,8 +510,8 @@ public class ApiService extends EntityContextFactoryAware {
         throw new InternalException("Can not resolve method in klass " + klass.getName() + " for map " + map);
     }
 
-    private List<Instance> tryResolveConstructor(Method method, Map<?, ?> map, IEntityContext context) {
-        var arguments = new ArrayList<Instance>();
+    private List<Value> tryResolveConstructor(Method method, Map<?, ?> map, IEntityContext context) {
+        var arguments = new ArrayList<Value>();
         for (Parameter parameter : method.getParameters()) {
             var v = map.get(parameter.getCode());
             var r = tryResolveValue(v, parameter.getType(), false, null, context);
@@ -522,17 +523,17 @@ public class ApiService extends EntityContextFactoryAware {
         return arguments;
     }
 
-    private record ValueResolutionResult(boolean successful, Instance resolved) {
+    private record ValueResolutionResult(boolean successful, Value resolved) {
 
         static ValueResolutionResult failed = new ValueResolutionResult(false, null);
 
-        static ValueResolutionResult of(Instance resolved) {
+        static ValueResolutionResult of(Value resolved) {
             return new ValueResolutionResult(true, resolved);
         }
 
     }
 
-    private record ResolutionResult(Method method, List<Instance> arguments) {
+    private record ResolutionResult(Method method, List<Value> arguments) {
     }
 
 }

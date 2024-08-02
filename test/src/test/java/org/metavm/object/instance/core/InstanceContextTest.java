@@ -113,13 +113,13 @@ public class InstanceContextTest extends TestCase {
                 var foo = (ClassInstance) context.get(fooId);
                 var baz = (ClassInstance) context.get(bazId);
                 var bars = foo.getField(fooTypes.fooBarsField()).resolveArray();
-                var bar001 = (InstanceReference) bars.get(0);
+                var bar001 = (Reference) bars.get(0);
                 baz.ensureLoaded();
                 context.remove(bar001.resolve());
                 final boolean[] onChangeCalled = new boolean[1];
                 context.addListener(new ContextListener() {
                     @Override
-                    public boolean onChange(DurableInstance instance) {
+                    public boolean onChange(Instance instance) {
                         if (instance == foo) {
                             bars.removeElement(bar001);
                             baz.getField(fooTypes.bazBarsField()).resolveArray().removeElement(bar001);

@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository, CallContext, Iterable<DurableInstance> {
+public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository, CallContext, Iterable<Instance> {
 
     IInstanceContext createSame(long appId);
 
@@ -36,13 +36,13 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     boolean isAlive(Id id);
 
-    DurableInstance get(Id id);
+    Instance get(Id id);
 
-    InstanceReference createReference(Id id);
+    Reference createReference(Id id);
 
-    List<DurableInstance> batchGetRoots(List<Long> treeIds);
+    List<Instance> batchGetRoots(List<Long> treeIds);
 
-    default DurableInstance getRoot(long treeId) {
+    default Instance getRoot(long treeId) {
         return NncUtils.first(batchGetRoots(List.of(treeId)));
     }
 
@@ -51,11 +51,11 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 //    Instance get(InstanceId id);
 
     @Nullable
-    DurableInstance getBuffered(Id id);
+    Instance getBuffered(Id id);
 
     String getClientId();
 
-    DurableInstance internalGet(Id id);
+    Instance internalGet(Id id);
 
 //    Instance getIfPresentByTmpId(long tmpId);
 
@@ -63,7 +63,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     Profiler getProfiler();
 
-    List<DurableInstance> batchGet(Collection<Id> ids);
+    List<Instance> batchGet(Collection<Id> ids);
 
 //    List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit);
 
@@ -82,7 +82,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void loadTree(long id);
 
-    default boolean isReferenced(DurableInstance instance) {
+    default boolean isReferenced(Instance instance) {
         if(instance.isReferencedByParent())
             return true;
         if(instance.tryGetId() instanceof PhysicalId id)
@@ -97,17 +97,17 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     RedirectStatusProvider getRedirectStatusProvider();
 
-    boolean containsInstance(DurableInstance instance);
+    boolean containsInstance(Instance instance);
 
     boolean containsId(Id id);
 
-    List<DurableInstance> getByReferenceTargetId(Id targetId, long startExclusive, long limit);
+    List<Instance> getByReferenceTargetId(Id targetId, long startExclusive, long limit);
 
-    List<DurableInstance> getMigrated();
+    List<Instance> getRelocated();
 
     void buffer(Id id);
 
-    void removeForwardingPointer(DurableInstance instance, boolean clearingOldId);
+    void removeForwardingPointer(Instance instance, boolean clearingOldId);
 
     default void buffer(Collection<? extends Id> ids) {
         ids.forEach(this::buffer);
@@ -125,31 +125,31 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     long getAppId();
 
-    void batchRemove(Collection<DurableInstance> instances);
+    void batchRemove(Collection<Instance> instances);
 
-    boolean remove(DurableInstance instance);
+    boolean remove(Instance instance);
 
-    List<InstanceReference> selectByKey(IndexKeyRT indexKey);
+    List<Reference> selectByKey(IndexKeyRT indexKey);
 
-    List<InstanceReference> query(InstanceIndexQuery query);
+    List<Reference> query(InstanceIndexQuery query);
 
     long count(InstanceIndexQuery query);
 
-    default InstanceReference selectFirstByKey(IndexKeyRT key) {
+    default Reference selectFirstByKey(IndexKeyRT key) {
         return NncUtils.first(selectByKey(key));
     }
 
-    default void bind(DurableInstance instance) {
+    default void bind(Instance instance) {
         batchBind(List.of(instance));
     }
 
-    void batchBind(Collection<DurableInstance> instances);
+    void batchBind(Collection<Instance> instances);
 
     void registerCommitCallback(Runnable action);
 
     <E> E getAttribute(ContextAttributeKey<E> key);
 
-    void initIdManually(DurableInstance instance, Id id);
+    void initIdManually(Instance instance, Id id);
 
     void increaseVersionsForAll();
 
@@ -157,9 +157,9 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     @Nullable Consumer<Object> getBindHook();
 
-    DurableInstance getRemoved(Id id);
+    Instance getRemoved(Id id);
 
-    void invalidateCache(InstanceReference instance);
+    void invalidateCache(Reference instance);
 
     @Nullable EventQueue getEventQueue();
 

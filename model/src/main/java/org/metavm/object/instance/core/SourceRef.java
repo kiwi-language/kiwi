@@ -9,7 +9,7 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 
 public record SourceRef(
-        InstanceReference source,
+        Reference source,
         @Nullable ObjectMapping mapping
 ) {
 

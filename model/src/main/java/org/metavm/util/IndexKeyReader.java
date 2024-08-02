@@ -1,13 +1,13 @@
 package org.metavm.util;
 
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 
 import java.io.InputStream;
 import java.util.function.Function;
 
 public class IndexKeyReader extends InstanceInput {
-    public IndexKeyReader(InputStream inputStream, Function<Id, DurableInstance> getInstance) {
+    public IndexKeyReader(InputStream inputStream, Function<Id, Instance> getInstance) {
         super(inputStream, getInstance,
                 inst -> {throw new UnsupportedOperationException();},
                 id -> {throw new UnsupportedOperationException();},

@@ -1,14 +1,14 @@
 package org.metavm.entity.natives;
 
-import org.metavm.object.instance.core.BooleanInstance;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.LongInstance;
+import org.metavm.object.instance.core.BooleanValue;
+import org.metavm.object.instance.core.LongValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.InternalException;
 
 public class NativeBase {
 
-    protected int getInt(Instance instance) {
-        if(instance instanceof LongInstance longInstance) {
+    protected int getInt(Value instance) {
+        if(instance instanceof LongValue longInstance) {
             return longInstance.getValue().intValue();
         }
         else {
@@ -16,8 +16,8 @@ public class NativeBase {
         }
     }
 
-    protected boolean getBool(Instance instance) {
-        if(instance instanceof BooleanInstance boolInstance) {
+    protected boolean getBool(Value instance) {
+        if(instance instanceof BooleanValue boolInstance) {
             return boolInstance.getValue();
         }
         else {

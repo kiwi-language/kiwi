@@ -7,7 +7,7 @@ import org.metavm.entity.*;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.FieldParamDTO;
 import org.metavm.flow.rest.ValueDTO;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.FieldRef;
 import org.metavm.util.AssertUtils;
@@ -27,13 +27,13 @@ public class FieldParam extends Entity implements LocalKey {
     }
 
     private final FieldRef fieldRef;
-    private Value value;
+    private org.metavm.flow.Value value;
 
     public FieldParam(FieldRef fieldRef, ValueDTO valueDTO, ParsingContext parsingContext) {
         this(fieldRef, ValueFactory.create(valueDTO, parsingContext));
     }
 
-    public FieldParam(FieldRef fieldRef, Value value) {
+    public FieldParam(FieldRef fieldRef, org.metavm.flow.Value value) {
         this.fieldRef = fieldRef;
         this.value = value;
     }
@@ -42,11 +42,11 @@ public class FieldParam extends Entity implements LocalKey {
         return fieldRef.resolve();
     }
 
-    public Value getValue() {
+    public org.metavm.flow.Value getValue() {
         return value;
     }
 
-    public void setValue(Value value) {
+    public void setValue(org.metavm.flow.Value value) {
         this.value = value;
     }
 
@@ -54,7 +54,7 @@ public class FieldParam extends Entity implements LocalKey {
         try (var serContext = SerializeContext.enter()) {
             return new FieldParamDTO(
                     serContext.getStringId(this),
-                    fieldRef.toDTO(serContext), NncUtils.get(value, Value::toDTO));
+                    fieldRef.toDTO(serContext), NncUtils.get(value, org.metavm.flow.Value::toDTO));
         }
     }
 
@@ -67,7 +67,7 @@ public class FieldParam extends Entity implements LocalKey {
         }
     }
 
-    public Instance evaluate(MetaFrame executionContext) {
+    public Value evaluate(MetaFrame executionContext) {
         return value.evaluate(executionContext);
     }
 

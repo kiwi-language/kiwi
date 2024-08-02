@@ -2,7 +2,7 @@ package org.metavm.entity;
 
 import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.InstanceFactory;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.rest.InstanceQueryFieldDTO;
 import org.metavm.object.type.Field;
 import org.metavm.util.BusinessException;
@@ -12,9 +12,9 @@ import javax.annotation.Nullable;
 
 public record InstanceQueryField(
         Field field,
-        @Nullable Instance value,
-        @Nullable Instance min,
-        @Nullable Instance max
+        @Nullable Value value,
+        @Nullable Value min,
+        @Nullable Value max
 ) {
 
     public InstanceQueryField {
@@ -22,11 +22,11 @@ public record InstanceQueryField(
             throw new BusinessException(ErrorCode.ILLEGAL_SEARCH_CONDITION);
     }
 
-    public static InstanceQueryField create(Field field, Instance value) {
+    public static InstanceQueryField create(Field field, Value value) {
         return new InstanceQueryField(field, value, null, null);
     }
 
-    public static InstanceQueryField create(Field field, Instance min, Instance max) {
+    public static InstanceQueryField create(Field field, Value min, Value max) {
         return new InstanceQueryField(field, null, min, max);
     }
 

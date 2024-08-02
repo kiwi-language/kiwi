@@ -1,17 +1,17 @@
 package org.metavm.flow;
 
-import org.metavm.object.instance.core.BooleanInstance;
+import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 
 import javax.annotation.Nullable;
 
 public record FlowExecResult(
-        @Nullable Instance ret,
+        @Nullable Value ret,
         @Nullable ClassInstance exception
 ) {
 
-    public static FlowExecResult of(Instance ret) {
+    public static FlowExecResult of(Value ret) {
         return new FlowExecResult(ret, null);
     }
 
@@ -20,7 +20,7 @@ public record FlowExecResult(
     }
 
     public boolean booleanRet() {
-        if(ret instanceof BooleanInstance booleanInstance)
+        if(ret instanceof BooleanValue booleanInstance)
             return booleanInstance.getValue();
         else
             throw new IllegalStateException("Not a boolean instance");

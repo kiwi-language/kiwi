@@ -9,10 +9,9 @@ import org.metavm.entity.SerializeContext;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.expression.EmptyEvaluationContext;
 import org.metavm.flow.Flows;
-import org.metavm.flow.Value;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.ClassInstanceBuilder;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.EnumConstantDefDTO;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
@@ -32,9 +31,9 @@ public class EnumConstantDef extends Element {
     private String name;
     private int ordinal;
     @ChildEntity
-    private final ReadWriteArray<Value> arguments = addChild(new ReadWriteArray<>(Value.class), "arguments");
+    private final ReadWriteArray<org.metavm.flow.Value> arguments = addChild(new ReadWriteArray<>(org.metavm.flow.Value.class), "arguments");
 
-    public EnumConstantDef(Klass klass, String name, int ordinal, List<Value> arguments) {
+    public EnumConstantDef(Klass klass, String name, int ordinal, List<org.metavm.flow.Value> arguments) {
         assert klass.isEnum();
         this.klass = klass;
         this.name = name;
@@ -49,16 +48,16 @@ public class EnumConstantDef extends Element {
     }
 
     public ClassInstance createEnumConstant(CallContext callContext) {
-        var arguments = new ArrayList<Instance>();
+        var arguments = new ArrayList<Value>();
         arguments.add(Instances.stringInstance(name));
         arguments.add(Instances.longInstance(ordinal));
         var evalCtx = new EmptyEvaluationContext();
-        for (Value arg : this.arguments) {
+        for (org.metavm.flow.Value arg : this.arguments) {
             arguments.add(arg.evaluate(evalCtx));
         }
         var constructor = klass.resolveMethod(
                 klass.getName(),
-                NncUtils.map(arguments, Instance::getType),
+                NncUtils.map(arguments, Value::getType),
                 List.of(),
                 false
         );
@@ -90,11 +89,11 @@ public class EnumConstantDef extends Element {
         this.ordinal = ordinal;
     }
 
-    public List<Value> getArguments() {
+    public List<org.metavm.flow.Value> getArguments() {
         return arguments.toList();
     }
 
-    public void setArguments(List<Value> arguments) {
+    public void setArguments(List<org.metavm.flow.Value> arguments) {
         this.arguments.reset(arguments);
     }
 
@@ -103,7 +102,7 @@ public class EnumConstantDef extends Element {
                 serializeContext.getStringId(this),
                 name,
                 ordinal,
-                NncUtils.map(arguments, Value::toDTO)
+                NncUtils.map(arguments, org.metavm.flow.Value::toDTO)
         );
     }
 

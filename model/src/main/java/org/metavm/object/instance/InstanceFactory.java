@@ -22,14 +22,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class InstanceFactory {
 
-    public static final Map<Class<? extends Instance>, Method> ALLOCATE_METHOD_MAP = new ConcurrentHashMap<>();
+    public static final Map<Class<? extends Value>, Method> ALLOCATE_METHOD_MAP = new ConcurrentHashMap<>();
     public static final String ALLOCATE_METHOD_NAME = "allocate";
 
-    public static <T extends DurableInstance> T allocate(Class<T> instanceType, boolean ephemeral) {
+    public static <T extends Instance> T allocate(Class<T> instanceType, boolean ephemeral) {
         return allocate(instanceType, null, ephemeral);
     }
 
-    public static <T extends DurableInstance> T allocate(Class<T> instanceType, Id id, boolean ephemeral) {
+    public static <T extends Instance> T allocate(Class<T> instanceType, Id id, boolean ephemeral) {
         T instance;
         if (instanceType == ArrayInstance.class)
             instance = instanceType.cast(new ArrayInstance(id, Types.getAnyArrayType(), ephemeral, null));
@@ -40,7 +40,7 @@ public class InstanceFactory {
         return instance;
     }
 
-    private static Method getAllocateMethod(Class<? extends Instance> instanceType,
+    private static Method getAllocateMethod(Class<? extends Value> instanceType,
                                             Class<? extends Type> typeType) {
         return ALLOCATE_METHOD_MAP.computeIfAbsent(
                 instanceType,
@@ -48,13 +48,13 @@ public class InstanceFactory {
         );
     }
 
-    public static InstanceReference create(InstanceDTO instanceDTO, IInstanceContext context) {
+    public static Reference create(InstanceDTO instanceDTO, IInstanceContext context) {
         return create(instanceDTO, null, context);
     }
 
-    public static InstanceReference save(InstanceDTO instanceDTO,
-                                @Nullable InstanceParentRef parentRef,
-                                IInstanceContext context) {
+    public static Reference save(InstanceDTO instanceDTO,
+                                 @Nullable InstanceParentRef parentRef,
+                                 IInstanceContext context) {
         if (!instanceDTO.isNew()) {
             var instance = context.get(instanceDTO.parseId());
             if (parentRef != null) {
@@ -68,14 +68,14 @@ public class InstanceFactory {
         }
     }
 
-    public static InstanceReference create(
+    public static Reference create(
             InstanceDTO instanceDTO,
             @Nullable InstanceParentRef parentRef,
             IInstanceContext context) {
         NncUtils.requireTrue(instanceDTO.isNew(),
                 "Id of new instance must be null or zero");
         Type type = TypeParser.parseType(instanceDTO.type(), context.getTypeDefProvider()) ;
-        DurableInstance instance;
+        Instance instance;
         var param = instanceDTO.param();
         if (param instanceof ClassInstanceParam classInstanceParam) {
             var classType = (ClassType) type;
@@ -137,14 +137,14 @@ public class InstanceFactory {
         return instance.getReference();
     }
 
-    public static Instance resolveValue(FieldValue rawValue, Type type, IEntityContext context) {
+    public static Value resolveValue(FieldValue rawValue, Type type, IEntityContext context) {
         return resolveValue(rawValue, type, null,
                 Objects.requireNonNull(context.getInstanceContext()));
     }
 
-    public static Instance resolveValue(FieldValue rawValue, Type type,
-                                        @Nullable InstanceParentRef parentRef,
-                                        IInstanceContext context) {
+    public static Value resolveValue(FieldValue rawValue, Type type,
+                                     @Nullable InstanceParentRef parentRef,
+                                     IInstanceContext context) {
         if (rawValue == null) {
             return Instances.nullInstance();
         }
@@ -224,7 +224,7 @@ public class InstanceFactory {
         throw new InternalException("Can not resolve field value: " + rawValue);
     }
 
-    private static PrimitiveInstance resolvePrimitiveValue(PrimitiveFieldValue fieldValue) {
+    private static PrimitiveValue resolvePrimitiveValue(PrimitiveFieldValue fieldValue) {
         var kind = PrimitiveKind.fromCode(fieldValue.getPrimitiveKind());
         var value = fieldValue.getValue();
         return switch (kind) {

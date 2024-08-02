@@ -4,7 +4,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.expression.Func;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.FieldDTO;
 import org.metavm.object.type.rest.dto.KlassDTO;
@@ -30,7 +30,7 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.INVALID_PARAMETERS, detail);
     }
 
-    public static BusinessException strongReferencesPreventRemoval(Instance source, Instance target) {
+    public static BusinessException strongReferencesPreventRemoval(Value source, Value target) {
         return new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, target.getQualifiedTitle(), source.getQualifiedTitle());
     }
 
@@ -200,7 +200,7 @@ public class BusinessException extends RuntimeException {
         );
     }
 
-    public static BusinessException constraintCheckFailed(Instance instance, Constraint constraint) {
+    public static BusinessException constraintCheckFailed(Value instance, Constraint constraint) {
         String reason = constraint.getMessage() != null ? constraint.getMessage() : constraint.getDefaultMessage();
         throw new BusinessException(
                 ErrorCode.CONSTRAINT_CHECK_FAILED,

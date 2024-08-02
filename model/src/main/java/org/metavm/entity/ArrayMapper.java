@@ -1,9 +1,8 @@
 package org.metavm.entity;
 
-import org.metavm.api.Value;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ArrayInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
@@ -19,7 +18,7 @@ public class ArrayMapper<E, C extends ReadonlyArray<E>> implements Mapper<C, Arr
     public ArrayMapper(Class<C> entityClass, DefContext defContext) {
         this.entityClass = entityClass;
         this.defContext = defContext;
-        valueArray = Value.class.isAssignableFrom(entityClass);
+        valueArray = org.metavm.api.Value.class.isAssignableFrom(entityClass);
     }
 
     @Override
@@ -82,7 +81,7 @@ public class ArrayMapper<E, C extends ReadonlyArray<E>> implements Mapper<C, Arr
 
     private void resetInstance(ArrayInstance instance, C model, ObjectInstanceMap instanceMap) {
         Instances.reloadParent(model, instance, instanceMap, defContext);
-        instance.reset(NncUtils.map(NncUtils.listOf(model), e -> e instanceof Instance i ? i : instanceMap.getInstance(e)));
+        instance.reset(NncUtils.map(NncUtils.listOf(model), e -> e instanceof Value i ? i : instanceMap.getInstance(e)));
     }
 
 }

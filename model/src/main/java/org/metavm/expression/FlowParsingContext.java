@@ -5,8 +5,8 @@ import org.metavm.flow.LoopNode;
 import org.metavm.flow.NodeRT;
 import org.metavm.flow.ScopeRT;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceProvider;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ContextTypeDefRepository;
 import org.metavm.object.type.IndexedTypeDefProvider;
 import org.metavm.object.type.Type;
@@ -58,7 +58,7 @@ public class FlowParsingContext extends BaseParsingContext {
     }
 
     @Override
-    public Instance getInstance(Id id) {
+    public Value getInstance(Id id) {
         return getInstanceProvider().get(id).getReference();
     }
 

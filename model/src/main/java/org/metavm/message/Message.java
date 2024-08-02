@@ -1,11 +1,11 @@
 package org.metavm.message;
 
-import org.metavm.entity.Entity;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
+import org.metavm.entity.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.message.rest.dto.MessageDTO;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.user.User;
 import org.metavm.util.Instances;
 
@@ -21,9 +21,9 @@ public class Message extends Entity {
     private final String title;
     private final MessageKind kind;
     private boolean read;
-    private Instance target;
+    private Value target;
 
-    public Message(User receiver, String title, MessageKind kind, Instance target) {
+    public Message(User receiver, String title, MessageKind kind, Value target) {
         this.receiver = receiver;
         this.title = title;
         this.kind = kind;

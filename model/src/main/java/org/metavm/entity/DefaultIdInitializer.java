@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.core.DurableInstance;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.DebugEnv;
@@ -26,18 +26,18 @@ public class DefaultIdInitializer implements IdInitializer {
     }
 
     @Override
-    public void initializeIds(long appId, Collection<? extends DurableInstance> instancesToInitId) {
+    public void initializeIds(long appId, Collection<? extends Instance> instancesToInitId) {
         var klassType = StdKlass.entity.type();
-        var countMap = Map.of(klassType, (int) NncUtils.count(instancesToInitId, DurableInstance::isRoot));
+        var countMap = Map.of(klassType, (int) NncUtils.count(instancesToInitId, Instance::isRoot));
         var ids = new LinkedList<>(idProvider.allocate(appId, countMap).get(klassType));
-        var roots = NncUtils.filterUnique(instancesToInitId, DurableInstance::isRoot);
-        var typeDefInstance = new HashMap<TypeDef, DurableInstance>();
-        for (DurableInstance instance : instancesToInitId) {
+        var roots = NncUtils.filterUnique(instancesToInitId, Instance::isRoot);
+        var typeDefInstance = new HashMap<TypeDef, Instance>();
+        for (Instance instance : instancesToInitId) {
             if (instance.getMappedEntity() instanceof TypeDef typeDef)
                 typeDefInstance.put(typeDef, instance);
         }
         var sortedInstances = sort(instancesToInitId, typeDefInstance);
-        for (DurableInstance inst : sortedInstances) {
+        for (Instance inst : sortedInstances) {
             var type = inst.getType();
             long treeId, nodeId;
             if (inst.isRoot()) {
@@ -52,17 +52,17 @@ public class DefaultIdInitializer implements IdInitializer {
         }
     }
 
-    private List<DurableInstance> sort(Collection<? extends DurableInstance> instances, Map<TypeDef, DurableInstance> typeInstance) {
-        var result = new ArrayList<DurableInstance>();
-        var visited = new IdentitySet<DurableInstance>();
-        var visiting = new IdentitySet<DurableInstance>();
-        var path = DebugEnv.recordPath ? new LinkedList<DurableInstance>() : null;
+    private List<Instance> sort(Collection<? extends Instance> instances, Map<TypeDef, Instance> typeInstance) {
+        var result = new ArrayList<Instance>();
+        var visited = new IdentitySet<Instance>();
+        var visiting = new IdentitySet<Instance>();
+        var path = DebugEnv.recordPath ? new LinkedList<Instance>() : null;
         instances.forEach(i -> visit(i, result, visited, visiting, typeInstance, path));
         return result;
     }
 
-    private void visit(DurableInstance instance, List<DurableInstance> result, Set<DurableInstance> visited,
-                       Set<DurableInstance> visiting, Map<TypeDef, DurableInstance> typeDef2instance, @Nullable LinkedList<DurableInstance> path) {
+    private void visit(Instance instance, List<Instance> result, Set<Instance> visited,
+                       Set<Instance> visiting, Map<TypeDef, Instance> typeDef2instance, @Nullable LinkedList<Instance> path) {
         if (visited.contains(instance))
             return;
         if (visiting.contains(instance))

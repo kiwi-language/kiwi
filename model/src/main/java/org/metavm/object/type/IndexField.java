@@ -8,9 +8,8 @@ import org.metavm.expression.Expression;
 import org.metavm.expression.Expressions;
 import org.metavm.expression.PropertyExpression;
 import org.metavm.expression.ThisExpression;
-import org.metavm.flow.Value;
 import org.metavm.flow.Values;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.IndexFieldDTO;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -35,9 +34,9 @@ public class IndexField extends Entity implements LocalKey {
     @EntityField(asKey = true)
     @Nullable
     private String code;
-    private Value value;
+    private org.metavm.flow.Value value;
 
-    public IndexField(Index index, String name, @Nullable String code, Value value) {
+    public IndexField(Index index, String name, @Nullable String code, org.metavm.flow.Value value) {
         setName(name);
         setCode(code);
         this.index = index;
@@ -54,7 +53,7 @@ public class IndexField extends Entity implements LocalKey {
         return code;
     }
 
-    public Value getValue() {
+    public org.metavm.flow.Value getValue() {
         return value;
     }
 
@@ -62,7 +61,7 @@ public class IndexField extends Entity implements LocalKey {
         this.name = name;
     }
 
-    public void setValue(Value value) {
+    public void setValue(org.metavm.flow.Value value) {
         this.value = value;
     }
 
@@ -102,7 +101,7 @@ public class IndexField extends Entity implements LocalKey {
         return index.getFieldIndex(this);
     }
 
-    public Instance convertEntityToInstance(Object entity, IEntityContext context) {
+    public Value convertEntityToInstance(Object entity, IEntityContext context) {
         if (Instances.isPrimitive(entity) || context.containsEntity(entity))
             return context.getObjectInstanceMap().getInstance(entity);
         else

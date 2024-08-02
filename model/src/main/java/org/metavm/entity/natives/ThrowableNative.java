@@ -17,40 +17,40 @@ public class ThrowableNative extends NativeBase {
         causeField = instance.getKlass().getFieldByCode("cause");
     }
 
-    public InstanceReference Throwable(CallContext callContext) {
+    public Reference Throwable(CallContext callContext) {
         return Throwable(Instances.nullInstance(), Instances.nullInstance(), callContext);
     }
 
-    public InstanceReference Throwable(Instance causeOrMessage, CallContext callContext) {
-        if(causeOrMessage instanceof NullInstance nullInstance) {
+    public Reference Throwable(Value causeOrMessage, CallContext callContext) {
+        if(causeOrMessage instanceof NullValue nullInstance) {
             return Throwable(nullInstance, nullInstance, callContext);
         }
-        else if(causeOrMessage instanceof StringInstance message) {
+        else if(causeOrMessage instanceof StringValue message) {
             return Throwable(message, Instances.nullInstance(), callContext);
         }
-        else if(causeOrMessage instanceof InstanceReference cause) {
+        else if(causeOrMessage instanceof Reference cause) {
             return Throwable(Instances.nullInstance(), cause, callContext);
         }
         throw new InternalException("Invalid argument: " + causeOrMessage);
     }
 
-    public InstanceReference Throwable(Instance message, Instance cause, CallContext callContext) {
+    public Reference Throwable(Value message, Value cause, CallContext callContext) {
         instance.initField(messageField, message);
         instance.initField(causeField, cause);
         return instance.getReference();
     }
 
-    public Instance getMessage(CallContext callContext) {
+    public Value getMessage(CallContext callContext) {
         return getMessage();
     }
 
-    public Instance getMessage() {
+    public Value getMessage() {
         return messageField.get(instance);
     }
 
     public static String getMessage(ClassInstance exception) {
         var n = new ThrowableNative(exception);
-        return ((StringInstance) n.getMessage()).getValue();
+        return ((StringValue) n.getMessage()).getValue();
     }
 
 }

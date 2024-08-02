@@ -106,7 +106,7 @@ public class Expressions {
         return new BinaryExpression(BinaryOperator.ADD, first, second);
     }
 
-    public static Expression constant(Instance value) {
+    public static Expression constant(Value value) {
         return new ConstantExpression(value);
     }
 
@@ -122,7 +122,7 @@ public class Expressions {
         return new ConstantExpression(Instances.doubleInstance(value));
     }
 
-    public static Expression fieldStartsWith(Field field, PrimitiveInstance strInstance) {
+    public static Expression fieldStartsWith(Field field, PrimitiveValue strInstance) {
         return new FunctionExpression(
                 Func.STARTS_WITH,
                 List.of(
@@ -132,7 +132,7 @@ public class Expressions {
         );
     }
 
-    public static Expression fieldLike(Field field, PrimitiveInstance strInstance) {
+    public static Expression fieldLike(Field field, PrimitiveValue strInstance) {
         return new FunctionExpression(
                 Func.CONTAINS,
                 List.of(
@@ -162,7 +162,7 @@ public class Expressions {
         return new PropertyExpression(self, property.getRef());
     }
 
-    public static Expression fieldEq(Field field, Instance value) {
+    public static Expression fieldEq(Field field, Value value) {
         return new BinaryExpression(
                 BinaryOperator.EQ,
                 propertyExpr(field),
@@ -174,7 +174,7 @@ public class Expressions {
         return new PropertyExpression(thisObject(property.getDeclaringType()), property.getRef());
     }
 
-    public static Expression fieldIn(Field field, Collection<? extends Instance> values) {
+    public static Expression fieldIn(Field field, Collection<? extends Value> values) {
         return new BinaryExpression(
                 BinaryOperator.IN,
                 propertyExpr(field),
@@ -281,42 +281,42 @@ public class Expressions {
         }
     }
 
-    public static LongInstance castInteger(Instance value) {
-        if (value instanceof LongInstance longInstance) {
+    public static LongValue castInteger(Value value) {
+        if (value instanceof LongValue longInstance) {
             return longInstance;
         } else {
             throw BusinessException.invalidExpressionValue("integer", value);
         }
     }
 
-    public static DoubleInstance castFloat(Instance value) {
-        if (value instanceof DoubleInstance doubleInstance) {
+    public static DoubleValue castFloat(Value value) {
+        if (value instanceof DoubleValue doubleInstance) {
             return doubleInstance;
         }
-        if (value instanceof LongInstance longInstance) {
+        if (value instanceof LongValue longInstance) {
             return Instances.doubleInstance(longInstance.getValue());
         } else {
             throw BusinessException.invalidExpressionValue("float", value);
         }
     }
 
-    public static BooleanInstance castBoolean(Instance value) {
-        if (value instanceof BooleanInstance booleanInstance) {
+    public static BooleanValue castBoolean(Value value) {
+        if (value instanceof BooleanValue booleanInstance) {
             return booleanInstance;
         } else {
             throw BusinessException.invalidExpressionValue("boolean", value);
         }
     }
 
-    public static StringInstance castString(Instance value) {
-        if (value instanceof StringInstance stringInstance) {
+    public static StringValue castString(Value value) {
+        if (value instanceof StringValue stringInstance) {
             return stringInstance;
         } else {
             return Instances.stringInstance(Objects.toString(value.getTitle()));
         }
     }
 
-    public static ArrayInstance castCollection(Instance value) {
+    public static ArrayInstance castCollection(Value value) {
         if (value.isArray()) {
             return value.resolveArray();
         } else {

@@ -35,7 +35,7 @@ public class StreamCopier extends StreamVisitor {
         output.write(treeTag);
         switch (treeTag) {
             case TreeTags.DEFAULT -> visitMessage();
-            case TreeTags.MIGRATED -> visitForwardingPointer();
+            case TreeTags.RELOCATED -> visitForwardingPointer();
             default -> throw new IllegalStateException("Invalid tree tag: " + treeTag);
         }
     }
@@ -59,7 +59,7 @@ public class StreamCopier extends StreamVisitor {
         }
         else
             output.writeBoolean(false);
-        visit();
+        visitValue();
     }
 
     @Override
@@ -70,20 +70,20 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitField() {
         output.writeLong(readLong());
-        visit();
+        visitValue();
     }
 
     @Override
-    public void visitRecord() {
-        output.write(WireTypes.RECORD);
+    public void visitInstance() {
+        output.write(WireTypes.INSTANCE);
         var nodeId = readLong();
         output.writeLong(nodeId);
-        visitRecord(-1L, -1L, false, getTreeId(), nodeId);
+        visitInstance(-1L, -1L, false, getTreeId(), nodeId);
     }
 
     @Override
-    public void visitMigratingRecord() {
-        output.write(WireTypes.MIGRATING_RECORD);
+    public void visitRelocatingInstance() {
+        output.write(WireTypes.RELOCATING_INSTANCE);
         var oldTreeId = readLong();
         output.writeLong(oldTreeId);
         var oldNodeId = readLong();
@@ -92,20 +92,20 @@ public class StreamCopier extends StreamVisitor {
         output.writeBoolean(useOldId);
         var nodeId = readLong();
         output.writeLong(nodeId);
-        visitRecord(oldTreeId, oldNodeId, useOldId, getTreeId(), nodeId);
+        visitInstance(oldTreeId, oldNodeId, useOldId, getTreeId(), nodeId);
     }
 
     @Override
-    public void visitRecord(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
+    public void visitInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
         var typeKey = readTypeKey();
         typeKey.write(output);
-        visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeKey);
+        visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeKey);
     }
 
 
     @Override
-    public void visitValue() {
-        output.write(WireTypes.VALUE);
+    public void visitValueInstance() {
+        output.write(WireTypes.VALUE_INSTANCE);
         var typeKey = readTypeKey();
         typeKey.write(output);
         visitBody(typeKey);
@@ -117,7 +117,7 @@ public class StreamCopier extends StreamVisitor {
             int len = readInt();
             output.writeInt(len);
             for (int i = 0; i < len; i++) {
-                visit();
+                visitValue();
             }
         } else {
             int numKlasses = readInt();
@@ -140,11 +140,11 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
-    public void visitRedirectingRecord() {
-        output.write(WireTypes.REDIRECTING_RECORD);
-        visit();
+    public void visitRedirectingInstance() {
+        output.write(WireTypes.REDIRECTING_INSTANCE);
+        visitValue();
         output.writeId(readId());
-        visit();
+        visitValue();
     }
 
     @Override
@@ -152,7 +152,7 @@ public class StreamCopier extends StreamVisitor {
         output.write(WireTypes.REDIRECTING_REFERENCE);
         output.write(read());
         output.writeId(readId());
-        visit();
+        visitValue();
         output.writeId(readId());
     }
 

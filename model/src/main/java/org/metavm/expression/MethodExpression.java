@@ -6,7 +6,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodRef;
 import org.metavm.flow.Parameter;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
 
@@ -55,7 +55,7 @@ public class MethodExpression extends Expression {
     }
 
     @Override
-    protected Instance evaluateSelf(EvaluationContext context) {
+    protected Value evaluateSelf(EvaluationContext context) {
         return self.evaluate(context).resolveObject().getFunction(getMethod());
     }
 

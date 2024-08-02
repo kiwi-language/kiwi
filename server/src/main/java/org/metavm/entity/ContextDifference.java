@@ -130,11 +130,11 @@ public class ContextDifference {
         new StreamVisitor(tree.openInput()) {
 
             @Override
-            public void visitRecordBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+            public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
                 var id =  PhysicalId.of(treeId, nodeId, typeOrTypeKey);
                 var oldId = oldTreeId != -1L ? PhysicalId.of(oldTreeId, oldNodeId, typeOrTypeKey) : null;
                 ids.add(new DiffId(id, oldId, useOldId));
-                super.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
+                super.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
             }
 
         }.visitGrove();

@@ -1,13 +1,13 @@
 package org.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.Value;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
 import org.metavm.flow.ScopeRT;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.DefaultObjectInstanceMap;
 import org.metavm.object.instance.ObjectInstanceMap;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.object.view.Mapping;
@@ -94,7 +94,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         var type = Types.getPrimitiveType(javaType);
         if (type != null)
             return type;
-        if (javaType instanceof Class<?> k && Instance.class.isAssignableFrom(k))
+        if (javaType instanceof Class<?> k && Value.class.isAssignableFrom(k))
             return AnyType.instance;
         if (BiUnion.isNullable(javaType))
             return Types.getNullableType(getType(BiUnion.getUnderlyingType(javaType)));
@@ -174,7 +174,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    public void onInstanceIdInit(DurableInstance instance) {
+    public void onInstanceIdInit(Instance instance) {
         super.onInstanceIdInit(instance);
         var entity = instance.getMappedEntity();
         if(entity != null)
@@ -230,7 +230,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     private Id getEntityId(Object entity) {
-        if (entity instanceof Value || EntityUtils.isEphemeral(entity))
+        if (entity instanceof org.metavm.api.Value || EntityUtils.isEphemeral(entity))
             return null;
         //        var type = getType(EntityUtils.getRealType(entity.getClass()));
         return stdIdProvider.getId(identityContext.getModelId(entity));
@@ -258,15 +258,15 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             var pType = (ParameterizedType) javaType;
             var arrayClass = getArrayClass(arrayType.getKind());
             var elementType = pType.getActualTypeArguments()[0];
-            if (elementType instanceof Class<?> klass && Instance.class.isAssignableFrom(klass))
+            if (elementType instanceof Class<?> klass && Value.class.isAssignableFrom(klass))
                 //noinspection rawtypes,unchecked
-                return new InstanceArrayMapper(arrayClass, pType, Instance.class, arrayType);
+                return new InstanceArrayMapper(arrayClass, pType, Value.class, arrayType);
             else
                 //noinspection rawtypes,unchecked
                 return new ArrayMapper(arrayClass, this);
-        } else if (javaType instanceof Class<?> klass && DurableInstance.class.isAssignableFrom(klass))
+        } else if (javaType instanceof Class<?> klass && Instance.class.isAssignableFrom(klass))
             //noinspection rawtypes,unchecked
-            return new InstanceMapper(DurableInstance.class.asSubclass(klass));
+            return new InstanceMapper(Instance.class.asSubclass(klass));
         else
             return getDef(javaType, stage);
     }
@@ -359,7 +359,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         Class<?> javaClass = ReflectionUtils.getRawClass(javaType);
         if (ReadonlyArray.class.isAssignableFrom(javaClass)) {
             throw new InternalException("Can not create parser for an array type: " + javaType.getTypeName());
-        } else if (Instance.class.isAssignableFrom(javaClass)) {
+        } else if (Value.class.isAssignableFrom(javaClass)) {
             throw new InternalException("Instance def should be predefined by StandardDefBuilder");
         } else {
             NncUtils.requireTrue(javaType == javaClass,
@@ -458,7 +458,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    public void onInstanceInitialized(DurableInstance instance) {
+    public void onInstanceInitialized(Instance instance) {
     }
 
     @Override
@@ -508,7 +508,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     void writeEntity(Object entity) {
         if (entities.add(entity)) {
             pendingModels.add(entity);
-            if (!(entity instanceof Value)) {
+            if (!(entity instanceof org.metavm.api.Value)) {
                 tryInitEntityId(entity);
                 memoryIndex.save(entity);
             }
@@ -561,12 +561,12 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 //    }
 
     @Override
-    public DurableInstance getInstance(Object entity) {
+    public Instance getInstance(Object entity) {
         return getInstance(entity, null);
     }
 
-    public DurableInstance getInstance(Object model, ModelDef<?> def) {
-        if (model instanceof InstanceReference d)
+    public Instance getInstance(Object model, ModelDef<?> def) {
+        if (model instanceof Reference d)
             return d.resolve();
         if (pendingModels.contains(model)) {
             generateInstance(model, def);
@@ -631,7 +631,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         }
     }
 
-    private void addToContext(Object model, DurableInstance instance) {
+    private void addToContext(Object model, Instance instance) {
         if (instance.tryGetTreeId() == null)
             // onBind will get invoked
             addBinding(model, instance);
@@ -662,7 +662,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    protected <T> void beforeGetModel(Class<T> klass, DurableInstance instance) {
+    protected <T> void beforeGetModel(Class<T> klass, Instance instance) {
         generateInstances();
     }
 
@@ -755,7 +755,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             entry.addMessage("numSeedEntities", entities.size());
             List<Object> newEntities = new ArrayList<>();
             EntityUtils.visitGraph(entities, e -> {
-                if (!(e instanceof Instance) && !entities.contains(e)/* TODO handle instance */) {
+                if (!(e instanceof Value) && !entities.contains(e)/* TODO handle instance */) {
                     newEntities.add(e);
                 }
             });

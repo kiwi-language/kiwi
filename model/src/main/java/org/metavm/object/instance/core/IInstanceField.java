@@ -11,13 +11,13 @@ public interface IInstanceField extends Comparable<IInstanceField> {
 
     boolean shouldSkipWrite();
 
-    void set(Instance value);
+    void set(Value value);
 
     void clear();
 
     void writeValue(InstanceOutput output);
 
-    @NotNull Instance getValue();
+    @NotNull Value getValue();
 
     boolean isFieldInitialized();
 

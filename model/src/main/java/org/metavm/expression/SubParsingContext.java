@@ -1,8 +1,8 @@
 package org.metavm.expression;
 
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceProvider;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.IndexedTypeDefProvider;
 import org.metavm.object.type.Type;
 import org.metavm.util.InternalException;
@@ -21,7 +21,7 @@ public class SubParsingContext implements ParsingContext {
     }
 
     @Override
-    public Instance getInstance(Id id) {
+    public Value getInstance(Id id) {
         return parent.getInstance(id);
     }
 

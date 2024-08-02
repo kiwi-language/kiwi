@@ -2,9 +2,9 @@ package org.metavm.task;
 
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.TreeNotFoundException;
-import org.metavm.object.instance.core.DurableInstance;
-import org.metavm.object.instance.core.DurableInstanceVisitor;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.util.Constants;
 
 import java.util.List;
@@ -16,13 +16,13 @@ public class ForwardedFlagSetter extends ReferenceScanner {
     }
 
     @Override
-    protected void process(List<DurableInstance> referring) {
+    protected void process(List<Instance> referring) {
         var id = getTargetId();
         if (!referring.isEmpty()) {
-            for (DurableInstance root : referring) {
-                root.accept(new DurableInstanceVisitor() {
+            for (Instance root : referring) {
+                root.accept(new InstanceVisitor() {
                     @Override
-                    public void visitDurableInstance(DurableInstance instance) {
+                    public void visitInstance(Instance instance) {
                         instance.forEachReference((ref, isChild) -> {
                             if (id.equals(ref.tryGetId()))
                                 ref.setForwarded();

@@ -1,15 +1,15 @@
 package org.metavm.user;
 
-import org.metavm.entity.Entity;
 import org.metavm.api.EntityType;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.entity.Entity;
+import org.metavm.object.instance.core.Value;
 
 @EntityType
 public class SessionEntry extends Entity  {
     private final String key;
-    private Instance value;
+    private Value value;
 
-    public SessionEntry(String key, Instance value) {
+    public SessionEntry(String key, Value value) {
         this.key = key;
         this.value = value;
     }
@@ -18,11 +18,11 @@ public class SessionEntry extends Entity  {
         return key;
     }
 
-    public Instance getValue() {
+    public Value getValue() {
         return value;
     }
 
-    public void setValue(Instance value) {
+    public void setValue(Value value) {
         this.value = value;
     }
 }

@@ -1,6 +1,6 @@
 package org.metavm.object.instance.query;
 
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.PrimitiveType;
@@ -10,7 +10,7 @@ import org.metavm.util.InternalException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class InstanceNode<I extends Instance> {
+public abstract class InstanceNode<I extends Value> {
 
     protected final PathTree path;
 
@@ -36,7 +36,7 @@ public abstract class InstanceNode<I extends Instance> {
 
     public abstract List<InstanceNode<?>> getChildren();
 
-    public final Instance getByPath(Instance instance, Path path) {
+    public final Value getByPath(Value instance, Path path) {
         if(path.isEmpty()) {
             return instance;
         }
@@ -45,15 +45,15 @@ public abstract class InstanceNode<I extends Instance> {
         }
     }
 
-    protected abstract Instance getByPath0(I instance, Path path);
+    protected abstract Value getByPath0(I instance, Path path);
 
-    public final List<Instance> getFetchResults(Instance instance, Path path) {
-        List<Instance> result = new ArrayList<>();
+    public final List<Value> getFetchResults(Value instance, Path path) {
+        List<Value> result = new ArrayList<>();
         fetch(instance, path, result);
         return result;
     }
 
-    protected final void fetch(Instance instance, Path path, List<Instance> result) {
+    protected final void fetch(Value instance, Path path, List<Value> result) {
         if(path.isEmpty()) {
             result.add(instance);
         }
@@ -62,7 +62,7 @@ public abstract class InstanceNode<I extends Instance> {
         }
     }
 
-    protected abstract void fetch0(I instance, Path path, List<Instance> result);
+    protected abstract void fetch0(I instance, Path path, List<Value> result);
 
     public static InstanceNode<?> create(PathTree path, Type type) {
         if(type.isBinaryNullable()) {
@@ -80,11 +80,11 @@ public abstract class InstanceNode<I extends Instance> {
         throw new InternalException("Can not create tree for type " + type);
     }
 
-    public List<NodeInstancePair>  getNodeInstancePairsForChildren(Instance instance) {
+    public List<NodeInstancePair>  getNodeInstancePairsForChildren(Value instance) {
         return getNodeInstancePairsForChildren0(tryCasting(instance));
     }
 
-    protected I tryCasting(Instance instance) {
+    protected I tryCasting(Value instance) {
         if(getInstanceClass().isInstance(instance)) {
             return getInstanceClass().cast(instance);
         }

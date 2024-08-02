@@ -7,9 +7,9 @@ import org.metavm.entity.ValueElement;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.TypeId;
 import org.metavm.object.instance.core.TypeTag;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.object.type.rest.dto.TypeKeyCodes;
 import org.metavm.util.*;
@@ -142,7 +142,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
         return false;
     }
 
-    public Instance convert(Instance instance) {
+    public Value convert(Value instance) {
         throw new UnsupportedOperationException();
     }
 
@@ -174,7 +174,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
         return this;
     }
 
-    public boolean isInstance(Instance value) {
+    public boolean isInstance(Value value) {
         return isAssignableFrom(value.getType());
     }
 

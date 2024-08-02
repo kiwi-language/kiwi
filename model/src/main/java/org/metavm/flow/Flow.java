@@ -12,7 +12,7 @@ import org.metavm.flow.rest.FlowDTO;
 import org.metavm.flow.rest.FlowParam;
 import org.metavm.flow.rest.FlowSignatureDTO;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.*;
@@ -98,7 +98,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.state = state;
     }
 
-    public abstract FlowExecResult execute(@Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext);
+    public abstract FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext);
 
     public List<Type> getParameterTypes() {
         return NncUtils.map(parameters, Parameter::getType);
@@ -462,8 +462,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.state = state;
     }
 
-    protected List<Instance> checkArguments(List<? extends Instance> arguments) {
-        List<Instance> convertedArgs = new ArrayList<>();
+    protected List<Value> checkArguments(List<? extends Value> arguments) {
+        List<Value> convertedArgs = new ArrayList<>();
         out:
         if (arguments.size() == parameters.size()) {
             var paramIt = parameters.iterator();

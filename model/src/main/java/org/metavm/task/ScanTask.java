@@ -2,8 +2,8 @@ package org.metavm.task;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.ScanResult;
 import org.metavm.util.ContextUtil;
 
@@ -50,6 +50,6 @@ public abstract class ScanTask extends Task {
         return context.scan(cursor, limit);
     }
 
-    protected abstract void process(List<DurableInstance> batch, IEntityContext context, IEntityContext taskContext);
+    protected abstract void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext);
 
 }

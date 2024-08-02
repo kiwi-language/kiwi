@@ -1,15 +1,13 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.expression.Expression;
 import org.metavm.expression.VarType;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.CapturedType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
@@ -17,6 +15,8 @@ import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -144,7 +144,7 @@ public abstract class CallNode extends NodeRT {
     public NodeExecResult execute(MetaFrame frame) {
         var flow = flowRef.resolve();
         var args = arguments;
-        List<Instance> argInstances = new ArrayList<>();
+        List<Value> argInstances = new ArrayList<>();
         out:
         for (Parameter param : flow.getParameters()) {
             for (Argument arg : args) {

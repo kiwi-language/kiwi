@@ -9,7 +9,7 @@ import org.metavm.expression.ExpressionTypeMap;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.NamingUtils;
@@ -241,7 +241,7 @@ public abstract class NodeRT extends Element implements LocalKey {
 
     public abstract NodeExecResult execute(MetaFrame frame);
 
-    public NodeExecResult next(Instance output) {
+    public NodeExecResult next(Value output) {
         return new NodeExecResult(output, null, getNext());
     }
 

@@ -7,7 +7,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.InstanceOutput;
@@ -86,7 +86,7 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public Instance convert(Instance instance) {
+    public Value convert(Value instance) {
         if(isConvertibleFrom(instance.getType()))
             return kind.convert(instance);
         else
@@ -176,7 +176,7 @@ public class PrimitiveType extends Type {
         output.write(PrimitiveTypeKey.getTypeKeyCode(kind.code()));
     }
 
-    public @Nullable Instance getDefaultValue() {
+    public @Nullable Value getDefaultValue() {
         return kind.getDefaultValue();
     }
 }

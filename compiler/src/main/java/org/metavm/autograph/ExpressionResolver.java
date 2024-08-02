@@ -6,10 +6,10 @@ import com.intellij.psi.tree.IElementType;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.*;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.BooleanInstance;
-import org.metavm.object.instance.core.DoubleInstance;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.LongInstance;
+import org.metavm.object.instance.core.BooleanValue;
+import org.metavm.object.instance.core.DoubleValue;
+import org.metavm.object.instance.core.LongValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -203,14 +203,14 @@ public class ExpressionResolver {
         if (value == null) {
             return new ConstantExpression(Instances.nullInstance());
         }
-        Instance instance;
+        Value instance;
         PrimitiveType valueType = (PrimitiveType) typeResolver.resolve(literalExpression.getType());
         instance = switch (value) {
-            case Boolean boolValue -> new BooleanInstance(boolValue, valueType);
-            case Integer integer -> new LongInstance(integer, valueType);
-            case Float floatValue -> new DoubleInstance(floatValue.doubleValue(), valueType);
-            case Double doubleValue -> new DoubleInstance(doubleValue, valueType);
-            case Long longValue -> new LongInstance(longValue, valueType);
+            case Boolean boolValue -> new BooleanValue(boolValue, valueType);
+            case Integer integer -> new LongValue(integer, valueType);
+            case Float floatValue -> new DoubleValue(floatValue.doubleValue(), valueType);
+            case Double doubleValue -> new DoubleValue(doubleValue, valueType);
+            case Long longValue -> new LongValue(longValue, valueType);
             case String string -> Instances.stringInstance(string);
             case null, default -> throw new InternalException("Unrecognized literal value: " + value);
         };
@@ -935,11 +935,11 @@ public class ExpressionResolver {
         }
     }
 
-    private Value trueValue() {
+    private org.metavm.flow.Value trueValue() {
         return Values.constant(Expressions.trueExpression());
     }
 
-    private Value falseValue() {
+    private org.metavm.flow.Value falseValue() {
         return Values.constant(Expressions.falseExpression());
     }
 

@@ -2,7 +2,7 @@ package org.metavm.task;
 
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +16,7 @@ public abstract class ScanByClassTask extends ScanByTypeTask {
     }
 
     @Override
-    protected final void processInstance(Instance instance, IEntityContext context) {
+    protected final void processInstance(Value instance, IEntityContext context) {
         if (instance.isObject()) {
             processClassInstance(instance.resolveObject(), context);
         } else {

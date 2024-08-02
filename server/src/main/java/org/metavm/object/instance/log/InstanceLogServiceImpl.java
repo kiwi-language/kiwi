@@ -161,11 +161,11 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                     var commitState = commit.getState();
                     try (var loadedContext = newContext(appId, builder -> builder
                             .readWAL(commitState.isPreparing() ? commit.getWal() : null)
-                            .migrationEnabled(commitState.isMigrationEnabled())
+                            .relocationEnabled(commitState.isRelocationEnabled())
                             .timeout(0)
                     )
                     ) {
-                        Iterable<DurableInstance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
+                        Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
                                 .iterator();
                         commit.getState().process(instances, commit, loadedContext);
                         loadedContext.finish();

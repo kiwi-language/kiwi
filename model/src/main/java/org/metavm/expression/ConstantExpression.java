@@ -3,10 +3,10 @@ package org.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceReference;
-import org.metavm.object.instance.core.PrimitiveInstance;
-import org.metavm.object.instance.core.StringInstance;
+import org.metavm.object.instance.core.PrimitiveValue;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.StringValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
@@ -18,25 +18,25 @@ import java.util.Objects;
 @EntityType
 public class ConstantExpression extends Expression {
 
-    private final Instance value;
+    private final Value value;
 
-    public ConstantExpression(@NotNull Instance value) {
+    public ConstantExpression(@NotNull Value value) {
         this.value = value;
     }
 
-    public Instance getValue() {
+    public Value getValue() {
         return value;
     }
 
     @Override
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
-        if(value instanceof StringInstance stringInstance) {
+        if(value instanceof StringValue stringInstance) {
             return "\"" + NncUtils.escape(stringInstance.getValue()) + "\"";
         }
-        else if(value instanceof PrimitiveInstance primitiveInstance) {
-            return primitiveInstance.getValue() + "";
+        else if(value instanceof PrimitiveValue primitiveValue) {
+            return primitiveValue.getValue() + "";
         }
-        else if(value instanceof InstanceReference d){
+        else if(value instanceof Reference d){
             if(relaxedCheck)
                 return Constants.ID_PREFIX + NncUtils.orElse(d.getStringId(), "<uninitializedId>");
             else
@@ -57,12 +57,12 @@ public class ConstantExpression extends Expression {
     }
 
     @Override
-    protected Instance evaluateSelf(EvaluationContext context) {
+    protected Value evaluateSelf(EvaluationContext context) {
         return value;
     }
 
     public boolean isString() {
-        return value instanceof StringInstance;
+        return value instanceof StringValue;
     }
 
     @Override

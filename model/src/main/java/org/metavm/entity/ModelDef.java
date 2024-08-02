@@ -3,8 +3,8 @@ package org.metavm.entity;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.ClassInstanceBuilder;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDef;
@@ -88,7 +88,7 @@ public abstract class ModelDef<T> implements Mapper<T, ClassInstance> {
         return javaType;
     }
 
-    public Map<Object, DurableInstance> getInstanceMapping() {
+    public Map<Object, Instance> getInstanceMapping() {
         return Map.of();
     }
 

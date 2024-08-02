@@ -3,6 +3,7 @@ package org.metavm.expression;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.natives.IteratorImplNative;
 import org.metavm.entity.natives.NativeMethods;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
@@ -42,99 +43,99 @@ public class FunctionMethods {
         return a + b;
     }
 
-    public static DoubleInstance MAX(DoubleInstance a, DoubleInstance b) {
+    public static DoubleValue MAX(DoubleValue a, DoubleValue b) {
         return Instances.max(a, b);
     }
 
-    public static DoubleInstance MIN(DoubleInstance a, DoubleInstance b) {
+    public static DoubleValue MIN(DoubleValue a, DoubleValue b) {
         return Instances.min(a, b);
     }
 
-    public static DoubleInstance SUM(DoubleInstance a, DoubleInstance b) {
+    public static DoubleValue SUM(DoubleValue a, DoubleValue b) {
         return Instances.sum(a, b);
     }
 
-    public static LongInstance MAX(LongInstance a, LongInstance b) {
+    public static LongValue MAX(LongValue a, LongValue b) {
         return Instances.max(a, b);
     }
 
-    public static LongInstance MIN(LongInstance a, LongInstance b) {
+    public static LongValue MIN(LongValue a, LongValue b) {
         return Instances.min(a, b);
     }
 
-    public static LongInstance SUM(LongInstance a, LongInstance b) {
+    public static LongValue SUM(LongValue a, LongValue b) {
         return Instances.sum(a, b);
     }
 
-    public static BooleanInstance IS_BLANK(StringInstance str) {
+    public static BooleanValue IS_BLANK(StringValue str) {
         return str.isBlank();
     }
 
-    public static PasswordInstance PASSWORD(StringInstance str) {
+    public static PasswordValue PASSWORD(StringValue str) {
         return Instances.passwordInstance(EncodingUtils.md5(str.getValue()));
     }
 
-    public static StringInstance GET_PASSWORD(PasswordInstance password) {
+    public static StringValue GET_PASSWORD(PasswordValue password) {
         return Instances.stringInstance(password.getValue());
     }
 
-    public static BooleanInstance DATE_BEFORE(TimeInstance date1, TimeInstance date2) {
+    public static BooleanValue DATE_BEFORE(TimeValue date1, TimeValue date2) {
         return date1.before(date2);
     }
 
-    public static BooleanInstance DATE_AFTER(TimeInstance date1, TimeInstance date2) {
+    public static BooleanValue DATE_AFTER(TimeValue date1, TimeValue date2) {
         return date1.after(date2);
     }
 
-    public static StringInstance UUID() {
+    public static StringValue UUID() {
         return Instances.stringInstance(UUID.randomUUID().toString());
     }
 
-    public static StringInstance MD5(StringInstance stringInstance) {
+    public static StringValue MD5(StringValue stringInstance) {
         return Instances.stringInstance(EncodingUtils.md5(stringInstance.getValue()));
     }
 
-    public static LongInstance GET_ID(Instance instance) {
-        if(instance instanceof InstanceReference d)
+    public static LongValue GET_ID(Value instance) {
+        if(instance instanceof Reference d)
             return Instances.longInstance(NncUtils.orElse(d.tryGetTreeId(), 0L));
         else
             return Instances.longInstance(0L);
     }
 
-    public static BooleanInstance STARTS_WITH(Instance first, StringInstance prefix) {
-        if(first instanceof NullInstance)
+    public static BooleanValue STARTS_WITH(Value first, StringValue prefix) {
+        if(first instanceof NullValue)
             return Instances.falseInstance();
-        else if(first instanceof StringInstance str)
+        else if(first instanceof StringValue str)
             return str.startsWith(prefix);
         throw new IllegalArgumentException("Invalid argument for starts_with function: " + first);
     }
 
-    public static BooleanInstance CONTAINS(Instance first, StringInstance prefix) {
-        if(first instanceof NullInstance)
+    public static BooleanValue CONTAINS(Value first, StringValue prefix) {
+        if(first instanceof NullValue)
             return Instances.falseInstance();
-        if(first instanceof StringInstance str)
+        if(first instanceof StringValue str)
             return str.contains(prefix);
         else
             throw new IllegalArgumentException("Invalid argument for contains function: " + first);
     }
 
-    public static StringInstance CONCAT(Instance str1, Instance str2) {
-        return new StringInstance(str1.getTitle() + str2.getTitle(), Types.getStringType());
+    public static StringValue CONCAT(Value str1, Value str2) {
+        return new StringValue(str1.getTitle() + str2.getTitle(), Types.getStringType());
     }
 
-    public static StringInstance REPLACE(StringInstance string, StringInstance target, StringInstance replacement) {
+    public static StringValue REPLACE(StringValue string, StringValue target, StringValue replacement) {
         return Instances.stringInstance(string.getValue().replace(target.getValue(), replacement.getValue()));
     }
 
-    public static StringInstance REPLACE_FIRST(StringInstance string, StringInstance regex, StringInstance replacement) {
+    public static StringValue REPLACE_FIRST(StringValue string, StringValue regex, StringValue replacement) {
         return Instances.stringInstance(string.getValue().replaceFirst(regex.getValue(), replacement.getValue()));
     }
 
-    public static LongInstance RANDOM() {
-        return new LongInstance(NncUtils.random(), Types.getLongType());
+    public static LongValue RANDOM() {
+        return new LongValue(NncUtils.random(), Types.getLongType());
     }
 
-    public static Instance IF(BooleanInstance condition, Instance value1, Instance value2) {
+    public static Value IF(BooleanValue condition, Value value1, Value value2) {
         return condition.isTrue() ? value1 : value2;
     }
 
@@ -158,27 +159,27 @@ public class FunctionMethods {
         return condition ? value1 : value2;
     }
 
-    public static TimeInstance NOW() {
+    public static TimeValue NOW() {
         return Instances.timeInstance(System.currentTimeMillis());
     }
 
-    public static LongInstance NOW_MILLIS() {
+    public static LongValue NOW_MILLIS() {
         return Instances.longInstance(System.currentTimeMillis());
     }
 
-    public static TimeInstance TIME(LongInstance timeMillis) {
+    public static TimeValue TIME(LongValue timeMillis) {
         return Instances.timeInstance(timeMillis.getValue());
     }
 
-    public static StringInstance TO_STRING(Instance instance) {
+    public static StringValue TO_STRING(Value instance) {
         return Instances.stringInstance(instance.getTitle());
     }
 
-    public static BooleanInstance ARRAY_CONTAINS(ArrayInstance array, Instance value) {
+    public static BooleanValue ARRAY_CONTAINS(ArrayInstance array, Value value) {
         return Instances.booleanInstance(array.contains(value));
     }
 
-    public static StringInstance RANDOM_PASSWORD() {
+    public static StringValue RANDOM_PASSWORD() {
         return Instances.stringInstance(NncUtils.randomPassword());
     }
 
@@ -192,37 +193,37 @@ public class FunctionMethods {
         return from.isAssignableFrom(to);
     }
 
-    public static LongInstance LEN(Instance instance) {
+    public static LongValue LEN(Value instance) {
         if(instance.isArray())
             return Instances.longInstance(instance.resolveArray().length());
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT, "LEN");
     }
 
-    public static BooleanInstance HAS_NEXT(Instance iterator) {
+    public static BooleanValue HAS_NEXT(Value iterator) {
         var iteratorNative = (IteratorImplNative) NativeMethods.getNativeObject(iterator.resolveObject());
         return iteratorNative.hasNext();
     }
 
-    public static BooleanInstance REGEX_MATCH(StringInstance regex, StringInstance value) {
+    public static BooleanValue REGEX_MATCH(StringValue regex, StringValue value) {
         return Instances.booleanInstance(Pattern.compile(regex.getValue()).matcher(value.getValue()).matches());
     }
 
-    public static StringInstance NUMBER_FORMAT(StringInstance format, LongInstance value) {
+    public static StringValue NUMBER_FORMAT(StringValue format, LongValue value) {
         return Instances.stringInstance(new DecimalFormat(format.getValue()).format(value.getValue()));
     }
 
-    public static LongInstance BOUNDED_RANDOM(LongInstance bound) {
+    public static LongValue BOUNDED_RANDOM(LongValue bound) {
         return Instances.longInstance(new Random().nextLong(bound.getValue()));
     }
 
-    public static StringInstance STRING_FORMAT(StringInstance format, ArrayInstance values) {
+    public static StringValue STRING_FORMAT(StringValue format, ArrayInstance values) {
         var args = new Object[values.size()];
-        NncUtils.map(values, Instance::getTitle).toArray(args);
+        NncUtils.map(values, Value::getTitle).toArray(args);
         return Instances.stringInstance(String.format(format.getValue(), args));
     }
 
-    public static LongInstance DATE_GET_TIME(TimeInstance date) {
+    public static LongValue DATE_GET_TIME(TimeValue date) {
         return Instances.longInstance(date.getValue());
     }
 

@@ -1,8 +1,8 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.NumberInstance;
-import org.metavm.object.instance.core.TimeInstance;
+import org.metavm.object.instance.core.NumberValue;
+import org.metavm.object.instance.core.TimeValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.BytesUtils;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -24,7 +24,7 @@ public enum IndexOperator {
         }
 
         @Override
-        public boolean evaluate(Instance instance1, Instance instance2) {
+        public boolean evaluate(Value instance1, Value instance2) {
             return instance1.equals(instance2);
         }
     },
@@ -42,7 +42,7 @@ public enum IndexOperator {
         }
 
         @Override
-        public boolean evaluate(Instance instance1, Instance instance2) {
+        public boolean evaluate(Value instance1, Value instance2) {
             return compare(instance1, instance2) > 0;
         }
     },
@@ -60,7 +60,7 @@ public enum IndexOperator {
         }
 
         @Override
-        public boolean evaluate(Instance instance1, Instance instance2) {
+        public boolean evaluate(Value instance1, Value instance2) {
             return IndexOperator.compare(instance1, instance2) >= 0;
         }
 
@@ -80,7 +80,7 @@ public enum IndexOperator {
         }
 
         @Override
-        public boolean evaluate(Instance instance1, Instance instance2) {
+        public boolean evaluate(Value instance1, Value instance2) {
             return IndexOperator.compare(instance1, instance2) < 0;
         }
 
@@ -99,16 +99,16 @@ public enum IndexOperator {
         }
 
         @Override
-        public boolean evaluate(Instance instance1, Instance instance2) {
+        public boolean evaluate(Value instance1, Value instance2) {
             return IndexOperator.compare(instance1, instance2) <= 0;
         }
 
     };
 
-    private static int compare(Instance instance1, Instance instance2) {
-        if (instance1 instanceof TimeInstance t1 && instance2 instanceof TimeInstance t2)
+    private static int compare(Value instance1, Value instance2) {
+        if (instance1 instanceof TimeValue t1 && instance2 instanceof TimeValue t2)
             return t1.compareTo(t2);
-        else if (instance1 instanceof NumberInstance n1 && instance2 instanceof NumberInstance n2)
+        else if (instance1 instanceof NumberValue n1 && instance2 instanceof NumberValue n2)
             return n1.compareTo(n2);
         else
             throw new InternalException(String.format("Can not compare instance %s with %s", instance1, instance2));
@@ -138,6 +138,6 @@ public enum IndexOperator {
 
     public abstract boolean evaluate(byte[] value1, byte[] value2);
 
-    public abstract boolean evaluate(Instance instance1, Instance instance2);
+    public abstract boolean evaluate(Value instance1, Value instance2);
 
 }

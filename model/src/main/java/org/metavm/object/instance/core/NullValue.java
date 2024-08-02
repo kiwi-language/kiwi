@@ -6,9 +6,9 @@ import org.metavm.util.InstanceOutput;
 import org.metavm.util.Null;
 import org.metavm.util.WireTypes;
 
-public class NullInstance extends PrimitiveInstance {
+public class NullValue extends PrimitiveValue {
 
-    public NullInstance(PrimitiveType type) {
+    public NullValue(PrimitiveType type) {
         super(type);
     }
 
@@ -28,8 +28,8 @@ public class NullInstance extends PrimitiveInstance {
     }
 
     @Override
-    public <R> R accept(InstanceVisitor<R> visitor) {
-        return visitor.visitNullInstance(this);
+    public <R> R accept(ValueVisitor<R> visitor) {
+        return visitor.visitNullValue(this);
     }
 
     @Override

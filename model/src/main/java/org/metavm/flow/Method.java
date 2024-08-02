@@ -12,8 +12,8 @@ import org.metavm.flow.rest.FlowParam;
 import org.metavm.flow.rest.FlowSummaryDTO;
 import org.metavm.flow.rest.MethodParam;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.generic.TypeSubstitutor;
@@ -354,7 +354,7 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
+    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         try (var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName() + "." + getName())) {
             if (DebugEnv.debugging) {
                 var methodName = getDeclaringType().getName() + "." + getNameWithTypeArguments();
@@ -406,7 +406,7 @@ public class Method extends Flow implements Property, GenericElement {
         }
     }
 
-    private @NotNull FlowExecResult invokeNative(DurableInstance self, List<? extends Instance> arguments, CallContext callContext) {
+    private @NotNull FlowExecResult invokeNative(Instance self, List<? extends Value> arguments, CallContext callContext) {
         assert javaMethod != null;
         var map = ContextUtil.getEntityContext().getObjectInstanceMap();
         var nativeSelf = Objects.requireNonNull(self.getMappedEntity());

@@ -30,19 +30,11 @@ public class InstanceOutput extends OutputStream {
         return bout.toByteArray();
     }
 
-    public static byte[] toBytes(DurableInstance instance) {
+    public static byte[] toBytes(Instance instance) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.writeInt(1);
         instance.writeTo(output);
-        return bout.toByteArray();
-    }
-
-    public static byte[] toMigrationsBytes(DurableInstance instance) {
-        var bout = new ByteArrayOutputStream();
-        var output = new InstanceOutput(bout);
-        output.writeInt(1);
-        instance.writeForwardingPointers(output);
         return bout.toByteArray();
     }
 
@@ -52,12 +44,12 @@ public class InstanceOutput extends OutputStream {
         this.outputStream = outputStream;
     }
 
-    public void writeRecord(Instance instance) {
-        instance.writeRecord(this);
+    public void writeInstance(Value value) {
+        value.writeInstance(this);
     }
 
-    public void writeInstance(Instance instance) {
-        instance.write(this);
+    public void writeValue(Value value) {
+        value.write(this);
     }
 
     public void writeString(String string) {

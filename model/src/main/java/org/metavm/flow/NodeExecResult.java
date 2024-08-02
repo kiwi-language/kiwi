@@ -2,15 +2,15 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 
 import javax.annotation.Nullable;
 
-public record NodeExecResult(@Nullable Instance output,
+public record NodeExecResult(@Nullable Value output,
                              @Nullable ClassInstance exception,
                              @Nullable NodeRT next) {
 
-    public static NodeExecResult jump(@Nullable Instance output, @NotNull NodeRT target) {
+    public static NodeExecResult jump(@Nullable Value output, @NotNull NodeRT target) {
         return new NodeExecResult(output, null, target);
     }
 
@@ -22,7 +22,7 @@ public record NodeExecResult(@Nullable Instance output,
         return new NodeExecResult(null, exception, null);
     }
 
-    public static NodeExecResult ret(@Nullable Instance output) {
+    public static NodeExecResult ret(@Nullable Value output) {
         return new NodeExecResult(output, null, null);
     }
 

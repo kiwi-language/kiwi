@@ -1,7 +1,7 @@
 package org.metavm.object.instance.query;
 
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ArrayNode extends InstanceNode<InstanceReference> {
+public class ArrayNode extends InstanceNode<Reference> {
 
     private final Type type;
     private final Map<String, InstanceNode<?>> children = new HashMap<>();
@@ -37,7 +37,7 @@ public class ArrayNode extends InstanceNode<InstanceReference> {
     }
 
     @Override
-    public Instance getByPath0(InstanceReference instance, Path path) {
+    public Value getByPath0(Reference instance, Path path) {
         InstanceNode<?> child = children.get(path.firstItem());
         if(child.isAsterisk()) {
             return Instances.createArray(
@@ -53,10 +53,10 @@ public class ArrayNode extends InstanceNode<InstanceReference> {
     }
 
     @Override
-    protected void fetch0(InstanceReference instance, Path path, List<Instance> result) {
+    protected void fetch0(Reference instance, Path path, List<Value> result) {
         InstanceNode<?> child = children.get(path.firstItem());
         if(child.isAsterisk()) {
-            for (Instance element : instance.resolveArray().getElements()) {
+            for (Value element : instance.resolveArray().getElements()) {
                 child.fetch(element, path.subPath(), result);
             }
         }
@@ -66,11 +66,11 @@ public class ArrayNode extends InstanceNode<InstanceReference> {
     }
 
     @Override
-    public List<NodeInstancePair> getNodeInstancePairsForChildren0(InstanceReference instance) {
+    public List<NodeInstancePair> getNodeInstancePairsForChildren0(Reference instance) {
         List<NodeInstancePair> pairs = new ArrayList<>();
         for (InstanceNode<?> child : children.values()) {
             if(child.isAsterisk()) {
-                for (Instance element : instance.resolveArray().getElements()) {
+                for (Value element : instance.resolveArray().getElements()) {
                     pairs.add(new NodeInstancePair(child, element));
                 }
             }
@@ -82,8 +82,8 @@ public class ArrayNode extends InstanceNode<InstanceReference> {
     }
 
     @Override
-    protected Class<InstanceReference> getInstanceClass() {
-        return InstanceReference.class;
+    protected Class<Reference> getInstanceClass() {
+        return Reference.class;
     }
 
 }

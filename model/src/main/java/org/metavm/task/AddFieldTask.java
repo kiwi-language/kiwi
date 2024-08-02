@@ -4,7 +4,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -22,7 +22,7 @@ public class AddFieldTask extends ScanByClassTask {
 
     @Override
     protected void processClassInstance(ClassInstance instance, IEntityContext context) {
-        Instance fieldValue;
+        Value fieldValue;
         if(field.isChild() && field.getType() instanceof ArrayType arrayType)
             fieldValue = new ArrayInstance(arrayType).getReference();
         else

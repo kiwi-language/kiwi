@@ -1,6 +1,6 @@
 package org.metavm.util;
 
-import org.metavm.object.instance.core.PasswordInstance;
+import org.metavm.object.instance.core.PasswordValue;
 
 public class Password {
 
@@ -10,7 +10,7 @@ public class Password {
         this(password, true);
     }
 
-    public Password(PasswordInstance passwordInstance) {
+    public Password(PasswordValue passwordInstance) {
         this(passwordInstance.getValue(), false);
     }
 

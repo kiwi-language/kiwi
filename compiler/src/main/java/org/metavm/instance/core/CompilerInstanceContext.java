@@ -59,12 +59,12 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
 //    }
 
     @Override
-    public List<DurableInstance> getByReferenceTargetId(Id targetId, long startExclusive, long limit) {
+    public List<Instance> getByReferenceTargetId(Id targetId, long startExclusive, long limit) {
         return null;
     }
 
     @Override
-    public List<DurableInstance> getMigrated() {
+    public List<Instance> getRelocated() {
         return List.of();
     }
 

@@ -3,7 +3,7 @@ package org.metavm.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +40,7 @@ public class FieldDef implements IFieldDef {
 
     @Override
     public Object getModelFieldValue(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
-        Instance fieldValue = instance.getField(field);
+        Value fieldValue = instance.getField(field);
         if (targetMapper instanceof InstanceArrayMapper<?, ?>) {
 //            noinspection rawtypes,unchecked
             return objectInstanceMap.getEntity(javaField.getType(), fieldValue, (Mapper) targetMapper);
@@ -49,7 +49,7 @@ public class FieldDef implements IFieldDef {
     }
 
     @Override
-    public Instance getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
+    public Value getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
         EntityUtils.ensureProxyInitialized(model);
         return instanceMap.getInstance(ReflectionUtils.get(model, javaField));
     }

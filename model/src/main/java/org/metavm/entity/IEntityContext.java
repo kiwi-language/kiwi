@@ -4,10 +4,10 @@ import org.metavm.ddl.Commit;
 import org.metavm.event.EventQueue;
 import org.metavm.flow.*;
 import org.metavm.object.instance.ObjectInstanceMap;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.object.view.Mapping;
 import org.metavm.object.view.MappingProvider;
@@ -36,15 +36,15 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return getEntity(typeReference.getType(), id);
     }
 
-    default <T> T getEntity(Class<T> klass, DurableInstance instance) {
+    default <T> T getEntity(Class<T> klass, Instance instance) {
         return getEntity(klass, instance, null);
     }
 
     ObjectInstanceMap getObjectInstanceMap();
 
-    <T> T getEntity(Class<T> klass, DurableInstance instance, @Nullable Mapper<T, ?> mapper);
+    <T> T getEntity(Class<T> klass, Instance instance, @Nullable Mapper<T, ?> mapper);
 
-    DurableInstance getInstance(Object object);
+    Instance getInstance(Object object);
 
     void invalidateCache(Id id);
 
@@ -97,7 +97,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     @Nullable
     IEntityContext getParent();
 
-    <T> T createEntity(DurableInstance instance, Mapper<T, ?> mapper);
+    <T> T createEntity(Instance instance, Mapper<T, ?> mapper);
 
     boolean isNewEntity(Object entity);
 
@@ -138,7 +138,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     long getAppId(Object model);
 
-    Instance resolveInstance(Object value);
+    Value resolveInstance(Object value);
 
     long getAppId();
 

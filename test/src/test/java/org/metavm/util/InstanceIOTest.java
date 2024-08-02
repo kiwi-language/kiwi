@@ -106,7 +106,7 @@ public class InstanceIOTest extends TestCase {
                 .data(Map.of(namesField, names.getReference()))
                 .id(PhysicalId.of(1L, 0L, fooKlass.getType()))
                 .build();
-        var instanceMap = new HashMap<Id, DurableInstance>();
+        var instanceMap = new HashMap<Id, Instance>();
         var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(foo)), id -> null,
                 i -> instanceMap.put(i.getId(), i), id -> id.equals(fooKlass.getId()) ? fooKlass : null, id -> null);
         var recovered = (ClassInstance) input.readSingleMessageGrove();
@@ -166,7 +166,7 @@ public class InstanceIOTest extends TestCase {
                 PhysicalId.of(30001L, 1L, TestUtils.mockClassType()),
                 Map.of(
                         barCodeField,
-                        new StringInstance(barCode, Types.getStringType())
+                        new StringValue(barCode, Types.getStringType())
                 ),
                 barType
         );
@@ -175,7 +175,7 @@ public class InstanceIOTest extends TestCase {
                 PhysicalId.of(30002L, 0L, TestUtils.mockClassType()),
                 Map.of(
                         quxNameField,
-                        new StringInstance("qux001", Types.getStringType())
+                        new StringValue("qux001", Types.getStringType())
                 ),
                 quxType
         );
@@ -183,7 +183,7 @@ public class InstanceIOTest extends TestCase {
         var fooInst = new ClassInstance(
                 PhysicalId.of(30001L, 0L, TestUtils.mockClassType()),
                 Map.of(
-                        nameField, new StringInstance(fooName, Types.getStringType()),
+                        nameField, new StringValue(fooName, Types.getStringType()),
                         barField, barInst.getReference(),
                         quxField, quxInst.getReference()
                 ),
@@ -191,7 +191,7 @@ public class InstanceIOTest extends TestCase {
         );
         barInst.setParentInternal(fooInst, barField, true);
 
-        Function<Id, DurableInstance> resolveInst = id -> {
+        Function<Id, Instance> resolveInst = id -> {
             if(Objects.equals(id, fooInst.tryGetId()))
                 return ClassInstance.allocateUninitialized(id);
             else if(Objects.equals(id, barInst.tryGetId()))

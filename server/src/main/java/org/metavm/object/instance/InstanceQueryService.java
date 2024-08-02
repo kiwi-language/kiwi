@@ -5,6 +5,7 @@ import org.metavm.common.Page;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.expression.*;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.instance.search.SearchQuery;
@@ -51,14 +52,14 @@ public class InstanceQueryService {
         );
     }
 
-    public Page<InstanceReference> query(InstanceQuery query, IEntityContext context) {
+    public Page<Reference> query(InstanceQuery query, IEntityContext context) {
         return query(query, context.getInstanceContext(),
                 new ContextTypeDefRepository(context));
     }
 
-    public Page<InstanceReference> query(InstanceQuery query,
-                                         InstanceRepository instanceRepository,
-                                         IndexedTypeDefProvider typeDefProvider) {
+    public Page<Reference> query(InstanceQuery query,
+                                 InstanceRepository instanceRepository,
+                                 IndexedTypeDefProvider typeDefProvider) {
         var type = query.klass().getType();
         if (type instanceof ClassType classType && query.sourceMapping() != null) {
             var sourceMapping = query.sourceMapping();
@@ -132,17 +133,17 @@ public class InstanceQueryService {
         );
     }
 
-    private Page<InstanceReference> queryPhysical(InstanceQuery query,
-                                                  InstanceRepository instanceRepository,
-                                                  IndexedTypeDefProvider typeDefProvider,
-                                                  InstanceProvider instanceProvider) {
+    private Page<Reference> queryPhysical(InstanceQuery query,
+                                          InstanceRepository instanceRepository,
+                                          IndexedTypeDefProvider typeDefProvider,
+                                          InstanceProvider instanceProvider) {
         var searchQuery = buildSearchQuery(query, typeDefProvider, instanceProvider);
         var idPage = instanceSearchService.search(searchQuery);
 //        var newlyCreatedIds = NncUtils.map(query.createdIds(), id -> ((PhysicalId) id).getId());
 //        var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
         var created = NncUtils.map(query.createdIds(), instanceProvider::get);
         var filteredCreatedId =
-                NncUtils.filterAndMap(created, i -> searchQuery.match((ClassInstance) i), DurableInstance::tryGetId);
+                NncUtils.filterAndMap(created, i -> searchQuery.match((ClassInstance) i), Instance::tryGetId);
         List<Id> ids = NncUtils.merge(idPage.data(), filteredCreatedId, true);
         ids = NncUtils.filter(ids, id -> !query.excludedIds().contains(id));
         ids = instanceRepository.filterAlive(ids);
@@ -212,7 +213,7 @@ public class InstanceQueryService {
             searchFieldSet.add(titleField);
         if (searchFieldSet.isEmpty())
             return null;
-        PrimitiveInstance searchTextInst = Instances.stringInstance(searchText);
+        PrimitiveValue searchTextInst = Instances.stringInstance(searchText);
         Expression result = null;
         for (Field field : searchFieldSet) {
             Expression expression;

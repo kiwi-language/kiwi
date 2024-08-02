@@ -10,11 +10,11 @@ public class WireTypes {
     public static final int PASSWORD = 6;
 
     public static final int REFERENCE = 10;
-    public static final int RECORD = 11;
-    public static final int VALUE = 12;
+    public static final int INSTANCE = 11;
+    public static final int VALUE_INSTANCE = 12;
     public static final int FLAGGED_REFERENCE = 13;
-    public static final int MIGRATING_RECORD = 14;
-    public static final int REDIRECTING_RECORD = 15;
+    public static final int RELOCATING_INSTANCE = 14;
+    public static final int REDIRECTING_INSTANCE = 15;
     public static final int REDIRECTING_REFERENCE = 16;
 
 

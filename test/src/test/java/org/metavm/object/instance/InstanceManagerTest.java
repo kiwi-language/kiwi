@@ -487,7 +487,7 @@ public class InstanceManagerTest extends TestCase {
         }
     }
 
-    public void testMigration() {
+    public void testRelocation() {
         var klassIds = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
                 var productKlass = context.bind(TestUtils.newKlassBuilder("Product").build());
@@ -535,7 +535,7 @@ public class InstanceManagerTest extends TestCase {
             }
         });
         TestUtils.doInTransactionWithoutResult(() -> {
-            try (var context = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.migrationEnabled(true))) {
+            try (var context = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.relocationEnabled(true))) {
                 var product = (ClassInstance) context.getInstanceContext().get(productId);
                 var inventory = context.getInstanceContext().get(inventoryId);
 //                context.getInstanceContext().remove(product);

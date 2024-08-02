@@ -122,7 +122,7 @@ public class EntityContextFactory {
                 .readonly(readonly)
                 .asyncPostProcess(NncUtils.orElse(asyncLogProcessing, defaultAsyncLogProcess))
                 .parent(parent)
-                .migrationEnabled(migrationDisabled)
+                .relocationEnabled(migrationDisabled)
                 .readWAL(cachingWAL)
                 .writeWAL(bufferingWAL)
                 .timeout(Constants.SESSION_TIMEOUT);

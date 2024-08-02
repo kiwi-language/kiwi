@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.core.DurableInstance;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.BootIdProvider;
 
 import java.util.ArrayList;
@@ -20,9 +20,9 @@ public class BootIdInitializer implements IdInitializer {
     }
 
     @Override
-    public void initializeIds(long appId, Collection<? extends DurableInstance> instances) {
-        List<DurableInstance> toInitialize = new ArrayList<>();
-        for (DurableInstance instance : instances) {
+    public void initializeIds(long appId, Collection<? extends Instance> instances) {
+        List<Instance> toInitialize = new ArrayList<>();
+        for (Instance instance : instances) {
             var entity = instance.getMappedEntity();
             if(entity != null) {
                 var modelId = identityContext.getModelId(entity);

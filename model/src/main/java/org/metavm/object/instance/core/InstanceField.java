@@ -19,14 +19,14 @@ public class InstanceField implements IInstanceField {
 
     private final ClassInstance owner;
     private final Field field;
-    private @Nullable Instance value;
+    private @Nullable Value value;
 
     InstanceField(ClassInstance owner, Field field) {
         this.owner = owner;
         this.field = field;
     }
 
-    InstanceField(ClassInstance owner, Field field, @NotNull Instance value) {
+    InstanceField(ClassInstance owner, Field field, @NotNull Value value) {
         this(owner, field);
         this.value = value;
     }
@@ -51,10 +51,10 @@ public class InstanceField implements IInstanceField {
     @Override
     public void writeValue(InstanceOutput output) {
         Objects.requireNonNull(value, () -> "Field " + field.getQualifiedName() + " is not initialized");
-        if (value instanceof InstanceReference r && r.isResolved() && r.resolve().isChildOf(owner, field))
-            output.writeRecord(value);
-        else
+        if (value instanceof Reference r && r.isResolved() && r.resolve().isChildOf(owner, field))
             output.writeInstance(value);
+        else
+            output.writeValue(value);
     }
 
     public String getName() {
@@ -67,10 +67,10 @@ public class InstanceField implements IInstanceField {
         return field.getColumn().name();
     }
 
-    public void set(Instance value) {
+    public void set(Value value) {
         value = checkValue(value);
         if (field.isChild() && value.isNotNull())
-            ((InstanceReference) value).resolve().setParent(this.owner, this.field);
+            ((Reference) value).resolve().setParent(this.owner, this.field);
         this.value = value;
     }
 
@@ -79,7 +79,7 @@ public class InstanceField implements IInstanceField {
         this.value = null;
     }
 
-    Instance checkValue(Instance value) {
+    Value checkValue(Value value) {
         if (field.getType().isInstance(value)) {
             return value;
         } else {
@@ -93,7 +93,7 @@ public class InstanceField implements IInstanceField {
     }
 
     @Override
-    public @NotNull Instance getValue() {
+    public @NotNull Value getValue() {
         return Objects.requireNonNull(value, "Field " + field.getQualifiedName() + " is not initialized");
     }
 
@@ -135,7 +135,7 @@ public class InstanceField implements IInstanceField {
 
     public ArrayInstance getInstanceArray() {
         assert value != null;
-        return (ArrayInstance) ((InstanceReference) value).resolve();
+        return (ArrayInstance) ((Reference) value).resolve();
     }
 
     @Override

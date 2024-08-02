@@ -22,7 +22,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class ClassInstance extends DurableInstance {
+public class ClassInstance extends Instance {
 
     public static final Logger logger = LoggerFactory.getLogger(ClassInstance.class);
 
@@ -30,9 +30,9 @@ public class ClassInstance extends DurableInstance {
 
     private final FieldTable fieldTable = new FieldTable(this);
     private Klass klass;
-    private transient Map<Flow, FlowInstance> functions;
+    private transient Map<Flow, FlowValue> functions;
 
-    public static ClassInstance create(Map<Field, Instance> data, ClassType type) {
+    public static ClassInstance create(Map<Field, Value> data, ClassType type) {
         return ClassInstanceBuilder.newBuilder(type).data(data).build();
     }
 
@@ -55,8 +55,8 @@ public class ClassInstance extends DurableInstance {
     }
 
     public ClassInstance(Id id, @NotNull ClassType type, long version, long syncVersion,
-                         @Nullable Consumer<DurableInstance> load, @Nullable InstanceParentRef parentRef,
-                         @Nullable Map<Field, Instance> data, @Nullable SourceRef sourceRef, boolean ephemeral, boolean initFieldTable) {
+                         @Nullable Consumer<Instance> load, @Nullable InstanceParentRef parentRef,
+                         @Nullable Map<Field, Value> data, @Nullable SourceRef sourceRef, boolean ephemeral, boolean initFieldTable) {
         super(id, type, version, syncVersion, ephemeral, load);
         this.klass = type.resolve();
         if (klass != uninitializedKlass && initFieldTable)
@@ -67,14 +67,14 @@ public class ClassInstance extends DurableInstance {
             reset(data, 0L, 0L);
     }
 
-    public ClassInstance(Id id, ClassType type, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
+    public ClassInstance(Id id, ClassType type, boolean ephemeral, @Nullable Consumer<Instance> load) {
         super(id, type, 0, 0, ephemeral, load);
         this.klass = type.resolve();
         if (klass != uninitializedKlass)
             fieldTable.initialize();
     }
 
-    public ClassInstance(Id id, Map<Field, Instance> data, Klass klass) {
+    public ClassInstance(Id id, Map<Field, Value> data, Klass klass) {
         super(id, klass.getType(), 0, 0, klass.isEphemeral(), null);
         this.klass = klass;
         if (klass != uninitializedKlass)
@@ -83,7 +83,7 @@ public class ClassInstance extends DurableInstance {
     }
 
     @NoProxy
-    public void reset(Map<Field, Instance> data, long version, long syncVersion) {
+    public void reset(Map<Field, Value> data, long version, long syncVersion) {
 //        try (var ignored = ContextUtil.getProfiler().enter("ClassInstance.reset")) {
         setModified();
         clear();
@@ -91,7 +91,7 @@ public class ClassInstance extends DurableInstance {
         setSyncVersion(syncVersion);
         klass.forEachField(field -> {
 //                try( var ignored1 = ContextUtil.getProfiler().enter("ClassInstance.reset.forEachField")) {
-            Instance fieldValue = data.get(field);
+            Value fieldValue = data.get(field);
             if (fieldValue == null || fieldValue.isNull()) {
                 fieldValue = field.getDefaultValue();
             }
@@ -118,7 +118,7 @@ public class ClassInstance extends DurableInstance {
         }
     }
 
-    public void forEachField(BiConsumer<Field, Instance> action) {
+    public void forEachField(BiConsumer<Field, Value> action) {
         ensureLoaded();
         fieldTable.forEachField(action);
     }
@@ -131,17 +131,17 @@ public class ClassInstance extends DurableInstance {
         );
     }
 
-    public Set<DurableInstance> getRefInstances() {
+    public Set<Instance> getRefInstances() {
         ensureLoaded();
-        Set<DurableInstance> result = new IdentitySet<>();
+        Set<Instance> result = new IdentitySet<>();
         forEachField((f, v) -> {
-            if (v instanceof InstanceReference r)
+            if (v instanceof Reference r)
                 result.add(r.resolve());
         });
         return result;
     }
 
-    private void addField(Field field, Instance value) {
+    private void addField(Field field, Value value) {
         fieldTable.get(field).set(value);
     }
 
@@ -152,49 +152,49 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
-    public void forEachChild(Consumer<DurableInstance> action) {
+    public void forEachChild(Consumer<Instance> action) {
         forEachField((f, v) -> {
-            if(f.isChild() && v instanceof InstanceReference r)
+            if(f.isChild() && v instanceof Reference r)
                 action.accept(r.resolve());
         });
     }
 
     @Override
-    public void forEachMember(Consumer<DurableInstance> action) {
+    public void forEachMember(Consumer<Instance> action) {
         forEachField((f, v) -> {
-            if(v instanceof InstanceReference r && (f.isChild() || r.isValueReference()))
+            if(v instanceof Reference r && (f.isChild() || r.isValueReference()))
                 action.accept(r.resolve());
         });
     }
 
     @Override
-    public void forEachReference(Consumer<InstanceReference> action) {
+    public void forEachReference(Consumer<Reference> action) {
         forEachField((f, v) -> {
-            if(v instanceof InstanceReference r)
+            if(v instanceof Reference r)
                 action.accept(r);
         });
     }
 
     @Override
-    public void forEachReference(BiConsumer<InstanceReference, Boolean> action) {
+    public void forEachReference(BiConsumer<Reference, Boolean> action) {
         forEachField((f, v) -> {
-            if(v instanceof InstanceReference r)
+            if(v instanceof Reference r)
                 action.accept(r, f.isChild());
         });
     }
 
     @Override
-    public void forEachReference(TriConsumer<InstanceReference, Boolean, Type> action) {
+    public void forEachReference(TriConsumer<Reference, Boolean, Type> action) {
         forEachField((f, v) -> {
-            if(v instanceof InstanceReference r)
+            if(v instanceof Reference r)
                 action.accept(r, f.isChild(), f.getType());
         });
     }
 
     @Override
-    public void transformReference(TriFunction<InstanceReference, Boolean, Type, InstanceReference> function) {
+    public void transformReference(TriFunction<Reference, Boolean, Type, Reference> function) {
         forEachField((f, v) -> {
-            if(v instanceof InstanceReference r) {
+            if(v instanceof Reference r) {
                 var r1 = function.apply(r, r.isResolved() && r.resolve().isChildOf(this, f), f.getType());
                 if(r1 != r)
                     setField(f, r1);
@@ -208,7 +208,7 @@ public class ClassInstance extends DurableInstance {
         InstanceField field = field(fieldId);
         if (fieldPath.size() > 1) {
             var subFieldPath = fieldPath.subList(1, fieldPath.size());
-            return NncUtils.get((ClassInstance) ((InstanceReference) field.getValue()).resolve(), inst -> inst.getField(subFieldPath));
+            return NncUtils.get((ClassInstance) ((Reference) field.getValue()).resolve(), inst -> inst.getField(subFieldPath));
         } else {
             return field.getValue();
         }
@@ -224,18 +224,18 @@ public class ClassInstance extends DurableInstance {
         return !isInlineValue();
     }
 
-    public Instance getInstanceField(Field field) {
+    public Value getInstanceField(Field field) {
         ensureLoaded();
         return field(field).getValue();
     }
 
-    public Set<DurableInstance> getChildren() {
+    public Set<Instance> getChildren() {
         ensureLoaded();
-        var children = new IdentitySet<DurableInstance>();
+        var children = new IdentitySet<Instance>();
         forEachField((f, v) -> {
             if (f.isChild()) {
                 if (v.isNotNull()) {
-                    children.add(((InstanceReference) v).resolve());
+                    children.add(((Reference) v).resolve());
                 }
             }
         });
@@ -316,7 +316,7 @@ public class ClassInstance extends DurableInstance {
                     }
                     if (m < fields.size() && (field = fields.get(m)).getTag() == fieldTag) {
                         input.setParentField(field);
-                        var value = input.readInstance();
+                        var value = input.readValue();
                         subTable.add(new InstanceField(this, field, value));
                         m++;
                     } else
@@ -346,10 +346,10 @@ public class ClassInstance extends DurableInstance {
 
     public ClassInstance getClassInstance(Field field) {
         ensureLoaded();
-        return (ClassInstance) ((InstanceReference) field(field).getValue()).resolve();
+        return (ClassInstance) ((Reference) field(field).getValue()).resolve();
     }
 
-    public Instance getField(String fieldPath) {
+    public Value getField(String fieldPath) {
         ensureLoaded();
         int idx = fieldPath.indexOf('.');
         if (idx == -1) {
@@ -357,33 +357,33 @@ public class ClassInstance extends DurableInstance {
         } else {
             String fieldName = fieldPath.substring(0, idx);
             String subPath = fieldPath.substring(idx + 1);
-            ClassInstance fieldInstance = (ClassInstance) ((InstanceReference) getInstanceField(fieldName)).resolve();
+            ClassInstance fieldInstance = (ClassInstance) ((Reference) getInstanceField(fieldName)).resolve();
             return NncUtils.get(fieldInstance, inst -> inst.getField(subPath));
         }
     }
 
-    public Instance getInstanceField(String fieldName) {
+    public Value getInstanceField(String fieldName) {
         ensureLoaded();
         return field(klass.tryGetFieldByName(fieldName)).getValue();
     }
 
-    public void setField(String fieldCode, Instance value) {
+    public void setField(String fieldCode, Value value) {
         var field = klass.getFieldByCode(fieldCode);
         setFieldInternal(field, value);
     }
 
-    public void setField(Field field, Instance value) {
+    public void setField(Field field, Value value) {
         ensureLoaded();
         setFieldInternal(field, value);
     }
 
-    private void setFieldInternal(Field field, Instance value) {
+    private void setFieldInternal(Field field, Value value) {
         ensureLoaded();
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass));
         if (field.isReadonly())
             throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD);
         if (field.isChild() && value.isNotNull())
-            ((InstanceReference) value).resolve().setParent(this, field);
+            ((Reference) value).resolve().setParent(this, field);
         setModified();
         field(field).set(value);
     }
@@ -400,35 +400,35 @@ public class ClassInstance extends DurableInstance {
         return type.findField(f -> !f.isMetadataRemoved() && !isFieldInitialized(f));
     }
 
-    public void initField(Field field, Instance value) {
+    public void initField(Field field, Value value) {
         ensureLoaded();
         initFieldInternal(field, value);
     }
 
-    private void initFieldInternal(Field field, Instance value) {
+    private void initFieldInternal(Field field, Value value) {
 //        try (var ignored = ContextUtil.getProfiler().enter("ClassInstance.initFieldInternal")) {
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass));
         NncUtils.requireFalse(isFieldInitialized(field),
                 "Field " + field.getQualifiedName() + " is already initialized");
         if (field.isChild() && value.isNotNull())
-            ((InstanceReference) value).resolve().setParent(this, field);
+            ((Reference) value).resolve().setParent(this, field);
         addField(field, value);
 //        }
     }
 
-    public StringInstance getStringField(Field field) {
-        return (StringInstance) getField(field(field).getField());
+    public StringValue getStringField(Field field) {
+        return (StringValue) getField(field(field).getField());
     }
 
-    public LongInstance getLongField(Field field) {
-        return (LongInstance) getField(field);
+    public LongValue getLongField(Field field) {
+        return (LongValue) getField(field);
     }
 
-    public DoubleInstance getDoubleField(Field field) {
-        return (DoubleInstance) getField(field);
+    public DoubleValue getDoubleField(Field field) {
+        return (DoubleValue) getField(field);
     }
 
-    public Instance getField(Field field) {
+    public Value getField(Field field) {
         ensureLoaded();
         return field(field).getValue();
     }
@@ -437,24 +437,24 @@ public class ClassInstance extends DurableInstance {
         fieldTable.tryClearUnknownField(klassTag, tag);
     }
 
-    public Instance getUnknownField(long klassTag, int tag) {
+    public Value getUnknownField(long klassTag, int tag) {
         return fieldTable.getUnknown(klassTag, tag);
     }
 
-    public @Nullable Instance tryGetUnknown(long klassId, int tag) {
+    public @Nullable Value tryGetUnknown(long klassId, int tag) {
         return fieldTable.tryGetUnknown(klassId, tag);
     }
 
-    public FlowInstance getFunction(Method method) {
+    public FlowValue getFunction(Method method) {
         ensureLoaded();
         if (functions == null)
             functions = new HashMap<>();
         var concreteFlow = klass.tryResolveMethod(method);
         return functions.computeIfAbsent(concreteFlow,
-                k -> new FlowInstance(klass.tryResolveMethod(method), this));
+                k -> new FlowValue(klass.tryResolveMethod(method), this));
     }
 
-    public Instance getProperty(Property property) {
+    public Value getProperty(Property property) {
         return switch (property) {
             case Field field -> getField(field);
             case Method method -> getFunction(method);
@@ -487,7 +487,7 @@ public class ClassInstance extends DurableInstance {
             } else {
                 return new ListInstanceParam(
                         false,
-                        NncUtils.map(elements, Instance::toFieldValueDTO)
+                        NncUtils.map(elements, Value::toFieldValueDTO)
                 );
             }
         } else
@@ -502,7 +502,7 @@ public class ClassInstance extends DurableInstance {
         forEachField((f, v) -> {
             treeWriter.writeLine(f.getName() + ":");
             treeWriter.indent();
-            if (v instanceof InstanceReference r && (r.isValueReference() || f.isChild()))
+            if (v instanceof Reference r && (r.isValueReference() || f.isChild()))
                 r.resolve().writeTree(treeWriter);
             else
                 treeWriter.writeLine(v.getTitle());
@@ -512,7 +512,7 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
-    public void accept(DurableInstanceVisitor visitor) {
+    public void accept(InstanceVisitor visitor) {
         visitor.visitClassInstance(this);
     }
 
@@ -595,7 +595,7 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
-    public DurableInstance copy() {
+    public Instance copy() {
         var copy = ClassInstanceBuilder.newBuilder(getType()).initFieldTable(false).build();
         copy.fieldTable.initializeFieldsArray();
         for (FieldSubTable subTable : fieldTable.subTables) {
@@ -603,7 +603,7 @@ public class ClassInstance extends DurableInstance {
             for (IInstanceField field : subTable.fields) {
                 if(field instanceof InstanceField f) {
                     var v = f.getValue();
-                    if(f.getField().isChild() && v instanceof InstanceReference r)
+                    if(f.getField().isChild() && v instanceof Reference r)
                         v = r.resolve().copy().getReference();
                     st.add(new InstanceField(copy, f.getField(), v));
                 }
@@ -612,10 +612,10 @@ public class ClassInstance extends DurableInstance {
         return copy;
     }
 
-    public void setUnknown(long classTag, int fieldTag, Instance value) {
+    public void setUnknown(long classTag, int fieldTag, Value value) {
         var bout = new ByteArrayOutputStream();
         var out = new InstanceOutput(bout);
-        out.writeInstance(value);
+        out.writeValue(value);
         UnknownField uf = new UnknownField(this, classTag, fieldTag, bout.toByteArray());
         fieldTable.addUnknownField(uf);
     }
@@ -664,7 +664,7 @@ public class ClassInstance extends DurableInstance {
             return fields[field.getOffset()];
         }
 
-        void forEachField(BiConsumer<Field, Instance> action) {
+        void forEachField(BiConsumer<Field, Value> action) {
             for (InstanceField field : fields) {
                 if(!field.getField().isMetadataRemoved())
                     action.accept(field.getField(), field.getValue());
@@ -724,14 +724,14 @@ public class ClassInstance extends DurableInstance {
             };
         }
 
-        public Instance getUnknown(long klassTag, int tag) {
+        public Value getUnknown(long klassTag, int tag) {
             var r = tryGetUnknown(klassTag, tag);
             if(r != null)
                 return r;
             throw new IllegalStateException("Can not find unknown field " + klassTag + "." + tag + " in " + owner.getId());
         }
 
-        public @Nullable Instance tryGetUnknown(long klassTag, int tag) {
+        public @Nullable Value tryGetUnknown(long klassTag, int tag) {
             for (var f : this) {
                 if(f instanceof UnknownField uf && uf.getKlassTag() == klassTag && uf.getTag() == tag)
                     return uf.getValue();

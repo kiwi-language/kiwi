@@ -26,7 +26,7 @@ public abstract class ScanByTypeTask extends ScanTask {
         return new ScanResult(NncUtils.filter(r.instances(), this::filer), r.completed());
     }
 
-    private boolean filer(DurableInstance instance) {
+    private boolean filer(Instance instance) {
         Klass klass;
         if(type instanceof ClassType classType && (klass = classType.resolve()).isTemplate()) {
             if(instance instanceof ClassInstance classInstance)
@@ -39,11 +39,11 @@ public abstract class ScanByTypeTask extends ScanTask {
     }
 
     @Override
-    protected final void process(List<DurableInstance> batch, IEntityContext context, IEntityContext taskContext) {
+    protected final void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
         for (var instance : batch) {
             processInstance(instance.getReference(), context);
         }
     }
 
-    protected abstract void processInstance(Instance instance, IEntityContext context);
+    protected abstract void processInstance(Value instance, IEntityContext context);
 }

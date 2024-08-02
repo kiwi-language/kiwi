@@ -8,36 +8,36 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class RedirectingReference extends InstanceReference {
+public class RedirectingReference extends Reference {
 
-    private final InstanceReference redirectionReference;
+    private final Reference redirectionReference;
     private final RedirectStatus status;
 
-    public RedirectingReference(@Nullable Id id, Supplier<DurableInstance> resolver,
-                                InstanceReference redirectingReference, RedirectStatus status) {
+    public RedirectingReference(@Nullable Id id, Supplier<Instance> resolver,
+                                Reference redirectingReference, RedirectStatus status) {
         super(id, resolver);
         this.redirectionReference = redirectingReference;
         this.status = status;
     }
 
-    public RedirectingReference(DurableInstance resolved, InstanceReference redirectionReference, RedirectStatus status) {
+    public RedirectingReference(Instance resolved, Reference redirectionReference, RedirectStatus status) {
         super(resolved);
         this.redirectionReference = redirectionReference;
         this.status = status;
     }
 
     @Override
-    public void writeRecord(InstanceOutput output) {
-        output.write(WireTypes.REDIRECTING_RECORD);
+    public void writeInstance(InstanceOutput output) {
+        output.write(WireTypes.REDIRECTING_INSTANCE);
         Objects.requireNonNull(redirectionReference).write(output);
         output.writeId(status.getId());
-        super.writeRecord(output);
+        super.writeInstance(output);
     }
 
     @Override
     public void write(InstanceOutput output) {
         if (isInlineValueReference())
-            writeRecord(output);
+            this.writeInstance(output);
         else {
             output.write(WireTypes.REDIRECTING_REFERENCE);
             output.write(getFlags());
@@ -48,7 +48,7 @@ public class RedirectingReference extends InstanceReference {
     }
 
     @Override
-    public DurableInstance resolve() {
+    public Instance resolve() {
         return shouldRedirect() ? redirectionReference.resolve() : super.resolve();
     }
 
@@ -60,7 +60,7 @@ public class RedirectingReference extends InstanceReference {
         return status.shouldRedirect();
     }
 
-    public InstanceReference tryRedirect() {
+    public Reference tryRedirect() {
         if(shouldRedirect())
             return redirectionReference.tryRedirect();
         else
@@ -75,7 +75,7 @@ public class RedirectingReference extends InstanceReference {
             return super.equals(obj);
     }
 
-    public InstanceReference getRedirectionReference() {
+    public Reference getRedirectionReference() {
         return redirectionReference;
     }
 

@@ -5,6 +5,7 @@ import org.metavm.common.Page;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.expression.ExpressionParser;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
@@ -66,7 +67,7 @@ public class InstanceManager extends EntityContextFactoryAware {
             List<Expression> selects = NncUtils.map(request.selects(), sel -> ExpressionParser.parse(klass, sel, entityContext));
             GraphQueryExecutor graphQueryExecutor = new GraphQueryExecutor();
             return new Page<>(
-                    graphQueryExecutor.execute(klass, NncUtils.map(roots, InstanceReference::resolve), selects),
+                    graphQueryExecutor.execute(klass, NncUtils.map(roots, Reference::resolve), selects),
                     dataPage.total()
             );
         }
@@ -153,7 +154,7 @@ public class InstanceManager extends EntityContextFactoryAware {
         }
     }
 
-    public Instance update(InstanceDTO instanceDTO, IInstanceContext context) {
+    public Value update(InstanceDTO instanceDTO, IInstanceContext context) {
         return ValueFormatter.parseInstance(instanceDTO, context);
     }
 
@@ -169,7 +170,7 @@ public class InstanceManager extends EntityContextFactoryAware {
         }
     }
 
-    public DurableInstance create(InstanceDTO instanceDTO, IInstanceContext context) {
+    public Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
         return InstanceFactory.create(instanceDTO, context).resolve();
     }
 
@@ -270,19 +271,19 @@ public class InstanceManager extends EntityContextFactoryAware {
     public List<InstanceDTO> loadByPaths(LoadInstancesByPathsRequest request) {
         try (var context = newInstanceContext()) {
             List<Path> paths = NncUtils.map(request.paths(), Path::create);
-            Map<Instance, InstanceNode<?>> instance2node = buildObjectTree(paths, context);
+            Map<Value, InstanceNode<?>> instance2node = buildObjectTree(paths, context);
             GraphQueryExecutor graphQueryExecutor = new GraphQueryExecutor();
             graphQueryExecutor.loadTree(instance2node);
 
-            Set<Instance> visited = new IdentitySet<>();
+            Set<Value> visited = new IdentitySet<>();
             List<InstanceDTO> result = new ArrayList<>();
             for (Path path : paths) {
                 var instanceId = Id.parse(path.firstItem().substring(Constants.ID_PREFIX.length()));
-                Instance instance = context.get(instanceId).getReference();
+                Value instance = context.get(instanceId).getReference();
                 InstanceNode<?> node = Objects.requireNonNull(instance2node.get(instance),
                         () -> "Can not find node for instance " + instance);
-                List<Instance> values = node.getFetchResults(instance, path.subPath());
-                for (Instance value : values) {
+                List<Value> values = node.getFetchResults(instance, path.subPath());
+                for (Value value : values) {
                     if (!visited.contains(value)) {
                         visited.add(value);
                         result.add(value.toDTO());
@@ -293,16 +294,16 @@ public class InstanceManager extends EntityContextFactoryAware {
         }
     }
 
-    private Map<Instance, InstanceNode<?>> buildObjectTree(List<Path> paths, IInstanceContext context) {
-        Map<Instance, PathTree> pathTreeMap = new HashMap<>();
+    private Map<Value, InstanceNode<?>> buildObjectTree(List<Path> paths, IInstanceContext context) {
+        Map<Value, PathTree> pathTreeMap = new HashMap<>();
         for (Path path : paths) {
-            Instance instance = context.get(Id.parse(path.firstItem().substring(Constants.ID_PREFIX.length()))).getReference();
+            Value instance = context.get(Id.parse(path.firstItem().substring(Constants.ID_PREFIX.length()))).getReference();
             PathTree pathTree = pathTreeMap.computeIfAbsent(instance, k -> new PathTree(k + ""));
             if (path.hasSubPath()) {
                 pathTree.addPath(path.subPath());
             }
         }
-        Map<Instance, InstanceNode<?>> objectTreeMap = new HashMap<>();
+        Map<Value, InstanceNode<?>> objectTreeMap = new HashMap<>();
         pathTreeMap.forEach((instance, pathTree) ->
                 objectTreeMap.put(instance, InstanceNode.create(pathTree, instance.getType()))
         );

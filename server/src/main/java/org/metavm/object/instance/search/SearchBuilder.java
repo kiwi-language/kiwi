@@ -5,8 +5,8 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.metavm.constant.FieldNames;
 import org.metavm.expression.*;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.StringInstance;
+import org.metavm.object.instance.core.StringValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Column;
@@ -72,11 +72,11 @@ public class SearchBuilder {
         if (func == Func.STARTS_WITH || func == Func.CONTAINS) {
             Expression fieldExpr = expression.getArguments().get(0);
             ConstantExpression constExpr = (ConstantExpression) expression.getArguments().get(1);
-            Instance constValue = constExpr.getValue();
+            Value constValue = constExpr.getValue();
             SearchField searchField = getColumn(fieldExpr);
             String columnName = func == Func.CONTAINS ? searchField.fuzzyName() : searchField.name();
             String value = func == Func.STARTS_WITH ?
-                    escape(((StringInstance) constValue).getValue()) + "*" :
+                    escape(((StringValue) constValue).getValue()) + "*" :
                     toString(constValue.toSearchConditionValue());
             return parenthesize(columnName + ":" + value);
         } else {
@@ -93,7 +93,7 @@ public class SearchBuilder {
         ) {
             Expression fieldExpr = expression.getVariableChild();
             ConstantExpression constExpr = expression.getConstChild();
-            Instance constValue = constExpr.getValue();
+            Value constValue = constExpr.getValue();
             SearchField searchField = getColumn(fieldExpr);
             String columnName = searchField.name();
             String value = toString(constValue.toSearchConditionValue());

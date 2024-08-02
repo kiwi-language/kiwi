@@ -2,6 +2,7 @@ package org.metavm.util;
 
 import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.ChangeType;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.IndexEntryPO;
@@ -25,11 +26,11 @@ public class InstanceInput implements Closeable {
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceInput.class);
 
-    public static final Function<Id, DurableInstance> UNSUPPORTED_RESOLVER = id -> {
+    public static final Function<Id, Instance> UNSUPPORTED_RESOLVER = id -> {
         throw new UnsupportedOperationException();
     };
 
-    public static final Consumer<DurableInstance> UNSUPPORTED_ADD_VALUE = inst -> {
+    public static final Consumer<Instance> UNSUPPORTED_ADD_VALUE = inst -> {
         throw new UnsupportedOperationException();
     };
 
@@ -50,13 +51,13 @@ public class InstanceInput implements Closeable {
     }
 
     private final InputStream inputStream;
-    private final Function<Id, DurableInstance> resolver;
-    private final Consumer<DurableInstance> addValue;
+    private final Function<Id, Instance> resolver;
+    private final Consumer<Instance> addValue;
     private final TypeDefProvider typeDefProvider;
     private final RedirectStatusProvider redirectStatusProvider;
     private long treeId;
     @Nullable
-    private DurableInstance parent;
+    private Instance parent;
     @Nullable
     private Field parentField;
     private boolean loadedFromCache;
@@ -66,8 +67,8 @@ public class InstanceInput implements Closeable {
     }
 
     public InstanceInput(InputStream inputStream,
-                         Function<Id, DurableInstance> resolver,
-                         Consumer<DurableInstance> addValue,
+                         Function<Id, Instance> resolver,
+                         Consumer<Instance> addValue,
                          TypeDefProvider typeDefProvider,
                          RedirectStatusProvider redirectStatusProvider) {
         this.inputStream = inputStream;
@@ -77,26 +78,26 @@ public class InstanceInput implements Closeable {
         this.redirectStatusProvider = redirectStatusProvider;
     }
 
-    public DurableInstance readSingleMessageGrove() {
+    public Instance readSingleMessageGrove() {
         readInt();
-        return (DurableInstance) readTree();
+        return (Instance) readTree();
     }
 
     public Message readTree() {
         var treeTag = read();
         return switch (treeTag) {
             case TreeTags.DEFAULT -> readMessage();
-            case TreeTags.MIGRATED -> readForwardingPointer();
+            case TreeTags.RELOCATED -> readForwardingPointer();
             default -> throw new IllegalStateException("Invalid tree tag: " + treeTag);
         };
     }
 
-    public DurableInstance readMessage() {
+    public Instance readMessage() {
         var version = readLong();
         readTreeId();
         var nextNodeId = readLong();
         var separateChild = readBoolean();
-        InstanceReference parent = null;
+        Reference parent = null;
         Field parentField = null;
         boolean pendingChild = false;
         if (separateChild) {
@@ -105,7 +106,7 @@ public class InstanceInput implements Closeable {
             parentField = ((ClassInstance) parent.resolve()).getKlass().findField(f -> f.idEquals(fieldId));
             pendingChild = parentField == null || !parentField.isChild();
         }
-        var instance = (DurableInstance) readInstance().resolveDurable();
+        var instance = (Instance) readValue().resolveDurable();
         instance.setVersion(version);
         instance.setNextNodeId(nextNodeId);
         if (separateChild) {
@@ -119,35 +120,35 @@ public class InstanceInput implements Closeable {
         return new ForwardingPointer(readId(), readId());
     }
 
-    public Instance readInstance() {
+    public Value readValue() {
         var wireType = read();
         return switch (wireType) {
-            case WireTypes.NULL -> new NullInstance(Types.getNullType());
-            case WireTypes.DOUBLE -> new DoubleInstance(readDouble(), Types.getDoubleType());
-            case WireTypes.STRING -> new StringInstance(readString(), Types.getStringType());
-            case WireTypes.LONG -> new LongInstance(readLong(), Types.getLongType());
-            case WireTypes.BOOLEAN -> new BooleanInstance(readBoolean(), Types.getBooleanType());
-            case WireTypes.TIME -> new TimeInstance(readLong(), Types.getTimeType());
-            case WireTypes.PASSWORD -> new PasswordInstance(readString(), Types.getPasswordType());
+            case WireTypes.NULL -> new NullValue(Types.getNullType());
+            case WireTypes.DOUBLE -> new DoubleValue(readDouble(), Types.getDoubleType());
+            case WireTypes.STRING -> new StringValue(readString(), Types.getStringType());
+            case WireTypes.LONG -> new LongValue(readLong(), Types.getLongType());
+            case WireTypes.BOOLEAN -> new BooleanValue(readBoolean(), Types.getBooleanType());
+            case WireTypes.TIME -> new TimeValue(readLong(), Types.getTimeType());
+            case WireTypes.PASSWORD -> new PasswordValue(readString(), Types.getPasswordType());
             case WireTypes.FLAGGED_REFERENCE -> readFlaggedReference();
             case WireTypes.REFERENCE -> readReference();
             case WireTypes.REDIRECTING_REFERENCE -> readRedirectingReference();
-            case WireTypes.REDIRECTING_RECORD -> readRedirectingRecord();
-            case WireTypes.RECORD -> readRecord();
-            case WireTypes.MIGRATING_RECORD -> readMigratingRecord();
-            case WireTypes.VALUE -> readValue();
+            case WireTypes.REDIRECTING_INSTANCE -> readRedirectingInstance();
+            case WireTypes.INSTANCE -> readInstance();
+            case WireTypes.RELOCATING_INSTANCE -> readRelocatingInstance();
+            case WireTypes.VALUE_INSTANCE -> readValueInstance();
             default -> throw new IllegalStateException("Invalid wire type: " + wireType);
         };
     }
 
-    private Instance readRedirectingRecord() {
-        var redirectionRef = (InstanceReference) readInstance();
+    private Value readRedirectingInstance() {
+        var redirectionRef = (Reference) readValue();
         var redirectionStatus = redirectStatusProvider.getRedirectStatus(readId());
-        var record = (InstanceReference) readInstance();
+        var record = (Reference) readValue();
         return new RedirectingReference(record.resolve(), redirectionRef, redirectionStatus);
     }
 
-    private InstanceReference readReference() {
+    private Reference readReference() {
 //        var inst = resolveInstance(readId());
 //        if(parentField != null && parentField.isChild())
 //            inst.setParentInternal(parent, parentField, false);
@@ -155,42 +156,38 @@ public class InstanceInput implements Closeable {
         return resolveInstance(readId());
     }
 
-    public InstanceReference readFlaggedReference() {
+    public Reference readFlaggedReference() {
         var flags = read();
         var ref = resolveInstance(readId());
         ref.setFlags(flags);
         return ref;
     }
 
-    public InstanceReference readRedirectingReference() {
+    public Reference readRedirectingReference() {
         var flags = read();
         var id = readId();
-        var redirectionRef = (InstanceReference) readInstance();
+        var redirectionRef = (Reference) readValue();
         var status = redirectStatusProvider.getRedirectStatus(readId());
         var ref = new RedirectingReference(id, () -> resolver.apply(id), redirectionRef, status);
         ref.setFlags(flags);
         return ref;
     }
 
-    private InstanceReference resolveInstance(Id id) {
-        return new InstanceReference(id, () -> resolver.apply(id));
+    private Reference resolveInstance(Id id) {
+        return new Reference(id, () -> resolver.apply(id));
     }
 
     private final StreamVisitor skipper = new StreamVisitor(this);
 
-    private Instance readRecord() {
-        return readRecord(-1L, -1L, false, treeId, readLong());
+    private Value readInstance() {
+        return readInstance(-1L, -1L, false, treeId, readLong());
     }
 
-    private Instance readMigratingRecord() {
-        return readRecord(readLong(), readLong(), readBoolean(), treeId, readLong());
+    private Value readRelocatingInstance() {
+        return readInstance(readLong(), readLong(), readBoolean(), treeId, readLong());
     }
 
-    private Instance readForwardingRecord() {
-        return readRecord(readLong(), readLong(), false, treeId, readLong());
-    }
-
-    private Instance readRecord(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
+    private Value readInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
         var type = Type.readType(this, typeDefProvider);
         var id = PhysicalId.of(treeId, nodeId, type);
         var instance = type instanceof ArrayType arrayType ?
@@ -211,7 +208,7 @@ public class InstanceInput implements Closeable {
         return ref;
     }
 
-    private Instance readValue() {
+    private Value readValueInstance() {
         var type = Type.readType(this, typeDefProvider);
         var instance = type instanceof ArrayType arrayType ?
                 new ArrayInstance(arrayType) : ClassInstance.allocateEmpty((ClassType) type);
@@ -221,13 +218,13 @@ public class InstanceInput implements Closeable {
     }
 
     public void skipInstance() {
-        skipper.visit();
+        skipper.visitValue();
     }
 
     public byte[] readInstanceBytes() {
         var bout = new ByteArrayOutputStream();
         var copyVisitor = new StreamCopier(inputStream, bout);
-        copyVisitor.visit();
+        copyVisitor.visitValue();
         return bout.toByteArray();
     }
 
@@ -285,7 +282,7 @@ public class InstanceInput implements Closeable {
         }
     }
 
-    public void setParent(@Nullable DurableInstance parent) {
+    public void setParent(@Nullable Instance parent) {
         this.parent = parent;
     }
 

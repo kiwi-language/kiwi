@@ -10,7 +10,7 @@ import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.GetElementNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.LongInstance;
+import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.type.ArrayType;
 import org.metavm.util.AssertUtils;
 import org.metavm.util.NncUtils;
@@ -78,7 +78,7 @@ public class GetElementNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var arrayInst = array.evaluate(frame).resolveArray();
-        var indexInst = (LongInstance) index.evaluate(frame);
+        var indexInst = (LongValue) index.evaluate(frame);
         return next(arrayInst.get(indexInst.getValue().intValue()));
     }
 

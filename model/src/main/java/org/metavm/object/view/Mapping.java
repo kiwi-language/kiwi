@@ -6,6 +6,7 @@ import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ExceptionNative;
 import org.metavm.flow.*;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.ResolutionStage;
@@ -44,12 +45,12 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         this.targetType = targetType;
     }
 
-    public DurableInstance mapRoot(DurableInstance instance, CallContext callContext) {
+    public Instance mapRoot(Instance instance, CallContext callContext) {
         var view = map(instance, callContext);
         view.accept(new CollectionAwareStructuralVisitor() {
 
             @Override
-            public void visitDurableInstance(DurableInstance instance) {
+            public void visitInstance(Instance instance) {
                 var sourceRef = instance.getSourceRef();
                 var sourceId = sourceRef.source().tryGetId();
                 var mappingKey = sourceRef.getMappingKey();
@@ -69,7 +70,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
                         instance.initId(new ElementViewId(isArray, (ViewId) instance.getParent().tryGetId(), mappingKey, index, sourceId, instance.getType().toTypeKey()));
                     }
                 }
-                super.visitDurableInstance(instance);
+                super.visitInstance(instance);
             }
         });
 //        view.accept(new CollectionAwareStructuralVisitor() {
@@ -109,13 +110,13 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         return view;
     }
 
-    public DurableInstance map(DurableInstance instance, CallContext callContext) {
-        var view = (InstanceReference) getMapper().execute(null, List.of(instance.getReference()), callContext).ret();
+    public Instance map(Instance instance, CallContext callContext) {
+        var view = (Reference) getMapper().execute(null, List.of(instance.getReference()), callContext).ret();
         requireNonNull(view).resolve().setSourceRef(new SourceRef(instance.getReference(), (ObjectMapping) this));
         return view.resolve();
     }
 
-    public InstanceReference unmap(InstanceReference view, CallContext callContext) {
+    public Reference unmap(Reference view, CallContext callContext) {
         if(DebugEnv.debugging) {
             DebugEnv.logger.info("unmap {}/{}, idClass: {}, source: {}", Instances.getInstanceDesc(view), view.getStringId(),
                     view.tryGetId() != null ? view.getId().getClass().getName() : null, NncUtils.get(view.resolve().tryGetSource(), Instances::getInstanceDesc));
@@ -125,7 +126,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
             var exceptionNative = new ExceptionNative(result.exception());
             throw new BusinessException(ErrorCode.FAIL_TO_SAVE_VIEW, exceptionNative.getMessage().getTitle());
         }
-        var source = (InstanceReference) Objects.requireNonNull(result.ret());
+        var source = (Reference) Objects.requireNonNull(result.ret());
         if (source.resolve().getContext() == null)
             callContext.instanceRepository().bind(source.resolve());
         return source;

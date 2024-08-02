@@ -2,8 +2,8 @@ package org.metavm.task;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ public abstract class ReferenceScanner extends Task {
             return false;
     }
 
-    protected abstract void process(List<DurableInstance> batch);
+    protected abstract void process(List<Instance> batch);
 
     protected void onTaskDone(IEntityContext context, Id id) {
     }

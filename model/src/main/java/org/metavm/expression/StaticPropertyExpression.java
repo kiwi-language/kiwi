@@ -5,8 +5,8 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Method;
-import org.metavm.object.instance.core.FlowInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.FlowValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Property;
 import org.metavm.object.type.PropertyRef;
@@ -59,12 +59,12 @@ public class StaticPropertyExpression extends Expression {
     }
 
     @Override
-    protected Instance evaluateSelf(EvaluationContext context) {
+    protected Value evaluateSelf(EvaluationContext context) {
         var property = getProperty();
         if(property instanceof Field field)
             return field.getStaticValue();
         else if (property instanceof Method method)
-            return new FlowInstance(method, null);
+            return new FlowValue(method, null);
         else
             throw new IllegalStateException("Unknown property type: " + property);
     }

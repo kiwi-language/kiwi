@@ -1,10 +1,9 @@
 package org.metavm.expression;
 
-import org.metavm.entity.Element;
 import org.metavm.api.EntityType;
-import org.metavm.api.Value;
+import org.metavm.entity.Element;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.InternalException;
 
@@ -12,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @EntityType
-public abstract class Expression extends Element implements Value {
+public abstract class Expression extends Element implements org.metavm.api.Value {
 
     protected abstract String buildSelf(VarType symbolType, boolean relaxedCheck);
 
@@ -83,14 +82,14 @@ public abstract class Expression extends Element implements Value {
         return results;
     }
 
-    public Instance evaluate(EvaluationContext context) {
+    public Value evaluate(EvaluationContext context) {
         if (context.isContextExpression(this))
             return context.evaluate(this);
         else
             return evaluateSelf(context);
     }
 
-    protected abstract Instance evaluateSelf(EvaluationContext context);
+    protected abstract Value evaluateSelf(EvaluationContext context);
 
 //    public Expression simplify() {
 //        return substituteChildren(NncUtils.map(getChildren(), Expression::simplify));

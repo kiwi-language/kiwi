@@ -24,7 +24,7 @@ public class StreamVisitor {
         this.input = input;
     }
 
-    protected void visit(int wireType) {
+    protected void visitValue(int wireType) {
         switch (wireType) {
             case WireTypes.NULL -> visitNull();
             case WireTypes.DOUBLE -> visitDouble();
@@ -36,10 +36,10 @@ public class StreamVisitor {
             case WireTypes.REFERENCE -> visitReference();
             case WireTypes.FLAGGED_REFERENCE -> visitFlaggedReference();
             case WireTypes.REDIRECTING_REFERENCE -> visitRedirectingReference();
-            case WireTypes.REDIRECTING_RECORD -> visitRedirectingRecord();
-            case WireTypes.RECORD -> visitRecord();
-            case WireTypes.MIGRATING_RECORD -> visitMigratingRecord();
-            case WireTypes.VALUE -> visitValue();
+            case WireTypes.REDIRECTING_INSTANCE -> visitRedirectingInstance();
+            case WireTypes.INSTANCE -> visitInstance();
+            case WireTypes.RELOCATING_INSTANCE -> visitRelocatingInstance();
+            case WireTypes.VALUE_INSTANCE -> visitValueInstance();
             default -> throw new InternalException("Invalid wire type: " + wireType);
         }
     }
@@ -47,14 +47,14 @@ public class StreamVisitor {
     public void visitRedirectingReference() {
         read();
         visitReference();
-        visit();
+        visitValue();
         readId();
     }
 
-    public void visitRedirectingRecord() {
-        visit();
+    public void visitRedirectingInstance() {
+        visitValue();
         readId();
-        visit();
+        visitValue();
         readId();
     }
 
@@ -78,7 +78,7 @@ public class StreamVisitor {
         var treeTag = read();
         switch (treeTag) {
             case TreeTags.DEFAULT -> visitMessage();
-            case TreeTags.MIGRATED -> visitForwardingPointer();
+            case TreeTags.RELOCATED -> visitForwardingPointer();
             default -> throw new IllegalStateException("Invalid tree tag: " + treeTag);
         }
     }
@@ -97,33 +97,33 @@ public class StreamVisitor {
             readId();
             readId();
         }
-        visit();
+        visitValue();
     }
 
     public void visitVersion(long version) {}
 
-    public void visit() {
-        visit(input.read());
+    public void visitValue() {
+        visitValue(input.read());
     }
 
     public void visitField() {
         input.readLong();
-        visit();
+        visitValue();
     }
 
-    public void visitRecord() {
-        visitRecord(-1L, -1L, false, getTreeId(), readLong());
+    public void visitInstance() {
+        visitInstance(-1L, -1L, false, getTreeId(), readLong());
     }
 
-    public void visitMigratingRecord() {
-        visitRecord(readLong(), readLong(), readBoolean(), getTreeId(), readLong());
+    public void visitRelocatingInstance() {
+        visitInstance(readLong(), readLong(), readBoolean(), getTreeId(), readLong());
     }
 
-    public void visitRecord(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
-        visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, TypeKey.read(input));
+    public void visitInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
+        visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, TypeKey.read(input));
     }
 
-    public void visitValue() {
+    public void visitValueInstance() {
         visitBody(TypeKey.read(input));
     }
 
@@ -159,7 +159,7 @@ public class StreamVisitor {
         return input.readBoolean();
     }
 
-    public void visitRecordBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
         visitBody(typeOrTypeKey);
     }
 
@@ -167,7 +167,7 @@ public class StreamVisitor {
         if (typeOrTypeKey.isArray()) {
             int len = input.readInt();
             for (int i = 0; i < len; i++)
-                visit();
+                visitValue();
         } else {
             int numKlasses = input.readInt();
             for (int i = 0; i < numKlasses; i++) {

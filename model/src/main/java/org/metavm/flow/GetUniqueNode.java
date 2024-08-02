@@ -11,7 +11,7 @@ import org.metavm.flow.rest.GetUniqueNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.Types;
 import org.metavm.object.type.UnionType;
@@ -41,9 +41,9 @@ public class GetUniqueNode extends NodeRT {
 
     private Index index;
     @ChildEntity
-    private final ReadWriteArray<Value> values = addChild(new ReadWriteArray<>(Value.class), "values");
+    private final ReadWriteArray<org.metavm.flow.Value> values = addChild(new ReadWriteArray<>(org.metavm.flow.Value.class), "values");
 
-    public GetUniqueNode(Long tmpId, String name, @Nullable String code, UnionType type, Index index, NodeRT previous, ScopeRT scope, List<Value> values) {
+    public GetUniqueNode(Long tmpId, String name, @Nullable String code, UnionType type, Index index, NodeRT previous, ScopeRT scope, List<org.metavm.flow.Value> values) {
         super(tmpId, name, code, type, previous, scope);
         this.index = index;
         this.values.addAll(values);
@@ -53,11 +53,11 @@ public class GetUniqueNode extends NodeRT {
     protected GetUniqueNodeParam getParam(SerializeContext serializeContext) {
         return new GetUniqueNodeParam(
                 index.getStringId(),
-                NncUtils.map(values, Value::toDTO)
+                NncUtils.map(values, org.metavm.flow.Value::toDTO)
         );
     }
 
-    public void setValues(List<Value> values) {
+    public void setValues(List<org.metavm.flow.Value> values) {
         this.values.reset(values);
     }
 
@@ -71,7 +71,7 @@ public class GetUniqueNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        Instance result = frame.instanceRepository().selectFirstByKey(buildIndexKey(frame));
+        Value result = frame.instanceRepository().selectFirstByKey(buildIndexKey(frame));
         if (result == null)
             result = Instances.nullInstance();
         return next(result);
@@ -80,7 +80,7 @@ public class GetUniqueNode extends NodeRT {
     @Override
     public void writeContent(CodeWriter writer) {
         writer.write("getUnique(" + index.getName() + ", " +
-                NncUtils.join(values, Value::getText, ", ") + ")");
+                NncUtils.join(values, org.metavm.flow.Value::getText, ", ") + ")");
     }
 
     private IndexKeyRT buildIndexKey(MetaFrame frame) {

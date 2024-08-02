@@ -8,7 +8,7 @@ import org.metavm.expression.InstanceEvaluationContext;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.IndexFieldDTO;
 import org.metavm.object.type.rest.dto.IndexParam;
 import org.metavm.util.InternalException;
@@ -68,7 +68,7 @@ public class Index extends Constraint implements LocalKey {
 
     public IndexKeyRT createIndexKeyByModels(List<Object> values, IEntityContext entityContext) {
         NncUtils.requireEquals(fields.size(), values.size());
-        List<Instance> instanceValues = new ArrayList<>();
+        List<Value> instanceValues = new ArrayList<>();
         NncUtils.biForEach(
                 fields, values,
                 (item, fieldValue) -> instanceValues.add(item.convertEntityToInstance(fieldValue, entityContext))
@@ -84,7 +84,7 @@ public class Index extends Constraint implements LocalKey {
 
     public void forEachIndexKey(ClassInstance instance, Consumer<IndexKeyRT> action) {
         EvaluationContext evaluationContext = new InstanceEvaluationContext(instance);
-        Map<IndexField, Instance> values = new HashMap<>();
+        Map<IndexField, Value> values = new HashMap<>();
         for (int i = 0; i < fields.size() - 1; i++) {
             var field = fields.get(i);
             values.put(field, field.getValue().evaluate(evaluationContext));
@@ -94,7 +94,7 @@ public class Index extends Constraint implements LocalKey {
         if (lastField.getValue().getType().getUnderlyingType().isArray()) {
             var lastValues = new HashSet<>(( lastField.getValue().evaluate(evaluationContext)).resolveArray().getElements());
             List<IndexKeyRT> keys = new ArrayList<>();
-            for (Instance lastValue : lastValues) {
+            for (Value lastValue : lastValues) {
                 values.put(lastField, lastValue);
                 action.accept(createIndexKey(values));
             }
@@ -104,12 +104,12 @@ public class Index extends Constraint implements LocalKey {
         }
     }
 
-    public IndexKeyRT createIndexKey(List<Instance> values) {
+    public IndexKeyRT createIndexKey(List<Value> values) {
         NncUtils.requireTrue(values.size() <= fields.size());
         return createIndexKey(NncUtils.zip(fields.subList(0, values.size()), values));
     }
 
-    public IndexKeyRT createIndexKey(Map<IndexField, Instance> values) {
+    public IndexKeyRT createIndexKey(Map<IndexField, Value> values) {
         return new IndexKeyRT(this, values);
     }
 

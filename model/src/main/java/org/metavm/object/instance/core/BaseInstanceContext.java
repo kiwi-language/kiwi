@@ -25,16 +25,16 @@ import java.util.function.Consumer;
 
 import static org.metavm.util.NncUtils.requireNonNull;
 
-public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<DurableInstance>, CallContext {
+public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<Instance>, CallContext {
 
     public static final Logger logger = LoggerFactory.getLogger(BaseInstanceContext.class);
 
     protected final long appId;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
-    private final Map<Id, DurableInstance> instanceMap = new HashMap<>();
-    private final IdentityHashMap<DurableInstance, List<DurableInstance>> source2views = new IdentityHashMap<>();
-    private DurableInstance head;
-    private DurableInstance tail;
+    private final Map<Id, Instance> instanceMap = new HashMap<>();
+    private final IdentityHashMap<Instance, List<Instance>> source2views = new IdentityHashMap<>();
+    private Instance head;
+    private Instance tail;
     private LockMode lockMode = LockMode.NONE;
     protected final Profiler profiler = ContextUtil.getProfiler();
 
@@ -98,12 +98,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public List<InstanceReference> indexScan(IndexKeyRT from, IndexKeyRT to) {
+    public List<Reference> indexScan(IndexKeyRT from, IndexKeyRT to) {
         return NncUtils.map(indexSource.scan(from, to, this), this::createReference);
     }
 
-    public InstanceReference createReference(Id id) {
-        return new InstanceReference(id, () -> get(id));
+    public Reference createReference(Id id) {
+        return new Reference(id, () -> get(id));
     }
 
     @Override
@@ -111,13 +111,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return indexSource.count(from, to, this);
     }
 
-    public List<InstanceReference> indexSelect(IndexKeyRT key) {
+    public List<Reference> indexSelect(IndexKeyRT key) {
         return query(key.toQuery());
     }
 
     @Override
-    public List<InstanceReference> query(InstanceIndexQuery query) {
-        var memResults = NncUtils.map(memIndex.query(query), DurableInstance::getReference);
+    public List<Reference> query(InstanceIndexQuery query) {
+        var memResults = NncUtils.map(memIndex.query(query), Instance::getReference);
         if (query.memoryOnly())
             return memResults;
         var storeResults = NncUtils.map(indexSource.query(query, this), this::createReference);
@@ -149,7 +149,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return readonly;
     }
 
-    private void evict(DurableInstance instance) {
+    private void evict(Instance instance) {
         if (instance == head)
             head = instance.getNext();
         if (instance == tail)
@@ -212,13 +212,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public List<DurableInstance> batchGet(Collection<Id> ids) {
+    public List<Instance> batchGet(Collection<Id> ids) {
         ids.forEach(this::buffer);
         return NncUtils.map(ids, this::get);
     }
 
     @Override
-    public DurableInstance get(Id id) {
+    public Instance get(Id id) {
         var found = getBuffered(id);
         if (found != null) {
             if (found.isRemoved())
@@ -239,7 +239,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public DurableInstance internalGet(Id id) {
+    public Instance internalGet(Id id) {
         var found = getBuffered(id);
         if (found != null)
             return found;
@@ -252,14 +252,14 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public @Nullable DurableInstance getBuffered(Id id) {
+    public @Nullable Instance getBuffered(Id id) {
         var found = instanceMap.get(id);
         if (found == null && parent != null)
             found = parent.getBuffered(id);
         return found;
     }
 
-    protected DurableInstance getSelfBuffered(Id id) {
+    protected Instance getSelfBuffered(Id id) {
         return instanceMap.get(id);
     }
 
@@ -283,8 +283,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return checkAliveInStore(id);
     }
 
-    private InstanceReference allocateView(ViewId viewId) {
-        var ref = new InstanceReference(viewId, () -> initializeView(viewId));
+    private Reference allocateView(ViewId viewId) {
+        var ref = new Reference(viewId, () -> initializeView(viewId));
         ref.setView();
         return ref;
 //        var viewType = viewId.getViewTypeKey(mappingProvider, typeDefProvider).toType(typeDefProvider);
@@ -305,7 +305,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //        return view;
     }
 
-    private DurableInstance initializeView(ViewId id) {
+    private Instance initializeView(ViewId id) {
         var rootId = id.getRootId();
         var mappingKey = Objects.requireNonNull(rootId.getMappingKey(),
                 () -> "The MappingKey is missing in the id: " + rootId.getClass().getName() + "-" + rootId);
@@ -348,23 +348,23 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //        return tmpId2Instance.get(tmpId);
 //    }
 
-    private InstanceReference add(Id id) {
+    private Reference add(Id id) {
         var instance = allocateInstance(id);
 //        add(instance);
         return instance;
     }
 
-    protected InstanceReference allocateInstance(Id id) {
+    protected Reference allocateInstance(Id id) {
         if (id.isArray()) {
             return switch (id) {
-                case PhysicalId physicalId -> new InstanceReference(physicalId, () -> get(physicalId));
+                case PhysicalId physicalId -> new Reference(physicalId, () -> get(physicalId));
 //                        new ArrayInstance(physicalId, Types.getAnyArrayType(), false, this::initializeInstance);
                 case ViewId viewId -> allocateView(viewId);
                 default -> throw new IllegalStateException("Unexpected value: " + id);
             };
         } else {
             return switch (id) {
-                case PhysicalId physicalId -> new InstanceReference(physicalId, () -> get(physicalId));
+                case PhysicalId physicalId -> new Reference(physicalId, () -> get(physicalId));
 //                        new ClassInstance(physicalId, ClassInstance.uninitializedKlass.getType(), false, instance -> initializeInstance());
                 case ViewId viewId -> allocateView(viewId);
                 default -> throw new IllegalStateException("Unexpected value: " + id);
@@ -388,7 +388,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public boolean containsInstance(DurableInstance instance) {
+    public boolean containsInstance(Instance instance) {
         return instance.getContext() == this || parent != null && parent.containsInstance(instance);
     }
 
@@ -452,7 +452,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     protected abstract void finishInternal();
 
-    public DurableInstance getRemoved(Id id) {
+    public Instance getRemoved(Id id) {
         var instance = NncUtils.requireNonNull(instanceMap.get(id));
         NncUtils.requireTrue(instance.isRemoved());
         return instance;
@@ -468,13 +468,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
 
     @Override
-    public void initIdManually(DurableInstance instance, Id id) {
+    public void initIdManually(Instance instance, Id id) {
         NncUtils.requireTrue(instance.getContext() == this);
         instance.initId(id);
         onIdInitialized(instance);
     }
 
-    protected void onIdInitialized(DurableInstance instance) {
+    protected void onIdInitialized(Instance instance) {
         instanceMap.put(instance.tryGetId(), instance);
         listeners.forEach(l -> l.onInstanceIdInit(instance));
         forEachView(instance, v -> {
@@ -501,7 +501,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
     }
 
-    protected boolean onChange(DurableInstance instance) {
+    protected boolean onChange(Instance instance) {
         boolean anyChange = false;
         for (ContextListener listener : listeners) {
             if (listener.onChange(instance))
@@ -510,7 +510,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return anyChange;
     }
 
-    protected boolean onRemove(DurableInstance instance) {
+    protected boolean onRemove(Instance instance) {
         boolean anyChange = false;
         for (var listener : listeners) {
             if (listener.onRemove(instance))
@@ -540,31 +540,31 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     @Override
-    public void batchRemove(Collection<DurableInstance> instances) {
-        for (DurableInstance instance : instances) {
+    public void batchRemove(Collection<Instance> instances) {
+        for (Instance instance : instances) {
             if(instance.tryGetOldId() != null)
                 buffer(instance.getOldId());
         }
-        for (DurableInstance instance : instances) {
+        for (Instance instance : instances) {
             if(instance.tryGetOldId() != null)
                 loadTree(instance.getOldId().getTreeId());
         }
         var removalBatch = getRemovalBatch(instances);
         removalBatch.forEach(i -> remove0(i, removalBatch));
-        for (DurableInstance instance : instances) {
+        for (Instance instance : instances) {
             if(instance.tryGetOldId() != null)
                 removeForwardingPointer(instance, false);
         }
     }
 
-    public boolean remove(DurableInstance instance) {
+    public boolean remove(Instance instance) {
         if (instance.isRemoved())
             throw new InternalException("Instance " + instance + " is already removed");
         batchRemove(List.of(instance));
         return true;
     }
 
-    private void remove0(DurableInstance instance, RemovalSet removalBatch) {
+    private void remove0(Instance instance, RemovalSet removalBatch) {
         if (instance.isRemoved())
             return;
         var parent = instance.getParent();
@@ -572,7 +572,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             switch (parent) {
                 case ClassInstance classParent -> {
                     var parentField = requireNonNull(instance.getParentField());
-                    if (classParent.getField(parentField) instanceof InstanceReference r && r.resolve() == instance) {
+                    if (classParent.getField(parentField) instanceof Reference r && r.resolve() == instance) {
                         if (parentField.isNullable())
                             classParent.setField(parentField, Instances.nullInstance());
                         else {
@@ -597,13 +597,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         createReferenceCleanupJob(instance.getReference());
     }
 
-    private RemovalSet getRemovalBatch(Collection<DurableInstance> instances) {
-        var visited = new HashSet<DurableInstance>();
+    private RemovalSet getRemovalBatch(Collection<Instance> instances) {
+        var visited = new HashSet<Instance>();
         var results = new RemovalSet();
         for (var instance : instances) {
-            instance.accept(new DurableInstanceVisitor() {
+            instance.accept(new InstanceVisitor() {
                 @Override
-                public void visitDurableInstance(DurableInstance instance) {
+                public void visitInstance(Instance instance) {
                     if(visited.add(instance)) {
                         results.add(instance);
                         instance.forEachChild(c -> c.accept(this));
@@ -615,7 +615,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return results;
     }
 
-    private void forEachView(DurableInstance instance, Consumer<DurableInstance> action) {
+    private void forEachView(Instance instance, Consumer<Instance> action) {
         if (instance.isView())
             action.accept(instance);
         var views = source2views.get(instance);
@@ -623,7 +623,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             views.forEach(v -> forEachView(v, action));
     }
 
-    private void createReferenceCleanupJob(Instance instance) {
+    private void createReferenceCleanupJob(Value instance) {
 //        if (createJob != null && isPersisted(instance)) {
 //            createJob.accept(new ReferenceCleanupTask(
 //                    instance.getIdRequired(),
@@ -634,7 +634,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public void batchBind(Collection<DurableInstance> instances) {
+    public void batchBind(Collection<Instance> instances) {
         instances.forEach(this::checkForBind);
         for (var inst : instances) {
             if (inst.tryGetTreeId() == null)
@@ -642,7 +642,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
     }
 
-    private void checkForBind(DurableInstance instance) {
+    private void checkForBind(Instance instance) {
         //        NncUtils.requireFalse(instance.isEphemeral(), "Can not bind an ephemeral instance");
 //        NncUtils.requireFalse(instance.isValue(), "Can not bind a value instance");
         NncUtils.requireNull(instance.getContext(), "Instance already bound");
@@ -670,13 +670,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         this.forEach(i -> i.setMarked(false));
     }
 
-    protected List<DurableInstance> computeNonPersistedOrphans() {
+    protected List<Instance> computeNonPersistedOrphans() {
         clearMarks();
         for (var instance : this) {
             if (instance.isInitialized() && instance.isRoot() && !instance.isRemoved())
                 instance.forEachDescendant(d -> d.setMarked(true));
         }
-        var orphans = new ArrayList<DurableInstance>();
+        var orphans = new ArrayList<Instance>();
         for (var instance : this) {
             if (instance.isNew() && !instance.isValue() && !instance.isRemoved() && !instance.isMarked())
                 orphans.add(instance);
@@ -689,7 +689,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return new InstanceInput(stream, this::internalGet, this::add, getTypeDefProvider(), redirectStatusProvider);
     }
 
-    private void add(DurableInstance instance) {
+    private void add(Instance instance) {
         NncUtils.requireTrue(instance.getContext() == null);
         instance.setContext(this);
         if (instance.tryGetId() == null && instance.isValue())
@@ -715,11 +715,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             instanceMap.put(instance.tryGetOldId(), instance);
     }
 
-    protected void mapManually(Id id, DurableInstance instance) {
+    protected void mapManually(Id id, Instance instance) {
         instanceMap.put(id, instance);
     }
 
-    protected void onInstanceInitialized(DurableInstance instance) {
+    protected void onInstanceInitialized(Instance instance) {
         for (var listener : listeners) {
             listener.onInstanceInitialized(instance);
         }
@@ -744,14 +744,14 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private record CrawResult(
-            Collection<DurableInstance> newInstances,
-            Set<Instance> visited
+            Collection<Instance> newInstances,
+            Set<Value> visited
     ) {
     }
 
-    private List<DurableInstance> doCraw(Iterable<DurableInstance> instances) {
-        var added = new ArrayList<DurableInstance>();
-        var visited = new IdentitySet<DurableInstance>();
+    private List<Instance> doCraw(Iterable<Instance> instances) {
+        var added = new ArrayList<Instance>();
+        var visited = new IdentitySet<Instance>();
         for (var instance : instances) {
             if (instance.isRoot() && !instance.isRemoved())
                 instance.visitGraph(i -> {
@@ -773,12 +773,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     //</editor-fold>
 
     @Override
-    public List<InstanceReference> selectByKey(IndexKeyRT indexKey) {
+    public List<Reference> selectByKey(IndexKeyRT indexKey) {
         return query(indexKey.toQuery());
     }
 
     @Override
-    public InstanceReference selectFirstByKey(IndexKeyRT key) {
+    public Reference selectFirstByKey(IndexKeyRT key) {
 //        NncUtils.requireTrue(key.getIndex().isUnique());
 //        var instances = memIndex.get(key);
 //        if (NncUtils.isNotEmpty(instances)) return instances.iterator().next();
@@ -797,10 +797,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @NotNull
     @Override
-    public Iterator<DurableInstance> iterator() {
+    public Iterator<Instance> iterator() {
         return new Iterator<>() {
 
-            DurableInstance current = head;
+            Instance current = head;
 
             @Override
             public boolean hasNext() {
@@ -808,7 +808,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             }
 
             @Override
-            public DurableInstance next() {
+            public Instance next() {
                 var i = current;
                 current = i.getNext();
                 return i;

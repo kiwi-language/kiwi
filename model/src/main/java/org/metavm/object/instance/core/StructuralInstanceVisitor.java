@@ -1,9 +1,9 @@
 package org.metavm.object.instance.core;
 
-public abstract class StructuralInstanceVisitor extends DurableInstanceVisitor {
+public abstract class StructuralInstanceVisitor extends InstanceVisitor {
 
     @Override
-    public void visitDurableInstance(DurableInstance instance) {
+    public void visitInstance(Instance instance) {
         instance.forEachMember(c -> c.accept(this));
     }
 

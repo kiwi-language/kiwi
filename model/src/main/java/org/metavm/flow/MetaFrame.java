@@ -5,6 +5,8 @@ import org.metavm.entity.natives.CallContext;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.expression.NodeExpression;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Access;
 import org.metavm.object.type.Field;
@@ -24,10 +26,10 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
     @Nullable
     private final ClassInstance self;
-    private final List<? extends Instance> arguments;
+    private final List<? extends Value> arguments;
     @Nullable
     private final Klass owner;
-    private final Map<NodeRT, Instance> outputs = new HashMap<>();
+    private final Map<NodeRT, Value> outputs = new HashMap<>();
     private final Set<LoopNode> loopingNodes = new IdentitySet<>();
     private NodeRT entry;
     private final InstanceRepository instanceRepository;
@@ -40,7 +42,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
     private final Map<TryNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
 
-    public MetaFrame(@NotNull NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<? extends Instance> arguments,
+    public MetaFrame(@NotNull NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<? extends Value> arguments,
                      InstanceRepository instanceRepository) {
         this.entry = entry;
         this.owner = owner;
@@ -49,11 +51,11 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         this.instanceRepository = instanceRepository;
     }
 
-    public Instance getOutput(NodeRT node) {
+    public Value getOutput(NodeRT node) {
         return outputs.get(node);
     }
 
-    public void setOutput(NodeRT node, Instance output) {
+    public void setOutput(NodeRT node, Value output) {
         this.outputs.put(node, output);
     }
 
@@ -69,7 +71,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         loopingNodes.remove(loopNode);
     }
 
-    public void addInstance(DurableInstance instance) {
+    public void addInstance(Instance instance) {
         instanceRepository.bind(instance);
     }
 
@@ -123,7 +125,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         return exceptions.get(tryNode);
     }
 
-    public void deleteInstance(InstanceReference instance) {
+    public void deleteInstance(Reference instance) {
         instanceRepository.remove(instance.resolve());
     }
 
@@ -164,7 +166,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     }
 
     @SuppressWarnings("unused")
-    private void checkResult(Instance result, NodeRT node) {
+    private void checkResult(Value result, NodeRT node) {
         Type outputType = node.getType();
         if (outputType == null || outputType.isVoid()) {
             if (result != null) {
@@ -179,7 +181,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     }
 
     @Override
-    public Instance evaluate(Expression expression) {
+    public Value evaluate(Expression expression) {
         if (expression instanceof NodeExpression nodeExpression) {
             return getOutput(nodeExpression.getNode());
         } else {
@@ -196,7 +198,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         return self;
     }
 
-    public List<Instance> getArguments() {
+    public List<Value> getArguments() {
         return Collections.unmodifiableList(arguments);
     }
 

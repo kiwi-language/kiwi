@@ -2,9 +2,9 @@ package org.metavm.expression;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ModelDefRegistry;
-import org.metavm.object.instance.core.BooleanInstance;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.NumberInstance;
+import org.metavm.object.instance.core.BooleanValue;
+import org.metavm.object.instance.core.NumberValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
@@ -16,13 +16,13 @@ public enum UnaryOperator {
 
     NOT(1, "!", 1, true, Boolean.class) {
         @Override
-        public Instance evaluate(Instance operand) {
-            return ((BooleanInstance) operand).not();
+        public Value evaluate(Value operand) {
+            return ((BooleanValue) operand).not();
         }
     },
     POS(35, "+", 1, true, null) {
         @Override
-        public Instance evaluate(Instance operand) {
+        public Value evaluate(Value operand) {
             return operand;
         }
 
@@ -33,8 +33,8 @@ public enum UnaryOperator {
     },
     NEG(36, "-", 1, true, null) {
         @Override
-        public Instance evaluate(Instance operand) {
-            return ((NumberInstance) operand).negate();
+        public Value evaluate(Value operand) {
+            return ((NumberValue) operand).negate();
         }
 
         @Override
@@ -44,7 +44,7 @@ public enum UnaryOperator {
     },
     IS_NULL(16, "is null", 6, false, Boolean.class) {
         @Override
-        public Instance evaluate(Instance operand) {
+        public Value evaluate(Value operand) {
             return Instances.booleanInstance(operand == null);
         }
 
@@ -55,7 +55,7 @@ public enum UnaryOperator {
     },
     IS_NOT_NULL(17, "is not null", 6, false, Boolean.class) {
         @Override
-        public Instance evaluate(Instance operand) {
+        public Value evaluate(Value operand) {
             return Instances.booleanInstance(operand != null);
         }
 
@@ -81,7 +81,7 @@ public enum UnaryOperator {
         this.resultType = resultClass;
     }
 
-    public abstract Instance evaluate(Instance operand);
+    public abstract Value evaluate(Value operand);
 
     public int code() {
         return this.code;

@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.metavm.api.ReadonlyList;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.Password;
 import org.metavm.util.ValueUtils;
@@ -126,7 +126,7 @@ public enum Func {
         return parameterTypes;
     }
 
-    public Instance evaluate(List<Instance> arguments) {
+    public Value evaluate(List<Value> arguments) {
         return desc.evaluate(arguments);
     }
 

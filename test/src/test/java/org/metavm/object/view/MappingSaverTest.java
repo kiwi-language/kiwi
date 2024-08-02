@@ -149,7 +149,7 @@ public class MappingSaverTest extends TestCase {
         var barInst = ClassInstanceBuilder.newBuilder(barType.getType())
                 .data(Map.of(
                         barCodeField,
-                        new StringInstance("bar001", Types.getStringType())
+                        new StringValue("bar001", Types.getStringType())
                 ))
                 .build();
 
@@ -159,7 +159,7 @@ public class MappingSaverTest extends TestCase {
                 .data(
                         Map.of(
                                 fooNameField,
-                                new StringInstance("foo", Types.getStringType()),
+                                new StringValue("foo", Types.getStringType()),
                                 fooBarsField,
                                 barChildArray.getReference()
                         )

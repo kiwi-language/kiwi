@@ -16,7 +16,7 @@ import org.metavm.flow.rest.TryEndNodeParam;
 import org.metavm.flow.rest.TryEndValueDTO;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -104,7 +104,7 @@ public class TryEndNode extends ChildTypeNode {
         assert tryNode == getPredecessor();
         var exceptionInfo = frame.getExceptionInfo(getPredecessor());
         var exceptionField = getKlass().getFieldByCode("exception");
-        Instance exception;
+        Value exception;
         NodeRT raiseNode;
         if (exceptionInfo != null) {
             exception = exceptionInfo.exception().getReference();
@@ -113,7 +113,7 @@ public class TryEndNode extends ChildTypeNode {
             exception = Instances.nullInstance();
             raiseNode = null;
         }
-        Map<Field, Instance> fieldValues = new HashMap<>(NncUtils.toMap(
+        Map<Field, Value> fieldValues = new HashMap<>(NncUtils.toMap(
                 fields, TryEndField::getField,
                 f -> f.getValue(raiseNode).evaluate(frame)
         ));

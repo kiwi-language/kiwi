@@ -17,7 +17,7 @@ import java.util.Objects;
 public record SourceEvaluationContext(Source source) implements EvaluationContext {
 
     @Override
-    public Instance evaluate(Expression expression) {
+    public Value evaluate(Expression expression) {
         var thisPropertyExpr = getThisPropertyExpression(expression);
         if (thisPropertyExpr != null) {
             var fieldId = thisPropertyExpr.getProperty().getIdNotNull();
@@ -38,9 +38,9 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         throw new InternalException(expression + " is not a context expression of " + this);
     }
 
-    private BooleanInstance checkEquals(Instance left, Instance right) {
-        if (left instanceof InstanceReference leftDurable
-                && right instanceof InstanceReference rightDurable) {
+    private BooleanValue checkEquals(Value left, Value right) {
+        if (left instanceof Reference leftDurable
+                && right instanceof Reference rightDurable) {
             if (right.isArray()) {
                 var tmp = leftDurable;
                 leftDurable = rightDurable;
@@ -56,11 +56,11 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
             return Instances.booleanInstance(left.equals(right));
     }
 
-    private boolean arrayContains(ArrayInstance array, Instance instance) {
+    private boolean arrayContains(ArrayInstance array, Value instance) {
         for (var element : array) {
             if (element.equals(instance))
                 return true;
-            if (element instanceof InstanceReference durableElement && instance instanceof InstanceReference durableInstance) {
+            if (element instanceof Reference durableElement && instance instanceof Reference durableInstance) {
                 if (Objects.equals(durableElement.tryGetId(), durableInstance.tryGetId()))
                     return true;
             }
@@ -68,11 +68,11 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         return false;
     }
 
-    private Instance getSourceField(Source source, Id fieldId) {
+    private Value getSourceField(Source source, Id fieldId) {
         return createInstance(source.fields().get(fieldId));
     }
 
-    private Instance createInstance(FieldValue value) {
+    private Value createInstance(FieldValue value) {
         return switch (value) {
             case ReferenceFieldValue refValue -> createReferenceProxy(refValue.getId());
             case PrimitiveFieldValue primitiveValue -> createPrimitiveInstance(primitiveValue);
@@ -85,7 +85,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
 
     private ArrayInstance createArrayInstance(InstanceDTO instanceDTO) {
         var arrayParam = (ArrayInstanceParam) instanceDTO.param();
-        var elementInstances = new ArrayList<Instance>();
+        var elementInstances = new ArrayList<Value>();
         for (var elementValue : arrayParam.elements()) {
             var elementInstance = createInstance(elementValue);
             elementInstances.add(elementInstance);
@@ -100,7 +100,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         return array;
     }
 
-    private Instance createPrimitiveInstance(PrimitiveFieldValue primitiveValue) {
+    private Value createPrimitiveInstance(PrimitiveFieldValue primitiveValue) {
         var kind = PrimitiveKind.fromCode(primitiveValue.getPrimitiveKind());
         return switch (kind) {
             case PASSWORD -> Instances.passwordInstance((String) primitiveValue.getValue());
@@ -114,7 +114,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         };
     }
 
-    private InstanceReference createReferenceProxy(String idStr) {
+    private Reference createReferenceProxy(String idStr) {
         var id = Id.parse(idStr);
         if (RegionConstants.isArrayId(id)) {
             return new ArrayInstance(id, Types.getAnyArrayType(), false, null).getReference();

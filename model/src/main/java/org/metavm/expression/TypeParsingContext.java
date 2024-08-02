@@ -2,8 +2,8 @@ package org.metavm.expression;
 
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceProvider;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.InternalException;
@@ -24,7 +24,7 @@ public class TypeParsingContext extends BaseParsingContext {
 
     private final Klass klass;
     private final ThisExpression thisExpression;
-    private final java.util.function.Function<Id, Instance> getInstanceFunc;
+    private final java.util.function.Function<Id, Value> getInstanceFunc;
 
     public TypeParsingContext(InstanceProvider instanceProvider,
                               IndexedTypeDefProvider typeProvider,
@@ -40,7 +40,7 @@ public class TypeParsingContext extends BaseParsingContext {
     }
 
     @Override
-    public Instance getInstance(Id id) {
+    public Value getInstance(Id id) {
         return getInstanceFunc.apply(id);
     }
 

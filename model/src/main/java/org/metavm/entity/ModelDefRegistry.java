@@ -2,7 +2,7 @@ package org.metavm.entity;
 
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.RuntimeGeneric;
@@ -37,7 +37,7 @@ public class ModelDefRegistry {
     private static <T, I extends ClassInstance> void updateInstanceHelper(
             ModelDef<T> modelDef,
             Object entity,
-            Instance instance,
+            Value instance,
             ObjectInstanceMap instanceMap) {
         modelDef.updateInstance(
                 modelDef.getInstanceClass().cast(instance), modelDef.getEntityClass().cast(entity),

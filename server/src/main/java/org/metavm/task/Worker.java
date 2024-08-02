@@ -114,7 +114,7 @@ public class Worker extends EntityContextFactoryAware {
                     if (appTask instanceof WalTask walTask) {
                         try (var walContext = newContext(shadowTask.getAppId(),
                                 builder -> builder.readWAL(walTask.getWAL())
-                                        .migrationEnabled(walTask.isMigrationEnabled())
+                                        .relocationEnabled(walTask.isRelocationEnabled())
                                         .timeout(appTask.getTimeout()))) {
                             terminated = runTask0(appTask, walContext, appContext);
                             if(!appTask.isFailed())

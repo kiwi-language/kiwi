@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.InternalException;
 
 public class InstanceEvaluationContext implements EvaluationContext {
@@ -13,7 +13,7 @@ public class InstanceEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public Instance evaluate(Expression expression) {
+    public Value evaluate(Expression expression) {
         if(isContextExpression(expression))
             return instance.getReference();
         else

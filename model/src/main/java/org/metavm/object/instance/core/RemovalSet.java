@@ -9,11 +9,11 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Consumer;
 
-class RemovalSet implements Collection<DurableInstance> {
-    final Set<DurableInstance> views = new HashSet<>();
-    final Set<DurableInstance> instances = new HashSet<>();
+class RemovalSet implements Collection<Instance> {
+    final Set<Instance> views = new HashSet<>();
+    final Set<Instance> instances = new HashSet<>();
 
-    public boolean add(DurableInstance instance) {
+    public boolean add(Instance instance) {
         if (instance.isView())
             return views.add(instance);
         else
@@ -22,7 +22,7 @@ class RemovalSet implements Collection<DurableInstance> {
 
     @Override
     public boolean remove(Object o) {
-        if (o instanceof DurableInstance i)
+        if (o instanceof Instance i)
             return i.isView() ? views.remove(i) : instances.remove(i);
         else
             return false;
@@ -38,9 +38,9 @@ class RemovalSet implements Collection<DurableInstance> {
     }
 
     @Override
-    public boolean addAll(@NotNull Collection<? extends DurableInstance> c) {
+    public boolean addAll(@NotNull Collection<? extends Instance> c) {
         boolean added = false;
-        for (DurableInstance i : c) {
+        for (Instance i : c) {
             if (add(i))
                 added = true;
         }
@@ -82,12 +82,12 @@ class RemovalSet implements Collection<DurableInstance> {
 
     @Override
     public boolean contains(Object o) {
-        return o instanceof DurableInstance i && (i.isView() ? views.contains(i) : instances.contains(i));
+        return o instanceof Instance i && (i.isView() ? views.contains(i) : instances.contains(i));
     }
 
     @NotNull
     @Override
-    public Iterator<DurableInstance> iterator() {
+    public Iterator<Instance> iterator() {
         return Iterators.concat(views.iterator(), instances.iterator());
     }
 
@@ -96,10 +96,10 @@ class RemovalSet implements Collection<DurableInstance> {
     public Object[] toArray() {
         var array = new Object[size()];
         int i = 0;
-        for (DurableInstance view : views) {
+        for (Instance view : views) {
             array[i++] = view;
         }
-        for (DurableInstance inst : instances) {
+        for (Instance inst : instances) {
             array[i++] = inst;
         }
         return array;
@@ -109,16 +109,16 @@ class RemovalSet implements Collection<DurableInstance> {
     @Override
     public <T> T[] toArray(@NotNull T[] a) {
         int i = 0;
-        for (DurableInstance view : views) {
+        for (Instance view : views) {
             a[i++] = (T) view;
         }
-        for (DurableInstance inst : instances) {
+        for (Instance inst : instances) {
             a[i++] = (T) inst;
         }
         return a;
     }
 
-    public void forEach(Consumer<? super DurableInstance> action) {
+    public void forEach(Consumer<? super Instance> action) {
 //          Remove views first otherwise uninitialized views in the removal set may fail to initialize
         views.forEach(action);
         instances.forEach(action);

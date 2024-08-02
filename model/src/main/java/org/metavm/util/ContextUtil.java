@@ -3,7 +3,7 @@ package org.metavm.util;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
@@ -21,7 +21,7 @@ public class ContextUtil {
         long nextTmpId = 1L;
         String token;
         private Profiler profiler = new Profiler();
-        private final Map<String, Instance> userData = new HashMap<>();
+        private final Map<String, Value> userData = new HashMap<>();
         private IEntityContext entityContext;
 
         long nextTmpId() {
@@ -46,11 +46,11 @@ public class ContextUtil {
             this.platformUserId = null;
         }
 
-        void setUserData(String key, Instance value) {
+        void setUserData(String key, Value value) {
             userData.put(key, value);
         }
 
-        Instance getUserData(String key) {
+        Value getUserData(String key) {
             return userData.getOrDefault(key, Instances.nullInstance());
         }
 
@@ -154,11 +154,11 @@ public class ContextUtil {
         getContextInfo().entityContext = entityContext;
     }
 
-    public static void setUserData(String key, Instance value) {
+    public static void setUserData(String key, Value value) {
         getContextInfo().setUserData(key, value);
     }
 
-    public static Instance getUserData(String key) {
+    public static Value getUserData(String key) {
         return getContextInfo().getUserData(key);
     }
 

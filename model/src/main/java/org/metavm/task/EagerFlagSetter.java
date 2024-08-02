@@ -1,7 +1,7 @@
 package org.metavm.task;
 
 import org.metavm.api.EntityType;
-import org.metavm.object.instance.core.DurableInstance;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.util.Instances;
 
 import java.util.List;
@@ -14,7 +14,7 @@ public class EagerFlagSetter extends ReferenceScanner {
     }
 
     @Override
-    protected void process(List<DurableInstance> batch) {
+    protected void process(List<Instance> batch) {
         Instances.setEagerFlag(batch, getTargetId());
     }
 

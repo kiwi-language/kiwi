@@ -16,7 +16,7 @@ import java.util.Map;
 public class SetNative extends IterableNative {
 
     private final ClassInstance instance;
-    private final Map<Instance, Integer> element2index = new HashMap<>();
+    private final Map<Value, Integer> element2index = new HashMap<>();
     private final Field arrayField;
     private ArrayInstance array;
 
@@ -31,13 +31,13 @@ public class SetNative extends IterableNative {
         }
     }
 
-    public Instance HashSet(CallContext callContext) {
+    public Value HashSet(CallContext callContext) {
         array = new ArrayInstance((ArrayType) arrayField.getType());
         instance.initField(arrayField, array.getReference());
         return instance.getReference();
     }
 
-    public InstanceReference iterator(CallContext callContext) {
+    public Reference iterator(CallContext callContext) {
         var iteratorImplType = StdKlass.iteratorImpl.get().getParameterized(List.of(instance.getKlass().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType.getType());
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
@@ -45,7 +45,7 @@ public class SetNative extends IterableNative {
         return it.getReference();
     }
 
-    public Instance add(Instance value, CallContext callContext) {
+    public Value add(Value value, CallContext callContext) {
         if (!element2index.containsKey(value)) {
             element2index.put(value, array.size());
             array.addElement(value);
@@ -55,7 +55,7 @@ public class SetNative extends IterableNative {
         }
     }
 
-    public Instance remove(Instance value, CallContext callContext) {
+    public Value remove(Value value, CallContext callContext) {
         Integer index = element2index.remove(value);
         if (index != null) {
             int lastIdx = array.size() - 1;
@@ -70,15 +70,15 @@ public class SetNative extends IterableNative {
         }
     }
 
-    public Instance isEmpty(CallContext callContext) {
+    public Value isEmpty(CallContext callContext) {
         return Instances.booleanInstance(element2index.isEmpty());
     }
 
-    public Instance contains(Instance value, CallContext callContext) {
+    public Value contains(Value value, CallContext callContext) {
         return Instances.booleanInstance(element2index.containsKey(value));
     }
 
-    public Instance size(CallContext callContext) {
+    public Value size(CallContext callContext) {
         return Instances.longInstance(element2index.size());
     }
 
@@ -88,9 +88,9 @@ public class SetNative extends IterableNative {
     }
 
     @Override
-    public void forEach(Instance action, CallContext callContext) {
-        if(action instanceof FunctionInstance functionInstance)
-            array.forEach(e -> functionInstance.execute(List.of(e), callContext));
+    public void forEach(Value action, CallContext callContext) {
+        if(action instanceof FunctionValue functionValue)
+            array.forEach(e -> functionValue.execute(List.of(e), callContext));
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }

@@ -13,9 +13,9 @@ import org.metavm.expression.Var;
 import org.metavm.flow.Error;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.view.MappingSaver;
@@ -1154,7 +1154,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.get(defaultMapping, serializeContext::getStringId),
                 desc,
                 getExtra(),
-                isEnum() ? NncUtils.map(getEnumConstants(), DurableInstance::toDTO) : List.of(),
+                isEnum() ? NncUtils.map(getEnumConstants(), Instance::toDTO) : List.of(),
                 isAbstract,
                 isTemplate(),
                 NncUtils.map(typeParameters, serializeContext::getStringId),
@@ -1208,11 +1208,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return getConstraint(Index.class, id);
     }
 
-    public List<InstanceReference> getEnumConstantRefs() {
+    public List<Reference> getEnumConstantRefs() {
         assert isEnum();
         return NncUtils.map(
                 enumConstantDefs,
-                ecd -> (InstanceReference) ecd.getField().getStaticValue()
+                ecd -> (Reference) ecd.getField().getStaticValue()
         );
     }
 
@@ -1243,7 +1243,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     boolean isEnumConstantField(Field field) {
         // TODO be more precise
         return isEnum() && field.isStatic() && isType(field.getType())
-                && field.getStaticValue() instanceof InstanceReference r && r.resolve() instanceof ClassInstance;
+                && field.getStaticValue() instanceof Reference r && r.resolve() instanceof ClassInstance;
     }
 
     public boolean isType(Type type) {
@@ -1579,7 +1579,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return template != null && template != this;
     }
 
-    public boolean isEnumConstant(InstanceReference reference) {
+    public boolean isEnumConstant(Reference reference) {
         assert isEnum();
         return getEnumConstantRefs().contains(reference);
     }

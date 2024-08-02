@@ -4,8 +4,8 @@ import junit.framework.TestCase;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceProvider;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 
 import javax.annotation.Nullable;
@@ -23,7 +23,7 @@ public class ExpressionParserTest extends TestCase {
                 new ParsingContext() {
 
                     @Override
-                    public Instance getInstance(Id id) {
+                    public Value getInstance(Id id) {
                         return null;
                     }
 

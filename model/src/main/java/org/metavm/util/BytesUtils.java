@@ -1,6 +1,7 @@
 package org.metavm.util;
 
 import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceParam;
@@ -34,33 +35,33 @@ public class BytesUtils {
         return negative ? -v : v;
     }
 
-    public static byte[] toIndexBytes(Instance instance) {
+    public static byte[] toIndexBytes(Value instance) {
         var bout = new ByteArrayOutputStream();
         var output = new IndexKeyWriter(bout);
-        output.writeInstance(instance);
+        output.writeValue(instance);
         return bout.toByteArray();
     }
 
     public static Object readIndexBytes(byte[] bytes) {
         var bin = new ByteArrayInputStream(bytes);
-        var input = new IndexKeyReader(bin, id -> new MockDurableInstance(id));
-        return convertInstanceToValue(input.readInstance());
+        var input = new IndexKeyReader(bin, id -> new MockInstance(id));
+        return convertInstanceToValue(input.readValue());
     }
 
-    private static Object convertInstanceToValue(Instance instance) {
-        if(instance instanceof PrimitiveInstance primitiveInstance)
-            return primitiveInstance.getValue();
-        else if(instance instanceof InstanceReference durableInstance)
+    private static Object convertInstanceToValue(Value instance) {
+        if(instance instanceof PrimitiveValue primitiveValue)
+            return primitiveValue.getValue();
+        else if(instance instanceof Reference durableInstance)
             return durableInstance.getId();
         else
             throw new InternalException("Can not convert instance: " + instance);
     }
 
-    private static class MockDurableInstance extends DurableInstance {
+    private static class MockInstance extends Instance {
 
         private final Id id;
 
-        public MockDurableInstance(Id id) {
+        public MockInstance(Id id) {
             super(AnyType.instance);
             this.id = id;
         }
@@ -76,7 +77,7 @@ public class BytesUtils {
         }
 
         @Override
-        public Set<DurableInstance> getRefInstances() {
+        public Set<Instance> getRefInstances() {
             return null;
         }
 
@@ -99,32 +100,32 @@ public class BytesUtils {
         }
 
         @Override
-        public void forEachChild(Consumer<DurableInstance> action) {
+        public void forEachChild(Consumer<Instance> action) {
 
         }
 
         @Override
-        public void forEachMember(Consumer<DurableInstance> action) {
+        public void forEachMember(Consumer<Instance> action) {
 
         }
 
         @Override
-        public void forEachReference(Consumer<InstanceReference> action) {
+        public void forEachReference(Consumer<Reference> action) {
 
         }
 
         @Override
-        public void forEachReference(BiConsumer<InstanceReference, Boolean> action) {
+        public void forEachReference(BiConsumer<Reference, Boolean> action) {
             
         }
 
         @Override
-        public void forEachReference(TriConsumer<InstanceReference, Boolean, Type> action) {
+        public void forEachReference(TriConsumer<Reference, Boolean, Type> action) {
 
         }
 
         @Override
-        public void transformReference(TriFunction<InstanceReference, Boolean, Type, InstanceReference> function) {
+        public void transformReference(TriFunction<Reference, Boolean, Type, Reference> function) {
 
         }
 
@@ -139,19 +140,19 @@ public class BytesUtils {
         }
 
         @Override
-        public DurableInstance copy() {
+        public Instance copy() {
             return null;
         }
 
-        public <R> R accept(InstanceVisitor<R> visitor) {
+        public <R> R accept(ValueVisitor<R> visitor) {
             return null;
         }
 
-        public <R> void acceptReferences(InstanceVisitor<R> visitor) {
+        public <R> void acceptReferences(ValueVisitor<R> visitor) {
 
         }
 
-        public <R> void acceptChildren(InstanceVisitor<R> visitor) {
+        public <R> void acceptChildren(ValueVisitor<R> visitor) {
 
         }
 
@@ -160,7 +161,7 @@ public class BytesUtils {
         }
 
         @Override
-        public void accept(DurableInstanceVisitor visitor) {
+        public void accept(InstanceVisitor visitor) {
 
         }
 
@@ -190,11 +191,11 @@ public class BytesUtils {
         return data;
     }
 
-    public static byte[] toBytes(DurableInstance instance) {
+    public static byte[] toBytes(Instance instance) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.writeLong(instance.getVersion());
-        output.writeRecord(instance.getReference());
+        output.writeInstance(instance.getReference());
         return bout.toByteArray();
     }
 
@@ -219,8 +220,8 @@ public class BytesUtils {
         public Object readJson() {
             var wireType = read();
             return switch (wireType) {
-                case WireTypes.RECORD -> readRecord();
-                case WireTypes.VALUE -> readValue();
+                case WireTypes.INSTANCE -> readRecord();
+                case WireTypes.VALUE_INSTANCE -> readMap();
                 case WireTypes.NULL -> null;
                 case WireTypes.BOOLEAN -> readBoolean();
                 case WireTypes.REFERENCE -> readId().toString();
@@ -238,7 +239,7 @@ public class BytesUtils {
             return map;
         }
 
-        private Object readValue() {
+        private Object readMap() {
             Map<String, Object> map = new HashMap<>();
             readBody(TypeKey.read(this), map);
             return map;

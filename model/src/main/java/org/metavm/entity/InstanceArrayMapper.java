@@ -3,7 +3,7 @@ package org.metavm.entity;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.AnyType;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Type;
@@ -14,7 +14,7 @@ import org.metavm.util.RuntimeGeneric;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 
-public class InstanceArrayMapper<E extends Instance, C extends ReadWriteArray<E>> implements Mapper<C, ArrayInstance> {
+public class InstanceArrayMapper<E extends Value, C extends ReadWriteArray<E>> implements Mapper<C, ArrayInstance> {
 
     public static InstanceArrayMapper<?,?> create(Class<?> javaClass, java.lang.reflect.Type javaType, Class<?> elementClass, Type type) {
         if(javaType instanceof ParameterizedType parameterizedType) {
@@ -23,7 +23,7 @@ public class InstanceArrayMapper<E extends Instance, C extends ReadWriteArray<E>
                     && rawClass == javaClass
                     && parameterizedType.getActualTypeArguments().length == 1) {
                 java.lang.reflect.Type elementType = parameterizedType.getActualTypeArguments()[0];
-                if(Instance.class.isAssignableFrom(elementClass)
+                if(Value.class.isAssignableFrom(elementClass)
                         && elementType == elementClass
                         && (type instanceof ArrayType arrayType)
                         && (arrayType.getElementType() instanceof AnyType)) {
@@ -71,7 +71,7 @@ public class InstanceArrayMapper<E extends Instance, C extends ReadWriteArray<E>
 
     @Override
     public void initEntity(C model, ArrayInstance instance, ObjectInstanceMap objectInstanceMap) {
-        for (Instance element : instance) {
+        for (Value element : instance) {
             model.add(elementClass.cast(element));
         }
     }

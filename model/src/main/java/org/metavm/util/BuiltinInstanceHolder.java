@@ -1,20 +1,20 @@
 package org.metavm.util;
 
-import org.metavm.object.instance.core.BooleanInstance;
-import org.metavm.object.instance.core.NullInstance;
+import org.metavm.object.instance.core.BooleanValue;
+import org.metavm.object.instance.core.NullValue;
 
 public interface BuiltinInstanceHolder {
 
-    NullInstance getNullInstance();
+    NullValue getNullInstance();
 
-    void setNullInstance(NullInstance nullInstance);
+    void setNullInstance(NullValue nullInstance);
 
-    BooleanInstance getTrueInstance();
+    BooleanValue getTrueInstance();
 
-    void setTrueInstance(BooleanInstance trueInstance);
+    void setTrueInstance(BooleanValue trueInstance);
 
-    BooleanInstance getFalseInstance();
+    BooleanValue getFalseInstance();
 
-    void setFalseInstance(BooleanInstance falseInstance);
+    void setFalseInstance(BooleanValue falseInstance);
 
 }

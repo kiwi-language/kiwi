@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Field;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.FooTypes;
@@ -40,13 +40,13 @@ public class InstanceTest extends TestCase {
     }
 
     private ClassInstance getBarInstance(FooTypes fooTypes) {
-        Map<Field, Instance> barData = new HashMap<>();
+        Map<Field, Value> barData = new HashMap<>();
         barData.put(fooTypes.barCodeField(), stringInstance(CONST_BAR_CODE));
         return ClassInstance.create(barData, fooTypes.barType().getType());
     }
 
     private ClassInstance getFooInstance(FooTypes fooTypes) {
-        Map<Field, Instance> fooData = new HashMap<>();
+        Map<Field, Value> fooData = new HashMap<>();
         fooData.put(fooTypes.fooNameField(), stringInstance(CONST_FOO_NAME));
         fooData.put(fooTypes.fooBarsField(),
                 new ArrayInstance(
@@ -69,7 +69,7 @@ public class InstanceTest extends TestCase {
 
     public void testChildren() {
         var fooTypes = MockUtils.createFooTypes(false);
-        Map<Field, Instance> data = Map.of(
+        Map<Field, Value> data = Map.of(
                 fooTypes.fooNameField(), stringInstance(CONST_FOO_NAME),
                 fooTypes.fooBarsField(),
                 new ArrayInstance(

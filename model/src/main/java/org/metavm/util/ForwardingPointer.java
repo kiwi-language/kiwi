@@ -24,7 +24,7 @@ public record ForwardingPointer(
 
     @Override
     public void writeTo(InstanceOutput output) {
-        output.write(TreeTags.MIGRATED);
+        output.write(TreeTags.RELOCATED);
         output.writeId(sourceId);
         output.writeId(targetId);
     }

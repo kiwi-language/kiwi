@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.expression.Func;
 import org.metavm.expression.FunctionDesc;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.BusinessException;
@@ -67,7 +67,7 @@ public class FunctionDescTest extends TestCase {
     public void test_evaluate_max_double() {
         FunctionDesc desc = new FunctionDesc(Func.MAX$_DOUBLE);
 
-        Instance result = desc.evaluate(
+        Value result = desc.evaluate(
                 List.of(
                         createDouble(1.0), createDouble(1.1)
                 )
@@ -77,7 +77,7 @@ public class FunctionDescTest extends TestCase {
 
     public void test_evaluate_is_blank() {
         FunctionDesc desc = new FunctionDesc(Func.IS_BLANK);
-        Instance result = desc.evaluate(
+        Value result = desc.evaluate(
                 List.of(
                         createString("abc")
                 )
@@ -87,7 +87,7 @@ public class FunctionDescTest extends TestCase {
 
     public void test_evaluate_sum_int() {
         FunctionDesc desc = new FunctionDesc(Func.SUM$_INT);
-        Instance result = desc.evaluate(
+        Value result = desc.evaluate(
                 List.of(
                         createLong(1L), createLong(2L)
                 )
@@ -97,7 +97,7 @@ public class FunctionDescTest extends TestCase {
 
     public void test_evaluate_if() {
         FunctionDesc desc = new FunctionDesc(Func.IF);
-        Instance result = desc.evaluate(
+        Value result = desc.evaluate(
                 List.of(
                         createBoolean(false),
                         createDouble(1.0), createDouble(1.1)

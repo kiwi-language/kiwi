@@ -11,7 +11,7 @@ import org.metavm.flow.rest.MergeNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -117,7 +117,7 @@ public class MergeNode extends ChildTypeNode {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         Branch branch = frame.getSelectedBranch(getBranchNode());
-        Map<Field, Instance> fieldValues = new HashMap<>();
+        Map<Field, Value> fieldValues = new HashMap<>();
         for (MergeNodeField field : fields) {
             fieldValues.put(
                     field.getField(),

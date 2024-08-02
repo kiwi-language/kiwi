@@ -3,11 +3,14 @@ package org.metavm.flow;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.ReadWriteArray;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.FunctionNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.FunctionInstance;
+import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.type.FunctionType;
 import org.metavm.util.BusinessException;
 import org.metavm.util.NncUtils;
@@ -75,7 +78,7 @@ public class FunctionNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var funcInst = (FunctionInstance) func.evaluate(frame);
+        var funcInst = (FunctionValue) func.evaluate(frame);
         var result = funcInst.execute(NncUtils.map(arguments, arg -> arg.evaluate(frame)), frame);
         if(result.exception() != null)
             return frame.catchException(this, result.exception());

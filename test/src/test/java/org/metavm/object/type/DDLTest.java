@@ -9,6 +9,7 @@ import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.task.DDLTask;
 import org.metavm.util.*;
@@ -106,19 +107,19 @@ public class DDLTest extends TestCase {
         var box = apiClient.getObject(boxId);
         Assert.assertEquals(1L, box.get("count"));
         var commitState = apiClient.getObject(apiClient.getObject(commitId).getString("state"));
-        Assert.assertEquals(CommitState.MIGRATING.name(), commitState.get("name"));
-        TestUtils.waitForDDLState(CommitState.FLAGGING_REFERENCE, entityContextFactory);
+        Assert.assertEquals(CommitState.RELOCATING.name(), commitState.get("name"));
+        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, entityContextFactory);
         try (var context = newContext()) {
             var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
             Assert.assertFalse(invInst.isRoot());
         }
-        TestUtils.waitForDDLState(CommitState.REDIRECTING_REFERENCE, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.UPDATING_REFERENCE, entityContextFactory);
         var newInventorId = TestUtils.doInTransaction(() -> {
            try(var context = newContext()) {
                var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
                Assert.assertEquals(invInst.getRoot().getTreeId(), invInst.getId().getTreeId());
                var boxInst = (ClassInstance) context.getInstanceContext().get(Id.parse(boxId));
-               var item = (InstanceReference) boxInst.getField("item");
+               var item = (Reference) boxInst.getField("item");
                Assert.assertTrue(item.isForwarded());
                Assert.assertEquals(inventoryId, item.getStringId());
                Assert.assertNotEquals(invInst.getId(), item.getId());
@@ -145,14 +146,14 @@ public class DDLTest extends TestCase {
         }
         logger.debug("Deploying rollback metadata");
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_rollback.masm", typeManager, false, entityContextFactory);
-        TestUtils.waitForDDLState(CommitState.FLAGGING_REFERENCE, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var invInst = instCtx.get(newInventorId);
             Assert.assertNotEquals(newInventorId, invInst.tryGetCurrentId());
             Assert.assertEquals(newInventorId, invInst.getId());
         }
-        TestUtils.waitForDDLState(CommitState.REDIRECTING_REFERENCE, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.UPDATING_REFERENCE, entityContextFactory);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var instCtx = context.getInstanceContext();
@@ -350,7 +351,7 @@ public class DDLTest extends TestCase {
         TestUtils.waitForDDLPrepared(entityContextFactory);
         try(var context = newContext()) {
             var commit = context.getEntity(Commit.class, commitId);
-            Assert.assertEquals(CommitState.MIGRATING, commit.getState());
+            Assert.assertEquals(CommitState.RELOCATING, commit.getState());
         }
         var priceKlass3 = typeManager.getTypeByCode("Price").type();
         Assert.assertEquals(ClassKind.CLASS.code(), priceKlass3.kind());
@@ -367,7 +368,7 @@ public class DDLTest extends TestCase {
             var priceField = productKlass1.getFieldByCode("price");
             for (String productId : productIds) {
                 var productInst = (ClassInstance) instCtx.get(Id.parse(productId));
-                var priceRef = (InstanceReference) productInst.getField(priceField);
+                var priceRef = (Reference) productInst.getField(priceField);
                 Assert.assertFalse(priceRef.isResolved());
                 Assert.assertFalse(priceRef.isEager());
                 Assert.assertFalse(priceRef.isValueReference());
@@ -398,14 +399,14 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
-            var priceRef = (InstanceReference) shoesInst.getField("price");
+            var priceRef = (Reference) shoesInst.getField("price");
             Assert.assertTrue(priceRef.isEager());
         }
         TestUtils.waitForDDLAborted(entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
-            var priceRef = (InstanceReference) shoesInst.getField("price");
+            var priceRef = (Reference) shoesInst.getField("price");
             Assert.assertFalse(priceRef.isEager());
         }
     }
@@ -434,7 +435,7 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
-            var priceRef = (InstanceReference) shoesInst.getField("price");
+            var priceRef = (Reference) shoesInst.getField("price");
             Assert.assertTrue(priceRef.isValueReference());
             priceId = priceRef.getId();
         }
@@ -442,7 +443,7 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
-            var priceRef = (InstanceReference) shoesInst.getField("price");
+            var priceRef = (Reference) shoesInst.getField("price");
             Assert.assertFalse(priceRef.isEager());
             Assert.assertTrue(priceRef.isValueReference());
             Assert.assertTrue(priceRef.isInlineValueReference());
@@ -526,7 +527,7 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
-            var kindRef = (InstanceReference) shoesInst.getField("kind");
+            var kindRef = (Reference) shoesInst.getField("kind");
             Assert.assertFalse(kindRef instanceof RedirectingReference);
             var kind = (ClassInstance) instCtx.get(Id.parse(kindId));
             Assert.assertSame(kind, kindRef.resolve());
@@ -550,7 +551,7 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
-            var priceRef = (InstanceReference) shoesInst.getField("price");
+            var priceRef = (Reference) shoesInst.getField("price");
             Assert.assertFalse(priceRef.isValueReference());
             var price = (ClassInstance) priceRef.resolve();
             Assert.assertNotNull(price.tryGetId());
@@ -560,7 +561,7 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
-            var priceRef = (InstanceReference) shoesInst.getField("price");
+            var priceRef = (Reference) shoesInst.getField("price");
             Assert.assertTrue(priceRef.isValueReference());
             var price = (ClassInstance) priceRef.resolve();
             Assert.assertNull(price.tryGetId());
@@ -583,7 +584,7 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
-            var kindRef = (InstanceReference) shoesInst.getField("kind");
+            var kindRef = (Reference) shoesInst.getField("kind");
             Assert.assertEquals(defaultKindId, kindRef.getStringId());
             try {
                 instCtx.get(Id.parse(kindId));
@@ -618,7 +619,7 @@ public class DDLTest extends TestCase {
             boxIds.add(boxId);
         }
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
-        TestUtils.waitForDDLState(CommitState.FLAGGING_REFERENCE, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, entityContextFactory);
         var newInventoryId = TestUtils.doInTransaction(() -> {
             try(var context = newContext()) {
                 var instCtx = context.getInstanceContext();

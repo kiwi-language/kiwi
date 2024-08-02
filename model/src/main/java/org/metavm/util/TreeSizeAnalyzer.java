@@ -35,23 +35,23 @@ public class TreeSizeAnalyzer extends StreamCopier {
     }
 
     @Override
-    public void visit() {
-        sizeBeforeRecord = bout.size();
-        super.visit();
-    }
-
-    @Override
     public void visitValue() {
-        treeId = null;
-        nodeId = null;
+        sizeBeforeRecord = bout.size();
         super.visitValue();
     }
 
     @Override
-    public void visitRecordBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitValueInstance() {
+        treeId = null;
+        nodeId = null;
+        super.visitValueInstance();
+    }
+
+    @Override
+    public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
         this.treeId = treeId;
         this.nodeId = nodeId;
-        super.visitRecordBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
+        super.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
     }
 
     @Override

@@ -6,11 +6,11 @@ import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.metavm.util.WireTypes;
 
-public class StringInstance extends PrimitiveInstance {
+public class StringValue extends PrimitiveValue {
 
     private final String value;
 
-    public StringInstance(String value, PrimitiveType type) {
+    public StringValue(String value, PrimitiveType type) {
         super(type);
         this.value = value;
     }
@@ -26,24 +26,24 @@ public class StringInstance extends PrimitiveInstance {
         output.writeString(value);
     }
 
-    public BooleanInstance contains(StringInstance that) {
+    public BooleanValue contains(StringValue that) {
         return Instances.createBoolean(value.contains(that.value));
     }
 
-    public BooleanInstance startsWith(StringInstance that) {
+    public BooleanValue startsWith(StringValue that) {
         return Instances.createBoolean(value.startsWith(that.value));
     }
 
-    public StringInstance concat(StringInstance that) {
-        return new StringInstance(value + that.value, getType());
+    public StringValue concat(StringValue that) {
+        return new StringValue(value + that.value, getType());
     }
 
-    public BooleanInstance isBlank() {
+    public BooleanValue isBlank() {
         return Instances.createBoolean(NncUtils.isBlank(value));
     }
 
     @Override
-    public StringInstance toStringInstance() {
+    public StringValue toStringInstance() {
         return this;
     }
 
@@ -53,8 +53,8 @@ public class StringInstance extends PrimitiveInstance {
     }
 
     @Override
-    public <R> R accept(InstanceVisitor<R> visitor) {
-        return visitor.visitStringInstance(this);
+    public <R> R accept(ValueVisitor<R> visitor) {
+        return visitor.visitStringValue(this);
     }
 
 }

@@ -11,7 +11,7 @@ import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.UnmapNodeParam;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.Type;
 import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.AssertUtils;
@@ -67,7 +67,7 @@ public class UnmapNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var viewInst = (InstanceReference) view.evaluate(frame);
+        var viewInst = (Reference) view.evaluate(frame);
         return next(mappingRef.resolve().unmap(viewInst, frame));
     }
 

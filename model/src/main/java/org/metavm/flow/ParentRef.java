@@ -9,7 +9,7 @@ import org.metavm.entity.SerializeContext;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.ParentRefDTO;
-import org.metavm.object.instance.core.InstanceReference;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
@@ -40,7 +40,7 @@ public class ParentRef extends Element implements org.metavm.api.Value {
     }
 
     public InstanceParentRef evaluate(EvaluationContext context) {
-        return new InstanceParentRef((InstanceReference) parent.evaluate(context), NncUtils.get(fieldRef, FieldRef::resolve));
+        return new InstanceParentRef((Reference) parent.evaluate(context), NncUtils.get(fieldRef, FieldRef::resolve));
     }
 
     public ParentRefDTO toDTO() {

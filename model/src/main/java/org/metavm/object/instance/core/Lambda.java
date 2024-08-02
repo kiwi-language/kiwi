@@ -11,18 +11,18 @@ import org.metavm.util.InstanceOutput;
 import java.util.List;
 import java.util.Objects;
 
-public class LambdaInstance extends FunctionInstance {
+public class Lambda extends FunctionValue {
 
     private final LambdaNode lambdaNode;
     private final MetaFrame containingFrame;
 
-    public LambdaInstance(LambdaNode lambdaNode, MetaFrame containingFrame) {
+    public Lambda(LambdaNode lambdaNode, MetaFrame containingFrame) {
         super(lambdaNode.getFunctionType());
         this.lambdaNode = lambdaNode;
         this.containingFrame = containingFrame;
     }
 
-    private MetaFrame createFrame(List<Instance> arguments, InstanceRepository instanceRepository) {
+    private MetaFrame createFrame(List<Value> arguments, InstanceRepository instanceRepository) {
         return new LambdaFrame(
                 Objects.requireNonNull(lambdaNode.getBodyScope().tryGetFirstNode()),
                 Flows.getDeclaringType(lambdaNode.getFlow()),
@@ -31,7 +31,7 @@ public class LambdaInstance extends FunctionInstance {
     }
 
     @Override
-    public void writeRecord(InstanceOutput output) {
+    public void writeInstance(InstanceOutput output) {
         throw new UnsupportedOperationException();
     }
 
@@ -41,12 +41,12 @@ public class LambdaInstance extends FunctionInstance {
     }
 
     @Override
-    public <R> R accept(InstanceVisitor<R> visitor) {
+    public <R> R accept(ValueVisitor<R> visitor) {
         return visitor.visitLambdaInstance(this);
     }
 
     @Override
-    public FlowExecResult execute(List<Instance> arguments, CallContext callContext) {
+    public FlowExecResult execute(List<Value> arguments, CallContext callContext) {
         return createFrame(arguments, callContext.instanceRepository()).execute();
     }
 }

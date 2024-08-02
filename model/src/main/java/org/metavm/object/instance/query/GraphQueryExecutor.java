@@ -3,8 +3,8 @@ package org.metavm.object.instance.query;
 import org.metavm.entity.EntityUtils;
 import org.metavm.expression.Expression;
 import org.metavm.expression.TreeEvaluationContext;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.type.Klass;
 import org.metavm.util.NncUtils;
@@ -15,7 +15,7 @@ import static org.metavm.object.instance.query.PathResolver.resolvePath;
 
 public class GraphQueryExecutor {
 
-    public List<InstanceDTO[]> execute(Klass type, List<DurableInstance> instances, List<Expression> expressions) {
+    public List<InstanceDTO[]> execute(Klass type, List<Instance> instances, List<Expression> expressions) {
         PathTree path = resolvePath(expressions);
         ObjectNode tree = new ObjectNode(path, type);
         loadTree(NncUtils.map(instances, i -> new NodeInstancePair(tree, i.getReference())));
@@ -32,7 +32,7 @@ public class GraphQueryExecutor {
         return results;
     }
 
-    public void loadTree(Map<Instance, InstanceNode<?>> instance2node) {
+    public void loadTree(Map<Value, InstanceNode<?>> instance2node) {
         List<NodeInstancePair> keyValues = new ArrayList<>();
         instance2node.forEach((i, n) -> keyValues.add(new NodeInstancePair(n, i)));
         loadTree(keyValues);
@@ -46,7 +46,7 @@ public class GraphQueryExecutor {
         while (!queue.isEmpty()) {
             NodeInstancePair pair = queue.poll();
             InstanceNode<?> node = pair.node();
-            Instance instance = pair.instance();
+            Value instance = pair.instance();
             EntityUtils.ensureProxyInitialized(instance);
             List<NodeInstancePair> childPairs = node.getNodeInstancePairsForChildren(instance);
             for (NodeInstancePair childPair : childPairs) {

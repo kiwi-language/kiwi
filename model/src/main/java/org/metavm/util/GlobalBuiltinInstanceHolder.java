@@ -1,41 +1,41 @@
 package org.metavm.util;
 
-import org.metavm.object.instance.core.BooleanInstance;
-import org.metavm.object.instance.core.NullInstance;
+import org.metavm.object.instance.core.BooleanValue;
+import org.metavm.object.instance.core.NullValue;
 
 public class GlobalBuiltinInstanceHolder implements BuiltinInstanceHolder {
 
-    private NullInstance nullInstance;
-    private BooleanInstance trueInstance;
-    private BooleanInstance falseInstance;
+    private NullValue nullInstance;
+    private BooleanValue trueInstance;
+    private BooleanValue falseInstance;
 
     @Override
-    public NullInstance getNullInstance() {
+    public NullValue getNullInstance() {
         return nullInstance;
     }
 
     @Override
-    public void setNullInstance(NullInstance nullInstance) {
+    public void setNullInstance(NullValue nullInstance) {
         this.nullInstance = nullInstance;
     }
 
     @Override
-    public BooleanInstance getTrueInstance() {
+    public BooleanValue getTrueInstance() {
         return trueInstance;
     }
 
     @Override
-    public void setTrueInstance(BooleanInstance trueInstance) {
+    public void setTrueInstance(BooleanValue trueInstance) {
         this.trueInstance = trueInstance;
     }
 
     @Override
-    public BooleanInstance getFalseInstance() {
+    public BooleanValue getFalseInstance() {
         return falseInstance;
     }
 
     @Override
-    public void setFalseInstance(BooleanInstance falseInstance) {
+    public void setFalseInstance(BooleanValue falseInstance) {
         this.falseInstance = falseInstance;
     }
 }

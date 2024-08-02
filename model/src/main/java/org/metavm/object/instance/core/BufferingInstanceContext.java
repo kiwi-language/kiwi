@@ -62,10 +62,10 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     @Override
     protected void initializeInstance(Id id) {
         var instances = initializeInstance0(id);
-        for (DurableInstance instance : instances) {
-            instance.accept(new DurableInstanceVisitor() {
+        for (Instance instance : instances) {
+            instance.accept(new InstanceVisitor() {
                 @Override
-                public void visitDurableInstance(DurableInstance instance) {
+                public void visitInstance(Instance instance) {
                     instance.forEachReference((r, isChild) -> {
                         if (r.isEager())
                             r.resolve();
@@ -77,11 +77,11 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         }
     }
 
-    private List<DurableInstance> initializeInstance0(Id id) {
+    private List<Instance> initializeInstance0(Id id) {
         try {
             var result = loadingBuffer.getTree(id);
             var trees = result.trees();
-            var instances = new ArrayList<DurableInstance>();
+            var instances = new ArrayList<Instance>();
             for (Tree tree : trees) {
                 loadTree(tree, instances);
             }
@@ -96,7 +96,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         loadTree(loadingBuffer.loadTree(id), new ArrayList<>());
     }
 
-    private void loadTree(Tree tree, List<DurableInstance> instances) {
+    private void loadTree(Tree tree, List<Instance> instances) {
         if (onTreeLoaded(tree)) {
             var input = createInstanceInput(new ByteArrayInputStream(tree.data()));
             readInstance(input, instances);
@@ -128,11 +128,11 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         return loadedTreeIds.add(tree.id());
     }
 
-    private void readInstance(InstanceInput input, List<DurableInstance> instances) {
+    private void readInstance(InstanceInput input, List<Instance> instances) {
         int numTrees = input.readInt();
         for (int i = 0; i < numTrees; i++) {
             var tree = input.readTree();
-            if(tree instanceof DurableInstance instance) {
+            if(tree instanceof Instance instance) {
                 onInstanceInitialized(instance);
                 instances.add(instance);
             }
@@ -154,12 +154,12 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    public void invalidateCache(InstanceReference instance) {
+    public void invalidateCache(Reference instance) {
         loadingBuffer.invalidateCache(List.of(instance.getTreeId()));
     }
 
     @Override
-    public List<DurableInstance> batchGetRoots(List<Long> treeIds) {
+    public List<Instance> batchGetRoots(List<Long> treeIds) {
         treeIds.forEach(loadingBuffer::buffer);
         return NncUtils.map(
                 treeIds,
@@ -168,7 +168,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    public void removeForwardingPointer(DurableInstance instance, boolean clearingOldId) {
+    public void removeForwardingPointer(Instance instance, boolean clearingOldId) {
         Objects.requireNonNull(forwardingPointers.get(instance.getOldId().getTreeId()))
                 .remove(new ForwardingPointer(instance.getOldId(), instance.getCurrentId()));
         if(clearingOldId)

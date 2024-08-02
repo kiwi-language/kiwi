@@ -10,7 +10,7 @@ import org.metavm.util.NncUtils;
 
 public class InstanceDTOBuilder {
 
-    public static InstanceDTO buildDTO(Instance instance, int depth) {
+    public static InstanceDTO buildDTO(Value instance, int depth) {
         if (depth <= 0) {
             throw new IllegalArgumentException("depth must be positive");
         }
@@ -18,18 +18,18 @@ public class InstanceDTOBuilder {
         return fieldValue.getInstance();
     }
 
-    private static FieldValue build(Instance instance, int depth, boolean isChild) {
+    private static FieldValue build(Value instance, int depth, boolean isChild) {
 //        try (var serContext = SerializeContext.enter()) {
 //            serContext.writeType(instance.getType());
 //        }
         return switch (instance) {
-            case InstanceReference reference -> {
+            case Reference reference -> {
                 if (reference.isArray())
                     yield buildForArray(reference.resolveArray(), depth, isChild);
                 else
                     yield buildForClassInstance(reference.resolveObject(), depth, isChild);
             }
-            case PrimitiveInstance primitiveInstance -> buildForPrimitive(primitiveInstance);
+            case PrimitiveValue primitiveValue -> buildForPrimitive(primitiveValue);
             case null, default -> throw new InternalException("Unrecognized instance: " + instance);
         };
     }
@@ -119,7 +119,7 @@ public class InstanceDTOBuilder {
         }
     }
 
-    private static FieldValue buildForPrimitive(PrimitiveInstance instance) {
+    private static FieldValue buildForPrimitive(PrimitiveValue instance) {
         return instance.toFieldValueDTO();
     }
 

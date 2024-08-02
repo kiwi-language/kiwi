@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /*
-Migration procedure
+Relocation process
 1 Move the object and activate migration mode for the object.
 2 New references will point to the old location and be flagged as forwarded.
 3 Mark all current references as forwarded.
@@ -29,20 +29,20 @@ Migration procedure
 6 Update existing references to point to the new location.
 7 Remove the forwarding pointer.
  */
-public class InstanceReference extends Instance {
+public class Reference extends Value {
 
     public static final int FLAG_FORWARDED = 1;
     public static final int FLAG_EAGER = 2;
     public static final int FLAG_VIEW = 4;
 
-    public static final Logger logger = LoggerFactory.getLogger(InstanceReference.class);
+    public static final Logger logger = LoggerFactory.getLogger(Reference.class);
 
-    private @Nullable Id id;
-    private @Nullable DurableInstance target;
-    private final Supplier<DurableInstance> resolver;
+    private final @Nullable Id id;
+    private @Nullable Instance target;
+    private final Supplier<Instance> resolver;
     private int flags = 0;
 
-    public InstanceReference(DurableInstance resolved) {
+    public Reference(Instance resolved) {
         super(resolved.getType());
         this.target = resolved;
         this.id = resolved.tryGetId();
@@ -51,13 +51,13 @@ public class InstanceReference extends Instance {
         };
     }
 
-    public InstanceReference(@Nullable Id id, Supplier<DurableInstance> resolver) {
+    public Reference(@Nullable Id id, Supplier<Instance> resolver) {
         super(Types.getAnyType());
         this.id = id;
         this.resolver = resolver;
     }
 
-    public DurableInstance resolve() {
+    public Instance resolve() {
         if (target == null)
             target = resolver.get();
         return target;
@@ -79,7 +79,7 @@ public class InstanceReference extends Instance {
         return NncUtils.get(tryGetId(), Id::toString);
     }
 
-    public void setTarget(@NotNull DurableInstance target) {
+    public void setTarget(@NotNull Instance target) {
         this.target = target;
     }
 
@@ -117,14 +117,14 @@ public class InstanceReference extends Instance {
     }
 
     @Override
-    public void writeRecord(InstanceOutput output) {
+    public void writeInstance(InstanceOutput output) {
         resolve().writeRecord(output);
     }
 
     @Override
     public void write(InstanceOutput output) {
         if (isInlineValueReference())
-            writeRecord(output);
+            writeInstance(output);
         else {
             if(flags != 0) {
                 output.write(WireTypes.FLAGGED_REFERENCE);
@@ -147,17 +147,17 @@ public class InstanceReference extends Instance {
     }
 
     @Override
-    public <R> R accept(InstanceVisitor<R> visitor) {
+    public <R> R accept(ValueVisitor<R> visitor) {
         return visitor.visitInstanceReference(this);
     }
 
     @Override
-    public <R> void acceptReferences(InstanceVisitor<R> visitor) {
+    public <R> void acceptReferences(ValueVisitor<R> visitor) {
         this.accept(visitor);
     }
 
     @Override
-    public <R> void acceptChildren(InstanceVisitor<R> visitor) {
+    public <R> void acceptChildren(ValueVisitor<R> visitor) {
     }
 
     @Override
@@ -219,10 +219,11 @@ public class InstanceReference extends Instance {
         this.flags = flags;
     }
 
-    public void forward() {
+    public Reference forward() {
         assert isForwarded();
-        this.id = resolve().getId();
-        clearForwarded();
+        var r = resolve().getReference();
+        r.setFlags(flags & ~FLAG_FORWARDED);
+        return r;
     }
 
     //    public IInstanceContext getContext() {
@@ -286,7 +287,7 @@ public class InstanceReference extends Instance {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof InstanceReference that) {
+        if (obj instanceof Reference that) {
             that = that.tryRedirect();
             if (id != null && id.equals(that.id))
                 return true;
@@ -296,7 +297,7 @@ public class InstanceReference extends Instance {
         return false;
     }
 
-    public InstanceReference tryRedirect() {
+    public Reference tryRedirect() {
         return this;
     }
 

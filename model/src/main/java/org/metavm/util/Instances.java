@@ -9,6 +9,7 @@ import org.metavm.entity.natives.ListNative;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.ObjectInstanceMap;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
@@ -40,15 +41,15 @@ public class Instances {
     public static final Map<Type, Class<?>> BASIC_TYPE_JAVA_CLASS;
 
     public static final Map<Class<?>, Class<?>> JAVA_CLASS_TO_INSTANCE_CLASS = Map.ofEntries(
-            Map.entry(Integer.class, LongInstance.class),
-            Map.entry(Long.class, LongInstance.class),
-            Map.entry(Double.class, DoubleInstance.class),
-            Map.entry(Boolean.class, BooleanInstance.class),
-            Map.entry(String.class, StringInstance.class),
-            Map.entry(Date.class, TimeInstance.class),
-            Map.entry(Password.class, PasswordInstance.class),
-            Map.entry(Null.class, NullInstance.class),
-            Map.entry(Object.class, Instance.class),
+            Map.entry(Integer.class, LongValue.class),
+            Map.entry(Long.class, LongValue.class),
+            Map.entry(Double.class, DoubleValue.class),
+            Map.entry(Boolean.class, BooleanValue.class),
+            Map.entry(String.class, StringValue.class),
+            Map.entry(Date.class, TimeValue.class),
+            Map.entry(Password.class, PasswordValue.class),
+            Map.entry(Null.class, NullValue.class),
+            Map.entry(Object.class, Value.class),
             Map.entry(ReadonlyList.class, ArrayInstance.class)
     );
 
@@ -64,31 +65,31 @@ public class Instances {
         INSTANCE_CLASS_TO_JAVA_CLASS = Collections.unmodifiableMap(classMap);
     }
 
-    public static BooleanInstance equals(Instance first, Instance second) {
+    public static BooleanValue equals(Value first, Value second) {
         return createBoolean(Objects.equals(first, second));
     }
 
-    public static BooleanInstance notEquals(Instance first, Instance second) {
+    public static BooleanValue notEquals(Value first, Value second) {
         return createBoolean(!Objects.equals(first, second));
     }
 
-    public static boolean isAllTime(Instance instance1, Instance instance2) {
-        return instance1 instanceof TimeInstance || instance2 instanceof TimeInstance;
+    public static boolean isAllTime(Value instance1, Value instance2) {
+        return instance1 instanceof TimeValue || instance2 instanceof TimeValue;
     }
 
-    public static boolean isAllIntegers(Instance instance1, Instance instance2) {
+    public static boolean isAllIntegers(Value instance1, Value instance2) {
         return isInteger(instance1) && isInteger(instance2);
     }
 
-    public static boolean isAllNumbers(Instance instance1, Instance instance2) {
+    public static boolean isAllNumbers(Value instance1, Value instance2) {
         return isNumber(instance1) && isNumber(instance2);
     }
 
-    public static boolean isNumber(Instance instance) {
-        return isInteger(instance) || instance instanceof DoubleInstance;
+    public static boolean isNumber(Value instance) {
+        return isInteger(instance) || instance instanceof DoubleValue;
     }
 
-    public static <T extends InstanceReference> List<T> sort(List<T> instances, boolean desc) {
+    public static <T extends Reference> List<T> sort(List<T> instances, boolean desc) {
         if (desc)
             instances.sort((i1, i2) -> NncUtils.compareId(i2.tryGetTreeId(), i1.tryGetTreeId()));
         else
@@ -96,7 +97,7 @@ public class Instances {
         return instances;
     }
 
-    public static <T extends InstanceReference> List<T> sortAndLimit(List<T> instances, boolean desc, long limit) {
+    public static <T extends Reference> List<T> sortAndLimit(List<T> instances, boolean desc, long limit) {
         sort(instances, desc);
         if (limit == -1L)
             return instances;
@@ -104,35 +105,35 @@ public class Instances {
             return instances.subList(0, Math.min(instances.size(), (int) limit));
     }
 
-    public static int compare(DurableInstance instance1, DurableInstance instance2) {
+    public static int compare(Instance instance1, Instance instance2) {
         if (instance1.isIdInitialized() && instance2.isIdInitialized())
             return instance1.getId().compareTo(instance2.getId());
         else
             return Integer.compare(instance1.getSeq(), instance2.getSeq());
     }
 
-    private static boolean isInteger(Instance instance) {
-        return instance instanceof LongInstance;
+    private static boolean isInteger(Value instance) {
+        return instance instanceof LongValue;
     }
 
-    public static boolean isAnyNull(Instance... instances) {
-        for (Instance instance : instances) {
-            if (instance instanceof NullInstance) {
+    public static boolean isAnyNull(Value... instances) {
+        for (Value instance : instances) {
+            if (instance instanceof NullValue) {
                 return true;
             }
         }
         return false;
     }
 
-    public static ArrayInstance arrayInstance(ArrayType type, List<Instance> elements) {
+    public static ArrayInstance arrayInstance(ArrayType type, List<Value> elements) {
         return new ArrayInstance(type, elements);
     }
 
-    public static ClassInstance classInstance(Klass type, Map<Field, Instance> fields) {
+    public static ClassInstance classInstance(Klass type, Map<Field, Value> fields) {
         return new ClassInstance(null, fields, type);
     }
 
-    public static PrimitiveInstance serializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
+    public static PrimitiveValue serializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
         return NncUtils.requireNonNull(trySerializePrimitive(value, getTypeFunc),
                 () -> String.format("Can not resolve primitive value '%s", value));
     }
@@ -143,7 +144,7 @@ public class Instances {
                 ValueUtils.isInteger(value) || ValueUtils.isFloat(value);
     }
 
-    public static @Nullable PrimitiveInstance trySerializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
+    public static @Nullable PrimitiveValue trySerializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
         if (value == null)
             return Instances.nullInstance();
         if (ValueUtils.isInteger(value))
@@ -161,8 +162,8 @@ public class Instances {
         return null;
     }
 
-    public static String getInstanceDetailedDesc(Instance instance) {
-        if (instance instanceof InstanceReference r && r.resolve() instanceof ClassInstance clsInst && clsInst.getType().isList()) {
+    public static String getInstanceDetailedDesc(Value instance) {
+        if (instance instanceof Reference r && r.resolve() instanceof ClassInstance clsInst && clsInst.getType().isList()) {
             var listNative = new ListNative(clsInst);
             var array = listNative.toArray();
             return clsInst.getType().getName() + " [" + NncUtils.join(array, Instances::getInstanceDesc) + "]";
@@ -170,15 +171,15 @@ public class Instances {
             return getInstanceDesc(instance);
     }
 
-    public static String getInstanceDesc(DurableInstance instance) {
+    public static String getInstanceDesc(Instance instance) {
         if (instance.getMappedEntity() != null)
             return EntityUtils.getEntityDesc(instance.getMappedEntity());
         else
             return instance.toString();
     }
 
-    public static String getInstanceDesc(Instance instance) {
-        if (instance instanceof InstanceReference r) {
+    public static String getInstanceDesc(Value instance) {
+        if (instance instanceof Reference r) {
             if (r.resolve().getMappedEntity() != null)
                 return EntityUtils.getEntityDesc(r.resolve().getMappedEntity());
             else
@@ -187,11 +188,11 @@ public class Instances {
             return instance.toString();
     }
 
-    public static String getInstancePath(DurableInstance instance) {
+    public static String getInstancePath(Instance instance) {
         if (instance.getMappedEntity() != null)
             return EntityUtils.getEntityPath(instance.getMappedEntity());
         else {
-            var path = new LinkedList<DurableInstance>();
+            var path = new LinkedList<Instance>();
             var i = instance;
             while (i != null) {
                 path.addFirst(i);
@@ -201,12 +202,12 @@ public class Instances {
         }
     }
 
-    public static String getInstancePath(Instance instance) {
-        if (instance instanceof InstanceReference r) {
+    public static String getInstancePath(Value instance) {
+        if (instance instanceof Reference r) {
             if (r.resolve().getMappedEntity() != null)
                 return EntityUtils.getEntityPath(r.resolve().getMappedEntity());
             else {
-                var path = new LinkedList<InstanceReference>();
+                var path = new LinkedList<Reference>();
                 var i = r.resolve();
                 while (i != null) {
                     path.addFirst(i.getReference());
@@ -219,12 +220,12 @@ public class Instances {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T deserializePrimitive(PrimitiveInstance instance, Class<T> javaClass) {
+    public static <T> T deserializePrimitive(PrimitiveValue instance, Class<T> javaClass) {
         javaClass = (Class<T>) ReflectionUtils.getBoxedClass(javaClass);
         if (instance.isNull()) {
             return null;
         }
-        if (instance instanceof LongInstance longInstance) {
+        if (instance instanceof LongValue longInstance) {
             if (javaClass == int.class || javaClass == Integer.class)
                 return (T) Integer.valueOf(longInstance.getValue().intValue());
             else if (javaClass == short.class || javaClass == Short.class)
@@ -234,22 +235,22 @@ public class Instances {
             else
                 return javaClass.cast(longInstance.getValue());
         }
-        if (instance instanceof DoubleInstance doubleInstance) {
+        if (instance instanceof DoubleValue doubleInstance) {
             if (javaClass == float.class || javaClass == Float.class)
                 return (T) Float.valueOf(doubleInstance.getValue().floatValue());
             else if (javaClass == double.class || javaClass == Double.class)
                 return javaClass.cast(doubleInstance.getValue());
         }
-        if (instance instanceof PasswordInstance passwordInstance) {
+        if (instance instanceof PasswordValue passwordInstance) {
             return javaClass.cast(new Password(passwordInstance));
         }
-        if (instance instanceof TimeInstance timeInstance) {
+        if (instance instanceof TimeValue timeInstance) {
             return javaClass.cast(new Date(timeInstance.getValue()));
         }
         return javaClass.cast(instance.getValue());
     }
 
-    public static PrimitiveInstance primitiveInstance(Object value) {
+    public static PrimitiveValue primitiveInstance(Object value) {
         if (value == null) {
             return nullInstance();
         }
@@ -277,81 +278,81 @@ public class Instances {
         throw new InternalException("Value '" + value + "' is not a primitive value");
     }
 
-    public static LongInstance longInstance(long value) {
-        return new LongInstance(value, Types.getLongType());
+    public static LongValue longInstance(long value) {
+        return new LongValue(value, Types.getLongType());
     }
 
-    public static LongInstance longInstance(long value, Function<Class<?>, Type> getTypeFunc) {
-        return new LongInstance(value, Types.getLongType());
+    public static LongValue longInstance(long value, Function<Class<?>, Type> getTypeFunc) {
+        return new LongValue(value, Types.getLongType());
     }
 
-    public static BooleanInstance booleanInstance(boolean value) {
-        return new BooleanInstance(value, Types.getBooleanType());
+    public static BooleanValue booleanInstance(boolean value) {
+        return new BooleanValue(value, Types.getBooleanType());
     }
 
-    public static BooleanInstance booleanInstance(boolean value, Function<Class<?>, Type> getTypeFunc) {
-        return new BooleanInstance(value, Types.getBooleanType());
+    public static BooleanValue booleanInstance(boolean value, Function<Class<?>, Type> getTypeFunc) {
+        return new BooleanValue(value, Types.getBooleanType());
     }
 
-    public static DoubleInstance doubleInstance(double value) {
-        return new DoubleInstance(value, Types.getDoubleType());
+    public static DoubleValue doubleInstance(double value) {
+        return new DoubleValue(value, Types.getDoubleType());
     }
 
-    public static DoubleInstance doubleInstance(double value, Function<Class<?>, Type> getTypeFunc) {
-        return new DoubleInstance(value, Types.getDoubleType());
+    public static DoubleValue doubleInstance(double value, Function<Class<?>, Type> getTypeFunc) {
+        return new DoubleValue(value, Types.getDoubleType());
     }
 
-    public static TimeInstance timeInstance(long value, Function<Class<?>, Type> getTypeFunc) {
-        return new TimeInstance(value, Types.getTimeType());
+    public static TimeValue timeInstance(long value, Function<Class<?>, Type> getTypeFunc) {
+        return new TimeValue(value, Types.getTimeType());
     }
 
-    public static TimeInstance timeInstance(long value) {
-        return new TimeInstance(value, Types.getTimeType());
+    public static TimeValue timeInstance(long value) {
+        return new TimeValue(value, Types.getTimeType());
     }
 
-    public static NullInstance nullInstance() {
-        return new NullInstance(Types.getNullType());
+    public static NullValue nullInstance() {
+        return new NullValue(Types.getNullType());
     }
 
-    public static BooleanInstance trueInstance() {
-        return new BooleanInstance(true, Types.getBooleanType());
+    public static BooleanValue trueInstance() {
+        return new BooleanValue(true, Types.getBooleanType());
     }
 
-    public static BooleanInstance falseInstance() {
-        return new BooleanInstance(false, Types.getBooleanType());
+    public static BooleanValue falseInstance() {
+        return new BooleanValue(false, Types.getBooleanType());
     }
 
-    public static PasswordInstance passwordInstance(String password) {
-        return new PasswordInstance(password, Types.getPasswordType());
+    public static PasswordValue passwordInstance(String password) {
+        return new PasswordValue(password, Types.getPasswordType());
     }
 
-    public static PasswordInstance passwordInstance(String password, Function<Class<?>, Type> getTypeFunc) {
-        return new PasswordInstance(password, Types.getPasswordType());
+    public static PasswordValue passwordInstance(String password, Function<Class<?>, Type> getTypeFunc) {
+        return new PasswordValue(password, Types.getPasswordType());
     }
 
-    public static StringInstance stringInstance(String value) {
-        return new StringInstance(value, Types.getStringType());
+    public static StringValue stringInstance(String value) {
+        return new StringValue(value, Types.getStringType());
     }
 
-    public static StringInstance stringInstance(String value, Function<Class<?>, Type> getTypeFunc) {
-        return new StringInstance(value, Types.getStringType());
+    public static StringValue stringInstance(String value, Function<Class<?>, Type> getTypeFunc) {
+        return new StringValue(value, Types.getStringType());
     }
 
-    public static Set<DurableInstance> getAllNonValueInstances(DurableInstance root) {
+    public static Set<Instance> getAllNonValueInstances(Instance root) {
         return getAllNonValueInstances(List.of(root));
     }
 
-    public static Set<DurableInstance> getAllNonValueInstances(Collection<DurableInstance> roots) {
+    public static Set<Instance> getAllNonValueInstances(Collection<Instance> roots) {
         return getAllInstances(roots, inst -> !inst.isValue());
     }
 
-    public static Set<DurableInstance> getAllInstances(Collection<DurableInstance> roots, Predicate<DurableInstance> filter) {
-        IdentitySet<DurableInstance> results = new IdentitySet<>();
+    public static Set<Instance> getAllInstances(Collection<Instance> roots, Predicate<Instance> filter) {
+        IdentitySet<Instance> results = new IdentitySet<>();
         getAllInstances(roots, filter, results);
         return results;
     }
 
-    private static void getAllInstances(Collection<DurableInstance> instances, Predicate<DurableInstance> filter, IdentitySet<DurableInstance> results) {
+    private static void getAllInstances(Collection<Instance> instances, Predicate<Instance> filter, IdentitySet<Instance> results) {
         var newInstances = NncUtils.filter(
                 instances, instance -> filter.test(instance) && !results.contains(instance)
         );
@@ -360,41 +361,41 @@ public class Instances {
         }
         results.addAll(newInstances);
         getAllInstances(
-                NncUtils.flatMap(newInstances, DurableInstance::getRefInstances),
+                NncUtils.flatMap(newInstances, Instance::getRefInstances),
                 filter,
                 results
         );
     }
 
-    public static LongInstance max(LongInstance a, LongInstance b) {
+    public static LongValue max(LongValue a, LongValue b) {
         return a.ge(b).getValue() ? a : b;
     }
 
-    public static DoubleInstance max(DoubleInstance a, DoubleInstance b) {
+    public static DoubleValue max(DoubleValue a, DoubleValue b) {
         return a.ge(b).getValue() ? a : b;
     }
 
-    public static LongInstance min(LongInstance a, LongInstance b) {
+    public static LongValue min(LongValue a, LongValue b) {
         return a.le(b).getValue() ? a : b;
     }
 
-    public static DoubleInstance min(DoubleInstance a, DoubleInstance b) {
+    public static DoubleValue min(DoubleValue a, DoubleValue b) {
         return a.le(b).getValue() ? a : b;
     }
 
-    public static StringInstance createString(String value) {
-        return new StringInstance(value, Types.getStringType());
+    public static StringValue createString(String value) {
+        return new StringValue(value, Types.getStringType());
     }
 
-    public static LongInstance createLong(long value) {
-        return new LongInstance(value, Types.getLongType());
+    public static LongValue createLong(long value) {
+        return new LongValue(value, Types.getLongType());
     }
 
-    public static DoubleInstance createDouble(double value) {
-        return new DoubleInstance(value, Types.getDoubleType());
+    public static DoubleValue createDouble(double value) {
+        return new DoubleValue(value, Types.getDoubleType());
     }
 
-    public static BooleanInstance createBoolean(boolean b) {
+    public static BooleanValue createBoolean(boolean b) {
         return b ? trueInstance() : falseInstance();
     }
 
@@ -406,7 +407,7 @@ public class Instances {
         return createArray(List.of());
     }
 
-    public static ArrayInstance createArray(List<Instance> instances) {
+    public static ArrayInstance createArray(List<Value> instances) {
         return new ArrayInstance(getAnyArrayType(), instances);
     }
 
@@ -484,38 +485,38 @@ public class Instances {
         return getBasicType(getJavaClassByInstanceClass(instanceClass));
     }
 
-    public static boolean isTrue(Instance instance) {
-        return (instance instanceof BooleanInstance booleanInstance) && booleanInstance.isTrue();
+    public static boolean isTrue(Value instance) {
+        return (instance instanceof BooleanValue booleanInstance) && booleanInstance.isTrue();
     }
 
-    public static boolean isFalse(Instance instance) {
-        return (instance instanceof BooleanInstance booleanInstance) && booleanInstance.isFalse();
+    public static boolean isFalse(Value instance) {
+        return (instance instanceof BooleanValue booleanInstance) && booleanInstance.isFalse();
     }
 
-    public static DoubleInstance sum(DoubleInstance a, DoubleInstance b) {
+    public static DoubleValue sum(DoubleValue a, DoubleValue b) {
         return a.add(b);
     }
 
-    public static LongInstance sum(LongInstance a, LongInstance b) {
+    public static LongValue sum(LongValue a, LongValue b) {
         return a.add(b);
     }
 
-    public static List<InstanceReference> merge(List<InstanceReference> result1, List<InstanceReference> result2, boolean desc, long limit) {
+    public static List<Reference> merge(List<Reference> result1, List<Reference> result2, boolean desc, long limit) {
         return sortAndLimit(new ArrayList<>(NncUtils.mergeUnique(result1, result2)), desc, limit);
     }
 
-    public static @Nullable ObjectMappingRefDTO getSourceMappingRefDTO(Instance instance) {
-        if (instance instanceof InstanceReference ref) {
+    public static @Nullable ObjectMappingRefDTO getSourceMappingRefDTO(Value instance) {
+        if (instance instanceof Reference ref) {
             var durableInstance = ref.resolve();
             return durableInstance.isView() ? durableInstance.getSourceRef().getMappingRefDTO() : null;
         } else
             return null;
     }
 
-    public static void reloadParent(Entity entity, DurableInstance instance, ObjectInstanceMap instanceMap, DefContext defContext) {
+    public static void reloadParent(Entity entity, Instance instance, ObjectInstanceMap instanceMap, DefContext defContext) {
 //        try(var ignored = ContextUtil.getProfiler().enter("ModelDef.reloadParent")) {
         if (entity.getParentEntity() != null) {
-            var parent = (InstanceReference) instanceMap.getInstance(entity.getParentEntity());
+            var parent = (Reference) instanceMap.getInstance(entity.getParentEntity());
             Field parentField = null;
             if (entity.getParentEntityField() != null)
                 parentField = defContext.getField(entity.getParentEntityField());
@@ -526,7 +527,7 @@ public class Instances {
 //        }
     }
 
-    public static ClassInstance createList(ClassType listType, List<? extends Instance> elements) {
+    public static ClassInstance createList(ClassType listType, List<? extends Value> elements) {
         if (listType.isList()) {
             var elementType = listType.getFirstTypeArgument();
             if (listType.getKlass() == StdKlass.list.get()) {
@@ -535,7 +536,7 @@ public class Instances {
             var list = ClassInstance.allocate(listType);
             var listNative = new ListNative(list);
             listNative.List();
-            for (Instance element : elements) {
+            for (Value element : elements) {
                 listNative.add(element);
             }
             return list;
@@ -543,7 +544,7 @@ public class Instances {
             throw new IllegalArgumentException(listType + " is not a List type");
     }
 
-    public static void applyDDL(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
+    public static void applyDDL(Iterable<Instance> instances, Commit commit, IEntityContext context) {
         var newFields = NncUtils.map(commit.getNewFieldIds(), context::getField);
         var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
         var toChildFields = NncUtils.map(commit.getToChildFieldIds(), context::getField);
@@ -551,7 +552,7 @@ public class Instances {
         var toValueKlasses = NncUtils.map(commit.getEntityToValueKlassIds(), context::getKlass);
         var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
         var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
-        for (DurableInstance instance : instances) {
+        for (Instance instance : instances) {
             if (instance instanceof ClassInstance clsInst) {
                 for (Field field : newFields) {
                     var k = clsInst.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
@@ -572,7 +573,7 @@ public class Instances {
                     if (k != null) {
                         var pf = k.findField(f -> f.getEffectiveTemplate() == field);
                         var value = clsInst.getField(pf);
-                        if (value instanceof InstanceReference r)
+                        if (value instanceof Reference r)
                             r.resolve().setParent(clsInst, pf);
                     }
                 }
@@ -613,7 +614,7 @@ public class Instances {
         });
     }
 
-    private static void handleEnumConversion(DurableInstance instance, Klass enumClass, Commit commit, IEntityContext context) {
+    private static void handleEnumConversion(Instance instance, Klass enumClass, Commit commit, IEntityContext context) {
         instance.transformReference((r, isChild, type) -> {
             if(type.isAssignableFrom(enumClass.getType())) {
                 var referent = r.resolve();
@@ -629,9 +630,9 @@ public class Instances {
         });
     }
 
-    private static InstanceReference mapEnumConstant(InstanceReference instance, Klass enumClass, IEntityContext context) {
+    private static Reference mapEnumConstant(Reference instance, Klass enumClass, IEntityContext context) {
         var mapper = getEnumConstantMapper(enumClass);
-        return (InstanceReference) Objects.requireNonNull(Flows.invoke(mapper, null, List.of(instance), context.getInstanceContext()));
+        return (Reference) Objects.requireNonNull(Flows.invoke(mapper, null, List.of(instance), context.getInstanceContext()));
     }
 
     private static Method getEnumConstantMapper(Klass enumClass) {
@@ -641,8 +642,8 @@ public class Instances {
         return found;
     }
 
-    public static void setEagerFlag(List<DurableInstance> referring, Id id) {
-        for (DurableInstance ref : referring) {
+    public static void setEagerFlag(List<Instance> referring, Id id) {
+        for (Instance ref : referring) {
             ref.forEachReference(r -> {
                 if (r.idEquals(id))
                     r.setEager();
@@ -664,7 +665,7 @@ public class Instances {
         return klass.findMethodByCodeAndParamTypes(initMethodName, List.of(Types.getStringType(), Types.getLongType()));
     }
 
-    public static @Nullable Instance getDefaultValue(Field field) {
+    public static @Nullable Value getDefaultValue(Field field) {
         var type = field.getType();
         if (type.isNullable())
             return Instances.nullInstance();
@@ -674,7 +675,7 @@ public class Instances {
             return null;
     }
 
-    public static Instance computeFieldInitialValue(ClassInstance instance, Field field, CallContext callContext) {
+    public static Value computeFieldInitialValue(ClassInstance instance, Field field, CallContext callContext) {
         var initMethod = findFieldInitializer(field, true);
         if (initMethod != null) {
             if(initMethod.getParameters().isEmpty())
@@ -712,7 +713,7 @@ public class Instances {
         );
     }
 
-    public static Instance computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {
+    public static Value computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {
         var converter = Objects.requireNonNull(findTypeConverter(field));
         var originalValue = instance.getUnknownField(field.getDeclaringType().getTag(), field.getOriginalTag());
         return Flows.invoke(converter, instance, List.of(originalValue), context);
@@ -741,10 +742,10 @@ public class Instances {
         return s;
     }
 
-    public static void rollbackDDL(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
+    public static void rollbackDDL(Iterable<Instance> instances, Commit commit, IEntityContext context) {
         for (FieldChange fieldChange : commit.getFieldChanges()) {
             var klass = context.getKlass(fieldChange.klassId());
-            for (DurableInstance instance : instances) {
+            for (Instance instance : instances) {
                 if(instance instanceof ClassInstance object) {
                     var k = object.getKlass().findAncestorByTemplate(klass);
                     if(k != null)
@@ -754,12 +755,12 @@ public class Instances {
         }
         for (String toChildFieldId : commit.getToChildFieldIds()) {
             var field = context.getField(toChildFieldId);
-            for (DurableInstance instance : instances) {
+            for (Instance instance : instances) {
                 if (instance instanceof ClassInstance object) {
                   var k = object.getKlass().findAncestorByTemplate(field.getDeclaringType());
                   if(k != null) {
                       var value = object.getField(field);
-                      if(value instanceof InstanceReference ref)
+                      if(value instanceof Reference ref)
                           ref.resolve().clearParent();
                   }
                 }
@@ -768,7 +769,7 @@ public class Instances {
         for (List<String> klassIdsList : List.of(commit.getEntityToValueKlassIds(), commit.getValueToEntityKlassIds())) {
             for (String klassId : klassIdsList) {
                 var klass = context.getKlass(klassId);
-                for (DurableInstance instance : instances) {
+                for (Instance instance : instances) {
                     instance.forEachReference(r -> {
                         if(r.isEager()) {
                             var referent = r.resolve();
@@ -785,7 +786,7 @@ public class Instances {
         }
         for (String klassId : commit.getToEnumKlassIds()) {
             var klass = context.getKlass(klassId);
-            for (DurableInstance instance : instances) {
+            for (Instance instance : instances) {
                 instance.transformReference((r, isChild, type) -> {
                     if(r instanceof RedirectingReference && type.isAssignableFrom(klass.getType())) {
                         if(r.resolve() instanceof ClassInstance object && object.getKlass() == klass) {

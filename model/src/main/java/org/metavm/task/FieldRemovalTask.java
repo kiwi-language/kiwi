@@ -2,8 +2,8 @@ package org.metavm.task;
 
 import org.metavm.entity.EntityUtils;
 import org.metavm.entity.IEntityContext;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Field;
 import org.metavm.util.NncUtils;
 
@@ -25,7 +25,7 @@ public class FieldRemovalTask {
             doFinally(context);
             return true;
         }
-        instances.stream().map(DurableInstance::getReference).filter(field.getDeclaringType().getType()::isInstance)
+        instances.stream().map(Instance::getReference).filter(field.getDeclaringType().getType()::isInstance)
                 .forEach(this::processInstance);
         cursor = instances.get(instances.size() - 1).getTreeId();
         return false;
@@ -35,7 +35,7 @@ public class FieldRemovalTask {
         context.remove(field);
     }
 
-    private void processInstance(Instance instance) {
+    private void processInstance(Value instance) {
         EntityUtils.ensureProxyInitialized(instance);
     }
 

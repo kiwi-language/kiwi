@@ -2,9 +2,9 @@ package org.metavm.task;
 
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.TreeNotFoundException;
-import org.metavm.object.instance.core.DurableInstance;
-import org.metavm.object.instance.core.DurableInstanceVisitor;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceVisitor;
 
 import java.util.List;
 
@@ -15,19 +15,20 @@ public class ReferenceRedirector extends ReferenceScanner {
     }
 
     @Override
-    protected void process(List<DurableInstance> referring) {
+    protected void process(List<Instance> referring) {
         var id = getTargetId();
         if(!referring.isEmpty()) {
-            for (DurableInstance root : referring) {
-                root.accept(new DurableInstanceVisitor() {
+            for (Instance root : referring) {
+                root.accept(new InstanceVisitor() {
                     @Override
-                    public void visitDurableInstance(DurableInstance instance) {
-                        instance.forEachReference((ref, isChild) -> {
+                    public void visitInstance(Instance instance) {
+                        instance.transformReference((ref, isChild) -> {
                             if (id.equals(ref.tryGetId())) {
-                                ref.forward();
+                                ref = ref.forward();
                             }
                             if (isChild)
                                 ref.resolve().accept(this);
+                            return ref;
                         });
                     }
                 });

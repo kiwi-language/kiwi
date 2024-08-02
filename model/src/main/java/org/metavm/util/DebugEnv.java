@@ -41,7 +41,7 @@ public class DebugEnv {
 
     public static volatile String stringId;
 
-    public static volatile DurableInstance instance;
+    public static volatile Instance instance;
 
     public static volatile ClassInstance classInstance;
 
@@ -79,7 +79,7 @@ public class DebugEnv {
         return path.equals(List.of(pathStr.split("\\.")));
     }
 
-    public static boolean isTarget(DurableInstance instance) {
+    public static boolean isTarget(Instance instance) {
         return instance.toString().startsWith("MyListbuiltinView<string>-");
     }
 

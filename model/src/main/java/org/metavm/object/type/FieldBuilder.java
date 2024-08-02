@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.Column;
 import org.metavm.util.Instances;
 
@@ -22,10 +22,10 @@ public class FieldBuilder {
     private Long tmpId;
     private Access access = Access.PUBLIC;
     private boolean unique = false;
-    private Instance defaultValue;
+    private Value defaultValue;
     private boolean isChild;
     private boolean isStatic = false;
-    private Instance staticValue;
+    private Value staticValue;
     private MetadataState state;
     private boolean lazy;
     private Field template;
@@ -91,7 +91,7 @@ public class FieldBuilder {
         return this;
     }
 
-    public FieldBuilder defaultValue(Instance defaultValue) {
+    public FieldBuilder defaultValue(Value defaultValue) {
         this.defaultValue = defaultValue;
         return this;
     }
@@ -106,7 +106,7 @@ public class FieldBuilder {
         return this;
     }
 
-    public FieldBuilder staticValue(Instance staticValue) {
+    public FieldBuilder staticValue(Value staticValue) {
         this.staticValue = staticValue;
         return this;
     }

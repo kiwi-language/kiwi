@@ -4,7 +4,7 @@ import org.metavm.common.Page;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ContextTypeDefRepository;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Types;
@@ -59,11 +59,11 @@ public class EntityQueryService {
 
     private InstanceQueryField convertToInstanceQueryField(EntityDef<?> entityDef, EntityQueryField entityQueryField, IEntityContext context) {
         Field field = entityDef.getFieldByJavaFieldName(entityQueryField.fieldName());
-        Instance instanceValue = convertValue(entityQueryField.value(), context);
+        Value instanceValue = convertValue(entityQueryField.value(), context);
         return new InstanceQueryField(field, instanceValue, null, null);
     }
 
-    private Instance convertValue(Object value, IEntityContext context) {
+    private Value convertValue(Object value, IEntityContext context) {
         if (context.containsEntity(value)) {
             return context.getInstance(value).getReference();
         } else if (value instanceof Collection<?> coll) {
@@ -79,7 +79,7 @@ public class EntityQueryService {
         }
     }
 
-    private Instance convertSingleValue(Object value, IEntityContext context) {
+    private Value convertSingleValue(Object value, IEntityContext context) {
         return context.getObjectInstanceMap().getInstance(value);
     }
 

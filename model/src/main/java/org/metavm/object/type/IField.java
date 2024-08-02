@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.Column;
 
 public interface IField {
@@ -17,7 +17,7 @@ public interface IField {
         return getColumn().name();
     }
 
-    String getDisplayValue(Instance value);
+    String getDisplayValue(Value value);
 
     Long getId();
 

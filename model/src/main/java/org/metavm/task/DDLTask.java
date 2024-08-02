@@ -4,7 +4,7 @@ import org.metavm.api.EntityType;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.IEntityContext;
-import org.metavm.object.instance.core.DurableInstance;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.WAL;
 
 import javax.annotation.Nullable;
@@ -25,7 +25,7 @@ public class DDLTask extends ScanTask implements WalTask {
     }
 
     @Override
-    protected void process(List<DurableInstance> batch, IEntityContext context, IEntityContext taskContext) {
+    protected void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
         commitState.process(batch, commit, context);
     }
 
@@ -79,8 +79,8 @@ public class DDLTask extends ScanTask implements WalTask {
     }
 
     @Override
-    public boolean isMigrationEnabled() {
-        return commitState.isMigrationEnabled();
+    public boolean isRelocationEnabled() {
+        return commitState.isRelocationEnabled();
     }
 
     @Override

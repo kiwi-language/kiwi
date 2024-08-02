@@ -10,8 +10,8 @@ import org.metavm.flow.ValueFactory;
 import org.metavm.flow.rest.ValueDTO;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.NullInstance;
+import org.metavm.object.instance.core.NullValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.object.view.MappingSaver;
 import org.metavm.util.*;
@@ -166,7 +166,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
     protected abstract D createDef(PojoDef<? super T> superDef);
 
     private void parseField(Field javaField, PojoDef<?> declaringTypeDef) {
-        if (Instance.class.isAssignableFrom(javaField.getType())) {
+        if (Value.class.isAssignableFrom(javaField.getType())) {
             Type fieldType;
             Class<?> javaFieldClass = javaField.getType();
             if (javaFieldClass == ArrayInstance.class)
@@ -258,9 +258,9 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 .readonly(Modifier.isFinal(javaField.getModifiers()))
                 .column(colAndTag.column())
                 .tag(colAndTag.tag())
-                .defaultValue(new NullInstance(Types.getNullType()))
+                .defaultValue(new NullValue(Types.getNullType()))
                 .isChild(isChild)
-                .staticValue(new NullInstance(Types.getNullType()))
+                .staticValue(new NullValue(Types.getNullType()))
                 .access(parseAccess(javaField.getModifiers()))
                 .build();
         if (asTitle)

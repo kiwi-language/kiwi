@@ -1,11 +1,13 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.CheckNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.BooleanInstance;
+import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.InternalException;
 
@@ -65,7 +67,7 @@ public class CheckNode extends NodeRT {
         }
         if (branch == null)
             throw new InternalException("Can not find an exit branch");
-        var checkResult = ((BooleanInstance) condition.evaluate(frame)).isTrue();
+        var checkResult = ((BooleanValue) condition.evaluate(frame)).isTrue();
         if (checkResult) {
             return next();
         } else {

@@ -3,7 +3,7 @@ package org.metavm.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.ReflectionUtils;
 
 public interface IFieldDef {
@@ -14,7 +14,7 @@ public interface IFieldDef {
 
     Object getModelFieldValue(ClassInstance instance, ObjectInstanceMap objectInstanceMap);
 
-    Instance getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap);
+    Value getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap);
 
     @JsonIgnore
     @SuppressWarnings("unused")

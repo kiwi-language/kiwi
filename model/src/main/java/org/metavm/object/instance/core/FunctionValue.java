@@ -10,18 +10,18 @@ import org.metavm.object.type.FunctionType;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public abstract class FunctionInstance extends Instance {
+public abstract class FunctionValue extends Value {
 
-    public FunctionInstance(FunctionType type) {
+    public FunctionValue(FunctionType type) {
         super(type);
     }
 
     @Override
-    public <R> void acceptReferences(InstanceVisitor<R> visitor) {
+    public <R> void acceptReferences(ValueVisitor<R> visitor) {
     }
 
     @Override
-    public <R> void acceptChildren(InstanceVisitor<R> visitor) {
+    public <R> void acceptChildren(ValueVisitor<R> visitor) {
     }
 
     @Override
@@ -29,7 +29,7 @@ public abstract class FunctionInstance extends Instance {
         return null;
     }
 
-    public abstract FlowExecResult execute(List<Instance> arguments, CallContext callContext);
+    public abstract FlowExecResult execute(List<Value> arguments, CallContext callContext);
 
     @Override
     public FunctionType getType() {

@@ -1,12 +1,14 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.Element;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.EntityParentRef;
+import org.metavm.entity.SerializeContext;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.expression.VarType;
 import org.metavm.flow.rest.ValueDTO;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.type.Type;
 
@@ -45,7 +47,7 @@ public abstract class Value extends Element implements org.metavm.api.Value {
         return expression.getType();
     }
 
-    public Instance evaluate(EvaluationContext context) {
+    public org.metavm.object.instance.core.Value evaluate(EvaluationContext context) {
         return expression.evaluate(context);
     }
 

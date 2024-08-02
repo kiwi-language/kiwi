@@ -26,12 +26,12 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private final Klass declaringType;
     private Access access;
     private boolean _static;
-    private Instance defaultValue;
+    private Value defaultValue;
     private boolean lazy;
     private final Column column;
     private boolean isChild;
     @EntityField(code = "static")
-    private Instance staticValue;
+    private Value staticValue;
     @Nullable
     private Expression initializer;
     @Nullable
@@ -53,11 +53,11 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             Access access,
             boolean readonly,
             Boolean unique,
-            Instance defaultValue,
+            Value defaultValue,
             boolean isChild,
             boolean isStatic,
             boolean lazy,
-            Instance staticValue,
+            Value staticValue,
             @Nullable Column column,
             int tag,
             MetadataState state
@@ -125,11 +125,11 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return declaringType.isParameterized() ? Objects.requireNonNull(copySource) : this;
     }
 
-    public void setDefaultValue(Instance defaultValue) {
+    public void setDefaultValue(Value defaultValue) {
         this.defaultValue = defaultValue;
     }
 
-    public Instance getStaticValue() {
+    public Value getStaticValue() {
         if (isStatic()) return staticValue;
         else throw new InternalException("Can not get static value from an instance field");
     }
@@ -169,31 +169,31 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return cascades;
     }
 
-    public LongInstance getLong(@Nullable ClassInstance instance) {
+    public LongValue getLong(@Nullable ClassInstance instance) {
         if (isStatic()) {
-            return (LongInstance) getStaticValue();
+            return (LongValue) getStaticValue();
         } else {
             return NncUtils.requireNonNull(instance).getLongField(this);
         }
     }
 
-    public DoubleInstance getDouble(@Nullable ClassInstance instance) {
+    public DoubleValue getDouble(@Nullable ClassInstance instance) {
         if (isStatic()) {
-            return (DoubleInstance) getStaticValue();
+            return (DoubleValue) getStaticValue();
         } else {
             return NncUtils.requireNonNull(instance).getDoubleField(this);
         }
     }
 
-    public StringInstance getString(@Nullable ClassInstance instance) {
+    public StringValue getString(@Nullable ClassInstance instance) {
         if (isStatic()) {
-            return (StringInstance) getStaticValue();
+            return (StringValue) getStaticValue();
         } else {
             return NncUtils.requireNonNull((instance)).getStringField(this);
         }
     }
 
-    public Instance get(@Nullable ClassInstance instance) {
+    public Value get(@Nullable ClassInstance instance) {
         if (isStatic()) {
             return getStaticValue();
         } else {
@@ -201,7 +201,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         }
     }
 
-    public void setStaticValue(Instance staticValue) {
+    public void setStaticValue(Value staticValue) {
         this.staticValue = staticValue;
     }
 
@@ -261,7 +261,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return getConcreteType().isString();
     }
 
-    public Instance getDefaultValue() {
+    public Value getDefaultValue() {
         return defaultValue;
     }
 
@@ -289,7 +289,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 //        return ValueFormatter.parse(rawValue, type);
 //    }
 
-    public String getDisplayValue(Instance value) {
+    public String getDisplayValue(Value value) {
         if (value == null) {
             return "";
         }
@@ -319,7 +319,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
                     isStatic(),
                     readonly,
                     lazy,
-                    NncUtils.get(staticValue, Instance::toDTO),
+                    NncUtils.get(staticValue, Value::toDTO),
                     getState().code()
             );
         }

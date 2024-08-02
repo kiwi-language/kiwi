@@ -18,9 +18,9 @@ public class ClassInstanceBuilder {
     private long syncVersion;
     private SourceRef sourceRef;
     private final ClassType type;
-    private Map<Field, Instance> data;
+    private Map<Field, Value> data;
     private InstanceParentRef parentRef;
-    private Consumer<DurableInstance> load;
+    private Consumer<Instance> load;
     private boolean ephemeral;
     private boolean initFieldTable = true;
 
@@ -33,7 +33,7 @@ public class ClassInstanceBuilder {
         return this;
     }
 
-    public ClassInstanceBuilder data(Map<Field, Instance> data) {
+    public ClassInstanceBuilder data(Map<Field, Value> data) {
         this.data = data;
         return this;
     }
@@ -58,7 +58,7 @@ public class ClassInstanceBuilder {
         return this;
     }
 
-    public ClassInstanceBuilder load(Consumer<DurableInstance> load) {
+    public ClassInstanceBuilder load(Consumer<Instance> load) {
         this.load = load;
         return this;
     }
@@ -84,7 +84,7 @@ public class ClassInstanceBuilder {
         return new ClassInstance(id, type, version, syncVersion, load, parentRef, data, sourceRef, ephemeral, initFieldTable);
     }
 
-    public InstanceReference buildAndGetReference() {
+    public Reference buildAndGetReference() {
         return build().getReference();
     }
 

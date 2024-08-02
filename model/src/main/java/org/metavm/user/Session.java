@@ -3,8 +3,10 @@ package org.metavm.user;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.entity.Entity;
+import org.metavm.entity.IndexDef;
+import org.metavm.entity.ReadWriteArray;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.AssertUtils;
 
 import javax.annotation.Nullable;
@@ -67,7 +69,7 @@ public class Session extends Entity {
         return state == SessionState.ACTIVE && autoCloseAt.after(new Date());
     }
 
-    public void setEntry(String key, Instance value) {
+    public void setEntry(String key, Value value) {
         AssertUtils.assertTrue(state == SessionState.ACTIVE,
                 ErrorCode.ILLEGAL_SESSION_STATE);
         var existing = entries.stream().filter(e -> e.getKey().equals(key)).findFirst();
@@ -78,7 +80,7 @@ public class Session extends Entity {
         }
     }
 
-    public @Nullable Instance getEntry(String key) {
+    public @Nullable Value getEntry(String key) {
         AssertUtils.assertTrue(state == SessionState.ACTIVE,
                 ErrorCode.ILLEGAL_SESSION_STATE);
         return entries.stream().filter(e -> e.getKey().equals(key)).findFirst().map(SessionEntry::getValue).orElse(null);

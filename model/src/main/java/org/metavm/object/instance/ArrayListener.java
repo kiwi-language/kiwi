@@ -1,11 +1,11 @@
 package org.metavm.object.instance;
 
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 
 public interface ArrayListener {
 
-    void onAdd(Instance instance);
+    void onAdd(Value instance);
 
-    void onRemove(Instance instance);
+    void onRemove(Value instance);
 
 }

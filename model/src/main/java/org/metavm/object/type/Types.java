@@ -8,7 +8,7 @@ import org.metavm.expression.NodeExpression;
 import org.metavm.expression.PropertyExpression;
 import org.metavm.flow.*;
 import org.metavm.flow.rest.FlowDTO;
-import org.metavm.object.instance.core.FunctionInstance;
+import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.util.*;
@@ -288,7 +288,7 @@ public class Types {
         return abstractFlows.get(0);
     }
 
-    public static Klass createSAMInterfaceImpl(Klass samInterface, FunctionInstance function) {
+    public static Klass createSAMInterfaceImpl(Klass samInterface, FunctionValue function) {
         var klass = KlassBuilder.newBuilder(
                         samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
                 .interfaces(samInterface.getType())

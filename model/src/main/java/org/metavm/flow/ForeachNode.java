@@ -13,7 +13,7 @@ import org.metavm.flow.rest.ForeachNodeNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
@@ -29,7 +29,7 @@ public class ForeachNode extends LoopNode {
         ParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
         ForeachNodeNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.getArray(), parsingContext);
-        Value condition = Values.expression(Expressions.trueExpression());
+        org.metavm.flow.Value condition = Values.expression(Expressions.trueExpression());
         if (outputType.findFieldByCode("array") == null) {
             FieldBuilder.newBuilder("array", "array", outputType, array.getType()).build();
         }
@@ -47,10 +47,10 @@ public class ForeachNode extends LoopNode {
         return node;
     }
 
-    private Value array;
+    private org.metavm.flow.Value array;
 
     public ForeachNode(Long tmpId, String name, @javax.annotation.Nullable String code, @NotNull Klass outputType, NodeRT previous, ScopeRT scope,
-                       Value array, Value condition) {
+                       org.metavm.flow.Value array, org.metavm.flow.Value condition) {
         super(tmpId, name, code, outputType, previous, scope, condition);
         this.array = array;
     }
@@ -59,18 +59,18 @@ public class ForeachNode extends LoopNode {
     protected ForeachNodeNodeParam getParam(SerializeContext serializeContext) {
         return new ForeachNodeNodeParam(
                 array.toDTO(),
-                NncUtils.get(getCondition(), Value::toDTO),
+                NncUtils.get(getCondition(), org.metavm.flow.Value::toDTO),
                 NncUtils.map(getFields(), LoopField::toDTO),
                 getBodyScope().toDTO(true, serializeContext)
         );
     }
 
-    public void setArray(Value array) {
+    public void setArray(org.metavm.flow.Value array) {
         this.array = array;
     }
 
     @Override
-    protected Map<Field, Instance> getExtraLoopFields(MetaFrame frame) {
+    protected Map<Field, Value> getExtraLoopFields(MetaFrame frame) {
         var arrayValue = array.evaluate(frame);
         var index = Instances.longInstance(0);
         return new HashMap<>(Map.of(

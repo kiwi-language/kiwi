@@ -3,7 +3,7 @@ package org.metavm.object.instance.core;
 import java.util.List;
 
 public record ScanResult(
-        List<DurableInstance> instances,
+        List<Instance> instances,
         boolean completed
 ) {
 }

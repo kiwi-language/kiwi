@@ -1,9 +1,8 @@
 package org.metavm.util;
 
-import org.metavm.api.Value;
 import org.metavm.entity.*;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.LongInstance;
+import org.metavm.object.instance.core.LongValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeCategory;
 import org.metavm.object.type.Types;
@@ -32,7 +31,7 @@ public class ValueUtils {
         if (isTime(value)) {
             return Types.getTimeType();
         }
-        if (value instanceof Instance instance) {
+        if (value instanceof Value instance) {
             return instance.getType();
         }
         throw new InternalException("Unsupported value: " + value);
@@ -65,8 +64,8 @@ public class ValueUtils {
         return from.isLong() && to.isDouble();
     }
 
-    public static Instance convert(Instance instance, Type type) {
-        if (instance instanceof LongInstance longInstance) {
+    public static Value convert(Value instance, Type type) {
+        if (instance instanceof LongValue longInstance) {
             if (type.isDouble()) {
                 return Instances.doubleInstance(longInstance.getValue());
             }
@@ -163,7 +162,7 @@ public class ValueUtils {
     }
 
     public static boolean isValueType(Class<?> klass) {
-        return Value.class.isAssignableFrom(klass);
+        return org.metavm.api.Value.class.isAssignableFrom(klass);
     }
 
     public static boolean isEnumType(Class<?> klass) {

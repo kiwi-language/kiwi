@@ -127,7 +127,7 @@ public class ClassInstanceTest extends TestCase {
                 .build();
 
         TestUtils.initInstanceIds(flow);
-        Map<Id, DurableInstance> id2instance = new HashMap<>();
+        Map<Id, Instance> id2instance = new HashMap<>();
         flow.forEachDescendant(instance -> id2instance.put(instance.tryGetId(), instance));
         var bin = new ByteArrayInputStream(InstanceOutput.toBytes(flow));
         var input = new InstanceInput(bin, id -> {

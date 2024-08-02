@@ -5,7 +5,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.flow.rest.ArgumentDTO;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 
 import java.util.Objects;
 
@@ -13,9 +13,9 @@ import java.util.Objects;
 public class Argument extends Element implements LocalKey, org.metavm.api.Value {
 
     private final ParameterRef parameterRef;
-    private final Value value;
+    private final org.metavm.flow.Value value;
 
-    public Argument(Long tmpId, ParameterRef parameterRef, Value value) {
+    public Argument(Long tmpId, ParameterRef parameterRef, org.metavm.flow.Value value) {
         super(tmpId);
         this.parameterRef = parameterRef;
         this.value = value;
@@ -25,11 +25,11 @@ public class Argument extends Element implements LocalKey, org.metavm.api.Value 
         return parameterRef.resolve();
     }
 
-    public Value getValue() {
+    public org.metavm.flow.Value getValue() {
         return value;
     }
 
-    public Instance evaluate(EvaluationContext evaluationContext) {
+    public Value evaluate(EvaluationContext evaluationContext) {
         return value.evaluate(evaluationContext);
     }
 

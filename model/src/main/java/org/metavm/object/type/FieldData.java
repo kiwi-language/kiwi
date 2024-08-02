@@ -1,11 +1,11 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.Entity;
 import org.metavm.api.EntityType;
+import org.metavm.entity.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.InstanceFactory;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.CreatingFieldDTO;
 import org.metavm.object.type.rest.dto.FieldDTO;
 import org.metavm.util.Column;
@@ -40,11 +40,11 @@ public class FieldData extends Entity {
     private final Type type;
     private final boolean isChild;
     private final boolean isStatic;
-    private final Instance staticValue;
+    private final Value staticValue;
     @Nullable
-    private final Instance defaultValue;
+    private final Value defaultValue;
 
-    public FieldData(Long tmpId, String name, @Nullable String code, Column column, boolean unique, Klass declaringType, Access access, Type type, boolean isChild, boolean isStatic, Instance staticValue, @Nullable Instance defaultValue) {
+    public FieldData(Long tmpId, String name, @Nullable String code, Column column, boolean unique, Klass declaringType, Access access, Type type, boolean isChild, boolean isStatic, Value staticValue, @Nullable Value defaultValue) {
         super(tmpId);
         this.name = name;
         this.code = code;
@@ -96,12 +96,12 @@ public class FieldData extends Entity {
         return isStatic;
     }
 
-    public Instance getStaticValue() {
+    public Value getStaticValue() {
         return staticValue;
     }
 
     @Nullable
-    public Instance getDefaultValue() {
+    public Value getDefaultValue() {
         return defaultValue;
     }
 

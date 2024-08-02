@@ -88,7 +88,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
     }
 
     @Override
-    public Map<Object, DurableInstance> getInstanceMapping() {
+    public Map<Object, Instance> getInstanceMapping() {
         return NncUtils.toMap(
                 enumConstantDefList,
                 EnumConstantDef::getValue,
@@ -116,14 +116,14 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
         }
         instance.setField(
                 klass.getFieldByCode("name"),
-                new StringInstance(
+                new StringValue(
                         EntityUtils.getMetaEnumConstantName(value),
                         PrimitiveType.stringType
                 )
         );
         var enumConstant = new EnumConstantRT(instance);
         FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), klass, klass.getType())
-                .defaultValue(new NullInstance(PrimitiveType.nullType))
+                .defaultValue(new NullValue(PrimitiveType.nullType))
                 .isChild(true)
                 .isStatic(true)
                 .staticValue(instance.getReference())

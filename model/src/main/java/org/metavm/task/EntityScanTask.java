@@ -3,8 +3,8 @@ package org.metavm.task;
 import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ModelDefRegistry;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.ScanResult;
 import org.metavm.util.NncUtils;
 
@@ -35,7 +35,7 @@ public abstract class EntityScanTask<T> extends ScanTask {
     }
 
     @Override
-    protected void process(List<DurableInstance> batch, IEntityContext context, IEntityContext taskContext) {
+    protected void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
         List<T> models = NncUtils.map(
                 batch, instance -> context.getEntity(entityType, instance.getId())
         );

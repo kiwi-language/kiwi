@@ -2,8 +2,8 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.expression.*;
-import org.metavm.object.instance.core.LongInstance;
-import org.metavm.object.instance.core.TimeInstance;
+import org.metavm.object.instance.core.LongValue;
+import org.metavm.object.instance.core.TimeValue;
 import org.metavm.object.instance.rest.ArrayFieldValue;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
@@ -26,15 +26,15 @@ public class ConstantValue extends Value {
             case FunctionExpression funcExpr
                     when funcExpr.getFunction() == Func.TIME
                     && funcExpr.getArguments().get(0) instanceof ConstantExpression constExpr ->
-                    toTimeFieldValue((LongInstance) constExpr.getValue());
+                    toTimeFieldValue((LongValue) constExpr.getValue());
             default -> throw new IllegalStateException("Unexpected value: " + expression);
         };
     }
 
-    private PrimitiveFieldValue toTimeFieldValue(LongInstance timeMillis) {
+    private PrimitiveFieldValue toTimeFieldValue(LongValue timeMillis) {
         var value = timeMillis.getValue();
         return new PrimitiveFieldValue(
-                TimeInstance.DF.format(new Date(value)),
+                TimeValue.DF.format(new Date(value)),
                 PrimitiveKind.TIME.code(),
                 value
         );

@@ -1,10 +1,10 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
-import org.metavm.object.instance.core.BooleanInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.object.instance.core.BooleanValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
@@ -72,8 +72,8 @@ public class ConditionalExpression extends Expression {
     }
 
     @Override
-    protected Instance evaluateSelf(EvaluationContext context) {
-        return ((BooleanInstance) condition.evaluate(context)).getValue() ?
+    protected Value evaluateSelf(EvaluationContext context) {
+        return ((BooleanValue) condition.evaluate(context)).getValue() ?
                 trueValue.evaluate(context) : falseValue.evaluate(context);
     }
 

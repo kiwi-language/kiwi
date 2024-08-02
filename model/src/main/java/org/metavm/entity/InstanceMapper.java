@@ -1,13 +1,13 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.ObjectInstanceMap;
-import org.metavm.object.instance.core.DurableInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.AnyType;
 import org.metavm.object.type.Type;
 import org.metavm.util.ReflectionUtils;
 
-public class InstanceMapper<I extends DurableInstance> implements Mapper<I, I> {
+public class InstanceMapper<I extends Instance> implements Mapper<I, I> {
 
     private final AnyType type;
     private final Class<I> instanceClass;

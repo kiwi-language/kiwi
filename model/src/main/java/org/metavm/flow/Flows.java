@@ -8,7 +8,7 @@ import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.expression.Expression;
 import org.metavm.expression.StaticPropertyExpression;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
@@ -49,12 +49,12 @@ public class Flows {
             throw new InternalException("Can not get static type of flow: " + flow);
     }
 
-    public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Instance> arguments, IEntityContext context) {
+    public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
         ContextUtil.setEntityContext(context);
         return execute(flow, self, arguments, context.getInstanceContext());
     }
 
-    public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
+    public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         try {
             return flow.execute(self, arguments, callContext);
         }
@@ -63,12 +63,12 @@ public class Flows {
         }
     }
 
-    public static @Nullable Instance invoke(Flow flow, ClassInstance self, List<? extends Instance> arguments, IEntityContext context) {
+    public static @Nullable Value invoke(Flow flow, ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
         ContextUtil.setEntityContext(context);
         return invoke(flow, self, arguments, context.getInstanceContext());
     }
 
-    public static @Nullable Instance invoke(Flow flow, ClassInstance self, List<? extends Instance> arguments, CallContext callContext) {
+    public static @Nullable Value invoke(Flow flow, ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         var result = execute(flow, self, arguments, callContext);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
@@ -76,7 +76,7 @@ public class Flows {
             return result.ret();
     }
 
-    public static @Nullable Instance invokeVirtual(Flow flow, @NotNull ClassInstance self, List<? extends Instance> arguments, IEntityContext context) {
+    public static @Nullable Value invokeVirtual(Flow flow, @NotNull ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
         if(flow instanceof Method method && method.isInstanceMethod()) {
             flow = self.getKlass().resolveMethod(method);
             return invoke(flow, self, arguments, context);
@@ -85,7 +85,7 @@ public class Flows {
             throw new InternalException("Can not invoke virtual method: " + flow);
     }
 
-    public static Instance invokeGetter(Method getter, ClassInstance instance, IEntityContext context) {
+    public static Value invokeGetter(Method getter, ClassInstance instance, IEntityContext context) {
         var result = execute(getter, instance, List.of(), context);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
@@ -93,7 +93,7 @@ public class Flows {
             return Objects.requireNonNull(result.ret());
     }
 
-    public static void invokeSetter(Method setter, ClassInstance instance, Instance value, IEntityContext context) {
+    public static void invokeSetter(Method setter, ClassInstance instance, Value value, IEntityContext context) {
         var result = execute(setter, instance, List.of(value), context);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));

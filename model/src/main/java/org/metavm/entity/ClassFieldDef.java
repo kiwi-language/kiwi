@@ -2,7 +2,7 @@ package org.metavm.entity;
 
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
 import org.metavm.util.ReflectionUtils;
@@ -29,7 +29,7 @@ public class ClassFieldDef implements IFieldDef {
 
     @Override
     public Object getModelFieldValue(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
-        Instance instanceFieldValue = instance.getField(field);
+        Value instanceFieldValue = instance.getField(field);
         if(instanceFieldValue.isNull())
             return null;
         Klass type = objectInstanceMap.getEntity(Klass.class, instanceFieldValue);
@@ -37,7 +37,7 @@ public class ClassFieldDef implements IFieldDef {
     }
 
     @Override
-    public Instance getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
+    public Value getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
         Class<?> fieldValue = (Class<?>) ReflectionUtils.get(model, javaField);
         return fieldValue != null ?
                 instanceMap.getInstance(defMap.getType(fieldValue))

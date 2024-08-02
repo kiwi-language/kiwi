@@ -18,7 +18,7 @@ import java.util.Objects;
 @SuppressWarnings("unused")
 public class MapNative extends NativeBase {
 
-    private final Map<Instance, Entry> map = new HashMap<>();
+    private final Map<Value, Entry> map = new HashMap<>();
     private final ClassInstance instance;
     private final Type keyType;
     private final Type valueType;
@@ -46,7 +46,7 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public Instance HashMap(CallContext callContext) {
+    public Value HashMap(CallContext callContext) {
         keyArray = new ArrayInstance((ArrayType) keyArrayField.getType());
         valueArray = new ArrayInstance((ArrayType) valueArrayField.getType());
         instance.initField(keyArrayField, keyArray.getReference());
@@ -54,31 +54,31 @@ public class MapNative extends NativeBase {
         return instance.getReference();
     }
 
-    public InstanceReference keySet(CallContext callContext) {
+    public Reference keySet(CallContext callContext) {
         var keySetKlass = StdKlass.hashSet.get().getParameterized(List.of(instance.getKlass().getFirstTypeArgument()));
         ClassInstance keySet = ClassInstance.allocate(keySetKlass.getType());
         var setNative = (SetNative) NativeMethods.getNativeObject(keySet);
         setNative.HashSet(callContext);
-        for (Instance key : keyArray) {
+        for (Value key : keyArray) {
             setNative.add(key, callContext);
         }
         return keySet.getReference();
     }
 
-    public Instance get(Instance key, CallContext callContext) {
+    public Value get(Value key, CallContext callContext) {
         checkKey(key, callContext);
         var entry = map.get(key);
         return entry != null ? entry.value : Instances.nullInstance();
     }
 
-    public Instance getOrDefault(Instance key, Instance value, CallContext callContext) {
+    public Value getOrDefault(Value key, Value value, CallContext callContext) {
         checkKey(key, callContext);
         checkValue(value, callContext);
         var entry = map.get(key);
         return entry != null ? entry.getValue() : value;
     }
 
-    public Instance put(Instance key, Instance value, CallContext callContext) {
+    public Value put(Value key, Value value, CallContext callContext) {
         checkKey(key, callContext);
         checkValue(value, callContext);
         var existingEntry = map.get(key);
@@ -97,18 +97,18 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public BooleanInstance containsKey(Instance key, CallContext callContext) {
+    public BooleanValue containsKey(Value key, CallContext callContext) {
         checkKey(key, callContext);
         return Instances.booleanInstance(map.containsKey(key));
     }
 
-    public Instance remove(Instance key, CallContext callContext) {
+    public Value remove(Value key, CallContext callContext) {
         checkKey(key, callContext);
         var entry = map.remove(key);
         if (entry != null) {
             int lastIndex = keyArray.size() - 1;
-            Instance lastKey = keyArray.get(lastIndex);
-            Instance lastValue = valueArray.get(lastIndex);
+            Value lastKey = keyArray.get(lastIndex);
+            Value lastValue = valueArray.get(lastIndex);
             keyArray.removeElement(lastIndex);
             valueArray.removeElement(lastIndex);
             if (!key.equals(lastKey)) {
@@ -122,7 +122,7 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public Instance size(CallContext callContext) {
+    public Value size(CallContext callContext) {
         return Instances.longInstance(keyArray.size());
     }
 
@@ -132,32 +132,32 @@ public class MapNative extends NativeBase {
         valueArray.clear();
     }
 
-    private boolean getBoolean(Instance instance, CallContext callContext) {
-        if (instance instanceof BooleanInstance booleanInstance) {
+    private boolean getBoolean(Value instance, CallContext callContext) {
+        if (instance instanceof BooleanValue booleanInstance) {
             return booleanInstance.isTrue();
         } else {
             throw new InternalException("Expecting a boolean argument, actually got: " + instance);
         }
     }
 
-    private void checkKey(Instance key, CallContext callContext) {
+    private void checkKey(Value key, CallContext callContext) {
         NncUtils.requireTrue(keyType.isInstance(key));
     }
 
-    private void checkValue(Instance value, CallContext callContext) {
+    private void checkValue(Value value, CallContext callContext) {
         NncUtils.requireTrue(valueType.isInstance(value));
     }
 
     private static class Entry {
-        private final Instance value;
+        private final Value value;
         private int index;
 
-        public Entry(Instance value, int index) {
+        public Entry(Value value, int index) {
             this.value = value;
             this.index = index;
         }
 
-        public Instance getValue() {
+        public Value getValue() {
             return value;
         }
     }

@@ -27,18 +27,18 @@ public class ListNative extends IterableNative {
         }
     }
 
-    public Instance List(CallContext callContext) {
+    public Value List(CallContext callContext) {
         return List();
     }
 
-    public Instance List() {
+    public Value List() {
         array = new ArrayInstance((ArrayType) arrayField.getType());
         instance.initField(arrayField, array.getReference());
         return instance.getReference();
     }
 
-    public Instance List(Instance c, CallContext callContext) {
-        if(c instanceof InstanceReference collection) {
+    public Value List(Value c, CallContext callContext) {
+        if(c instanceof Reference collection) {
             var thatArrayField = collection.resolveObject().getKlass().getFieldByCode("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
             array = new ArrayInstance((ArrayType) arrayField.getType(),
@@ -51,31 +51,31 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public Instance ChildList(CallContext callContext) {
+    public Value ChildList(CallContext callContext) {
         return List(callContext);
     }
 
-    public Instance ChildList(Instance c, CallContext callContext) {
+    public Value ChildList(Value c, CallContext callContext) {
         return List(c, callContext);
     }
 
-    public Instance ArrayList(CallContext callContext) {
+    public Value ArrayList(CallContext callContext) {
         return List(callContext);
     }
 
-    public Instance ArrayList(Instance c, CallContext callContext) {
+    public Value ArrayList(Value c, CallContext callContext) {
         return List(c, callContext);
     }
 
-    public Instance ValueList(CallContext callContext) {
+    public Value ValueList(CallContext callContext) {
         return List(callContext);
     }
 
-    public Instance ValueList(Instance c, CallContext callContext) {
+    public Value ValueList(Value c, CallContext callContext) {
         return List(c, callContext);
     }
 
-    public InstanceReference iterator(CallContext callContext) {
+    public Reference iterator(CallContext callContext) {
         var iteratorImplType = StdKlass.iteratorImpl.get().getParameterized(List.of(instance.getKlass().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType.getType());
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
@@ -83,23 +83,23 @@ public class ListNative extends IterableNative {
         return it.getReference();
     }
 
-    public Instance get(Instance index, CallContext callContext) {
+    public Value get(Value index, CallContext callContext) {
         return array.get(getInt(index));
     }
 
-    public Instance set(Instance index, Instance value, CallContext callContext) {
+    public Value set(Value index, Value value, CallContext callContext) {
         return array.setElement(getInt(index), value);
     }
 
-    public BooleanInstance remove(Instance instance, CallContext callContext) {
+    public BooleanValue remove(Value instance, CallContext callContext) {
         return Instances.booleanInstance(array.removeElement(instance));
     }
 
-    public Instance removeAt(Instance index, CallContext callContext) {
+    public Value removeAt(Value index, CallContext callContext) {
         return array.removeElement(getInt(index));
     }
 
-    public Instance contains(Instance value, CallContext callContext) {
+    public Value contains(Value value, CallContext callContext) {
         return Instances.booleanInstance(array.contains(value));
     }
 
@@ -111,17 +111,17 @@ public class ListNative extends IterableNative {
         array.clear();
     }
 
-    public BooleanInstance add(Instance instance, CallContext callContext) {
+    public BooleanValue add(Value instance, CallContext callContext) {
         return add(instance);
     }
 
-    public BooleanInstance add(Instance instance) {
+    public BooleanValue add(Value instance) {
         array.addElement(instance);
         return Instances.trueInstance();
     }
 
-    public BooleanInstance addAll(Instance c, CallContext callContext) {
-        if(c instanceof InstanceReference collection && collection.resolveObject().isList()) {
+    public BooleanValue addAll(Value c, CallContext callContext) {
+        if(c instanceof Reference collection && collection.resolveObject().isList()) {
             var thatArrayField = collection.resolveObject().getKlass().getFieldByCode("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
             array.addAll(thatArray);
@@ -131,8 +131,8 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public static InstanceReference of(Klass klass, Instance values, CallContext callContext) {
-        if(values instanceof InstanceReference r) {
+    public static Reference of(Klass klass, Value values, CallContext callContext) {
+        if(values instanceof Reference r) {
             var list = ClassInstance.allocate(klass.getType());
             var listNative = (ListNative) NativeMethods.getNativeObject(list);
             listNative.List(callContext);
@@ -143,16 +143,16 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public Instance isEmpty(CallContext callContext) {
+    public Value isEmpty(CallContext callContext) {
         return Instances.booleanInstance(array.isEmpty());
     }
 
-    public LongInstance size(CallContext callContext) {
+    public LongValue size(CallContext callContext) {
         return Instances.longInstance(array.size());
     }
 
-    public BooleanInstance removeIf(Instance filter, CallContext callContext) {
-        if(filter instanceof InstanceReference r) {
+    public BooleanValue removeIf(Value filter, CallContext callContext) {
+        if(filter instanceof Reference r) {
             var method = r.resolveObject().getKlass().getMethods().get(0);
             return Instances.booleanInstance(array.removeIf(e -> method.execute(
                     r.resolveObject(), List.of(e), callContext).booleanRet()));
@@ -166,8 +166,8 @@ public class ListNative extends IterableNative {
     }
 
     @Override
-    public void forEach(Instance action, CallContext callContext) {
-        if(action instanceof InstanceReference r) {
+    public void forEach(Value action, CallContext callContext) {
+        if(action instanceof Reference r) {
             var method = r.resolveObject().getKlass().getMethods().get(0);
             array.forEach(e -> method.execute(r.resolveObject(), List.of(e), callContext));
         }
