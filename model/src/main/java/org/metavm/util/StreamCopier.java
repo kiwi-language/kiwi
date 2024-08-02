@@ -140,20 +140,20 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
-    public void visitRedirectingInstance() {
-        output.write(WireTypes.REDIRECTING_INSTANCE);
-        visitValue();
-        output.writeId(readId());
-        visitValue();
-    }
-
-    @Override
     public void visitRedirectingReference() {
         output.write(WireTypes.REDIRECTING_REFERENCE);
         output.write(read());
         output.writeId(readId());
         visitValue();
         output.writeId(readId());
+    }
+
+    @Override
+    public void visitRedirectingInstance() {
+        output.write(WireTypes.REDIRECTING_INSTANCE);
+        visitValue();
+        output.writeId(readId());
+        visitValue();
     }
 
     @Override

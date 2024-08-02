@@ -609,7 +609,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void addField(Field field) {
         if (fields.contains(field))
             throw new RuntimeException("Field " + field.tryGetId() + " is already added");
-        if (tryGetFieldByName(field.getName()) != null || tryGetStaticFieldByName(field.getName()) != null)
+        if (findSelfField(f -> f.getName().equals(field.getName())) != null
+                || findSelfStaticField(f -> f.getName().equals(field.getName())) != null)
             throw BusinessException.invalidField(field, "Field name '" + field.getName() + "' is already used in class " + getName());
         if (field.getCode() != null &&
                 (findSelfFieldByCode(field.getCode()) != null || findSelfStaticFieldByCode(field.getCode()) != null))
@@ -756,6 +757,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public @Nullable Field findSelfField(Predicate<Field> predicate) {
         return NncUtils.find(fields, predicate);
+    }
+
+    public @Nullable Field findSelfStaticField(Predicate<Field> predicate) {
+        return NncUtils.find(staticFields, predicate);
     }
 
     public @Nullable Field findField(Predicate<Field> predicate) {

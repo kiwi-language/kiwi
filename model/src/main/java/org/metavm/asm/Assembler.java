@@ -523,7 +523,8 @@ public class Assembler {
             var mods = currentMods();
             var classInfo = (ClassInfo) scope;
             var klass = classInfo.klass;
-            var field = klass.findField(f -> f.getCodeNotNull().equals(name));
+            var isStatic = mods.contains(Modifiers.STATIC);
+            var field = isStatic ? klass.findSelfStaticFieldByCode(name) : klass.findSelfFieldByCode(name);
             if (field == null) {
                 field = FieldBuilder.newBuilder(name, name, klass, type)
                         .tmpId(NncUtils.randomNonNegative())
@@ -535,7 +536,7 @@ public class Assembler {
             }
             field.setAccess(getAccess(mods));
             field.setReadonly(mods.contains(Modifiers.READONLY));
-            field.setStatic(mods.contains(Modifiers.STATIC));
+            field.setStatic(isStatic);
             if (mods.contains(Modifiers.TITLE))
                 klass.setTitleField(field);
             else if(klass.getTitleField() == field)

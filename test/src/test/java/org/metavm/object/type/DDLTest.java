@@ -600,6 +600,46 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(Id.parse(shoesId).getTreeId(), Id.parse(kind.getString("$id")).getTreeId());
     }
 
+    public void testChildToEnumConversionAbortion() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_before.masm", typeManager, entityContextFactory);
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "shoes",
+                "kind", Map.of("name", "DEFAULT")
+        )));
+        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_after.masm", typeManager, false, entityContextFactory);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var commit = context.getCommit(commitId);
+                commit.cancel();
+                context.finish();
+            }
+        });
+        TestUtils.waitForDDLAborted(entityContextFactory);
+        var shoes = apiClient.getObject(shoesId);
+        MatcherAssert.assertThat(shoes.get("kind"), CoreMatchers.instanceOf(ClassInstanceWrap.class));
+    }
+
+    public void testEnumToChildConversionAbortion() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_to_child_ddl.masm", typeManager, entityContextFactory);
+        var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        var defaultKindId = TestUtils.getEnumConstantIdByName(productKindKlass, "DEFAULT");
+        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+                "name", "shoes",
+                "kind", defaultKindId
+        )));
+        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_rollback.masm", typeManager, false, entityContextFactory);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var commit = context.getCommit(commitId);
+                commit.cancel();
+                context.finish();
+            }
+        });
+        TestUtils.waitForDDLAborted(entityContextFactory);
+        var kindId = apiClient.getObject(shoesId).getString("kind");
+        Assert.assertEquals(defaultKindId, kindId);
+    }
+
     public void testRaceCondition() throws InterruptedException {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
         var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(

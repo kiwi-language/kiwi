@@ -55,7 +55,6 @@ public class StreamVisitor {
         visitValue();
         readId();
         visitValue();
-        readId();
     }
 
     protected void visitFlaggedReference() {
