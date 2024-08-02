@@ -7,7 +7,6 @@ import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.instance.rest.ReferenceFieldValue;
-import org.metavm.object.type.RedirectStatus;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.InstanceOutput;
@@ -35,7 +34,6 @@ public class InstanceReference extends Instance {
     public static final int FLAG_FORWARDED = 1;
     public static final int FLAG_EAGER = 2;
     public static final int FLAG_VIEW = 4;
-    public static final int FLAG_REDIRECTING = 8;
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceReference.class);
 
@@ -43,8 +41,6 @@ public class InstanceReference extends Instance {
     private @Nullable DurableInstance target;
     private final Supplier<DurableInstance> resolver;
     private int flags = 0;
-    private @Nullable InstanceReference redirectionReference;
-    private @Nullable RedirectStatus redirectStatus;
 
     public InstanceReference(DurableInstance resolved) {
         super(resolved.getType());
@@ -62,8 +58,6 @@ public class InstanceReference extends Instance {
     }
 
     public DurableInstance resolve() {
-        if(shouldRedirect())
-            return Objects.requireNonNull(redirectionReference).resolve();
         if (target == null)
             target = resolver.get();
         return target;
@@ -91,26 +85,6 @@ public class InstanceReference extends Instance {
 
     public boolean isForwarded() {
         return (flags & FLAG_FORWARDED) != 0;
-    }
-
-    public boolean isRedirecting() {
-        return (flags & FLAG_REDIRECTING) != 0;
-    }
-
-    public InstanceReference getRedirectionReference() {
-        return Objects.requireNonNull(redirectionReference);
-    }
-
-    public void setRedirecting(InstanceReference redirectionTarget, RedirectStatus redirectStatus) {
-        flags |= FLAG_REDIRECTING;
-        this.redirectionReference = redirectionTarget;
-        this.redirectStatus = redirectStatus;
-    }
-
-    public void clearRedirecting() {
-        flags &= ~FLAG_REDIRECTING;
-        redirectionReference = null;
-        redirectStatus = null;
     }
 
     @Override
@@ -144,11 +118,6 @@ public class InstanceReference extends Instance {
 
     @Override
     public void writeRecord(InstanceOutput output) {
-        if(isRedirecting()) {
-            output.write(WireTypes.REDIRECTING_RECORD);
-            Objects.requireNonNull(redirectionReference).write(output);
-            output.writeId(Objects.requireNonNull(redirectStatus).getId());
-        }
         resolve().writeRecord(output);
     }
 
@@ -164,10 +133,6 @@ public class InstanceReference extends Instance {
             else
                 output.write(WireTypes.REFERENCE);
             output.writeId(id instanceof PhysicalId ? id : resolve().getId());
-            if(isRedirecting()) {
-                Objects.requireNonNull(redirectionReference).write(output);
-                output.writeId(Objects.requireNonNull(redirectStatus).getId());
-            }
         }
     }
 
@@ -321,8 +286,6 @@ public class InstanceReference extends Instance {
 
     @Override
     public boolean equals(Object obj) {
-        if(shouldRedirect())
-            return Objects.requireNonNull(redirectionReference).equals(obj);
         if (obj instanceof InstanceReference that) {
             that = that.tryRedirect();
             if (id != null && id.equals(that.id))
@@ -333,15 +296,8 @@ public class InstanceReference extends Instance {
         return false;
     }
 
-    public boolean shouldRedirect() {
-        return isRedirecting() && Objects.requireNonNull(redirectStatus).shouldRedirect();
-    }
-
     public InstanceReference tryRedirect() {
-        if(shouldRedirect())
-            return Objects.requireNonNull(redirectionReference).tryRedirect();
-        else
-            return this;
+        return this;
     }
 
     @Override
@@ -363,11 +319,14 @@ public class InstanceReference extends Instance {
     }
 
     public boolean isResolved() {
-        return shouldRedirect() ? Objects.requireNonNull(redirectionReference).isResolved() : target != null;
+        return target != null;
     }
 
     public boolean idEquals(Id id) {
         return this.id != null && this.id.equals(id);
     }
 
+    public int getFlags() {
+        return flags;
+    }
 }

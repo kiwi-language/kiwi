@@ -131,6 +131,7 @@ public class InstanceInput implements Closeable {
             case WireTypes.PASSWORD -> new PasswordInstance(readString(), Types.getPasswordType());
             case WireTypes.FLAGGED_REFERENCE -> readFlaggedReference();
             case WireTypes.REFERENCE -> readReference();
+            case WireTypes.REDIRECTING_REFERENCE -> readRedirectingReference();
             case WireTypes.REDIRECTING_RECORD -> readRedirectingRecord();
             case WireTypes.RECORD -> readRecord();
             case WireTypes.MIGRATING_RECORD -> readMigratingRecord();
@@ -143,9 +144,7 @@ public class InstanceInput implements Closeable {
         var redirectionRef = (InstanceReference) readInstance();
         var redirectionStatus = redirectStatusProvider.getRedirectStatus(readId());
         var record = (InstanceReference) readInstance();
-        var ref = new InstanceReference(record.resolve());
-        ref.setRedirecting(redirectionRef, redirectionStatus);
-        return ref;
+        return new RedirectingReference(record.resolve(), redirectionRef, redirectionStatus);
     }
 
     private InstanceReference readReference() {
@@ -160,8 +159,16 @@ public class InstanceInput implements Closeable {
         var flags = read();
         var ref = resolveInstance(readId());
         ref.setFlags(flags);
-        if(ref.isRedirecting())
-            ref.setRedirecting((InstanceReference) readInstance(), redirectStatusProvider.getRedirectStatus(readId()));
+        return ref;
+    }
+
+    public InstanceReference readRedirectingReference() {
+        var flags = read();
+        var id = readId();
+        var redirectionRef = (InstanceReference) readInstance();
+        var status = redirectStatusProvider.getRedirectStatus(readId());
+        var ref = new RedirectingReference(id, () -> resolver.apply(id), redirectionRef, status);
+        ref.setFlags(flags);
         return ref;
     }
 

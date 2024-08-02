@@ -16,7 +16,6 @@ import org.metavm.util.*;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -365,13 +364,14 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     }
 
     @Override
-    public void transformReference(BiFunction<InstanceReference, Boolean, InstanceReference> function) {
+    public void transformReference(TriFunction<InstanceReference, Boolean, Type, InstanceReference> function) {
         var isChild = isChildArray();
+        var elementType = getType().getElementType();
         var it = elements.listIterator();
         while (it.hasNext()) {
             var v = it.next();
             if(v instanceof InstanceReference r) {
-                var r1 = function.apply(r, isChild);
+                var r1 = function.apply(r, isChild, elementType);
                 if(r1 != r)
                     it.set(r1);
             }

@@ -731,10 +731,14 @@ public abstract class DurableInstance implements Message {
     public abstract void forEachReference(TriConsumer<InstanceReference, Boolean, Type> action);
 
     public void transformReference(Function<InstanceReference, InstanceReference> function) {
-        transformReference((r, isChild) -> function.apply(r));
+        transformReference((r, isChild, type) -> function.apply(r));
     }
 
-    public abstract void transformReference(BiFunction<InstanceReference, Boolean, InstanceReference> function);
+    public void transformReference(BiFunction<InstanceReference, Boolean, InstanceReference> function) {
+        transformReference((r, isChild, type) -> function.apply(r, isChild));
+    }
+
+    public abstract void transformReference(TriFunction<InstanceReference, Boolean, Type, InstanceReference> function);
 
     public void visitGraph(Predicate<DurableInstance> action) {
         visitGraph(action, r -> true, new IdentitySet<>());

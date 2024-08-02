@@ -2,7 +2,6 @@ package org.metavm.util;
 
 import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.TypeOrTypeKey;
 
 import java.io.InputStream;
@@ -149,15 +148,20 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
+    public void visitRedirectingReference() {
+        output.write(WireTypes.REDIRECTING_REFERENCE);
+        output.write(read());
+        output.writeId(readId());
+        visit();
+        output.writeId(readId());
+    }
+
+    @Override
     protected void visitFlaggedReference() {
         output.write(WireTypes.FLAGGED_REFERENCE);
         var flags = read();
         output.write(flags);
         output.writeId(readId());
-        if((flags & InstanceReference.FLAG_REDIRECTING) != 0) {
-            visit();
-            output.writeId(readId());
-        }
     }
 
     @Override

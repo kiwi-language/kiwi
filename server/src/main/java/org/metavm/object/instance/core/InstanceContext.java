@@ -599,7 +599,12 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void finalizeRedirections() {
-        forEachInitialized(instance -> instance.transformReference(r -> r.shouldRedirect() ? r.getRedirectionReference() : r));
+        forEachInitialized(instance -> instance.transformReference(r -> {
+            if(r instanceof RedirectingReference redirectingRef && redirectingRef.shouldRedirect())
+                return redirectingRef.getRedirectionReference();
+            else
+                return r;
+        }));
     }
 
     private Migrations migrate() {

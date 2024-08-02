@@ -527,7 +527,7 @@ public class DDLTest extends TestCase {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
             var kindRef = (InstanceReference) shoesInst.getField("kind");
-            Assert.assertFalse(kindRef.isRedirecting());
+            Assert.assertFalse(kindRef instanceof RedirectingReference);
             var kind = (ClassInstance) instCtx.get(Id.parse(kindId));
             Assert.assertSame(kind, kindRef.resolve());
             Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag()));

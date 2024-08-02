@@ -20,7 +20,6 @@ import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public class ClassInstance extends DurableInstance {
@@ -193,10 +192,10 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
-    public void transformReference(BiFunction<InstanceReference, Boolean, InstanceReference> function) {
+    public void transformReference(TriFunction<InstanceReference, Boolean, Type, InstanceReference> function) {
         forEachField((f, v) -> {
             if(v instanceof InstanceReference r) {
-                var r1 = function.apply(r, r.isResolved() && r.resolve().isChildOf(this, f));
+                var r1 = function.apply(r, r.isResolved() && r.resolve().isChildOf(this, f), f.getType());
                 if(r1 != r)
                     setField(f, r1);
             }

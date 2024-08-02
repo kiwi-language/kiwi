@@ -614,7 +614,7 @@ public class Instances {
     }
 
     private static void handleEnumConversion(DurableInstance instance, Klass enumClass, Commit commit, IEntityContext context) {
-        instance.forEachReference((r, isChild, type) -> {
+        instance.transformReference((r, isChild, type) -> {
             if(type.isAssignableFrom(enumClass.getType())) {
                 var referent = r.resolve();
                 if(referent instanceof ClassInstance object && object.getKlass() == enumClass && !enumClass.isEnumConstant(object.getReference())) {
@@ -622,9 +622,10 @@ public class Instances {
                     object.setField(enumClass.getFieldByTemplate(StdField.enumName.get()), Instances.stringInstance(""));
                     object.setField(enumClass.getFieldByTemplate(StdField.enumOrdinal.get()), Instances.longInstance(-1L));
                     var ec = mapEnumConstant(r1 ,enumClass, context);
-                    r.setRedirecting(ec, commit);
+                    return new RedirectingReference(referent, ec, commit);
                 }
             }
+            return r;
         });
     }
 
@@ -785,15 +786,15 @@ public class Instances {
         for (String klassId : commit.getToEnumKlassIds()) {
             var klass = context.getKlass(klassId);
             for (DurableInstance instance : instances) {
-                instance.forEachReference((r, isChild, type) -> {
-                    if(r.isRedirecting() && type.isAssignableFrom(klass.getType())) {
-                        var resolved = r.resolve();
-                        if(resolved instanceof ClassInstance object && object.getKlass() == klass) {
-                            r.clearRedirecting();
+                instance.transformReference((r, isChild, type) -> {
+                    if(r instanceof RedirectingReference && type.isAssignableFrom(klass.getType())) {
+                        if(r.resolve() instanceof ClassInstance object && object.getKlass() == klass) {
                             object.tryClearUnknownField(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag());
                             object.tryClearUnknownField(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag());
+                            return object.getReference();
                         }
                     }
+                    return r;
                 });
             }
         }
