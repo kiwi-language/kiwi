@@ -2,7 +2,7 @@ package org.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.api.Value;
+import org.metavm.api.ValueObject;
 import org.metavm.event.MockEventQueue;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.object.instance.InstanceStore;
@@ -119,7 +119,7 @@ public class BootstrapTest extends TestCase {
             ContextUtil.resetProfiler();
             var profiler = ContextUtil.getProfiler();
             var originalDefContext = ModelDefRegistry.getDefContext();
-            var entities = NncUtils.filter(originalDefContext.getEntities(), e -> !EntityUtils.isEphemeral(e) && !(e instanceof Value));
+            var entities = NncUtils.filter(originalDefContext.getEntities(), e -> !EntityUtils.isEphemeral(e) && !(e instanceof ValueObject));
             var modelIds = NncUtils.map(entities, e -> originalDefContext.getIdentityContext().getModelId(e));
             var originalIds = NncUtils.map(entities, e -> originalDefContext.getInstance(e).tryGetId());
             stdIdStore = new MemoryStdIdStore();

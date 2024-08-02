@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.api.ValueObject;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.Value;
@@ -44,7 +45,7 @@ public class IdentityContextTest extends TestCase {
         var identities = new IdentityHashMap<Object, ModelIdentity>();
         EntityUtils.visitGraph(List.of(fooKlass),
                 entity -> {
-                    if (!(entity instanceof Value) && !(entity instanceof org.metavm.api.Value))
+                    if (!(entity instanceof Value) && !(entity instanceof ValueObject))
                         identities.put(entity, identityContext.getModelId(entity));
                 }
         );

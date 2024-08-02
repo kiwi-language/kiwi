@@ -12,7 +12,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.hamcrest.MatcherAssert;
-import org.metavm.api.Value;
+import org.metavm.api.ValueObject;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
@@ -282,7 +282,7 @@ public class TestUtils {
             else
                 treeId = nextTreeIdRef.value++;
             r.forEachDescendant(e -> {
-                if(!e.isEphemeralEntity() && !(e instanceof Value) && !e.hasPhysicalId()) {
+                if(!e.isEphemeralEntity() && !(e instanceof ValueObject) && !e.hasPhysicalId()) {
                     var type =
                             ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(e) : AnyType.instance;
                     e.initId(PhysicalId.of(treeId, nextNodeIdRef.value++, type));

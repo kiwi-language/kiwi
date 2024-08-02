@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.api.ValueObject;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.Value;
@@ -162,7 +163,7 @@ public class ValueUtils {
     }
 
     public static boolean isValueType(Class<?> klass) {
-        return org.metavm.api.Value.class.isAssignableFrom(klass);
+        return ValueObject.class.isAssignableFrom(klass);
     }
 
     public static boolean isEnumType(Class<?> klass) {

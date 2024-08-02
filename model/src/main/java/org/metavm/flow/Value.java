@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
+import org.metavm.api.ValueObject;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.EntityParentRef;
@@ -15,7 +16,7 @@ import org.metavm.object.type.Type;
 import javax.annotation.Nullable;
 
 @EntityType
-public abstract class Value extends Element implements org.metavm.api.Value {
+public abstract class Value extends Element implements ValueObject {
 
     protected final ValueKind kind;
 

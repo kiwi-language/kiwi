@@ -1,7 +1,7 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.api.Value;
+import org.metavm.api.ValueObject;
 import org.metavm.entity.*;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.ParsingContext;
@@ -14,7 +14,7 @@ import org.metavm.util.NncUtils;
 import java.util.List;
 
 @EntityType
-public class IndexQueryKey extends Entity implements Value {
+public class IndexQueryKey extends Entity implements ValueObject {
 
     public static IndexQueryKey create(IndexQueryKeyDTO indexQueryKeyDTO, IEntityContext context, ParsingContext parsingContext) {
         return new IndexQueryKey(

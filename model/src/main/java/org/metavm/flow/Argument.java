@@ -2,6 +2,7 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
+import org.metavm.api.ValueObject;
 import org.metavm.entity.*;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.flow.rest.ArgumentDTO;
@@ -10,7 +11,7 @@ import org.metavm.object.instance.core.Value;
 import java.util.Objects;
 
 @EntityType
-public class Argument extends Element implements LocalKey, org.metavm.api.Value {
+public class Argument extends Element implements LocalKey, ValueObject {
 
     private final ParameterRef parameterRef;
     private final org.metavm.flow.Value value;

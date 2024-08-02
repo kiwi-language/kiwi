@@ -1,7 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.api.EntityType;
-import org.metavm.api.Value;
+import org.metavm.api.ValueObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.Map;
 public record Attribute(
         String name,
         String value
-) implements Value {
+) implements ValueObject {
 
     public static List<Attribute> fromMap(Map<String, String> map) {
         var attributes = new ArrayList<Attribute>();

@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
+import org.metavm.api.ValueObject;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
@@ -18,7 +19,7 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 
 @EntityType
-public class ParentRef extends Element implements org.metavm.api.Value {
+public class ParentRef extends Element implements ValueObject {
 
     public static ParentRef create(ParentRefDTO parentRefDTO, ParsingContext parsingContext, IEntityContext entityContext, @Nullable Type childType) {
         var master = ValueFactory.create(parentRefDTO.parent(), parsingContext);

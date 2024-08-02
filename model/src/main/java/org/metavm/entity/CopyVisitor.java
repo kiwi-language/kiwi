@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.api.Value;
+import org.metavm.api.ValueObject;
 import org.metavm.object.type.Klass;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.InternalException;
@@ -89,7 +89,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
 
     protected Object getValue(Object object, Consumer<Object> setter) {
         return switch (object) {
-            case Value ignored -> {
+            case ValueObject ignored -> {
                 if (object instanceof Element element)
                     yield element.accept(this);
                 else
@@ -170,7 +170,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
 
     protected Object allocateCopy(Object entity) {
         var copy = ReflectionUtils.allocateInstance(EntityUtils.getRealType(entity.getClass()));
-        if (copy instanceof Entity e && !(copy instanceof Value))
+        if (copy instanceof Entity e && !(copy instanceof ValueObject))
             e.setStrictEphemeral(strictEphemeral);
         return copy;
     }

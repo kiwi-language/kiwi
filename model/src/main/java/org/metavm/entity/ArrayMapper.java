@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.api.ValueObject;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Value;
@@ -18,7 +19,7 @@ public class ArrayMapper<E, C extends ReadonlyArray<E>> implements Mapper<C, Arr
     public ArrayMapper(Class<C> entityClass, DefContext defContext) {
         this.entityClass = entityClass;
         this.defContext = defContext;
-        valueArray = org.metavm.api.Value.class.isAssignableFrom(entityClass);
+        valueArray = ValueObject.class.isAssignableFrom(entityClass);
     }
 
     @Override

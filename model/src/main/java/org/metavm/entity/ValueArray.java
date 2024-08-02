@@ -1,11 +1,11 @@
 package org.metavm.entity;
 
-import org.metavm.api.Value;
+import org.metavm.api.ValueObject;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
 
-public class ValueArray<T> extends ReadonlyArray<T> implements Value {
+public class ValueArray<T> extends ReadonlyArray<T> implements ValueObject {
 
     public ValueArray() {
     }

@@ -1,7 +1,7 @@
 package org.metavm.http;
 
 import org.metavm.api.EntityType;
-import org.metavm.api.Value;
+import org.metavm.api.ValueObject;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType(isNative = true)
-public class HttpRequestImpl extends Entity implements HttpRequest, Value {
+public class HttpRequestImpl extends Entity implements HttpRequest, ValueObject {
 
     private final String method;
     private final String requestURI;

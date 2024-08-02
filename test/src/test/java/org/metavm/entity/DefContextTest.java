@@ -3,7 +3,7 @@ package org.metavm.entity;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
-import org.metavm.api.Value;
+import org.metavm.api.ValueObject;
 import org.metavm.expression.ConstantExpression;
 import org.metavm.flow.NodeRT;
 import org.metavm.mocks.Bar;
@@ -126,7 +126,7 @@ public class DefContextTest extends TestCase {
         for (ModelAndPath modelAndPath : models) {
             Object model = modelAndPath.model();
             String path = modelAndPath.path();
-            if (!(model instanceof Value) && model instanceof Identifiable identifiable && !EntityUtils.isEphemeral(model)) {
+            if (!(model instanceof ValueObject) && model instanceof Identifiable identifiable && !EntityUtils.isEphemeral(model)) {
                 ModelIdentity identity = identityMap.get(identifiable);
                 Assert.assertNotNull(
                         "Can not find identity for model '" + model + "' at path '" + path + "'",

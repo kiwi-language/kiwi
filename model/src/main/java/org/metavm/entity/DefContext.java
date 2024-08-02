@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.ValueObject;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
 import org.metavm.flow.ScopeRT;
@@ -230,7 +231,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     private Id getEntityId(Object entity) {
-        if (entity instanceof org.metavm.api.Value || EntityUtils.isEphemeral(entity))
+        if (entity instanceof ValueObject || EntityUtils.isEphemeral(entity))
             return null;
         //        var type = getType(EntityUtils.getRealType(entity.getClass()));
         return stdIdProvider.getId(identityContext.getModelId(entity));
@@ -508,7 +509,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     void writeEntity(Object entity) {
         if (entities.add(entity)) {
             pendingModels.add(entity);
-            if (!(entity instanceof org.metavm.api.Value)) {
+            if (!(entity instanceof ValueObject)) {
                 tryInitEntityId(entity);
                 memoryIndex.save(entity);
             }

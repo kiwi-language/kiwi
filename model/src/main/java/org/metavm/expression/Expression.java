@@ -1,6 +1,7 @@
 package org.metavm.expression;
 
 import org.metavm.api.EntityType;
+import org.metavm.api.ValueObject;
 import org.metavm.entity.Element;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
@@ -11,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @EntityType
-public abstract class Expression extends Element implements org.metavm.api.Value {
+public abstract class Expression extends Element implements ValueObject {
 
     protected abstract String buildSelf(VarType symbolType, boolean relaxedCheck);
 
