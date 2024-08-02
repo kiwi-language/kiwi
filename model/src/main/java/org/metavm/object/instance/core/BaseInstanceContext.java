@@ -9,6 +9,7 @@ import org.metavm.entity.LockMode;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
+import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.util.*;
@@ -46,6 +47,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final boolean readonly;
     private final String clientId = ContextUtil.getClientId();
     private final TypeDefProvider typeDefProvider;
+    private final RedirectStatusProvider redirectStatusProvider;
     private final IndexSource indexSource;
     private final MappingProvider mappingProvider;
     private int seq;
@@ -58,6 +60,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                                IndexSource indexSource,
                                TypeDefProvider typeDefProvider,
                                MappingProvider mappingProvider,
+                               RedirectStatusProvider redirectStatusProvider,
                                long timeout) {
         this.appId = appId;
         this.readonly = readonly;
@@ -66,6 +69,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //        this.typeProvider = typeProvider;
         this.typeDefProvider = typeDefProvider;
         this.mappingProvider = mappingProvider;
+        this.redirectStatusProvider = redirectStatusProvider;
         memIndex = new InstanceMemoryIndex();
         this.timeout = timeout;
     }
@@ -379,6 +383,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
+    public RedirectStatusProvider getRedirectStatusProvider() {
+        return redirectStatusProvider;
+    }
+
+    @Override
     public boolean containsInstance(DurableInstance instance) {
         return instance.getContext() == this || parent != null && parent.containsInstance(instance);
     }
@@ -677,7 +686,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public InstanceInput createInstanceInput(InputStream stream) {
-        return new InstanceInput(stream, this::internalGet, this::add, getTypeDefProvider());
+        return new InstanceInput(stream, this::internalGet, this::add, getTypeDefProvider(), redirectStatusProvider);
     }
 
     private void add(DurableInstance instance) {

@@ -9,6 +9,8 @@ import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.type.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -21,6 +23,8 @@ import java.util.function.Supplier;
 
 public class InstanceInput implements Closeable {
 
+    public static final Logger logger = LoggerFactory.getLogger(InstanceInput.class);
+
     public static final Function<Id, DurableInstance> UNSUPPORTED_RESOLVER = id -> {
         throw new UnsupportedOperationException();
     };
@@ -30,6 +34,10 @@ public class InstanceInput implements Closeable {
     };
 
     public static final TypeDefProvider UNSUPPORTED_TYPE_DEF_PROVIDER = id -> {
+        throw new UnsupportedOperationException();
+    };
+
+    public static final RedirectStatusProvider UNSUPPORTED_REDIRECTION_SIGNAL_PROVIDER = id -> {
         throw new UnsupportedOperationException();
     };
 
@@ -45,6 +53,7 @@ public class InstanceInput implements Closeable {
     private final Function<Id, DurableInstance> resolver;
     private final Consumer<DurableInstance> addValue;
     private final TypeDefProvider typeDefProvider;
+    private final RedirectStatusProvider redirectStatusProvider;
     private long treeId;
     @Nullable
     private DurableInstance parent;
@@ -53,17 +62,19 @@ public class InstanceInput implements Closeable {
     private boolean loadedFromCache;
 
     public InstanceInput(InputStream inputStream) {
-        this(inputStream, UNSUPPORTED_RESOLVER, UNSUPPORTED_ADD_VALUE, UNSUPPORTED_TYPE_DEF_PROVIDER);
+        this(inputStream, UNSUPPORTED_RESOLVER, UNSUPPORTED_ADD_VALUE, UNSUPPORTED_TYPE_DEF_PROVIDER, UNSUPPORTED_REDIRECTION_SIGNAL_PROVIDER);
     }
 
     public InstanceInput(InputStream inputStream,
                          Function<Id, DurableInstance> resolver,
                          Consumer<DurableInstance> addValue,
-                         TypeDefProvider typeDefProvider) {
+                         TypeDefProvider typeDefProvider,
+                         RedirectStatusProvider redirectStatusProvider) {
         this.inputStream = inputStream;
         this.resolver = resolver;
         this.addValue = addValue;
         this.typeDefProvider = typeDefProvider;
+        this.redirectStatusProvider = redirectStatusProvider;
     }
 
     public DurableInstance readSingleMessageGrove() {
@@ -120,11 +131,21 @@ public class InstanceInput implements Closeable {
             case WireTypes.PASSWORD -> new PasswordInstance(readString(), Types.getPasswordType());
             case WireTypes.FLAGGED_REFERENCE -> readFlaggedReference();
             case WireTypes.REFERENCE -> readReference();
+            case WireTypes.REDIRECTING_RECORD -> readRedirectingRecord();
             case WireTypes.RECORD -> readRecord();
             case WireTypes.MIGRATING_RECORD -> readMigratingRecord();
             case WireTypes.VALUE -> readValue();
             default -> throw new IllegalStateException("Invalid wire type: " + wireType);
         };
+    }
+
+    private Instance readRedirectingRecord() {
+        var redirectionRef = (InstanceReference) readInstance();
+        var redirectionStatus = redirectStatusProvider.getRedirectStatus(readId());
+        var record = (InstanceReference) readInstance();
+        var ref = new InstanceReference(record.resolve());
+        ref.setRedirecting(redirectionRef, redirectionStatus);
+        return ref;
     }
 
     private InstanceReference readReference() {
@@ -139,6 +160,8 @@ public class InstanceInput implements Closeable {
         var flags = read();
         var ref = resolveInstance(readId());
         ref.setFlags(flags);
+        if(ref.isRedirecting())
+            ref.setRedirecting((InstanceReference) readInstance(), redirectStatusProvider.getRedirectStatus(readId()));
         return ref;
     }
 

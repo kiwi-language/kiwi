@@ -275,6 +275,21 @@ public abstract class DurableInstance implements Message {
         return !isInlineValue() && getRoot() == this;
     }
 
+    public boolean isReferencedByParent() {
+        if(parent != null) {
+            var ref = new Object() {
+                boolean referenced;
+            };
+            parent.forEachChild(c -> {
+                if(c == this)
+                    ref.referenced = true;
+            });
+            return ref.referenced;
+        }
+        else
+            return false;
+    }
+
     void setLoaded(boolean fromCache) {
         if (loaded)
             throw new InternalException(String.format("Instance %d is already loaded", getTreeId()));

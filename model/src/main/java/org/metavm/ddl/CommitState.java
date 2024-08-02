@@ -37,22 +37,12 @@ public enum CommitState {
     MIGRATING {
         @Override
         public void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
-            var fromEnumKlasses = NncUtils.mapUnique(commit.getFromEnumKlassIds(), context::getKlass);
-            var instCtx = context.getInstanceContext();
-            for (DurableInstance instance : instances) {
-                if(instance instanceof ClassInstance clsInst && fromEnumKlasses.contains(clsInst.getKlass())) {
-                    var refs = instCtx.getByReferenceTargetId(instance.getId(), 0, 10);
-                    if(refs.isEmpty())
-                        instCtx.remove(instance);
-                }
-            }
         }
 
         @Override
         public boolean shouldSkip(Commit commit) {
             return commit.getValueToEntityKlassIds().isEmpty() && commit.getEntityToValueKlassIds().isEmpty()
-                    && commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty()
-                    && commit.getFromEnumKlassIds().isEmpty();
+                    && commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty();
         }
 
         @Override
@@ -64,7 +54,6 @@ public enum CommitState {
         @Override
         public void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
             var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
-            var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
             for (var instance : instances) {
                 instance.forEachReference(r -> {
                     if(!r.isResolved())
@@ -90,45 +79,27 @@ public enum CommitState {
                         }
                     });
                 }
-                for (Klass klass : toEnumKlasses) {
-                    instance.transformReference(ref -> {
-                        if(ref.isForwarded()) {
-                            var referent = ref.resolve();
-                            if (referent instanceof ClassInstance object && object.getKlass() == klass)
-                                return object.getReference();
-                        }
-                        return ref;
-                    });
-                }
             }
         }
 
         @Override
         public boolean shouldSkip(Commit commit) {
             return commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty()
-                    && commit.getValueToEntityKlassIds().isEmpty() && commit.getToEnumKlassIds().isEmpty()
-                    && commit.getEntityToValueKlassIds().isEmpty();
+                    && commit.getValueToEntityKlassIds().isEmpty() && commit.getEntityToValueKlassIds().isEmpty();
         }
     },
     SWITCHING_ID {
         @Override
         public void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
-            var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
-            var instCtx = context.getInstanceContext();
             for (var instance : instances) {
                 if(instance.tryGetOldId() != null && instance.isUseOldId())
                     instance.switchId();
-                for (Klass k : toEnumKlasses) {
-                    if(instance instanceof ClassInstance o && o.getKlass() == k && !k.isEnumConstant(o.getReference()))
-                        instCtx.remove(instance);
-                }
             }
         }
 
         @Override
         public boolean shouldSkip(Commit commit) {
-            return commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty()
-                    && commit.getToEnumKlassIds().isEmpty();
+            return commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty();
         }
     },
     REDIRECTING_REFERENCE {
@@ -158,6 +129,8 @@ public enum CommitState {
         @Override
         public void process(Iterable<DurableInstance> instances, Commit commit, IEntityContext context) {
             var instCtx = context.getInstanceContext();
+            var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
+            var fromEnumKlasses = NncUtils.mapUnique(commit.getFromEnumKlassIds(), context::getKlass);
             for (DurableInstance instance : instances) {
                 if(instance.tryGetOldId() != null && !instance.isUseOldId())
                     instCtx.buffer(instance.getOldId());
@@ -167,12 +140,20 @@ public enum CommitState {
                     instCtx.loadTree(instance.getOldId().getTreeId());
                     instCtx.removeForwardingPointer(instance, true);
                 }
+                for (Klass k : toEnumKlasses) {
+                    if(instance instanceof ClassInstance o && o.getKlass() == k && !k.isEnumConstant(o.getReference())) {
+                        instCtx.remove(instance);
+                    }
+                }
+                if(instance instanceof ClassInstance clsInst && fromEnumKlasses.contains(clsInst.getKlass()) && !instCtx.isReferenced(clsInst))
+                    instCtx.remove(instance);
             }
         }
 
         @Override
         public boolean shouldSkip(Commit commit) {
-            return commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty();
+            return commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty()
+                    && commit.getToEnumKlassIds().isEmpty() && commit.getFromEnumKlassIds().isEmpty();
         }
     },
     COMPLETED {

@@ -598,7 +598,7 @@ public class Instances {
                 });
             }
             for (Klass klass : toEnumKlasses) {
-                handleEnumConversion(instance, klass, context);
+                handleEnumConversion(instance, klass, commit, context);
             }
         }
     }
@@ -613,7 +613,7 @@ public class Instances {
         });
     }
 
-    private static void handleEnumConversion(DurableInstance instance, Klass enumClass, IEntityContext context) {
+    private static void handleEnumConversion(DurableInstance instance, Klass enumClass, Commit commit, IEntityContext context) {
         instance.forEachReference((r, isChild, type) -> {
             if(type.isAssignableFrom(enumClass.getType())) {
                 var referent = r.resolve();
@@ -621,9 +621,8 @@ public class Instances {
                     var r1 = object.getReference();
                     object.setField(enumClass.getFieldByTemplate(StdField.enumName.get()), Instances.stringInstance(""));
                     object.setField(enumClass.getFieldByTemplate(StdField.enumOrdinal.get()), Instances.longInstance(-1L));
-                    var forwarded = mapEnumConstant(r1 ,enumClass, context);
-                    object.setUnknown(StdKlass.enum_.get().getTag(), Constants.ENUM_CONSTANT_FP_TAG, forwarded);
-                    r.setForwarded();
+                    var ec = mapEnumConstant(r1 ,enumClass, context);
+                    r.setRedirecting(ec, commit);
                 }
             }
         });
@@ -787,11 +786,10 @@ public class Instances {
             var klass = context.getKlass(klassId);
             for (DurableInstance instance : instances) {
                 instance.forEachReference((r, isChild, type) -> {
-                    if(r.isForwarded() && type.isAssignableFrom(klass.getType())) {
+                    if(r.isRedirecting() && type.isAssignableFrom(klass.getType())) {
                         var resolved = r.resolve();
                         if(resolved instanceof ClassInstance object && object.getKlass() == klass) {
-                            r.clearForwarded();
-                            object.tryClearUnknownField(StdKlass.enum_.get().getTag(), Constants.ENUM_CONSTANT_FP_TAG);
+                            r.clearRedirecting();
                             object.tryClearUnknownField(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag());
                             object.tryClearUnknownField(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag());
                         }

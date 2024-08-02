@@ -8,6 +8,7 @@ import org.metavm.entity.VersionSource;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.instance.TreeNotFoundException;
 import org.metavm.object.instance.TreeSource;
+import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.util.BusinessException;
@@ -34,9 +35,10 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
                                     @Nullable IInstanceContext parent,
                                     TypeDefProvider typeDefProvider,
                                     MappingProvider mappingProvider,
+                                    RedirectStatusProvider redirectStatusProvider,
                                     boolean readonly,
                                     long timeout) {
-        super(appId, parent, readonly, indexSource, typeDefProvider, mappingProvider, timeout);
+        super(appId, parent, readonly, indexSource, typeDefProvider, mappingProvider, redirectStatusProvider, timeout);
         this.idInitializer = idInitializer;
         this.loadingBuffer = new LoadingBuffer(this, treeSources);
     }

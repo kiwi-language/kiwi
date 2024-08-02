@@ -10,7 +10,9 @@ public class IndexKeyReader extends InstanceInput {
     public IndexKeyReader(InputStream inputStream, Function<Id, DurableInstance> getInstance) {
         super(inputStream, getInstance,
                 inst -> {throw new UnsupportedOperationException();},
-                id -> {throw new UnsupportedOperationException();});
+                id -> {throw new UnsupportedOperationException();},
+                id -> {throw new UnsupportedOperationException();}
+        );
     }
 
     @Override

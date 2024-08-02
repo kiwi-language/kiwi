@@ -20,7 +20,7 @@ import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.util.List;
 
-public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, MappingProvider, TypeDefProvider {
+public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, MappingProvider, TypeDefProvider, RedirectStatusProvider {
 
     boolean containsEntity(Object entity);
 
@@ -220,6 +220,11 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     default Mapping getMapping(String id) {
         return getEntity(Mapping.class, id);
+    }
+
+    @Override
+    default RedirectStatus getRedirectStatus(Id id) {
+        return getEntity(RedirectStatus.class, id);
     }
 
     default Function getFunction(Id id) {

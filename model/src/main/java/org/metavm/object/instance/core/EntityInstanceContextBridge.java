@@ -11,7 +11,7 @@ import org.metavm.object.view.MappingProvider;
 import org.metavm.util.NncUtils;
 
 public class EntityInstanceContextBridge implements MappingProvider,
-        TypeDefProvider, IndexProvider, VersionRepository, TypeRegistry {
+        TypeDefProvider, IndexProvider, VersionRepository, TypeRegistry, RedirectStatusProvider {
 
     private IEntityContext entityContext;
 
@@ -22,6 +22,11 @@ public class EntityInstanceContextBridge implements MappingProvider,
 
     public void setEntityContext(IEntityContext entityContext) {
         this.entityContext = entityContext;
+    }
+
+    @Override
+    public RedirectStatus getRedirectStatus(Id id) {
+        return entityContext.getRedirectStatus(id);
     }
 
     @Override

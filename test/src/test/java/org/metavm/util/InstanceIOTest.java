@@ -108,7 +108,7 @@ public class InstanceIOTest extends TestCase {
                 .build();
         var instanceMap = new HashMap<Id, DurableInstance>();
         var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(foo)), id -> null,
-                i -> instanceMap.put(i.getId(), i), id -> id.equals(fooKlass.getId()) ? fooKlass : null);
+                i -> instanceMap.put(i.getId(), i), id -> id.equals(fooKlass.getId()) ? fooKlass : null, id -> null);
         var recovered = (ClassInstance) input.readSingleMessageGrove();
         var recoveredNames = recovered.getField(namesField).resolveArray();
         var name = recoveredNames.get(0);
@@ -130,7 +130,7 @@ public class InstanceIOTest extends TestCase {
                 .build();
         inst.initId(PhysicalId.of(1L, 1L, inst.getType()));
         var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(inst)), id -> null, i -> {
-        }, id -> id.equals(derivedKlass.getId()) ? derivedKlass : null);
+        }, id -> id.equals(derivedKlass.getId()) ? derivedKlass : null, id -> null);
         var recovered = (ClassInstance) input.readSingleMessageGrove();
         Assert.assertEquals(inst.getField(nameField), recovered.getField(nameField));
     }
@@ -211,7 +211,7 @@ public class InstanceIOTest extends TestCase {
             throw new NullPointerException("Can not find type def for id: " + id);
         };
         var bytes = InstanceOutput.toBytes(fooInst);
-        var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, i -> {}, typeDefProvider);
+        var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, i -> {}, typeDefProvider, id -> null);
         var recoveredFooInst = (ClassInstance) input.readSingleMessageGrove();
         MatcherAssert.assertThat(recoveredFooInst, InstanceMatcher.of(fooInst));
         new StreamVisitor(new ByteArrayInputStream(bytes)) {

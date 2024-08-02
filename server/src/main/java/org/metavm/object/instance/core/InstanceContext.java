@@ -11,6 +11,7 @@ import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.instance.persistence.VersionRT;
+import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
@@ -54,6 +55,7 @@ public class InstanceContext extends BufferingInstanceContext {
                            IInstanceContext parent,
                            TypeDefProvider typeDefProvider,
                            MappingProvider mappingProvider,
+                           RedirectStatusProvider redirectStatusProvider,
                            boolean childrenLazyLoading,
                            Cache cache,
                            @Nullable EventQueue eventQueue,
@@ -66,7 +68,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 List.of(/*new CacheTreeSource(cache),*/new StoreTreeSource(instanceStore)),
                 new StoreVersionSource(instanceStore),
                 new StoreIndexSource(instanceStore), idInitializer,
-                parent, typeDefProvider, mappingProvider, readonly, timeout);
+                parent, typeDefProvider, mappingProvider, redirectStatusProvider, readonly, timeout);
         headContext = new SubContext(appId);
         this.asyncPostProcessing = asyncPostProcessing;
         this.plugins = plugins;
@@ -103,6 +105,7 @@ public class InstanceContext extends BufferingInstanceContext {
         if (DebugEnv.debugging)
             debugLogger.info("InstanceContext.finish");
         headContext.freeze();
+        finalizeRedirections();
         var migrationResult = migrationEnabled ? migrate() : Migrations.EMPTY;
         var patchContext = new PatchContext(migrationResult);
         var patch = buildPatch(null, patchContext);
@@ -178,9 +181,8 @@ public class InstanceContext extends BufferingInstanceContext {
                 if (!instance.isRemoved())
                     orphans.add(instance);
             }
-            if (!orphans.isEmpty()) {
+            if (!orphans.isEmpty())
                 batchRemove(orphans);
-            }
         }
     }
 
@@ -549,6 +551,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 getParent(),
                 getTypeDefProvider(),
                 getMappingProvider(),
+                getRedirectStatusProvider(),
                 childrenLazyLoading,
                 cache,
                 eventQueue,
@@ -593,6 +596,10 @@ public class InstanceContext extends BufferingInstanceContext {
         public boolean isEmpty() {
             return merged.isEmpty() && extracted.isEmpty();
         }
+    }
+
+    private void finalizeRedirections() {
+        forEachInitialized(instance -> instance.transformReference(r -> r.shouldRedirect() ? r.getRedirectionReference() : r));
     }
 
     private Migrations migrate() {

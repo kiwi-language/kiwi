@@ -7,6 +7,7 @@ import org.metavm.entity.LockMode;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.event.EventQueue;
 import org.metavm.object.instance.IndexKeyRT;
+import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.util.InstanceInput;
@@ -81,9 +82,20 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void loadTree(long id);
 
+    default boolean isReferenced(DurableInstance instance) {
+        if(instance.isReferencedByParent())
+            return true;
+        if(instance.tryGetId() instanceof PhysicalId id)
+            return !getByReferenceTargetId(id, 0, 1).isEmpty();
+        // TODO handle in-memory references
+        return false;
+    }
+
     TypeDefProvider getTypeDefProvider();
 
     MappingProvider getMappingProvider();
+
+    RedirectStatusProvider getRedirectStatusProvider();
 
     boolean containsInstance(DurableInstance instance);
 

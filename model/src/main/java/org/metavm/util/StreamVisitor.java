@@ -2,6 +2,7 @@ package org.metavm.util;
 
 import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.InstanceReference;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.TypeOrTypeKey;
@@ -35,6 +36,7 @@ public class StreamVisitor {
             case WireTypes.PASSWORD -> visitPassword();
             case WireTypes.REFERENCE -> visitReference();
             case WireTypes.FLAGGED_REFERENCE -> visitFlaggedReference();
+            case WireTypes.REDIRECTING_RECORD -> visitRedirectingRecord();
             case WireTypes.RECORD -> visitRecord();
             case WireTypes.MIGRATING_RECORD -> visitMigratingRecord();
             case WireTypes.VALUE -> visitValue();
@@ -42,9 +44,19 @@ public class StreamVisitor {
         }
     }
 
+    public void visitRedirectingRecord() {
+        visit();
+        readId();
+        visit();
+    }
+
     protected void visitFlaggedReference() {
-        read();
+        var flags = read();
         visitReference();
+        if((flags & InstanceReference.FLAG_REDIRECTING) != 0) {
+            visit();
+            readId();
+        }
     }
 
     public InstanceInput getInput() {

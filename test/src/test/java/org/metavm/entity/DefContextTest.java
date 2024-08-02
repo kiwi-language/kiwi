@@ -37,7 +37,7 @@ public class DefContextTest extends TestCase {
         idProvider = new MockIdProvider();
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = InstanceContextBuilder.newBuilder(Constants.ROOT_APP_ID,
-                        new MemInstanceStore(), new DefaultIdInitializer(idProvider), bridge, bridge)
+                        new MemInstanceStore(), new DefaultIdInitializer(idProvider), bridge, bridge, bridge)
                 .readonly(false)
                 .build();
         defContext = new DefContext(

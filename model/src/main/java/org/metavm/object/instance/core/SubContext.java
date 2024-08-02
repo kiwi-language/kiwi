@@ -25,9 +25,9 @@ public final class SubContext {
     }
 
     public boolean tryAdd(@NotNull Tree tree) {
-        ensureNotFrozen();
         if (trees.containsKey(tree.id()))
             return false;
+        ensureNotFrozen();
         trees.put(tree.id(), tree);
         new ReferenceExtractor(tree.openInput(), appId, references::add).visitGrove();
         return true;

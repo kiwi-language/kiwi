@@ -1,10 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeDef;
-import org.metavm.object.type.TypeDefProvider;
+import org.metavm.object.type.*;
 import org.metavm.object.view.Mapping;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.util.NncUtils;
@@ -12,7 +9,7 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public interface EntityProvider extends MappingProvider, TypeDefProvider {
+public interface EntityProvider extends MappingProvider, TypeDefProvider, RedirectStatusProvider {
 
     <T> T getEntity(Class<T> entityType, Id id);
 
@@ -24,6 +21,10 @@ public interface EntityProvider extends MappingProvider, TypeDefProvider {
 
     default Mapping getMapping(Id id) {
         return getEntity(Mapping.class, id);
+    }
+
+    default RedirectStatus getRedirectStatus(Id id) {
+        return getEntity(RedirectStatus.class, id);
     }
 
     default Type getType(Id id) {

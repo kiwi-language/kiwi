@@ -466,16 +466,14 @@ public class DDLTest extends TestCase {
                         "code", 0
                 )
         )));
+        var kindId0 = apiClient.getObject(shoesId).getString("kind");
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_after.masm", typeManager, false, entityContextFactory);
-        TestUtils.waitForDDLState(CommitState.MIGRATING, entityContextFactory);
+        TestUtils.waitForDDLCompleted(entityContextFactory);
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
         var nameField = NncUtils.find(productKindKlass.fields(), f -> f.name().equals("name") && f.state() == MetadataState.REMOVED.code());
         Assert.assertNotNull(nameField);
         var isDefaultProduct = TestUtils.doInTransaction(() -> apiClient.callMethod(shoesId, "isDefaultKind", List.of()));
         Assert.assertEquals(true, isDefaultProduct);
-        var shoes0 = apiClient.getObject(shoesId);
-        var kindId0 = shoes0.getString("kind");
-        TestUtils.waitForDDLCompleted(entityContextFactory);
         var shoes = apiClient.getObject(shoesId);
         var defaultKind = TestUtils.getEnumConstantByName(productKindKlass, "DEFAULT");
         var hotelKind = TestUtils.getEnumConstantByName(productKindKlass, "HOTEL");
@@ -529,10 +527,9 @@ public class DDLTest extends TestCase {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
             var kindRef = (InstanceReference) shoesInst.getField("kind");
-            Assert.assertFalse(kindRef.isForwarded());
+            Assert.assertFalse(kindRef.isRedirecting());
             var kind = (ClassInstance) instCtx.get(Id.parse(kindId));
             Assert.assertSame(kind, kindRef.resolve());
-            Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), Constants.ENUM_CONSTANT_FP_TAG));
             Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag()));
             Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag()));
         }

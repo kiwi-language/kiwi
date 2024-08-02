@@ -14,6 +14,7 @@ public class WireTypes {
     public static final int VALUE = 12;
     public static final int FLAGGED_REFERENCE = 13;
     public static final int MIGRATING_RECORD = 14;
+    public static final int REDIRECTING_RECORD = 15;
     
 
 //    LONG(1),

@@ -6,6 +6,7 @@ import org.metavm.event.EventQueue;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.instance.TreeSource;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
 
@@ -22,13 +23,14 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
                                    IInstanceContext parent,
                                    TypeDefProvider typeDefProvider,
                                    MappingProvider mappingProvider,
+                                   RedirectStatusProvider redirectStatusProvider,
                                    boolean readonly) {
         super(appId,
                 treeSources, versionSource,
                 indexSource, idService,
                 parent,
                 typeDefProvider,
-                mappingProvider, readonly, 0);
+                mappingProvider, redirectStatusProvider, readonly, 0);
     }
 
     @Override

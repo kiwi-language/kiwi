@@ -6,6 +6,7 @@ import org.metavm.entity.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.instance.core.WAL;
+import org.metavm.object.type.RedirectStatus;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.util.NncUtils;
 
@@ -13,7 +14,7 @@ import java.util.Date;
 import java.util.List;
 
 @EntityType
-public class Commit extends Entity {
+public class Commit extends Entity implements RedirectStatus {
 
     public static final IndexDef<Commit> IDX_RUNNING = IndexDef.create(Commit.class, "running");
 
@@ -188,5 +189,10 @@ public class Commit extends Entity {
 
     public boolean isCancelled() {
         return cancelled;
+    }
+
+    @Override
+    public boolean shouldRedirect() {
+        return state != CommitState.PREPARING0 && state != CommitState.ABORTING && state != CommitState.ABORTED;
     }
 }
