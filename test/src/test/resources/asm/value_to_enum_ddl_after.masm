@@ -1,0 +1,62 @@
+import java.lang.IllegalStateException;
+
+class Product {
+
+    private title string name;
+    private ProductKind kind;
+
+    public Product(string name, ProductKind kind) {
+        this.name = name;
+        this.kind = kind;
+    }
+
+    public string getName() {
+        return this.name;
+    }
+
+    public void setName(string name) {
+        this.name = name;
+    }
+
+    public ProductKind getKind() {
+        return this.kind;
+    }
+
+    public void setKind(ProductKind kind) {
+        this.kind = kind;
+    }
+
+}
+
+enum ProductKind {
+
+    DEFAULT(0),
+    VIRTUAL(1),
+    HOTEL(2)
+
+    ;
+
+    private readonly int code;
+    private deleted string name;
+
+    ProductKind(int code) {
+        this.code = code;
+    }
+
+    public int getCode() {
+        return this.code;
+    }
+
+    public static ProductKind __map__(ProductKind kind) {
+        values: ProductKind.values();
+        loop: for(int i = 0; loop.i < len(values); i = loop.i + 1) {
+            name: values[loop.i].name();
+            if(name == kind.name) {
+                return values[loop.i];
+            }
+        }
+        e: new IllegalStateException(concat("Can not find an enum constant of ProductKind for name: ", kind.name));
+        throw e;
+    }
+
+}

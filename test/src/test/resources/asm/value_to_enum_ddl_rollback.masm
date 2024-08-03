@@ -1,0 +1,50 @@
+class Product {
+
+    private title string name;
+    private ProductKind kind;
+
+    public Product(string name, ProductKind kind) {
+        this.name = name;
+        this.kind = kind;
+    }
+
+    public string getName() {
+        return this.name;
+    }
+
+    public void setName(string name) {
+        this.name = name;
+    }
+
+    public ProductKind getKind() {
+        return this.kind;
+    }
+
+    public void setKind(ProductKind kind) {
+        this.kind = kind;
+    }
+
+}
+
+record ProductKind {
+    private readonly int code;
+    private readonly string name;
+
+    public ProductKind(int code, string name) {
+        this.code = code;
+        this.name = name;
+    }
+
+    public int getCode() {
+        return this.code;
+    }
+
+    public string getName() {
+        return this.name;
+    }
+
+    private string __name__(string name, int ordinal) {
+        return name;
+    }
+
+}

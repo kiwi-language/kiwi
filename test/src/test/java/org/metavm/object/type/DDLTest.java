@@ -21,10 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class DDLTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(DDLTest.class);
+    public static final String SRC_DIR = "/Users/leen/workspace/object/test/src/test/resources/asm/";
 
     private TypeManager typeManager;
     private EntityContextFactory entityContextFactory;
@@ -53,31 +55,31 @@ public class DDLTest extends TestCase {
     }
 
     public void testDDL() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        assemble("ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "inventory", Map.of(
                         "quantity", 100
                 ),
                 "price", 100
-        )));
+        ));
         var shoes = apiClient.getObject(shoesId);
         Assert.assertEquals(100L, shoes.get("price"));
 //        var inventory = shoes.getObject("inventory");
         var inventoryId = shoes.getString("inventory");
         var inventory = apiClient.getObject(inventoryId);
         Assert.assertEquals(100L, inventory.get("quantity"));
-        var boxId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Box<Inventory>", Map.of(
+        var boxId = saveInstance("Box<Inventory>", Map.of(
                 "item", inventoryId
-        )));
-        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
-        var hatId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        ));
+        var commitId = assemble("ddl_after.masm", false);
+        var hatId = saveInstance("Product", Map.of(
                 "name", "Hat",
                 "inventory", Map.of(
                         "quantity", 100
                 ),
                 "price", 20
-        )));
+        ));
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var commit = context.getEntity(Commit.class, commitId);
             var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "Product"));
@@ -145,7 +147,7 @@ public class DDLTest extends TestCase {
             );
         }
         logger.debug("Deploying rollback metadata");
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_rollback.masm", typeManager, false, entityContextFactory);
+        assemble("ddl_rollback.masm", false);
         TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
@@ -195,18 +197,18 @@ public class DDLTest extends TestCase {
     }
 
     public void testCheck() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        assemble("ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "inventory", Map.of(
                         "quantity", 100
                 ),
                 "price", 100
-        )));
+        ));
         var shoes = apiClient.getObject(shoesId);
         Assert.assertEquals(100L, shoes.get("price"));
         try {
-            MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after_failed.masm", typeManager, false, entityContextFactory);
+            assemble("ddl_after_failed.masm", false);
             Assert.fail("Should have thrown exception");
         } catch (BusinessException e) {
             Assert.assertEquals(
@@ -218,32 +220,31 @@ public class DDLTest extends TestCase {
     }
 
     public void testDDLRollback() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        assemble("ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "inventory", Map.of(
                         "quantity", 100
                 ),
                 "price", 100
-        )));
+        ));
         for (int i = 0; i < 16; i++) {
-            var _i = i;
-            TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
-                    "name", "Product" + _i,
+            saveInstance("Product", Map.of(
+                    "name", "Product" + i,
                     "inventory", Map.of(
                             "quantity", 100
                     ),
                     "price", 100
-            )));
+            ));
         }
         var shoes = apiClient.getObject(shoesId);
         var inventoryId = shoes.getString("inventory");
-        TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        saveInstance("Product", Map.of(
                 "name", "Hat",
                 "inventory", inventoryId,
                 "price", 20
-        )));
-        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
+        ));
+        var commitId = assemble("ddl_after.masm", false);
         Field availableField;
         try(var context = newContext()) {
             var commit = context.getEntity(Commit.class, commitId);
@@ -268,28 +269,27 @@ public class DDLTest extends TestCase {
     }
 
     public void testEntityToValueConversion() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_before.masm", typeManager, entityContextFactory);
+        assemble("value_ddl_before.masm");
         var currencyKlass = typeManager.getTypeByCode("Currency").type();
         var priceKlass = typeManager.getTypeByCode("Price").type();
         var productKlass = typeManager.getTypeByCode("Product").type();
         var yuanId = TestUtils.getEnumConstantByName(currencyKlass, "YUAN").getIdNotNull();
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
                         "amount", 100,
                         "currency", yuanId
                 )
-        )));
+        ));
         var priceId = apiClient.getObject(shoesId).getString("price");
         var productIds = new ArrayList<>(List.of(shoesId));
         for (int i = 0; i < 16; i++) {
-            var _i = i;
-            productIds.add(TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
-                    "name", "Shoes" + _i,
+            productIds.add(saveInstance("Product", Map.of(
+                    "name", "Shoes" + i,
                     "price", priceId
-            ))));
+            )));
         }
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_after.masm", typeManager, false, entityContextFactory);
+        assemble("value_ddl_after.masm", false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var productKlass1 = context.getKlass(productKlass.id());
@@ -343,7 +343,7 @@ public class DDLTest extends TestCase {
             var price = (ClassInstanceWrap) product.get("price");
             Assert.assertNull(price.get("$id"));
         }
-        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_before.masm", typeManager, false, entityContextFactory);
+        var commitId = assemble("value_ddl_before.masm", false);
         TestUtils.runTasks(1, 16, entityContextFactory);
         var shoes1 = apiClient.getObject(shoesId);
         var price1 = shoes1.get("price");
@@ -377,17 +377,17 @@ public class DDLTest extends TestCase {
     }
 
     public void testRollbackEntityToValueConversion() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_before.masm", typeManager, entityContextFactory);
+        assemble("value_ddl_before.masm");
         var currencyKlass = typeManager.getTypeByCode("Currency").type();
         var yuanId = TestUtils.getEnumConstantByName(currencyKlass, "YUAN").getIdNotNull();
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
                         "amount", 100,
                         "currency", yuanId
                 )
-        )));
-        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_after.masm", typeManager, false, entityContextFactory);
+        ));
+        var commitId = assemble("value_ddl_after.masm", false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var commit = context.getCommit(commitId);
@@ -412,17 +412,17 @@ public class DDLTest extends TestCase {
     }
 
     public void testRollbackValueToEntityConversion() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_after.masm", typeManager, entityContextFactory);
+        assemble("value_ddl_after.masm");
         var currencyKlass = typeManager.getTypeByCode("Currency").type();
         var yuanId = TestUtils.getEnumConstantByName(currencyKlass, "YUAN").getIdNotNull();
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
                         "amount", 100,
                         "currency", yuanId
                 )
-        )));
-        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_ddl_before.masm", typeManager, false, entityContextFactory);
+        ));
+        var commitId = assemble("value_ddl_before.masm", false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var commit = context.getCommit(commitId);
@@ -459,16 +459,16 @@ public class DDLTest extends TestCase {
     }
 
     public void testEntityToEnumConversion() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_before.masm", typeManager, entityContextFactory);
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        assemble("enum_ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "kind", Map.of(
                         "name", "DEFAULT",
                         "code", 0
                 )
-        )));
+        ));
         var kindId0 = apiClient.getObject(shoesId).getString("kind");
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_after.masm", typeManager, false, entityContextFactory);
+        assemble("enum_ddl_after.masm", false);
         TestUtils.waitForDDLCompleted(entityContextFactory);
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
         var nameField = NncUtils.find(productKindKlass.fields(), f -> f.name().equals("name") && f.state() == MetadataState.REMOVED.code());
@@ -487,7 +487,7 @@ public class DDLTest extends TestCase {
         catch (BusinessException e) {
             Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
         }
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_rollback.masm", typeManager, entityContextFactory);
+        assemble("enum_ddl_rollback.masm");
         try (var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
@@ -506,16 +506,16 @@ public class DDLTest extends TestCase {
     }
 
     public void testEnumConversionRollback() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_before.masm", typeManager, entityContextFactory);
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        assemble("enum_ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "kind", Map.of(
                         "name", "DEFAULT",
                         "code", 0
                 )
-        )));
+        ));
         var kindId = apiClient.getObject(shoesId).getString("kind");
-        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_ddl_after.masm", typeManager, false, entityContextFactory);
+        var commitId = assemble("enum_ddl_after.masm", false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var commit = context.getCommit(commitId);
@@ -537,17 +537,17 @@ public class DDLTest extends TestCase {
     }
 
     public void testValueToChildConversion() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_to_child_ddl_before.masm", typeManager, entityContextFactory);
+        assemble("value_to_child_ddl_before.masm");
         var currencyKlass = typeManager.getTypeByCode("Currency").type();
         var yuanId = TestUtils.getEnumConstantIdByName(currencyKlass, "YUAN");
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "price", Map.of(
                         "amount", 100,
                         "currency", yuanId
                 )
-        )));
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_to_child_ddl_after.masm", typeManager, entityContextFactory);
+        ));
+        assemble("value_to_child_ddl_after.masm");
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
@@ -557,7 +557,7 @@ public class DDLTest extends TestCase {
             Assert.assertNotNull(price.tryGetId());
             Assert.assertEquals(price.getTreeId(), shoesInst.getTreeId());
         }
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/value_to_child_ddl_before.masm", typeManager, entityContextFactory);
+        assemble("value_to_child_ddl_before.masm");
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
@@ -571,13 +571,13 @@ public class DDLTest extends TestCase {
     }
 
     public void testChildToEnumConversion() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_before.masm", typeManager, entityContextFactory);
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        assemble("child_to_enum_ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "kind", Map.of("name", "DEFAULT")
-        )));
+        ));
         var kindId = apiClient.getObject(shoesId).getObject("kind").getString("$id");
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_after.masm", typeManager, entityContextFactory);
+        assemble("child_to_enum_ddl_after.masm");
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
         Assert.assertEquals(ClassKind.ENUM.code(), productKindKlass.kind());
         var defaultKindId = TestUtils.getEnumConstantIdByName(productKindKlass, "DEFAULT");
@@ -594,19 +594,19 @@ public class DDLTest extends TestCase {
                 Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
             }
         }
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_rollback.masm", typeManager, entityContextFactory);
+        assemble("child_to_enum_ddl_rollback.masm");
         var kind = apiClient.getObject(shoesId).getObject("kind");
         Assert.assertEquals("DEFAULT", kind.getString("name"));
         Assert.assertEquals(Id.parse(shoesId).getTreeId(), Id.parse(kind.getString("$id")).getTreeId());
     }
 
     public void testChildToEnumConversionAbortion() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_before.masm", typeManager, entityContextFactory);
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        assemble("child_to_enum_ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "kind", Map.of("name", "DEFAULT")
-        )));
-        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_after.masm", typeManager, false, entityContextFactory);
+        ));
+        var commitId = assemble("child_to_enum_ddl_after.masm", false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var commit = context.getCommit(commitId);
@@ -620,14 +620,14 @@ public class DDLTest extends TestCase {
     }
 
     public void testEnumToChildConversionAbortion() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/enum_to_child_ddl.masm", typeManager, entityContextFactory);
+        assemble("enum_to_child_ddl.masm");
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
         var defaultKindId = TestUtils.getEnumConstantIdByName(productKindKlass, "DEFAULT");
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "kind", defaultKindId
-        )));
-        var commitId = MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/child_to_enum_ddl_rollback.masm", typeManager, false, entityContextFactory);
+        ));
+        var commitId = assemble("child_to_enum_ddl_rollback.masm", false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var commit = context.getCommit(commitId);
@@ -640,25 +640,90 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(defaultKindId, kindId);
     }
 
+    public void testValueToEnumConversion() {
+        assemble("value_to_enum_ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
+                "name", "shoes",
+                "kind", Map.of(
+                        "name", "DEFAULT",
+                        "code", 0
+                )
+        ));
+        assemble("value_to_enum_ddl_after.masm");
+        var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        var defaultKindId = TestUtils.getEnumConstantIdByName(productKindKlass, "DEFAULT");
+        var shoes = apiClient.getObject(shoesId);
+        var kind = shoes.get("kind");
+        MatcherAssert.assertThat(kind, CoreMatchers.instanceOf(String.class));
+        Assert.assertEquals(defaultKindId, kind);
+        assemble("value_to_enum_ddl_rollback.masm");
+        var shoes1 = apiClient.getObject(shoesId);
+        var kind1 = shoes1.get("kind");
+        MatcherAssert.assertThat(kind1, CoreMatchers.instanceOf(ClassInstanceWrap.class));
+        var kind1Obj = (ClassInstanceWrap) kind1;
+        Assert.assertNull(kind1Obj.get("$id"));
+    }
+
+    public void testAbortingValueToEnumConversion() {
+        assemble("value_to_enum_ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
+                "name", "shoes",
+                "kind", Map.of(
+                        "name", "DEFAULT",
+                        "code", 0
+                )
+        ));
+        var commitId = assemble("value_to_enum_ddl_after.masm", false);
+        doInContext(context -> {
+           var commit = context.getCommit(commitId);
+           commit.cancel();
+        });
+        TestUtils.waitForDDLAborted(entityContextFactory);
+        var kind = apiClient.getObject(shoesId).get("kind");
+        MatcherAssert.assertThat(kind, CoreMatchers.instanceOf(ClassInstanceWrap.class));
+        var kindObj = (ClassInstanceWrap) kind;
+        Assert.assertNull(kindObj.get("$id"));
+    }
+
+    public void testAbortingEnumToValueConversion() {
+        assemble("enum_to_value_ddl.masm");
+        var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        var defaultKindId = TestUtils.getEnumConstantIdByName(productKindKlass, "DEFAULT");
+        var shoesId = saveInstance("Product", Map.of(
+                "name", "shoes",
+                "kind", defaultKindId
+                )
+        );
+        var commitId = assemble("value_to_enum_ddl_rollback.masm", false);
+        doInContext(context -> {
+            var commit = context.getCommit(commitId);
+            commit.cancel();
+        });
+        TestUtils.waitForDDLAborted(entityContextFactory);
+        var kind = apiClient.getObject(shoesId).get("kind");
+        MatcherAssert.assertThat(kind, CoreMatchers.instanceOf(String.class));
+        Assert.assertEquals(defaultKindId, kind);
+    }
+
     public void testRaceCondition() throws InterruptedException {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_before.masm", typeManager, entityContextFactory);
-        var shoesId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+        assemble("ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "inventory", Map.of(
                         "quantity", 100
                 ),
                 "price", 100
-        )));
+        ));
         var shoes = apiClient.getObject(shoesId);
         var inventoryId = shoes.getString("inventory");
         var boxIds = new ArrayList<String>();
         for (int i = 0; i < 16; i++) {
-            var boxId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Box<Inventory>", Map.of(
+            var boxId = saveInstance("Box<Inventory>", Map.of(
                     "item", inventoryId
-            )));
+            ));
             boxIds.add(boxId);
         }
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/ddl_after.masm", typeManager, false, entityContextFactory);
+        assemble("ddl_after.masm", false);
         TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, entityContextFactory);
         var newInventoryId = TestUtils.doInTransaction(() -> {
             try(var context = newContext()) {
@@ -713,6 +778,27 @@ public class DDLTest extends TestCase {
         }
         thread.join();
         Assert.assertTrue(ref.timeout);
+    }
+
+    private void assemble(String fileName) {
+        assemble(fileName, true);
+    }
+
+    private String assemble(String fileName, boolean waitForDDLCompleted) {
+        return MockUtils.assemble(SRC_DIR + fileName, typeManager, waitForDDLCompleted, entityContextFactory);
+    }
+
+    private String saveInstance(String className, Map<String, Object> value) {
+        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, value));
+    }
+
+    private void doInContext(Consumer<IEntityContext> action) {
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                action.accept(context);
+                context.finish();
+            }
+        });
     }
 
     private IEntityContext newContext() {
