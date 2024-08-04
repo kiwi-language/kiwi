@@ -15,6 +15,7 @@ import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.flow.rest.UpdateFieldDTO;
 import org.metavm.mocks.*;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
@@ -629,6 +630,64 @@ public class InstanceManagerTest extends TestCase {
             var inst2 = (ClassInstance) instCtx.get(instId2);
             Assert.assertEquals(Instances.nullInstance(), inst2.getField(nameField));
         }
+    }
+
+    public void testRemoveChildField() {
+        var ids = TestUtils.doInTransaction(() -> {
+            try(var context = newContext()) {
+                var fooKlass = TestUtils.newKlassBuilder("Foo").build();
+                var barKlass = TestUtils.newKlassBuilder("Bar").build();
+                var fooBarField = FieldBuilder.newBuilder("bar", "bar", fooKlass, barKlass.getType())
+                        .isChild(true)
+                        .build();
+                context.bind(fooKlass);
+                var quxKlass = TestUtils.newKlassBuilder("Qux").build();
+                var quxBarField = FieldBuilder.newBuilder("bar", "bar", quxKlass, barKlass.getType()).build();
+                context.bind(quxKlass);
+                var instCtx = context.getInstanceContext();
+                var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType())
+                        .data(Map.of(
+                                fooBarField,
+                                ClassInstanceBuilder.newBuilder(barKlass.getType()).build().getReference()
+                        ))
+                        .build();
+                instCtx.bind(foo);
+                var qux = ClassInstanceBuilder.newBuilder(quxKlass.getType())
+                        .data(Map.of(quxBarField, foo.getField(fooBarField)))
+                        .build();
+                instCtx.bind(qux);
+                context.finish();
+                return new Id[] {fooBarField.getId(), foo.getId(), qux.getId()};
+            }
+        });
+        var fooBarFieldId = ids[0];
+        var fooId = ids[1];
+        var quxId = ids[2];
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                context.remove(context.getField(fooBarFieldId));
+                context.finish();
+            }
+        });
+        try(var context = newContext()) {
+            context.getInstanceContext().scan(0, 1000);
+        }
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = newContext()) {
+                var instCtx = context.getInstanceContext();
+                var foo = instCtx.get(fooId);
+                context.finish();
+            }
+        });
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = newContext()) {
+                var instCtx = context.getInstanceContext();
+                var qux = (ClassInstance) instCtx.get(quxId);
+                var barRef = (Reference) qux.getField("bar");
+                logger.debug("qux.bar: {}", barRef.resolve());
+                context.finish();
+            }
+        });
     }
 
 }

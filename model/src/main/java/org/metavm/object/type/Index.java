@@ -119,7 +119,7 @@ public class Index extends Constraint implements LocalKey {
 
     @Override
     public String getDefaultMessage() {
-        return "Duplicate field '" + NncUtils.join(fields, IndexField::getName) + "'";
+        return "Duplicate field '" + NncUtils.join(fields, IndexField::getQualifiedName) + "'";
     }
 
     @Override

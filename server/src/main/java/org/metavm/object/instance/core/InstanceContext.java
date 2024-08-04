@@ -567,8 +567,22 @@ public class InstanceContext extends BufferingInstanceContext {
         var treeIds = instanceStore.scan(getAppId(), start, limit);
         treeIds.forEach(loadingBuffer::buffer);
         loadingBuffer.flush();
-        var ids = NncUtils.flatMap(treeIds, loadingBuffer::getIdsInTree);
-        return new ScanResult(NncUtils.map(ids, this::get), treeIds.size() < limit);
+        var batch = new ArrayList<Instance>();
+        for (Long treeId : treeIds) {
+            var ids = loadingBuffer.getIdsInTree(treeId);
+            if(!ids.isEmpty()) {
+                var root = get(ids.get(0));
+                root.accept(new StructuralInstanceVisitor() {
+                    @Override
+                    public void visitInstance(Instance instance) {
+                        if (instance.tryGetId() != null)
+                            batch.add(instance);
+                        super.visitInstance(instance);
+                    }
+                });
+            }
+        }
+        return new ScanResult(batch, treeIds.size() < limit);
     }
 
     public record Relocations(

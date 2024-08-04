@@ -48,6 +48,10 @@ public class IndexField extends Entity implements LocalKey {
         return name;
     }
 
+    public String getQualifiedName() {
+        return index.getDeclaringType().getName() + "." + index.getName() + "." + name;
+    }
+
     @Nullable
     public String getCode() {
         return code;

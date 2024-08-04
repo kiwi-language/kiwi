@@ -4,3 +4,5 @@
 - Support value-to-enum conversion and entity-to-enum conversion.
 - Support duplicate field names within a class hierarchy.
 - Add a ContextTestBase class that provides utility methods for executing actions within contexts.
+- BUG: Application deployment fails with a false error indicating duplicate class codes after a previous failed deployment.
+- BUG: New classes are missing in local metadata cache

@@ -225,7 +225,10 @@ public class TypeParserImpl implements TypeParser {
     }
 
     private TypeDef getTypeDef(String name) {
-        return typeDefProvider.getTypeDef(name);
+        var typeDef = typeDefProvider.getTypeDef(name);
+        if(typeDef == null)
+            throw new NullPointerException("Failed to find a TypeDef for name: " + name);
+        return typeDef;
     }
 
     private ArrayKind parseArrayKind(@Nullable org.metavm.object.type.antlr.TypeParser.ArrayKindContext ctx) {

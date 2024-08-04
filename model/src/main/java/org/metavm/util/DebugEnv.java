@@ -59,6 +59,8 @@ public class DebugEnv {
 
     public static volatile PhysicalId id;
 
+    public static volatile long treeId;
+
     public static final LinkedList<String> path = new LinkedList<>();
 
     public static final List<InputNode> nodes = new CopyOnWriteArrayList<>();

@@ -125,7 +125,7 @@ public class ConstraintFactory {
     public static Index newUniqueConstraint(String name, @Nullable String code, List<Field> fields) {
         NncUtils.requireNotEmpty(fields, "fields can not empty");
         Klass type = fields.get(0).getDeclaringType();
-        String message = "Duplicate field '" + NncUtils.join(fields, Field::getName) + "'";
+        String message = "Duplicate field '" + NncUtils.join(fields, Field::getQualifiedName) + "'";
         return new Index(type, name, code, message, true, fields);
     }
 

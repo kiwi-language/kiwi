@@ -4,6 +4,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.expression.Func;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.FieldDTO;
@@ -200,7 +201,7 @@ public class BusinessException extends RuntimeException {
         );
     }
 
-    public static BusinessException constraintCheckFailed(Value instance, Constraint constraint) {
+    public static BusinessException constraintCheckFailed(Instance instance, Constraint constraint) {
         String reason = constraint.getMessage() != null ? constraint.getMessage() : constraint.getDefaultMessage();
         throw new BusinessException(
                 ErrorCode.CONSTRAINT_CHECK_FAILED,

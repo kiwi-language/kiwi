@@ -53,7 +53,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
                         entry -> {
                             if (!currentUniqueKeys.add(entry.getKey()))
                                 throw BusinessException.constraintCheckFailed(
-                                        instanceMap.get(entry.getId()).getReference(), indexProvider.getIndex(Id.fromBytes(entry.getIndexId()))
+                                        instanceMap.get(entry.getId()), indexProvider.getIndex(Id.fromBytes(entry.getIndexId()))
                                 );
                         });
             }
@@ -73,7 +73,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
                     if (!oldIdSet.contains(id)) {
                         var currentEntry = NncUtils.findRequired(currentEntries, e -> e.getKey().equals(entry.getKey()));
                         var index = indexProvider.getIndex(Id.fromBytes(entry.getIndexId()));
-                        throw BusinessException.constraintCheckFailed(instanceMap.get(currentEntry.getId()).getReference(), index);
+                        throw BusinessException.constraintCheckFailed(instanceMap.get(currentEntry.getId()), index);
                     }
                 }));
         change.setAttribute(OLD_INDEX_ITEMS, oldEntries);

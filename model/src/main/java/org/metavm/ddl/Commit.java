@@ -107,7 +107,7 @@ public class Commit extends Entity implements RedirectStatus {
         if(state.ordinal() <= this.state.ordinal())
             throw new IllegalStateException("Invalid state transition from " + this.state + " to " + state);
         this.state = state;
-        if(state == CommitState.COMPLETED)
+        if(state.isTerminal())
             running = false;
     }
 
