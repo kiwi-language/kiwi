@@ -506,6 +506,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public void setMetadataRemoved() {
         this.state = MetadataState.REMOVED;
+        setChild(false);
     }
 
     public boolean isMetadataRemoved() {

@@ -512,7 +512,7 @@ public class Assembler {
             var removedMethods = NncUtils.exclude(klass.getMethods(), classInfo.visitedMethods::contains);
             removedMethods.forEach(klass::removeMethod);
             var removedFields = NncUtils.exclude(klass.getFields(), classInfo.visitedFields::contains);
-            removedFields.forEach(klass::removeField);
+            removedFields.forEach(Field::setMetadataRemoved);
             scope = classInfo.parent;
         }
 

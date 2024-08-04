@@ -109,7 +109,7 @@ public class Declarator extends CodeGenVisitor {
         if(klass.isEnum())
             visitedMethods.add(Flows.saveValuesMethod(klass));
         var removedFields = NncUtils.exclude(klass.getFields(), visitedFields::contains);
-        removedFields.forEach(klass::removeField);
+        removedFields.forEach(Field::setMetadataRemoved);
         var removedMethods = NncUtils.filter(klass.getMethods(),
                 m -> !visitedMethods.contains(m));
         var fieldIndices = new HashMap<String, Integer>();

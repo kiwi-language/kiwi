@@ -14,8 +14,8 @@ import org.metavm.flow.rest.MethodParam;
 import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.flow.rest.UpdateFieldDTO;
 import org.metavm.mocks.*;
-import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
@@ -665,7 +665,8 @@ public class InstanceManagerTest extends TestCase {
         var quxId = ids[2];
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
-                context.remove(context.getField(fooBarFieldId));
+                var fooBarField = context.getField(fooBarFieldId);
+                fooBarField.setMetadataRemoved();
                 context.finish();
             }
         });
@@ -673,7 +674,7 @@ public class InstanceManagerTest extends TestCase {
             context.getInstanceContext().scan(0, 1000);
         }
         TestUtils.doInTransactionWithoutResult(() -> {
-            try(var context = newContext()) {
+            try(var context = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.relocationEnabled(true))) {
                 var instCtx = context.getInstanceContext();
                 var foo = instCtx.get(fooId);
                 context.finish();
@@ -684,7 +685,9 @@ public class InstanceManagerTest extends TestCase {
                 var instCtx = context.getInstanceContext();
                 var qux = (ClassInstance) instCtx.get(quxId);
                 var barRef = (Reference) qux.getField("bar");
-                logger.debug("qux.bar: {}", barRef.resolve());
+                var bar = barRef.resolve();
+                var foo = instCtx.get(fooId);
+                Assert.assertNotEquals(foo.getTreeId(), bar.getTreeId());
                 context.finish();
             }
         });
