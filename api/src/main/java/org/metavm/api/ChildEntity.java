@@ -13,4 +13,6 @@ public @interface ChildEntity {
 
     boolean lazy() default false;
 
+    boolean removed() default false;
+
 }

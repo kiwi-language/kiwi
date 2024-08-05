@@ -71,9 +71,10 @@ public class Main {
         System.out.print("password: ");
         var password = scanner.nextLine();
         doLogin(name, password);
-        listApps();
-        System.out.print("application ID: ");
-        var appId = scanner.nextLong();
+        var apps = listApps();
+        System.out.print("application: ");
+        var appName = scanner.nextLine();
+        var appId = NncUtils.findRequired(apps, app -> app.name().equals(appName)).id();
         enterApp(appId);
         System.out.println("Logged in successfully");
     }
@@ -205,14 +206,14 @@ public class Main {
         }
     }
 
-    private static void listApps() {
+    private static List<ApplicationDTO> listApps() {
         var page = CompilerHttpUtils.get("/app", new TypeReference<Page<ApplicationDTO>>() {});
         System.out.println("applications:");
-        System.out.println("\tname\tid");
         for (ApplicationDTO app : page.data()) {
             if(app.id() > 2)
-                System.out.printf("\t%s\t%s%n", app.name(), app.id());
+                System.out.printf("\t%s%n", app.name());
         }
+        return page.data();
     }
 
     private static void initializeHttpClient() {
@@ -241,6 +242,7 @@ public class Main {
         System.out.println("metavm host <host>");
         System.out.println("metavm login");
         System.out.println("metavm logout");
+        System.out.println("metavm app");
         System.out.println("metavm create-app <name>");
         System.out.println("metavm env");
         System.out.println("metavm create-env <env>");
@@ -272,6 +274,7 @@ public class Main {
             }
             case "login" -> login();
             case "logout" -> logout();
+            case "app" -> System.out.println(CompilerHttpUtils.getAppId());
             case "create-app" -> {
                 if(args.length < 2) {
                     usage();
