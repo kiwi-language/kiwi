@@ -705,7 +705,24 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(defaultKindId, kind);
     }
 
-    public void testRemoveChildField() {
+    public void testChildFieldRemoval() {
+        assemble("remove_child_field_ddl_before.masm");
+        var shoesId = saveInstance("Product", Map.of(
+                "name", "shoes",
+                "inventory", Map.of("quantity", 100)
+        ));
+        var inventoryId = apiClient.getObject(shoesId).getObject("inventory").getString("$id");
+        assemble("remove_child_field_ddl_after.masm");
+        try {
+            apiClient.getObject(inventoryId);
+            Assert.fail("Should have been removed");
+        }
+        catch (BusinessException e) {
+            Assert.assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+    }
+
+    public void testCancelChildFieldRemoval() {
         assemble("remove_child_field_ddl_before.masm");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",

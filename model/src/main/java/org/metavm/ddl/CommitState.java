@@ -4,6 +4,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.task.DDLTask;
 import org.metavm.task.SimpleDDLTask;
@@ -160,6 +161,7 @@ public enum CommitState {
             var instCtx = context.getInstanceContext();
             var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
             var fromEnumKlasses = NncUtils.mapUnique(commit.getFromEnumKlassIds(), context::getKlass);
+            var removedChildFields = NncUtils.map(commit.getRemovedChildFieldIds(), context::getField);
             for (Instance instance : instances) {
                 if(instance.tryGetOldId() != null && !instance.isUseOldId())
                     instCtx.buffer(instance.getOldId());
@@ -169,20 +171,30 @@ public enum CommitState {
                     instCtx.loadTree(instance.getOldId().getTreeId());
                     instCtx.removeForwardingPointer(instance, true);
                 }
-                for (Klass k : toEnumKlasses) {
-                    if(instance instanceof ClassInstance o && o.getKlass() == k && !k.isEnumConstant(o.getReference())) {
+                if(instance instanceof ClassInstance object) {
+                    for (Klass k : toEnumKlasses) {
+                        if (object.getKlass() == k && !k.isEnumConstant(object.getReference())) {
+                            instCtx.remove(instance);
+                        }
+                    }
+                    if (fromEnumKlasses.contains(object.getKlass()) && !instCtx.isReferenced(object))
                         instCtx.remove(instance);
+                    for (Field removedChildField : removedChildFields) {
+                        var k = object.getKlass().findAncestorByTemplate(removedChildField.getDeclaringType());
+                        if(k != null) {
+                            var f = k.getFieldByTemplate(removedChildField);
+                            object.setField(f, Instances.nullInstance());
+                        }
                     }
                 }
-                if(instance instanceof ClassInstance clsInst && fromEnumKlasses.contains(clsInst.getKlass()) && !instCtx.isReferenced(clsInst))
-                    instCtx.remove(instance);
             }
         }
 
         @Override
         public boolean shouldSkip(Commit commit) {
             return commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty()
-                    && commit.getToEnumKlassIds().isEmpty() && commit.getFromEnumKlassIds().isEmpty();
+                    && commit.getToEnumKlassIds().isEmpty() && commit.getFromEnumKlassIds().isEmpty()
+                    && commit.getRemovedChildFieldIds().isEmpty();
         }
     },
     COMPLETED {

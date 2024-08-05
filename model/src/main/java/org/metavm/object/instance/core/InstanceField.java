@@ -82,7 +82,10 @@ public class InstanceField implements IInstanceField {
     Value checkValue(Value value) {
         if (field.getType().isInstance(value)) {
             return value;
-        } else {
+        }
+        else if(field.isMetadataRemoved() && value.isNull())
+            return value;
+        else {
             try {
                 return value.convert(field.getType());
             } catch (BusinessException e) {
