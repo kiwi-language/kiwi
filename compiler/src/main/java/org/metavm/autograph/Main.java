@@ -1,5 +1,7 @@
 package org.metavm.autograph;
 
+import org.metavm.application.rest.dto.ApplicationDTO;
+import org.metavm.common.Page;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.object.type.*;
@@ -29,7 +31,7 @@ public class Main {
 
     private static String selectedEnv = getEnvPath("default");
 
-    public static final String DEFAULT_HOST = "https://metavm.tech/rest";
+    public static final String DEFAULT_HOST = "http://localhost:8080";
 
     private final Compiler compiler;
     private final String sourceRoot;
@@ -68,22 +70,27 @@ public class Main {
         var name = scanner.nextLine();
         System.out.print("password: ");
         var password = scanner.nextLine();
+        doLogin(name, password);
+        listApps();
         System.out.print("application ID: ");
         var appId = scanner.nextLong();
-        doLogin(name, password, appId);
+        enterApp(appId);
+        NncUtils.writeFile(getAppFile(), Long.toString(appId));
+        NncUtils.writeFile(getTokenFile(), CompilerHttpUtils.getToken());
         System.out.println("Logged in successfully");
     }
 
-    private static void doLogin(String loginName, String password, long appId) {
+    private static void doLogin(String loginName, String password) {
         CompilerHttpUtils.setAppId(2L);
         CompilerHttpUtils.post("/login", new LoginRequest(Constants.PLATFORM_APP_ID, loginName, password),
                 new TypeReference<LoginInfo>() {
                 });
+    }
+
+    private static void enterApp(long appId) {
         CompilerHttpUtils.post("/platform-user/enter-app/" + appId, null, new TypeReference<LoginInfo>() {
         });
         CompilerHttpUtils.setAppId(appId);
-        NncUtils.writeFile(getAppFile(), Long.toString(appId));
-        NncUtils.writeFile(getTokenFile(), CompilerHttpUtils.getToken());
     }
 
     private static String getAppFile() {
@@ -181,6 +188,16 @@ public class Main {
             System.out.println("Logged out successfully");
         } else {
             System.out.println("Not logged in");
+        }
+    }
+
+    private static void listApps() {
+        var page = CompilerHttpUtils.get("/app", new TypeReference<Page<ApplicationDTO>>() {});
+        System.out.println("applications:");
+        System.out.println("\tname\tid");
+        for (ApplicationDTO app : page.data()) {
+            if(app.id() > 2)
+                System.out.printf("\t%s\t%s%n", app.name(), app.id());
         }
     }
 

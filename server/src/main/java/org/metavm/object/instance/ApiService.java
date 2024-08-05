@@ -157,6 +157,13 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
+    public Object getStatic(String className, String fieldName) {
+        try(var context = newContext()) {
+            var klass = getKlass(className, context);
+            return formatInstance(klass.getStaticFieldByName(fieldName).getStaticValue(), false);
+        }
+    }
+
     @Transactional
     public void deleteInstance(String id) {
         try (var context = newContext()) {

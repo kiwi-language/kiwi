@@ -808,3 +808,33 @@ X-App-ID: 1843616873
 ###
 GET http://localhost:8080/api/01e8da8ede0d00
 X-App-ID: 1843616873
+
+###
+GET http://localhost:8080/api/org/metavm/mlab/Currency/YUAN
+X-App-ID: 1845016901
+
+###
+PUT http://localhost:8080/api/org/metavm/mlab/Product
+X-App-ID: 1845016901
+Content-Type: application/json
+
+{
+  "name": "shoes",
+  "kind": "01fecab9df0d00",
+  "skus": [
+    {
+      "name": "default",
+      "price": {
+        "amount": 100,
+        "currency": "01f8cab9df0d00"
+      },
+      "inventory": {
+        "quantity": 100
+      }
+    }
+  ]
+}
+
+###
+GET http://localhost:8080/api/01a8cbb9df0d00
+X-App-ID: 1845016901

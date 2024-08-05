@@ -61,7 +61,13 @@ public class ApiController {
                 else
                     yield apiService.handleMethodCall(qualifier, methodCode, arguments, request, response);
             }
-            case "GET" -> apiService.getInstance(path);
+            case "GET" -> {
+                var idx = path.lastIndexOf('/');
+                if(idx == -1)
+                    yield apiService.getInstance(path);
+                else
+                    yield apiService.getStatic(NamingUtils.pathToName(path.substring(0, idx), true), path.substring(idx + 1));
+            }
             case "PUT" -> {
                 if(requestBody instanceof Map<?,?>) {
                     var klassName = NamingUtils.pathToName(path, true);
