@@ -2,8 +2,6 @@ package org.metavm.autograph;
 
 import org.metavm.application.rest.dto.ApplicationDTO;
 import org.metavm.common.Page;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.object.type.*;
 import org.metavm.user.rest.dto.LoginInfo;
 import org.metavm.user.rest.dto.LoginRequest;
@@ -11,6 +9,8 @@ import org.metavm.util.CompilerHttpUtils;
 import org.metavm.util.Constants;
 import org.metavm.util.NncUtils;
 import org.metavm.util.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -75,8 +75,6 @@ public class Main {
         System.out.print("application ID: ");
         var appId = scanner.nextLong();
         enterApp(appId);
-        NncUtils.writeFile(getAppFile(), Long.toString(appId));
-        NncUtils.writeFile(getTokenFile(), CompilerHttpUtils.getToken());
         System.out.println("Logged in successfully");
     }
 
@@ -91,6 +89,18 @@ public class Main {
         CompilerHttpUtils.post("/platform-user/enter-app/" + appId, null, new TypeReference<LoginInfo>() {
         });
         CompilerHttpUtils.setAppId(appId);
+        NncUtils.writeFile(getAppFile(), Long.toString(appId));
+        NncUtils.writeFile(getTokenFile(), CompilerHttpUtils.getToken());
+        NncUtils.writeFile(getPlatformTokenFile(), CompilerHttpUtils.getToken(2L));
+    }
+
+    private static void createApp(String name) {
+        var currentAppId = CompilerHttpUtils.getAppId();
+        CompilerHttpUtils.setAppId(2);
+        var appId = CompilerHttpUtils.post("/app", new ApplicationDTO(null, name, null), new TypeReference<Long>() {
+        });
+        System.out.println("application ID: " + appId);
+        CompilerHttpUtils.setAppId(currentAppId);
     }
 
     private static String getAppFile() {
@@ -99,6 +109,10 @@ public class Main {
 
     private static String getTokenFile() {
         return selectedEnv + File.separator + "token";
+    }
+
+    private static String getPlatformTokenFile() {
+        return selectedEnv + File.separator + "platform_token";
     }
 
     private static String getHostFile() {
@@ -204,11 +218,13 @@ public class Main {
     private static void initializeHttpClient() {
         CompilerHttpUtils.setHost(getHost());
         var tokenFile = new File(getTokenFile());
+        var platformTokenFile = new File(getPlatformTokenFile());
         var appFile = new File(getAppFile());
-        if (tokenFile.exists() && appFile.exists()) {
+        if (tokenFile.exists() && platformTokenFile.exists() && appFile.exists()) {
             var appId = NncUtils.readLong(appFile);
             CompilerHttpUtils.setAppId(appId);
             CompilerHttpUtils.setToken(appId, NncUtils.readLine(tokenFile));
+            CompilerHttpUtils.setToken(2L, NncUtils.readLine(platformTokenFile));
         }
     }
 
@@ -225,6 +241,7 @@ public class Main {
         System.out.println("metavm host <host>");
         System.out.println("metavm login");
         System.out.println("metavm logout");
+        System.out.println("metavm create-app <name>");
         System.out.println("metavm env");
         System.out.println("metavm create-env <env>");
         System.out.println("metavm set-env <env>");
@@ -255,6 +272,13 @@ public class Main {
             }
             case "login" -> login();
             case "logout" -> logout();
+            case "create-app" -> {
+                if(args.length < 2) {
+                    usage();
+                    return;
+                }
+                createApp(args[1]);
+            }
             case "env" -> {
                 var selected = NncUtils.readLine(ENV_FILE);
                 var home = new File(HOME);
