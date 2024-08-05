@@ -121,7 +121,7 @@ public class Worker extends EntityContextFactoryAware {
                                 walContext.finish();
                         }
                     } else {
-                        try (var executionContext = newContext(shadowTask.getAppId())) {
+                        try (var executionContext = newContext(shadowTask.getAppId(), builder -> builder.timeout(appTask.getTimeout()))) {
                             terminated = runTask0(appTask, executionContext, appContext);
                             if(!appTask.isFailed())
                                 executionContext.finish();

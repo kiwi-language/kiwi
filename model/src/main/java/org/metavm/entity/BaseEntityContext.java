@@ -628,7 +628,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                         ParameterizedTypeImpl.create(table.getRawClass(), Object.class),
                         NncUtils.map(
                                 instances,
-                                inst -> getEntity(javaType, inst.getId())
+                                inst -> inst.tryGetId() != null ?
+                                        getEntity(javaType, inst.getId()) : getEntity(javaType, inst.resolve())
                         )
                 ),
                 k -> ReadonlyArray.createProxy(k, javaType)

@@ -10,6 +10,7 @@ import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.InstanceContext;
 import org.metavm.object.instance.core.WAL;
+import org.metavm.object.type.ActiveCommitProvider;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
@@ -28,9 +29,10 @@ public class InstanceContextBuilder {
                                                     IdInitializer idProvider,
                                                     TypeDefProvider typeDefProvider,
                                                     MappingProvider mappingProvider,
-                                                    RedirectStatusProvider redirectStatusProvider) {
+                                                    RedirectStatusProvider redirectStatusProvider,
+                                                    ActiveCommitProvider activeCommitProvider) {
         return new InstanceContextBuilder(appId, instanceStore, idProvider,
-                typeDefProvider, mappingProvider, redirectStatusProvider);
+                typeDefProvider, mappingProvider, redirectStatusProvider, activeCommitProvider);
     }
 
     private final long appId;
@@ -43,6 +45,7 @@ public class InstanceContextBuilder {
     private TypeDefProvider typeDefProvider;
     private MappingProvider mappingProvider;
     private final RedirectStatusProvider redirectStatusProvider;
+    private final ActiveCommitProvider activeCommitProvider;
     private boolean childLazyLoading;
     private Cache cache;
     private EventQueue eventQueue;
@@ -58,13 +61,15 @@ public class InstanceContextBuilder {
                                   IdInitializer idInitializer,
                                   TypeDefProvider typeDefProvider,
                                   MappingProvider mappingProvider,
-                                  RedirectStatusProvider redirectStatusProvider) {
+                                  RedirectStatusProvider redirectStatusProvider,
+                                  ActiveCommitProvider activeCommitProvider) {
         this.appId = appId;
         this.instanceStore = instanceStore;
         this.idInitializer = idInitializer;
         this.typeDefProvider = typeDefProvider;
         this.mappingProvider = mappingProvider;
         this.redirectStatusProvider = redirectStatusProvider;
+        this.activeCommitProvider = activeCommitProvider;
     }
 
     public InstanceContextBuilder dependency(EntityInstanceContextBridge dependency) {
@@ -164,6 +169,7 @@ public class InstanceContextBuilder {
         return new InstanceContext(
                 appId, instanceStore, idInitializer, executor, asyncPostProcess,
                 plugins, parent, typeDefProvider, mappingProvider, redirectStatusProvider,
+                activeCommitProvider,
                 childLazyLoading, cache,
                 eventQueue, readonly, skipPostprocessing, relocationEnabled, timeout);
     }

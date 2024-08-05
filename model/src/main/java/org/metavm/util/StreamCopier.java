@@ -74,8 +74,18 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
+    protected void visitRemovingInstance() {
+        output.write(WireTypes.REMOVING_INSTANCE);
+        copyInstance();
+    }
+
+    @Override
     public void visitInstance() {
         output.write(WireTypes.INSTANCE);
+        copyInstance();
+    }
+
+    private void copyInstance() {
         var nodeId = readLong();
         output.writeLong(nodeId);
         visitInstance(-1L, -1L, false, getTreeId(), nodeId);

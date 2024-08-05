@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.ddl.Commit;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
 import org.metavm.object.view.Mapping;
@@ -9,7 +10,7 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public interface EntityProvider extends MappingProvider, TypeDefProvider, RedirectStatusProvider {
+public interface EntityProvider extends MappingProvider, TypeDefProvider, RedirectStatusProvider, ActiveCommitProvider {
 
     <T> T getEntity(Class<T> entityType, Id id);
 
@@ -33,6 +34,12 @@ public interface EntityProvider extends MappingProvider, TypeDefProvider, Redire
 
     default TypeDef getTypeDef(Id id) {
         return getEntity(TypeDef.class, id);
+    }
+
+    @Nullable
+    @Override
+    default Commit getActiveCommit() {
+        return selectFirstByKey(Commit.IDX_RUNNING, true);
     }
 
     <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... values);

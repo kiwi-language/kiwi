@@ -1,6 +1,7 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.Nullable;
+import org.metavm.ddl.Commit;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.TypeRegistry;
 import org.metavm.object.type.*;
@@ -11,7 +12,7 @@ import org.metavm.object.view.MappingProvider;
 import org.metavm.util.NncUtils;
 
 public class EntityInstanceContextBridge implements MappingProvider,
-        TypeDefProvider, IndexProvider, VersionRepository, TypeRegistry, RedirectStatusProvider {
+        TypeDefProvider, IndexProvider, VersionRepository, TypeRegistry, RedirectStatusProvider, ActiveCommitProvider {
 
     private IEntityContext entityContext;
 
@@ -57,4 +58,9 @@ public class EntityInstanceContextBridge implements MappingProvider,
         return entityContext.getDefContext().getType(javaClass);
     }
 
+    @javax.annotation.Nullable
+    @Override
+    public Commit getActiveCommit() {
+        return entityContext.selectFirstByKey(Commit.IDX_RUNNING, true);
+    }
 }

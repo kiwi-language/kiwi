@@ -40,8 +40,13 @@ public class StreamVisitor {
             case WireTypes.INSTANCE -> visitInstance();
             case WireTypes.RELOCATING_INSTANCE -> visitRelocatingInstance();
             case WireTypes.VALUE_INSTANCE -> visitValueInstance();
+            case WireTypes.REMOVING_INSTANCE -> visitRemovingInstance();
             default -> throw new InternalException("Invalid wire type: " + wireType);
         }
+    }
+
+    protected void visitRemovingInstance() {
+        visitInstance();
     }
 
     public void visitRedirectingReference() {

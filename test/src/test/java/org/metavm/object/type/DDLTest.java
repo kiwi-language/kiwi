@@ -12,6 +12,8 @@ import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.task.DDLTask;
+import org.metavm.task.IDDLTask;
+import org.metavm.task.ScanTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +44,6 @@ public class DDLTest extends TestCase {
         apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory()));
         instanceStore = bootResult.instanceStore();
         ContextUtil.setAppId(TestConstants.APP_ID);
-        DDLTask.DISABLE_DELAY = true;
     }
 
     @Override
@@ -51,7 +52,6 @@ public class DDLTest extends TestCase {
         entityContextFactory = null;
         apiClient = null;
         instanceStore = null;
-        DDLTask.DISABLE_DELAY = false;
     }
 
     public void testDDL() {
@@ -253,7 +253,7 @@ public class DDLTest extends TestCase {
                 availableField = productKlass.getFieldByCode("available");
             }
         }
-        TestUtils.waitForDDLState(CommitState.ABORTED, 16, entityContextFactory);
+        TestUtils.waitForDDLState(s -> s == CommitState.ABORTED, 16, entityContextFactory);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
@@ -705,79 +705,111 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(defaultKindId, kind);
     }
 
-    public void testRaceCondition() throws InterruptedException {
-        assemble("ddl_before.masm");
+    public void testRemoveChildField() {
+        assemble("remove_child_field_ddl_before.masm");
         var shoesId = saveInstance("Product", Map.of(
-                "name", "Shoes",
-                "inventory", Map.of(
-                        "quantity", 100
-                ),
-                "price", 100
+                "name", "shoes",
+                "inventory", Map.of("quantity", 100)
         ));
-        var shoes = apiClient.getObject(shoesId);
-        var inventoryId = shoes.getString("inventory");
-        var boxIds = new ArrayList<String>();
-        for (int i = 0; i < 16; i++) {
-            var boxId = saveInstance("Box<Inventory>", Map.of(
-                    "item", inventoryId
-            ));
-            boxIds.add(boxId);
+        var inventoryId = apiClient.getObject(shoesId).getObject("inventory").getString("$id");
+        assemble("remove_child_field_ddl_after.masm", false);
+        TestUtils.waitForDDLState(CommitState.SUBMITTING, entityContextFactory);
+        saveInstance("Box<Inventory>", Map.of(
+                "item", inventoryId
+        ));
+        TestUtils.waitForDDLAborted(entityContextFactory);
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var shoesInst = instCtx.get(Id.parse(inventoryId));
+            Assert.assertFalse(shoesInst.isRemoving());
         }
-        assemble("ddl_after.masm", false);
-        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, entityContextFactory);
-        var newInventoryId = TestUtils.doInTransaction(() -> {
-            try(var context = newContext()) {
-                var instCtx = context.getInstanceContext();
-                var invInst = instCtx.get(Id.parse(inventoryId));
-                context.finish();
-                return invInst.getCurrentId().toString();
+    }
+
+    public void testRaceCondition() throws InterruptedException {
+        try {
+            assemble("ddl_before.masm");
+            var shoesId = saveInstance("Product", Map.of(
+                    "name", "Shoes",
+                    "inventory", Map.of(
+                            "quantity", 100
+                    ),
+                    "price", 100
+            ));
+            var shoes = apiClient.getObject(shoesId);
+            var inventoryId = shoes.getString("inventory");
+            var boxIds = new ArrayList<String>();
+            for (int i = 0; i < 16; i++) {
+                var boxId = saveInstance("Box<Inventory>", Map.of(
+                        "item", inventoryId
+                ));
+                boxIds.add(boxId);
             }
-        });
-        Assert.assertNotEquals(inventoryId, newInventoryId);
-        var monitor = new Object();
-        var ref = new Object() {
-          boolean timeout;
-        };
-        var thread = new Thread(() -> TestUtils.doInTransactionWithoutResult(() -> {
-            try (var context = newContext()) {
-                var instCtx = context.getInstanceContext();
-                var invInst = instCtx.get(Id.parse(inventoryId));
-                var boxKlass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "Box"));
-                var boxOfInvKlass = boxKlass.getParameterized(List.of(invInst.getType()));
-                var boxInst = ClassInstanceBuilder.newBuilder(boxOfInvKlass.getType())
-                        .data(Map.of(
-                                boxOfInvKlass.getFieldByCode("item"), invInst.getReference(),
-                                boxOfInvKlass.getFieldByCode("count"), Instances.longInstance(1)
-                        ))
-                        .build();
-                instCtx.bind(boxInst);
-                synchronized (monitor) {
+            assemble("ddl_after.masm", false);
+            TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, entityContextFactory);
+            var newInventoryId = TestUtils.doInTransaction(() -> {
+                try (var context = newContext()) {
+                    var instCtx = context.getInstanceContext();
+                    var invInst = instCtx.get(Id.parse(inventoryId));
+                    context.finish();
+                    return invInst.getCurrentId().toString();
+                }
+            });
+            Assert.assertNotEquals(inventoryId, newInventoryId);
+            var monitor = new Object();
+            var ref = new Object() {
+                boolean timeout;
+            };
+            var thread = new Thread(() -> TestUtils.doInTransactionWithoutResult(() -> {
+                try (var context = newContext()) {
+                    var instCtx = context.getInstanceContext();
+                    var invInst = instCtx.get(Id.parse(inventoryId));
+                    var boxKlass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "Box"));
+                    var boxOfInvKlass = boxKlass.getParameterized(List.of(invInst.getType()));
+                    var boxInst = ClassInstanceBuilder.newBuilder(boxOfInvKlass.getType())
+                            .data(Map.of(
+                                    boxOfInvKlass.getFieldByCode("item"), invInst.getReference(),
+                                    boxOfInvKlass.getFieldByCode("count"), Instances.longInstance(1)
+                            ))
+                            .build();
+                    instCtx.bind(boxInst);
+                    synchronized (monitor) {
+                        try {
+                            monitor.wait();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
                     try {
-                        monitor.wait();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                        context.finish();
+                    } catch (SessionTimeoutException e) {
+                        ref.timeout = true;
+                        throw e;
                     }
                 }
-                try {
-                    context.finish();
-                }
-                catch (SessionTimeoutException e) {
-                    ref.timeout = true;
-                    throw e;
-                }
+            }));
+            thread.start();
+            DDLTask.DISABLE_DELAY = false;
+            Constants.SESSION_TIMEOUT = 100L;
+            TestUtils.waitForTaskDone(
+                    t -> t instanceof IDDLTask ddlTask && ddlTask.getCommit().getState() == CommitState.COMPLETED,
+                    10L,
+                    ScanTask.DEFAULT_BATCH_SIZE,
+                    entityContextFactory
+            );
+            synchronized (monitor) {
+                monitor.notify();
             }
-        }));
-        thread.start();
-        TestUtils.waitForDDLCompleted(entityContextFactory);
-        synchronized (monitor) {
-            monitor.notify();
+            for (String boxId : boxIds) {
+                var box = apiClient.getObject(boxId);
+                Assert.assertEquals(newInventoryId, box.getString("item"));
+            }
+            thread.join();
+            Assert.assertTrue(ref.timeout);
         }
-        for (String boxId : boxIds) {
-            var box = apiClient.getObject(boxId);
-            Assert.assertEquals(newInventoryId, box.getString("item"));
+        finally {
+            DDLTask.DISABLE_DELAY = true;
+            Constants.SESSION_TIMEOUT = Constants.DEFAULT_SESSION_TIMEOUT;
         }
-        thread.join();
-        Assert.assertTrue(ref.timeout);
     }
 
     private void assemble(String fileName) {

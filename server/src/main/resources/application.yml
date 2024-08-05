@@ -58,3 +58,5 @@ metavm:
       Field: /id/Field.properties
       UniqueConstraintRT: /id/Constraint.properties
       TypeCategory: /id/TypeCategory.properties
+  ddl:
+    disable-task-delay: false

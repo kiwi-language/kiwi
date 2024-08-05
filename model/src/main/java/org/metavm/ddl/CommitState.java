@@ -5,11 +5,17 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Klass;
+import org.metavm.task.DDLTask;
+import org.metavm.task.SimpleDDLTask;
+import org.metavm.task.Task;
+import org.metavm.task.Tasks;
 import org.metavm.util.Constants;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.metavm.task.DDLTask.DISABLE_DELAY;
 
 @EntityType
 public enum CommitState {
@@ -20,13 +26,34 @@ public enum CommitState {
         }
 
         @Override
+        public boolean isPreparing() {
+            return true;
+        }
+
+        @Override
+        public long getSessionTimeout() {
+            return Constants.DDL_SESSION_TIMEOUT;
+        }
+    },
+    SUBMITTING {
+        @Override
+        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        }
+
+        @Override
         public void onCompletion(Commit commit) {
-            commit.submit();
+            if(!commit.isCancelled())
+                commit.submit();
         }
 
         @Override
         public boolean isPreparing() {
             return true;
+        }
+
+        @Override
+        public Task createTask(Commit commit) {
+            return new SimpleDDLTask(commit, this);
         }
 
         @Override
@@ -223,6 +250,31 @@ public enum CommitState {
 
     public boolean isTerminal() {
         return false;
+    }
+
+    public Task createTask(Commit commit) {
+        return new DDLTask(commit, this);
+    }
+
+    public void transition(Commit commit, IEntityContext taskContext) {
+        CommitState nextState;
+        if(isPreparing() && commit.isCancelled())
+            nextState = CommitState.ABORTING;
+        else {
+            onCompletion(commit);
+            nextState = nextState();
+            while (!nextState.isTerminal() && nextState.shouldSkip(commit))
+                nextState = nextState.nextState();
+        }
+        commit.setState(nextState);
+        if(!nextState.isTerminal()) {
+            var nextTask = nextState.createTask(commit);
+            if(DISABLE_DELAY)
+                taskContext.bind(nextTask);
+            else
+                taskContext.bind(Tasks.delay(nextTask));
+        }
+
     }
 
 }

@@ -11,9 +11,9 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType
-public class DDLTask extends ScanTask implements WalTask {
+public class DDLTask extends ScanTask implements WalTask, IDDLTask {
 
-    public static boolean DISABLE_DELAY = false;
+    public static boolean DISABLE_DELAY = true;
 
     private final Commit commit;
     private final CommitState commitState;
@@ -36,22 +36,7 @@ public class DDLTask extends ScanTask implements WalTask {
 
     @Override
     protected void onScanOver(IEntityContext context, IEntityContext taskContext) {
-        CommitState nextState;
-        if(commitState.isPreparing() && commit.isCancelled())
-            nextState = CommitState.ABORTING;
-        else {
-            commitState.onCompletion(commit);
-            nextState = commitState.nextState();
-            while (!nextState.isTerminal() && nextState.shouldSkip(commit))
-                nextState = nextState.nextState();
-        }
-        commit.setState(nextState);
-        if(!nextState.isTerminal()) {
-            if(DISABLE_DELAY)
-                taskContext.bind(new DDLTask(commit, nextState));
-            else
-                taskContext.bind(Tasks.delay(new DDLTask(commit, nextState)));
-        }
+        commitState.transition(commit, taskContext);
     }
 
     @Override

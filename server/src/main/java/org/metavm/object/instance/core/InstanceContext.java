@@ -1,6 +1,7 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.common.ErrorCode;
+import org.metavm.ddl.Commit;
 import org.metavm.entity.*;
 import org.metavm.event.EventQueue;
 import org.metavm.object.instance.ContextPlugin;
@@ -11,6 +12,7 @@ import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.instance.persistence.VersionRT;
+import org.metavm.object.type.ActiveCommitProvider;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDefProvider;
@@ -45,6 +47,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private final boolean skipPostprocessing;
     private final boolean relocationEnabled;
     private final List<Instance> relocated = new ArrayList<>();
+    private final ActiveCommitProvider activeCommitProvider;
 
     public InstanceContext(long appId,
                            IInstanceStore instanceStore,
@@ -56,6 +59,7 @@ public class InstanceContext extends BufferingInstanceContext {
                            TypeDefProvider typeDefProvider,
                            MappingProvider mappingProvider,
                            RedirectStatusProvider redirectStatusProvider,
+                           ActiveCommitProvider activeCommitProvider,
                            boolean childrenLazyLoading,
                            Cache cache,
                            @Nullable EventQueue eventQueue,
@@ -76,6 +80,7 @@ public class InstanceContext extends BufferingInstanceContext {
         this.childrenLazyLoading = childrenLazyLoading;
         this.eventQueue = eventQueue;
         this.instanceStore = instanceStore;
+        this.activeCommitProvider = activeCommitProvider;
 //        entityContext = new EntityContext(
 //                this,
 //                NncUtils.get(parent, IInstanceContext::getEntityContext),
@@ -104,7 +109,12 @@ public class InstanceContext extends BufferingInstanceContext {
             throw new IllegalStateException("Already finished");
         if (DebugEnv.debugging)
             debugLogger.info("InstanceContext.finish");
+        var commit = activeCommitProvider.getActiveCommit();
+        if(commit != null)
+            EntityUtils.ensureTreeInitialized(commit);
         headContext.freeze();
+        if(commit != null)
+            tryCancelCommit(commit);
         finalizeRedirections();
         var migrationResult = relocationEnabled ? relocate() : Relocations.EMPTY;
         var patchContext = new PatchContext(migrationResult);
@@ -127,6 +137,20 @@ public class InstanceContext extends BufferingInstanceContext {
             }
         }
         finished = true;
+    }
+
+    private void tryCancelCommit(Commit commit) {
+        if(commit != null) {
+            forEachInitialized(instance -> {
+                instance.forEachReference((r, isChild) -> {
+                    if(!isChild && r.isResolved() && r.resolve().isRemoving()) {
+                        if(!commit.isCancelled()) {
+                            commit.cancel();
+                        }
+                    }
+                });
+            });
+        }
     }
 
     private static class PatchContext {
@@ -552,6 +576,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 getTypeDefProvider(),
                 getMappingProvider(),
                 getRedirectStatusProvider(),
+                activeCommitProvider,
                 childrenLazyLoading,
                 cache,
                 eventQueue,

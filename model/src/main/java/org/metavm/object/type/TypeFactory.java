@@ -215,6 +215,9 @@ public abstract class TypeFactory {
                 if(field.getState() == MetadataState.REMOVED)
                     batch.addNewField(field);
                 field.setState(state);
+                if(state == MetadataState.REMOVED && field.isChild()) {
+                    batch.addRemovedChildField(field);
+                }
             }
         }
         return field;

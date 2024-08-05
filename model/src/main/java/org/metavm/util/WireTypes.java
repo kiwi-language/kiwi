@@ -16,6 +16,7 @@ public class WireTypes {
     public static final int RELOCATING_INSTANCE = 14;
     public static final int REDIRECTING_INSTANCE = 15;
     public static final int REDIRECTING_REFERENCE = 16;
+    public static final int REMOVING_INSTANCE = 17;
 
 
 //    LONG(1),

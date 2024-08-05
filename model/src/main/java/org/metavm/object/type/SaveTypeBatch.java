@@ -44,6 +44,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
     private final Set<Field> typeChangedFields = new HashSet<>();
     private final Set<Field> toChildFields = new HashSet<>();
     private final Set<Field> toNonChildFields = new HashSet<>();
+    private final Set<Field> removedChildFields = new HashSet<>();
     private final Set<Klass> changingSuperKlasses = new HashSet<>();
     private final Set<Klass> entityToValueKlasses = new HashSet<>();
     private final Set<Klass> valueToEntityKlasses = new HashSet<>();
@@ -81,6 +82,10 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public void addToNonChildField(Field field) {
         toNonChildFields.add(field);
+    }
+
+    public void addRemovedChildField(Field field) {
+        removedChildFields.add(field);
     }
 
     public void addChangingSuperKlass(Klass klass) {
@@ -340,6 +345,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                 NncUtils.map(typeChangedFields, Entity::getStringId),
                 NncUtils.map(toChildFields, Entity::getStringId),
                 NncUtils.map(toNonChildFields, Entity::getStringId),
+                NncUtils.map(removedChildFields, Entity::getStringId),
                 NncUtils.map(changingSuperKlasses, Entity::getStringId),
                 NncUtils.map(entityToValueKlasses, Entity::getStringId),
                 NncUtils.map(valueToEntityKlasses, Entity::getStringId),

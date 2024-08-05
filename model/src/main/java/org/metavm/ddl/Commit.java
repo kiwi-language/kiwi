@@ -30,6 +30,8 @@ public class Commit extends Entity implements RedirectStatus {
     @ChildEntity
     private final ReadWriteArray<String> toNonChildFieldIds = addChild(new ReadWriteArray<>(String.class), "toNonChildFieldIds");
     @ChildEntity
+    private final ReadWriteArray<String> removedChildFieldIds = addChild(new ReadWriteArray<>(String.class), "removedChildFieldIds");
+    @ChildEntity
     private final ReadWriteArray<String> changingSuperKlassIds = addChild(new ReadWriteArray<>(String.class), "changingSuperKlassIds");
     @ChildEntity
     private final ReadWriteArray<String> entityToValueKlassIds = addChild(new ReadWriteArray<>(String.class), "entityToValueKlassIds");
@@ -59,6 +61,7 @@ public class Commit extends Entity implements RedirectStatus {
                   List<String> convertingFieldIds,
                   List<String> toChildFieldIds,
                   List<String> toNonChildFieldIds,
+                  List<String> removedChildFieldIds,
                   List<String> changingSuperKlassIds,
                   List<String> entityToValueKlassIds,
                   List<String> valueToEntityKlassIds,
@@ -72,6 +75,7 @@ public class Commit extends Entity implements RedirectStatus {
         this.convertingFieldIds.addAll(convertingFieldIds);
         this.toChildFieldIds.addAll(toChildFieldIds);
         this.toNonChildFieldIds.addAll(toNonChildFieldIds);
+        this.removedChildFieldIds.addAll(removedChildFieldIds);
         this.changingSuperKlassIds.addAll(changingSuperKlassIds);
         this.entityToValueKlassIds.addAll(entityToValueKlassIds);
         this.valueToEntityKlassIds.addAll(valueToEntityKlassIds);
@@ -129,6 +133,10 @@ public class Commit extends Entity implements RedirectStatus {
 
     public List<String> getToNonChildFieldIds() {
         return toNonChildFieldIds.toList();
+    }
+
+    public List<String> getRemovedChildFieldIds() {
+        return removedChildFieldIds.toList();
     }
 
     public List<String> getToChildFieldIds() {

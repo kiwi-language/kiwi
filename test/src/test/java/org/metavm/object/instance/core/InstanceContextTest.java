@@ -51,6 +51,7 @@ public class InstanceContextTest extends TestCase {
                 entityRepository,
                 entityRepository,
                 entityRepository,
+                entityRepository,
                 false,
                 cache,
                 eventQueue, false, false, false, 0);

@@ -489,18 +489,22 @@ public class TestUtils {
     }
 
     public static void waitForDDLState(CommitState commitState, EntityContextFactory entityContextFactory) {
-        waitForDDLState(commitState, ScanTask.DEFAULT_BATCH_SIZE, entityContextFactory);
+        waitForDDLState(s -> s.ordinal() >= commitState.ordinal(), entityContextFactory);
     }
 
-    public static void waitForDDLState(CommitState commitState, int batchSize, EntityContextFactory entityContextFactory) {
-        waitForTaskDone(t -> t instanceof DDLTask d && d.getCommit().getState().ordinal() >= commitState.ordinal(),
-                100,
+    public static void waitForDDLState(Predicate<CommitState> filter, EntityContextFactory entityContextFactory) {
+        waitForDDLState(filter, ScanTask.DEFAULT_BATCH_SIZE, entityContextFactory);
+    }
+
+    public static void waitForDDLState(Predicate<CommitState> filter, int batchSize, EntityContextFactory entityContextFactory) {
+        waitForTaskDone(t -> t instanceof IDDLTask d && filter.test(d.getCommit().getState()),
+                0,
                 batchSize,
                 entityContextFactory);
     }
 
     public static void waitForDDLCompleted(EntityContextFactory entityContextFactory) {
-        waitForDDLState(CommitState.COMPLETED, entityContextFactory);
+        waitForDDLState(s -> s == CommitState.COMPLETED, entityContextFactory);
     }
 
     public static void waitForDDLPrepared(EntityContextFactory entityContextFactory) {
@@ -527,17 +531,19 @@ public class TestUtils {
         waitForTaskDone(scheduler, worker, predicate, 0, ScanTask.BATCH_SIZE);
     }
 
+    private static final int NUM_RUNS = 50;
+
     public static void waitForTaskDone(Scheduler scheduler, Worker worker, Predicate<Task> predicate, long delay, long batchSize) {
         try {
             ScanTask.BATCH_SIZE = batchSize;
             scheduler.sendHeartbeat();
             worker.sendHeartbeat();
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < NUM_RUNS; i++) {
                 scheduler.schedule();
-                if (worker.waitFor(predicate, 5, delay))
+                if (worker.waitFor(predicate, 1, delay))
                     return;
             }
-            throw new IllegalStateException("Condition not met after " + 15 + " runs");
+            throw new IllegalStateException("Condition not met after " + NUM_RUNS + " runs");
         }
         finally {
             ScanTask.BATCH_SIZE = ScanTask.DEFAULT_BATCH_SIZE;

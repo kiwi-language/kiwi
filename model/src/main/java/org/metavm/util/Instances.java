@@ -545,6 +545,7 @@ public class Instances {
     }
 
     public static void applyDDL(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        var instCtx = context.getInstanceContext();
         var newFields = NncUtils.map(commit.getNewFieldIds(), context::getField);
         var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
         var toChildFields = NncUtils.map(commit.getToChildFieldIds(), context::getField);
@@ -552,6 +553,7 @@ public class Instances {
         var toValueKlasses = NncUtils.map(commit.getEntityToValueKlassIds(), context::getKlass);
         var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
         var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
+        var removingChildFields = NncUtils.map(commit.getRemovedChildFieldIds(), context::getField);
         for (Instance instance : instances) {
             if (instance instanceof ClassInstance clsInst) {
                 for (Field field : newFields) {
@@ -584,6 +586,38 @@ public class Instances {
                 }
                 for (Klass klass : toValueKlasses) {
                     handleEntityToValueConversion(clsInst, klass);
+                }
+                for (Field removingChildField : removingChildFields) {
+                    var k = clsInst.getKlass().findAncestorByTemplate(removingChildField.getDeclaringType());
+                    if(k == null)
+                        continue;
+                    var f = k.getFieldByTemplate(removingChildField);
+                    var childRef = clsInst.getField(f);
+                    if(childRef.isNull())
+                        continue;
+                    var child = childRef.resolveDurable();
+                    var ref = new Object() {
+                        boolean referenced;
+                    };
+                    var r = child.getReference();
+                    child.getRoot().forEachDescendant(i -> {
+                        i.forEachReference((ii, isChild) -> {
+                            if(!isChild && ii.equals(r))
+                                ref.referenced = true;
+                        });
+                    });
+                    if(!ref.referenced) {
+                        var referring = instCtx.getByReferenceTargetId(child.getId(), 0, 1);
+                        if(!referring.isEmpty())
+                            ref.referenced = true;
+                    }
+                    if(ref.referenced)
+                        throw new InternalException(
+                                "Unable to delete child field " +
+                                        f.getQualifiedName()
+                                        + " because the child object " + child + " is still referenced by other objects"
+                        );
+                    child.setRemoving(true);
                 }
             }
             for (Klass klass : valueToEntityKlasses) {
@@ -753,9 +787,9 @@ public class Instances {
                 }
             }
         }
-        for (String toChildFieldId : commit.getToChildFieldIds()) {
-            var field = context.getField(toChildFieldId);
-            for (Instance instance : instances) {
+        for (Instance instance : instances) {
+            for (String toChildFieldId : commit.getToChildFieldIds()) {
+                var field = context.getField(toChildFieldId);
                 if (instance instanceof ClassInstance object) {
                   var k = object.getKlass().findAncestorByTemplate(field.getDeclaringType());
                   if(k != null) {
@@ -765,6 +799,8 @@ public class Instances {
                   }
                 }
             }
+            if(instance.isRemoving())
+                instance.setRemoving(false);
         }
         for (List<String> klassIdsList : List.of(commit.getEntityToValueKlassIds(), commit.getValueToEntityKlassIds())) {
             for (String klassId : klassIdsList) {

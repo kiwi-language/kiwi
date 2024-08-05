@@ -137,8 +137,15 @@ public class InstanceInput implements Closeable {
             case WireTypes.INSTANCE -> readInstance();
             case WireTypes.RELOCATING_INSTANCE -> readRelocatingInstance();
             case WireTypes.VALUE_INSTANCE -> readValueInstance();
+            case WireTypes.REMOVING_INSTANCE ->  readRemovingInstance();
             default -> throw new IllegalStateException("Invalid wire type: " + wireType);
         };
+    }
+
+    private Value readRemovingInstance() {
+        var ref = readInstance();
+        ref.resolve().setRemoving(true);
+        return ref;
     }
 
     private Value readRedirectingInstance() {
@@ -179,7 +186,7 @@ public class InstanceInput implements Closeable {
 
     private final StreamVisitor skipper = new StreamVisitor(this);
 
-    private Value readInstance() {
+    private Reference readInstance() {
         return readInstance(-1L, -1L, false, treeId, readLong());
     }
 
@@ -187,7 +194,7 @@ public class InstanceInput implements Closeable {
         return readInstance(readLong(), readLong(), readBoolean(), treeId, readLong());
     }
 
-    private Value readInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
+    private Reference readInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
         var type = Type.readType(this, typeDefProvider);
         var id = PhysicalId.of(treeId, nodeId, type);
         var instance = type instanceof ArrayType arrayType ?

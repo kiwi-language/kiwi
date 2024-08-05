@@ -118,7 +118,7 @@ public class EntityContextFactory {
                                                       @Nullable WAL cachingWAL,
                                                       @Nullable WAL bufferingWAL,
                                                       @Nullable IInstanceStore store, boolean migrationDisabled, Consumer<InstanceContextBuilder> customizer) {
-        var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge)
+        var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge, bridge)
                 .readonly(readonly)
                 .asyncPostProcess(NncUtils.orElse(asyncLogProcessing, defaultAsyncLogProcess))
                 .parent(parent)

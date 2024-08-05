@@ -63,6 +63,7 @@ public abstract class Instance implements Message {
     private @NotNull Instance aggregateRoot;
     private boolean pendingChild;
     private boolean useOldId;
+    private boolean removing;
 
     private transient Long tmpId;
 
@@ -390,7 +391,10 @@ public abstract class Instance implements Message {
                 output.writeLong(oldId.getTreeId());
                 output.writeLong(oldId.getNodeId());
                 output.writeBoolean(useOldId);
-            } else
+            }
+            else if(removing)
+                output.write(WireTypes.REMOVING_INSTANCE);
+            else
                 output.write(WireTypes.INSTANCE);
             output.writeLong(id.getNodeId());
         }
@@ -808,5 +812,13 @@ public abstract class Instance implements Message {
 
     public Id getRelocatedId() {
         return Objects.requireNonNull(relocatedId);
+    }
+
+    public boolean isRemoving() {
+        return removing;
+    }
+
+    public void setRemoving(boolean removing) {
+        this.removing = removing;
     }
 }

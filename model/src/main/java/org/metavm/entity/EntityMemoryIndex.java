@@ -109,7 +109,6 @@ public class EntityMemoryIndex {
         }
 
         public @Nullable T selectByUniqueKey(List<Object> values) {
-            NncUtils.requireTrue(indexDef.isUnique());
             return NncUtils.first(selectByKey(values));
         }
 
