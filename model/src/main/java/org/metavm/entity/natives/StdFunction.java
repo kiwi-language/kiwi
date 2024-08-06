@@ -423,7 +423,26 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var h = EncodingUtils.secureHash(v, s);
                 return FlowExecResult.of(Instances.stringInstance(h));
             }
-    );
+    ),
+    getParent(
+            "any|null getParent(any object)",
+            true,
+            List.of(ReflectionUtils.getMethod(Lang.class, "getParent", Object.class)),
+            (func, args, callContext) -> {
+                var obj = args.get(0).resolveDurable();
+                return FlowExecResult.of(NncUtils.getOrElse(obj.getParent(), Instance::getReference, Instances.nullInstance()));
+            }
+    ),
+    getRoot(
+            "any getRoot(any object)",
+            true,
+            List.of(ReflectionUtils.getMethod(Lang.class, "getRoot", Object.class)),
+            (func, args, callContext) -> {
+                var obj = args.get(0).resolveDurable();
+                return FlowExecResult.of(obj.getRoot().getReference());
+            }
+    )
+    ;
 
     private final String name;
     private final String signature;

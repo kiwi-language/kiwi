@@ -890,3 +890,10 @@ X-App-ID: 1845016908
 ###
 GET http://localhost:8080/api/0198d1b9df0d00
 X-App-ID: 1845016908
+
+###
+POST http://localhost:8080/api/0198d1b9df0d08/get-product
+X-App-ID: 1845016908
+Content-Type: application/json
+
+[]

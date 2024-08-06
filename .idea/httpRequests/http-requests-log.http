@@ -1,3 +1,130 @@
+POST http://localhost:8080/api/0198d1b9df0d08/get-product
+X-App-ID: 1845016908
+Content-Type: application/json
+Content-Length: 2
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[]
+
+<> 2024-08-06T200500.200.txt
+
+###
+
+POST http://localhost:8080/bootstrap/save
+Content-Length: 0
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2024-08-06T183206.200.json
+
+###
+
+POST http://localhost:8080/api/0198d1b9df0d08/get-product
+X-App-ID: 1845016908
+Content-Type: application/json
+Content-Length: 2
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[]
+
+<> 2024-08-06T182759.200.json
+
+###
+
+POST http://localhost:8080/api/0198d1b9df0d08/get-product
+X-App-ID: 1845016908
+Content-Type: application/json
+Content-Length: 2
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[]
+
+<> 2024-08-06T182653.200.json
+
+###
+
+GET http://localhost:8080/api/0198d1b9df0d00
+X-App-ID: 1845016908
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2024-08-06T182543.200.json
+
+###
+
+POST http://localhost:8080/api/0198d1b9df0d08/get-product
+X-App-ID: 1845016908
+Content-Type: application/json
+Content-Length: 2
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+[]
+
+<> 2024-08-06T182525.200.json
+
+###
+
+POST http://localhost:8080/api/0198d1b9df0d08/get-product
+X-App-ID: 1845016908
+Content-Length: 0
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2024-08-06T182443.200.json
+
+###
+
+GET http://localhost:8080/api/0198d1b9df0d00
+X-App-ID: 1845016908
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2024-08-06T181944.200.json
+
+###
+
+POST http://localhost:8080/bootstrap/save
+Content-Length: 0
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2024-08-06T181752.200.json
+
+###
+
+GET http://localhost:8080/api/0198d1b9df0d00
+X-App-ID: 1845016908
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
+Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+<> 2024-08-06T181116.200.json
+
+###
+
 PUT http://localhost:8080/api/org/metavm/mlab/Product
 X-App-ID: 1845016908
 Content-Type: application/json
@@ -793,154 +920,6 @@ Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_18450
 Accept-Encoding: br,deflate,gzip,x-gzip
 
 <> 2024-08-05T213723.200.json
-
-###
-
-GET http://localhost:8080/api/01a8cbb9df0d00
-X-App-ID: 1845016901
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-08-05T213624.200.json
-
-###
-
-GET http://localhost:8080/01a8cbb9df0d00
-X-App-ID: 1845016901
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-08-05T213617.404.json
-
-###
-
-PUT http://localhost:8080/api/org/metavm/mlab/Product
-X-App-ID: 1845016901
-Content-Type: application/json
-Content-Length: 242
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-{
-  "name": "shoes",
-  "kind": "01fecab9df0d00",
-  "skus": [
-    {
-      "name": "default",
-      "price": {
-        "amount": 100,
-        "currency": "01f8cab9df0d00"
-      },
-      "inventory": {
-        "quantity": 100
-      }
-    }
-  ]
-}
-
-<> 2024-08-05T213547.200.txt
-
-###
-
-POST http://localhost:8080/api/org/metavm/mlab/Product
-X-App-ID: 1845016901
-Content-Type: application/json
-Content-Length: 242
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-{
-  "name": "shoes",
-  "kind": "01fecab9df0d00",
-  "skus": [
-    {
-      "name": "default",
-      "price": {
-        "amount": 100,
-        "currency": "01f8cab9df0d00"
-      },
-      "inventory": {
-        "quantity": 100
-      }
-    }
-  ]
-}
-
-<> 2024-08-05T213530.200.json
-
-###
-
-GET http://localhost:8080/api/org/metavm/mlab/Currency/YUAN
-X-App-ID: 1845016901
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-08-05T213435.200.txt
-
-###
-
-GET http://localhost:8080/api/org/metavm/mlab/ProductKind/DEFAULT
-X-App-ID: 1845016901
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-08-05T213320.200.txt
-
-###
-
-GET http://localhost:8080/org/metavm/mlab/ProductKind/DEFAULT
-X-App-ID: 1845016901
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_1845016901__=652e7059-2731-40dd-8b22-e1cb46fe8df4; __token_2__=b2317006-28df-4c56-9e4a-ef258315c65b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-08-05T213306.404.json
-
-###
-
-POST http://localhost:8080/system/init-test
-Content-Length: 0
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1844716895__=226173bd-9be2-4799-9c86-04bf2e4c863c; __token_2__=7be1a4c8-6361-4943-9387-91539d71e17b; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-08-05T185228.200.json
-
-###
-
-POST http://localhost:8080/system/init-test
-Content-Length: 0
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: __token_1844216885__=6b750133-b6ef-4fec-85f1-86449db2baea; __token_2__=f297290d-050e-4eb7-b112-01661c576e24; token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-07-03T213633.200.json
-
-###
-
-POST http://localhost:8080/system/init-test
-Content-Length: 0
-Connection: Keep-Alive
-User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.8.1)
-Cookie: token=018eda8ede0d00-PGjGG1VB-V6SihZtuuRFLW294_9Ot-28qgjGGdIMox0
-Accept-Encoding: br,deflate,gzip,x-gzip
-
-<> 2024-07-03T205415.200.json
 
 ###
 

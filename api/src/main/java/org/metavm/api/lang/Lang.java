@@ -43,4 +43,12 @@ public class Lang {
     public static String getId(Object object) {
         return "";
     }
+
+    public static @Nullable Object getParent(Object object) {
+        return null;
+    }
+
+    public static Object getRoot(Object object) {
+        return object;
+    }
 }
