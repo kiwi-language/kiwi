@@ -21,6 +21,7 @@ public record FieldDTO(
         boolean readonly,
         boolean lazy,
         @Nullable InstanceDTO staticValue,
+        @Nullable Integer sourceCodeTag,
         int state
 ) implements BaseDTO {
 

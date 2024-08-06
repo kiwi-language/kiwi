@@ -13,4 +13,6 @@ public @interface ValueType {
 
     boolean compiled() default false;
 
+    int tag() default -1;
+
 }

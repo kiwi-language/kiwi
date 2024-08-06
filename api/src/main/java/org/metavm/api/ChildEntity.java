@@ -15,4 +15,6 @@ public @interface ChildEntity {
 
     boolean removed() default false;
 
+    int tag() default -1;
+
 }

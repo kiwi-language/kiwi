@@ -815,7 +815,11 @@ public class TranspileUtils {
         return ephemeral == Boolean.TRUE;
     }
 
-    private static @Nullable Object getEntityAnnotationAttr(PsiClass psiClass, String attributeName) {
+    public static @Nullable Object getEntityAnnotationAttr(PsiClass psiClass, String attributeName) {
+        return getEntityAnnotationAttr(psiClass, attributeName, null);
+    }
+
+    public static Object getEntityAnnotationAttr(PsiClass psiClass, String attributeName, Object defaultValue) {
         var value = getAnnotationAttribute(psiClass, EntityType.class, attributeName);
         if (value != null)
             return value;
@@ -823,7 +827,9 @@ public class TranspileUtils {
             return value;
         if ((value = getAnnotationAttribute(psiClass, EntityStruct.class, attributeName)) != null)
             return value;
-        return getAnnotationAttribute(psiClass, ValueStruct.class, attributeName);
+        if ((value =  getAnnotationAttribute(psiClass, ValueStruct.class, attributeName)) != null)
+            return value;
+        return defaultValue;
     }
 
     public static Access getAccess(PsiVariable psiField) {
@@ -958,6 +964,16 @@ public class TranspileUtils {
         var annotation = getAnnotation(element, annotationClass);
         if (annotation != null)
             return getAnnotationAttribute(annotation, attributeName, defaultValue);
+        return defaultValue;
+    }
+
+    public static Object getFieldAnnotationAttribute(PsiField field, String attributeName, Object defaultValue) {
+        var entityField = getAnnotation(field, EntityField.class);
+        if(entityField != null)
+            return getAnnotationAttribute(entityField, attributeName, defaultValue);
+        var childEntity = getAnnotation(field, ChildEntity.class);
+        if(childEntity != null)
+            return getAnnotationAttribute(childEntity, attributeName, defaultValue);
         return defaultValue;
     }
 

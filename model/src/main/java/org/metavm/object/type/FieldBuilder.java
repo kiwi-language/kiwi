@@ -33,6 +33,7 @@ public class FieldBuilder {
     private boolean readonly;
     private boolean asTitle;
     private int tag = -1;
+    private Integer sourceCodeTag;
 
     private FieldBuilder(String name, @Nullable String code, Klass declaringType, Type type) {
         this.name = name;
@@ -121,6 +122,11 @@ public class FieldBuilder {
         return this;
     }
 
+    public FieldBuilder sourceCodeTag(Integer sourceCodeTag) {
+        this.sourceCodeTag = sourceCodeTag;
+        return this;
+    }
+
     public Field build() {
         Field field;
         if (existing == null) {
@@ -148,6 +154,7 @@ public class FieldBuilder {
                     staticValue,
                     column,
                     tag,
+                    sourceCodeTag,
                     state
             );
         } else {

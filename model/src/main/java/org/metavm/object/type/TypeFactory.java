@@ -84,6 +84,8 @@ public abstract class TypeFactory {
                         .source(ClassSource.getByCode(klassDTO.source()))
                         .tmpId(klassDTO.tmpId())
                         .tag(KlassTagAssigner.getInstance(context).next())
+                        .sourceCodeTag(klassDTO.sourceCodeTag() != null ? klassDTO.sourceCodeTag() :
+                                KlassSourceCodeTagAssigner.getInstance(context).next())
                         .build();
                 context.bind(klass);
             } else if (klass.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
@@ -186,6 +188,7 @@ public abstract class TypeFactory {
                     .isStatic(fieldDTO.isStatic())
                     .staticValue(Instances.nullInstance())
                     .tag(declaringType.nextFieldTag())
+                    .sourceCodeTag(fieldDTO.sourceCodeTag() != null ? fieldDTO.sourceCodeTag() : declaringType.nextFieldSourceCodeTag())
                     .state(context.isNewEntity(declaringType) ? MetadataState.READY : MetadataState.INITIALIZING)
                     .build();
             if(!context.isNewEntity(declaringType) && !field.isStatic())

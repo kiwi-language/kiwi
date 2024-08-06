@@ -23,4 +23,6 @@ public @interface EntityField {
 
     boolean removed() default false;
 
+    int tag() default -1;
+
 }

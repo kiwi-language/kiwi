@@ -43,6 +43,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public static final IndexDef<Klass> UNIQUE_CODE = IndexDef.createUnique(Klass.class, "code");
 
+    public static final IndexDef<Klass> UNIQUE_SOURCE_CODE_TAG = IndexDef.createUnique(Klass.class, "sourceCodeTag");
+
     public static final IndexDef<Klass> TEMPLATE_IDX = IndexDef.create(Klass.class, "template");
 
     @EntityField(asTitle = true)
@@ -100,8 +102,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private @Nullable Klass copySource;
 
     private int nextFieldTag;
+    private int nextFieldSourceCodeTag = 1000000;
 
     private ClassTypeState state = ClassTypeState.INIT;
+
+    private final @Nullable Integer sourceCodeTag;
 
     private final long tag;
 
@@ -160,7 +165,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             boolean isTemplate,
             List<TypeVariable> typeParameters,
             List<? extends Type> typeArguments,
-            long tag) {
+            long tag,
+            @Nullable Integer sourceCodeTag) {
         this.name = name;
         this.code = code;
         this.kind = kind;
@@ -175,6 +181,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.source = source;
         this.desc = desc;
         this.tag = tag;
+        this.sourceCodeTag = sourceCodeTag;
         this.numFields = superType != null ? superType.resolve().getNumFields() : 0;
         closure = new Closure(this);
         resetRank();
@@ -1168,6 +1175,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.map(typeArguments, t -> t.toExpression(serializeContext)),
                 !extensions.isEmpty() || !implementations.isEmpty(),
                 struct,
+                sourceCodeTag,
                 NncUtils.map(errors, Error::toDTO)
         );
     }
@@ -1837,5 +1845,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         enumConstantDefs.clear();
     }
 
+    public int nextFieldSourceCodeTag() {
+        return nextFieldSourceCodeTag++;
+    }
 }
 

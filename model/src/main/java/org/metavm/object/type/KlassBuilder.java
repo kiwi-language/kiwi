@@ -36,6 +36,7 @@ public class KlassBuilder {
     private List<Klass> dependencies;
     private List<TypeVariable> typeParameters = List.of();
     private long tag = TypeTags.DEFAULT;
+    private Integer sourceCodeTag;
     private final List<Attribute> attributes = new ArrayList<>();
 
     private KlassBuilder(String name, @Nullable String code) {
@@ -146,6 +147,11 @@ public class KlassBuilder {
         return this;
     }
 
+    public KlassBuilder sourceCodeTag(Integer sourceCodeTag) {
+        this.sourceCodeTag = sourceCodeTag;
+        return this;
+    }
+
     public KlassBuilder existing(Klass existing) {
         this.existing = existing;
         return this;
@@ -190,7 +196,8 @@ public class KlassBuilder {
                     isTemplate,
                     typeParameters,
                     typeArguments,
-                    tag);
+                    tag,
+                    sourceCodeTag);
         } else {
             klass = existing;
             existing.setName(effectiveName);

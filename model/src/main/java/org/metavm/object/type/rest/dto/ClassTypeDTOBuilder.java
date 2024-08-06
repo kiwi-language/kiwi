@@ -55,6 +55,7 @@ public class ClassTypeDTOBuilder {
     private List<String> typeParameterIds = new ArrayList<>();
     private boolean hasSubTypes;
     private boolean struct;
+    private Integer sourceCodeTag;
     private List<InstanceDTO> enumConstants = new ArrayList<>();
     private List<ErrorDTO> errors = new ArrayList<>();
 
@@ -238,6 +239,11 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
+    public ClassTypeDTOBuilder sourceCodeTag(Integer sourceCodeTag) {
+        this.sourceCodeTag = sourceCodeTag;
+        return this;
+    }
+
     @Nullable
     public String getId() {
         return id;
@@ -280,6 +286,7 @@ public class ClassTypeDTOBuilder {
                 typeArgumentIds,
                 hasSubTypes,
                 struct,
+                sourceCodeTag,
                 errors
         );
     }

@@ -251,9 +251,17 @@ public class Declarator extends CodeGenVisitor {
         if (TranspileUtils.getAnnotation(psiField, Nullable.class) != null)
             type = Types.getNullableType(type);
         var klass = currentClass().klass;
-        var field = TranspileUtils.isStatic(psiField) ?
-                klass.findSelfStaticFieldByCode(psiField.getName())
-                : klass.findSelfFieldByCode(psiField.getName());
+        var isStatic = TranspileUtils.isStatic(psiField);
+        var fieldTag = (int) TranspileUtils.getFieldAnnotationAttribute(psiField, "tag", -1);
+        Field field;
+        if(fieldTag == -1) {
+            field = isStatic ? klass.findSelfStaticFieldByCode(psiField.getName())
+                    :klass.findSelfFieldByCode(psiField.getName());
+        }
+        else {
+            field = isStatic ? klass.findSelfStaticField(f -> Objects.equals(f.getSourceCodeTag(), fieldTag))
+                    : klass.findSelfField(f -> Objects.equals(f.getSourceCodeTag(), fieldTag));
+        }
         if (field == null) {
             field = FieldBuilder
                     .newBuilder(getBizFieldName(psiField), psiField.getName(), klass, type)
@@ -261,9 +269,11 @@ public class Declarator extends CodeGenVisitor {
                     .unique(TranspileUtils.isUnique(psiField))
                     .isChild(TranspileUtils.isChild(psiField))
                     .isStatic(requireNonNull(psiField.getModifierList()).hasModifierProperty(PsiModifier.STATIC))
+                    .sourceCodeTag(fieldTag != -1 ? fieldTag : null)
                     .build();
         } else {
             field.setName(getBizFieldName(psiField));
+            field.setCode(psiField.getName());
             field.setType(type);
             field.setAccess(getAccess(psiField));
             field.setUnique(TranspileUtils.isUnique(psiField));
@@ -274,8 +284,7 @@ public class Declarator extends CodeGenVisitor {
             klass.setTitleField(field);
         else if(klass.getTitleField() == field)
             klass.setTitleField(null);
-        if((Boolean) TranspileUtils.getAnnotationAttribute(psiField, EntityField.class, "removed", false)
-                || (Boolean) TranspileUtils.getAnnotationAttribute(psiField, ChildEntity.class, "removed", false))
+        if((Boolean) TranspileUtils.getFieldAnnotationAttribute(psiField, "removed", false))
             field.setMetadataRemoved();
         else
             field.setState(MetadataState.READY);

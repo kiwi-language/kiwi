@@ -1,7 +1,14 @@
+import javax.annotation.Nullable;
+import org.metavm.api.EntityField;
+
 public class Product {
     private String name;
     private Price price;
     private String brand;
+    @EntityField(removed = true)
+    private @Nullable String description;
+    @EntityField(tag = 0)
+    private ProductStatus status = ProductStatus.AVAILABLE;;
 
     public Product(String name, Price price, String brand) {
         this.name = name;
@@ -32,4 +39,5 @@ public class Product {
     public void setBrand(String brand) {
         this.brand = brand;
     }
+
 }

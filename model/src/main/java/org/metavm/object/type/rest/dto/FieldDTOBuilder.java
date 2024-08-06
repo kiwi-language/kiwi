@@ -28,6 +28,7 @@ public class FieldDTOBuilder {
     private boolean lazy;
     private InstanceDTO staticValue;
     private boolean searchable;
+    private Integer sourceCodeTag;
     private int state = MetadataState.READY.code();
 
     private FieldDTOBuilder(String name, String type) {
@@ -100,6 +101,11 @@ public class FieldDTOBuilder {
         return this;
     }
 
+    public FieldDTOBuilder sourceCodeTag(Integer sourceCodeTag) {
+        this.sourceCodeTag = sourceCodeTag;
+        return this;
+    }
+
     public FieldDTOBuilder declaringTypeId(String declaringTypeId) {
         this.declaringTypeId = declaringTypeId;
         return this;
@@ -127,6 +133,7 @@ public class FieldDTOBuilder {
                 readonly,
                 lazy,
                 staticValue,
+                sourceCodeTag,
                 state
         );
     }

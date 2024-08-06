@@ -9,6 +9,7 @@ import org.metavm.message.Message;
 import org.metavm.message.MessageKind;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.GlobalKlassTagAssigner;
+import org.metavm.object.type.KlassSourceCodeTagAssigner;
 import org.metavm.object.type.KlassTagAssigner;
 import org.metavm.system.IdService;
 import org.metavm.task.RemoveAppTaskGroup;
@@ -185,6 +186,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
         try(var context = newContext(appId)) {
             BeanDefinitionRegistry.initialize(context);
             KlassTagAssigner.initialize(context, GlobalKlassTagAssigner.getInstance(platformContext));
+            KlassSourceCodeTagAssigner.initialize(context);
             context.finish();
         }
     }

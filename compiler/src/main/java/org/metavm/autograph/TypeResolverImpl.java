@@ -373,13 +373,15 @@ public class TypeResolverImpl implements TypeResolver {
             var kind = getClassKind(psiClass);
             boolean isTemplate = psiClass.getTypeParameterList() != null
                     && psiClass.getTypeParameterList().getTypeParameters().length > 0;
-            var klass = NncUtils.first(context.query(
-                    EntityIndexQueryBuilder
-                            .newBuilder(Klass.UNIQUE_CODE)
-                            .eq(new EntityIndexKey(List.of(requireNonNull(psiClass.getQualifiedName()))))
-                            .build()));
+            var tag = (int) TranspileUtils.getEntityAnnotationAttr(psiClass, "tag", -1);
+            Klass klass;
+            if(tag == -1)
+                klass = context.selectFirstByKey(Klass.UNIQUE_CODE, psiClass.getQualifiedName());
+            else
+                klass = context.selectFirstByKey(Klass.UNIQUE_SOURCE_CODE_TAG, tag);
             if (klass != null) {
                 klass.setName(name);
+                klass.setCode(psiClass.getQualifiedName());
                 if (klass.isTemplate() != isTemplate)
                     throw new BusinessException(ErrorCode.CHANGING_IS_TEMPLATE);
                 if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
@@ -392,6 +394,7 @@ public class TypeResolverImpl implements TypeResolver {
                         .struct(TranspileUtils.isStruct(psiClass))
                         .isTemplate(isTemplate)
                         .isAbstract(psiClass.hasModifierProperty(PsiModifier.ABSTRACT))
+                        .sourceCodeTag(tag != -1 ? tag : null)
                         .build();
                 context.bind(klass);
             }

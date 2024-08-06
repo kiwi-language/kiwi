@@ -3,6 +3,8 @@ package org.metavm.autograph;
 import org.metavm.application.rest.dto.ApplicationDTO;
 import org.metavm.common.Page;
 import org.metavm.object.type.*;
+import org.metavm.object.type.rest.dto.GetTypeByCodeRequest;
+import org.metavm.object.type.rest.dto.GetTypeResponse;
 import org.metavm.user.rest.dto.LoginInfo;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.CompilerHttpUtils;
@@ -102,6 +104,30 @@ public class Main {
         });
         System.out.println("application ID: " + appId);
         CompilerHttpUtils.setAppId(currentAppId);
+    }
+
+    private static void printClassTag(String name) {
+        var klass = CompilerHttpUtils.post("/type/get-by-code", new GetTypeByCodeRequest(name), new TypeReference<GetTypeResponse>() {
+        }).type();
+        System.out.println(klass.sourceCodeTag());
+    }
+
+    private static void printFieldTag(String name) {
+        var idx = name.lastIndexOf('.');
+        if(idx == -1) {
+            System.out.println("Invalid qualified field name");
+            return;
+        }
+        var klassName = name.substring(0, idx);
+        var fieldName = name.substring(idx + 1);
+        var klass = CompilerHttpUtils.post("/type/get-by-code", new GetTypeByCodeRequest(klassName), new TypeReference<GetTypeResponse>() {
+        }).type();
+        var field = NncUtils.find(klass.fields(), f -> fieldName.equals(f.code()));
+        if(field == null) {
+            System.out.println("Field not found");
+            return;
+        }
+        System.out.println(field.sourceCodeTag());
     }
 
     private static String getAppFile() {
@@ -281,6 +307,20 @@ public class Main {
                     return;
                 }
                 createApp(args[1]);
+            }
+            case "class-tag" -> {
+                if(args.length < 2) {
+                    usage();
+                    return;
+                }
+                printClassTag(args[1]);
+            }
+            case "field-tag" -> {
+                if(args.length < 2) {
+                    usage();
+                    return;
+                }
+                printFieldTag(args[1]);
             }
             case "env" -> {
                 var selected = NncUtils.readLine(ENV_FILE);

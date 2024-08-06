@@ -43,6 +43,7 @@ public record KlassDTO(
         List<String> typeArguments,
         boolean hasSubTypes,
         boolean struct,
+        @Nullable Integer sourceCodeTag,
         List<ErrorDTO> errors
 ) implements TypeDefDTO, GenericDeclarationDTO {
 

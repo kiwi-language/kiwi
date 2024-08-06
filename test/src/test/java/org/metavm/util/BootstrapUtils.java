@@ -63,6 +63,7 @@ public class BootstrapUtils {
                     try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                         BeanDefinitionRegistry.initialize(context);
                         KlassTagAssigner.initialize(context, globalTagAssigner);
+                        KlassSourceCodeTagAssigner.initialize(context);
                         context.finish();
                     }
                     platformContext.finish();
@@ -124,6 +125,7 @@ public class BootstrapUtils {
                     try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                         BeanDefinitionRegistry.initialize(context);
                         KlassTagAssigner.initialize(context, globalTagAssigner);
+                        KlassSourceCodeTagAssigner.initialize(context);
                         context.finish();
                     }
                     platformContext.finish();
