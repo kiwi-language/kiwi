@@ -811,26 +811,26 @@ X-App-ID: 1843616873
 
 ###
 GET http://localhost:8080/api/org/metavm/mlab/Currency/YUAN
-X-App-ID: 1845016904
+X-App-ID: 1845016908
 
 ###
 GET http://localhost:8080/api/org/metavm/mlab/ProductKind/DEFAULT
-X-App-ID: 1845016904
+X-App-ID: 1845016908
 
 ###
 PUT http://localhost:8080/api/org/metavm/mlab/Product
-X-App-ID: 1845016904
+X-App-ID: 1845016908
 Content-Type: application/json
 
 {
   "name": "shoes",
-  "kind": "01c0cdb9df0d00",
+  "kind": "01b4d0b9df0d00",
   "skus": [
     {
-      "name": "default",
+      "name": "40",
       "price": {
         "amount": 100,
-        "currency": "01c6cdb9df0d00"
+        "currency": "01aed0b9df0d00"
       },
       "inventory": {
         "quantity": 100
@@ -840,5 +840,53 @@ Content-Type: application/json
 }
 
 ###
+PUT http://localhost:8080/api/org/metavm/mlab/Product
+X-App-ID: 1845016908
+Content-Type: application/json
+
+{
+  "$class": "org.metavm.mlab.Product",
+  "skus": [
+    {
+      "$class": "org.metavm.mlab.SKU",
+      "price": {
+        "$class": "org.metavm.mlab.Price",
+        "amount": 100.0,
+        "currency": "01aed0b9df0d00"
+      },
+      "name": "40",
+      "inventory": {
+        "$class": "org.metavm.mlab.Inventory",
+        "quantity": 100,
+        "$id": "0198d1b9df0d06"
+      },
+      "$id": "0198d1b9df0d08"
+    },
+    {
+      "$class": "org.metavm.mlab.SKU",
+      "price": {
+        "$class": "org.metavm.mlab.Price",
+        "amount": 100.0,
+        "currency": "01aed0b9df0d00"
+      },
+      "name": "41",
+      "inventory": {
+        "$class": "org.metavm.mlab.Inventory",
+        "quantity": 200,
+        "$id": "0198d1b9df0d0c"
+      },
+      "$id": "0198d1b9df0d0e"
+    }
+  ],
+  "kind": "01b4d0b9df0d00",
+  "name": "shoes",
+  "$id": "0198d1b9df0d00"
+}
+
+###
 GET http://localhost:8080/api/0188ceb9df0d00
-X-App-ID: 1845016904
+X-App-ID: 1845016908
+
+###
+GET http://localhost:8080/api/0198d1b9df0d00
+X-App-ID: 1845016908

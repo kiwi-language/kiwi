@@ -116,7 +116,7 @@ public class Declarator extends CodeGenVisitor {
         for (int i = 0; i < psiClass.getFields().length; i++) {
             fieldIndices.put(psiClass.getFields()[i].getName(), i);
         }
-        klass.sortFields(Comparator.comparingInt(f -> fieldIndices.get(f.getCode())));
+        klass.sortFields(Comparator.comparingInt(f -> fieldIndices.getOrDefault(f.getCode(), Integer.MAX_VALUE)));
         var methodIndices = new HashMap<Method, Integer>();
         for (int i = 0; i < psiClass.getMethods().length; i++) {
             var method = psiClass.getMethods()[i].getUserData(Keys.Method);

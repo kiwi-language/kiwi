@@ -10,11 +10,15 @@ import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.NncUtils;
 import org.metavm.util.StreamVisitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
 
 public class DiskTreeStore implements TreeSource {
+
+    public static final Logger logger = LoggerFactory.getLogger(DiskTreeStore.class);
 
     private final String path;
     private Map<Long, Tree> trees = new HashMap<>();
@@ -41,9 +45,21 @@ public class DiskTreeStore implements TreeSource {
 
     @Override
     public void save(List<Tree> trees) {
+    }
+
+    public void load(List<Tree> trees, List<Long> removedIds) {
+        NncUtils.forEach(removedIds, this.trees::remove);
         for (Tree tree : trees) {
             this.trees.put(tree.id(), tree);
         }
+    }
+
+    public boolean contains(long treeId) {
+        return trees.containsKey(treeId);
+    }
+
+    public int size() {
+        return trees.size();
     }
 
     @Override
@@ -53,7 +69,6 @@ public class DiskTreeStore implements TreeSource {
 
     @Override
     public void remove(List<Long> ids) {
-        NncUtils.forEach(ids, trees::remove);
     }
 
     public void persist() {
@@ -79,10 +94,30 @@ public class DiskTreeStore implements TreeSource {
                     byte[] bytes = new byte[len];
                     input.read(bytes);
                     var subInput = new InstanceInput(new ByteArrayInputStream(bytes));
-                    var version = subInput.readLong();
-                    var treeId = subInput.readTreeId();
-                    var nextNodeId = subInput.readInt();
-                    trees.put(treeId, new Tree(treeId, version, nextNodeId, bytes));
+                    var ref = new Object() {
+                        long version;
+                        long treeId;
+                        long nextNodeId;
+                    };
+                    new StreamVisitor(subInput) {
+                        @Override
+                        public void visitVersion(long version) {
+                            ref.version = version;
+                            super.visitVersion(version);
+                        }
+
+                        @Override
+                        public long readTreeId() {
+                            return ref.treeId = super.readTreeId();
+                        }
+
+                        @Override
+                        public void visitNextNodeId(long nextNodeId) {
+                            ref.nextNodeId = nextNodeId;
+                            super.visitNextNodeId(nextNodeId);
+                        }
+                    }.visitGrove();
+                    trees.put(ref.treeId, new Tree(ref.treeId, ref.version, ref.nextNodeId, bytes));
                 }
                 this.trees = trees;
             } catch (IOException e) {

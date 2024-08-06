@@ -188,5 +188,8 @@ public abstract class CompilerTestBase extends TestCase  {
         submit(() -> TestUtils.waitForDDLPrepared(entityContextFactory));
     }
 
+    protected void clearHome() {
+        NncUtils.clearDirectory(HOME);
+    }
 
 }

@@ -5,12 +5,16 @@ import org.metavm.object.instance.TreeSource;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.rest.GetTreesRequest;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class ServerTreeSource implements TreeSource {
+
+    public static final Logger logger = LoggerFactory.getLogger(ServerTreeSource.class);
 
     private final TypeClient typeClient;
 

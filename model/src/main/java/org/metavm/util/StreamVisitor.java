@@ -95,7 +95,7 @@ public class StreamVisitor {
     public void visitMessage() {
         visitVersion(input.readLong());
         readTreeId();
-        input.readLong();
+        visitNextNodeId(input.readLong());
         boolean separateChild = readBoolean();
         if(separateChild) {
             readId();
@@ -105,6 +105,8 @@ public class StreamVisitor {
     }
 
     public void visitVersion(long version) {}
+
+    public void visitNextNodeId(long nextNodeId) {}
 
     public void visitValue() {
         visitValue(input.read());

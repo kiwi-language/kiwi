@@ -11,6 +11,8 @@ import org.metavm.util.BytesUtils;
 import org.metavm.util.CompilerHttpUtils;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.HashMap;
@@ -18,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 public class LocalIndexSource implements IndexSource {
+
+    public static final Logger logger = LoggerFactory.getLogger(LocalIndexSource.class);
 
     private CompilerInstanceContextFactory contextFactory;
     private final DiskTreeStore treeStore;

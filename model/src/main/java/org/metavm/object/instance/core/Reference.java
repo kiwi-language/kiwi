@@ -188,7 +188,7 @@ public class Reference extends Value {
     }
 
     public Long tryGetTreeId() {
-        return id != null ? id.getTreeId() : null;
+        return id != null ? id.tryGetTreeId() : null;
     }
 
     public boolean isLoaded() {
