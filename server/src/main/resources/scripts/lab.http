@@ -905,7 +905,7 @@ POST http://localhost:8080/system/pre-upgrade
 Content-Type: application/json
 
 {
-  "newSystemFields": [
+  "fieldAdditions": [
     {
       "klassId": "02e0a03e008c02",
       "fieldName": "upgradeFlag",
@@ -914,7 +914,7 @@ Content-Type: application/json
   ],
   "initializerKlasses": [
     {
-      "id": "13a2f9f7edb48fdb08",
+      "id": "13ccc0cbc384fd8119",
       "name": "KlassInitializer",
       "code": "org.metavm.object.type.KlassInitializer",
       "kind": 1,
@@ -928,7 +928,7 @@ Content-Type: application/json
       "constraints": [],
       "flows": [
         {
-          "id": "13def2b69cc5fde404",
+          "id": "13eef9dd96c389e008",
           "name": "__upgradeFlag__",
           "code": "__upgradeFlag__",
           "isNative": false,
@@ -938,10 +938,10 @@ Content-Type: application/json
             "nodes": [
               {
                 "id": "1304",
-                "flowId": "13def2b69cc5fde404",
+                "flowId": "13eef9dd96c389e008",
                 "name": "input0",
                 "kind": 1,
-                "outputType": "$$13e6b6e892869e841b",
+                "outputType": "$$13ac8da68dd588940b",
                 "param": {
                   "kind": "1",
                   "fields": [
@@ -958,8 +958,8 @@ Content-Type: application/json
                   ]
                 },
                 "outputKlass": {
-                  "id": "13e6b6e892869e841b",
-                  "name": "Input_2301496203880046",
+                  "id": "13ac8da68dd588940b",
+                  "name": "Input_4691005097974404",
                   "kind": 1,
                   "ephemeral": true,
                   "anonymous": true,
@@ -978,7 +978,7 @@ Content-Type: application/json
                         "kind": 1
                       },
                       "unique": false,
-                      "declaringTypeId": "13e6b6e892869e841b",
+                      "declaringTypeId": "13ac8da68dd588940b",
                       "type": "$$02e0a03e008c02:134",
                       "isChild": false,
                       "isStatic": false,
@@ -1014,8 +1014,8 @@ Content-Type: application/json
                 }
               },
               {
-                "id": "13c296b8d3d7d59815",
-                "flowId": "13def2b69cc5fde404",
+                "id": "13f8aca1a19fa4f901",
+                "flowId": "13eef9dd96c389e008",
                 "name": "klass",
                 "kind": 16,
                 "prevId": "1304",
@@ -1033,11 +1033,11 @@ Content-Type: application/json
                 }
               },
               {
-                "id": "1380c8adc3c7f28a14",
-                "flowId": "13def2b69cc5fde404",
+                "id": "13a4a5dc92c6cca81f",
+                "flowId": "13eef9dd96c389e008",
                 "name": "__node__1",
                 "kind": 9,
-                "prevId": "13c296b8d3d7d59815",
+                "prevId": "13f8aca1a19fa4f901",
                 "outputType": "long",
                 "param": {
                   "kind": "9",
@@ -1056,12 +1056,12 @@ Content-Type: application/json
           "returnType": "long",
           "parameters": [
             {
-              "id": "13f4a1fb83acdb8d04",
+              "id": "13a0b5bca3a392f21a",
               "name": "klass",
               "code": "klass",
               "type": "$$02e0a03e008c02:134",
               "attributes": {},
-              "callableId": "13def2b69cc5fde404"
+              "callableId": "13eef9dd96c389e008"
             }
           ],
           "type": "($$02e0a03e008c02:134)->long",
@@ -1077,15 +1077,15 @@ Content-Type: application/json
             "isConstructor": false,
             "isAbstract": false,
             "isStatic": true,
-            "declaringTypeId": "13a2f9f7edb48fdb08",
-            "staticType": "($$13a2f9f7edb48fdb08,$$02e0a03e008c02:134)->long",
+            "declaringTypeId": "13ccc0cbc384fd8119",
+            "staticType": "($$13ccc0cbc384fd8119,$$02e0a03e008c02:134)->long",
             "overriddenRefs": [],
             "access": 1,
             "kind": 2
           }
         },
         {
-          "id": "13e2fef0f99c93f417",
+          "id": "13e0b5decbdab5de09",
           "name": "<cinit>",
           "code": "<cinit>",
           "isNative": false,
@@ -1095,7 +1095,7 @@ Content-Type: application/json
             "nodes": [
               {
                 "id": "130a",
-                "flowId": "13e2fef0f99c93f417",
+                "flowId": "13e0b5decbdab5de09",
                 "name": "__node__2",
                 "kind": 9,
                 "outputType": "void",
@@ -1120,7 +1120,7 @@ Content-Type: application/json
             "isConstructor": false,
             "isAbstract": false,
             "isStatic": true,
-            "declaringTypeId": "13a2f9f7edb48fdb08",
+            "declaringTypeId": "13ccc0cbc384fd8119",
             "overriddenRefs": [],
             "access": 3,
             "kind": 2

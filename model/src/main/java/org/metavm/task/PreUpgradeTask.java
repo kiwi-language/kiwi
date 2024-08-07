@@ -51,4 +51,8 @@ public class PreUpgradeTask extends ScanTask  implements WalTask {
         return wal;
     }
 
+    @Override
+    public long getTimeout() {
+        return 500L;
+    }
 }
