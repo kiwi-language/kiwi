@@ -42,6 +42,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private Type type;
     private int originalTag = -1;
     private int tag;
+    private final int since;
     private final @Nullable Integer sourceCodeTag;
     private transient int offset;
 
@@ -62,6 +63,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             @Nullable Column column,
             int tag,
             @Nullable Integer sourceCodeTag,
+            int since,
             MetadataState state
     ) {
         super(tmpId);
@@ -77,6 +79,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this.tag = tag;
         this.sourceCodeTag = sourceCodeTag;
         this.readonly = readonly;
+        this.since = since;
         if (column != null) {
             NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
             this.column = column;
@@ -520,4 +523,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return state == MetadataState.REMOVED;
     }
 
+    public int getSince() {
+        return since;
+    }
 }

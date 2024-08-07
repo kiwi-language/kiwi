@@ -39,6 +39,7 @@ public abstract class Instance implements Message {
     private transient boolean ephemeral;
     private transient boolean changeNotified;
     private transient boolean removalNotified;
+    private transient boolean directlyModified;
 
     transient IInstanceContext context;
     private transient boolean afterContextInitIdsNotified;
@@ -820,5 +821,13 @@ public abstract class Instance implements Message {
 
     public void setRemoving(boolean removing) {
         this.removing = removing;
+    }
+
+    public boolean isDirectlyModified() {
+        return directlyModified;
+    }
+
+    public void setDirectlyModified(boolean directlyModified) {
+        this.directlyModified = directlyModified;
     }
 }

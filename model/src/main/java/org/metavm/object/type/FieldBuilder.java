@@ -34,6 +34,7 @@ public class FieldBuilder {
     private boolean asTitle;
     private int tag = -1;
     private Integer sourceCodeTag;
+    private int since;
 
     private FieldBuilder(String name, @Nullable String code, Klass declaringType, Type type) {
         this.name = name;
@@ -127,6 +128,11 @@ public class FieldBuilder {
         return this;
     }
 
+    public FieldBuilder since(int since) {
+        this.since = since;
+        return this;
+    }
+
     public Field build() {
         Field field;
         if (existing == null) {
@@ -155,6 +161,7 @@ public class FieldBuilder {
                     column,
                     tag,
                     sourceCodeTag,
+                    since,
                     state
             );
         } else {

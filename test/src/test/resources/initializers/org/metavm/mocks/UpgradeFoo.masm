@@ -1,0 +1,11 @@
+package org.metavm.mocks;
+
+import org.metavm.mocks.UpgradeFoo;
+
+class UpgradeFooInitializer {
+
+    public static string __code__(UpgradeFoo foo) {
+        return foo.name;
+    }
+
+}

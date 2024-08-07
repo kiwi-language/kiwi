@@ -25,9 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -61,6 +59,15 @@ public class Assembler {
     @SuppressWarnings("UnusedReturnValue")
     public List<TypeDefDTO> assemble(List<String> sourcePaths) {
         var units = NncUtils.map(sourcePaths, path -> parse(getSource(path)));
+        return assemble0(units);
+    }
+
+    public List<TypeDefDTO> assemble(InputStream input) {
+        var unit = parse(input);
+        return assemble0(List.of(unit));
+    }
+
+    private List<TypeDefDTO> assemble0(List<AssemblyParser.CompilationUnitContext> units) {
         visit(units, new ImportParser());
         visit(units, new AsmInit());
         visit(units, new AsmDeclarator());
@@ -1335,6 +1342,17 @@ public class Assembler {
         return parser.compilationUnit();
     }
 
+    private AssemblyParser.CompilationUnitContext parse(InputStream in) {
+        try {
+            var input = CharStreams.fromReader(new InputStreamReader(in));
+            var parser = new AssemblyParser(new CommonTokenStream(new AssemblyLexer(input)));
+            return parser.compilationUnit();
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Failed to read source input", e);
+        }
+    }
+
     private Type parseType(AssemblyParser.TypeTypeOrVoidContext typeTypeOrVoid, AsmScope scope, CompilationUit compilationUnit) {
         if (typeTypeOrVoid.VOID() != null)
             return PrimitiveType.voidType;
@@ -1448,7 +1466,7 @@ public class Assembler {
     private Klass createKlass(String name, String code, ClassKind kind) {
         var klass = KlassBuilder.newBuilder(name, code).kind(kind).tmpId(NncUtils.randomNonNegative()).build();
         code2klass.put(name, klass);
-        binder.accept(klass);
+//        binder.accept(klass);
         return klass;
     }
 

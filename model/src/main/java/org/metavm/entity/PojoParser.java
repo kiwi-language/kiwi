@@ -262,6 +262,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 .isChild(isChild)
                 .staticValue(new NullValue(Types.getNullType()))
                 .access(parseAccess(javaField.getModifiers()))
+                .since(annotation != null ? annotation.since() : 0)
                 .build();
         if (asTitle)
             declaringType.setTitleField(field);

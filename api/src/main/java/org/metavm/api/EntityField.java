@@ -25,4 +25,6 @@ public @interface EntityField {
 
     int tag() default -1;
 
+    int since() default 0;
+
 }

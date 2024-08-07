@@ -620,6 +620,18 @@ public class ClassInstance extends Instance {
         fieldTable.addUnknownField(uf);
     }
 
+    public void setFieldByTag(long classTag, int fieldTag, Value value) {
+        var st = NncUtils.find(fieldTable.subTables, s -> s.klassTag == classTag);
+        if(st != null) {
+            var ff = NncUtils.find(st.fields, f -> f.getTag() == fieldTag);
+            if(ff != null) {
+                ff.set(value);
+                return;
+            }
+        }
+        setUnknown(classTag, fieldTag, value);
+    }
+
     private static class FieldTable implements Iterable<IInstanceField> {
 
         private final ClassInstance owner;

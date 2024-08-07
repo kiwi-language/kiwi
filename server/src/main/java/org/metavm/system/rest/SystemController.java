@@ -2,11 +2,12 @@ package org.metavm.system.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.bind.annotation.*;
 import org.metavm.application.ApplicationManager;
 import org.metavm.application.rest.dto.ApplicationCreateRequest;
 import org.metavm.common.Result;
+import org.metavm.ddl.DDLManager;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.type.rest.dto.PreUpgradeRequest;
 import org.metavm.system.CacheManager;
 import org.metavm.system.StoreManager;
 import org.metavm.user.PlatformUserManager;
@@ -16,6 +17,7 @@ import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.NncUtils;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,13 +63,16 @@ public class SystemController {
 
     private final StoreManager storeManager;
 
-    public SystemController(ApplicationManager applicationManager, LoginController loginController, BootstrapController bootstrapController, PlatformUserManager platformUserManager, CacheManager cacheManager, StoreManager storeManager) {
+    private final DDLManager ddlManager;
+
+    public SystemController(ApplicationManager applicationManager, LoginController loginController, BootstrapController bootstrapController, PlatformUserManager platformUserManager, CacheManager cacheManager, StoreManager storeManager, DDLManager ddlManager) {
         this.applicationManager = applicationManager;
         this.loginController = loginController;
         this.bootstrapController = bootstrapController;
         this.platformUserManager = platformUserManager;
         this.cacheManager = cacheManager;
         this.storeManager = storeManager;
+        this.ddlManager = ddlManager;
     }
 
     @PostMapping("/init-test")
@@ -137,6 +142,17 @@ public class SystemController {
     @PostMapping("/download-cache/{id:[0-9]+}")
     public Result<Void> saveCacheBytes(@PathVariable("id") long id) {
         cacheManager.saveCacheBytes(id);
+        return Result.voidSuccess();
+    }
+
+    @PostMapping("/build-pre-upgrade-request")
+    public Result<PreUpgradeRequest> buildPreUpgradeRequest(@RequestParam("since") int since) {
+        return Result.success(ddlManager.buildUpgradePreparationRequest(since));
+    }
+
+    @PostMapping("/pre-upgrade")
+    public Result<Void> preUpgrade(PreUpgradeRequest request) {
+        ddlManager.preUpgrade(request);
         return Result.voidSuccess();
     }
 
