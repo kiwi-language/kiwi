@@ -6,6 +6,7 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.mocks.UpgradeFoo;
+import org.metavm.task.GlobalPreUpgradeTask;
 import org.metavm.task.PreUpgradeTask;
 import org.metavm.util.BootstrapUtils;
 import org.metavm.util.ContextUtil;
@@ -37,8 +38,8 @@ public class DDLManagerTest extends TestCase {
         var codeField = fooKlass.getFieldByCode("code");
         Assert.assertEquals(1, codeField.getSince());
         var request = ddlManager.buildUpgradePreparationRequest(0);
-        Assert.assertEquals(1, request.newSystemFields().size());
-        Assert.assertEquals(codeField.getName(), request.newSystemFields().get(0).fieldName());
+        Assert.assertEquals(1, request.fieldAdditions().size());
+        Assert.assertEquals(codeField.getName(), request.fieldAdditions().get(0).fieldName());
         Assert.assertEquals(1, request.initializerKlasses().size());
         Assert.assertEquals(fooKlass.getCodeNotNull() + "Initializer", request.initializerKlasses().get(0).code());
         TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
@@ -51,6 +52,7 @@ public class DDLManagerTest extends TestCase {
                 return foo.getId();
             }
         });
+        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, entityContextFactory);
         TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
         try(var context = newContext()) {
             var foo = context.getEntity(UpgradeFoo.class, fooId);

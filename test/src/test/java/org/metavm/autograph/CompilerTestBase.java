@@ -40,7 +40,7 @@ public abstract class CompilerTestBase extends TestCase  {
     private static final Logger logger = LoggerFactory.getLogger(CompilerTestBase.class);
 
     protected AuthConfig AUTH_CONFIG;
-    protected long APP_ID = 100L;
+    protected long APP_ID;
 
     public static final String HOME = "/Users/leen/workspace/object/test/src/test/resources/home";
 
@@ -69,6 +69,7 @@ public abstract class CompilerTestBase extends TestCase  {
             FlowSavingContext.initConfig();
             return BootstrapUtils.bootstrap();
         });
+        APP_ID = TestConstants.APP_ID;
         allocatorStore = bootResult.allocatorStore();
         columnStore = bootResult.columnStore();
         typeTagStore = bootResult.typeTagStore();

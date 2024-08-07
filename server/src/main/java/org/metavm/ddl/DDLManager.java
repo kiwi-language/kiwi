@@ -1,10 +1,7 @@
 package org.metavm.ddl;
 
 import org.metavm.asm.AssemblerFactory;
-import org.metavm.entity.Entity;
-import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.EntityContextFactoryAware;
-import org.metavm.entity.ModelDefRegistry;
+import org.metavm.entity.*;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.WAL;
@@ -15,6 +12,7 @@ import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.rest.dto.FieldAdditionDTO;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.PreUpgradeRequest;
+import org.metavm.task.GlobalPreUpgradeTask;
 import org.metavm.task.PreUpgradeTask;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -35,6 +33,7 @@ public class DDLManager extends EntityContextFactoryAware {
     public DDLManager(EntityContextFactory entityContextFactory, TypeManager typeManager) {
         super(entityContextFactory);
         this.typeManager = typeManager;
+        GlobalPreUpgradeTask.preUpgradeAction = this::preUpgrade;
     }
 
     public PreUpgradeRequest buildUpgradePreparationRequest(int since) {
@@ -71,37 +70,39 @@ public class DDLManager extends EntityContextFactoryAware {
 
     @Transactional
     public void preUpgrade(PreUpgradeRequest request) {
+        try(var platformContext = newPlatformContext()) {
+            platformContext.bind(new GlobalPreUpgradeTask(request));
+            platformContext.finish();
+        }
+    }
+
+    private void preUpgrade(PreUpgradeRequest request, IEntityContext context) {
         FlowSavingContext.initConfig();
         FlowSavingContext.skipPreprocessing(true);
-        try(var context = newContext()) {
-            var wal = context.bind(new WAL(context.getAppId()));
-            String ddlId;
-            try (var bufferingContext = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT).writeWAL(wal))) {
-                var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), bufferingContext);
-                var fieldAdds = new ArrayList<FieldAddition>();
-                for (FieldAdditionDTO fieldAddDTO : request.newSystemFields()) {
-                    var klass = bufferingContext.getKlass(fieldAddDTO.klassId());
-                    if (klass != null) {
-                        fieldAdds.add(
-                                new FieldAddition(
-                                        klass,
-                                        fieldAddDTO.fieldTag(),
-                                        getSystemFieldInitializer(batch, klass, fieldAddDTO.fieldName())
-                                )
-                        );
-                    }
+        var wal = context.bind(new WAL(context.getAppId()));
+        String ddlId;
+        try (var bufferingContext = newContext(context.getAppId(),  builder -> builder.timeout(DDL_SESSION_TIMEOUT).writeWAL(wal))) {
+            var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), bufferingContext);
+            var fieldAdds = new ArrayList<FieldAddition>();
+            for (FieldAdditionDTO fieldAddDTO : request.fieldAdditions()) {
+                var klass = bufferingContext.getKlass(fieldAddDTO.klassId());
+                if (klass != null) {
+                    fieldAdds.add(
+                            new FieldAddition(
+                                    klass,
+                                    fieldAddDTO.fieldTag(),
+                                    getSystemFieldInitializer(batch, klass, fieldAddDTO.fieldName())
+                            )
+                    );
                 }
-                var ddl = new SystemDDL(fieldAdds);
-                bufferingContext.bind(ddl);
-                bufferingContext.finish();
-                ddlId = ddl.getStringId();
             }
-            context.bind(new PreUpgradeTask(wal, ddlId));
-            context.finish();
+            var ddl = new SystemDDL(fieldAdds);
+            bufferingContext.bind(ddl);
+            bufferingContext.finish();
+            ddlId = ddl.getStringId();
         }
-        finally {
-            FlowSavingContext.clearConfig();
-        }
+        context.bind(new PreUpgradeTask(wal, ddlId));
+        FlowSavingContext.clearConfig();
     }
 
     private Method getSystemFieldInitializer(SaveTypeBatch batch, Klass klass, String fieldName) {

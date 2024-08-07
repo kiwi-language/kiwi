@@ -134,10 +134,17 @@ public abstract class PojoDef<T> extends ModelDef<T> {
     }
 
     protected Map<Field, Value> getInstanceFields(Object object, ObjectInstanceMap instanceMap) {
+        var fieldData = getInstanceFields0(object, instanceMap);
+        var result = new HashMap<Field, Value>();
+        klass.forEachField(f -> result.put(f, fieldData.get(f.getEffectiveTemplate())));
+        return result;
+    }
+
+    private Map<Field, Value> getInstanceFields0(Object object, ObjectInstanceMap instanceMap) {
 //        try(var ignored = ContextUtil.getProfiler().enter("PojoDef.getInstanceFields")) {
             Map<Field, Value> fieldData = new HashMap<>();
             if (superDef != null)
-                fieldData.putAll(superDef.getInstanceFields(object, instanceMap));
+                fieldData.putAll(superDef.getInstanceFields0(object, instanceMap));
             for (IFieldDef fieldDef : fieldDefList) {
                 fieldData.put(fieldDef.getField(), fieldDef.getInstanceFieldValue(object, instanceMap));
             }

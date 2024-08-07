@@ -5,13 +5,14 @@ import org.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 public class UnknownField implements IInstanceField {
 
     private final ClassInstance owner;
     private final long recordGroupTag;
     private final int recordTag;
-    private final byte[] bytes;
+    private byte[] bytes;
     private @Nullable Value value;
 
     public UnknownField(ClassInstance owner, long recordGroupTag, int recordTag, byte[] bytes) {
@@ -36,7 +37,11 @@ public class UnknownField implements IInstanceField {
 
     @Override
     public void set(Value value) {
-        throw new UnsupportedOperationException();
+        var bout = new ByteArrayOutputStream();
+        var out = new InstanceOutput(bout);
+        out.writeValue(value);
+        this.value = value;
+        this.bytes = bout.toByteArray();
     }
 
     @Override

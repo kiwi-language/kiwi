@@ -4,7 +4,7 @@ import org.metavm.object.instance.core.Id;
 
 public class TestConstants {
 
-    public static final long APP_ID = 100L;
+    public static volatile long APP_ID = 100L;
 
     public static final long USER_ID = 1004L;
 

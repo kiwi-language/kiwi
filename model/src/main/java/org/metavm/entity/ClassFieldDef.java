@@ -6,24 +6,28 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
 import org.metavm.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 
 public class ClassFieldDef implements IFieldDef {
 
+    private static final Logger logger = LoggerFactory.getLogger(ClassFieldDef.class);
+
     private final PojoDef<?> declaringTypeDef;
     private final org.metavm.object.type.Field field;
     private final Field javaField;
-    private final DefMap defMap;
+    private final DefContext defContext;
 
     public ClassFieldDef(PojoDef<?> declaringTypeDef,
                          org.metavm.object.type.Field field,
                          Field javaField,
-                         DefMap defMap) {
+                         DefContext defContext) {
         this.declaringTypeDef = declaringTypeDef;
         this.field = field;
         this.javaField = javaField;
-        this.defMap = defMap;
+        this.defContext = defContext;
         declaringTypeDef.addFieldDef(this);
     }
 
@@ -33,14 +37,14 @@ public class ClassFieldDef implements IFieldDef {
         if(instanceFieldValue.isNull())
             return null;
         Klass type = objectInstanceMap.getEntity(Klass.class, instanceFieldValue);
-        return defMap.getMapper(type.getType()).getEntityClass();
+        return defContext.getMapper(type.getType()).getEntityClass();
     }
 
     @Override
     public Value getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
         Class<?> fieldValue = (Class<?>) ReflectionUtils.get(model, javaField);
         return fieldValue != null ?
-                instanceMap.getInstance(defMap.getType(fieldValue))
+                instanceMap.getInstance(defContext.getKlass(fieldValue))
                 : Instances.nullInstance();
     }
 

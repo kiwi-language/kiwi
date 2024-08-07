@@ -151,7 +151,7 @@ public class SystemController {
     }
 
     @PostMapping("/pre-upgrade")
-    public Result<Void> preUpgrade(PreUpgradeRequest request) {
+    public Result<Void> preUpgrade(@RequestBody PreUpgradeRequest request) {
         ddlManager.preUpgrade(request);
         return Result.voidSuccess();
     }

@@ -15,7 +15,7 @@ public class KlassTagAssigner extends Entity {
     public static KlassTagAssigner getInstance(IEntityContext context) {
         return Objects.requireNonNull(
                 context.selectFirstByKey(IDX_ALL_FLAGS, true),
-                "ClassTagAssigner instance not found"
+                () -> "ClassTagAssigner instance not found for application: " + context.getAppId()
         );
     }
 

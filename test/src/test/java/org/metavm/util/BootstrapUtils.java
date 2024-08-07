@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.application.Application;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.StdFunction;
@@ -14,10 +15,15 @@ import org.metavm.system.RegionManager;
 import org.metavm.system.persistence.MemBlockMapper;
 import org.metavm.system.persistence.MemRegionMapper;
 import org.metavm.task.SchedulerRegistry;
+import org.metavm.user.PlatformUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class BootstrapUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(BootstrapUtils.class);
 
     private static volatile BootState state;
 
@@ -60,6 +66,11 @@ public class BootstrapUtils {
                 try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                     SchedulerRegistry.initialize(platformContext);
                     var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
+                    var app = new Application("demo",
+                            new PlatformUser("demo", "123456", "demo", List.of()));
+                    platformContext.bind(app);
+                    platformContext.initIds();
+                    TestConstants.APP_ID = app.getId().getTreeId();
                     try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                         BeanDefinitionRegistry.initialize(context);
                         KlassTagAssigner.initialize(context, globalTagAssigner);
@@ -122,6 +133,11 @@ public class BootstrapUtils {
                 try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                     SchedulerRegistry.initialize(platformContext);
                     var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
+                    var app = new Application("demo",
+                            new PlatformUser("demo", "123456", "demo", List.of()));
+                    platformContext.bind(app);
+                    platformContext.initIds();
+                    TestConstants.APP_ID = app.getId().getTreeId();
                     try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                         BeanDefinitionRegistry.initialize(context);
                         KlassTagAssigner.initialize(context, globalTagAssigner);
