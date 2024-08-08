@@ -27,6 +27,7 @@ public abstract class ModelDef<T> implements Mapper<T, ClassInstance> {
     private boolean initialized;
     @Nullable
     private DefParser<T, ?> parser;
+    private volatile boolean disabled;
 
     protected ModelDef(Class<T> javaClass) {
         this(javaClass, javaClass);
@@ -127,5 +128,14 @@ public abstract class ModelDef<T> implements Mapper<T, ClassInstance> {
 
     public void setParser(@Nullable DefParser<T, ?> parser) {
         this.parser = parser;
+    }
+
+    @Override
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 }

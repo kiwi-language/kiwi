@@ -38,6 +38,8 @@ public class DDLManagerTest extends TestCase {
         var fooKlass = ModelDefRegistry.getDefContext().getKlass(UpgradeFoo.class);
         var field = fooKlass.getFieldByCode("bar");
         Assert.assertEquals(1, field.getSince());
+        var barKlass = ModelDefRegistry.getDefContext().getKlass(UpgradeBar.class);
+        Assert.assertEquals(1, barKlass.getSince());
         var request = ddlManager.buildUpgradePreparationRequest(0);
         Assert.assertEquals(1, request.fieldAdditions().size());
         Assert.assertEquals(field.getName(), request.fieldAdditions().get(0).fieldName());
@@ -53,13 +55,17 @@ public class DDLManagerTest extends TestCase {
                 return foo.getId();
             }
         });
+        var defContext = ModelDefRegistry.getDefContext();
+        defContext.evict(barKlass);
         TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, entityContextFactory);
         TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
+        defContext.putBack(barKlass);
         try(var context = newContext()) {
             var foo = context.getEntity(UpgradeFoo.class, fooId);
             Assert.assertEquals(new UpgradeBar("foo-bar"), foo.getBar());
         }
         // Rerun the pre-upgrade task
+        defContext.evict(barKlass);
         TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
         TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
     }

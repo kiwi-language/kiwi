@@ -9,9 +9,9 @@ public class UpgradeFoo extends Entity {
 
     private final String name;
     @EntityField(since = 1)
-    private final UpgradeBar bar;
+    private final Object bar;
 
-    public UpgradeFoo(String name, UpgradeBar bar) {
+    public UpgradeFoo(String name, Object bar) {
         this.name = name;
         this.bar = bar;
     }
@@ -20,7 +20,7 @@ public class UpgradeFoo extends Entity {
         return name;
     }
 
-    public UpgradeBar getBar() {
+    public Object getBar() {
         return bar;
     }
 }

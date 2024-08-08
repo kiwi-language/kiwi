@@ -149,7 +149,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return readonly;
     }
 
-    private void evict(Instance instance) {
+    @Override
+    public void evict(Instance instance) {
         if (instance == head)
             head = instance.getNext();
         if (instance == tail)
@@ -159,6 +160,19 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             instanceMap.remove(id);
         instance.setContext(null);
         instance.unlink();
+    }
+
+    @Override
+    public void pubBack(Instance instance) {
+        if (tail == null)
+            head = tail = instance;
+        else {
+            tail.insertAfter(instance);
+            tail = instance;
+        }
+        var id = instance.tryGetId();
+        if (id != null)
+            instanceMap.put(id, instance);
     }
 
     public void updateMemoryIndex(ClassInstance instance) {

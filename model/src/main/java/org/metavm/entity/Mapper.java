@@ -82,4 +82,8 @@ public interface Mapper<T, I extends Instance> {
         throw new ClassCastException(javaClass.getName() + " is not assignable from " + getEntityClass().getName());
     }
 
+    default boolean isDisabled() {
+        return false;
+    }
+
 }

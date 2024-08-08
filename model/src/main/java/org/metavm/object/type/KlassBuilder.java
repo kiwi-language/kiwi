@@ -38,6 +38,7 @@ public class KlassBuilder {
     private long tag = TypeTags.DEFAULT;
     private Integer sourceCodeTag;
     private final List<Attribute> attributes = new ArrayList<>();
+    private int since = 0;
 
     private KlassBuilder(String name, @Nullable String code) {
         this.name = name;
@@ -163,6 +164,11 @@ public class KlassBuilder {
         return this;
     }
 
+    public KlassBuilder since(int since) {
+        this.since = since;
+        return this;
+    }
+
     public Klass build() {
         NncUtils.requireFalse(done, "Build has already been invoked");
         done = true;
@@ -197,7 +203,8 @@ public class KlassBuilder {
                     typeParameters,
                     typeArguments,
                     tag,
-                    sourceCodeTag);
+                    sourceCodeTag,
+                    since);
         } else {
             klass = existing;
             existing.setName(effectiveName);

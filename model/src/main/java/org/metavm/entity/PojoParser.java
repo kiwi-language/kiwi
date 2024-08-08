@@ -295,6 +295,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
             superClass = (ClassType) defContext.getType(javaClass.getGenericSuperclass());
         else
             superClass = null;
+        var entityType = javaClass.getAnnotation(EntityType.class);
         return KlassBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))
                 .kind(ClassKind.fromTypeCategory(getTypeCategory()))
                 .source(ClassSource.BUILTIN)
@@ -303,6 +304,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 .interfaces(NncUtils.map(javaClass.getGenericInterfaces(), t -> (ClassType) defContext.getType(t)))
                 .typeParameters(NncUtils.map(javaClass.getTypeParameters(), this::createTypeVariable))
                 .tag(defContext.getTypeTag(javaClass))
+                .since(entityType != null ? entityType.since() : 0)
                 .build();
     }
 

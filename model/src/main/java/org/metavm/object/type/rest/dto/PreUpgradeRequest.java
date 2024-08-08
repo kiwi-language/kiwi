@@ -4,6 +4,7 @@ import java.util.List;
 
 public record PreUpgradeRequest(
         List<FieldAdditionDTO> fieldAdditions,
-        List<KlassDTO> initializerKlasses
+        List<KlassDTO> initializerKlasses,
+        String walContent
 ) {
 }

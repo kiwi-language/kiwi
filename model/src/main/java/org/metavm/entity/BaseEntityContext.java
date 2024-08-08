@@ -128,6 +128,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if (typeTag == 0 || typeTag >= 1000000)
             return null;
         var mapper = (Mapper) getDefContext().getMapper(typeTag);
+        if (mapper.isDisabled())
+            return null;
         return createEntity(instance, mapper);
 //        if (!mapper.isProxySupported()) {
 //            mapper.createEntity(instance, getObjectInstanceMap());
@@ -230,10 +232,14 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     @Override
     public boolean onChange(Instance instance) {
         if (instance instanceof ClassInstance classInstance && classInstance.getType().getTypeTag() > 0 && !instance.isDirectlyModified()) {
-            var entity = getEntity(Object.class, classInstance);
-            if (entity instanceof ChangeAware changeAware && changeAware.isChangeAware()) {
-                changeAware.onChange(classInstance, this);
-                return true;
+            //noinspection unchecked
+            var mapper = (Mapper<Object, ?>) getDefContext().getMapper(classInstance.getType().getTypeTag());
+            if (!mapper.isDisabled()) {
+                var entity = getEntity(Object.class, classInstance, mapper);
+                if (entity instanceof ChangeAware changeAware && changeAware.isChangeAware()) {
+                    changeAware.onChange(classInstance, this);
+                    return true;
+                }
             }
         }
         return false;

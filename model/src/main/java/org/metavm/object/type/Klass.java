@@ -110,6 +110,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private final long tag;
 
+    private final int since;
+
     @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private boolean templateFlag = false;
 
@@ -166,7 +168,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             List<TypeVariable> typeParameters,
             List<? extends Type> typeArguments,
             long tag,
-            @Nullable Integer sourceCodeTag) {
+            @Nullable Integer sourceCodeTag,
+            int since) {
         this.name = name;
         this.code = code;
         this.kind = kind;
@@ -182,6 +185,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.desc = desc;
         this.tag = tag;
         this.sourceCodeTag = sourceCodeTag;
+        this.since = since;
         this.numFields = superType != null ? superType.resolve().getNumFields() : 0;
         closure = new Closure(this);
         resetRank();
@@ -1848,6 +1852,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public int nextFieldSourceCodeTag() {
         return nextFieldSourceCodeTag++;
+    }
+
+    public int getSince() {
+        return since;
     }
 }
 

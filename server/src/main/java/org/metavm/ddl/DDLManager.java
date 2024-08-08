@@ -5,6 +5,7 @@ import org.metavm.entity.*;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.SaveTypeBatch;
@@ -14,8 +15,9 @@ import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.PreUpgradeRequest;
 import org.metavm.task.GlobalPreUpgradeTask;
 import org.metavm.task.PreUpgradeTask;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,8 @@ import static org.metavm.util.Constants.DDL_SESSION_TIMEOUT;
 
 @Component
 public class DDLManager extends EntityContextFactoryAware {
+
+    private static final Logger logger = LoggerFactory.getLogger(DDLManager.class);
 
     private final TypeManager typeManager;
 
@@ -41,18 +45,34 @@ public class DDLManager extends EntityContextFactoryAware {
         var klasses = NncUtils.exclude(defContext.getAllBufferedEntities(Klass.class), Entity::isEphemeralEntity);
         var fields = new ArrayList<FieldAdditionDTO>();
         var initializers = new ArrayList<KlassDTO>();
+        var wal = new WAL(Constants.ROOT_APP_ID);
+        var instancePOs = new ArrayList<InstancePO>();
         for (Klass klass : klasses) {
+            if (klass.getSince() > since) {
+                var instance = defContext.getInstance(klass);
+                var instancePO = new InstancePO(
+                        Constants.ROOT_APP_ID,
+                        instance.getTreeId(),
+                        InstanceOutput.toBytes(instance),
+                        instance.getVersion(),
+                        instance.getSyncVersion(),
+                        instance.getNextNodeId()
+                );
+                instancePOs.add(instancePO);
+            }
             boolean anyMatch = false;
             for (Field field : klass.getFields()) {
-                if(field.getSince() > since) {
+                if (field.getSince() > since) {
                     fields.add(new FieldAdditionDTO(klass.getStringId(), field.getName(), field.getTag()));
                     anyMatch = true;
                 }
             }
-            if(anyMatch)
+            if (anyMatch)
                 initializers.add(buildInitializerKlass(klass));
         }
-        return new PreUpgradeRequest(fields, initializers);
+        wal.saveInstances(ChangeList.inserts(instancePOs));
+        wal.buildData();
+        return new PreUpgradeRequest(fields, initializers, wal.getData());
     }
 
     private KlassDTO buildInitializerKlass(Klass klass) {
@@ -79,9 +99,17 @@ public class DDLManager extends EntityContextFactoryAware {
     private void preUpgrade(PreUpgradeRequest request, IEntityContext context) {
         FlowSavingContext.initConfig();
         FlowSavingContext.skipPreprocessing(true);
-        var wal = context.bind(new WAL(context.getAppId()));
+        var readWAL = new WAL(context.getAppId());
+        readWAL.setData(request.walContent());
+        var writeWAL = context.bind(new WAL(context.getAppId()));
+        writeWAL.setData(request.walContent());
         String ddlId;
-        try (var bufferingContext = newContext(context.getAppId(),  builder -> builder.timeout(DDL_SESSION_TIMEOUT).writeWAL(wal))) {
+        try (var bufferingContext = newContext(context.getAppId(),
+                builder -> builder
+                        .timeout(DDL_SESSION_TIMEOUT)
+                        .readWAL(readWAL)
+                        .writeWAL(writeWAL)
+        )) {
             var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), bufferingContext);
             var fieldAdds = new ArrayList<FieldAddition>();
             for (FieldAdditionDTO fieldAddDTO : request.fieldAdditions()) {
@@ -101,7 +129,7 @@ public class DDLManager extends EntityContextFactoryAware {
             bufferingContext.finish();
             ddlId = ddl.getStringId();
         }
-        context.bind(new PreUpgradeTask(wal, ddlId));
+        context.bind(new PreUpgradeTask(writeWAL, ddlId));
         FlowSavingContext.clearConfig();
     }
 

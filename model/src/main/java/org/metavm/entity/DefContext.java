@@ -811,6 +811,31 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         throw new UnsupportedOperationException();
     }
 
+    // For testing
+    public void evict(Object entity) {
+        EntityUtils.forEachDescendant(entity, e-> {
+            if(e instanceof Klass klass && klass.getTag() > 0)
+                typeDef2Def.get(klass).setDisabled(true);
+            var instance = getInstance(e);
+            getInstanceContext().evict(instance);
+            memoryIndex.remove(e);
+            if (e instanceof Identifiable identifiable && identifiable.tryGetId() != null)
+                entityMap.remove(identifiable.getId());
+        });
+    }
+
+    public void putBack(Object entity) {
+        EntityUtils.forEachDescendant(entity, e -> {
+            if(e instanceof Klass klass && klass.getTag() > 0)
+                typeDef2Def.get(klass).setDisabled(false);
+            var instance = getInstance(e);
+            getInstanceContext().pubBack(instance);
+            memoryIndex.save(e);
+            if (e instanceof Identifiable identifiable && identifiable.tryGetId() != null)
+                entityMap.put(identifiable.getId(), entity);
+        });
+    }
+
     @Override
     public <T> T bind(T entiy) {
         if (entiy instanceof Entity entity && entity.isEphemeralEntity())

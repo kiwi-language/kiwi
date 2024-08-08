@@ -64,6 +64,10 @@ public class WAL extends Entity implements LoadAware, ContextFinishWare {
 
     @Override
     public void onContextFinish(IEntityContext context) {
+        buildData();
+    }
+
+    public void buildData() {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.writeList(inserts.values(), output::writeInstancePO);
@@ -75,6 +79,10 @@ public class WAL extends Entity implements LoadAware, ContextFinishWare {
         output.writeList(removedIndexEntries.values, output::writeIndexEntryPO);
         output.writeList(instanceLogs, output::writeInstanceLog);
         data = EncodingUtils.encodeBase64(bout.toByteArray());
+    }
+
+    public String getData() {
+        return data;
     }
 
     public void saveInstances(ChangeList<InstancePO> changeList) {
@@ -141,6 +149,11 @@ public class WAL extends Entity implements LoadAware, ContextFinishWare {
 
     public List<InstanceLog> getInstanceLogs() {
         return instanceLogs;
+    }
+
+    public void setData(String data) {
+        this.data = data;
+        onLoad();
     }
 
     public void commit() {

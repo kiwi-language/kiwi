@@ -153,6 +153,10 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void increaseVersionsForAll();
 
+    void evict(Instance instance);
+
+    void pubBack(Instance instance);
+
     void updateMemoryIndex(ClassInstance instance);
 
     @Nullable Consumer<Object> getBindHook();
