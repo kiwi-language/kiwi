@@ -15,4 +15,6 @@ public @interface ValueType {
 
     int tag() default -1;
 
+    int since() default 0;
+
 }

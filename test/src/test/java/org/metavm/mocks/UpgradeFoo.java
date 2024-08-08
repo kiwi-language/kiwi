@@ -9,18 +9,18 @@ public class UpgradeFoo extends Entity {
 
     private final String name;
     @EntityField(since = 1)
-    private final String code;
+    private final UpgradeBar bar;
 
-    public UpgradeFoo(String name, String code) {
+    public UpgradeFoo(String name, UpgradeBar bar) {
         this.name = name;
-        this.code = code;
+        this.bar = bar;
     }
 
     public String getName() {
         return name;
     }
 
-    public String getCode() {
-        return code;
+    public UpgradeBar getBar() {
+        return bar;
     }
 }

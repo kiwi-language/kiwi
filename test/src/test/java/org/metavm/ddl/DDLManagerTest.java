@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ModelDefRegistry;
+import org.metavm.mocks.UpgradeBar;
 import org.metavm.mocks.UpgradeFoo;
 import org.metavm.task.GlobalPreUpgradeTask;
 import org.metavm.task.PreUpgradeTask;
@@ -35,18 +36,18 @@ public class DDLManagerTest extends TestCase {
 
     public void testPreUpgrade() {
         var fooKlass = ModelDefRegistry.getDefContext().getKlass(UpgradeFoo.class);
-        var codeField = fooKlass.getFieldByCode("code");
-        Assert.assertEquals(1, codeField.getSince());
+        var field = fooKlass.getFieldByCode("bar");
+        Assert.assertEquals(1, field.getSince());
         var request = ddlManager.buildUpgradePreparationRequest(0);
         Assert.assertEquals(1, request.fieldAdditions().size());
-        Assert.assertEquals(codeField.getName(), request.fieldAdditions().get(0).fieldName());
+        Assert.assertEquals(field.getName(), request.fieldAdditions().get(0).fieldName());
         Assert.assertEquals(1, request.initializerKlasses().size());
         Assert.assertEquals(fooKlass.getCodeNotNull() + "Initializer", request.initializerKlasses().get(0).code());
         TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
         TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
         var fooId = TestUtils.doInTransaction(() -> {
             try(var context = newContext()) {
-                var foo = new UpgradeFoo("foo", "<missing>");
+                var foo = new UpgradeFoo("foo", new UpgradeBar("<missing>"));
                 context.bind(foo);
                 context.finish();
                 return foo.getId();
@@ -56,7 +57,7 @@ public class DDLManagerTest extends TestCase {
         TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
         try(var context = newContext()) {
             var foo = context.getEntity(UpgradeFoo.class, fooId);
-            Assert.assertEquals("foo", foo.getCode());
+            Assert.assertEquals(new UpgradeBar("foo-bar"), foo.getBar());
         }
         // Rerun the pre-upgrade task
         TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));

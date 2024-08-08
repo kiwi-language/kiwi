@@ -1175,6 +1175,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.map(typeArguments, t -> t.toExpression(serializeContext)),
                 !extensions.isEmpty() || !implementations.isEmpty(),
                 struct,
+                tag,
                 sourceCodeTag,
                 NncUtils.map(errors, Error::toDTO)
         );

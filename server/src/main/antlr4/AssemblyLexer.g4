@@ -36,6 +36,7 @@ NATIVE:             'native';
 ENEW:               'enew';
 UNEW:               'unew';
 NEW:                'new';
+ALLOCATE:           'allocate';
 PRIVATE:            'private';
 PROTECTED:          'protected';
 PUBLIC:             'public';

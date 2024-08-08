@@ -172,6 +172,7 @@ statement
     | methodCall ';'
     | functionCall ';'
     | (NEW | UNEW | ENEW) creator ';'
+    | ALLOCATE allocator ';'
     | select ';'
     | '(' castType=typeType ')' expression ';'
     | (THIS | IDENTIFIER) '.' IDENTIFIER
@@ -179,6 +180,12 @@ statement
       expression ';'
     | lambda
     ;
+
+allocator: classOrInterfaceType '{' allocatorFieldList? '}';
+
+allocatorFieldList: allocatorField (',' allocatorField)*;
+
+allocatorField: IDENTIFIER ':' expression;
 
 select: (SELECT | SELECT_FIRST) '(' qualifiedName '.' IDENTIFIER (',' expression)* ')';
 

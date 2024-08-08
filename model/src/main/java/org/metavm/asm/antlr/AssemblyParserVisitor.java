@@ -1,4 +1,4 @@
-// Generated from AssemblyParser.g4 by ANTLR 4.13.1
+// Generated from AssemblyParser.g4 by ANTLR 4.13.2
 package org.metavm.asm.antlr;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -220,6 +220,24 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitStatement(AssemblyParser.StatementContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#allocator}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAllocator(AssemblyParser.AllocatorContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#allocatorFieldList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAllocatorFieldList(AssemblyParser.AllocatorFieldListContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#allocatorField}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAllocatorField(AssemblyParser.AllocatorFieldContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#select}.
 	 * @param ctx the parse tree

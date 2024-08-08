@@ -1,11 +1,17 @@
 package org.metavm.mocks;
 
 import org.metavm.mocks.UpgradeFoo;
+import org.metavm.mocks.UpgradeBar;
 
 class UpgradeFooInitializer {
 
     public static string __code__(UpgradeFoo foo) {
         return foo.name;
+    }
+
+    public static UpgradeBar __bar__(UpgradeFoo foo) {
+        bar: allocate UpgradeBar { name: concat(foo.name, "-bar") };
+        return bar;
     }
 
 }

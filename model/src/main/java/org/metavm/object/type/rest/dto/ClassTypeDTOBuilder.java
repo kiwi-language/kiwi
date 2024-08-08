@@ -6,6 +6,7 @@ import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.type.ClassKind;
+import org.metavm.object.type.TypeTags;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
 import org.metavm.util.NncUtils;
 
@@ -55,6 +56,7 @@ public class ClassTypeDTOBuilder {
     private List<String> typeParameterIds = new ArrayList<>();
     private boolean hasSubTypes;
     private boolean struct;
+    private int tag = TypeTags.DEFAULT;
     private Integer sourceCodeTag;
     private List<InstanceDTO> enumConstants = new ArrayList<>();
     private List<ErrorDTO> errors = new ArrayList<>();
@@ -239,6 +241,11 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
+    public ClassTypeDTOBuilder tag(int tag) {
+        this.tag = tag;
+        return this;
+    }
+
     public ClassTypeDTOBuilder sourceCodeTag(Integer sourceCodeTag) {
         this.sourceCodeTag = sourceCodeTag;
         return this;
@@ -286,6 +293,7 @@ public class ClassTypeDTOBuilder {
                 typeArgumentIds,
                 hasSubTypes,
                 struct,
+                tag,
                 sourceCodeTag,
                 errors
         );

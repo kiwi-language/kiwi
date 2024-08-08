@@ -1,4 +1,4 @@
-// Generated from AssemblyParser.g4 by ANTLR 4.13.1
+// Generated from AssemblyParser.g4 by ANTLR 4.13.2
 package org.metavm.asm.antlr;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -432,6 +432,42 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitStatement(AssemblyParser.StatementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterAllocator(AssemblyParser.AllocatorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitAllocator(AssemblyParser.AllocatorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterAllocatorFieldList(AssemblyParser.AllocatorFieldListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitAllocatorFieldList(AssemblyParser.AllocatorFieldListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterAllocatorField(AssemblyParser.AllocatorFieldContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitAllocatorField(AssemblyParser.AllocatorFieldContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

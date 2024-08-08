@@ -1,4 +1,4 @@
-// Generated from AssemblyParser.g4 by ANTLR 4.13.1
+// Generated from AssemblyParser.g4 by ANTLR 4.13.2
 package org.metavm.asm.antlr;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -357,6 +357,36 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitStatement(AssemblyParser.StatementContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#allocator}.
+	 * @param ctx the parse tree
+	 */
+	void enterAllocator(AssemblyParser.AllocatorContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#allocator}.
+	 * @param ctx the parse tree
+	 */
+	void exitAllocator(AssemblyParser.AllocatorContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#allocatorFieldList}.
+	 * @param ctx the parse tree
+	 */
+	void enterAllocatorFieldList(AssemblyParser.AllocatorFieldListContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#allocatorFieldList}.
+	 * @param ctx the parse tree
+	 */
+	void exitAllocatorFieldList(AssemblyParser.AllocatorFieldListContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#allocatorField}.
+	 * @param ctx the parse tree
+	 */
+	void enterAllocatorField(AssemblyParser.AllocatorFieldContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#allocatorField}.
+	 * @param ctx the parse tree
+	 */
+	void exitAllocatorField(AssemblyParser.AllocatorFieldContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#select}.
 	 * @param ctx the parse tree

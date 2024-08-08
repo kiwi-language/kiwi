@@ -1290,6 +1290,33 @@ public class Assembler {
                             parseValue(statement.expression().getText(), parsingContext)
                     );
                 }
+                if(statement.ALLOCATE() != null) {
+                    var allocator = statement.allocator();
+                    var type = (ClassType) parseClassType(allocator.classOrInterfaceType(), this.scope, getCompilationUnit());
+                    var node = new AddObjectNode(
+                            null,
+                            name,
+                            null,
+                            false,
+                            false,
+                            type,
+                            scope.getLastNode(),
+                            scope
+                    );
+                    if(allocator.allocatorFieldList() != null) {
+                        var fields = allocator.allocatorFieldList().allocatorField();
+                        var klass = type.resolve();
+                        for (AssemblyParser.AllocatorFieldContext field : fields) {
+                            node.addField(
+                                    new FieldParam(
+                                            klass.getFieldByCode(field.IDENTIFIER().getText()).getRef(),
+                                            parseValue(field.expression().getText(), parsingContext)
+                                    )
+                            );
+                        }
+                    }
+                    return node;
+                }
                 throw new InternalException("Unknown statement: " + statement.getText());
             } catch (Exception e) {
                 throw new InternalException("Fail to process statement: " + statement.getText(), e);

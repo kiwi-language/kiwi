@@ -83,7 +83,7 @@ public abstract class TypeFactory {
                         .desc(klassDTO.desc())
                         .source(ClassSource.getByCode(klassDTO.source()))
                         .tmpId(klassDTO.tmpId())
-                        .tag(KlassTagAssigner.getInstance(context).next())
+                        .tag(klassDTO.tag() != TypeTags.DEFAULT ? klassDTO.tag() :  KlassTagAssigner.getInstance(context).next())
                         .sourceCodeTag(klassDTO.sourceCodeTag() != null ? klassDTO.sourceCodeTag() :
                                 KlassSourceCodeTagAssigner.getInstance(context).next())
                         .build();
