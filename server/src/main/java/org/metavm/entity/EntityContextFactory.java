@@ -81,7 +81,12 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent) {
-        return newContext(appId, parent, null);
+        return newContext(appId, parent, (IdInitializer) null);
+    }
+
+    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, Consumer<InstanceContextBuilder> customizer) {
+        return newContext(appId, parent, null, defaultAsyncLogProcess, null, null,
+                false, null, customizer);
     }
 
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider) {

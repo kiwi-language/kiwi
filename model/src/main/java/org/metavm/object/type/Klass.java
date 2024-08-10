@@ -770,6 +770,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return NncUtils.find(fields, predicate);
     }
 
+    public Field getSelfField(Predicate<Field> predicate) {
+        return Objects.requireNonNull(findSelfField(predicate));
+    }
+
     public @Nullable Field findSelfStaticField(Predicate<Field> predicate) {
         return NncUtils.find(staticFields, predicate);
     }
@@ -1670,7 +1674,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public void saveMapping(IEntityContext context) {
-        if (!(context instanceof DefContext)) {
+        if (!(context instanceof SystemDefContext)) {
             if(shouldGenerateBuiltinMapping())
                 MappingSaver.create(context).saveBuiltinMapping(this, true);
             else {

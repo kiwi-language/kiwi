@@ -138,4 +138,12 @@ public abstract class ModelDef<T> implements Mapper<T, ClassInstance> {
     public void setDisabled(boolean disabled) {
         this.disabled = disabled;
     }
+
+    public Class<T> getJavaClass() {
+        return javaClass;
+    }
+
+    public java.lang.reflect.Type getJavaType() {
+        return javaType;
+    }
 }

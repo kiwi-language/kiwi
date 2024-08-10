@@ -1,11 +1,11 @@
 package org.metavm.entity.mocks;
 
-import org.metavm.entity.DefContext;
+import org.metavm.entity.SystemDefContext;
 
 public class MinimumBootstrap {
 
 
-    public static void boot(DefContext defContext) {
+    public static void boot(SystemDefContext defContext) {
 
     }
 

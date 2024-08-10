@@ -24,11 +24,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class DefContextTest extends TestCase {
+public class SystemDefContextTest extends TestCase {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefContextTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(SystemDefContextTest.class);
 
-    private DefContext defContext;
+    private SystemDefContext defContext;
     private ObjectInstanceMap objectInstanceMap;
     private MockIdProvider idProvider;
 
@@ -40,7 +40,7 @@ public class DefContextTest extends TestCase {
                         new MemInstanceStore(), new DefaultIdInitializer(idProvider), bridge, bridge, bridge, bridge)
                 .readonly(false)
                 .build();
-        defContext = new DefContext(
+        defContext = new SystemDefContext(
                 new StdIdProvider(new EmptyStdIdStore()), instanceContext, new MemColumnStore(), new MemTypeTagStore(), new IdentityContext());
         bridge.setEntityContext(defContext);
         objectInstanceMap = defContext.getObjectInstanceMap();

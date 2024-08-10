@@ -51,7 +51,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
     public T createEntity(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         return NncUtils.findRequired(
                 enumConstantDefList,
-                def -> def.getInstance() == instance
+                def -> def.getInstance() == instance || def.getInstance().idEquals(instance.tryGetId())
         ).getValue();
     }
 
@@ -121,7 +121,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
                         PrimitiveType.stringType
                 )
         );
-        var enumConstant = new EnumConstantRT(instance);
+        var enumConstant = createEnumConstant(instance);
         FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), klass, klass.getType())
                 .defaultValue(new NullValue(PrimitiveType.nullType))
                 .isChild(true)
@@ -129,6 +129,10 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
                 .staticValue(instance.getReference())
                 .build();
         return enumConstant;
+    }
+
+    EnumConstantRT createEnumConstant(ClassInstance instance) {
+        return new EnumConstantRT(instance);
     }
 
     @Override
@@ -151,4 +155,11 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
         return enumConstantDefList;
     }
 
+    public ValueDef<Enum<?>> getParentDef() {
+        return parentDef;
+    }
+
+    public Klass getKlass() {
+        return klass;
+    }
 }

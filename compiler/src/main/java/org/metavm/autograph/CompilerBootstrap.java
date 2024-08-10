@@ -40,7 +40,7 @@ public class CompilerBootstrap {
             var standardInstanceContext = contextFactory.newBridgedInstanceContext(ROOT_APP_ID, bridge,
                     idInitializer);
             contextFactory.setStdContext(standardInstanceContext);
-            var defContext = new DefContext(
+            var defContext = new SystemDefContext(
                     new StdIdProvider(new AllocatorStdIdStore(stdAllocators)),
                     standardInstanceContext, columnStore, typeTagStore, identityContext);
             bridge.setEntityContext(defContext);

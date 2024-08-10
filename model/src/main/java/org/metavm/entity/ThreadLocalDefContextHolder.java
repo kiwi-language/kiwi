@@ -5,12 +5,12 @@ public class ThreadLocalDefContextHolder implements DefContextHolder {
     private final ThreadLocal<GlobalDefContextHolder> tl = ThreadLocal.withInitial(GlobalDefContextHolder::new);
 
     @Override
-    public DefContext get() {
+    public SystemDefContext get() {
         return tl.get().get();
     }
 
     @Override
-    public void set(DefContext defContext) {
+    public void set(SystemDefContext defContext) {
         tl.get().set(defContext);
     }
 

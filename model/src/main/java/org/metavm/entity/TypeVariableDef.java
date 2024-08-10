@@ -39,4 +39,7 @@ public class TypeVariableDef extends ModelDef<Object> {
         throw new UnsupportedOperationException();
     }
 
+    public TypeVariable getVariable() {
+        return variable;
+    }
 }

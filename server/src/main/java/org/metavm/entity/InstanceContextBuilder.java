@@ -162,6 +162,11 @@ public class InstanceContextBuilder {
         return this;
     }
 
+    public InstanceContextBuilder typeDefProvider(TypeDefProvider typeDefProvider) {
+        this.typeDefProvider = typeDefProvider;
+        return this;
+    }
+
     public IInstanceContext build() {
         if (executor == null)
             executor = Executors.newSingleThreadExecutor();

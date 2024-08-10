@@ -32,12 +32,12 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
     protected final Class<T> javaClass;
     protected final java.lang.reflect.Type javaType;
     private D def;
-    protected final DefContext defContext;
+    protected final SystemDefContext defContext;
     protected final TypeFactory typeFactory;
     private final JavaSubstitutor substitutor;
     private final ColumnStore columnStore;
 
-    public PojoParser(Class<T> javaClass, java.lang.reflect.Type javaType, DefContext defContext, ColumnStore columnStore) {
+    public PojoParser(Class<T> javaClass, java.lang.reflect.Type javaType, SystemDefContext defContext, ColumnStore columnStore) {
         this.javaClass = javaClass;
         this.javaType = javaType;
         this.defContext = defContext;

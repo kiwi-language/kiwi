@@ -18,7 +18,7 @@ public class FieldDef implements IFieldDef {
     private final Field javaField;
     private final PojoDef<?> declaringTypeDef;
     private final org.metavm.object.type.Field field;
-    private final @Nullable Mapper<?, ?> targetMapper;
+    private @Nullable Mapper<?, ?> targetMapper;
 
     public FieldDef(org.metavm.object.type.Field field,
                     boolean nullable,
@@ -80,4 +80,7 @@ public class FieldDef implements IFieldDef {
         return field.getName();
     }
 
+    public void setTargetMapper(@Nullable Mapper<?, ?> targetMapper) {
+        this.targetMapper = targetMapper;
+    }
 }

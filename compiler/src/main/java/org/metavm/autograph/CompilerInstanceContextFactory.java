@@ -19,7 +19,7 @@ public class CompilerInstanceContextFactory {
     private final LocalIndexSource localIndexSource;
 
     private IInstanceContext stdContext;
-    private DefContext defContext;
+    private SystemDefContext defContext;
 
     public CompilerInstanceContextFactory(DiskTreeStore diskTreeSource, LocalIndexSource localIndexSource, TypeClient typeClient) {
         this.diskTreeSource = diskTreeSource;
@@ -61,7 +61,7 @@ public class CompilerInstanceContextFactory {
         this.stdContext = stdContext;
     }
 
-    public void setDefContext(DefContext defContext) {
+    public void setDefContext(SystemDefContext defContext) {
         this.defContext = defContext;
     }
 }

@@ -340,8 +340,9 @@ public abstract class Instance implements Message {
             throw new NullPointerException("Instance id not initialized yet");
     }
 
-    public boolean idEquals(long id) {
-        return Objects.equals(this.tryGetTreeId(), id);
+    public boolean idEquals(Id id) {
+        var thisId = tryGetId();
+        return thisId != null && thisId.equals(id);
     }
 
     public boolean isIdInitialized() {

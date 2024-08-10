@@ -2,19 +2,22 @@ package org.metavm.ddl;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.ModelDefRegistry;
+import org.metavm.entity.*;
 import org.metavm.mocks.UpgradeBar;
 import org.metavm.mocks.UpgradeFoo;
+import org.metavm.object.instance.core.EntityInstanceContextBridge;
+import org.metavm.object.instance.core.InstanceContext;
+import org.metavm.object.instance.core.WAL;
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.KlassBuilder;
 import org.metavm.task.GlobalPreUpgradeTask;
 import org.metavm.task.PreUpgradeTask;
-import org.metavm.util.BootstrapUtils;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.TestConstants;
-import org.metavm.util.TestUtils;
+import org.metavm.util.BootstrapResult;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.metavm.util.Constants.ROOT_APP_ID;
 
 public class DDLManagerTest extends TestCase {
 
@@ -22,16 +25,26 @@ public class DDLManagerTest extends TestCase {
 
     private DDLManager ddlManager;
     private EntityContextFactory entityContextFactory;
+    private BootstrapResult bootResult;
+    private EntityIdProvider idProvider;
 
     @Override
     protected void setUp() throws Exception {
-        var bootResult = BootstrapUtils.bootstrap();
+        bootResult = BootstrapUtils.bootstrap();
         var managers = TestUtils.createCommonManagers(bootResult);
         var typeManager = managers.typeManager();
         entityContextFactory = bootResult.entityContextFactory();
         ddlManager = new DDLManager(entityContextFactory, typeManager);
+        idProvider = bootResult.idProvider();
         ContextUtil.setAppId(TestConstants.APP_ID);
+    }
 
+    @Override
+    protected void tearDown() throws Exception {
+        bootResult = null;
+        entityContextFactory = null;
+        ddlManager = null;
+        idProvider = null;
     }
 
     public void testPreUpgrade() {
@@ -39,6 +52,7 @@ public class DDLManagerTest extends TestCase {
         var field = fooKlass.getFieldByCode("bar");
         Assert.assertEquals(1, field.getSince());
         var barKlass = ModelDefRegistry.getDefContext().getKlass(UpgradeBar.class);
+        var klassKlass = ModelDefRegistry.getDefContext().getKlass(Klass.class);
         Assert.assertEquals(1, barKlass.getSince());
         var request = ddlManager.buildUpgradePreparationRequest(0);
         Assert.assertEquals(1, request.fieldAdditions().size());
@@ -68,6 +82,47 @@ public class DDLManagerTest extends TestCase {
         defContext.evict(barKlass);
         TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
         TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
+    }
+
+    public void testCopyDefContext() {
+        var request = ddlManager.buildUpgradePreparationRequest(0);
+        var sysDefContext = ModelDefRegistry.getDefContext();
+        var klassKlass = sysDefContext.getKlass(Klass.class);
+        var klassKlassId = klassKlass.getId();
+        var barKlass = sysDefContext.getKlass(UpgradeBar.class);
+        var barKlassId = barKlass.getId();
+        DebugEnv.klass = sysDefContext.getKlass(Klass.class);
+        var wal = new WAL(ROOT_APP_ID);
+        wal.setData(request.walContent());
+        var quxKlassId = TestUtils.doInTransaction(() -> {
+            try (var context = newContext()) {
+                var quxKlass = KlassBuilder.newBuilder("Qux", "Qux").build();
+                context.bind(quxKlass);
+                context.finish();
+                return quxKlass.getId();
+            }
+        });
+        logger.debug("QuxKlass ID: {}", quxKlassId);
+
+        var bridge = new EntityInstanceContextBridge();
+        var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
+                ROOT_APP_ID, false, null, null,
+                new DefaultIdInitializer(idProvider), bridge, wal, null, null, false,
+                builder -> builder.timeout(0L).typeDefProvider(sysDefContext)
+        );
+        var reversedDefContext = new ReversedDefContext(standardInstanceContext, sysDefContext);
+        bridge.setEntityContext(reversedDefContext);
+
+        var klassKlass1 = reversedDefContext.getEntity(Klass.class, klassKlassId);
+        Assert.assertNotNull(klassKlass1);
+        Assert.assertEquals(klassKlass.getName(), klassKlass1.getName());
+        Assert.assertNotSame(klassKlass, klassKlass1);
+        reversedDefContext.initializeFrom(sysDefContext);
+        entityContextFactory.setDefContext(reversedDefContext);
+        try(var context1 = entityContextFactory.newContext()) {
+            var quxKlass = context1.getKlass(quxKlassId);
+            Assert.assertEquals("Qux", quxKlass.getName());
+        }
     }
 
     private IEntityContext newContext() {

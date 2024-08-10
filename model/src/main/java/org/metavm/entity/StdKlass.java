@@ -66,7 +66,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
         this.klassHolder = new DirectValueHolder<>();
     }
 
-    public static void initialize(DefContext defContext) {
+    public static void initialize(SystemDefContext defContext) {
         for (StdKlass def : values()) {
             def.init(defContext);
         }
@@ -102,7 +102,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
         this.klassHolder = klassHolder;
     }
 
-    public void init(DefContext defContext) {
+    public void init(SystemDefContext defContext) {
         var klass = defContext.getKlass(javaClass);
         set(klass);
     }

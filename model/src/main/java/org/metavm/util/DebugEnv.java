@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.entity.SystemDefContext;
 import org.metavm.flow.InputNode;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodCallNode;
@@ -72,6 +73,12 @@ public class DebugEnv {
     public static void enterPathItem(String pathItem) {
         path.addLast(pathItem);
     }
+
+    public static volatile Klass klass;
+
+    public static volatile Object object;
+
+    public static volatile SystemDefContext defContext;
 
     public static void exitPathItem() {
         path.removeLast();

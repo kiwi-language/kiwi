@@ -11,10 +11,10 @@ public class TypeVariableParser extends DefParser<Object, TypeVariableDef> {
 
     private final TypeVariable<?> javaTypeVariable;
     private final Class<?> declaringClass;
-    private final DefContext defMap;
+    private final SystemDefContext defMap;
     private org.metavm.object.type.TypeVariable type;
 
-    public TypeVariableParser(TypeVariable<?> javaTypeVariable, DefContext defMap) {
+    public TypeVariableParser(TypeVariable<?> javaTypeVariable, SystemDefContext defMap) {
         if(!(javaTypeVariable.getGenericDeclaration() instanceof Class<?>)) {
             throw new InternalException("TypeVariables not declared in classes are not supported yet");
         }

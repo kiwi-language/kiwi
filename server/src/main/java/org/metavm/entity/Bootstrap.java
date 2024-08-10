@@ -50,7 +50,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
                     idInitializer, bridge, null, null, null, false,
                     builder -> builder.timeout(0L)
                     );
-            var defContext = new DefContext(
+            var defContext = new SystemDefContext(
                     new StdIdProvider(stdIdStore),
                     standardInstanceContext, columnStore, typeTagStore, identityContext);
             defContext.setFieldBlacklist(fieldBlacklist);
@@ -93,7 +93,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
 
     @Transactional
     public void save(boolean saveIds) {
-        DefContext defContext = ModelDefRegistry.getDefContext();
+        SystemDefContext defContext = ModelDefRegistry.getDefContext();
         try (var ignoredEntry = defContext.getProfiler().enter("Bootstrap.save")) {
             if (defContext.isFinished())
                 return;

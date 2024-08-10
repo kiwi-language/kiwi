@@ -9,7 +9,7 @@ import java.lang.reflect.Type;
 
 public class InterfaceParser<T> extends PojoParser<T, InterfaceDef<T>> {
 
-    public InterfaceParser(Class<T> javaClass, Type javaType, DefContext defContext, ColumnStore columnStore) {
+    public InterfaceParser(Class<T> javaClass, Type javaType, SystemDefContext defContext, ColumnStore columnStore) {
         super(javaClass, javaType, defContext, columnStore);
     }
 

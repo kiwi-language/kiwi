@@ -45,7 +45,7 @@ public enum StdMethod implements ValueHolderOwner<Method> {
         methodHolder.set(method);
     }
 
-    public void init(DefContext defContext) {
+    public void init(SystemDefContext defContext) {
         var klass = defContext.getKlass(javaClass);
         var method = klass.getMethodByCodeAndParamTypes(
                 methodName,
@@ -58,7 +58,7 @@ public enum StdMethod implements ValueHolderOwner<Method> {
         this.methodHolder = methodHolder;
     }
 
-    public static void initialize(DefContext defContext) {
+    public static void initialize(SystemDefContext defContext) {
         for (StdMethod value : values()) {
             value.init(defContext);
         }

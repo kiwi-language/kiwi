@@ -7,7 +7,7 @@ import java.lang.reflect.Type;
 
 public class ValueParser<T> extends PojoParser<T, ValueDef<T>> {
 
-    public ValueParser(Class<T> entityType, Type genericType, DefContext defContext, ColumnStore columnStore) {
+    public ValueParser(Class<T> entityType, Type genericType, SystemDefContext defContext, ColumnStore columnStore) {
         super(entityType, genericType, defContext, columnStore);
     }
 

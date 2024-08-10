@@ -1,13 +1,13 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.DefContext;
 import org.metavm.entity.DirectDef;
+import org.metavm.entity.SystemDefContext;
 
 public class DefTypeFactory extends TypeFactory {
 
-    private final DefContext defContext;
+    private final SystemDefContext defContext;
 
-    public DefTypeFactory(DefContext defContext) {
+    public DefTypeFactory(SystemDefContext defContext) {
         this.defContext = defContext;
     }
 

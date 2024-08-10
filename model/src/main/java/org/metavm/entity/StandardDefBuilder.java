@@ -29,7 +29,7 @@ public class StandardDefBuilder {
 
     private FieldDef enumOrdinalDef;
 
-    private final DefContext defContext;
+    private final SystemDefContext defContext;
 
     private Klass iteratorKlass;
 
@@ -53,7 +53,7 @@ public class StandardDefBuilder {
 
     private final PrimTypeFactory primTypeFactory = new PrimTypeFactory();
 
-    public StandardDefBuilder(DefContext defContext) {
+    public StandardDefBuilder(SystemDefContext defContext) {
         this.defContext = defContext;
     }
 
@@ -269,7 +269,7 @@ public class StandardDefBuilder {
     private <T extends Entity> EntityDef<T> createEntityDef(java.lang.reflect.Type javaType,
                                                             Class<T> javaClass,
                                                             Klass type,
-                                                            DefContext defContext) {
+                                                            SystemDefContext defContext) {
         return new EntityDef<>(
                 javaClass,
                 javaType,
@@ -283,7 +283,7 @@ public class StandardDefBuilder {
     private <T> ValueDef<T> createValueDef(java.lang.reflect.Type javaType,
                                            Class<T> javaClass,
                                            Klass type,
-                                           DefContext defContext) {
+                                           SystemDefContext defContext) {
         return new ValueDef<>(
                 javaClass,
                 javaType,
@@ -910,18 +910,18 @@ public class StandardDefBuilder {
             return Collections.unmodifiableMap(javaType2TypeDef);
         }
 
-        public void saveDefs(DefMap defMap) {
+        public void saveDefs(SystemDefContext defContext) {
             for (var typeDef : javaType2TypeDef.values()) {
-                createDefIfAbsent(typeDef, defMap);
+                createDefIfAbsent(typeDef, defContext);
             }
             for (var typeDef : javaType2TypeDef.values()) {
-                defMap.afterDefInitialized(defMap.getDef(typeDef));
+                defContext.afterDefInitialized(defContext.getDef(typeDef));
             }
         }
 
-        private ModelDef<?> createDefIfAbsent(TypeDef typeDef, DefMap defMap) {
-            if (defMap.containsDef(typeDef)) {
-                return defMap.getDef(typeDef);
+        private ModelDef<?> createDefIfAbsent(TypeDef typeDef, SystemDefContext defContext) {
+            if (defContext.containsDef(typeDef)) {
+                return defContext.getDef(typeDef);
             }
             var javaType = NncUtils.requireNonNull(typeDef2JavaType.get(typeDef));
             var def = switch (typeDef) {
@@ -930,7 +930,7 @@ public class StandardDefBuilder {
                 );
                 default -> new DirectDef<>(javaType, typeDef);
             };
-            defMap.preAddDef(def);
+            defContext.preAddDef(def);
             return def;
         }
 
