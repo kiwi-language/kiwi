@@ -1,8 +1,8 @@
 package org.metavm.util;
 
+import org.metavm.entity.DefContext;
 import org.metavm.entity.MemIndexEntryMapper;
 import org.metavm.entity.MemoryStdIdStore;
-import org.metavm.entity.SystemDefContext;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.persistence.mappers.MemInstanceMapper;
 import org.metavm.object.instance.persistence.mappers.MemReferenceMapper;
@@ -13,7 +13,7 @@ import org.metavm.system.persistence.MemBlockMapper;
 import org.metavm.system.persistence.MemRegionMapper;
 
 public record BootState(
-        SystemDefContext defContext,
+        DefContext defContext,
         MemInstanceMapper instanceMapper,
         MemReferenceMapper referenceMapper,
         MemIndexEntryMapper indexEntryMapper,

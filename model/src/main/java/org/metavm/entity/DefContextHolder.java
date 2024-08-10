@@ -2,9 +2,9 @@ package org.metavm.entity;
 
 public interface DefContextHolder {
 
-    SystemDefContext get();
+    DefContext get();
 
-    void set(SystemDefContext defContext);
+    void set(DefContext defContext);
 
     boolean isPresent();
 }

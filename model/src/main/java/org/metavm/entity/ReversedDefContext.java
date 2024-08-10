@@ -1,8 +1,8 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Value;
+import org.metavm.entity.natives.StdFunction;
+import org.metavm.flow.Function;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
@@ -10,20 +10,21 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.TypeVariable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class ReversedDefContext extends DefContext {
 
     private static final Logger logger = LoggerFactory.getLogger(ReversedDefContext.class);
 
-    private final SystemDefContext defContext;
+    private DefContext defContext;
     private final Map<TypeDef, ModelDef<?>> typeDef2Def = new HashMap<>();
     private final Map<java.lang.reflect.Type, ModelDef<?>> javaType2Def = new HashMap<>();
     private final Map<Integer, ModelDef<?>> typeTag2Def = new HashMap<>();
+    private boolean initialized;
+    private final List<Function> stdFunctions = new ArrayList<>();
 
-    public ReversedDefContext(IInstanceContext instanceContext, SystemDefContext defContext) {
+    public ReversedDefContext(IInstanceContext instanceContext, DefContext defContext) {
         super(instanceContext);
         this.defContext = defContext;
     }
@@ -56,7 +57,29 @@ public class ReversedDefContext extends DefContext {
 
     @Override
     public ModelDef<?> getDef(java.lang.reflect.Type javaType, ResolutionStage stage) {
-        return Objects.requireNonNull(javaType2Def.get(javaType), () -> "Cannot find def for type: " + javaType);
+        checkJavaType(javaType);
+        javaType = ReflectionUtils.getBoxedType(javaType);
+        if (!(javaType instanceof TypeVariable<?>)) {
+            javaType = EntityUtils.getEntityType(javaType);
+            if (javaType instanceof Class<?> klass) {
+                if (ReflectionUtils.isBoxingClass(klass))
+                    javaType = BOX_CLASS_MAP.getOrDefault(klass, klass);
+                else
+                    javaType = EntityUtils.getRealType(klass);
+            }
+        }
+        var javaTypeF = javaType;
+        return Objects.requireNonNull(javaType2Def.get(javaType), () -> "Cannot find def for type: " + javaTypeF);
+    }
+
+    @Override
+    public Collection<ModelDef<?>> getAllDefList() {
+        return typeDef2Def.values();
+    }
+
+    @Override
+    public boolean containsDef(TypeDef typeDef) {
+        return typeDef2Def.containsKey(typeDef);
     }
 
     @Override
@@ -64,9 +87,75 @@ public class ReversedDefContext extends DefContext {
         return new ReversedDefContext(getInstanceContext(), defContext);
     }
 
-    public void initializeFrom(SystemDefContext sysDefContext) {
+    public void initializeFrom(DefContext sysDefContext) {
         sysDefContext.getAllDefList().forEach(this::initDef);
+        loadStdFunctions();
         initFieldTargetMapper();
+        defContext = this;
+        initialized = true;
+        postInitialization();
+    }
+
+    private void loadStdFunctions() {
+        for (StdFunction stdFunction : StdFunction.values()) {
+            var func = getFunction(stdFunction.get().getId());
+            EntityUtils.ensureTreeInitialized(func);
+            stdFunctions.add(func);
+        }
+    }
+
+    @Override
+    public void onInstanceInitialized(Instance instance) {
+        if(!initialized)
+            super.onInstanceInitialized(instance);
+    }
+
+    public void postInitialization() {
+        replaceInstanceContext();
+        addMappings();
+        replaceEnumConstants();
+    }
+
+    private void replaceInstanceContext() {
+        var instCtx = getInstanceContext().createSame(getAppId(), this);
+        setInstanceContext(instCtx);
+        instCtx.addListener(this);
+    }
+
+    private void addMappings() {
+        var instCtx = getInstanceContext();
+        var entities = new ArrayList<>();
+        forEachDef(def -> {
+            if(def instanceof TypeVariableDef )
+                return;
+            entities.add(def.getTypeDef());
+        });
+        entities.addAll(stdFunctions);
+        for (var entity : entities) {
+            EntityUtils.forEachDescendant(entity, e -> {
+                if (e instanceof IdInitializing idInitializing && idInitializing.tryGetId() instanceof PhysicalId id) {
+                    var inst = instCtx.get(id);
+                    addMapping(e, inst);
+                }
+            });
+        }
+    }
+
+    private void replaceEnumConstants() {
+        var instCtx = getInstanceContext();
+        forEachDef(def -> {
+            if(def instanceof EnumDef<?> enumDef) {
+                for (EnumConstantDef<?> enumConstantDef : enumDef.getEnumConstantDefs()) {
+                    var instance = (ClassInstance) instCtx.get(enumConstantDef.getInstance().getId());
+                    enumConstantDef.setEnumConstant(instance);
+                    addMapping(enumConstantDef.getValue(), instance);
+                }
+            }
+        });
+    }
+
+    private void forEachDef(Consumer<ModelDef<?>> action) {
+        javaType2Def.values().forEach(action);
     }
 
     private void initFieldTargetMapper() {
@@ -126,7 +215,7 @@ public class ReversedDefContext extends DefContext {
     private <T extends Record> RecordDef<T> createRecordDef(RecordDef<T> prototype) {
         var klass = getKlass(prototype.getKlass().getId());
         var def = new RecordDef<>(prototype.getJavaClass(), prototype.getJavaType(), getSuperDef(prototype), klass, this);
-        initFieldDefs(def, prototype);
+        initPojoDef(def, prototype);
         return def;
     }
 
@@ -153,14 +242,14 @@ public class ReversedDefContext extends DefContext {
     private <T extends Entity> EntityDef<T> createEntityDef(EntityDef<T> prototype) {
         var klass = getKlass(prototype.getKlass().getId());
        var def = new EntityDef<>(prototype.getJavaClass(), prototype.getJavaType(), getSuperDef(prototype), klass, this);
-       initFieldDefs(def, prototype);
+       initPojoDef(def, prototype);
        return def;
     }
 
     private <T> ValueDef<T> createValueDef(ValueDef<T> prototype) {
         var klass = getKlass(prototype.getKlass().getId());
         var def = new ValueDef<>(prototype.getJavaClass(), prototype.getEntityType(), getSuperDef(prototype), klass, this);
-        initFieldDefs(def, prototype);
+        initPojoDef(def, prototype);
         return def;
     }
 
@@ -177,8 +266,13 @@ public class ReversedDefContext extends DefContext {
         return (PojoDef<? super T>) createDef(s);
     }
 
-    private void initFieldDefs(PojoDef<?> pojoDef, PojoDef<?> prototype) {
+    private void initPojoDef(PojoDef<?> pojoDef, PojoDef<?> prototype) {
         javaType2Def.put(pojoDef.getJavaType(), pojoDef);
+        initFieldDefs(pojoDef, prototype);
+        initIndexDefs(pojoDef, prototype);
+    }
+
+    private void initFieldDefs(PojoDef<?> pojoDef, PojoDef<?> prototype) {
         for (var prototypeField : prototype.getKlass().getFields()) {
             var field = pojoDef.getKlass().getSelfField(f -> f.getCodeNotNull().equals(prototypeField.getCodeNotNull()));
             var javaField = ReflectionUtils.getField(pojoDef.getJavaClass(), field.getCodeNotNull());
@@ -191,4 +285,19 @@ public class ReversedDefContext extends DefContext {
         }
     }
 
+    private void initIndexDefs(PojoDef<?> pojoDef, PojoDef<?> prototype) {
+        var klass = pojoDef.getKlass();
+        for (IndexConstraintDef indexDef : prototype.getIndexConstraintDefList()) {
+            new IndexConstraintDef(
+                    Objects.requireNonNull(klass.findIndex(idx -> idx.idEquals(indexDef.getIndexConstraint().getId()))),
+                    indexDef.getIndexDefField(),
+                    pojoDef
+            );
+        }
+    }
+
+    @Override
+    public Class<?> getJavaClassByTag(int tag) {
+        return typeTag2Def.get(tag).getEntityClass();
+    }
 }

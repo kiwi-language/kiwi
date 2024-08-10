@@ -32,7 +32,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     private final Map<Id, Object> entityMap = new HashMap<>();
 
-    private final IInstanceContext instanceContext;
+    private IInstanceContext instanceContext;
     private final IdentitySet<Object> entities = new IdentitySet<>();
     private final IdentityHashMap<Object, Instance> model2instance = new IdentityHashMap<>();
     //    private final IdentitySet<Object> removedEntities = new IdentitySet<>();
@@ -852,5 +852,9 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 instanceContext.scan(start, limit).instances(),
                 inst -> getEntity(Object.class, inst.getId())
         );
+    }
+
+    public void setInstanceContext(IInstanceContext instanceContext) {
+        this.instanceContext = instanceContext;
     }
 }

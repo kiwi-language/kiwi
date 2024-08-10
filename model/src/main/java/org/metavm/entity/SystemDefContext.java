@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.*;
 
 import static org.metavm.object.type.ResolutionStage.*;
@@ -51,13 +50,6 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     private final Set<ClassType> functionTypes = new HashSet<>();
     private final StandardDefBuilder standardDefBuilder;
     private final ObjectInstanceMap defObjectInstanceMap = new DefaultObjectInstanceMap(this, this::addToContext);
-
-    public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
-            Map.entry(Byte.class, Long.class),
-            Map.entry(Short.class, Long.class),
-            Map.entry(Integer.class, Long.class),
-            Map.entry(Float.class, Double.class)
-    );
 
     public SystemDefContext(StdIdProvider getId, ColumnStore columnStore, TypeTagStore typeTagStore) {
         this(getId, null, columnStore, typeTagStore, new IdentityContext());
@@ -166,18 +158,6 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
         return javaType2Def.containsKey(javaType);
     }
 
-    @Override
-    public boolean containsDef(TypeDef typeDef) {
-        return typeDef2Def.containsKey(typeDef);
-    }
-
-    private void checkJavaType(Type javaType) {
-        if (javaType instanceof WildcardType && javaType instanceof TypeVariable<?>) {
-            throw new InternalException("Can not get def for java type '" + javaType.getTypeName() + "', " +
-                    "Because it's either a wildcard type or a type variable");
-        }
-    }
-
     public Klass getKlass(Class<?> javaClass) {
         return (Klass) getDef(javaClass).getTypeDef();
     }
@@ -221,9 +201,9 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
         return (ModelDef<T>) getDef((Type) klass);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends Enum<?>> EnumDef<T> getEnumDef(Class<T> enumType) {
-        return (EnumDef<T>) getDef(enumType);
+    @Override
+    public boolean containsDef(TypeDef typeDef) {
+        return typeDef2Def.containsKey(typeDef);
     }
 
     @Override
@@ -416,7 +396,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
             throw new InternalException("Entity " + entity + " is already written to the context");
     }
 
-    @SuppressWarnings("unused")
+    @Override
     public Collection<ModelDef<?>> getAllDefList() {
         return javaType2Def.values();
     }
@@ -758,6 +738,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
         standardDefBuilder.initUserFunctions();
     }
 
+    @Override
     public Class<?> getJavaClassByTag(int tag) {
         return typeTag2Def.get(tag).getEntityClass();
     }

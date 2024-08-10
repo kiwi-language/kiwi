@@ -9,7 +9,7 @@ import org.metavm.system.persistence.BlockMapper;
 import org.metavm.system.persistence.RegionMapper;
 
 public record BootstrapResult(
-        SystemDefContext defContext,
+        DefContext defContext,
         EntityContextFactory entityContextFactory,
         EntityIdProvider idProvider,
         BlockMapper blockMapper,

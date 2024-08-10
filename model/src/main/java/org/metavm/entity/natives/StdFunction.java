@@ -3,8 +3,8 @@ package org.metavm.entity.natives;
 import org.metavm.api.lang.EmailUtils;
 import org.metavm.api.lang.*;
 import org.metavm.common.ErrorCode;
+import org.metavm.entity.DefContext;
 import org.metavm.entity.StdKlass;
-import org.metavm.entity.SystemDefContext;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.core.Reference;
@@ -474,14 +474,14 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 .toList();
     }
 
-    public static List<Function> defineUserFunctions(SystemDefContext defContext) {
+    public static List<Function> defineUserFunctions(DefContext defContext) {
         return Arrays.stream(values())
                 .filter(def -> !def.isSystem())
                 .map(def -> def.define(defContext))
                 .toList();
     }
 
-    public static void initializeFromDefContext(SystemDefContext defContext) {
+    public static void initializeFromDefContext(DefContext defContext) {
         for (StdFunction def : values()) {
             def.set(Objects.requireNonNull(
                     defContext.selectFirstByKey(Function.UNIQUE_IDX_CODE, def.getName()),
@@ -498,7 +498,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
         return system;
     }
 
-    public Function define(SystemDefContext defContext) {
+    public Function define(DefContext defContext) {
         var function = parseFunction(defContext);
         function.setNative(true);
         function.setNativeCode(impl);
@@ -506,7 +506,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
         return function;
     }
 
-    private Function parseFunction(SystemDefContext defContext) {
+    private Function parseFunction(DefContext defContext) {
         return new TypeParserImpl(
                 (String name) -> {
                     if (defContext != null)

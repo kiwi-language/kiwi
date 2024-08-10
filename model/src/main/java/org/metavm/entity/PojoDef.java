@@ -176,6 +176,10 @@ public abstract class PojoDef<T> extends ModelDef<T> {
         );
     }
 
+    public List<IndexConstraintDef> getIndexConstraintDefList() {
+        return Collections.unmodifiableList(indexConstraintDefList);
+    }
+
     @SuppressWarnings("unused")
     public List<IFieldDef> getFieldDefList() {
         return fieldDefList;

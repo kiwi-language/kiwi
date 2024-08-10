@@ -93,7 +93,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
 
     @Transactional
     public void save(boolean saveIds) {
-        SystemDefContext defContext = ModelDefRegistry.getDefContext();
+        SystemDefContext defContext = (SystemDefContext) ModelDefRegistry.getDefContext();
         try (var ignoredEntry = defContext.getProfiler().enter("Bootstrap.save")) {
             if (defContext.isFinished())
                 return;

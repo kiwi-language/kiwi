@@ -12,8 +12,8 @@ public class EnumConstantDef<T extends Enum<?>> {
     private final String name;
     private final int ordinal;
     private final T value;
-    private final EnumConstantRT enumConstant;
-    private final ClassInstance instance;
+    private EnumConstantRT enumConstant;
+    private ClassInstance instance;
     private final EnumDef<T> enumDef;
 
     public EnumConstantDef(T value, EnumDef<T> enumDef, Function<Object, Id> getId) {
@@ -59,4 +59,10 @@ public class EnumConstantDef<T extends Enum<?>> {
     public Long getId() {
         return enumConstant.getId();
     }
+
+    public void setEnumConstant(ClassInstance instance) {
+        this.instance = instance;
+        this.enumConstant = new EnumConstantRT(instance);
+    }
+
 }

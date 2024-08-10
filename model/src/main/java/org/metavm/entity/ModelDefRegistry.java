@@ -17,12 +17,12 @@ public class ModelDefRegistry {
         ModelDefRegistry.holder = holder;
     }
 
-    public static void setDefContext(SystemDefContext defContext) {
+    public static void setDefContext(DefContext defContext) {
 //        NncUtils.requireNull(holder.get(), () -> new IllegalStateException("DefContext already set"));
         holder.set(defContext);
     }
 
-    public static SystemDefContext getDefContext() {
+    public static DefContext getDefContext() {
         return holder.get();
     }
 

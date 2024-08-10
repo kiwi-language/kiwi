@@ -83,6 +83,11 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public IInstanceContext createSame(long appId, TypeDefProvider typeDefProvider) {
+        return null;
+    }
+
     @Nullable
     @Override
     public EventQueue getEventQueue() {

@@ -4,15 +4,15 @@ import java.util.Objects;
 
 public class GlobalDefContextHolder implements DefContextHolder {
 
-    private SystemDefContext defContext;
+    private DefContext defContext;
 
     @Override
-    public SystemDefContext get() {
+    public DefContext get() {
         return Objects.requireNonNull(defContext);
     }
 
     @Override
-    public void set(SystemDefContext defContext) {
+    public void set(DefContext defContext) {
         this.defContext = defContext;
     }
 

@@ -129,6 +129,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     boolean remove(Instance instance);
 
+    IInstanceContext createSame(long appId, TypeDefProvider typeDefProvider);
+
     List<Reference> selectByKey(IndexKeyRT indexKey);
 
     List<Reference> query(InstanceIndexQuery query);

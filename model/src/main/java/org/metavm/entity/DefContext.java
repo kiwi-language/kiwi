@@ -10,14 +10,29 @@ import org.metavm.util.*;
 import javax.annotation.Nullable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.metavm.object.type.ResolutionStage.*;
 
 public abstract class DefContext extends BaseEntityContext implements IEntityContext, TypeRegistry {
 
+    public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
+            Map.entry(Byte.class, Long.class),
+            Map.entry(Short.class, Long.class),
+            Map.entry(Integer.class, Long.class),
+            Map.entry(Float.class, Double.class)
+    );
+
     public DefContext(IInstanceContext instanceContext) {
         super(instanceContext, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Enum<?>> EnumDef<T> getEnumDef(Class<T> enumType) {
+        return (EnumDef<T>) getDef(enumType);
     }
 
     public Mapper<?, ?> getMapper(org.metavm.object.type.Type type) {
@@ -104,6 +119,8 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
     public org.metavm.object.type.Field getField(java.lang.reflect.Field javaField) {
         return ((PojoDef<?>) getDef(javaField.getDeclaringClass(), DECLARATION)).getKlass().getFieldByJavaField(javaField);
     }
+
+    public abstract Collection<ModelDef<?>> getAllDefList();
 
     public Class<?> getJavaClass(org.metavm.object.type.Type type) {
         return getMapper(type).getEntityClass();
@@ -207,6 +224,14 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
             return getDef(javaType, stage);
     }
 
+    public abstract boolean containsDef(TypeDef typeDef);
+
+    protected void checkJavaType(Type javaType) {
+        if (javaType instanceof WildcardType && javaType instanceof java.lang.reflect.TypeVariable<?>) {
+            throw new InternalException("Can not get def for java type '" + javaType.getTypeName() + "', " +
+                    "Because it's either a wildcard type or a type variable");
+        }
+    }
 
     public Klass getKlass(Class<?> javaClass) {
         return (Klass) getDef(javaClass).getTypeDef();
@@ -234,4 +259,6 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
                 getDef(klass)
         );
     }
+
+    public abstract Class<?> getJavaClassByTag(int tag);
 }

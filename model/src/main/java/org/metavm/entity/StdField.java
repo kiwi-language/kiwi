@@ -29,7 +29,7 @@ public enum StdField implements ValueHolderOwner<Field> {
         methodHolder.set(field);
     }
 
-    public void init(SystemDefContext defContext) {
+    public void init(DefContext defContext) {
         var klass = defContext.getKlass(javaClass);
         var field = klass.getFieldByCode(fieldName);
         set(field);
@@ -39,7 +39,7 @@ public enum StdField implements ValueHolderOwner<Field> {
         this.methodHolder = methodHolder;
     }
 
-    public static void initialize(SystemDefContext defContext) {
+    public static void initialize(DefContext defContext) {
         for (StdField value : values()) {
             value.init(defContext);
         }

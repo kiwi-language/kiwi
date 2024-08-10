@@ -116,8 +116,9 @@ public class BootstrapUtils {
             );
             bootstrap.boot();
             TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+            var defContext = copyDefContext(entityContextFactory, idProvider, (SystemDefContext) ModelDefRegistry.getDefContext());
             state = new BootState(
-                    ModelDefRegistry.getDefContext(),
+                    defContext,
                     instanceStore.getInstanceMapper().copy(),
                     instanceStore.getReferenceMapper().copy(),
                     instanceStore.getIndexEntryMapper().copy(),
@@ -161,6 +162,21 @@ public class BootstrapUtils {
                     typeTagStore
             );
         }
+    }
+
+    private static DefContext copyDefContext(EntityContextFactory entityContextFactory, EntityIdProvider idProvider, SystemDefContext sysDefContext) {
+//        var bridge = new EntityInstanceContextBridge();
+//        var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
+//                ROOT_APP_ID, false, null, null,
+//                new DefaultIdInitializer(idProvider), bridge, null, null, null, false,
+//                builder -> builder.timeout(0L).typeDefProvider(sysDefContext)
+//        );
+//        var defContext = new ReversedDefContext(standardInstanceContext, sysDefContext);
+//        bridge.setEntityContext(defContext);
+//        defContext.initializeFrom(sysDefContext);
+//        ModelDefRegistry.setDefContext(defContext);
+//        return defContext;
+        return sysDefContext;
     }
 
 }

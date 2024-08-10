@@ -118,7 +118,7 @@ public class BootstrapTest extends TestCase {
         {
             ContextUtil.resetProfiler();
             var profiler = ContextUtil.getProfiler();
-            var originalDefContext = ModelDefRegistry.getDefContext();
+            var originalDefContext = (SystemDefContext) ModelDefRegistry.getDefContext();
             var entities = NncUtils.filter(originalDefContext.getEntities(), e -> !EntityUtils.isEphemeral(e) && !(e instanceof ValueObject));
             var modelIds = NncUtils.map(entities, e -> originalDefContext.getIdentityContext().getModelId(e));
             var originalIds = NncUtils.map(entities, e -> originalDefContext.getInstance(e).tryGetId());
@@ -127,7 +127,7 @@ public class BootstrapTest extends TestCase {
             idProvider = new MockIdProvider();
             var bootstrap = newBootstrap();
             doInTransactionWithoutResult(bootstrap::bootAndSave);
-            var defContext = ModelDefRegistry.getDefContext();
+            var defContext = (SystemDefContext) ModelDefRegistry.getDefContext();
             Assert.assertEquals(
                     originalIds,
                     NncUtils.map(

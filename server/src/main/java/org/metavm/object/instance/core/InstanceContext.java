@@ -565,6 +565,11 @@ public class InstanceContext extends BufferingInstanceContext {
 
     @Override
     public IInstanceContext createSame(long appId) {
+        return createSame(appId, getTypeDefProvider());
+    }
+
+    @Override
+    public IInstanceContext createSame(long appId, TypeDefProvider typeDefProvider) {
         return new InstanceContext(
                 appId,
                 instanceStore,
@@ -573,7 +578,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 asyncPostProcessing,
                 plugins,
                 getParent(),
-                getTypeDefProvider(),
+                typeDefProvider,
                 getMappingProvider(),
                 getRedirectStatusProvider(),
                 activeCommitProvider,

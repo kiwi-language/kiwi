@@ -1,6 +1,5 @@
 package org.metavm.entity;
 
-import org.metavm.object.type.TypeDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +18,6 @@ public interface DefMap {
 //    Mapper<?, ?> getMapper(Type javaType, ResolutionStage stage);
 
     boolean containsDef(Type javaType);
-
-    boolean containsDef(TypeDef typeDef);
 
     org.metavm.object.type.Type internType(org.metavm.object.type.Type type);
 
