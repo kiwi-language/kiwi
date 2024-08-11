@@ -4,7 +4,9 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.ddl.FieldAddition;
 import org.metavm.ddl.SystemDDL;
+import org.metavm.entity.ContextFlag;
 import org.metavm.entity.IEntityContext;
+import org.metavm.entity.ReadWriteArray;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
@@ -14,20 +16,27 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType
-public class PreUpgradeTask extends ScanTask  implements WalTask {
+public class PreUpgradeTask extends ScanTask {
 
     @ChildEntity
     private final WAL wal;
     private final String ddlId;
+    @ChildEntity
+    private final WAL defWal;
+    @ChildEntity
+    private final ReadWriteArray<String> newKlassIds = addChild(new ReadWriteArray<>(String.class), "newKlassIds");
 
-    public PreUpgradeTask(WAL wal, String ddlId) {
+    public PreUpgradeTask(WAL wal, WAL defWal, List<String> newKlassIds, String ddlId) {
         super("PreUpgradeTask-" + ddlId);
         this.wal = wal;
+        this.defWal = defWal;
         this.ddlId = ddlId;
+        this.newKlassIds.addAll(newKlassIds);
     }
 
     @Override
     protected void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
+        context.setFlag(ContextFlag.SKIP_SAVING_MAPPINGS);
         var instCtx = context.getInstanceContext();
         var ddl = context.getEntity(SystemDDL.class, ddlId);
         for (FieldAddition field : ddl.getFieldAdditions()) {
@@ -53,6 +62,18 @@ public class PreUpgradeTask extends ScanTask  implements WalTask {
 
     @Override
     public long getTimeout() {
-        return 500L;
+        return 1000L;
     }
+
+    @Nullable
+    @Override
+    public WAL getDefWAL() {
+        return defWal;
+    }
+
+    @Override
+    public List<String> getExtraStdKlassIds() {
+        return newKlassIds.toList();
+    }
+
 }

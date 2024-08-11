@@ -47,8 +47,10 @@ public class DDLManager extends EntityContextFactoryAware {
         var initializers = new ArrayList<KlassDTO>();
         var wal = new WAL(Constants.ROOT_APP_ID);
         var instancePOs = new ArrayList<InstancePO>();
+        var newKlassIds = new ArrayList<String>();
         for (Klass klass : klasses) {
             if (klass.getSince() > since) {
+                newKlassIds.add(klass.getStringId());
                 var instance = defContext.getInstance(klass);
                 var instancePO = new InstancePO(
                         Constants.ROOT_APP_ID,
@@ -72,7 +74,7 @@ public class DDLManager extends EntityContextFactoryAware {
         }
         wal.saveInstances(ChangeList.inserts(instancePOs));
         wal.buildData();
-        return new PreUpgradeRequest(fields, initializers, wal.getData());
+        return new PreUpgradeRequest(fields, initializers, newKlassIds, wal.getData());
     }
 
     private KlassDTO buildInitializerKlass(Klass klass) {
@@ -99,37 +101,37 @@ public class DDLManager extends EntityContextFactoryAware {
     private void preUpgrade(PreUpgradeRequest request, IEntityContext context) {
         FlowSavingContext.initConfig();
         FlowSavingContext.skipPreprocessing(true);
-        var readWAL = new WAL(context.getAppId());
-        readWAL.setData(request.walContent());
+        var defWAL = context.bind(new WAL(Constants.ROOT_APP_ID, request.walContent()));
         var writeWAL = context.bind(new WAL(context.getAppId()));
-        writeWAL.setData(request.walContent());
         String ddlId;
-        try (var bufferingContext = newContext(context.getAppId(),
-                builder -> builder
-                        .timeout(DDL_SESSION_TIMEOUT)
-                        .readWAL(readWAL)
-                        .writeWAL(writeWAL)
-        )) {
-            var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), bufferingContext);
-            var fieldAdds = new ArrayList<FieldAddition>();
-            for (FieldAdditionDTO fieldAddDTO : request.fieldAdditions()) {
-                var klass = bufferingContext.getKlass(fieldAddDTO.klassId());
-                if (klass != null) {
-                    fieldAdds.add(
-                            new FieldAddition(
-                                    klass,
-                                    fieldAddDTO.fieldTag(),
-                                    getSystemFieldInitializer(batch, klass, fieldAddDTO.fieldName())
-                            )
-                    );
+        try(var defContext = DefContextUtils.createReversedDefContext(defWAL, entityContextFactory, request.newKlassIds())) {
+            try (var bufferingContext = entityContextFactory.newContext(context.getAppId(), defContext,
+                    builder -> builder
+                            .timeout(DDL_SESSION_TIMEOUT)
+                            .writeWAL(writeWAL)
+            )) {
+                bufferingContext.setFlag(ContextFlag.SKIP_SAVING_MAPPINGS);
+                var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), bufferingContext);
+                var fieldAdds = new ArrayList<FieldAddition>();
+                for (FieldAdditionDTO fieldAddDTO : request.fieldAdditions()) {
+                    var klass = bufferingContext.getKlass(fieldAddDTO.klassId());
+                    if (klass != null) {
+                        fieldAdds.add(
+                                new FieldAddition(
+                                        klass,
+                                        fieldAddDTO.fieldTag(),
+                                        getSystemFieldInitializer(batch, klass, fieldAddDTO.fieldName())
+                                )
+                        );
+                    }
                 }
+                var ddl = new SystemDDL(fieldAdds);
+                bufferingContext.bind(ddl);
+                bufferingContext.finish();
+                ddlId = ddl.getStringId();
             }
-            var ddl = new SystemDDL(fieldAdds);
-            bufferingContext.bind(ddl);
-            bufferingContext.finish();
-            ddlId = ddl.getStringId();
         }
-        context.bind(new PreUpgradeTask(writeWAL, ddlId));
+        context.bind(new PreUpgradeTask(writeWAL, defWAL, request.newKlassIds(), ddlId));
         FlowSavingContext.clearConfig();
     }
 

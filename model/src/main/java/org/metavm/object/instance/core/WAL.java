@@ -46,6 +46,11 @@ public class WAL extends Entity implements LoadAware, ContextFinishWare {
         this.appId = appId;
     }
 
+    public WAL(long appId, String data) {
+        this.appId = appId;
+        setData(data);
+    }
+
     @Override
     public void onLoad() {
         var input = new InstanceInput(new ByteArrayInputStream(EncodingUtils.decodeBase64(data)));

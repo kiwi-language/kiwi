@@ -14,12 +14,15 @@ import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.ClassKind;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.KlassBuilder;
+import org.metavm.object.type.StdAllocators;
 import org.metavm.task.GlobalPreUpgradeTask;
 import org.metavm.task.PreUpgradeTask;
 import org.metavm.util.BootstrapResult;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Set;
 
 import static org.metavm.util.Constants.ROOT_APP_ID;
 
@@ -56,7 +59,6 @@ public class DDLManagerTest extends TestCase {
         var field = fooKlass.getFieldByCode("bar");
         Assert.assertEquals(1, field.getSince());
         var barKlass = ModelDefRegistry.getDefContext().getKlass(UpgradeBar.class);
-        var klassKlass = ModelDefRegistry.getDefContext().getKlass(Klass.class);
         Assert.assertEquals(1, barKlass.getSince());
         var request = ddlManager.buildUpgradePreparationRequest(0);
         Assert.assertEquals(1, request.fieldAdditions().size());
@@ -64,28 +66,37 @@ public class DDLManagerTest extends TestCase {
         Assert.assertEquals(1, request.initializerKlasses().size());
         Assert.assertEquals(fooKlass.getCodeNotNull() + "Initializer", request.initializerKlasses().get(0).code());
         TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
-        TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
+
+        Bootstrap bootstrap = new Bootstrap(entityContextFactory, new StdAllocators(bootResult.allocatorStore()),
+                bootResult.columnStore(), bootResult.typeTagStore(), bootResult.stdIdStore());
+        bootstrap.setFieldBlacklist(Set.of(ReflectionUtils.getField(UpgradeFoo.class, "bar")));
+        bootstrap.setClassBlacklist(Set.of(UpgradeBar.class));
+        bootstrap.boot();
+
         var fooId = TestUtils.doInTransaction(() -> {
             try(var context = newContext()) {
-                var foo = new UpgradeFoo("foo", new UpgradeBar("<missing>"));
+                var foo = new UpgradeFoo("foo", null);
                 context.bind(foo);
                 context.finish();
                 return foo.getId();
             }
         });
-        var defContext = (SystemDefContext) ModelDefRegistry.getDefContext();
-        defContext.evict(barKlass);
+
+        TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
         TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, entityContextFactory);
         TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
-        defContext.putBack(barKlass);
+
+        TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
+        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
+
+        bootstrap = new Bootstrap(entityContextFactory, new StdAllocators(bootResult.allocatorStore()),
+                bootResult.columnStore(), bootResult.typeTagStore(), bootResult.stdIdStore());
+        bootstrap.boot();
         try(var context = newContext()) {
             var foo = context.getEntity(UpgradeFoo.class, fooId);
             Assert.assertEquals(new UpgradeBar("foo-bar"), foo.getBar());
         }
-        // Rerun the pre-upgrade task
-        defContext.evict(barKlass);
-        TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
-        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
     }
 
     public void testCopyDefContext() {
@@ -139,8 +150,9 @@ public class DDLManagerTest extends TestCase {
                 defContext.getKlass(Klass.class),
                 defContext.selectFirstByKey(Klass.UNIQUE_CODE, klassKlass.getCodeNotNull()));
 
-        entityContextFactory.setDefContext(defContext);
-        try(var context1 = entityContextFactory.newContext()) {
+        try(var context1 = entityContextFactory.newContext(TestConstants.APP_ID, defContext)) {
+            Assert.assertSame(context1.getDefContext(), defContext);
+            Assert.assertSame(context1.getParent(), defContext);
             var quxKlass = context1.getKlass(quxKlassId);
             Assert.assertEquals("Qux", quxKlass.getName());
         }

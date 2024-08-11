@@ -284,4 +284,9 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     List<Object> scan(long start, long limit);
 
+    void setFlag(ContextFlag flag);
+
+    boolean isFlagSet(ContextFlag flag);
+
+    void clearFlag(ContextFlag flag);
 }

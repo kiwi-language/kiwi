@@ -104,7 +104,7 @@ public class EntityContextFactory {
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(), asyncLogProcessing,
                 NncUtils.get(parent, IEntityContext::getInstanceContext), idProvider, bridge, cachingWAL, bufferingWAL, store, migrationDisabled, customizer);
-        var context = new EntityContext(instanceContext, parent, defContext);
+        var context = new EntityContext(instanceContext, parent, parent instanceof DefContext dc ? dc : defContext);
         bridge.setEntityContext(context);
         return context;
     }
@@ -141,7 +141,7 @@ public class EntityContextFactory {
 //                        new MetaVersionPlugin(bridge, bridge),
                         new CheckConstraintPlugin(),
                         new IndexConstraintPlugin(currentStore, bridge),
-                        new ChangeLogPlugin(currentStore, instanceLogService)
+                        new ChangeLogPlugin(currentStore, instanceLogService, bridge)
                 ));
         return builder.build();
     }

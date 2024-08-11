@@ -1,5 +1,6 @@
 package org.metavm.task;
 
+import org.metavm.ddl.DefContextUtils;
 import org.metavm.entity.*;
 import org.metavm.util.InternalException;
 import org.metavm.util.NetworkUtils;
@@ -111,21 +112,16 @@ public class Worker extends EntityContextFactoryAware {
                 logger.info("Running task {}-{}", EntityUtils.getRealType(appTask).getSimpleName(), appTask.getTitle());
                 boolean terminated;
                 try {
-                    if (appTask instanceof WalTask walTask) {
-                        try (var walContext = newContext(shadowTask.getAppId(),
-                                builder -> builder.readWAL(walTask.getWAL())
-                                        .relocationEnabled(walTask.isRelocationEnabled())
-                                        .timeout(appTask.getTimeout()))) {
-                            terminated = runTask0(appTask, walContext, appContext);
-                            if(!appTask.isFailed())
-                                walContext.finish();
-                        }
-                    } else {
-                        try (var executionContext = newContext(shadowTask.getAppId(), builder -> builder.timeout(appTask.getTimeout()))) {
-                            terminated = runTask0(appTask, executionContext, appContext);
-                            if(!appTask.isFailed())
-                                executionContext.finish();
-                        }
+                    var parentContext = appTask.getDefWAL() != null ?
+                            DefContextUtils.createReversedDefContext(appTask.getDefWAL(), entityContextFactory, appTask.getExtraStdKlassIds()) :
+                            ModelDefRegistry.getDefContext();
+                    try (var walContext = entityContextFactory.newContext(shadowTask.getAppId(), parentContext,
+                            builder -> builder.readWAL(appTask.getWAL())
+                                    .relocationEnabled(appTask.isRelocationEnabled())
+                                    .timeout(appTask.getTimeout()))) {
+                        terminated = runTask0(appTask, walContext, appContext);
+                        if(!appTask.isFailed())
+                            walContext.finish();
                     }
                 }
                 catch (Exception e) {

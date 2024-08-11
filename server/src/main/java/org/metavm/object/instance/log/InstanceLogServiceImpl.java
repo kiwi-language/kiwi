@@ -49,18 +49,18 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         this.transactionOperations = transactionOperations;
         this.handlers = handlers;
         this.eventQueue = eventQueue;
-        WAL.setPostProcessHook((appId, logs) -> process(appId, logs, instanceStore, List.of(), null));
+        WAL.setPostProcessHook((appId, logs) -> process(appId, logs, instanceStore, List.of(), null, ModelDefRegistry.getDefContext()));
     }
 
     @Override
-    public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, List<Id> migrated, @Nullable String clientId) {
+    public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, List<Id> migrated, @Nullable String clientId, DefContext defContext) {
         if (NncUtils.isEmpty(logs) && migrated.isEmpty())
             return;
         List<Id> idsToLoad = NncUtils.filterAndMap(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getId);
         var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
         handleDDL(appId, newInstanceIds);
         handleMetaChanges(appId, logs, clientId);
-        try (var context = newContextWithStore(appId, instanceStore)) {
+        try (var context = entityContextFactory.newContext(appId, defContext, builder -> builder.instanceStore(instanceStore))) {
             var instanceContext = context.getInstanceContext();
             List<ClassInstance> changed = NncUtils.filterByType(instanceContext.batchGet(idsToLoad), ClassInstance.class);
             List<ClassInstance> created = NncUtils.filter(changed, c -> newInstanceIds.contains(c.getId()));
@@ -88,22 +88,25 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             var id = log.getId();
             if (id instanceof TaggedPhysicalId tpId && tpId.getTypeTag() > 4) {
                 var defContext = ModelDefRegistry.getDefContext();
-                var javaClass = defContext.getJavaClassByTag(tpId.getTypeTag());
-                if (TypeDef.class.isAssignableFrom(javaClass)) {
-                    if (log.isDelete())
-                        removedTypeDefIds.add(id.toString());
-                    else
-                        changedTypeDefIds.add(id.toString());
-                } else if (Mapping.class.isAssignableFrom(javaClass)) {
-                    if (log.isDelete())
-                        removedMappingIds.add(id.toString());
-                    else
-                        changedMappingIds.add(id.toString());
-                } else if (Function.class.isAssignableFrom(javaClass)) {
-                    if (log.isDelete())
-                        removedFunctionIds.add(id.toString());
-                    else
-                        changedFunctionIds.add(id.toString());
+                var mapper = defContext.tryGetMapper(tpId.getTypeTag());
+                if(mapper != null) {
+                    var javaClass = mapper.getEntityClass();
+                    if (TypeDef.class.isAssignableFrom(javaClass)) {
+                        if (log.isDelete())
+                            removedTypeDefIds.add(id.toString());
+                        else
+                            changedTypeDefIds.add(id.toString());
+                    } else if (Mapping.class.isAssignableFrom(javaClass)) {
+                        if (log.isDelete())
+                            removedMappingIds.add(id.toString());
+                        else
+                            changedMappingIds.add(id.toString());
+                    } else if (Function.class.isAssignableFrom(javaClass)) {
+                        if (log.isDelete())
+                            removedFunctionIds.add(id.toString());
+                        else
+                            changedFunctionIds.add(id.toString());
+                    }
                 }
             }
         }

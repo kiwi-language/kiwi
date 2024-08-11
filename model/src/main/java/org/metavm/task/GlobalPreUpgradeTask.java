@@ -26,4 +26,8 @@ public class GlobalPreUpgradeTask extends GlobalTask {
         return NncUtils.readJSONString(requestJSON, PreUpgradeRequest.class);
     }
 
+    @Override
+    public long getTimeout() {
+        return 1000L;
+    }
 }

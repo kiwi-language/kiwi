@@ -28,7 +28,8 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
     private final ColumnStore columnStore;
     private final TypeTagStore typeTagStore;
     private final StdIdStore stdIdStore;
-    private final Set<Field> fieldBlacklist = new HashSet<>();
+    private Set<Field> fieldBlacklist = Set.of();
+    private Set<Class<?>> classBlackList= Set.of();
 
     public Bootstrap(EntityContextFactory entityContextFactory, StdAllocators stdAllocators, ColumnStore columnStore, TypeTagStore typeTagStore, StdIdStore stdIdStore) {
         super(entityContextFactory);
@@ -60,7 +61,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
             var entityClasses = EntityUtils.getModelClasses();
             for (ResolutionStage stage : ResolutionStage.values()) {
                 for (Class<?> entityClass : entityClasses) {
-                    if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
+                    if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass() && !classBlackList.contains(entityClass))
                         defContext.getDef(entityClass, stage);
                 }
             }
@@ -150,7 +151,11 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
     }
 
     public void setFieldBlacklist(Set<Field> fieldBlacklist) {
-        this.fieldBlacklist.addAll(fieldBlacklist);
+        this.fieldBlacklist = new HashSet<>(fieldBlacklist);
+    }
+
+    public void setClassBlacklist(Set<Class<?>> classBlacklist) {
+        this.classBlackList = new HashSet<>(classBlacklist);
     }
 
     @Override

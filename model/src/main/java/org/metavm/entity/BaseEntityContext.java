@@ -40,6 +40,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     @Nullable
     private final IEntityContext parent;
     private final ObjectInstanceMap objectInstanceMap = new DefaultObjectInstanceMap(this, this::addBinding);
+    private final Set<ContextFlag> flags = new HashSet<>();
 
     public BaseEntityContext(IInstanceContext instanceContext, @Nullable IEntityContext parent) {
         this.instanceContext = instanceContext;
@@ -127,8 +128,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         var typeTag = instance.getType().getTypeTag();
         if (typeTag == 0 || typeTag >= 1000000)
             return null;
-        var mapper = (Mapper) getDefContext().getMapper(typeTag);
-        if (mapper.isDisabled())
+        var mapper = (Mapper) getDefContext().tryGetMapper(typeTag);
+        if (mapper == null || mapper.isDisabled())
             return null;
         return createEntity(instance, mapper);
 //        if (!mapper.isProxySupported()) {
@@ -233,8 +234,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public boolean onChange(Instance instance) {
         if (instance instanceof ClassInstance classInstance && classInstance.getType().getTypeTag() > 0 && !instance.isDirectlyModified()) {
             //noinspection unchecked
-            var mapper = (Mapper<Object, ?>) getDefContext().getMapper(classInstance.getType().getTypeTag());
-            if (!mapper.isDisabled()) {
+            var mapper = (Mapper<Object, ?>) getDefContext().tryGetMapper(classInstance.getType().getTypeTag());
+            if (mapper != null && !mapper.isDisabled()) {
                 var entity = getEntity(Object.class, classInstance, mapper);
                 if (entity instanceof ChangeAware changeAware && changeAware.isChangeAware()) {
                     changeAware.onChange(classInstance, this);
@@ -857,4 +858,20 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public void setInstanceContext(IInstanceContext instanceContext) {
         this.instanceContext = instanceContext;
     }
+
+    @Override
+    public void setFlag(ContextFlag flag) {
+        flags.add(flag);
+    }
+
+    @Override
+    public boolean isFlagSet(ContextFlag flag) {
+        return flags.contains(flag);
+    }
+
+    @Override
+    public void clearFlag(ContextFlag flag) {
+        flags.remove(flag);
+    }
+
 }

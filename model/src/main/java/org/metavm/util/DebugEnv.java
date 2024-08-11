@@ -1,6 +1,7 @@
 package org.metavm.util;
 
 import org.metavm.entity.SystemDefContext;
+import org.metavm.flow.Function;
 import org.metavm.flow.InputNode;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodCallNode;
@@ -15,6 +16,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DebugEnv {
+
+    public static volatile Function func;
 
     public static volatile boolean debugging = false;
 

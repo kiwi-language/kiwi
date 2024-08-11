@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType
-public class DDLTask extends ScanTask implements WalTask, IDDLTask {
+public class DDLTask extends ScanTask implements IDDLTask {
 
     public static boolean DISABLE_DELAY = true;
 

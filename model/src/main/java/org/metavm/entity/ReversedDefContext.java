@@ -23,6 +23,7 @@ public class ReversedDefContext extends DefContext {
     private final Map<Integer, ModelDef<?>> typeTag2Def = new HashMap<>();
     private boolean initialized;
     private final List<Function> stdFunctions = new ArrayList<>();
+    private final List<Klass> extraKlasses = new ArrayList<>();
 
     public ReversedDefContext(IInstanceContext instanceContext, DefContext defContext) {
         super(instanceContext);
@@ -53,6 +54,14 @@ public class ReversedDefContext extends DefContext {
     @Override
     public ModelDef<?> tryGetDef(TypeDef typeDef) {
         return typeDef2Def.get(typeDef);
+    }
+
+    public void loadExtraKlasses(List<String> ids) {
+        for (String id : ids) {
+            var klass = getKlass(id);
+            EntityUtils.ensureTreeInitialized(klass);
+            extraKlasses.add(klass);
+        }
     }
 
     @Override
@@ -131,6 +140,7 @@ public class ReversedDefContext extends DefContext {
             entities.add(def.getTypeDef());
         });
         entities.addAll(stdFunctions);
+        entities.addAll(extraKlasses);
         for (var entity : entities) {
             EntityUtils.forEachDescendant(entity, e -> {
                 if (e instanceof IdInitializing idInitializing && idInitializing.tryGetId() instanceof PhysicalId id) {

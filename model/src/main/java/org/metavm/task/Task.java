@@ -4,9 +4,11 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.WAL;
 import org.metavm.util.Constants;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 @EntityType
 public abstract class Task extends Entity {
@@ -124,6 +126,22 @@ public abstract class Task extends Entity {
 
     public long getTimeout() {
         return group != null ? group.getSessionTimeout() : Constants.SESSION_TIMEOUT;
+    }
+
+    public @Nullable WAL getWAL() {
+        return null;
+    }
+
+    public @Nullable WAL getDefWAL() {
+        return null;
+    }
+
+    public List<String> getExtraStdKlassIds() {
+        return List.of();
+    }
+
+    public boolean isRelocationEnabled() {
+        return false;
     }
 
 }

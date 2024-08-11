@@ -1,5 +1,6 @@
 package org.metavm.object.instance;
 
+import org.metavm.entity.DefContextProvider;
 import org.metavm.entity.EntityChange;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
@@ -21,10 +22,12 @@ public class ChangeLogPlugin implements ContextPlugin {
 
     private final IInstanceStore instanceStore;
     private final InstanceLogService instanceLogService;
+    private final DefContextProvider defContextProvider;
 
-    public ChangeLogPlugin(IInstanceStore instanceStore, InstanceLogService instanceLogService) {
+    public ChangeLogPlugin(IInstanceStore instanceStore, InstanceLogService instanceLogService, DefContextProvider defContextProvider) {
         this.instanceStore = instanceStore;
         this.instanceLogService = instanceLogService;
+        this.defContextProvider = defContextProvider;
     }
 
     @Override
@@ -55,7 +58,7 @@ public class ChangeLogPlugin implements ContextPlugin {
             if(NncUtils.isNotEmpty(logs))
                 instanceStore.saveInstanceLogs(logs);
             instanceLogService.process(context.getAppId(), logs,
-                    instanceStore, NncUtils.map(context.getRelocated(), Instance::getId), context.getClientId());
+                    instanceStore, NncUtils.map(context.getRelocated(), Instance::getId), context.getClientId(), defContextProvider.getDefContext());
         }
     }
 
