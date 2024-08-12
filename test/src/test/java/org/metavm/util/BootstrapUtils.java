@@ -19,7 +19,9 @@ import org.metavm.user.PlatformUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Set;
 
 public class BootstrapUtils {
 
@@ -94,29 +96,40 @@ public class BootstrapUtils {
                     state.typeTagStore()
             );
         } else {
-            StdFunction.setEmailSender(MockEmailSender.INSTANCE);
-            var regionMapper = new MemRegionMapper();
-            var regionManager = new RegionManager(regionMapper);
-            regionManager.initialize();
-            var blockMapper = new MemBlockMapper();
-            var idProvider = new IdService(blockMapper, regionManager);
-            var instanceStore = new MemInstanceStore();
-            var instanceSearchService = new MemInstanceSearchServiceV2();
-            var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
-            var allocatorStore = new MemAllocatorStore();
-            var columnStore = new MemColumnStore();
-            var typeTagStore = new MemTypeTagStore();
-            var stdIdStore = new MemoryStdIdStore();
-            var bootstrap = new Bootstrap(
-                    entityContextFactory,
-                    new StdAllocators(allocatorStore),
-                    columnStore,
-                    typeTagStore,
-                    stdIdStore
-            );
-            bootstrap.boot();
-            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
-            var defContext = copyDefContext(entityContextFactory, idProvider, (SystemDefContext) ModelDefRegistry.getDefContext());
+            return create(true, true, new MemAllocatorStore(), new MemColumnStore(), new MemTypeTagStore(), Set.of(), Set.of());
+        }
+    }
+
+    public static BootstrapResult create(boolean saveState,
+                                         boolean saveIds,
+                                         MemAllocatorStore allocatorStore,
+                                         MemColumnStore columnStore,
+                                         MemTypeTagStore typeTagStore,
+                                         Set<Class<?>> classBlacklist,
+                                         Set<Field> fieldBlacklist) {
+        StdFunction.setEmailSender(MockEmailSender.INSTANCE);
+        var regionMapper = new MemRegionMapper();
+        var regionManager = new RegionManager(regionMapper);
+        regionManager.initialize();
+        var blockMapper = new MemBlockMapper();
+        var idProvider = new IdService(blockMapper, regionManager);
+        var instanceStore = new MemInstanceStore();
+        var instanceSearchService = new MemInstanceSearchServiceV2();
+        var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
+        var stdIdStore = new MemoryStdIdStore();
+        var bootstrap = new Bootstrap(
+                entityContextFactory,
+                new StdAllocators(allocatorStore),
+                columnStore,
+                typeTagStore,
+                stdIdStore
+        );
+        bootstrap.setClassBlacklist(classBlacklist);
+        bootstrap.setFieldBlacklist(fieldBlacklist);
+        bootstrap.boot();
+        TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(saveIds));
+        var defContext = copyDefContext(entityContextFactory, idProvider, (SystemDefContext) ModelDefRegistry.getDefContext());
+        if(saveState) {
             state = new BootState(
                     defContext,
                     instanceStore.getInstanceMapper().copy(),
@@ -130,38 +143,38 @@ public class BootstrapUtils {
                     allocatorStore.copy(),
                     instanceSearchService.copy()
             );
-            TestUtils.doInTransactionWithoutResult(() -> {
-                try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                    SchedulerRegistry.initialize(platformContext);
-                    var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
-                    var app = new Application("demo",
-                            new PlatformUser("demo", "123456", "demo", List.of()));
-                    platformContext.bind(app);
-                    platformContext.initIds();
-                    TestConstants.APP_ID = app.getId().getTreeId();
-                    try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                        BeanDefinitionRegistry.initialize(context);
-                        KlassTagAssigner.initialize(context, globalTagAssigner);
-                        KlassSourceCodeTagAssigner.initialize(context);
-                        context.finish();
-                    }
-                    platformContext.finish();
-                }
-            });
-            return new BootstrapResult(
-                    ModelDefRegistry.getDefContext(),
-                    entityContextFactory,
-                    idProvider,
-                    blockMapper,
-                    regionMapper,
-                    instanceStore,
-                    instanceSearchService,
-                    allocatorStore,
-                    columnStore,
-                    stdIdStore,
-                    typeTagStore
-            );
         }
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                SchedulerRegistry.initialize(platformContext);
+                var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
+                var app = new Application("demo",
+                        new PlatformUser("demo", "123456", "demo", List.of()));
+                platformContext.bind(app);
+                platformContext.initIds();
+                TestConstants.APP_ID = app.getId().getTreeId();
+                try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                    BeanDefinitionRegistry.initialize(context);
+                    KlassTagAssigner.initialize(context, globalTagAssigner);
+                    KlassSourceCodeTagAssigner.initialize(context);
+                    context.finish();
+                }
+                platformContext.finish();
+            }
+        });
+        return new BootstrapResult(
+                ModelDefRegistry.getDefContext(),
+                entityContextFactory,
+                idProvider,
+                blockMapper,
+                regionMapper,
+                instanceStore,
+                instanceSearchService,
+                allocatorStore,
+                columnStore,
+                stdIdStore,
+                typeTagStore
+        );
     }
 
     private static DefContext copyDefContext(EntityContextFactory entityContextFactory, EntityIdProvider idProvider, SystemDefContext sysDefContext) {

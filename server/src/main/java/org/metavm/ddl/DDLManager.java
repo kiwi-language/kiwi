@@ -4,6 +4,7 @@ import org.metavm.asm.AssemblerFactory;
 import org.metavm.entity.*;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.Method;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.type.Field;
@@ -52,29 +53,35 @@ public class DDLManager extends EntityContextFactoryAware {
             if (klass.getSince() > since) {
                 newKlassIds.add(klass.getStringId());
                 var instance = defContext.getInstance(klass);
-                var instancePO = new InstancePO(
-                        Constants.ROOT_APP_ID,
-                        instance.getTreeId(),
-                        InstanceOutput.toBytes(instance),
-                        instance.getVersion(),
-                        instance.getSyncVersion(),
-                        instance.getNextNodeId()
-                );
-                instancePOs.add(instancePO);
-            }
-            boolean anyMatch = false;
-            for (Field field : klass.getFields()) {
-                if (field.getSince() > since) {
-                    fields.add(new FieldAdditionDTO(klass.getStringId(), field.getName(), field.getTag()));
-                    anyMatch = true;
+                instancePOs.add(buildInstancePO(instance));
+            } else {
+                boolean anyMatch = false;
+                for (Field field : klass.getFields()) {
+                    if (field.getSince() > since) {
+                        fields.add(new FieldAdditionDTO(klass.getStringId(), field.getName(), field.getTag()));
+                        anyMatch = true;
+                    }
+                }
+                if (anyMatch) {
+                    instancePOs.add(buildInstancePO(defContext.getInstance(klass)));
+                    initializers.add(buildInitializerKlass(klass));
                 }
             }
-            if (anyMatch)
-                initializers.add(buildInitializerKlass(klass));
         }
         wal.saveInstances(ChangeList.inserts(instancePOs));
         wal.buildData();
         return new PreUpgradeRequest(fields, initializers, newKlassIds, wal.getData());
+    }
+
+    private InstancePO buildInstancePO(Instance instance) {
+        return new InstancePO(
+                Constants.ROOT_APP_ID,
+                instance.getTreeId(),
+                InstanceOutput.toBytes(instance),
+                instance.getVersion(),
+                instance.getSyncVersion(),
+                instance.getNextNodeId()
+        );
     }
 
     private KlassDTO buildInitializerKlass(Klass klass) {

@@ -2,8 +2,10 @@ package org.metavm.entity;
 
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.Function;
+import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
+import org.metavm.util.Column;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,8 @@ public class ReversedDefContext extends DefContext {
     private boolean initialized;
     private final List<Function> stdFunctions = new ArrayList<>();
     private final List<Klass> extraKlasses = new ArrayList<>();
+    private final List<Column> columns = new ArrayList<>();
+    private final Map<Object, Id> entity2Id = new IdentityHashMap<>();
 
     public ReversedDefContext(IInstanceContext instanceContext, DefContext defContext) {
         super(instanceContext);
@@ -99,9 +103,11 @@ public class ReversedDefContext extends DefContext {
     public void initializeFrom(DefContext sysDefContext) {
         sysDefContext.getAllDefList().forEach(this::initDef);
         loadStdFunctions();
+        loadColumns(sysDefContext);
         initFieldTargetMapper();
         defContext = this;
         initialized = true;
+        recordEntityIds();
         postInitialization();
     }
 
@@ -113,10 +119,24 @@ public class ReversedDefContext extends DefContext {
         }
     }
 
+    private void loadColumns(DefContext sysDefContext) {
+        for (Column col : ColumnKind.columns()) {
+            columns.add(get(Column.class, sysDefContext.getInstance(col).getId()));
+        }
+    }
+
     @Override
     public void onInstanceInitialized(Instance instance) {
         if(!initialized)
             super.onInstanceInitialized(instance);
+    }
+
+    private void recordEntityIds() {
+        for (Object entity : models()) {
+            var inst = getInstance(entity);
+            if(inst.tryGetId() != null)
+                entity2Id.put(entity, inst.getId());
+        }
     }
 
     public void postInitialization() {
@@ -141,9 +161,11 @@ public class ReversedDefContext extends DefContext {
         });
         entities.addAll(stdFunctions);
         entities.addAll(extraKlasses);
+        entities.addAll(columns);
         for (var entity : entities) {
             EntityUtils.forEachDescendant(entity, e -> {
-                if (e instanceof IdInitializing idInitializing && idInitializing.tryGetId() instanceof PhysicalId id) {
+                var id = entity2Id.get(e);
+                if(id != null) {
                     var inst = instCtx.get(id);
                     addMapping(e, inst);
                 }

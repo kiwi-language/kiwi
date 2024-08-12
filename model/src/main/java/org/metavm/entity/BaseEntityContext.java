@@ -817,7 +817,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                     instance.initId(id);
                 entityMap.put(id, entity);
             }
-        }
+        } else if(instance.tryGetId() instanceof PhysicalId id)
+            entityMap.put(id, model);
         if (!manualInstanceWriting()) {
             if (!instanceContext.containsInstance(instance))
                 instanceContext.bind(instance);
