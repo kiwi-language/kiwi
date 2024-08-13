@@ -244,6 +244,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                                                        PojoDef<?> declaringTypeDef,
                                                        Type fieldType) {
         EntityField annotation = javaField.getAnnotation(EntityField.class);
+        ChildEntity childEntity = javaField.getAnnotation(ChildEntity.class);
         boolean unique = annotation != null && annotation.unique();
         boolean asTitle = annotation != null && annotation.asTitle();
         boolean isChild = javaField.isAnnotationPresent(ChildEntity.class);
@@ -262,7 +263,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 .isChild(isChild)
                 .staticValue(new NullValue(Types.getNullType()))
                 .access(parseAccess(javaField.getModifiers()))
-                .since(annotation != null ? annotation.since() : 0)
+                .since(annotation != null ? annotation.since() : (childEntity != null ? childEntity.since() : 0))
                 .build();
         if (asTitle)
             declaringType.setTitleField(field);

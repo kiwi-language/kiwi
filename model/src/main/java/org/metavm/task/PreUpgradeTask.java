@@ -36,17 +36,17 @@ public class PreUpgradeTask extends ScanTask {
 
     @Override
     protected void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
-        context.setFlag(ContextFlag.SKIP_SAVING_MAPPINGS);
         var instCtx = context.getInstanceContext();
         var ddl = context.getEntity(SystemDDL.class, ddlId);
-        for (FieldAddition field : ddl.getFieldAdditions()) {
-            var klass = field.klass();
+        for (FieldAddition fieldAdd : ddl.getFieldAdditions()) {
+            var field  = fieldAdd.field();
+            var klass = field.getDeclaringType();
             for (Instance instance : batch) {
                 if(instance instanceof ClassInstance clsInst) {
                     var k = clsInst.getKlass().findAncestorByTemplate(klass);
                     if(k != null) {
-                        var value = Flows.invoke(field.initializer(), null, List.of(clsInst.getReference()), instCtx);
-                        clsInst.setFieldByTag(k.getTag(), field.fieldTag(), value);
+                        var value = Flows.invoke(fieldAdd.initializer(), null, List.of(clsInst.getReference()), instCtx);
+                        clsInst.setFieldForce(field, value);
                         clsInst.setDirectlyModified(true);
                     }
                 }

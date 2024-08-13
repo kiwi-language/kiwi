@@ -369,19 +369,23 @@ public class ClassInstance extends Instance {
 
     public void setField(String fieldCode, Value value) {
         var field = klass.getFieldByCode(fieldCode);
-        setFieldInternal(field, value);
+        setField(field, value);
     }
 
     public void setField(Field field, Value value) {
         ensureLoaded();
-        setFieldInternal(field, value);
+        setFieldInternal(field, value, true);
     }
 
-    private void setFieldInternal(Field field, Value value) {
+    public void setFieldForce(Field field, Value value) {
+        setFieldInternal(field, value, false);
+    }
+
+    private void setFieldInternal(Field field, Value value, boolean checkMutability) {
         ensureLoaded();
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass));
-        if (field.isReadonly())
-            throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD);
+        if (checkMutability && field.isReadonly())
+            throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD, field.getQualifiedName());
         if (field.isChild() && value.isNotNull())
             ((Reference) value).resolve().setParent(this, field);
         setModified();

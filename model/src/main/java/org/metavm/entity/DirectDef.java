@@ -42,4 +42,8 @@ public class DirectDef<T> extends ModelDef<T> {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public boolean isDisabled() {
+        return true;
+    }
 }

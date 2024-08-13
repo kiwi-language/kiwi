@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.Tree;
 import org.metavm.entity.TreeTags;
+import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.Field;
@@ -94,6 +95,17 @@ public abstract class Instance implements Message {
         } else
             _new = true;
         this.root = aggregateRoot = this;
+    }
+
+    public InstancePO toPO(long appId) {
+        return new InstancePO(
+                appId,
+                getTreeId(),
+                InstanceOutput.toBytes(this),
+                getVersion(),
+                getSyncVersion(),
+                getNextNodeId()
+        );
     }
 
     public boolean isDurable() {

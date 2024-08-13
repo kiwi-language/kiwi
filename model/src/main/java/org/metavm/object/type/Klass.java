@@ -12,9 +12,7 @@ import org.metavm.entity.natives.NativeBase;
 import org.metavm.expression.Var;
 import org.metavm.flow.Error;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.rest.dto.KlassDTO;
@@ -91,6 +89,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private final ChildArray<Error> errors = addChild(new ChildArray<>(Error.class), "errors");
 
     private boolean error;
+
+    // For unit test. Do not remove
+    @ChildEntity(since = 1)
+    @Nullable
+    private KlassFlags flags;
 
     @ChildEntity
     private final ChildArray<ObjectMapping> mappings = addChild(new ChildArray<>(ObjectMapping.class), "mappings");
@@ -1860,6 +1863,15 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public int getSince() {
         return since;
+    }
+
+    @Nullable
+    public KlassFlags getFlags() {
+        return flags;
+    }
+
+    public boolean isFlag1() {
+        return flags != null && flags.isFlag1();
     }
 }
 

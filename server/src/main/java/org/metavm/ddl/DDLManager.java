@@ -4,7 +4,6 @@ import org.metavm.asm.AssemblerFactory;
 import org.metavm.entity.*;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.Method;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.type.Field;
@@ -16,7 +15,10 @@ import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.PreUpgradeRequest;
 import org.metavm.task.GlobalPreUpgradeTask;
 import org.metavm.task.PreUpgradeTask;
-import org.metavm.util.*;
+import org.metavm.util.ChangeList;
+import org.metavm.util.Constants;
+import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -53,17 +55,17 @@ public class DDLManager extends EntityContextFactoryAware {
             if (klass.getSince() > since) {
                 newKlassIds.add(klass.getStringId());
                 var instance = defContext.getInstance(klass);
-                instancePOs.add(buildInstancePO(instance));
+                instancePOs.add(instance.toPO(Constants.ROOT_APP_ID));
             } else {
                 boolean anyMatch = false;
                 for (Field field : klass.getFields()) {
                     if (field.getSince() > since) {
-                        fields.add(new FieldAdditionDTO(klass.getStringId(), field.getName(), field.getTag()));
+                        fields.add(new FieldAdditionDTO(field.getStringId(), field.getName()));
                         anyMatch = true;
                     }
                 }
                 if (anyMatch) {
-                    instancePOs.add(buildInstancePO(defContext.getInstance(klass)));
+                    instancePOs.add(defContext.getInstance(klass).toPO(Constants.ROOT_APP_ID));
                     initializers.add(buildInitializerKlass(klass));
                 }
             }
@@ -71,17 +73,6 @@ public class DDLManager extends EntityContextFactoryAware {
         wal.saveInstances(ChangeList.inserts(instancePOs));
         wal.buildData();
         return new PreUpgradeRequest(fields, initializers, newKlassIds, wal.getData());
-    }
-
-    private InstancePO buildInstancePO(Instance instance) {
-        return new InstancePO(
-                Constants.ROOT_APP_ID,
-                instance.getTreeId(),
-                InstanceOutput.toBytes(instance),
-                instance.getVersion(),
-                instance.getSyncVersion(),
-                instance.getNextNodeId()
-        );
     }
 
     private KlassDTO buildInitializerKlass(Klass klass) {
@@ -117,20 +108,16 @@ public class DDLManager extends EntityContextFactoryAware {
                             .timeout(DDL_SESSION_TIMEOUT)
                             .writeWAL(writeWAL)
             )) {
-                bufferingContext.setFlag(ContextFlag.SKIP_SAVING_MAPPINGS);
                 var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), bufferingContext);
                 var fieldAdds = new ArrayList<FieldAddition>();
                 for (FieldAdditionDTO fieldAddDTO : request.fieldAdditions()) {
-                    var klass = bufferingContext.getKlass(fieldAddDTO.klassId());
-                    if (klass != null) {
-                        fieldAdds.add(
-                                new FieldAddition(
-                                        klass,
-                                        fieldAddDTO.fieldTag(),
-                                        getSystemFieldInitializer(batch, klass, fieldAddDTO.fieldName())
-                                )
-                        );
-                    }
+                    var field = bufferingContext.getField(fieldAddDTO.fieldId());
+                    fieldAdds.add(
+                            new FieldAddition(
+                                    field,
+                                    getSystemFieldInitializer(batch, field.getDeclaringType(), fieldAddDTO.fieldName())
+                            )
+                    );
                 }
                 var ddl = new SystemDDL(fieldAdds);
                 bufferingContext.bind(ddl);

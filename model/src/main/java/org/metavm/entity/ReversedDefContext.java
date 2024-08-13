@@ -1,7 +1,6 @@
 package org.metavm.entity;
 
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.flow.Function;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
@@ -23,11 +22,16 @@ public class ReversedDefContext extends DefContext {
     private final Map<TypeDef, ModelDef<?>> typeDef2Def = new HashMap<>();
     private final Map<java.lang.reflect.Type, ModelDef<?>> javaType2Def = new HashMap<>();
     private final Map<Integer, ModelDef<?>> typeTag2Def = new HashMap<>();
-    private boolean initialized;
-    private final List<Function> stdFunctions = new ArrayList<>();
+    private State state = State.PRE_INITIALIZING;
     private final List<Klass> extraKlasses = new ArrayList<>();
     private final List<Column> columns = new ArrayList<>();
     private final Map<Object, Id> entity2Id = new IdentityHashMap<>();
+
+    private enum State {
+        PRE_INITIALIZING,
+        INITIALIZING,
+        POST_INITIALIZING
+    }
 
     public ReversedDefContext(IInstanceContext instanceContext, DefContext defContext) {
         super(instanceContext);
@@ -60,7 +64,7 @@ public class ReversedDefContext extends DefContext {
         return typeDef2Def.get(typeDef);
     }
 
-    public void loadExtraKlasses(List<String> ids) {
+    private void loadExtraKlasses(List<String> ids) {
         for (String id : ids) {
             var klass = getKlass(id);
             EntityUtils.ensureTreeInitialized(klass);
@@ -100,22 +104,24 @@ public class ReversedDefContext extends DefContext {
         return new ReversedDefContext(getInstanceContext(), defContext);
     }
 
-    public void initializeFrom(DefContext sysDefContext) {
-        sysDefContext.getAllDefList().forEach(this::initDef);
+    public void initializeFrom(DefContext sysDefContext, List<String> extraKlassIds) {
         loadStdFunctions();
+        state = State.INITIALIZING;
+        loadExtraKlasses(extraKlassIds);
+        sysDefContext.getAllDefList().forEach(this::initDef);
         loadColumns(sysDefContext);
         initFieldTargetMapper();
         defContext = this;
-        initialized = true;
+        state = State.POST_INITIALIZING;
         recordEntityIds();
         postInitialization();
     }
 
     private void loadStdFunctions() {
-        for (StdFunction stdFunction : StdFunction.values()) {
-            var func = getFunction(stdFunction.get().getId());
-            EntityUtils.ensureTreeInitialized(func);
-            stdFunctions.add(func);
+        var instCtx = getInstanceContext();
+        for (StdFunction stdFunc : StdFunction.values()) {
+            var func = stdFunc.get();
+            func.forEachDescendant(e -> addMapping(e, instCtx.get(e.getId())));
         }
     }
 
@@ -127,7 +133,7 @@ public class ReversedDefContext extends DefContext {
 
     @Override
     public void onInstanceInitialized(Instance instance) {
-        if(!initialized)
+        if(state == State.INITIALIZING)
             super.onInstanceInitialized(instance);
     }
 
@@ -159,7 +165,9 @@ public class ReversedDefContext extends DefContext {
                 return;
             entities.add(def.getTypeDef());
         });
-        entities.addAll(stdFunctions);
+        for (StdFunction stdFunc : StdFunction.values()) {
+            entities.add(stdFunc.get());
+        }
         entities.addAll(extraKlasses);
         entities.addAll(columns);
         for (var entity : entities) {

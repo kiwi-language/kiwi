@@ -48,7 +48,7 @@ public enum ErrorCode {
     INCORRECT_PARENT_REF(308, "Invalid parent object reference, child: {}, parent: {}, reference: {}"),
     MULTI_PARENT(309, "Child object belongs to multiple parents: {}"),
     CONVERSION_FAILED(410, "Cannot convert object '{}' to type '{}'"),
-    CAN_NOT_MODIFY_READONLY_FIELD(411, "Cannot modify read-only field"),
+    CAN_NOT_MODIFY_READONLY_FIELD(411, "Cannot modify read-only field {}"),
     TYPE_CAST_ERROR(412, "Type conversion error, original type: {}, target type: {}"),
     NOT_A_PHYSICAL_INSTANCE(413, "Object '{}' is not a physical entity"),
     NOT_A_CLASS_INSTANCE(414, "Object '{}' is not a class entity"),

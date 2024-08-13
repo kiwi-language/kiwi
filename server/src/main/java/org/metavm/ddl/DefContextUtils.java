@@ -21,8 +21,7 @@ public class DefContextUtils {
         );
         var defContext = new ReversedDefContext(standardInstanceContext, sysDefContext);
         bridge.setEntityContext(defContext);
-        defContext.loadExtraKlasses(extraKlassIds);
-        defContext.initializeFrom(sysDefContext);
+        defContext.initializeFrom(sysDefContext, extraKlassIds);
         return defContext;
     }
 

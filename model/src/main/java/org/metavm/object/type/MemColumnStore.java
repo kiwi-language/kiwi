@@ -4,6 +4,8 @@ import org.metavm.object.instance.ColumnKind;
 import org.metavm.util.Column;
 import org.metavm.util.ColumnAndTag;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
@@ -12,6 +14,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class MemColumnStore implements ColumnStore {
+
+    private static final Logger logger = LoggerFactory.getLogger(MemColumnStore.class);
 
     protected final Map<String, Map<String, String>> columnNameMap = new HashMap<>();
     protected final Map<String, Map<String, Integer>> tagMap = new HashMap<>();
@@ -63,8 +67,17 @@ public class MemColumnStore implements ColumnStore {
     }
 
     public MemColumnStore copy() {
-        var result = new MemColumnStore();
-        result.columnNameMap.putAll(columnNameMap);
-        return result;
+        var copy = new MemColumnStore();
+        columnNameMap.forEach((className, names) -> {
+            var copyNames = new HashMap<String, String>();
+            copy.columnNameMap.put(className, copyNames);
+            copyNames.putAll(names);
+        });
+        tagMap.forEach((className, tags) -> {
+            var copyTags = new HashMap<String, Integer>();
+            copy.tagMap.put(className, copyTags);
+            copyTags.putAll(tags);
+        });
+        return copy;
     }
 }
