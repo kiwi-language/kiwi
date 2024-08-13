@@ -168,4 +168,9 @@ public class TypeController {
         return Result.success(typeManager.getPrimitiveMap());
     }
 
+    @GetMapping("/is-flag1")
+    public Result<Boolean> isFlag1(@RequestParam("name") String name) {
+        return Result.success(typeManager.isFlag1(name));
+    }
+
 }

@@ -34,7 +34,7 @@ X-App-ID: 2
 GET http://localhost:8080/platform-user/apps
 
 ###
-POST http://localhost:8080/platform-user/enter-app/1839816797
+POST http://localhost:8080/platform-user/enter-app/1850817017
 Accept: application/json
 X-App-ID: 2
 
@@ -1142,3 +1142,7 @@ Content-Type: application/json
     }
   ]
 }
+
+###
+GET http://localhost:8080/type/is-flag1?name=org.metavm.mlab.Product
+X-App-ID: 1850817017

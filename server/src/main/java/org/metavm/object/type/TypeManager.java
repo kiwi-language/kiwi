@@ -695,6 +695,15 @@ public class TypeManager extends EntityContextFactoryAware {
         }
     }
 
+    public boolean isFlag1(String name) {
+        try(var context = newContext()) {
+            var klass = context.selectFirstByKey(Klass.UNIQUE_CODE, name);
+            if(klass == null)
+                throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, name);
+            return klass.isFlag1();
+        }
+    }
+
     @Autowired
     public void setFlowManager(FlowManager flowManager) {
         this.flowManager = flowManager;
