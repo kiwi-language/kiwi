@@ -17,7 +17,7 @@ typeDeclaration
     ;
 
 classDeclaration
-    : (CLASS | STRUCT | RECORD) IDENTIFIER typeParameters?
+    : annotation* (CLASS | STRUCT | RECORD) IDENTIFIER typeParameters?
       (EXTENDS typeType)?
       (IMPLEMENTS typeList)?
       classBody
@@ -36,7 +36,7 @@ classBodyDeclaration
     ;
 
 enumDeclaration
-    : ENUM IDENTIFIER (IMPLEMENTS typeList)? '{' enumConstants? ','? enumBodyDeclarations? '}'
+    : annotation* ENUM IDENTIFIER (IMPLEMENTS typeList)? '{' enumConstants? ','? enumBodyDeclarations? '}'
     ;
 
 enumConstants
@@ -52,7 +52,7 @@ enumBodyDeclarations
     ;
 
 interfaceDeclaration
-    : INTERFACE IDENTIFIER typeParameters? (EXTENDS typeList)? interfaceBody
+    : annotation* INTERFACE IDENTIFIER typeParameters? (EXTENDS typeList)? interfaceBody
     ;
 
 interfaceBody
@@ -427,3 +427,5 @@ lambdaBody
 indexDeclaration: INDEX IDENTIFIER '{' indexField* '}';
 
 indexField: IDENTIFIER ':' expression ';';
+
+annotation: '@' IDENTIFIER;

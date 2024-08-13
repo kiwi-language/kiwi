@@ -1020,6 +1020,18 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitIndexField(AssemblyParser.IndexFieldContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterAnnotation(AssemblyParser.AnnotationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitAnnotation(AssemblyParser.AnnotationContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

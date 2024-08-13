@@ -1873,5 +1873,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public boolean isFlag1() {
         return flags != null && flags.isFlag1();
     }
+
+    public boolean isBeanClass() {
+        return getAttribute(AttributeNames.BEAN_KIND) != null;
+    }
+
 }
 

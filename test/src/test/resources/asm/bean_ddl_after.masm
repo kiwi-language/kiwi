@@ -1,0 +1,50 @@
+abstract class BaseService {
+
+    protected readonly IdService idService;
+
+    public BaseService(IdService idService) {
+        this.idService = idService;
+    }
+
+}
+
+@Component
+class IdService {
+
+    public IdService() {}
+
+}
+
+@Component
+class FooService extends BaseService {
+
+    index IDX_ALL_FLAGS {
+        allFlags: this.allFlags;
+    }
+
+    private readonly boolean allFlags;
+    private readonly BarService barService;
+
+    public FooService(IdService idService, BarService barService) {
+        super(idService);
+        this.allFlags = true;
+        this.barService = barService;
+    }
+
+}
+
+@Component
+class BarService extends BaseService {
+
+    index IDX_ALL_FLAGS {
+        allFlags: this.allFlags;
+    }
+
+    private readonly boolean allFlags;
+
+    public BarService(IdService idService) {
+        super(idService);
+        this.allFlags = true;
+    }
+
+}

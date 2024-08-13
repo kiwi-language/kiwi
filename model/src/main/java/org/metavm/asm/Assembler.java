@@ -17,10 +17,8 @@ import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.TypeDefDTO;
 import org.metavm.object.type.rest.dto.TypeVariableDTO;
-import org.metavm.util.DebugEnv;
-import org.metavm.util.InternalException;
+import org.metavm.util.*;
 import org.metavm.util.LinkedList;
-import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -327,7 +325,7 @@ public class Assembler {
                     ctx.typeType(),
                     ctx.typeList(),
                     ctx.typeParameters(),
-                    ctx,
+                    ctx.annotation(), ctx,
                     () -> super.visitClassDeclaration(ctx));
             return null;
         }
@@ -335,14 +333,14 @@ public class Assembler {
         @Override
         public Void visitEnumDeclaration(AssemblyParser.EnumDeclarationContext ctx) {
             visitTypeDef(ctx.IDENTIFIER().getText(), TypeCategory.ENUM, false, null, ctx.typeList(),
-                    null, ctx, () -> super.visitEnumDeclaration(ctx));
+                    null, ctx.annotation(), ctx, () -> super.visitEnumDeclaration(ctx));
             return null;
         }
 
         @Override
         public Void visitInterfaceDeclaration(AssemblyParser.InterfaceDeclarationContext ctx) {
             visitTypeDef(ctx.IDENTIFIER().getText(), TypeCategory.INTERFACE, false, null,
-                    ctx.typeList(), ctx.typeParameters(), ctx, () -> super.visitInterfaceDeclaration(ctx));
+                    ctx.typeList(), ctx.typeParameters(), ctx.annotation(), ctx, () -> super.visitInterfaceDeclaration(ctx));
             return null;
         }
 
@@ -353,9 +351,8 @@ public class Assembler {
                 @Nullable AssemblyParser.TypeTypeContext superType,
                 @Nullable AssemblyParser.TypeListContext interfaces,
                 @Nullable AssemblyParser.TypeParametersContext typeParameters,
-                ParserRuleContext ctx,
-                Runnable processBody
-        ) {
+                List<AssemblyParser.AnnotationContext> annotations, ParserRuleContext ctx,
+                Runnable processBody) {
             scope = getAttribute(ctx, AsmAttributeKey.classInfo);
             processBody.run();
             scope = scope.parent();
@@ -450,13 +447,13 @@ public class Assembler {
                                  boolean isStruct, @Nullable AssemblyParser.TypeTypeContext superType,
                                  @Nullable AssemblyParser.TypeListContext interfaces,
                                  @Nullable AssemblyParser.TypeParametersContext typeParameters,
-                                 ParserRuleContext ctx,
+                                 List<AssemblyParser.AnnotationContext> annotations, ParserRuleContext ctx,
                                  Runnable processBody) {
             var code = getCompilationUnit().getDefinitionName(name);
             var klass = tryGetKlass(code);
             var kind = ClassKind.fromTypeCategory(typeCategory);
             if (klass == null)
-                klass = createKlass(name, code, kind);
+                klass = createKlass(name, code, kind, annotations);
             else {
                 if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
                     klass.clearEnumConstantDefs();
@@ -471,7 +468,7 @@ public class Assembler {
                     typeCategory == TypeCategory.ENUM
             );
             setAttribute(ctx, AsmAttributeKey.classInfo, classInfo);
-            super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, ctx, processBody);
+            super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, annotations, ctx, processBody);
         }
 
         @Override
@@ -509,7 +506,7 @@ public class Assembler {
         }
 
         @Override
-        public void visitTypeDef(String name, TypeCategory typeCategory, boolean isStruct, @Nullable AssemblyParser.TypeTypeContext superType, @Nullable AssemblyParser.TypeListContext interfaces, @Nullable AssemblyParser.TypeParametersContext typeParameters, ParserRuleContext ctx, Runnable processBody) {
+        public void visitTypeDef(String name, TypeCategory typeCategory, boolean isStruct, @Nullable AssemblyParser.TypeTypeContext superType, @Nullable AssemblyParser.TypeListContext interfaces, @Nullable AssemblyParser.TypeParametersContext typeParameters, List<AssemblyParser.AnnotationContext> annotations, ParserRuleContext ctx, Runnable processBody) {
             var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
             scope = classInfo;
             var klass = classInfo.klass;
@@ -789,7 +786,7 @@ public class Assembler {
                                  @Nullable AssemblyParser.TypeTypeContext superType,
                                  @Nullable AssemblyParser.TypeListContext interfaces,
                                  @Nullable AssemblyParser.TypeParametersContext typeParameters,
-                                 ParserRuleContext ctx,
+                                 List<AssemblyParser.AnnotationContext> annotations, ParserRuleContext ctx,
                                  Runnable processBody) {
             var currentClass = getAttribute(ctx, AsmAttributeKey.classInfo);
             var klass = currentClass.klass;
@@ -1353,13 +1350,13 @@ public class Assembler {
     private class KlassInitializer extends VisitorBase {
 
         @Override
-        public void visitTypeDef(String name, TypeCategory typeCategory, boolean isStruct, @Nullable AssemblyParser.TypeTypeContext superType, @Nullable AssemblyParser.TypeListContext interfaces, @Nullable AssemblyParser.TypeParametersContext typeParameters, ParserRuleContext ctx, Runnable processBody) {
+        public void visitTypeDef(String name, TypeCategory typeCategory, boolean isStruct, @Nullable AssemblyParser.TypeTypeContext superType, @Nullable AssemblyParser.TypeListContext interfaces, @Nullable AssemblyParser.TypeParametersContext typeParameters, List<AssemblyParser.AnnotationContext> annotations, ParserRuleContext ctx, Runnable processBody) {
             var klass = getAttribute(ctx, AsmAttributeKey.classInfo).klass;
             try (var serContext = SerializeContext.enter()) {
                 serContext.addWritingCodeType(klass);
                 types.add(klass.toDTO(serContext));
             }
-            super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, ctx, processBody);
+            super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, annotations, ctx, processBody);
         }
     }
 
@@ -1490,8 +1487,14 @@ public class Assembler {
         return code2klass.computeIfAbsent(code, klassProvider);
     }
 
-    private Klass createKlass(String name, String code, ClassKind kind) {
+    private Klass createKlass(String name, String code, ClassKind kind, List<AssemblyParser.AnnotationContext> annotations) {
         var klass = KlassBuilder.newBuilder(name, code).kind(kind).tmpId(NncUtils.randomNonNegative()).build();
+        for (AssemblyParser.AnnotationContext annotation : annotations) {
+            if(annotation.IDENTIFIER().getText().equals("Component")) {
+                klass.setAttribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT);
+                klass.setAttribute(AttributeNames.BEAN_NAME, NamingUtils.firstCharToLowerCase(klass.getName()));
+            }
+        }
         code2klass.put(name, klass);
 //        binder.accept(klass);
         return klass;

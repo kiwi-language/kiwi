@@ -1,10 +1,10 @@
 package org.metavm.util;
 
 import org.metavm.api.ReadonlyList;
+import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.FieldChange;
 import org.metavm.entity.*;
-import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
@@ -686,7 +686,7 @@ public class Instances {
     }
 
     private static void initializeField(ClassInstance instance, Field field, IEntityContext context) {
-        var initialValue = computeFieldInitialValue(instance, field, context.getInstanceContext());
+        var initialValue = computeFieldInitialValue(instance, field, context);
         instance.setField(field, initialValue);
     }
 
@@ -699,23 +699,28 @@ public class Instances {
         return klass.findMethodByCodeAndParamTypes(initMethodName, List.of(Types.getStringType(), Types.getLongType()));
     }
 
-    public static @Nullable Value getDefaultValue(Field field) {
+    public static @Nullable Value getDefaultValue(Field field, IEntityContext context) {
         var type = field.getType();
         if (type.isNullable())
             return Instances.nullInstance();
         else if (type instanceof PrimitiveType primitiveType)
             return primitiveType.getDefaultValue();
+        else if(field.getType() instanceof ClassType ct && ct.resolve().isBeanClass()) {
+            var beanDefReg = BeanDefinitionRegistry.getInstance(context);
+            var beans = beanDefReg.getBeansOfType(ct);
+            return beans.isEmpty() ? null : beans.get(0).getReference();
+        }
         else
             return null;
     }
 
-    public static Value computeFieldInitialValue(ClassInstance instance, Field field, CallContext callContext) {
+    public static Value computeFieldInitialValue(ClassInstance instance, Field field, IEntityContext context) {
+        var callContext = context.getInstanceContext();
         var initMethod = findFieldInitializer(field, true);
         if (initMethod != null) {
             if(initMethod.getParameters().isEmpty())
                 return Flows.invoke(initMethod, instance, List.of(), callContext);
-            else {
-                assert initMethod.getParameterTypes().equals(List.of(Types.getStringType(), Types.getLongType()));
+            else if(initMethod.getParameterTypes().equals(List.of(Types.getStringType(), Types.getLongType()))){
                 return Flows.invoke(
                         initMethod,
                         instance,
@@ -726,10 +731,11 @@ public class Instances {
                         callContext
                 );
             }
-
+            else
+                throw new IllegalStateException("Invalid initializer method: " + initMethod.getSignatureString());
         }
         else
-            return Objects.requireNonNull(getDefaultValue(field), "Can not find a default value for field " + field.getQualifiedName());
+            return Objects.requireNonNull(getDefaultValue(field, context), "Can not find a default value for field " + field.getQualifiedName());
     }
 
     private static void convertField(ClassInstance instance, Field field, IEntityContext context) {
@@ -754,8 +760,7 @@ public class Instances {
     }
 
     private static void initializeSuper(ClassInstance instance, Klass klass, IEntityContext context) {
-        var s = computeSuper(instance, klass, context.getInstanceContext());
-        s.forEachField(instance::setField);
+        computeSuper(instance, klass, context);
     }
 
 
@@ -769,11 +774,22 @@ public class Instances {
         );
     }
 
-    private static ClassInstance computeSuper(ClassInstance instance, Klass klass, CallContext callContext) {
-        var initializer = Objects.requireNonNull(findSuperInitializer(klass));
-        var s = Objects.requireNonNull(Flows.invoke(initializer, instance, List.of(), callContext)).resolveObject();
-        s.setEphemeral();
-        return s;
+    private static void computeSuper(ClassInstance instance, Klass klass, IEntityContext context) {
+        var superInitializer = findSuperInitializer(klass);
+        if(superInitializer != null) {
+            var initializer = Objects.requireNonNull(superInitializer);
+            var s = Objects.requireNonNull(Flows.invoke(initializer, instance, List.of(), context.getInstanceContext())).resolveObject();
+            s.setEphemeral();
+            s.forEachField(instance::setFieldForce);
+        }
+        else {
+            var superKlass = Objects.requireNonNull(klass.getSuperType()).resolve();
+            superKlass.forEachField(field -> {
+                instance.setFieldForce(field,
+                        Objects.requireNonNull(Instances.getDefaultValue(field, context),
+                                () -> "Default value is missing for field: " + field.getQualifiedName()));
+            });
+        }
     }
 
     public static void rollbackDDL(Iterable<Instance> instances, Commit commit, IEntityContext context) {

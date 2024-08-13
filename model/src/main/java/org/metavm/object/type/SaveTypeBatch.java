@@ -357,7 +357,8 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     private void checkForDDL() {
         for (Field field : newFields) {
-            if (Instances.findFieldInitializer(field, fromEnumKlasses.contains(field.getDeclaringType())) == null && Instances.getDefaultValue(field) == null)
+            if (Instances.findFieldInitializer(field, fromEnumKlasses.contains(field.getDeclaringType())) == null
+                    && Instances.getDefaultValue(field, context) == null)
                 throw new BusinessException(ErrorCode.MISSING_FIELD_INITIALIZER, field.getQualifiedName());
         }
         for (Field field : typeChangedFields) {
@@ -365,8 +366,13 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                 throw new BusinessException(ErrorCode.MISSING_TYPE_CONVERTER, field.getQualifiedName());
         }
         for (var klass : changingSuperKlasses) {
-            if (Instances.findSuperInitializer(klass) == null)
-                throw new BusinessException(ErrorCode.MISSING_SUPER_INITIALIZER, klass.getCode());
+            if (Instances.findSuperInitializer(klass) == null) {
+                var superClass =Objects.requireNonNull(klass.getSuperType()).resolve();
+                for (Field field : superClass.getAllFields()) {
+                    if(Instances.getDefaultValue(field, context) == null)
+                        throw new BusinessException(ErrorCode.MISSING_SUPER_INITIALIZER, klass.getCode());
+                }
+            }
         }
     }
 

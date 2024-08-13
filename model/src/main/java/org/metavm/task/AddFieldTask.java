@@ -26,7 +26,7 @@ public class AddFieldTask extends ScanByClassTask {
         if(field.isChild() && field.getType() instanceof ArrayType arrayType)
             fieldValue = new ArrayInstance(arrayType).getReference();
         else
-            fieldValue = Instances.computeFieldInitialValue(instance, field, context.getInstanceContext());
+            fieldValue = Instances.computeFieldInitialValue(instance, field, context);
         if(!instance.isFieldInitialized(field))
             instance.initField(field, fieldValue);
     }

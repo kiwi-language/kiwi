@@ -9,6 +9,7 @@ import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.task.DDLTask;
@@ -826,6 +827,35 @@ public class DDLTest extends TestCase {
         finally {
             DDLTask.DISABLE_DELAY = true;
             Constants.SESSION_TIMEOUT = Constants.DEFAULT_SESSION_TIMEOUT;
+        }
+    }
+
+    public void testCreateBeans() {
+        assemble("bean_ddl_before.masm");
+        var klass = typeManager.getTypeByCode("FooService").type();
+        Assert.assertEquals(BeanKinds.COMPONENT, klass.attributes().get(AttributeNames.BEAN_KIND));
+        Assert.assertEquals(NamingUtils.firstCharToLowerCase(klass.name()), klass.attributes().get(AttributeNames.BEAN_NAME));
+        Id fooServiceId;
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var k = context.getKlass(klass.id());
+            var index = k.getIndices().get(0);
+            var bean = instCtx.selectFirstByKey(new IndexKeyRT(
+                index,
+                Map.of(
+                     index.getFields().get(0),
+                     Instances.trueInstance()
+                )
+            ));
+            Assert.assertNotNull(bean);
+            fooServiceId = bean.getId();
+        }
+        assemble("bean_ddl_after.masm");
+        try(var context = newContext()) {
+            var instCtx = context.getInstanceContext();
+            var fooService = (ClassInstance) instCtx.get(fooServiceId);
+            Assert.assertTrue(fooService.getField("barService").isNotNull());
+            Assert.assertTrue(fooService.getField("idService").isNotNull());
         }
     }
 

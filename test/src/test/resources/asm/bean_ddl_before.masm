@@ -1,0 +1,14 @@
+@Component
+class FooService {
+
+    index IDX_ALL_FLAGS {
+        allFlags: this.allFlags;
+    }
+
+    private readonly boolean allFlags;
+
+    public FooService() {
+        this.allFlags = true;
+    }
+
+}
