@@ -4,7 +4,6 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.ddl.FieldAddition;
 import org.metavm.ddl.SystemDDL;
-import org.metavm.entity.ContextFlag;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.flow.Flows;
@@ -62,7 +61,7 @@ public class PreUpgradeTask extends ScanTask {
 
     @Override
     public long getTimeout() {
-        return 1000L;
+        return 1500L;
     }
 
     @Nullable

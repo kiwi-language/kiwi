@@ -1,8 +1,11 @@
 package org.metavm.ddl;
 
 import junit.framework.TestCase;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.entity.*;
+import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.Function;
 import org.metavm.mocks.UpgradeBar;
@@ -167,6 +170,7 @@ public class DDLManagerTest extends TestCase {
                 builder -> builder.timeout(0L).typeDefProvider(sysDefContext)
         );
         var defContext = new ReversedDefContext(standardInstanceContext, sysDefContext);
+        ModelDefRegistry.setLocalDefContext(defContext);
         bridge.setEntityContext(defContext);
         defContext.initializeFrom(sysDefContext, List.of());
 
@@ -208,7 +212,7 @@ public class DDLManagerTest extends TestCase {
                 defContext.getInstance(e);
             });
         }
-
+        defContext.close();
     }
 
     public void testWalWithKlassInst() {
@@ -217,9 +221,20 @@ public class DDLManagerTest extends TestCase {
         var instancePOs = List.of(klassKlassInst.toPO(ROOT_APP_ID));
         var wal = new WAL(ROOT_APP_ID);
         wal.saveInstances(ChangeList.inserts(instancePOs));
+        try(var dc = DefContextUtils.createReversedDefContext(wal, bootResult.entityContextFactory(), List.of())) {
+            EntityUtils.ensureTreeInitialized(dc.getKlass(Klass.class));
+        }
+    }
 
-        var dc = DefContextUtils.createReversedDefContext(wal, bootResult.entityContextFactory(), List.of());
-        EntityUtils.ensureTreeInitialized(dc.getKlass(Klass.class));
+    public void testCleanup() {
+        var wal = new WAL(ROOT_APP_ID);
+        try(var dc = DefContextUtils.createReversedDefContext(wal, bootResult.entityContextFactory(), List.of())) {
+        }
+        var defContext = ModelDefRegistry.getDefContext();
+        MatcherAssert.assertThat(defContext, CoreMatchers.instanceOf(SystemDefContext.class));
+        var vh = (HybridValueHolder<?>) StdField.enumName.getValueHolder();
+        Assert.assertFalse(vh.isLocalPresent());
+        Assert.assertTrue(defContext.containsEntity(StdField.enumName.get()));
     }
 
     private IEntityContext newContext() {

@@ -122,7 +122,7 @@ public abstract class CompilerTestBase extends TestCase  {
         loginService = null;
         platformUserManager = null;
         apiClient = null;
-        SystemConfig.setDefaultMode();
+        SystemConfig.setHybridMode();
     }
 
     protected void submit(Runnable task) {

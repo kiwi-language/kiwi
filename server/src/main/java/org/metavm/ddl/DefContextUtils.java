@@ -22,6 +22,7 @@ public class DefContextUtils {
         var defContext = new ReversedDefContext(standardInstanceContext, sysDefContext);
         bridge.setEntityContext(defContext);
         defContext.initializeFrom(sysDefContext, extraKlassIds);
+        ModelDefRegistry.setLocalDefContext(defContext);
         return defContext;
     }
 

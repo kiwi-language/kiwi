@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
 
 public class ModelDefRegistry {
 
-    private static DefContextHolder holder = new GlobalDefContextHolder();
+    private static DefContextHolder holder = new HybridDefContextHolder();
 
     public static void setHolder(DefContextHolder holder) {
         ModelDefRegistry.holder = holder;
@@ -22,8 +22,16 @@ public class ModelDefRegistry {
         holder.set(defContext);
     }
 
+    public static void setLocalDefContext(DefContext defContext) {
+        ((HybridDefContextHolder) holder).setLocal(defContext);
+    }
+
     public static DefContext getDefContext() {
         return holder.get();
+    }
+
+    public static void clearLocal() {
+        holder.clearLocal();
     }
 
     public static boolean isDefContextPresent() {

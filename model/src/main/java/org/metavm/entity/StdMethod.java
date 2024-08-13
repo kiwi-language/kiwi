@@ -3,7 +3,7 @@ package org.metavm.entity;
 import org.metavm.api.Interceptor;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
-import org.metavm.entity.natives.DirectValueHolder;
+import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.ValueHolder;
 import org.metavm.entity.natives.ValueHolderOwner;
 import org.metavm.flow.Method;
@@ -29,7 +29,7 @@ public enum StdMethod implements ValueHolderOwner<Method> {
     private final Class<?> javaClass;
     private final String methodName;
     private final List<Type> parameterTypes;
-    private ValueHolder<Method> methodHolder = new DirectValueHolder<>();
+    private ValueHolder<Method> methodHolder = new HybridValueHolder<>();
 
     StdMethod(Class<?> javaClass, String methodName, List<Type> parameterTypes) {
         this.javaClass = javaClass;
@@ -45,22 +45,34 @@ public enum StdMethod implements ValueHolderOwner<Method> {
         methodHolder.set(method);
     }
 
-    public void init(DefContext defContext) {
+    public void setLocal(Method method) {
+        methodHolder.setLocal(method);
+    }
+
+    public void init(DefContext defContext, boolean local) {
         var klass = defContext.getKlass(javaClass);
         var method = klass.getMethodByCodeAndParamTypes(
                 methodName,
                 NncUtils.map(parameterTypes, defContext::getType)
         );
-        set(method);
+        if(local)
+            setLocal(method);
+        else
+            set(method);
     }
 
     public void setValueHolder(ValueHolder<Method> methodHolder) {
         this.methodHolder = methodHolder;
     }
 
-    public static void initialize(DefContext defContext) {
+    @Override
+    public ValueHolder<Method> getValueHolder() {
+        return methodHolder;
+    }
+
+    public static void initialize(DefContext defContext, boolean local) {
         for (StdMethod value : values()) {
-            value.init(defContext);
+            value.init(defContext, local);
         }
     }
 

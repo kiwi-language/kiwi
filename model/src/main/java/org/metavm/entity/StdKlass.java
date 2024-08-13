@@ -63,12 +63,12 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
         this.javaClass = javaClass;
         this.autoDefine = autoDefine;
         this.nativeClass = nativeClass;
-        this.klassHolder = new DirectValueHolder<>();
+        this.klassHolder = new HybridValueHolder<>();
     }
 
-    public static void initialize(DefContext defContext) {
+    public static void initialize(DefContext defContext, boolean local) {
         for (StdKlass def : values()) {
-            def.init(defContext);
+            def.init(defContext, local);
         }
     }
 
@@ -98,12 +98,25 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
         klassHolder.set(klass);
     }
 
+    void setLocal(Klass klass) {
+        klass.setNativeClass(nativeClass);
+        klassHolder.setLocal(klass);
+    }
+
     public void setValueHolder(ValueHolder<Klass> klassHolder) {
         this.klassHolder = klassHolder;
     }
 
-    public void init(DefContext defContext) {
+    @Override
+    public ValueHolder<Klass> getValueHolder() {
+        return klassHolder;
+    }
+
+    public void init(DefContext defContext, boolean local) {
         var klass = defContext.getKlass(javaClass);
-        set(klass);
+        if(local)
+            setLocal(klass);
+        else
+            set(klass);
     }
 }

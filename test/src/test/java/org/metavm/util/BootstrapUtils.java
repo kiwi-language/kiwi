@@ -49,11 +49,11 @@ public class BootstrapUtils {
         if (state != null) {
             var defContext = state.defContext();
             ModelDefRegistry.setDefContext(defContext);
-            StdFunction.initializeFromDefContext(defContext);
+            StdFunction.initializeFromDefContext(defContext, false);
             StdFunction.setEmailSender(MockEmailSender.INSTANCE);
-            StdKlass.initialize(defContext);
-            StdMethod.initialize(defContext);
-            StdField.initialize(defContext);
+            StdKlass.initialize(defContext, false);
+            StdMethod.initialize(defContext, false);
+            StdField.initialize(defContext, false);
             var state = BootstrapUtils.state.copy();
             var instanceStore = new MemInstanceStore(
                     state.instanceMapper(),

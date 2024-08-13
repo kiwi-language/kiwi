@@ -123,6 +123,10 @@ public class Worker extends EntityContextFactoryAware {
                         if(!appTask.isFailed())
                             walContext.finish();
                     }
+                    finally {
+                        if(parentContext instanceof ReversedDefContext reversedDefContext)
+                            reversedDefContext.close();
+                    }
                 }
                 catch (Exception e) {
                     logger.error("Failed to execute task {}", appTask.getTitle(), e);

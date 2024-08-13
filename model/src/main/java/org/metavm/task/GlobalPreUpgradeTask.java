@@ -28,6 +28,6 @@ public class GlobalPreUpgradeTask extends GlobalTask {
 
     @Override
     public long getTimeout() {
-        return 1000L;
+        return 1500L;
     }
 }

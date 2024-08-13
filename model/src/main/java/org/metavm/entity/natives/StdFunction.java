@@ -456,7 +456,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
         this.system = system;
         this.javaMethods = new ArrayList<>(javaMethods);
         this.impl = impl;
-        this.functionHolder = new DirectValueHolder<>();
+        this.functionHolder = new HybridValueHolder<>();
         var typeParser = new TypeParserImpl((String name) -> {
             throw new NullPointerException("defContext is null");
         });
@@ -481,12 +481,15 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 .toList();
     }
 
-    public static void initializeFromDefContext(DefContext defContext) {
+    public static void initializeFromDefContext(DefContext defContext, boolean local) {
         for (StdFunction def : values()) {
-            def.set(Objects.requireNonNull(
+            var func = Objects.requireNonNull(
                     defContext.selectFirstByKey(Function.UNIQUE_IDX_CODE, def.getName()),
-                    "Function not found: " + def.getName())
-            );
+                    "Function not found: " + def.getName());
+            if(local)
+                def.setLocal(func);
+            else
+                def.set(func);
         }
     }
 
@@ -529,12 +532,21 @@ public enum StdFunction implements ValueHolderOwner<Function> {
         functionHolder.set(function);
     }
 
+    public void setLocal(Function function) {
+        functionHolder.setLocal(function);
+    }
+
     public Function get() {
         return functionHolder.get();
     }
 
     public void setValueHolder(ValueHolder<Function> functionHolder) {
         this.functionHolder = functionHolder;
+    }
+
+    @Override
+    public ValueHolder<Function> getValueHolder() {
+        return functionHolder;
     }
 
     public FunctionImpl getImpl() {

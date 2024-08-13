@@ -732,9 +732,9 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     }
 
     public void postProcess() {
-        StdKlass.initialize(this);
-        StdMethod.initialize(this);
-        StdField.initialize(this);
+        StdKlass.initialize(this, false);
+        StdMethod.initialize(this, false);
+        StdField.initialize(this, false);
         standardDefBuilder.initUserFunctions();
     }
 

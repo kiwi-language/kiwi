@@ -7,4 +7,9 @@ public interface DefContextHolder {
     void set(DefContext defContext);
 
     boolean isPresent();
+
+    default void clearLocal() {
+        throw new UnsupportedOperationException();
+    }
+
 }
