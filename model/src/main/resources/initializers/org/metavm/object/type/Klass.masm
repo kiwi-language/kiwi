@@ -1,0 +1,13 @@
+package org.metavm.object.type;
+
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.KlassFlags;
+
+class KlassInitializer {
+
+    public static KlassFlags __flags__(Klass klass) {
+        flags: allocate KlassFlags {flag1: true};
+        return flags;
+    }
+
+}
