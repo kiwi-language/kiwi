@@ -10,9 +10,11 @@ import org.metavm.flow.Flows;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.WAL;
+import org.metavm.object.type.Klass;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 @EntityType
 public class PreUpgradeTask extends ScanTask {
@@ -51,6 +53,26 @@ public class PreUpgradeTask extends ScanTask {
                 }
             }
         }
+    }
+
+    @Override
+    protected void onScanOver(IEntityContext context, IEntityContext taskContext) {
+        var newKlassIds = getExtraStdKlassIds();
+        for (String klassId : newKlassIds) {
+            var klass = context.getKlass(klassId);
+            var initializer = tryGetInitializerKlass(klass, context);
+            if (initializer != null) {
+                var creationMethod = initializer.findMethod(m -> m.isStatic() && m.getName().equals("create")
+                        && m.getParameters().isEmpty() && m.getReturnType().equals(klass.getType()));
+                if (creationMethod != null) {
+                    Objects.requireNonNull(Flows.invoke(creationMethod, null, List.of(), context));
+                }
+            }
+        }
+    }
+
+    private Klass tryGetInitializerKlass(Klass klass, IEntityContext context) {
+        return context.selectFirstByKey(Klass.UNIQUE_CODE, klass.getCodeNotNull() + "Initializer");
     }
 
     @Nullable

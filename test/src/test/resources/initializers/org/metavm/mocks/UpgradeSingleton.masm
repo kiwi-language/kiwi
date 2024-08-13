@@ -1,0 +1,16 @@
+package org.metavm.mocks;
+
+import org.metavm.mocks.UpgradeSingleton;
+
+class UpgradeSingletonInitializer {
+
+    public static UpgradeSingleton create() {
+        existing: selectFirst(org.metavm.mocks.UpgradeSingleton.IDX_ALL_FLAGS, true);
+        if(existing != null) {
+            return existing;
+        }
+        instance: allocate UpgradeSingleton {allFlags: true};
+        return instance;
+    }
+
+}

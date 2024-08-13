@@ -4,12 +4,16 @@ import junit.framework.TestCase;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityField;
+import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.Function;
 import org.metavm.mocks.UpgradeBar;
 import org.metavm.mocks.UpgradeFoo;
+import org.metavm.mocks.UpgradeSingleton;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
@@ -23,6 +27,9 @@ import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -66,8 +73,9 @@ public class DDLManagerTest extends TestCase {
 //        Assert.assertEquals(fooKlass.getCodeNotNull() + "Initializer", request.initializerKlasses().get(0).code());
         TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
 
+        var blacklist = computeBlacklist(0);
         bootResult = BootstrapUtils.create(false, false, bootResult.allocatorStore(), bootResult.columnStore(), bootResult.typeTagStore(),
-                Set.of(UpgradeBar.class, KlassFlags.class), Set.of(ReflectionUtils.getField(UpgradeFoo.class, "bar"), ReflectionUtils.getField(Klass.class, "flags")));
+                blacklist.classBlacklist, blacklist.fieldBlacklist);
         entityContextFactory = bootResult.entityContextFactory();
         var typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
         ddlManager = new DDLManager(entityContextFactory, typeManager);
@@ -113,9 +121,9 @@ public class DDLManagerTest extends TestCase {
         var request = ddlManager.buildUpgradePreparationRequest(0);
         TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
 
+        var blacklist = computeBlacklist(0);
         bootResult = BootstrapUtils.create(false, false, bootResult.allocatorStore(), bootResult.columnStore(), bootResult.typeTagStore(),
-                Set.of(KlassFlags.class, UpgradeBar.class),
-                Set.of(ReflectionUtils.getField(Klass.class, "flags"), ReflectionUtils.getField(UpgradeFoo.class, "bar")));
+                blacklist.classBlacklist, blacklist.fieldBlacklist);
         entityContextFactory = bootResult.entityContextFactory();
         var typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
         ddlManager = new DDLManager(entityContextFactory, typeManager);
@@ -213,6 +221,60 @@ public class DDLManagerTest extends TestCase {
             });
         }
         defContext.close();
+    }
+
+    public void testNewSingletonClass() {
+        var request = ddlManager.buildUpgradePreparationRequest(0);
+        var blacklist = computeBlacklist(0);
+        bootResult = BootstrapUtils.create(false, false, bootResult.allocatorStore(), bootResult.columnStore(), bootResult.typeTagStore(),
+                blacklist.classBlacklist, blacklist.fieldBlacklist);
+        entityContextFactory = bootResult.entityContextFactory();
+        var typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
+        ddlManager = new DDLManager(entityContextFactory, typeManager);
+
+        TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
+        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
+
+        var bootstrap1 = new Bootstrap(entityContextFactory, new StdAllocators(bootResult.allocatorStore()),
+                bootResult.columnStore(), bootResult.typeTagStore(), bootResult.stdIdStore());
+        bootstrap1.boot();
+        TestUtils.doInTransactionWithoutResult(() -> bootstrap1.save(false));
+        try(var context = newContext()) {
+            var singleton = context.selectFirstByKey(UpgradeSingleton.IDX_ALL_FLAGS, true);
+            Assert.assertNotNull(singleton);
+        }
+    }
+
+    private static Blacklist computeBlacklist(int since) {
+        var klasses = EntityUtils.getModelClasses();
+        var classBlacklist = new HashSet<Class<?>>();
+        var fieldBlacklist = new HashSet<Field>();
+        for (Class<?> k : klasses) {
+            var entityType = k.getAnnotation(EntityType.class);
+            if(entityType != null && entityType.since() > since)
+                classBlacklist.add(k);
+            else {
+                ReflectionUtils.forEachField(k, f -> {
+                    if(Modifier.isStatic(f.getModifiers()) || Modifier.isTransient(f.getModifiers()))
+                        return;
+                    var entityField = f.getAnnotation(EntityField.class);
+                    if(entityField != null) {
+                        if(entityField.since() > since)
+                            fieldBlacklist.add(f);
+                    }
+                    else {
+                        var childEntity = f.getAnnotation(ChildEntity.class);
+                        if(childEntity != null && childEntity.since() > since)
+                            fieldBlacklist.add(f);
+                    }
+                });
+            }
+        }
+        return new Blacklist(classBlacklist, fieldBlacklist);
+    }
+
+    private record Blacklist(Set<Class<?>> classBlacklist, Set<Field> fieldBlacklist) {
     }
 
     public void testWalWithKlassInst() {

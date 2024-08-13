@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +57,9 @@ public class DDLManager extends EntityContextFactoryAware {
                 newKlassIds.add(klass.getStringId());
                 var instance = defContext.getInstance(klass);
                 instancePOs.add(instance.toPO(Constants.ROOT_APP_ID));
+                var initializerKlass = tryBuildInitializerKlass(klass);
+                if(initializerKlass != null)
+                    initializers.add(initializerKlass);
             } else {
                 boolean anyMatch = false;
                 for (Field field : klass.getFields()) {
@@ -76,10 +80,17 @@ public class DDLManager extends EntityContextFactoryAware {
     }
 
     private KlassDTO buildInitializerKlass(Klass klass) {
+        var klassDTO = tryBuildInitializerKlass(klass);
+        if(klassDTO == null)
+            throw new InternalException("Initializer assembly file is missing for class: " + klass.getCodeNotNull());
+        return klassDTO;
+    }
+
+    private @Nullable KlassDTO tryBuildInitializerKlass(Klass klass) {
         var asmFile = "/initializers/" + klass.getCodeNotNull().replace('.', '/') + ".masm";
         try(var input = Klass.class.getResourceAsStream(asmFile)) {
             if(input == null)
-                throw new InternalException("Initializer assembly file is missing for class: " + klass.getCodeNotNull());
+                return null;
             var assembler = AssemblerFactory.createWithStandardTypes(ModelDefRegistry.getDefContext());
             return (KlassDTO) assembler.assemble(input).get(0);
         }
@@ -96,22 +107,22 @@ public class DDLManager extends EntityContextFactoryAware {
         }
     }
 
-    private void preUpgrade(PreUpgradeRequest request, IEntityContext context) {
+    private void preUpgrade(PreUpgradeRequest request, IEntityContext outerContext) {
         FlowSavingContext.initConfig();
         FlowSavingContext.skipPreprocessing(true);
-        var defWAL = context.bind(new WAL(Constants.ROOT_APP_ID, request.walContent()));
-        var writeWAL = context.bind(new WAL(context.getAppId()));
+        var defWAL = outerContext.bind(new WAL(Constants.ROOT_APP_ID, request.walContent()));
+        var writeWAL = outerContext.bind(new WAL(outerContext.getAppId()));
         String ddlId;
         try(var defContext = DefContextUtils.createReversedDefContext(defWAL, entityContextFactory, request.newKlassIds())) {
-            try (var bufferingContext = entityContextFactory.newContext(context.getAppId(), defContext,
+            try (var context = entityContextFactory.newContext(outerContext.getAppId(), defContext,
                     builder -> builder
                             .timeout(DDL_SESSION_TIMEOUT)
                             .writeWAL(writeWAL)
             )) {
-                var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), bufferingContext);
+                var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), context);
                 var fieldAdds = new ArrayList<FieldAddition>();
                 for (FieldAdditionDTO fieldAddDTO : request.fieldAdditions()) {
-                    var field = bufferingContext.getField(fieldAddDTO.fieldId());
+                    var field = context.getField(fieldAddDTO.fieldId());
                     fieldAdds.add(
                             new FieldAddition(
                                     field,
@@ -120,17 +131,21 @@ public class DDLManager extends EntityContextFactoryAware {
                     );
                 }
                 var ddl = new SystemDDL(fieldAdds);
-                bufferingContext.bind(ddl);
-                bufferingContext.finish();
+                context.bind(ddl);
+                context.finish();
                 ddlId = ddl.getStringId();
             }
         }
-        context.bind(new PreUpgradeTask(writeWAL, defWAL, request.newKlassIds(), ddlId));
+        outerContext.bind(new PreUpgradeTask(writeWAL, defWAL, request.newKlassIds(), ddlId));
         FlowSavingContext.clearConfig();
     }
 
+    private Klass tryGetInitializerKlass(Klass klass, IEntityContext context) {
+        return context.selectFirstByKey(Klass.UNIQUE_CODE, klass.getCodeNotNull() + "Initializer");
+    }
+
     private Method getSystemFieldInitializer(SaveTypeBatch batch, Klass klass, String fieldName) {
-        var initializerKlass = batch.getContext().selectFirstByKey(Klass.UNIQUE_CODE, klass.getCodeNotNull() + "Initializer");
+        var initializerKlass = tryGetInitializerKlass(klass, batch.getContext());
         if(initializerKlass == null)
             throw new InternalException("Cannot find initializer class for " + klass.getName());
         var methodName = "__" + fieldName +"__";
