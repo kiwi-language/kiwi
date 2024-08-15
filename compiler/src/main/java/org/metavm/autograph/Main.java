@@ -33,7 +33,7 @@ public class Main {
 
     private static String selectedEnv = getEnvPath("default");
 
-    public static final String DEFAULT_HOST = "http://localhost:8080";
+    public static final String DEFAULT_HOST = "https://metavm.tech/rest";
 
     private final Compiler compiler;
     private final String sourceRoot;
@@ -373,7 +373,7 @@ public class Main {
                 main.run();
             }
             case "deploy_direct" -> {
-                CompilerHttpUtils.setHost("http://localhost:8080");
+                CompilerHttpUtils.setHost("https://metavm.tech/rest");
                 var main = new Main(
                         args[1],
                         args[2],

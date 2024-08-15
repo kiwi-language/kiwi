@@ -19,7 +19,7 @@ import java.util.List;
 
 public class CompilerHttpUtils {
 
-    private static String host = "http://localhost:8080";
+    private static String host = "https://metavm.tech/rest";
     private final static HttpClient client;
     private static long appId;
 
