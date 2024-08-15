@@ -25,6 +25,11 @@ public class MockCache implements Cache {
     }
 
     @Override
+    public void clear() {
+        map.clear();
+    }
+
+    @Override
     public void batchRemove(List<Long> ids) {
         ids.forEach(map::remove);
     }
