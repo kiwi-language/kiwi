@@ -8,6 +8,7 @@ import org.metavm.event.EventQueue;
 import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.cache.Cache;
+import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.cache.MockCache;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Types;
@@ -31,7 +32,7 @@ public class InstanceContextTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         MockStandardTypesInitializer.init();
-        instanceStore = new MemInstanceStore();
+        instanceStore = new MemInstanceStore(new LocalCache());
         entityRepository = new MockEntityRepository(new MemTypeRegistry());
         cache = new MockCache();
         eventQueue = new MockEventQueue();

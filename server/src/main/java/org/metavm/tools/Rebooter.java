@@ -3,6 +3,7 @@ package org.metavm.tools;
 import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.MockInstanceLogService;
+import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.cache.MockCache;
 import org.metavm.object.type.DirectoryAllocatorStore;
 import org.metavm.object.type.FileColumnStore;
@@ -21,7 +22,7 @@ public class Rebooter {
         var stdAllocators = new StdAllocators(allocatorStore);
         var eventQueue = new MockEventQueue();
         var indexEntryMapper = new MemIndexEntryMapper();
-        var instanceStore = new MemInstanceStore();
+        var instanceStore = new MemInstanceStore(new LocalCache());
         var idProvider = new MockIdProvider();
 
         var instanceContextFactory = new InstanceContextFactory(instanceStore, eventQueue);

@@ -7,6 +7,7 @@ import org.metavm.event.MockEventQueue;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.object.instance.InstanceStore;
 import org.metavm.object.instance.MockInstanceLogService;
+import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.cache.MockCache;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.*;
@@ -36,7 +37,7 @@ public class BootstrapTest extends TestCase {
         columnStore = new MemColumnStore();
         typeTagStore = new MemTypeTagStore();
         stdIdStore = new MemoryStdIdStore();
-        instanceStore = new MemInstanceStore();
+        instanceStore = new MemInstanceStore(new LocalCache());
         idProvider = new MockIdProvider();
     }
 
@@ -123,7 +124,7 @@ public class BootstrapTest extends TestCase {
             var modelIds = NncUtils.map(entities, e -> originalDefContext.getIdentityContext().getModelId(e));
             var originalIds = NncUtils.map(entities, e -> originalDefContext.getInstance(e).tryGetId());
             stdIdStore = new MemoryStdIdStore();
-            instanceStore = new MemInstanceStore();
+            instanceStore = new MemInstanceStore(new LocalCache());
             idProvider = new MockIdProvider();
             var bootstrap = newBootstrap();
             doInTransactionWithoutResult(bootstrap::bootAndSave);
@@ -154,7 +155,7 @@ public class BootstrapTest extends TestCase {
         var bootstrap1 = newBootstrap();
         bootstrap1.boot();
         TestUtils.doInTransactionWithoutResult(() -> bootstrap1.save(true));
-        instanceStore = new MemInstanceStore();
+        instanceStore = new MemInstanceStore(new LocalCache());
         idProvider = new MockIdProvider();
         stdIdStore = new MemoryStdIdStore();
         var bootstrap2 = newBootstrap();

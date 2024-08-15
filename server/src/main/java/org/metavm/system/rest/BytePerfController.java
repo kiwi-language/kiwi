@@ -3,7 +3,7 @@ package org.metavm.system.rest;
 import org.metavm.common.Result;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
-import org.metavm.object.instance.cache.RedisCache;
+import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.StreamVisitor;
@@ -15,9 +15,10 @@ import java.io.ByteArrayInputStream;
 @RequestMapping("/perf")
 public class BytePerfController extends EntityContextFactoryAware {
 
-    private final RedisCache cache;
+//    private final RedisCache cache;
+    private final LocalCache cache;
 
-    public BytePerfController(EntityContextFactory entityContextFactory, RedisCache cache) {
+    public BytePerfController(EntityContextFactory entityContextFactory, LocalCache cache) {
         super(entityContextFactory);
         this.cache = cache;
     }

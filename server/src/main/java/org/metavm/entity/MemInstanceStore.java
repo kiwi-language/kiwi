@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.InstanceStore;
+import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.mappers.InstanceMapper;
 import org.metavm.object.instance.persistence.mappers.*;
@@ -12,24 +13,26 @@ public class MemInstanceStore extends InstanceStore {
 
     private final IndexEntryMapper indexEntryMapper;
 
-    public MemInstanceStore() {
-        this(new MemIndexEntryMapper());
+    public MemInstanceStore(Cache cache) {
+        this(new MemIndexEntryMapper(), cache);
     }
 
-    public MemInstanceStore(MemIndexEntryMapper indexEntryMapper) {
+    public MemInstanceStore(MemIndexEntryMapper indexEntryMapper, Cache cache) {
         this(
                 new MemInstanceMapper(),
                 indexEntryMapper,
-                new MemReferenceMapper()
+                new MemReferenceMapper(),
+                cache
         );
     }
 
     public MemInstanceStore(InstanceMapper instanceMapper,
                             IndexEntryMapper indexEntryMapper,
-                            ReferenceMapper referenceMapper
+                            ReferenceMapper referenceMapper,
+                            Cache cache
                             ) {
         super(instanceMapper,
-                indexEntryMapper, referenceMapper);
+                indexEntryMapper, referenceMapper, cache);
         this.indexEntryMapper = indexEntryMapper;
     }
 

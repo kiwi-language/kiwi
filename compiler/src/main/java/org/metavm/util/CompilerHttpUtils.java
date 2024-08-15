@@ -19,7 +19,7 @@ import java.util.List;
 
 public class CompilerHttpUtils {
 
-    private static String host = "https://metavm.tech/rest";
+    private static String host = Constants.DEFAULT_HOST;
     private final static HttpClient client;
     private static long appId;
 

@@ -5,7 +5,9 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.InstanceIndexKey;
 import org.metavm.object.type.*;
 import org.metavm.util.NncUtils;
+import org.metavm.util.StreamVisitor;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -80,6 +82,33 @@ public class PersistenceUtils {
             case ArrayType arrayType -> extractReferences(arrayType, instancePO);
             default -> Set.of();
         };
+    }
+
+    public static InstancePO buildInstancePO(long appId, long id, byte[] treeBytes) {
+        var ref = new Object() {
+            long version;
+            long syncVersion;
+            long nextNodeId;
+        };
+        new StreamVisitor(new ByteArrayInputStream(treeBytes)) {
+            @Override
+            public void visitVersion(long version) {
+                ref.version = version;
+            }
+
+            @Override
+            public void visitNextNodeId(long nextNodeId) {
+                ref.nextNodeId = nextNodeId;
+            }
+        }.visitGrove();
+        return new InstancePO(
+                appId,
+                id,
+                treeBytes,
+                ref.version,
+                ref.syncVersion,
+                ref.nextNodeId
+        );
     }
 
 }

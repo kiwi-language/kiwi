@@ -1,8 +1,8 @@
 package org.metavm.system;
 
-import org.springframework.stereotype.Component;
-import org.metavm.object.instance.cache.RedisCache;
+import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.persistence.mappers.InstanceMapper;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
 import java.util.Map;
@@ -14,9 +14,10 @@ public class StoreManager {
 
     private final InstanceMapper instanceMapper;
 
-    private final RedisCache cache;
+//    private final RedisCache cache;
+    private final LocalCache cache;
 
-    public StoreManager(InstanceMapper instanceMapper, RedisCache cache) {
+    public StoreManager(InstanceMapper instanceMapper, LocalCache cache) {
         this.instanceMapper = instanceMapper;
         this.cache = cache;
     }

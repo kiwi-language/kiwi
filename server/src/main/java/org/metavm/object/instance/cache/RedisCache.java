@@ -1,6 +1,5 @@
 package org.metavm.object.instance.cache;
 
-import org.springframework.stereotype.Component;
 import org.metavm.util.KeyValue;
 import org.metavm.util.NncUtils;
 import org.metavm.util.RedisRepository;
@@ -8,7 +7,7 @@ import org.metavm.util.RedisRepository;
 import java.util.Collection;
 import java.util.List;
 
-@Component
+//@Component
 public class RedisCache implements Cache {
 
     private final RedisRepository redisRepository;
@@ -32,7 +31,8 @@ public class RedisCache implements Cache {
         );
     }
 
-    public void flushDB() {
+    @Override
+    public void clear() {
         redisRepository.flushDB();
     }
 

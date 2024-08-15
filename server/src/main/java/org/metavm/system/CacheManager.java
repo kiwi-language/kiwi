@@ -1,15 +1,16 @@
 package org.metavm.system;
 
-import org.springframework.stereotype.Component;
-import org.metavm.object.instance.cache.RedisCache;
+import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.util.BytesUtils;
+import org.springframework.stereotype.Component;
 
 @Component
 public class CacheManager {
 
-    private final RedisCache cache;
+//    private final RedisCache cache;
+    private final LocalCache cache;
 
-    public CacheManager(RedisCache cache) {
+    public CacheManager(LocalCache cache) {
         this.cache = cache;
     }
 
@@ -18,7 +19,7 @@ public class CacheManager {
     }
 
     public void clearCache() {
-        cache.flushDB();
+        cache.clear();
     }
 
     public void saveCacheBytes(long id) {

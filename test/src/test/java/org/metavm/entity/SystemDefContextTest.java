@@ -11,6 +11,7 @@ import org.metavm.mocks.Baz;
 import org.metavm.mocks.Foo;
 import org.metavm.mocks.Qux;
 import org.metavm.object.instance.ObjectInstanceMap;
+import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.PhysicalId;
@@ -37,7 +38,7 @@ public class SystemDefContextTest extends TestCase {
         idProvider = new MockIdProvider();
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = InstanceContextBuilder.newBuilder(Constants.ROOT_APP_ID,
-                        new MemInstanceStore(), new DefaultIdInitializer(idProvider), bridge, bridge, bridge, bridge)
+                        new MemInstanceStore(new LocalCache()), new DefaultIdInitializer(idProvider), bridge, bridge, bridge, bridge)
                 .readonly(false)
                 .build();
         defContext = new SystemDefContext(

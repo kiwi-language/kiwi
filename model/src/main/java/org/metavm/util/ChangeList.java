@@ -108,4 +108,8 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         );
     }
 
+    public void forEachInsertOrUpdate(Consumer<T> action) {
+        inserts.forEach(action);
+        updates.forEach(action);
+    }
 }

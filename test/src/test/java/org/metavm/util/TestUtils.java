@@ -24,7 +24,7 @@ import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.flow.rest.ParameterDTO;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
-import org.metavm.object.instance.cache.MockCache;
+import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.core.DefaultViewId;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
@@ -245,7 +245,7 @@ public class TestUtils {
                                                                    MemInstanceStore instanceStore) {
         InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue())
                 .setIdService(idProvider);
-        instanceContextFactory.setCache(new MockCache());
+        instanceContextFactory.setCache(new LocalCache());
         return instanceContextFactory;
     }
 

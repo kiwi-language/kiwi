@@ -6,6 +6,7 @@ import org.metavm.entity.*;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
+import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.log.InstanceLogServiceImpl;
 import org.metavm.object.instance.log.TaskHandler;
 import org.metavm.object.instance.search.InstanceSearchService;
@@ -58,7 +59,8 @@ public class BootstrapUtils {
             var instanceStore = new MemInstanceStore(
                     state.instanceMapper(),
                     state.indexEntryMapper(),
-                    state.referenceMapper()
+                    state.referenceMapper(),
+                    new LocalCache()
             );
             var idProvider = new IdService(state.blockMapper(), new RegionManager(state.regionMapper()));
             var instanceSearchService = state.instanceSearchService();
@@ -113,7 +115,7 @@ public class BootstrapUtils {
         regionManager.initialize();
         var blockMapper = new MemBlockMapper();
         var idProvider = new IdService(blockMapper, regionManager);
-        var instanceStore = new MemInstanceStore();
+        var instanceStore = new MemInstanceStore(new LocalCache());
         var instanceSearchService = new MemInstanceSearchServiceV2();
         var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
         var stdIdStore = new MemoryStdIdStore();
