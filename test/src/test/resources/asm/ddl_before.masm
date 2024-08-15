@@ -2,11 +2,13 @@ class Product {
     private title string name;
     private int price;
     private Inventory inventory;
+    private string manufacturer;
 
-    public Product(string name, int price, Inventory inventory) {
+    public Product(string name, int price, Inventory inventory, string manufacturer) {
         this.name = name;
         this.price = price;
         this.inventory = inventory;
+        this.manufacturer = manufacturer;
     }
 
     public string getName() {
@@ -31,6 +33,14 @@ class Product {
 
     public void setInventory(Inventory inventory) {
         this.inventory = inventory;
+    }
+
+    public string getManufacturer() {
+        return this.manufacturer;
+    }
+
+    public void setManufacturer(string manufacturer) {
+        this.manufacturer = manufacturer;
     }
 
 }

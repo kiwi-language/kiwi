@@ -705,13 +705,13 @@ public class Instances {
             return Instances.nullInstance();
         else if (type instanceof PrimitiveType primitiveType)
             return primitiveType.getDefaultValue();
-        else if(field.getType() instanceof ClassType ct && ct.resolve().isBeanClass()) {
+        else if(field.getType() instanceof ClassType ct) {
             var beanDefReg = BeanDefinitionRegistry.getInstance(context);
             var beans = beanDefReg.getBeansOfType(ct);
-            return beans.isEmpty() ? null : beans.get(0).getReference();
+            if(!beans.isEmpty())
+                return beans.get(0).getReference();
         }
-        else
-            return null;
+        return null;
     }
 
     public static Value computeFieldInitialValue(ClassInstance instance, Field field, IEntityContext context) {

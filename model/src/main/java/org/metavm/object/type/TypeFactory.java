@@ -205,7 +205,7 @@ public abstract class TypeFactory {
                 else
                     batch.addToNonChildField(field);
             }
-            if(!fieldType.equals(field.getType())) {
+            if(!fieldType.isAssignableFrom(field.getType())) {
                 field.setType(fieldType);
                 field.setTag(declaringType.nextFieldTag());
                 if(!field.isStatic())

@@ -14,13 +14,15 @@ class Product extends Versioned {
     private child Inventory inventory;
     private boolean available;
     private string|null description;
+    private any manufacturer;
 
-    public Product(string name, double price, Inventory inventory, string|null description) {
+    public Product(string name, double price, Inventory inventory, string|null description, any manufacturer) {
         super();
         this.name = name;
         this.price = price;
         this.inventory = inventory;
         this.description = description;
+        this.manufacturer = manufacturer;
     }
 
     public string getName() {
@@ -75,6 +77,14 @@ class Product extends Versioned {
     private Versioned __Versioned__() {
         v: new Versioned();
         return v;
+    }
+
+    public any getManufacturer() {
+        return this.manufacturer;
+    }
+
+    public void setManufacturer(any manufacturer) {
+        this.manufacturer = manufacturer;
     }
 
 }

@@ -62,7 +62,8 @@ public class DDLTest extends TestCase {
                 "inventory", Map.of(
                         "quantity", 100
                 ),
-                "price", 100
+                "price", 100,
+                "manufacturer", "AppEase"
         ));
         var shoes = apiClient.getObject(shoesId);
         Assert.assertEquals(100L, shoes.get("price"));
@@ -79,7 +80,8 @@ public class DDLTest extends TestCase {
                 "inventory", Map.of(
                         "quantity", 100
                 ),
-                "price", 20
+                "price", 20,
+                "manufacturer", "AppEase"
         ));
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var commit = context.getEntity(Commit.class, commitId);
@@ -204,7 +206,8 @@ public class DDLTest extends TestCase {
                 "inventory", Map.of(
                         "quantity", 100
                 ),
-                "price", 100
+                "price", 100,
+                "manufacturer", "AppEase"
         ));
         var shoes = apiClient.getObject(shoesId);
         Assert.assertEquals(100L, shoes.get("price"));
@@ -227,7 +230,8 @@ public class DDLTest extends TestCase {
                 "inventory", Map.of(
                         "quantity", 100
                 ),
-                "price", 100
+                "price", 100,
+                "manufacturer", "AppEase"
         ));
         for (int i = 0; i < 16; i++) {
             saveInstance("Product", Map.of(
@@ -235,7 +239,8 @@ public class DDLTest extends TestCase {
                     "inventory", Map.of(
                             "quantity", 100
                     ),
-                    "price", 100
+                    "price", 100,
+                    "manufacturer", "AppEase"
             ));
         }
         var shoes = apiClient.getObject(shoesId);
@@ -243,7 +248,8 @@ public class DDLTest extends TestCase {
         saveInstance("Product", Map.of(
                 "name", "Hat",
                 "inventory", inventoryId,
-                "price", 20
+                "price", 20,
+                "manufacturer", "AppEase"
         ));
         var commitId = assemble("ddl_after.masm", false);
         Field availableField;
@@ -751,7 +757,8 @@ public class DDLTest extends TestCase {
                     "inventory", Map.of(
                             "quantity", 100
                     ),
-                    "price", 100
+                    "price", 100,
+                    "manufacturer", "AppEase"
             ));
             var shoes = apiClient.getObject(shoesId);
             var inventoryId = shoes.getString("inventory");

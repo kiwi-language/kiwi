@@ -9,13 +9,6 @@ abstract class BaseService {
 }
 
 @Component
-class IdService {
-
-    public IdService() {}
-
-}
-
-@Component
 class FooService extends BaseService {
 
     index IDX_ALL_FLAGS {
@@ -48,3 +41,15 @@ class BarService extends BaseService {
     }
 
 }
+
+interface IdService {
+
+}
+
+@Component
+class IdServiceImpl implements IdService {
+
+    public IdService() {}
+
+}
+
