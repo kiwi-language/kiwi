@@ -335,7 +335,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public boolean containsEntity(Class<?> entityType, Id id) {
-        return entityMap.containsKey(id);
+        return entityMap.containsKey(id) || parent != null && parent.containsEntity(entityType, id);
     }
 
     @Override

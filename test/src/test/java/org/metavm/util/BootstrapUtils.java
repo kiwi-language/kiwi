@@ -95,7 +95,8 @@ public class BootstrapUtils {
                     state.allocatorStore(),
                     state.columnStore(),
                     state.stdIdStore(),
-                    state.typeTagStore()
+                    state.typeTagStore(),
+                    new MetaContextCache(entityContextFactory)
             );
         } else {
             return create(true, true, new MemAllocatorStore(), new MemColumnStore(), new MemTypeTagStore(), Set.of(), Set.of());
@@ -175,7 +176,8 @@ public class BootstrapUtils {
                 allocatorStore,
                 columnStore,
                 stdIdStore,
-                typeTagStore
+                typeTagStore,
+                new MetaContextCache(entityContextFactory)
         );
     }
 

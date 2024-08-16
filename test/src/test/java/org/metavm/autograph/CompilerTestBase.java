@@ -81,7 +81,7 @@ public abstract class CompilerTestBase extends TestCase  {
                 new TaskManager(entityContextFactory, new MockTransactionOperations()),
                 new BeanManager());
         instanceManager = new InstanceManager(entityContextFactory,
-                bootResult.instanceStore(), instanceQueryService);
+                bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
         typeManager.setInstanceManager(instanceManager);
         flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
         flowManager.setTypeManager(typeManager);
@@ -100,7 +100,7 @@ public abstract class CompilerTestBase extends TestCase  {
                 loginService, entityQueryService, new MockEventQueue(), verificationCodeService);
         applicationManager = new ApplicationManager(entityContextFactory, roleManager, platformUserManager,
                 verificationCodeService, (IdService) bootResult.idProvider(), entityQueryService);
-        var apiService = new ApiService(entityContextFactory);
+        var apiService = new ApiService(entityContextFactory, bootResult.metaContextCache());
         apiClient = new ApiClient(apiService);
         ContextUtil.resetProfiler();
     }

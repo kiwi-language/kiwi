@@ -22,7 +22,7 @@ public class ApiServiceTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
-        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory()));
+        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache()));
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
         instanceManager = managers.instanceManager();

@@ -37,10 +37,13 @@ public class InstanceManager extends EntityContextFactoryAware {
 
     private final InstanceQueryService instanceQueryService;
 
-    public InstanceManager(EntityContextFactory entityContextFactory, InstanceStore instanceStore, InstanceQueryService instanceQueryService) {
+    private final MetaContextCache metaContextCache;
+
+    public InstanceManager(EntityContextFactory entityContextFactory, InstanceStore instanceStore, InstanceQueryService instanceQueryService, MetaContextCache metaContextCache) {
         super(entityContextFactory);
         this.instanceStore = instanceStore;
         this.instanceQueryService = instanceQueryService;
+        this.metaContextCache = metaContextCache;
     }
 
     @Transactional(readOnly = true)
@@ -308,6 +311,12 @@ public class InstanceManager extends EntityContextFactoryAware {
                 objectTreeMap.put(instance, InstanceNode.create(pathTree, instance.getType()))
         );
         return objectTreeMap;
+    }
+
+    @Override
+    public IEntityContext newContext() {
+        var appId = ContextUtil.getAppId();
+        return entityContextFactory.newContext(appId, metaContextCache.get(appId));
     }
 
     private IInstanceContext newInstanceContext() {

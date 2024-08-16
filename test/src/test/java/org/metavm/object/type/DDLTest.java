@@ -42,7 +42,7 @@ public class DDLTest extends TestCase {
         var commonManagers = TestUtils.createCommonManagers(bootResult);
         typeManager = commonManagers.typeManager();
         entityContextFactory = bootResult.entityContextFactory();
-        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory()));
+        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache()));
         instanceStore = bootResult.instanceStore();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }

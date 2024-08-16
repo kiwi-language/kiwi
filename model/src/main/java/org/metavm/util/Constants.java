@@ -40,7 +40,7 @@ public class Constants {
     public static final String DEFAULT_HOST = "http://localhost:8080";
     public static EmailSender emailSender;
 
-    public final static long DEFAULT_SESSION_TIMEOUT = 500L;
+    public final static long DEFAULT_SESSION_TIMEOUT = 300L;
     public static long SESSION_TIMEOUT = DEFAULT_SESSION_TIMEOUT;
     public static long DDL_SESSION_TIMEOUT = 6000L;
 

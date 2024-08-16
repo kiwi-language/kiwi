@@ -33,8 +33,11 @@ public class ApiService extends EntityContextFactoryAware {
     public static final String KEY_ID = "$id";
     public static final String KEY_CLASS = "$class";
 
-    public ApiService(EntityContextFactory entityContextFactory) {
+    private final MetaContextCache metaContextCache;
+
+    public ApiService(EntityContextFactory entityContextFactory, MetaContextCache metaContextCache) {
         super(entityContextFactory);
+        this.metaContextCache = metaContextCache;
     }
 
     @Transactional
@@ -543,4 +546,9 @@ public class ApiService extends EntityContextFactoryAware {
     private record ResolutionResult(Method method, List<Value> arguments) {
     }
 
+    @Override
+    public IEntityContext newContext() {
+        var appId = ContextUtil.getAppId();
+        return entityContextFactory.newContext(appId, metaContextCache.get(appId));
+    }
 }

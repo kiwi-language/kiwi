@@ -19,6 +19,7 @@ public record BootstrapResult(
         MemAllocatorStore allocatorStore,
         MemColumnStore columnStore,
         MemoryStdIdStore stdIdStore,
-        MemTypeTagStore typeTagStore
+        MemTypeTagStore typeTagStore,
+        MetaContextCache metaContextCache
 ) {
 }

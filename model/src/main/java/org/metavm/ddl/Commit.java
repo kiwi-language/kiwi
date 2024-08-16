@@ -12,11 +12,14 @@ import org.metavm.util.NncUtils;
 
 import java.util.Date;
 import java.util.List;
+import java.util.function.Consumer;
 
 @EntityType
 public class Commit extends Entity implements RedirectStatus {
 
     public static final IndexDef<Commit> IDX_RUNNING = IndexDef.create(Commit.class, "running");
+
+    public static Consumer<Long> META_CONTEXT_INVALIDATE_HOOK;
 
     private final String requestJSON;
     private final Date time = new Date();
@@ -95,6 +98,8 @@ public class Commit extends Entity implements RedirectStatus {
             throw new IllegalStateException("Commit is already submitted");
         this.submitted = true;
         wal.commit();
+        if(META_CONTEXT_INVALIDATE_HOOK != null)
+            META_CONTEXT_INVALIDATE_HOOK.accept(wal.getAppId());
     }
 
     public boolean hasCleanUpWorks() {

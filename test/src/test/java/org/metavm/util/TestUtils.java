@@ -465,7 +465,7 @@ public class TestUtils {
         var taskManager = new TaskManager(entityContextFactory, transactionOps);
         var typeManager = new TypeManager(entityContextFactory, entityQueryService, taskManager, new BeanManager());
         var flowExecutionService = new FlowExecutionService(entityContextFactory);
-        var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService);
+        var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
         var flowManager = new FlowManager(entityContextFactory, transactionOps);
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
         var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
