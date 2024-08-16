@@ -59,6 +59,9 @@ public class MetaContextCache extends EntityContextFactoryAware {
         var typeDefs = context.selectByKey(Klass.IDX_ALL_FLAG, true);
         for (TypeDef typeDef : typeDefs) {
             EntityUtils.ensureTreeInitialized(typeDef);
+            if(typeDef instanceof Klass klass && klass.isEnum()) {
+                klass.getEnumConstants();
+            }
         }
 //        });
 //        try {
