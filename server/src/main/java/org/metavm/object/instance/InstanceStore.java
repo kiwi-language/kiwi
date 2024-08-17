@@ -31,7 +31,7 @@ public class InstanceStore extends BaseInstanceStore {
     protected final InstanceMapper instanceMapper;
     private final IndexEntryMapper indexEntryMapper;
     protected final ReferenceMapper referenceMapper;
-    private final Cache cache;
+//    private final Cache cache;
 
     public InstanceStore(InstanceMapper instanceMapper,
                          IndexEntryMapper indexEntryMapper,
@@ -40,7 +40,7 @@ public class InstanceStore extends BaseInstanceStore {
         this.instanceMapper = instanceMapper;
         this.indexEntryMapper = indexEntryMapper;
         this.referenceMapper = referenceMapper;
-        this.cache = cache;
+//        this.cache = cache;
         WAL.setCommitHook(wal -> {
             save(wal.getInstanceChanges());
             saveReferences(wal.getReferenceChanges());
@@ -51,7 +51,7 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public void save(ChangeList<InstancePO> diff) {
         try (var entry = ContextUtil.getProfiler().enter("InstanceStore.save")) {
-            cache.save(diff);
+//            cache.save(diff);
             entry.addMessage("numChanges", diff.inserts().size() + diff.updates().size() + diff.deletes().size());
             diff.apply(
                     instanceMapper::batchInsert,
@@ -200,23 +200,24 @@ public class InstanceStore extends BaseInstanceStore {
             entry.addMessage("numInstances", ids.size());
             if (entry.isVerbose())
                 entry.addMessage("ids", ids);
-            var hits = cache.batchGet(ids);
-            var result = new ArrayList<InstancePO>();
-            var missedIds = new ArrayList<Long>();
-            NncUtils.biForEach(ids, hits, (id, hit) -> {
-                if(hit != null)
-                    result.add(PersistenceUtils.buildInstancePO(context.getAppId(), id, hit));
-                else
-                    missedIds.add(id);
-            });
-            if(!missedIds.isEmpty()) {
-                var records = instanceMapper.selectByIds(context.getAppId(), missedIds,
-                        context.getLockMode().code());
-                result.addAll(records);
-            }
+//            var hits = cache.batchGet(ids);
+//            var result = new ArrayList<InstancePO>();
+//            var missedIds = new ArrayList<Long>();
+//            NncUtils.biForEach(ids, hits, (id, hit) -> {
+//                if(hit != null)
+//                    result.add(PersistenceUtils.buildInstancePO(context.getAppId(), id, hit));
+//                else
+//                    missedIds.add(id);
+//            });
+//            if(!missedIds.isEmpty()) {
+//                var records = instanceMapper.selectByIds(context.getAppId(), missedIds,
+//                        context.getLockMode().code());
+//                result.addAll(records);
+//            }
 //            var typeIds = NncUtils.mapUnique(records, InstancePO::getInstanceId);
 //            context.buffer(typeIds);
-            return result;
+//            return result;
+            return instanceMapper.selectByIds(context.getAppId(), ids, context.getLockMode().code());
         }
     }
 
