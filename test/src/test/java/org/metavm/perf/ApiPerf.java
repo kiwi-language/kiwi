@@ -18,12 +18,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ApiPerf {
 
-    private static final String host = "http://localhost:8080/api";
     public static final int THREAD_COUNT = 5;
     public static final int EXECUTIONS = 200;
-    public static final long appId = 1000000014L;
-    public static final String defaultProductKindId = "01d0a8d6b90700";
-    public static final String yuanCurrencyId = "01daa8d6b90700";
+//    private static final String host = "http://localhost:8080/api";
+//    public static final long appId = 1000000014L;
+//    public static final String defaultProductKindId = "01d0a8d6b90700";
+//    public static final String yuanCurrencyId = "01daa8d6b90700";
+
+    private static final String host = "https://metavm.tech/api";
+    public static final long appId = 1000000019;
+    public static final String defaultProductKindId = "01dea8d6b90700";
+    public static final String yuanCurrencyId = "01d8a8d6b90700";
+
     private static final HttpClient client;
     public static final AtomicInteger failureCounter = new AtomicInteger();
 

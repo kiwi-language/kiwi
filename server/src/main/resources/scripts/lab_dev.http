@@ -22,3 +22,33 @@ X-App-ID: 1001500031
 [
   "leen"
 ]
+###
+GET https://metavm.tech/api/org/metavm/mlab/ProductKind/DEFAULT
+X-App-ID: 1000000019
+
+###
+GET https://metavm.tech/api/org/metavm/mlab/Currency/YUAN
+X-App-ID: 1000000019
+
+###
+PUT https://metavm.tech/api/org/metavm/mlab/Product
+X-App-ID: 1000000019
+Content-Type: application/json
+
+{
+  "name": "Shoes",
+  "kind": "01dea8d6b90700",
+  "skus": [
+    {
+      "name": "40",
+      "price": {
+        "amount": 100,
+        "currency": "01d8a8d6b90700"
+      },
+      "inventory": {
+        "quantity": 100
+      }
+    }
+  ]
+}
+
