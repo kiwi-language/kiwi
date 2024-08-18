@@ -66,6 +66,8 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
             instance.accept(new InstanceVisitor() {
                 @Override
                 public void visitInstance(Instance instance) {
+                    if(instance instanceof ClassInstance clsInst)
+                        updateMemoryIndex(clsInst);
                     instance.forEachReference((r, isChild) -> {
                         if (r.isEager())
                             r.resolve();

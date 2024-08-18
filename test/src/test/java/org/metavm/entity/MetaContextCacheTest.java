@@ -5,9 +5,9 @@ import org.junit.Assert;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.object.instance.core.ClassInstanceBuilder;
 import org.metavm.object.type.Klass;
-import org.metavm.util.BootstrapUtils;
-import org.metavm.util.TestConstants;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
+
+import java.util.Objects;
 
 public class MetaContextCacheTest extends TestCase {
 
@@ -40,6 +40,8 @@ public class MetaContextCacheTest extends TestCase {
         Assert.assertTrue(metaContext.containsEntity(Klass.class, fooKlassId));
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID, metaContext)) {
+                var parent = Objects.requireNonNull(context.getParent());
+                Assert.assertTrue(parent.containsUniqueKey(Klass.UNIQUE_CODE, "Foo"));
                 var instCtx = context.getInstanceContext();
                 var fooKlass = context.getKlass(fooKlassId);
                 var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType()).build();

@@ -5,8 +5,12 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.ddl.Commit;
+import org.metavm.flow.CallableRef;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeDef;
+import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.InternalException;
 import org.springframework.stereotype.Component;
 
@@ -62,6 +66,17 @@ public class MetaContextCache extends EntityContextFactoryAware {
             if(typeDef instanceof Klass klass && klass.isEnum()) {
                 klass.getEnumConstants();
             }
+        }
+        for (TypeDef typeDef : typeDefs) {
+            EntityUtils.forEachMember(typeDef, e -> {
+                switch (e) {
+                    case ClassType classType -> classType.resolve();
+                    case FieldRef fieldRef -> fieldRef.resolve();
+                    case CallableRef callableRef -> callableRef.resolve();
+                    case ObjectMappingRef objectMappingRef -> objectMappingRef.resolve();
+                    default -> {}
+                }
+            });
         }
 //        });
 //        try {

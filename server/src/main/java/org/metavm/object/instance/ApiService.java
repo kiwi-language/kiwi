@@ -19,7 +19,10 @@ import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
@@ -34,13 +37,14 @@ public class ApiService extends EntityContextFactoryAware {
     public static final String KEY_CLASS = "$class";
 
     private final MetaContextCache metaContextCache;
+    private JdbcTemplate jdbcTemplate;
 
     public ApiService(EntityContextFactory entityContextFactory, MetaContextCache metaContextCache) {
         super(entityContextFactory);
         this.metaContextCache = metaContextCache;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public String handleNewInstance(String classCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
@@ -53,7 +57,7 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Object handleMethodCall(String qualifier, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             Value result;
@@ -77,7 +81,7 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Object handleBeanMethodCall(String beanName, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var registry = BeanDefinitionRegistry.getInstance(context);
@@ -98,7 +102,7 @@ public class ApiService extends EntityContextFactoryAware {
         return execute(r.method, self, r.arguments, request, response, context);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Object handleStaticMethodCall(String classCode, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
@@ -154,12 +158,14 @@ public class ApiService extends EntityContextFactoryAware {
         return klass;
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
     public Object getInstance(String id) {
         try (var context = newContext()) {
             return formatInstance(context.getInstanceContext().get(Id.parse(id)).getReference(), true);
         }
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
     public Object getStatic(String className, String fieldName) {
         try(var context = newContext()) {
             var klass = getKlass(className, context);
@@ -167,7 +173,7 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deleteInstance(String id) {
         try (var context = newContext()) {
             var instanceContext = context.getInstanceContext();
@@ -176,9 +182,10 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public String saveInstance(String classCode, Map<String, Object> object, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
+//            logTxId();
             var klass = getKlass(classCode, context);
             var inst = doIntercepted(() -> {
                 var r = tryResolveValue(object, klass.getType(), true, null, context);
@@ -546,9 +553,21 @@ public class ApiService extends EntityContextFactoryAware {
     private record ResolutionResult(Method method, List<Value> arguments) {
     }
 
+    private void logTxId() {
+        if(jdbcTemplate != null) {
+            var txId = jdbcTemplate.queryForObject("SELECT txid_current();", Long.class);
+            logger.info("Transaction ID: {}", txId);
+        }
+    }
+
     @Override
     public IEntityContext newContext() {
         var appId = ContextUtil.getAppId();
         return entityContextFactory.newContext(appId, metaContextCache.get(appId));
+    }
+
+    @Autowired
+    public void setTransactionTemplate(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 }

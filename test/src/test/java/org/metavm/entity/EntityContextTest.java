@@ -1,7 +1,9 @@
 package org.metavm.entity;
 
 import junit.framework.TestCase;
+import org.junit.Assert;
 import org.metavm.entity.mocks.EntityFoo;
+import org.metavm.object.type.Klass;
 import org.metavm.util.BootstrapUtils;
 import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
@@ -35,5 +37,11 @@ public class EntityContextTest extends TestCase {
         });
     }
 
+    public void testContainsUniqueKey() {
+        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            Assert.assertNotNull(context.getParent());
+            Assert.assertTrue(context.getParent().containsUniqueKey(Klass.UNIQUE_CODE, Klass.class.getName()));
+        }
+    }
 
 }

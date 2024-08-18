@@ -14,6 +14,7 @@ import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
 import java.util.List;
+import java.util.Map;
 
 public class ShoppingTest extends TestCase {
 
@@ -21,6 +22,7 @@ public class ShoppingTest extends TestCase {
     private InstanceManager instanceManager;
     private FlowExecutionService flowExecutionService;
     private EntityContextFactory entityContextFactory;
+    private ApiClient apiClient;
 
     @Override
     protected void setUp() throws Exception {
@@ -31,6 +33,7 @@ public class ShoppingTest extends TestCase {
         instanceManager = managers.instanceManager();
         flowExecutionService = managers.flowExecutionService();
         entityContextFactory = bootResult.entityContextFactory();
+        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache()));
     }
 
     @Override
@@ -39,6 +42,22 @@ public class ShoppingTest extends TestCase {
         instanceManager = null;
         flowExecutionService = null;
         entityContextFactory = null;
+        apiClient = null;
+    }
+
+    public void testCreateProduct() {
+        MockUtils.createShoppingTypes(typeManager,entityContextFactory);
+        DebugEnv.flag = true;
+        TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
+           "name", "shoes",
+           "skuList", List.of(
+                   Map.of(
+                           "name", "40",
+                           "price", 100,
+                           "quantity", 100
+                   )
+                )
+        )));
     }
 
     public void testDecAmount() {

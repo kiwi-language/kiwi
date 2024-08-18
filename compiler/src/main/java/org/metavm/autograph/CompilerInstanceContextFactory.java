@@ -24,7 +24,7 @@ public class CompilerInstanceContextFactory {
     public CompilerInstanceContextFactory(DiskTreeStore diskTreeSource, LocalIndexSource localIndexSource, TypeClient typeClient) {
         this.diskTreeSource = diskTreeSource;
         this.localIndexSource = localIndexSource;
-        idService = new CompilerIdService(typeClient);
+        idService = new CompilerIdService();
         versionSource = new ServerVersionSource(typeClient);
         serverTreeSource = new ServerTreeSource(typeClient);
     }

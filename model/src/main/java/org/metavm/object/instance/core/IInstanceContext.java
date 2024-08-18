@@ -137,6 +137,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     long count(InstanceIndexQuery query);
 
+    boolean containsUniqueKey(IndexKeyRT key);
+
     default Reference selectFirstByKey(IndexKeyRT key) {
         return NncUtils.first(selectByKey(key));
     }

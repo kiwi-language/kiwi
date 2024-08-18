@@ -569,12 +569,6 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
         }
     }
 
-    @Override
-    public void beforeFinish() {
-        freezeKlasses();
-        super.beforeFinish();
-    }
-
     private void freezeKlasses() {
         typeDef2Def.keySet().forEach(t -> {
             if(t instanceof Klass k)
@@ -672,6 +666,11 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     }
 
     @Override
+    public boolean containsUniqueKey(IndexDef<?> indexDef, Object... values) {
+        return memoryIndex.selectByUniqueKey(indexDef, List.of(values)) != null;
+    }
+
+    @Override
     public boolean remove(Object entity) {
         throw new UnsupportedOperationException();
     }
@@ -732,6 +731,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     }
 
     public void postProcess() {
+        freezeKlasses();
         StdKlass.initialize(this, false);
         StdMethod.initialize(this, false);
         StdField.initialize(this, false);

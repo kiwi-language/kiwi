@@ -1,16 +1,15 @@
 package org.metavm.instance.core;
 
-import org.metavm.autograph.TypeClient;
+import org.metavm.entity.EntityIdProvider;
 import org.metavm.object.type.Type;
-import org.metavm.system.BaseIdService;
 
 import java.util.List;
 import java.util.Map;
 
-public class CompilerIdService extends BaseIdService {
+public class CompilerIdService implements EntityIdProvider {
 
-    public CompilerIdService(TypeClient typeClient) {
-        super(new ServerBlockSource(typeClient));
+    public CompilerIdService() {
+        super();
     }
 
     @Override

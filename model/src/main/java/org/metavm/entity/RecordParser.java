@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.api.ValueObject;
 import org.metavm.flow.*;
 import org.metavm.object.type.ColumnStore;
 import org.metavm.object.type.TypeCategory;
@@ -84,7 +85,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
 
     @Override
     protected TypeCategory getTypeCategory() {
-        return TypeCategory.CLASS;
+        return ValueObject.class.isAssignableFrom(javaClass) ? TypeCategory.VALUE : TypeCategory.CLASS;
     }
 
 }

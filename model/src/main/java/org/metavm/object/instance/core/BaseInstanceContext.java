@@ -116,9 +116,14 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
+    public boolean containsUniqueKey(IndexKeyRT key) {
+        return !memIndex.query(key.toQuery()).isEmpty();
+    }
+
+    @Override
     public List<Reference> query(InstanceIndexQuery query) {
         var memResults = NncUtils.map(memIndex.query(query), Instance::getReference);
-        if (query.memoryOnly())
+        if (query.memoryOnly() || !memResults.isEmpty() && query.index().isUnique())
             return memResults;
         var storeResults = NncUtils.map(indexSource.query(query, this), this::createReference);
         return Instances.merge(memResults, storeResults, query.desc(), NncUtils.orElse(query.limit(), -1L));
@@ -793,6 +798,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public Reference selectFirstByKey(IndexKeyRT key) {
+        if(key.getIndex().isUnique() && parent != null && parent.containsUniqueKey(key))
+            return parent.selectFirstByKey(key);
 //        NncUtils.requireTrue(key.getIndex().isUnique());
 //        var instances = memIndex.get(key);
 //        if (NncUtils.isNotEmpty(instances)) return instances.iterator().next();

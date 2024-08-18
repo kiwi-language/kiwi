@@ -1146,3 +1146,56 @@ Content-Type: application/json
 ###
 GET http://localhost:8080/type/is-flag1?name=org.metavm.mlab.Product
 X-App-ID: 1850817017
+
+###
+GET http://localhost:8080/api/org/metavm/mlab/ProductKind/DEFAULT
+X-App-ID: 1000000014
+
+###
+GET http://localhost:8080/api/org/metavm/mlab/Currency/YUAN
+X-App-ID: 1000000014
+
+###
+PUT http://localhost:8080/api/org/metavm/mlab/Product
+X-App-ID: 1000000014
+Content-Type: application/json
+
+{
+  "name": "Shoes",
+  "kind": "01d0a8d6b90700",
+  "skus": [
+    {
+      "name": "40",
+      "price": {
+        "amount": 100,
+        "currency": "01daa8d6b90700"
+      },
+      "inventory": {
+        "quantity": 100
+      }
+    }
+  ]
+}
+
+<> 2024-08-17T174614.200.txt
+<> 2024-08-17T174537.200.txt
+<> 2024-08-17T174536.200.txt
+<> 2024-08-17T174407.200.txt
+<> 2024-08-17T174406.200.txt
+<> 2024-08-17T173802.200.txt
+<> 2024-08-17T173801.200.txt
+<> 2024-08-17T173743.500.json
+<> 2024-08-17T173742.500.json
+<> 2024-08-17T171801.200.txt
+<> 2024-08-17T170611.200.txt
+<> 2024-08-17T164505.200.txt
+<> 2024-08-17T164504.200.txt
+<> 2024-08-17T164502.200.txt
+<> 2024-08-17T160809.200.txt
+<> 2024-08-17T160808.200.txt
+<> 2024-08-17T160807.200.txt
+<> 2024-08-17T160806.200.txt
+<> 2024-08-17T160805.200.txt
+<> 2024-08-17T160804.200.txt
+<> 2024-08-17T160803.200.txt
+<> 2024-08-16T160035.200.txt

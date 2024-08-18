@@ -3,22 +3,24 @@ package org.metavm.system;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.ModelDefRegistry;
+import org.metavm.entity.StdKlass;
 import org.metavm.object.type.IdConstants;
 import org.metavm.object.type.Klass;
-import org.metavm.util.BootstrapUtils;
 import org.metavm.util.TestConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class IdServiceTest extends TestCase {
 
+    public static final Logger logger = LoggerFactory.getLogger(IdServiceTest.class);
+
     private IdService idService;
 
     @Override
     protected void setUp() throws Exception {
-        var bootResult = BootstrapUtils.bootstrap();
-        var regionManager = new RegionManager(bootResult.regionMapper());
-        idService = new IdService(bootResult.blockMapper(), regionManager);
+        idService = new IdService(new IdGenerator(new MemoryBlockRepository()));
     }
 
     @Override
@@ -33,6 +35,16 @@ public class IdServiceTest extends TestCase {
         Assert.assertEquals(count, ids.size());
         ids = idService.allocate(TestConstants.APP_ID, Map.of(type, count)).get(type);
         Assert.assertEquals(count, ids.size());
+    }
+
+    public void testAllocate() {
+        var type2ids = idService.allocate(TestConstants.APP_ID, Map.of(
+                StdKlass.valueList.type(), 10,
+                StdKlass.hashSet.type(), 10
+        ));
+        type2ids.forEach((type, ids) -> {
+            logger.info("{}", ids);
+        });
     }
 
 }

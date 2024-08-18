@@ -306,6 +306,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 .typeParameters(NncUtils.map(javaClass.getTypeParameters(), this::createTypeVariable))
                 .tag(defContext.getTypeTag(javaClass))
                 .since(entityType != null ? entityType.since() : 0)
+                .ephemeral(entityType != null && entityType.ephemeral())
                 .build();
     }
 

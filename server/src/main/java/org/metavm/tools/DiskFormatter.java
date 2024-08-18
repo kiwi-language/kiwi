@@ -105,6 +105,7 @@ public class DiskFormatter {
                     statement.execute("delete from reference");
                     statement.execute("delete from index_entry");
                     statement.execute("delete from files");
+                    statement.execute("delete from id_sequence");
                 } catch (SQLException e) {
                     throw new InternalException("SQL Error", e);
                 }

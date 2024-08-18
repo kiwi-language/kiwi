@@ -5,9 +5,10 @@ import org.junit.Assert;
 import org.metavm.mocks.Foo;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.*;
+import org.metavm.system.IdGenerator;
 import org.metavm.system.IdService;
+import org.metavm.system.MemoryBlockRepository;
 import org.metavm.system.RegionManager;
-import org.metavm.system.persistence.MemBlockMapper;
 import org.metavm.system.persistence.MemRegionMapper;
 import org.metavm.util.InternalException;
 import org.metavm.util.TestConstants;
@@ -64,7 +65,7 @@ public class EntityIdProviderTest extends TestCase {
     public void testAllocateForIdService() {
         RegionManager regionManager = new RegionManager(new MemRegionMapper());
         regionManager.initialize();
-        testAllocate(new IdService(new MemBlockMapper(), regionManager));
+        testAllocate(new IdService(new IdGenerator(new MemoryBlockRepository())));
     }
 
     public void testAllocateForStdAllocators() {

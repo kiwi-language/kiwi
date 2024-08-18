@@ -260,6 +260,8 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return NncUtils.first(selectByKey(indexDef, values));
     }
 
+    boolean containsUniqueKey(IndexDef<?> indexDef, Object...values);
+
     void initIds();
 
     default boolean tryBind(Object entity) {

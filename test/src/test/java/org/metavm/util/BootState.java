@@ -9,6 +9,7 @@ import org.metavm.object.instance.persistence.mappers.MemReferenceMapper;
 import org.metavm.object.type.MemAllocatorStore;
 import org.metavm.object.type.MemColumnStore;
 import org.metavm.object.type.MemTypeTagStore;
+import org.metavm.system.MemoryBlockRepository;
 import org.metavm.system.persistence.MemBlockMapper;
 import org.metavm.system.persistence.MemRegionMapper;
 
@@ -19,6 +20,7 @@ public record BootState(
         MemIndexEntryMapper indexEntryMapper,
         MemRegionMapper regionMapper,
         MemBlockMapper blockMapper,
+        MemoryBlockRepository blockRepository,
         MemColumnStore columnStore,
         MemTypeTagStore typeTagStore,
         MemoryStdIdStore stdIdStore,
@@ -35,6 +37,7 @@ public record BootState(
                 indexEntryMapper.copy(),
                 regionMapper.copy(),
                 blockMapper.copy(),
+                blockRepository.copy(),
                 columnStore.copy(),
                 typeTagStore.copy(),
                 stdIdStore.copy(),

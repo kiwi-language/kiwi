@@ -558,12 +558,20 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     @Override
     public <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Object... values) {
 //        NncUtils.requireTrue(indexDef.isUnique());
-        try (var ignored = enter("selectByUniqueKey")) {
+//        try (var ignored = enter("selectByUniqueKey")) {
+            if(indexDef.isUnique() && parent != null && parent.containsUniqueKey(indexDef, values)) {
+                return parent.selectFirstByKey(indexDef, values);
+            }
             NncUtils.requireNonNull(instanceContext, "instanceContext required");
             IndexKeyRT indexKey = createIndexKey(indexDef, values);
             var instance = instanceContext.selectFirstByKey(indexKey);
             return instance == null ? null : createEntityList(indexDef.getType(), List.of(instance)).get(0);
-        }
+//        }
+    }
+
+    @Override
+    public boolean containsUniqueKey(IndexDef<?> indexDef, Object... values) {
+        return instanceContext.containsUniqueKey(createIndexKey(indexDef, values));
     }
 
     @Override

@@ -13,7 +13,10 @@ import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
 import org.metavm.user.LoginService;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,6 +28,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 public class ApiController {
+
+    public static final int MAX_RETRIES = 5;
+
+    public static final Logger logger = LoggerFactory.getLogger(ApiController.class);
 
     private final ApiService apiService;
 
@@ -40,6 +47,18 @@ public class ApiController {
 
     @RequestMapping("/**")
     public Object handle(HttpServletRequest servletRequest, HttpServletResponse servletResponse, @RequestBody(required = false) Object requestBody) {
+        for (int i = 0; i < MAX_RETRIES; i++) {
+            try {
+                return handle0(servletRequest, servletResponse, requestBody);
+            }
+            catch (PessimisticLockingFailureException e) {
+                logger.error("Serialization failure", e);
+            }
+        }
+        throw new InternalException("Too many retries (" + MAX_RETRIES + ")");
+    }
+
+    private Object handle0(HttpServletRequest servletRequest, HttpServletResponse servletResponse, Object requestBody) {
         verify(servletRequest);
         var request = createRequest(servletRequest);
         var response = new HttpResponseImpl();

@@ -11,7 +11,9 @@ import org.metavm.object.instance.log.InstanceLogServiceImpl;
 import org.metavm.object.instance.log.TaskHandler;
 import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.type.*;
+import org.metavm.system.IdGenerator;
 import org.metavm.system.IdService;
+import org.metavm.system.MemoryBlockRepository;
 import org.metavm.system.RegionManager;
 import org.metavm.system.persistence.MemBlockMapper;
 import org.metavm.system.persistence.MemRegionMapper;
@@ -62,7 +64,7 @@ public class BootstrapUtils {
                     state.referenceMapper(),
                     new LocalCache()
             );
-            var idProvider = new IdService(state.blockMapper(), new RegionManager(state.regionMapper()));
+            var idProvider = new IdService(new IdGenerator(state.blockRepository()));
             var instanceSearchService = state.instanceSearchService();
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             entityContextFactory.setDefContext(defContext);
@@ -115,7 +117,8 @@ public class BootstrapUtils {
         var regionManager = new RegionManager(regionMapper);
         regionManager.initialize();
         var blockMapper = new MemBlockMapper();
-        var idProvider = new IdService(blockMapper, regionManager);
+        var blockRepository = new MemoryBlockRepository();
+        var idProvider = new IdService(new IdGenerator(blockRepository));
         var instanceStore = new MemInstanceStore(new LocalCache());
         var instanceSearchService = new MemInstanceSearchServiceV2();
         var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
@@ -140,6 +143,7 @@ public class BootstrapUtils {
                     instanceStore.getIndexEntryMapper().copy(),
                     regionMapper.copy(),
                     blockMapper.copy(),
+                    blockRepository.copy(),
                     columnStore.copy(),
                     typeTagStore.copy(),
                     stdIdStore.copy(),

@@ -66,6 +66,34 @@ public class EntityUtils {
             action.accept(object);
     }
 
+    public static void forEachMember(Object object, Consumer<Object> action) {
+        forEachMember(object, action, false);
+    }
+
+    public static void forEachMember(Object object, Consumer<Object> action, boolean skipCopyIgnore) {
+        action.accept(object);
+        if (object instanceof ChildArray<?> childArray) {
+            childArray.forEach(e -> forEachMember(e, action, skipCopyIgnore));
+        }
+        else if(object instanceof ReadonlyArray<?> array) {
+            array.forEach(e -> {
+                if (e instanceof ValueObject v)
+                    forEachMember(v, action, skipCopyIgnore);
+            });
+        }
+        else {
+            var desc = DescStore.get(EntityUtils.getRealType(object));
+            desc.forEachNonTransientProp(prop -> {
+                if(skipCopyIgnore && prop.isCopyIgnore())
+                    return;
+                var value = prop.get(object);
+                if (value != null && (prop.isChildEntity() || value instanceof ValueObject)) {
+                    forEachMember(value, action, skipCopyIgnore);
+                }
+            });
+        }
+    }
+
     public static Object getRoot(Object object) {
         if (object instanceof Entity entity) {
             if (entity.getParentEntity() == null)
