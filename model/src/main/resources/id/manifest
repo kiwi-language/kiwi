@@ -17,7 +17,6 @@
 /id/org.metavm.entity.ChildArray<org.metavm.object.view.ObjectMapping>.properties
 /id/org.metavm.entity.DummyGenericDeclaration.properties
 /id/org.metavm.entity.ElementKind.properties
-/id/org.metavm.entity.Entity.properties
 /id/org.metavm.entity.IndexOperator.properties
 /id/org.metavm.entity.ReadWriteArray<org.metavm.entity.Attribute>.properties
 /id/org.metavm.entity.ReadWriteArray<org.metavm.flow.MethodRef>.properties
