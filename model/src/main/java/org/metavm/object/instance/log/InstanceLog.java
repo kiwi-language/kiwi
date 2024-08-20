@@ -24,13 +24,13 @@ public class InstanceLog extends Entity implements ValueObject {
     }
 
     private final long appId;
-    private final String id;
+    private final Identifier id;
     private final ChangeType changeType;
     private final long version;
 
     public InstanceLog(long appId, Id id, ChangeType changeType, long version) {
         this.appId = appId;
-        this.id = id.toString();
+        this.id = Identifier.fromId(id);
         this.changeType = changeType;
         this.version = version;
     }
@@ -40,7 +40,7 @@ public class InstanceLog extends Entity implements ValueObject {
     }
 
     public Id getId() {
-        return Id.parse(id);
+        return id.toId();
     }
 
     public ChangeType getChangeType() {
