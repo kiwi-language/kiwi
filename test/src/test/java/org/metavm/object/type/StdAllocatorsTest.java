@@ -2,6 +2,7 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.entity.ModelIdentity;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.util.ParameterizedTypeImpl;
@@ -72,18 +73,31 @@ public class StdAllocatorsTest extends TestCase {
     public void testFileNames() {
         allocators.allocate(
                 Map.of(
-                        Type.class, 1,
-                        ParameterizedTypeImpl.create(ReadWriteArray.class, Type.class), 1
+                        Klass.class, 1,
+                        ParameterizedTypeImpl.create(ReadWriteArray.class, Klass.class), 1
                 )
         );
-
+        allocators.putId(
+                new ModelIdentity(
+                        Type.class,
+                        "Klass1",
+                        false
+                )
+                , new PhysicalId(false, 1L ,0L));
+        allocators.putId(
+                new ModelIdentity(
+                ParameterizedTypeImpl.create(ReadWriteArray.class, Type.class),
+                        "array",
+                        false
+                ),
+                new PhysicalId(false, 2, 0L));
         allocators.save();
-
         Assert.assertEquals(
                 Set.of("/id/" + Type.class.getName() +".properties",
                         "/id/" + ParameterizedTypeImpl.create(ReadWriteArray.class, Type.class).getTypeName() + ".properties"),
                 new HashSet<>(allocatorStore.getFileNames())
         );
+        Assert.assertEquals(10002, allocatorStore.getNextId());
     }
 
 }

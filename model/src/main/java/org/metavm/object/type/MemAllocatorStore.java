@@ -12,6 +12,7 @@ public class MemAllocatorStore implements AllocatorStore {
 
     public static final String DUMP_DIR = "/Users/leen/workspace/object/test/src/test/resources/tmp";
 
+    private long nextId = 10000L;
     private final List<String> fileNames = new ArrayList<>();
     private final Map<String, Properties> propertiesMap = new HashMap<>();
 
@@ -23,6 +24,16 @@ public class MemAllocatorStore implements AllocatorStore {
     @Override
     public List<String> getFileNames() {
         return fileNames;
+    }
+
+    @Override
+    public long getNextId() {
+        return nextId;
+    }
+
+    @Override
+    public void saveNextId(long nextId) {
+        this.nextId = nextId;
     }
 
     @Override
@@ -39,6 +50,7 @@ public class MemAllocatorStore implements AllocatorStore {
     public void saveFileNames(List<String> fileNames) {
         this.fileNames.clear();
         this.fileNames.addAll(fileNames);
+        Collections.sort(this.fileNames);
     }
 
     @Override

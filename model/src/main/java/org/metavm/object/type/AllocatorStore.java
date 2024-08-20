@@ -9,6 +9,10 @@ public interface AllocatorStore {
 
     List<String> getFileNames();
 
+    long getNextId();
+
+    void saveNextId(long nextId);
+
     Properties load(String fileName);
 
     boolean fileNameExists(String fileName);

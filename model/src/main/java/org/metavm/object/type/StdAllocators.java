@@ -1,8 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.ChildArray;
 import org.metavm.entity.ModelIdentity;
-import org.metavm.entity.ReadWriteArray;
 import org.metavm.entity.ReadonlyArray;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TypeId;
@@ -16,6 +14,7 @@ import javax.annotation.Nullable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,29 +25,16 @@ public class StdAllocators {
 
     private static final Logger logger = LoggerFactory.getLogger(StdAllocators.class);
 
-    private static final long NUM_IDS_PER_ALLOCATOR = 10000L;
-
     private final Map<Type, StdAllocator> allocatorMap = new HashMap<>();
-    private long nextBaseId = 10000L;
-    private long nextReadWriteArrayBaseId = IdConstants.READ_WRITE_ARRAY_REGION_BASE + 10000L;
-    private long nextChildArrayBaseId = IdConstants.CHILD_ARRAY_REGION_BASE + 10000L;
-    private long nextReadOnlyArrayBaseId = IdConstants.READ_ONLY_ARRAY_REGION_BASE + 10000L;
+    private long nextId;
     private final AllocatorStore store;
 
     public StdAllocators(AllocatorStore store) {
         this.store = store;
+        nextId = store.getNextId();
         for (String fileName : store.getFileNames()) {
             StdAllocator allocator = new StdAllocator(store, fileName);
             allocatorMap.put(allocator.getJavaType(), allocator);
-            if (allocator.isChildArray()) {
-                nextChildArrayBaseId = Math.max(nextChildArrayBaseId, allocator.getNextId() + NUM_IDS_PER_ALLOCATOR);
-            } else if (allocator.isReadWriteArray()) {
-                nextReadWriteArrayBaseId = Math.max(nextReadWriteArrayBaseId, allocator.getNextId() + NUM_IDS_PER_ALLOCATOR);
-            } else if (allocator.isReadonlyArray()) {
-                nextReadOnlyArrayBaseId = Math.max(nextReadOnlyArrayBaseId, allocator.getNextId() + NUM_IDS_PER_ALLOCATOR);
-            } else {
-                nextBaseId = Math.max(nextBaseId, allocator.getNextId() + NUM_IDS_PER_ALLOCATOR);
-            }
         }
     }
 
@@ -87,7 +73,7 @@ public class StdAllocators {
     }
 
     private void putId0(Type javaType, String entityCode, Id id, @Nullable Long nextNodeId) {
-        allocatorMap.get(javaType).putId(entityCode, id, nextNodeId);
+        getAllocator(javaType).putId(entityCode, id, nextNodeId);
     }
 
     public TypeId getTypeId(Id id) {
@@ -113,10 +99,17 @@ public class StdAllocators {
         Map<Type, List<Long>> result = new HashMap<>();
         typeId2count.forEach((javaType, count) -> {
 //            Class<?> javaType = ModelDefRegistry.getJavaType(type);
-            var ids = getAllocator(javaType).allocate(count);
+            var ids = new ArrayList<Long>();
+            for (var i = 0; i < count; i++) {
+                ids.add(nextId());
+            }
             result.put(javaType, ids);
         });
         return result;
+    }
+
+    private long nextId() {
+        return nextId++;
     }
 
     private StdAllocator getAllocator(Type javaType) {
@@ -128,43 +121,8 @@ public class StdAllocators {
         if (store.fileNameExists(fileName)) {
             return new StdAllocator(store, fileName);
         } else {
-            return new StdAllocator(
-                    store,
-                    fileName,
-                    javaType,
-                    allocateNextBaseId(javaType)
-            );
+            return new StdAllocator(store, fileName, javaType);
         }
-    }
-
-    private long allocateNextBaseId(Type javaType) {
-        long basedId;
-        if (isChildArrayType(javaType)) {
-            basedId = nextChildArrayBaseId;
-            nextChildArrayBaseId += NUM_IDS_PER_ALLOCATOR;
-        } else if (isReadWriteArray(javaType)) {
-            basedId = nextReadWriteArrayBaseId;
-            nextReadWriteArrayBaseId += NUM_IDS_PER_ALLOCATOR;
-        } else if (isReadOnlyArray(javaType)) {
-            basedId = nextReadOnlyArrayBaseId;
-            nextReadOnlyArrayBaseId += NUM_IDS_PER_ALLOCATOR;
-        } else {
-            basedId = nextBaseId;
-            nextBaseId += NUM_IDS_PER_ALLOCATOR;
-        }
-        return basedId;
-    }
-
-    private boolean isChildArrayType(Type javaType) {
-        return ChildArray.class.isAssignableFrom(ReflectionUtils.getRawClass(javaType));
-    }
-
-    private boolean isReadWriteArray(Type javaType) {
-        return ReadWriteArray.class.isAssignableFrom(ReflectionUtils.getRawClass(javaType));
-    }
-
-    private boolean isReadOnlyArray(Type javaType) {
-        return ReadonlyArray.class.isAssignableFrom(ReflectionUtils.getRawClass(javaType));
     }
 
     private String getTypeCode(Type type) {
@@ -184,6 +142,7 @@ public class StdAllocators {
     }
 
     public void save() {
+        store.saveNextId(nextId);
         store.saveFileNames(NncUtils.map(allocatorMap.values(), StdAllocator::getFileName));
         allocatorMap.values().forEach(StdAllocator::save);
     }

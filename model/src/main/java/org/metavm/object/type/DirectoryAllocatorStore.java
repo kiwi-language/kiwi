@@ -1,18 +1,18 @@
 package org.metavm.object.type;
 
 import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
 import org.metavm.util.PropertiesUtils;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class DirectoryAllocatorStore implements AllocatorStore {
 
     private static final String ID_FILE_DIR = "/id";
+
+    public static final String NEXT_ID_FILE = "/id/next_id";
 
     private static final Pattern ID_FILE_NAME_PATTERN = Pattern.compile(".+\\.properties");
 
@@ -42,6 +42,24 @@ public class DirectoryAllocatorStore implements AllocatorStore {
         } catch (IOException e) {
             throw new InternalException("Fail to read id files", e);
         }
+    }
+
+    @Override
+    public long getNextId() {
+        try(var input = StdAllocators.class.getResourceAsStream(NEXT_ID_FILE)) {
+            if(input == null)
+                return 10000L;
+            var scanner = new Scanner(input);
+            return scanner.nextLong();
+        }
+        catch (IOException e) {
+            throw new InternalException("Failed to read " + NEXT_ID_FILE);
+        }
+    }
+
+    @Override
+    public void saveNextId(long nextId) {
+        NncUtils.writeLong(saveDir + NEXT_ID_FILE, nextId);
     }
 
     @Override
