@@ -22,6 +22,10 @@ public class EntityContextFactoryAware {
         return entityContextFactory.newContext(appId, customizer);
     }
 
+    public IEntityContext newContext(long appId, IEntityContext parent, Consumer<InstanceContextBuilder> customizer) {
+        return entityContextFactory.newContext(appId, parent, customizer);
+    }
+
     public IEntityContext newContext(Consumer<InstanceContextBuilder> customizer) {
         return entityContextFactory.newContext(ContextUtil.getAppId(), customizer);
     }

@@ -50,7 +50,7 @@ public class BufferedInstanceStore implements IInstanceStore {
     }
 
     @Override
-    public void saveInstanceLogs(List<InstanceLog> instanceLogs) {
+    public void saveInstanceLogs(List<InstanceLog> instanceLogs, IInstanceContext context) {
         wal.saveInstanceLogs(instanceLogs);
     }
 

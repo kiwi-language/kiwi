@@ -1,6 +1,7 @@
 package org.metavm.util;
 
 import org.metavm.entity.*;
+import org.metavm.object.instance.ChangeLogManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.type.MemAllocatorStore;
 import org.metavm.object.type.MemColumnStore;
@@ -20,6 +21,7 @@ public record BootstrapResult(
         MemColumnStore columnStore,
         MemoryStdIdStore stdIdStore,
         MemTypeTagStore typeTagStore,
-        MetaContextCache metaContextCache
+        MetaContextCache metaContextCache,
+        ChangeLogManager changeLogManager
 ) {
 }

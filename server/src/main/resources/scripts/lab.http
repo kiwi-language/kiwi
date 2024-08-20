@@ -811,26 +811,26 @@ X-App-ID: 1843616873
 
 ###
 GET http://localhost:8080/api/org/metavm/mlab/Currency/YUAN
-X-App-ID: 1845016908
+X-App-ID: 1000001021
 
 ###
 GET http://localhost:8080/api/org/metavm/mlab/ProductKind/DEFAULT
-X-App-ID: 1845016908
+X-App-ID: 1000001021
 
 ###
 PUT http://localhost:8080/api/org/metavm/mlab/Product
-X-App-ID: 1845016908
+X-App-ID: 1000001021
 Content-Type: application/json
 
 {
   "name": "shoes",
-  "kind": "01b4d0b9df0d00",
+  "kind": "01dab8d6b90700",
   "skus": [
     {
       "name": "40",
       "price": {
         "amount": 100,
-        "currency": "01aed0b9df0d00"
+        "currency": "01d4b8d6b90700"
       },
       "inventory": {
         "quantity": 100
@@ -841,7 +841,7 @@ Content-Type: application/json
 
 ###
 PUT http://localhost:8080/api/org/metavm/mlab/Product
-X-App-ID: 1845016908
+X-App-ID: 1000001021
 Content-Type: application/json
 
 {
@@ -885,7 +885,7 @@ Content-Type: application/json
 
 ###
 GET http://localhost:8080/api/0188ceb9df0d00
-X-App-ID: 1845016908
+X-App-ID: 1000001021
 
 ###
 GET http://localhost:8080/api/0282a4d8e00d008c02
@@ -893,7 +893,7 @@ X-App-ID: 1846416929
 
 ###
 POST http://localhost:8080/api/0198d1b9df0d08/get-product
-X-App-ID: 1845016908
+X-App-ID: 1000001021
 Content-Type: application/json
 
 []

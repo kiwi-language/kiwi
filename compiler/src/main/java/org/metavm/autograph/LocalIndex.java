@@ -1,7 +1,5 @@
 package org.metavm.autograph;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.IndexOperator;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.persistence.IndexEntryPO;
@@ -9,6 +7,8 @@ import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,11 +45,8 @@ public class LocalIndex {
             indexMap.forEach(entry -> {
                 var key = entry.getKey();
                 instOutput.writeId(Id.fromBytes(key.getIndexId()));
-                for (int i = 0; i < IndexKeyPO.MAX_KEY_COLUMNS; i++) {
-                    var bytes = key.getColumn(i);
-                    instOutput.writeInt(bytes.length);
-                    instOutput.write(bytes);
-                }
+                instOutput.writeInt(key.getData().length);
+                instOutput.write(key.getData());
                 instOutput.writeId(entry.getId());
             });
         } catch (IOException e) {
@@ -68,13 +65,10 @@ public class LocalIndex {
             for (int i = 0; i < size; i++) {
                 var key = new IndexKeyPO();
                 key.setIndexId(instInput.readId().toBytes());
-                for (int j = 0; j < IndexKeyPO.MAX_KEY_COLUMNS; j++) {
-                    int n = instInput.readInt();
-                    var bytes = new byte[n];
-                    //noinspection ResultOfMethodCallIgnored
-                    input.read(bytes);
-                    key.setColumn(j, bytes);
-                }
+                var len = instInput.readInt();
+                var data = new byte[len];
+                instInput.read(data);
+                key.setData(data);
                 var id = instInput.readId();
                 indexMap.add(new IndexEntryPO(appId, key, id.toBytes()));
             }

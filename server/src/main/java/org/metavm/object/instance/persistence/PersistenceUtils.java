@@ -52,8 +52,9 @@ public class PersistenceUtils {
     }
 
     public static boolean containsNull(Index index, IndexKeyPO key) {
+        var columns = key.getColumns();
         for (int i = 0; i < index.getNumFields(); i++) {
-           if(Arrays.equals(key.getColumn(i), IndexKeyPO.NULL))
+           if(Arrays.equals(columns.get(i), IndexKeyPO.NULL))
                return true;
         }
         return false;
@@ -61,7 +62,7 @@ public class PersistenceUtils {
     }
 
     private static boolean isItemNull(IndexField field, IndexKeyPO key) {
-        return Arrays.equals(key.getColumn(field.getIndex().getFieldIndex(field)), IndexKeyPO.NULL);
+        return Arrays.equals(key.getColumns().get(field.getIndex().getFieldIndex(field)), IndexKeyPO.NULL);
     }
 
     public static IndexQueryPO toIndexQueryPO(InstanceIndexQuery query, long appId, int lockMode) {

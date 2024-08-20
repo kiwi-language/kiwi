@@ -28,7 +28,7 @@ public interface IInstanceStore {
 
     void saveIndexEntries(ChangeList<IndexEntryPO> changes);
 
-    void saveInstanceLogs(List<InstanceLog> instanceLogs);
+    void saveInstanceLogs(List<InstanceLog> instanceLogs, IInstanceContext context);
 
     ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds);
 

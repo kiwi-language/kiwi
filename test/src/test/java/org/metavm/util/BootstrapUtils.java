@@ -5,6 +5,7 @@ import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.event.MockEventQueue;
+import org.metavm.object.instance.ChangeLogManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.log.InstanceLogServiceImpl;
@@ -68,6 +69,8 @@ public class BootstrapUtils {
             var instanceSearchService = state.instanceSearchService();
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             entityContextFactory.setDefContext(defContext);
+            var metaContextCache = new MetaContextCache(entityContextFactory);
+            var changeLogManager = new ChangeLogManager(entityContextFactory);
             TestUtils.doInTransactionWithoutResult(() -> {
                 try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                     SchedulerRegistry.initialize(platformContext);
@@ -98,7 +101,8 @@ public class BootstrapUtils {
                     state.columnStore(),
                     state.stdIdStore(),
                     state.typeTagStore(),
-                    new MetaContextCache(entityContextFactory)
+                    metaContextCache,
+                    changeLogManager
             );
         } else {
             return create(true, true, new MemAllocatorStore(), new MemColumnStore(), new MemTypeTagStore(), Set.of(), Set.of());
@@ -133,6 +137,8 @@ public class BootstrapUtils {
         bootstrap.setClassBlacklist(classBlacklist);
         bootstrap.setFieldBlacklist(fieldBlacklist);
         bootstrap.boot();
+        var metaContextCache = new MetaContextCache(entityContextFactory);
+        var changeLogManager = new ChangeLogManager(entityContextFactory);
         TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(saveIds));
         var defContext = copyDefContext(entityContextFactory, idProvider, (SystemDefContext) ModelDefRegistry.getDefContext());
         if(saveState) {
@@ -181,7 +187,8 @@ public class BootstrapUtils {
                 columnStore,
                 stdIdStore,
                 typeTagStore,
-                new MetaContextCache(entityContextFactory)
+                metaContextCache,
+                changeLogManager
         );
     }
 

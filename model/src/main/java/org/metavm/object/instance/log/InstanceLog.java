@@ -1,11 +1,15 @@
 package org.metavm.object.instance.log;
 
+import org.metavm.api.EntityType;
+import org.metavm.api.ValueObject;
+import org.metavm.entity.Entity;
 import org.metavm.object.instance.ChangeType;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.persistence.VersionPO;
 import org.metavm.object.instance.persistence.VersionRT;
 
-public class InstanceLog {
+@EntityType
+public class InstanceLog extends Entity implements ValueObject {
 
     public static InstanceLog insert(VersionRT version) {
         return new InstanceLog(version.appId(), version.id(), ChangeType.INSERT, version.version());
@@ -20,13 +24,13 @@ public class InstanceLog {
     }
 
     private final long appId;
-    private final Id id;
+    private final String id;
     private final ChangeType changeType;
     private final long version;
 
     public InstanceLog(long appId, Id id, ChangeType changeType, long version) {
         this.appId = appId;
-        this.id = id;
+        this.id = id.toString();
         this.changeType = changeType;
         this.version = version;
     }
@@ -36,7 +40,7 @@ public class InstanceLog {
     }
 
     public Id getId() {
-        return id;
+        return Id.parse(id);
     }
 
     public ChangeType getChangeType() {
@@ -44,7 +48,7 @@ public class InstanceLog {
     }
 
     public VersionPO toVersionPO() {
-        return new VersionPO(appId, id.getTreeId(), version);
+        return new VersionPO(appId, getId().getTreeId(), version);
     }
 
     public long getVersion() {
@@ -64,7 +68,7 @@ public class InstanceLog {
     }
 
     @Override
-    public String toString() {
+    public String toString0() {
         return "InstanceLog{" +
                 "appId=" + appId +
                 ", id=" + id +

@@ -108,8 +108,9 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
-    public void saveInstanceLogs(List<InstanceLog> instanceLogs) {
-
+    public void saveInstanceLogs(List<InstanceLog> instanceLogs, IInstanceContext context) {
+        var changeLog = new ChangeLog(instanceLogs);
+        changeLog.save(context.getAppId());
     }
 
     @Override

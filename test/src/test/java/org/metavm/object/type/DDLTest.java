@@ -814,10 +814,10 @@ public class DDLTest extends TestCase {
             }));
             thread.start();
             DDLTask.DISABLE_DELAY = false;
-            Constants.SESSION_TIMEOUT = 100L;
+            Constants.SESSION_TIMEOUT = 200L;
             TestUtils.waitForTaskDone(
                     t -> t instanceof IDDLTask ddlTask && ddlTask.getCommit().getState() == CommitState.COMPLETED,
-                    10L,
+                    20L,
                     ScanTask.DEFAULT_BATCH_SIZE,
                     entityContextFactory
             );

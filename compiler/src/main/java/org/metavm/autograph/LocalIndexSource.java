@@ -5,11 +5,13 @@ import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.entity.InstanceIndexQueryItem;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.InstanceIndexKey;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.util.BytesUtils;
 import org.metavm.util.CompilerHttpUtils;
-import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,17 +57,7 @@ public class LocalIndexSource implements IndexSource {
     }
 
     private IndexKeyPO convertKey(IndexKeyRT indexKeyRT) {
-        var fields = indexKeyRT.getIndex().getFields();
-        byte[][] bytes = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
-        for (int i = 0; i < IndexKeyPO.MAX_KEY_COLUMNS; i++) {
-            Value value;
-            if (i < fields.size())
-                value = indexKeyRT.getField(fields.get(i));
-            else
-                value = Instances.nullInstance();
-            bytes[i] = BytesUtils.toIndexBytes(value);
-        }
-        return new IndexKeyPO(indexKeyRT.getIndex().getId().toBytes(), bytes);
+        return new IndexKeyPO(indexKeyRT.getIndex().getId().toBytes(), indexKeyRT.getKeyBytes());
     }
 
     public IEntityContext newContext() {

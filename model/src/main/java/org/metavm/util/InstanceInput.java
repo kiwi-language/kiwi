@@ -322,12 +322,10 @@ public class InstanceInput implements Closeable {
 
     public IndexKeyPO readIndexKeyPO() {
         var indexId = readId().toBytes();
-        var columns = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
-        for (int i = 0; i < columns.length; i++) {
-            columns[i] = new byte[readInt()];
-            read(columns[i]);
-        }
-        return new IndexKeyPO(indexId, columns);
+        var len = readInt();
+        var data = new byte[len];
+        read(data);
+        return new IndexKeyPO(indexId, data);
     }
 
     public <T> List<T> readList(Supplier<T> read) {

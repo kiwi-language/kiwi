@@ -65,15 +65,8 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
             -1, -1, -1, -1, -1, -1, -1, -1
     };
 
-    private static final byte[][] MIN_COLUMNS = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
-    private static final byte[][] MAX_COLUMNS = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
-
-    static {
-        for (int i = 0; i < IndexKeyPO.MAX_KEY_COLUMNS; i++) {
-            MIN_COLUMNS[i] = MIN_BYTES;
-            MAX_COLUMNS[i] = MAX_BYTES;
-        }
-    }
+    private static final byte[] MIN_COLUMNS = new byte[0];
+    private static final byte[] MAX_COLUMNS = new byte[] {0x01};
 
     public Collection<IndexEntryPO> query(long appId, byte[] indexId, @Nullable IndexKeyPO from, @Nullable IndexKeyPO to) {
         if(from == null)

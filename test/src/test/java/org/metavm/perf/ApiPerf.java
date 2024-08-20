@@ -20,15 +20,15 @@ public class ApiPerf {
 
     public static final int THREAD_COUNT = 5;
     public static final int EXECUTIONS = 200;
-//    private static final String host = "http://localhost:8080/api";
-//    public static final long appId = 1000000014L;
-//    public static final String defaultProductKindId = "01d0a8d6b90700";
-//    public static final String yuanCurrencyId = "01daa8d6b90700";
+    private static final String host = "http://localhost:8080/api";
+    public static final long appId = 1000001021L;
+    public static final String defaultProductKindId = "01dab8d6b90700";
+    public static final String yuanCurrencyId = "01d4b8d6b90700";
 
-    private static final String host = "https://metavm.tech/api";
-    public static final long appId = 1000000019;
-    public static final String defaultProductKindId = "01dea8d6b90700";
-    public static final String yuanCurrencyId = "01d8a8d6b90700";
+//    private static final String host = "https://metavm.tech/api";
+//    public static final long appId = 1000000019;
+//    public static final String defaultProductKindId = "01dea8d6b90700";
+//    public static final String yuanCurrencyId = "01d8a8d6b90700";
 
     private static final HttpClient client;
     public static final AtomicInteger failureCounter = new AtomicInteger();

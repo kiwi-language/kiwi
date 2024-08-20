@@ -1,10 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.event.EventQueue;
-import org.metavm.object.instance.BufferedInstanceStore;
-import org.metavm.object.instance.CachingInstanceStore;
-import org.metavm.object.instance.ContextPlugin;
-import org.metavm.object.instance.IInstanceStore;
+import org.metavm.object.instance.*;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -14,6 +11,7 @@ import org.metavm.object.type.ActiveCommitProvider;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
+import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -45,7 +43,7 @@ public class InstanceContextBuilder {
     private TypeDefProvider typeDefProvider;
     private MappingProvider mappingProvider;
     private final RedirectStatusProvider redirectStatusProvider;
-    private final ActiveCommitProvider activeCommitProvider;
+    private ActiveCommitProvider activeCommitProvider;
     private boolean childLazyLoading;
     private Cache cache;
     private EventQueue eventQueue;
@@ -55,6 +53,7 @@ public class InstanceContextBuilder {
     private boolean skipPostprocessing;
     private boolean relocationEnabled;
     private long timeout;
+    private boolean changeLogDisabled;
 
     public InstanceContextBuilder(long appId,
                                   IInstanceStore instanceStore,
@@ -167,9 +166,21 @@ public class InstanceContextBuilder {
         return this;
     }
 
+    public InstanceContextBuilder changeLogDisabled(boolean changeLogDisabled) {
+        this.changeLogDisabled = changeLogDisabled;
+        return this;
+    }
+
+    public InstanceContextBuilder activeCommitProvider(ActiveCommitProvider activeCommitProvider) {
+        this.activeCommitProvider = activeCommitProvider;
+        return this;
+    }
+
     public IInstanceContext build() {
         if (executor == null)
             executor = Executors.newSingleThreadExecutor();
+        if(changeLogDisabled)
+            plugins = NncUtils.exclude(plugins, p -> p instanceof ChangeLogPlugin);
         var idInitializer = this.idInitializer;
         return new InstanceContext(
                 appId, instanceStore, idInitializer, executor, asyncPostProcess,

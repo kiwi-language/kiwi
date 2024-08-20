@@ -132,11 +132,8 @@ public class InstanceOutput extends OutputStream {
 
     public void writeIndexKeyPO(IndexKeyPO indexKeyPO) {
         write(indexKeyPO.getIndexId());
-        for (int i = 0; i < IndexKeyPO.MAX_KEY_COLUMNS; i++) {
-            var col = indexKeyPO.getColumn(i);
-            writeInt(col.length);
-            write(col);
-        }
+        writeInt(indexKeyPO.getData().length);
+        write(indexKeyPO.getData());
     }
 
     public void writeReferencePO(ReferencePO referencePO) {

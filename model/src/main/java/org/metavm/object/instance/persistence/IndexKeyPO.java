@@ -6,7 +6,10 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.util.BytesUtils;
 import org.metavm.util.NncUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class IndexKeyPO implements Comparable<IndexKeyPO> {
@@ -15,23 +18,17 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
     public static final byte[] NULL = {'\0'};
 
     private byte[] indexId;
-    private final byte[][] columns = new byte[MAX_KEY_COLUMNS][];
+    private byte[] data;
     private transient int hash;
     private transient boolean hashIsZero;
+    private List<byte[]> columns;
 
     public IndexKeyPO() {
-        fillNull();
     }
 
-    public IndexKeyPO(byte[] indexId, byte[][] columns) {
+    public IndexKeyPO(byte[] indexId, byte[] data) {
         this.indexId = indexId;
-        for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
-            this.columns[i] = Arrays.copyOf(columns[i], columns[i].length);
-        }
-    }
-
-    public void fillNull() {
-        Arrays.fill(columns, NULL);
+        this.data = data;
     }
 
     public byte[] getIndexId() {
@@ -42,132 +39,13 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
         this.indexId = indexId;
     }
 
-    public byte[] getColumn0() {
-        return columns[0];
+    public byte[] getData() {
+        return data;
     }
 
-    public void setColumn0(byte[] column1) {
-        columns[0] = column1;
-    }
-
-    public byte[] getColumn1() {
-        return columns[1];
-    }
-
-    public void setColumn1(byte[] column1) {
-        columns[1] = column1;
-    }
-
-    public byte[] getColumn2() {
-        return columns[2];
-    }
-
-    public void setColumn2(byte[] column2) {
-        columns[2] = column2;
-    }
-
-    public byte[] getColumn3() {
-        return columns[3];
-    }
-
-    public void setColumn3(byte[] column3) {
-        columns[3] = column3;
-    }
-
-    public byte[] getColumn4() {
-        return columns[4];
-    }
-
-    public void setColumn4(byte[] column4) {
-        columns[4] = column4;
-    }
-
-    public byte[] getColumn5() {
-        return columns[5];
-    }
-
-    public void setColumn5(byte[] column5) {
-        columns[5] = column5;
-    }
-
-    public byte[] getColumn6() {
-        return columns[6];
-    }
-
-    public void setColumn6(byte[] column6) {
-        columns[6] = column6;
-    }
-
-    public byte[] getColumn7() {
-        return columns[7];
-    }
-
-    public void setColumn7(byte[] column7) {
-        columns[7] = column7;
-    }
-
-    public byte[] getColumn8() {
-        return columns[8];
-    }
-
-    public void setColumn8(byte[] column8) {
-        columns[8] = column8;
-    }
-
-    public byte[] getColumn9() {
-        return columns[9];
-    }
-
-    public void setColumn9(byte[] column9) {
-        columns[9] = column9;
-    }
-
-    public byte[] getColumn10() {
-        return columns[10];
-    }
-
-    public void setColumn10(byte[] column10) {
-        columns[10] = column10;
-    }
-
-    public byte[] getColumn11() {
-        return columns[11];
-    }
-
-    public void setColumn11(byte[] column11) {
-        columns[11] = column11;
-    }
-
-    public byte[] getColumn12() {
-        return columns[12];
-    }
-
-    public void setColumn12(byte[] column12) {
-        columns[12] = column12;
-    }
-
-    public byte[] getColumn13() {
-        return columns[13];
-    }
-
-    public void setColumn13(byte[] column13) {
-        columns[13] = column13;
-    }
-
-    public byte[] getColumn14() {
-        return columns[14];
-    }
-
-    public void setColumn14(byte[] column14) {
-        columns[14] = column14;
-    }
-
-    public void setColumn(int i, byte[] column) {
-        columns[i] = column;
-    }
-
-    public byte[] getColumn(int i) {
-        return columns[i];
+    public void setData(byte[] data) {
+        this.data = data;
+        columns = null;
     }
 
     @Override
@@ -175,23 +53,14 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IndexKeyPO that = (IndexKeyPO) o;
-        if (Arrays.equals(indexId, that.indexId)) {
-            for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
-                if (!Arrays.equals(columns[i], that.columns[i]))
-                    return false;
-            }
-            return true;
-        } else
-            return false;
+        return Arrays.equals(indexId, that.indexId) && Arrays.equals(data, that.data);
     }
 
     @Override
     public int hashCode() {
         int h = hash;
         if (h == 0 && !hashIsZero) {
-            h = Arrays.hashCode(indexId);
-            for (int i = 0; i < MAX_KEY_COLUMNS; i++)
-                h = 31 * h + Arrays.hashCode(columns[i]);
+            h = 31 * Arrays.hashCode(indexId) + Arrays.hashCode(data);
             if (h == 0)
                 hashIsZero = true;
             else
@@ -203,12 +72,46 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
     @Override
     public String toString() {
         var indexIdStr = Id.fromBytes(indexId);
-        var fields = NncUtils.map(columns, BytesUtils::readIndexBytes);
+        var fields = NncUtils.map(getColumns(), BytesUtils::readIndexBytes);
         return "{\"indexId: \"" + indexIdStr + "\", \"fields\": [" + NncUtils.join(fields, Objects::toString) + "]}";
     }
 
+    List<byte[]> getColumns() {
+        if(columns == null)
+            columns = toColumns(data);
+        return columns;
+    }
+
+    public static List<byte[]> toColumns(byte[] data) {
+        if(data.length <= 1)
+            return List.of();
+        var bout = new ByteArrayOutputStream();
+        var fieldBytes = new ArrayList<byte[]>();
+        for (int i = 1; i < data.length; i++) {
+            var b = data[i];
+            if(b == (byte) 0x00){
+              fieldBytes.add(bout.toByteArray());
+              bout.reset();
+            } else {
+                if (b == (byte) 0xff) {
+                    b = data[++i];
+                    if (b == 0x00)
+                        bout.write(0xfe);
+                    else if (b == 0x01)
+                        bout.write(0xff);
+                    else
+                        throw new IllegalStateException("Corrupted stream");
+                }
+                else
+                    bout.write(b - 1);
+            }
+        }
+        fieldBytes.add(bout.toByteArray());
+        return fieldBytes;
+    }
+
     public IndexKeyPO copy() {
-        var copy = new IndexKeyPO(indexId, columns);
+        var copy = new IndexKeyPO(indexId, data);
         copy.hash = hash;
         copy.hashIsZero = hashIsZero;
         return copy;
@@ -219,14 +122,7 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
         var indexCmpResult = UnsignedBytes.lexicographicalComparator().compare(indexId, o.indexId);
         if (indexCmpResult != 0)
             return indexCmpResult;
-//        if(!Arrays.equals(indexId, o.indexId))
-//            throw new RuntimeException("Can not compare keys from different indexes");
-        for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
-            var cmp = UnsignedBytes.lexicographicalComparator().compare(columns[i], o.columns[i]);
-            if (cmp != 0)
-                return cmp;
-        }
-        return 0;
+        return UnsignedBytes.lexicographicalComparator().compare(data, o.data);
     }
 
 }

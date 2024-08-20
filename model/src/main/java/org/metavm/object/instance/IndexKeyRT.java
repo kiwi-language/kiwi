@@ -11,7 +11,9 @@ import org.metavm.util.BytesUtils;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -53,16 +55,8 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
         IndexKeyPO key = new IndexKeyPO();
         var index = getIndex();
         key.setIndexId(index.getId().toBytes());
-        for (IndexField field : index.getFields()) {
-            var fieldValue = getFields().get(field);
-            if(fieldValue != null)
-                setKeyItem(field, key, fieldValue);
-        }
+        key.setData(getKeyBytes());
         return key;
-    }
-
-    private static void setKeyItem(IndexField field, IndexKeyPO key, Value fieldValue) {
-        key.setColumn(field.getIndex().getFieldIndex(field), BytesUtils.toIndexBytes(fieldValue));
     }
 
     public Index getIndex() {
@@ -150,4 +144,30 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
         sb.append("}}");
         return sb.toString();
     }
+
+    public byte[] getKeyBytes() {
+        return toKeyBytes(NncUtils.map(index.getFields(), fields::get));
+    }
+
+    public static byte[] toKeyBytes(List<Value> values) {
+        var bout = new ByteArrayOutputStream();
+        for (var value : values) {
+            var bytes = BytesUtils.toIndexBytes(value);
+            bout.write(0x00);
+            for (byte b : bytes) {
+                if(b == (byte) 0xfe) {
+                    bout.write(0xff);
+                    bout.write(0x00);
+                }
+                else if(b == (byte) 0xff) {
+                    bout.write(0xff);
+                    bout.write(0x01);
+                }
+                else
+                    bout.write(b + 1);
+            }
+        }
+        return bout.toByteArray();
+    }
+
 }

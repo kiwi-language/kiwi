@@ -48,15 +48,14 @@ public class ChangeLogPlugin implements ContextPlugin {
 
     @Override
     public void afterSaving(EntityChange<VersionRT> change, IInstanceContext context) {
-        instanceStore.saveInstanceLogs(context.getAttribute(CHANGE_LOGS));
+        instanceStore.saveInstanceLogs(context.getAttribute(CHANGE_LOGS), context);
     }
 
     @Override
     public void postProcess(IInstanceContext context) {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
-        if (NncUtils.isNotEmpty(logs) || !context.getRelocated().isEmpty()) {
-            if(NncUtils.isNotEmpty(logs))
-                instanceStore.saveInstanceLogs(logs);
+        if (NncUtils.isNotEmpty(logs)) {
+//            instanceStore.saveInstanceLogs(logs, context);
             instanceLogService.process(context.getAppId(), logs,
                     instanceStore, NncUtils.map(context.getRelocated(), Instance::getId), context.getClientId(), defContextProvider.getDefContext());
         }
