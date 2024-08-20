@@ -1,9 +1,11 @@
 package org.metavm.object.type;
 
 import org.metavm.util.InternalException;
+import org.metavm.util.PropertiesUtils;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -55,6 +57,8 @@ public class DirectoryAllocatorStore implements AllocatorStore {
 
     @Override
     public void saveFileNames(List<String> fileNames) {
+        fileNames = new ArrayList<>(fileNames);
+        Collections.sort(fileNames);
         String manifestFile = saveDir + "/id/manifest";
         try (OutputStream out = new FileOutputStream(manifestFile)) {
             for (String fileName : fileNames) {
@@ -69,7 +73,7 @@ public class DirectoryAllocatorStore implements AllocatorStore {
     public void save(String fileName, Properties properties) {
         String filePath = saveDir + fileName;
         try (OutputStream out = new FileOutputStream(filePath)) {
-            properties.store(out, null);
+            PropertiesUtils.store(properties, out);
         } catch (IOException e) {
             throw new InternalException("Fail to save properties to file: " + fileName, e);
         }

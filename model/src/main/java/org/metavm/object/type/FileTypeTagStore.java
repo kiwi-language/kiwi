@@ -1,6 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.util.InternalException;
+import org.metavm.util.PropertiesUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class FileTypeTagStore extends MemTypeTagStore {
         map.forEach((name, tag) -> properties.put(name, tag.toString()));
         String filePath = cpRoot + FILE;
         try {
-            properties.store(new FileOutputStream(filePath), null);
+            PropertiesUtils.store(properties, new FileOutputStream(filePath));
         } catch (IOException e) {
             throw new InternalException("Fail to save type tags file '" + filePath + "'", e);
         }

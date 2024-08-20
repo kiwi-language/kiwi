@@ -2,6 +2,7 @@ package org.metavm.object.type;
 
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.metavm.util.PropertiesUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -46,7 +47,7 @@ public class FileColumnStore extends MemColumnStore {
         }
         String filePath = cpRoot + FILE;
         try {
-            properties.store(new FileOutputStream(filePath), null);
+            PropertiesUtils.store(properties, new FileOutputStream(filePath));
         } catch (IOException e) {
             throw new InternalException("Fail to save column file '" + filePath + "'", e);
         }
