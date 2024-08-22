@@ -1,10 +1,10 @@
 package org.metavm.user;
 
+import org.metavm.api.ChildEntity;
+import org.metavm.api.EntityType;
 import org.metavm.application.Application;
 import org.metavm.application.ApplicationState;
 import org.metavm.common.ErrorCode;
-import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.user.rest.dto.PlatformUserDTO;
@@ -12,7 +12,7 @@ import org.metavm.util.BusinessException;
 
 import java.util.List;
 
-@EntityType
+@EntityType(searchable = true)
 public class PlatformUser extends User {
 
     public static final IndexDef<PlatformUser> IDX_APP =

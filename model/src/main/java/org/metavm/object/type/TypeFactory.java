@@ -80,6 +80,7 @@ public abstract class TypeFactory {
                         .isTemplate(klassDTO.isTemplate())
                         .isAbstract(klassDTO.isAbstract())
                         .struct(klassDTO.struct())
+                        .searchable(klassDTO.searchable())
                         .desc(klassDTO.desc())
                         .source(ClassSource.getByCode(klassDTO.source()))
                         .tmpId(klassDTO.tmpId())
@@ -92,6 +93,7 @@ public abstract class TypeFactory {
                 klass.setCode(klassDTO.code());
                 klass.setName(klassDTO.name());
                 klass.setDesc(klassDTO.desc());
+                klass.setSearchable(klassDTO.searchable());
                 if(kind != klass.getKind()) {
                     if(!context.isNewEntity(klass)) {
                         if(kind == ClassKind.VALUE)

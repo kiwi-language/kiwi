@@ -11,26 +11,28 @@ import org.metavm.object.instance.persistence.VersionRT;
 @EntityType
 public class InstanceLog extends Entity implements ValueObject {
 
-    public static InstanceLog insert(VersionRT version) {
-        return new InstanceLog(version.appId(), version.id(), ChangeType.INSERT, version.version());
+    public static InstanceLog insert(VersionRT version, boolean searchable) {
+        return new InstanceLog(version.appId(), version.id(), searchable, ChangeType.INSERT, version.version());
     }
 
-    public static InstanceLog update(VersionRT version) {
-        return new InstanceLog(version.appId(), version.id(), ChangeType.UPDATE, version.version());
+    public static InstanceLog update(VersionRT version, boolean searchable) {
+        return new InstanceLog(version.appId(), version.id(), searchable, ChangeType.UPDATE, version.version());
     }
 
-    public static InstanceLog delete(VersionRT version) {
-        return new InstanceLog(version.appId(), version.id(), ChangeType.DELETE, version.version());
+    public static InstanceLog delete(VersionRT version, boolean searchable) {
+        return new InstanceLog(version.appId(), version.id(), searchable, ChangeType.DELETE, version.version());
     }
 
     private final long appId;
     private final Identifier id;
+    private final boolean searchable;
     private final ChangeType changeType;
     private final long version;
 
-    public InstanceLog(long appId, Id id, ChangeType changeType, long version) {
+    public InstanceLog(long appId, Id id, boolean searchable, ChangeType changeType, long version) {
         this.appId = appId;
         this.id = Identifier.fromId(id);
+        this.searchable = searchable;
         this.changeType = changeType;
         this.version = version;
     }
@@ -65,6 +67,10 @@ public class InstanceLog extends Entity implements ValueObject {
 
     public boolean isDelete() {
         return changeType == ChangeType.DELETE;
+    }
+
+    public boolean isSearchable() {
+        return searchable;
     }
 
     @Override

@@ -23,6 +23,7 @@ public class KlassBuilder {
     private ClassKind kind = ClassKind.CLASS;
     private boolean anonymous;
     private boolean ephemeral;
+    private boolean searchable;
     private boolean isAbstract;
     private boolean isTemplate;
     private boolean struct;
@@ -72,6 +73,11 @@ public class KlassBuilder {
 
     public KlassBuilder ephemeral(boolean ephemeral) {
         this.ephemeral = ephemeral;
+        return this;
+    }
+
+    public KlassBuilder searchable(boolean searchable) {
+        this.searchable = searchable;
         return this;
     }
 
@@ -197,6 +203,7 @@ public class KlassBuilder {
                     anonymous,
                     ephemeral,
                     struct,
+                    searchable,
                     desc,
                     isAbstract,
                     isTemplate,
@@ -218,6 +225,7 @@ public class KlassBuilder {
             existing.setTypeParameters(typeParameters);
             existing.setTypeArguments(typeArguments);
             existing.setStruct(struct);
+            existing.setSearchable(searchable);
         }
         klass.setAttributes(attributes);
         return klass;

@@ -43,6 +43,7 @@ public record KlassDTO(
         List<String> typeArguments,
         boolean hasSubTypes,
         boolean struct,
+        boolean searchable,
         long tag,
         @Nullable Integer sourceCodeTag,
         List<ErrorDTO> errors

@@ -12,7 +12,9 @@ import org.metavm.entity.natives.NativeBase;
 import org.metavm.expression.Var;
 import org.metavm.flow.Error;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.rest.dto.KlassDTO;
@@ -30,7 +32,7 @@ import java.util.function.Predicate;
 
 import static org.metavm.util.NncUtils.*;
 
-@EntityType
+@EntityType(searchable = true)
 public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity, GlobalKey, LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
@@ -52,6 +54,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private ClassKind kind;
     private boolean anonymous;
     private boolean ephemeral;
+    private boolean searchable;
     @Nullable
     private ClassType superType;
     @ChildEntity
@@ -165,6 +168,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             boolean anonymous,
             boolean ephemeral,
             boolean struct,
+            boolean searchable,
             @Nullable String desc,
             boolean isAbstract,
             boolean isTemplate,
@@ -183,6 +187,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.anonymous = anonymous;
         this.ephemeral = ephemeral;
         this.struct = struct;
+        this.searchable = searchable;
         this.template = copySource = template;
         this.source = source;
         this.desc = desc;
@@ -1186,6 +1191,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.map(typeArguments, t -> t.toExpression(serializeContext)),
                 !extensions.isEmpty() || !implementations.isEmpty(),
                 struct,
+                searchable,
                 tag,
                 sourceCodeTag,
                 NncUtils.map(errors, Error::toDTO)
@@ -1466,6 +1472,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void setEphemeral(boolean ephemeral) {
         this.ephemeral = ephemeral;
+    }
+
+    public boolean isSearchable() {
+        return searchable;
+    }
+
+    public void setSearchable(boolean searchable) {
+        this.searchable = searchable;
     }
 
     public List<Type> getTypeArguments() {

@@ -21,6 +21,8 @@ public @interface EntityType {
 
     boolean isNative() default false;
 
+    boolean searchable() default false;
+
     int tag() default -1;
 
     int since() default 0;

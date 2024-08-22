@@ -843,4 +843,8 @@ public abstract class Instance implements Message {
     public void setDirectlyModified(boolean directlyModified) {
         this.directlyModified = directlyModified;
     }
+
+    public boolean isSearchable() {
+        return false;
+    }
 }

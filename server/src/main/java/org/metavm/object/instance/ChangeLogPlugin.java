@@ -34,13 +34,13 @@ public class ChangeLogPlugin implements ContextPlugin {
     public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
         List<InstanceLog> logs = new ArrayList<>();
         for (var instance : change.inserts()) {
-            logs.add(InstanceLog.insert(instance));
+            logs.add(InstanceLog.insert(instance, context.internalGet(instance.id()).isSearchable()));
         }
         for (var instance : change.updates()) {
-            logs.add(InstanceLog.update(instance));
+            logs.add(InstanceLog.update(instance, context.internalGet(instance.id()).isSearchable()));
         }
         for (var delete : change.deletes()) {
-            logs.add(InstanceLog.delete(delete));
+            logs.add(InstanceLog.delete(delete, context.internalGet(delete.id()).isSearchable()));
         }
         context.getAttribute(CHANGE_LOGS).addAll(logs);
         return false;

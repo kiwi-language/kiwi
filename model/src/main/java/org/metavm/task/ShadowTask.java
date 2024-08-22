@@ -3,11 +3,17 @@ package org.metavm.task;
 import org.metavm.api.EntityType;
 import org.metavm.entity.Entity;
 import org.metavm.entity.IndexDef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.util.List;
+import java.util.function.BiConsumer;
 
 @EntityType
 public class ShadowTask extends Entity {
+
+    public static final Logger logger = LoggerFactory.getLogger(ShadowTask.class);
 
     public static final IndexDef<ShadowTask> IDX_RUN_AT = IndexDef.create(ShadowTask.class,"runAt");
     public static final IndexDef<ShadowTask> IDX_EXECUTOR_IP_START_AT = IndexDef.create(ShadowTask.class, "executorIP", "startAt");
@@ -18,6 +24,8 @@ public class ShadowTask extends Entity {
     private long runAt;
     private final long appId;
     private final String appTaskId;
+
+    public static BiConsumer<Long, List<Task>> saveShadowTasksHook;
 
     public ShadowTask(long appId, String appTaskId, long startAt) {
         this.appId = appId;

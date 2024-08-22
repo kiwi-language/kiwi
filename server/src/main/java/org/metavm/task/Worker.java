@@ -52,6 +52,14 @@ public class Worker extends EntityContextFactoryAware {
         run0();
     }
 
+    public void waitForAllDone() {
+        while (true) {
+            var tasks = run0();
+            if(tasks.isEmpty())
+                return;
+        }
+    }
+
     public boolean waitFor(Predicate<Task> predicate, int maxRuns, long delay) {
         for (int i = 0; i < maxRuns; i++) {
             var tasks = run0();

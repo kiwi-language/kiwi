@@ -13,7 +13,7 @@ import org.metavm.util.Password;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType
+@EntityType(searchable = true)
 public class User extends Entity {
 
     public static final IndexDef<User> IDX_PLATFORM_USER_ID = IndexDef.createUnique(User.class, "platformUserId");

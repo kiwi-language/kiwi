@@ -550,6 +550,16 @@ public class TestUtils {
         }
     }
 
+    public static void waitForAllTasksDone(EntityContextFactory entityContextFactory) {
+        var transactionOps = new MockTransactionOperations();
+        var scheduler = new Scheduler(entityContextFactory, transactionOps);
+        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
+        scheduler.sendHeartbeat();
+        worker.sendHeartbeat();
+        scheduler.schedule();
+        worker.waitForAllDone();
+    }
+
     public static void waitForTaskGroupDone(Predicate<TaskGroup> predicate, EntityContextFactory entityContextFactory) {
         var transactionOps = new MockTransactionOperations();
         var scheduler = new Scheduler(entityContextFactory, transactionOps);

@@ -54,7 +54,6 @@ public class InstanceContextFactory {
                 .executor(executor)
                 .eventQueue(eventQueue)
                 .cache(cache)
-                .asyncPostProcess(true)
                 .readonly(isReadonlyTransaction());
     }
 

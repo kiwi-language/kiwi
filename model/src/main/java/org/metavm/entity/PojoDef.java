@@ -94,7 +94,16 @@ public abstract class PojoDef<T> extends ModelDef<T> {
     @Override
     public void updateInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
         instance.ensureLoaded();
-        resetInstance(instance, model, instanceMap);
+        Klass instanceKlass = instance.getKlass();
+        if (klass.isType(instance.getType())) {
+            if (model instanceof Entity entity)
+                Instances.reloadParent(entity, instance, instanceMap, defContext);
+            instance.setType(klass.getType());
+            var fields = getInstanceFields(model, instanceMap);
+            fields.forEach(instance::setFieldForce);
+        } else {
+            getSubTypeDef(instanceKlass).updateInstanceHelper(model, instance, instanceMap);
+        }
     }
 
     private void resetInstance(ClassInstance instance, Object model, ObjectInstanceMap instanceMap) {
@@ -136,7 +145,11 @@ public abstract class PojoDef<T> extends ModelDef<T> {
     protected Map<Field, Value> getInstanceFields(Object object, ObjectInstanceMap instanceMap) {
         var fieldData = getInstanceFields0(object, instanceMap);
         var result = new HashMap<Field, Value>();
-        klass.forEachField(f -> result.put(f, fieldData.get(f.getEffectiveTemplate())));
+        klass.forEachField(f -> {
+            var v = fieldData.get(f.getEffectiveTemplate());
+            if(v != null)
+                result.put(f, v);
+        });
         return result;
     }
 

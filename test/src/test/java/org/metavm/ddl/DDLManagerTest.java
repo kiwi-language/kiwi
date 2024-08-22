@@ -97,6 +97,8 @@ public class DDLManagerTest extends TestCase {
         TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, entityContextFactory);
         TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
 
+        TestUtils.waitForAllTasksDone(entityContextFactory);
+
         var bootstrap1 = new Bootstrap(entityContextFactory, new StdAllocators(bootResult.allocatorStore()),
                 bootResult.columnStore(), bootResult.typeTagStore(), bootResult.stdIdStore());
         bootstrap1.boot();
@@ -173,7 +175,7 @@ public class DDLManagerTest extends TestCase {
 
         var bridge = new EntityInstanceContextBridge();
         var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
-                ROOT_APP_ID, false, null, null,
+                ROOT_APP_ID, false, null,
                 new DefaultIdInitializer(bootResult.idProvider()), bridge, wal, null, null, false,
                 builder -> builder.timeout(0L).typeDefProvider(sysDefContext)
         );

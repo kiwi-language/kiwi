@@ -1,9 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.ChangeLogPlugin;
-import org.metavm.object.instance.CheckConstraintPlugin;
-import org.metavm.object.instance.IInstanceStore;
-import org.metavm.object.instance.IndexConstraintPlugin;
+import org.metavm.object.instance.*;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.WAL;
@@ -26,7 +23,6 @@ public class EntityContextFactory {
     private final InstanceContextFactory instanceContextFactory;
     private final IndexEntryMapper indexEntryMapper;
     private InstanceLogService instanceLogService;
-    private boolean defaultAsyncLogProcess = true;
     private DefContext defContext;
 
     public EntityContextFactory(InstanceContextFactory instanceContextFactory,
@@ -39,11 +35,6 @@ public class EntityContextFactory {
         return newContext(ContextUtil.getAppId());
     }
 
-
-    public IEntityContext newContext(boolean asyncLogProcess) {
-        return newContext(ContextUtil.getAppId(), defContext, null, asyncLogProcess, null, null, false, null, builder -> {
-        });
-    }
 
     public IEntityContext newContext(long appId, IdInitializer idProvider) {
         return newContext(appId, defContext, idProvider);
@@ -58,7 +49,7 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newLoadedContext(long appId, WAL cachingWAL, boolean migrationDisabled) {
-        return newContext(appId, defContext, null, defaultAsyncLogProcess, cachingWAL, null, migrationDisabled, null, builder -> {
+        return newContext(appId, defContext, null, cachingWAL, null, migrationDisabled, null, builder -> {
         });
     }
 
@@ -67,7 +58,7 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newBufferingContext(long appId, WAL bufferingWAL) {
-        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, bufferingWAL, false, null, builder -> {
+        return newContext(appId, defContext, null, null, bufferingWAL, false, null, builder -> {
         });
     }
 
@@ -76,7 +67,7 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newContext(long appId, Consumer<InstanceContextBuilder> customizer) {
-        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, null,
+        return newContext(appId, defContext, null, null, null,
                 false, null, customizer);
     }
 
@@ -85,24 +76,23 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent, Consumer<InstanceContextBuilder> customizer) {
-        return newContext(appId, parent, null, defaultAsyncLogProcess, null, null,
+        return newContext(appId, parent, null, null, null,
                 false, null, customizer);
     }
 
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider) {
-        return newContext(appId, parent, idProvider, defaultAsyncLogProcess, null, null, false, null, builder -> {
+        return newContext(appId, parent, idProvider, null, null, false, null, builder -> {
         });
     }
 
     public IEntityContext newContext(long appId,
                                      @Nullable IEntityContext parent,
                                      @Nullable IdInitializer idProvider,
-                                     boolean asyncLogProcessing,
                                      @Nullable WAL cachingWAL,
                                      @Nullable WAL bufferingWAL,
                                      boolean migrationDisabled, @Nullable IInstanceStore store, Consumer<InstanceContextBuilder> customizer) {
         var bridge = new EntityInstanceContextBridge();
-        var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(), asyncLogProcessing,
+        var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(),
                 NncUtils.get(parent, IEntityContext::getInstanceContext), idProvider, bridge, cachingWAL, bufferingWAL, store, migrationDisabled, customizer);
         var context = new EntityContext(instanceContext, parent, parent instanceof DefContext dc ? dc : defContext);
         bridge.setEntityContext(context);
@@ -110,13 +100,12 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newContextWithStore(long appId, IInstanceStore instanceStore) {
-        return newContext(appId, defContext, null, defaultAsyncLogProcess, null, null, false, instanceStore, builder -> {
+        return newContext(appId, defContext, null, null, null, false, instanceStore, builder -> {
         });
     }
 
     public IInstanceContext newBridgedInstanceContext(long appId,
                                                       boolean readonly,
-                                                      @Nullable Boolean asyncLogProcessing,
                                                       @Nullable IInstanceContext parent,
                                                       @Nullable IdInitializer idProvider,
                                                       EntityInstanceContextBridge bridge,
@@ -125,7 +114,6 @@ public class EntityContextFactory {
                                                       @Nullable IInstanceStore store, boolean migrationDisabled, Consumer<InstanceContextBuilder> customizer) {
         var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge, bridge)
                 .readonly(readonly)
-                .asyncPostProcess(NncUtils.orElse(asyncLogProcessing, defaultAsyncLogProcess))
                 .parent(parent)
                 .relocationEnabled(migrationDisabled)
                 .readWAL(cachingWAL)
@@ -141,7 +129,8 @@ public class EntityContextFactory {
 //                        new MetaVersionPlugin(bridge, bridge),
                         new CheckConstraintPlugin(),
                         new IndexConstraintPlugin(currentStore, bridge),
-                        new ChangeLogPlugin(currentStore, instanceLogService, bridge)
+                        new ChangeLogPlugin(currentStore, instanceLogService, bridge),
+                        new TaskPlugin()
                 ));
         return builder.build();
     }
@@ -158,10 +147,6 @@ public class EntityContextFactory {
 
     public InstanceContextFactory getInstanceContextFactory() {
         return instanceContextFactory;
-    }
-
-    public void setDefaultAsyncLogProcess(boolean defaultAsyncLogProcess) {
-        this.defaultAsyncLogProcess = defaultAsyncLogProcess;
     }
 
     public void setDefContext(DefContext defContext) {

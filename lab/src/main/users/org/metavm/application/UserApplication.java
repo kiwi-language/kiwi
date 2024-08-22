@@ -14,7 +14,7 @@ import org.metavm.utils.UserUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType
+@EntityType(searchable = true)
 public class UserApplication extends LabApplication {
 
     public static final int MAX_NUM_ADMINS = 16;

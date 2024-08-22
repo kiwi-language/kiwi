@@ -176,4 +176,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     long getTimeout();
 
     void setTimeout(long timeout);
+
+    String getDescription();
+
+    void setDescription(String description);
 }

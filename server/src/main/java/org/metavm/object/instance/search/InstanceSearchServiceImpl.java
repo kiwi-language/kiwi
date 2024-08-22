@@ -10,11 +10,12 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.search.SearchHit;
-import org.springframework.stereotype.Component;
 import org.metavm.common.Page;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.util.Hooks;
 import org.metavm.util.NncUtils;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,6 +27,11 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     private static final String INDEX = "instance";
 
     private final RestHighLevelClient restHighLevelClient;
+
+    public InstanceSearchServiceImpl(RestHighLevelClient restHighLevelClient) {
+        this.restHighLevelClient = restHighLevelClient;
+        Hooks.SEARCH_BULK = this::bulk;
+    }
 
     @Override
     public Page<Id> search(SearchQuery query) {
@@ -58,10 +64,6 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
         } catch (IOException e) {
             throw new RuntimeException("ElasticSearch Error", e);
         }
-    }
-
-    public InstanceSearchServiceImpl(RestHighLevelClient restHighLevelClient) {
-        this.restHighLevelClient = restHighLevelClient;
     }
 
     @Override

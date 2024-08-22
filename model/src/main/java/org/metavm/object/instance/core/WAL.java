@@ -170,6 +170,10 @@ public class WAL extends Entity implements LoadAware, ContextFinishWare {
         return appId;
     }
 
+    public WAL copy() {
+        return new WAL(appId, data);
+    }
+
     private static class IndexEntryList implements Iterable<IndexEntryPO> {
         private final List<IndexEntryPO> values = new ArrayList<>();
         private final Map<IndexKeyPO, List<IndexEntryPO>> key2entries = new HashMap<>();

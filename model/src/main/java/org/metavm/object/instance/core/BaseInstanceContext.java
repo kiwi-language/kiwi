@@ -53,6 +53,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private int seq;
     private final long startAt = System.currentTimeMillis();
     private long timeout;
+    private String description = "unnamed";
 
     public BaseInstanceContext(long appId,
                                IInstanceContext parent,
@@ -847,4 +848,18 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         this.timeout = timeout;
     }
 
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceContext-" + description + "-" + System.identityHashCode(this);
+    }
 }

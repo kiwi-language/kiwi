@@ -90,8 +90,10 @@ public class TypeManagerTest extends TestCase {
                 )
                 .build();
         KlassDTO savedKlassDTO = TestUtils.doInTransaction(() -> typeManager.saveType(klassDTO));
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         Assert.assertTrue(instanceSearchService.contains(TestUtils.getTypeId(savedKlassDTO)));
         TestUtils.doInTransactionWithoutResult(() -> typeManager.remove(savedKlassDTO.id()));
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         Assert.assertFalse(instanceSearchService.contains(TestUtils.getTypeId(savedKlassDTO)));
     }
 
@@ -219,6 +221,34 @@ public class TypeManagerTest extends TestCase {
         var reloadedProductViewType = TestUtils.getViewKlass(productType, typeManager);
         var reloadedProductViewSkuField = TestUtils.getFieldByName(reloadedProductViewType, "sku");
         Assert.assertEquals(skuViewChildArrayType, reloadedProductViewSkuField.type());
+    }
+
+    public void testSynchronizeSearch() {
+        var fooKlassId = TestUtils.doInTransaction(() -> {
+            try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                var fooKlass = TestUtils.newKlassBuilder("SynchronizeFoo").build();
+                context.bind(fooKlass);
+                context.finish();
+                Assert.assertTrue(context.getInstance(fooKlass).isSearchable());
+                return fooKlass.getId();
+            }
+        });
+        DebugEnv.id = fooKlassId;
+//        TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, entityContextFactory);
+        DebugEnv.flag = true;
+        TestUtils.waitForAllTasksDone(entityContextFactory);
+        var queryResult = typeManager.query(new TypeQuery(
+                "SynchronizeFoo",
+                List.of(ClassKind.CLASS.code()),
+                null,
+                false,
+                false,
+                null,
+                List.of(),
+                1,
+                20
+        ));
+        Assert.assertEquals(1, queryResult.data().size());
     }
 
 }

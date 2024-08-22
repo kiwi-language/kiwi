@@ -144,6 +144,7 @@ public class InstanceOutput extends OutputStream {
 
     public void writeInstanceLog(InstanceLog instanceLog) {
         writeId(instanceLog.getId());
+        writeBoolean(instanceLog.isSearchable());
         writeInt(instanceLog.getChangeType().ordinal());
         writeLong(instanceLog.getVersion());
     }

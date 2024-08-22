@@ -19,7 +19,7 @@ import java.util.List;
 
 import static org.metavm.api.lang.Indices.selectFirst;
 
-@EntityType
+@EntityType(searchable = true)
 public class LabPlatformUser extends LabUser {
 
     @ChildEntity

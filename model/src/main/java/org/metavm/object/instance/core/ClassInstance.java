@@ -774,6 +774,11 @@ public class ClassInstance extends Instance {
         }
     }
 
+    @Override
+    public boolean isSearchable() {
+        return klass.isSearchable();
+    }
+
     private static class FieldSubTable implements Iterable<IInstanceField> {
         private final FieldTable table;
         private final long klassTag;

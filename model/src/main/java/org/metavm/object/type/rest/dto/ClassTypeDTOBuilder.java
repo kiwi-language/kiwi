@@ -35,6 +35,7 @@ public class ClassTypeDTOBuilder {
     private Object extra;
     private boolean ephemeral;
     private boolean anonymous;
+    private boolean searchable;
     @Nullable
     private String superClassId;
     private List<String> interfaceIds = new ArrayList<>();
@@ -139,6 +140,11 @@ public class ClassTypeDTOBuilder {
 
     public ClassTypeDTOBuilder struct(boolean struct) {
         this.struct = struct;
+        return this;
+    }
+
+    public ClassTypeDTOBuilder searchable(boolean searchable) {
+        this.searchable = searchable;
         return this;
     }
 
@@ -293,6 +299,7 @@ public class ClassTypeDTOBuilder {
                 typeArgumentIds,
                 hasSubTypes,
                 struct,
+                searchable,
                 tag,
                 sourceCodeTag,
                 errors

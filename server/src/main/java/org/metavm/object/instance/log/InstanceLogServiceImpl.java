@@ -1,11 +1,11 @@
 package org.metavm.object.instance.log;
 
 import org.metavm.ddl.Commit;
+import org.metavm.ddl.DefContextUtils;
 import org.metavm.entity.*;
 import org.metavm.event.EventQueue;
-import org.metavm.event.rest.dto.FunctionChangeEvent;
-import org.metavm.event.rest.dto.TypeChangeEvent;
 import org.metavm.flow.Function;
+import org.metavm.object.instance.CachingInstanceStore;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.search.InstanceSearchService;
@@ -14,6 +14,8 @@ import org.metavm.object.version.Version;
 import org.metavm.object.version.VersionRepository;
 import org.metavm.object.version.Versions;
 import org.metavm.object.view.Mapping;
+import org.metavm.task.PublishMetadataEventTask;
+import org.metavm.task.SynchronizeSearchTask;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,20 +62,29 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
         handleDDL(appId, newInstanceIds);
         handleMetaChanges(appId, logs, clientId);
-        try (var context = entityContextFactory.newContext(appId, defContext, builder -> builder.instanceStore(instanceStore))) {
+        try (var context = entityContextFactory.newContext(appId, defContext, builder -> builder
+                .instanceStore(instanceStore).skipPostProcessing(true))) {
             var instanceContext = context.getInstanceContext();
+            instanceContext.setDescription("PostProcess");
             List<ClassInstance> changed = NncUtils.filterByType(instanceContext.batchGet(idsToLoad), ClassInstance.class);
             List<ClassInstance> created = NncUtils.filter(changed, c -> newInstanceIds.contains(c.getId()));
             for (LogHandler<?> handler : handlers) {
                 invokeHandler(created, handler, clientId, context);
             }
-            List<Id> removed = NncUtils.filterAndMap(logs, InstanceLog::isDelete, InstanceLog::getId);
-            if (NncUtils.isNotEmpty(changed) || NncUtils.isNotEmpty(removed)) {
-                try (var ignored = context.getProfiler().enter("bulk")) {
-                    instanceSearchService.bulk(appId, changed, removed);
-                }
+            List<Id> removedSearchable = NncUtils.filterAndMap(logs, i -> i.isDelete() && i.isSearchable(), InstanceLog::getId);
+            var changedSearchable = NncUtils.filter(changed, ClassInstance::isSearchable);
+            if (NncUtils.isNotEmpty(changedSearchable) || NncUtils.isNotEmpty(removedSearchable)) {
+                WAL wal = instanceStore instanceof CachingInstanceStore cachingInstanceStore ?
+                        cachingInstanceStore.getWal().copy() : null;
+                WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
+                        DefContextUtils.getWal(reversedDefContext).copy() : null;
+                context.bind(new SynchronizeSearchTask(
+                        NncUtils.map(changedSearchable, i -> Identifier.fromId(i.getId())),
+                        NncUtils.map(removedSearchable, Identifier::fromId),
+                        wal, defWal));
             }
             this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
+            context.finish();
         }
     }
 
@@ -113,8 +124,9 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty()
                 || !changedMappingIds.isEmpty() || !removedMappingIds.isEmpty()
                 || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
-            var version = transactionOperations.execute(s -> {
+            transactionOperations.executeWithoutResult(s -> {
                 try (var context = newContext(appId, builder -> builder.timeout(0))) {
+                    context.getInstanceContext().setDescription("MetaChange");
                     var v = Versions.create(
                             changedTypeDefIds,
                             removedTypeDefIds,
@@ -136,21 +148,12 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                                     context.bind(version);
                                 }
                             });
+                    if(!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty() || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
+                        context.bind(new PublishMetadataEventTask(changedTypeDefIds, removedTypeDefIds, changedFunctionIds, removedFunctionIds, v.getVersion(), clientId));
+                    }
                     context.finish();
-                    return v;
                 }
             });
-            assert version != null;
-            if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty()) {
-                eventQueue.publishAppEvent(
-                        new TypeChangeEvent(appId, version.getVersion(), NncUtils.merge(changedTypeDefIds, removedTypeDefIds), clientId)
-                );
-            }
-            if (!changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
-                eventQueue.publishAppEvent(
-                        new FunctionChangeEvent(appId, version.getVersion(), NncUtils.merge(changedFunctionIds, removedFunctionIds), clientId)
-                );
-            }
         }
     }
 
@@ -168,6 +171,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                             .timeout(0)
                     )
                     ) {
+                        loadedContext.getInstanceContext().setDescription("DDLHandler");
                         Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
                                 .iterator();
                         commit.getState().process(instances, commit, loadedContext);

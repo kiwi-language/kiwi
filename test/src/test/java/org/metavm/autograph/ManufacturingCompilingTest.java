@@ -30,13 +30,13 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
         super.setUp();
-        Constants.SESSION_TIMEOUT = 1000;
+        Constants.SESSION_TIMEOUT = 3000;
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
-        Constants.SESSION_TIMEOUT = 300;
+        Constants.SESSION_TIMEOUT = Constants.DEFAULT_SESSION_TIMEOUT;
     }
 
     public void test() {
@@ -255,6 +255,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 )
         ));
         DebugEnv.stringId = inventoryId;
+        waitForAllTasksDone();
         // query the inventory object by condition
         var queryResp = instanceManager.query(
                 new InstanceQueryDTO(

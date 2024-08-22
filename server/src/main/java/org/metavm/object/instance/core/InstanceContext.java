@@ -36,7 +36,6 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private boolean finished;
     private final SubContext headContext;
-    private final boolean asyncPostProcessing;
     private final List<ContextPlugin> plugins;
     private final Executor executor;
     private final boolean childrenLazyLoading;
@@ -53,7 +52,6 @@ public class InstanceContext extends BufferingInstanceContext {
                            IInstanceStore instanceStore,
                            IdInitializer idInitializer,
                            Executor executor,
-                           boolean asyncPostProcessing,
                            List<ContextPlugin> plugins,
                            IInstanceContext parent,
                            TypeDefProvider typeDefProvider,
@@ -74,7 +72,6 @@ public class InstanceContext extends BufferingInstanceContext {
                 new StoreIndexSource(instanceStore), idInitializer,
                 parent, typeDefProvider, mappingProvider, redirectStatusProvider, readonly, timeout);
         headContext = new SubContext(appId);
-        this.asyncPostProcessing = asyncPostProcessing;
         this.plugins = plugins;
         this.executor = executor;
         this.childrenLazyLoading = childrenLazyLoading;
@@ -129,12 +126,8 @@ public class InstanceContext extends BufferingInstanceContext {
         headContext.unfreeze();
         headContext.clear();
         patch.trees.forEach(headContext::add);
-        if (TransactionSynchronizationManager.isActualTransactionActive())
-            registerTransactionSynchronization();
-        else {
-            try (var ignored = getProfiler().enter("postProcess")) {
-                postProcess();
-            }
+        try (var ignored = getProfiler().enter("postProcess")) {
+            postProcess();
         }
         finished = true;
     }
@@ -512,11 +505,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private void postProcess() {
         if (skipPostprocessing)
             return;
-        if (asyncPostProcessing) {
-            executor.execute(this::postProcess0);
-        } else {
-            postProcess0();
-        }
+        postProcess0();
     }
 
     private void postProcess0() {
@@ -575,7 +564,6 @@ public class InstanceContext extends BufferingInstanceContext {
                 instanceStore,
                 idInitializer,
                 executor,
-                asyncPostProcessing,
                 plugins,
                 getParent(),
                 typeDefProvider,

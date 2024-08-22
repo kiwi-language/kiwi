@@ -38,7 +38,6 @@ public class InstanceContextBuilder {
     private IdInitializer idInitializer;
     private Executor executor;
     private @Nullable IInstanceContext parent;
-    private boolean asyncPostProcess;
     private List<ContextPlugin> plugins = List.of();
     private TypeDefProvider typeDefProvider;
     private MappingProvider mappingProvider;
@@ -110,11 +109,6 @@ public class InstanceContextBuilder {
         return this;
     }
 
-    public InstanceContextBuilder asyncPostProcess(boolean asyncPostProcess) {
-        this.asyncPostProcess = asyncPostProcess;
-        return this;
-    }
-
     public InstanceContextBuilder readonly(boolean readonly) {
         this.readonly = readonly;
         return this;
@@ -151,6 +145,11 @@ public class InstanceContextBuilder {
         return this;
     }
 
+    public InstanceContextBuilder skipPostProcessing(boolean skipPostprocessing) {
+        this.skipPostprocessing = skipPostprocessing;
+        return this;
+    }
+
     public InstanceContextBuilder relocationEnabled(boolean relocationEabled) {
         this.relocationEnabled = relocationEabled;
         return this;
@@ -183,7 +182,7 @@ public class InstanceContextBuilder {
             plugins = NncUtils.exclude(plugins, p -> p instanceof ChangeLogPlugin);
         var idInitializer = this.idInitializer;
         return new InstanceContext(
-                appId, instanceStore, idInitializer, executor, asyncPostProcess,
+                appId, instanceStore, idInitializer, executor,
                 plugins, parent, typeDefProvider, mappingProvider, redirectStatusProvider,
                 activeCommitProvider,
                 childLazyLoading, cache,

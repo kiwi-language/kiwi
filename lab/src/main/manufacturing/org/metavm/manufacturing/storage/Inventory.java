@@ -11,7 +11,7 @@ import org.metavm.manufacturing.utils.Utils;
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType
+@EntityType(searchable = true)
 public class Inventory {
     private final Material material;
     private long quantity;

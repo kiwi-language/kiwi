@@ -815,6 +815,11 @@ public class TranspileUtils {
         return ephemeral == Boolean.TRUE;
     }
 
+    public static boolean isSearchable(PsiClass psiClass) {
+        Boolean ephemeral = (Boolean) getEntityAnnotationAttr(psiClass, "searchable");
+        return ephemeral == Boolean.TRUE;
+    }
+
     public static @Nullable Object getEntityAnnotationAttr(PsiClass psiClass, String attributeName) {
         return getEntityAnnotationAttr(psiClass, attributeName, null);
     }

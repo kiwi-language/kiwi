@@ -8,11 +8,15 @@ import org.metavm.util.DiffUtils;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class MemInstanceMapper implements InstanceMapper {
+
+    public static final Logger logger = LoggerFactory.getLogger(MemInstanceMapper.class);
 
     private final NavigableMap<Long, InstancePO> id2instance = new TreeMap<>();
 //    private final Map<Id, List<InstancePO>> type2instances = new HashMap<>();

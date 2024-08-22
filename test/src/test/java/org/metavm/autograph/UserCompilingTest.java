@@ -7,7 +7,6 @@ import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.instance.rest.InstanceQueryDTO;
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
-import org.metavm.object.type.ClassKind;
 import org.metavm.object.type.PrimitiveKind;
 import org.metavm.object.type.TypeExpressionBuilder;
 import org.metavm.object.type.TypeExpressions;
@@ -54,7 +53,7 @@ public class UserCompilingTest extends CompilerTestBase {
         submit(() -> {
             var profiler = ContextUtil.getProfiler();
             try (var ignored = profiler.enter("submit")) {
-                var roleType = queryClassType("LabRole");
+                var roleType = queryClassType("org.metavm.user.LabRole");
                 var roleReadWriteListType = TypeExpressionBuilder.fromKlassId(roleType.id()).readWriteList().build();
                 var roleNameFieldId = getFieldIdByCode(roleType, "name");
                 var roleId = doInTransaction(() -> apiClient.newInstance(
@@ -66,22 +65,22 @@ public class UserCompilingTest extends CompilerTestBase {
                         "admin",
                         ((PrimitiveFieldValue) role.getFieldValue(roleNameFieldId)).getValue()
                 );
-                var userType = queryClassType("LabUser", List.of(ClassKind.CLASS.code()));
+                var userType = queryClassType("org.metavm.user.LabUser");
                 assertNoError(userType);
                 var userLoginNameFieldId = getFieldIdByCode(userType, "loginName");
                 var userNameFieldId = getFieldIdByCode(userType, "name");
                 var userPasswordFieldId = getFieldIdByCode(userType, "password");
                 var userRolesFieldId = getFieldIdByCode(userType, "roles");
 
-                var platformUserType = queryClassType("LabPlatformUser", List.of(ClassKind.CLASS.code()));
+                var platformUserType = queryClassType("org.metavm.user.LabPlatformUser");
+                Assert.assertTrue(platformUserType.searchable());
                 assertNoError(platformUserType);
 
                 // send verification code by invoking LabVerificationCode.sendVerificationCode
-                var verificationCodeType = queryClassType("LabVerificationCode");
+                var verificationCodeType = queryClassType("org.metavm.user.LabVerificationCode");
                 String email = "15968879210@163.com";
                 sendVerificationCode(verificationCodeType, email);
                 var verificationCode = getLastSentEmailContent();
-                var registerRequestType = queryClassType("LabRegisterRequest");
                 var platformUserId = (String) doInTransaction(() -> apiClient.callMethod(
                         platformUserType.getCodeNotNull(),
                         "register",
@@ -94,6 +93,7 @@ public class UserCompilingTest extends CompilerTestBase {
                                 )
                         )
                 ));
+                waitForAllTasksDone();
                 var platformUser = instanceManager.get(platformUserId, 2).instance();
                 Assert.assertEquals(
                         email, ((PrimitiveFieldValue) platformUser.getFieldValue(userLoginNameFieldId)).getValue()
@@ -136,7 +136,7 @@ public class UserCompilingTest extends CompilerTestBase {
 //            Assert.assertEquals(1, reloadedPlatformUserRoles.getListSize());
 
                 // create an UserApplication by invoking the UserApplication.create method
-                var userApplicationType = queryClassType("UserApplication");
+                var userApplicationType = queryClassType("org.metavm.application.UserApplication");
                 var applicationId = (String) doInTransaction(() -> apiClient.callMethod(
                         userApplicationType.getCodeNotNull(),
                         "create",
@@ -150,12 +150,11 @@ public class UserCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(applicationId, joinedApplications.getElement(0).referenceId());
 
                 // get PlatformApplication
-                var platformApplicationType = queryClassType("PlatformApplication");
+                var platformApplicationType = queryClassType("org.metavm.application.PlatformApplication");
                 var platformApplicationId = (String) doInTransaction(() -> apiClient.callMethod(
                         platformApplicationType.getCodeNotNull(), "getInstance", List.of()
                 ));
                 var platformApplication = instanceManager.get(platformApplicationId, 2).instance();
-                var loginResultType = queryClassType("LabLoginResult");
 
                 // login
                 var token = login(userType, platformApplication, email, "123456");
@@ -212,7 +211,8 @@ public class UserCompilingTest extends CompilerTestBase {
                 login(userType, platformApplication, "lyq2", "123456");
 
                 // query the latest message
-                var messageType = queryClassType("LabMessage", List.of(ClassKind.CLASS.code()));
+                waitForAllTasksDone();
+                var messageType = queryClassType("org.metavm.message.LabMessage");
                 var messageList = instanceManager.query(
                         new InstanceQueryDTO(
                                 TypeExpressions.getClassType(messageType.id()),
@@ -253,7 +253,6 @@ public class UserCompilingTest extends CompilerTestBase {
                         "enterApp",
                         List.of(platformUser2.getIdNotNull(), application.getIdNotNull())
                 ));
-                loginResultType = queryClassType("LabLoginResult");
 //                token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
                 token = (String) loginResult.get("token");
                 Assert.assertNotNull(token);
@@ -278,6 +277,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 }
 
                 // test application view list
+                waitForAllTasksDone();
                 var applicationMapping = TestUtils.getDefaultMapping(userApplicationType);
                 var applicationViewType = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(applicationMapping.targetType()), false)).type();
                 var applicationViewList = instanceManager.query(
@@ -301,8 +301,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 TestUtils.doInTransactionWithoutResult(() -> instanceManager.update(applicationView));
 
                 // assert that fields of LabToken type has been generated correctly
-                var tokenType = queryClassType("LabToken");
-                var tokenReadWriteListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(tokenType.id()));
+                var tokenType = queryClassType("org.metavm.user.LabToken");
                 Assert.assertTrue(tokenType.ephemeral());
                 Assert.assertEquals(2, tokenType.fields().size());
 
@@ -344,7 +343,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 // execute the LabUser.verify method and check verification result
                 var tokenValue = createTokenValue(application, token);
                 var loginInfo = verify(userType, tokenValue);
-                var loginInfoType = queryClassType("LabLoginInfo");
+                var loginInfoType = queryClassType("org.metavm.user.LabLoginInfo");
                 assertNoError(loginInfoType);
                 Assert.assertEquals(application.id(), loginInfo.get("application"));
                 Assert.assertEquals(user.id(), loginInfo.get("user"));

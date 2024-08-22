@@ -2,7 +2,6 @@ package org.metavm.object.instance;
 
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
-import org.metavm.util.DebugEnv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -24,10 +23,9 @@ public class ChangeLogManager extends EntityContextFactoryAware {
                 .changeLogDisabled(true)
                 .activeCommitProvider(() -> null)
         )) {
+            context.getInstanceContext().setDescription("ChangeLog");
             context.bind(changeLog);
-            DebugEnv.flag = true;
             context.finish();
-            DebugEnv.flag = false;
         }
     }
 

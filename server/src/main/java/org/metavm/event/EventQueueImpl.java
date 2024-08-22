@@ -1,11 +1,11 @@
 package org.metavm.event;
 
-import org.metavm.event.EventQueue;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Component;
 import org.metavm.event.rest.dto.AppEvent;
 import org.metavm.event.rest.dto.UserEvent;
 import org.metavm.util.ContextUtil;
+import org.metavm.util.Hooks;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Component;
 
 @Component
 public class EventQueueImpl implements EventQueue {
@@ -14,6 +14,8 @@ public class EventQueueImpl implements EventQueue {
 
     public EventQueueImpl(SimpMessagingTemplate simpMessagingTemplate) {
         this.simpMessagingTemplate = simpMessagingTemplate;
+        Hooks.PUBLISH_USER_EVENT = this::publishUserEvent;
+        Hooks.PUBLISH_APP_EVENT = this::publishAppEvent;
     }
 
     @Override

@@ -9,7 +9,7 @@ import org.metavm.utils.LabErrorCode;
 
 import javax.annotation.Nullable;
 
-@EntityType
+@EntityType(searchable = true)
 public class LabMessage {
 
     @EntityIndex

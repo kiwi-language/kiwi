@@ -17,8 +17,8 @@ import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.TypeDefDTO;
 import org.metavm.object.type.rest.dto.TypeVariableDTO;
-import org.metavm.util.*;
 import org.metavm.util.LinkedList;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -452,13 +452,30 @@ public class Assembler {
             var code = getCompilationUnit().getDefinitionName(name);
             var klass = tryGetKlass(code);
             var kind = ClassKind.fromTypeCategory(typeCategory);
+            boolean searchable = false;
+            boolean isBean = false;
+            for (AssemblyParser.AnnotationContext annotation : annotations) {
+                if(annotation.IDENTIFIER().getText().equals("Component"))
+                    isBean = true;
+                else if(annotation.IDENTIFIER().getText().equals("Searchable"))
+                    searchable = true;
+            }
             if (klass == null)
-                klass = createKlass(name, code, kind, annotations);
+                klass = createKlass(name, code, kind);
             else {
                 if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
                     klass.clearEnumConstantDefs();
                 klass.setKind(kind);
             }
+            if(isBean) {
+                klass.setAttribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT);
+                klass.setAttribute(AttributeNames.BEAN_NAME, NamingUtils.firstCharToLowerCase(klass.getName()));
+            }
+            else {
+                klass.removeAttribute(AttributeNames.BEAN_KIND);
+                klass.removeAttribute(AttributeNames.BEAN_NAME);
+            }
+            klass.setSearchable(searchable);
             var classInfo = new ClassInfo(
                     scope,
                     klass,
@@ -1487,14 +1504,8 @@ public class Assembler {
         return code2klass.computeIfAbsent(code, klassProvider);
     }
 
-    private Klass createKlass(String name, String code, ClassKind kind, List<AssemblyParser.AnnotationContext> annotations) {
+    private Klass createKlass(String name, String code, ClassKind kind) {
         var klass = KlassBuilder.newBuilder(name, code).kind(kind).tmpId(NncUtils.randomNonNegative()).build();
-        for (AssemblyParser.AnnotationContext annotation : annotations) {
-            if(annotation.IDENTIFIER().getText().equals("Component")) {
-                klass.setAttribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT);
-                klass.setAttribute(AttributeNames.BEAN_NAME, NamingUtils.firstCharToLowerCase(klass.getName()));
-            }
-        }
         code2klass.put(name, klass);
 //        binder.accept(klass);
         return klass;

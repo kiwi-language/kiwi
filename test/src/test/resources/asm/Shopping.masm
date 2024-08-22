@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.lang.RuntimeException;
 import org.metavm.api.ChildList;
 
+@Searchable
 struct Product {
     private title string name;
     private readonly child ChildList<SKU> skuList;
@@ -134,6 +135,7 @@ enum CouponState {
 
 }
 
+@Searchable
 class Order {
     private title readonly string code;
     private readonly int quantity;

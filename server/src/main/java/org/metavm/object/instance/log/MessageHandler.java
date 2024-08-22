@@ -2,9 +2,8 @@ package org.metavm.object.instance.log;
 
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
-import org.metavm.event.EventQueue;
-import org.metavm.event.rest.dto.ReceiveMessageEvent;
 import org.metavm.message.Message;
+import org.metavm.task.SendMessageTask;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
@@ -12,12 +11,6 @@ import java.util.List;
 
 @Component
 public class MessageHandler implements LogHandler<Message> {
-
-    private final EventQueue eventQueue;
-
-    public MessageHandler(EventQueue eventQueue) {
-        this.eventQueue = eventQueue;
-    }
 
     @Override
     public Class<Message> getEntityClass() {
@@ -27,7 +20,7 @@ public class MessageHandler implements LogHandler<Message> {
     @Override
     public void process(List<Message> created, @Nullable String clientId, IEntityContext context, EntityContextFactory entityContextFactory) {
         for (Message message : created) {
-            eventQueue.publishUserEvent(new ReceiveMessageEvent(message.toDTO()));
+            context.bind(new SendMessageTask(message));
         }
     }
 }

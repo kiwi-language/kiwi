@@ -174,4 +174,7 @@ public class CachingInstanceStore implements IInstanceStore {
         wrapped.updateSyncVersion(versions);
     }
 
+    public WAL getWal() {
+        return wal;
+    }
 }

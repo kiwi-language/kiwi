@@ -5,14 +5,16 @@ import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
 import org.metavm.application.rest.dto.ApplicationDTO;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.Entity;
+import org.metavm.entity.HashedValue;
+import org.metavm.entity.ReadWriteArray;
 import org.metavm.user.PlatformUser;
 import org.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType
+@EntityType(searchable = true)
 public class Application extends Entity {
 
     public static final int MAX_NUM_ADMINS = 16;

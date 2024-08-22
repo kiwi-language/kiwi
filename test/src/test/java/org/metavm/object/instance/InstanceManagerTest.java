@@ -60,7 +60,7 @@ public class InstanceManagerTest extends TestCase {
     }
 
     private IEntityContext newContext() {
-        return entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.asyncPostProcess(false));
+        return entityContextFactory.newContext(TestConstants.APP_ID);
     }
 
     private Foo saveFoo() {
@@ -123,6 +123,7 @@ public class InstanceManagerTest extends TestCase {
     public void testSelect() {
         var foo = saveFoo();
         var fooType = ModelDefRegistry.getClassType(Foo.class);
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         var page = instanceManager.select(new SelectRequest(
                 fooType.toExpression(),
                 List.of(

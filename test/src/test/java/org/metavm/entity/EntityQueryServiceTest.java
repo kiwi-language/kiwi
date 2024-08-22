@@ -2,14 +2,14 @@ package org.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.common.Page;
 import org.metavm.mocks.Foo;
 import org.metavm.mocks.Qux;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.type.Klass;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -58,6 +58,7 @@ public class EntityQueryServiceTest extends TestCase {
 
     public void test() {
         Foo foo = addEntity(MockUtils.getFoo());
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         try (var context = newContext()) {
             foo = context.getEntity(Foo.class, foo.getId());
             var qux = context.getEntity(Qux.class, Objects.requireNonNull(foo.getQux()).getId());
@@ -75,6 +76,7 @@ public class EntityQueryServiceTest extends TestCase {
 
     public void testSearchText() {
         Foo foo = addEntity(MockUtils.getFoo());
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         try (var context = newContext()) {
             foo = context.getEntity(Foo.class, foo.getId());
             Page<Foo> page = entityQueryService.query(
@@ -91,6 +93,7 @@ public class EntityQueryServiceTest extends TestCase {
 
     public void testSearchTypes() {
         Klass fooType = ModelDefRegistry.getClassType(Foo.class).resolve();
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         try (var context = entityContextFactory.newContext(Constants.ROOT_APP_ID)) {
             Page<Klass> page = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Klass.class)

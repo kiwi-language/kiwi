@@ -5,7 +5,10 @@ import org.metavm.flow.Function;
 import org.metavm.flow.InputNode;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodCallNode;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Klass;
 import org.metavm.task.Task;
 import org.slf4j.Logger;
@@ -61,7 +64,7 @@ public class DebugEnv {
 
     public static volatile boolean flag3;
 
-    public static volatile PhysicalId id;
+    public static volatile Id id;
 
     public static volatile long treeId;
 

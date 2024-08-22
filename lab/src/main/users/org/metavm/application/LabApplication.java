@@ -3,7 +3,7 @@ package org.metavm.application;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
 
-@EntityType
+@EntityType(searchable = true)
 public class LabApplication {
 
     @EntityField(asTitle = true)

@@ -53,6 +53,7 @@ public class IndexRebuildJobTest extends TestCase {
                 context.finish();
             }
         });
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         try (var context = newContext()) {
             var instances = context.selectByKey(Foo.IDX_ALL_FLAG, true);
             for (var instance : instances) {

@@ -8,6 +8,7 @@ import org.metavm.object.type.MemColumnStore;
 import org.metavm.object.type.MemTypeTagStore;
 import org.metavm.system.persistence.BlockMapper;
 import org.metavm.system.persistence.RegionMapper;
+import org.metavm.task.TaskManager;
 
 public record BootstrapResult(
         DefContext defContext,
@@ -22,6 +23,7 @@ public record BootstrapResult(
         MemoryStdIdStore stdIdStore,
         MemTypeTagStore typeTagStore,
         MetaContextCache metaContextCache,
-        ChangeLogManager changeLogManager
+        ChangeLogManager changeLogManager,
+        TaskManager taskManager
 ) {
 }

@@ -400,4 +400,8 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         return ancestorClass.cast(e);
     }
 
+    public String getSimpleClassName() {
+        return EntityUtils.getRealType(this).getSimpleName();
+    }
+
 }

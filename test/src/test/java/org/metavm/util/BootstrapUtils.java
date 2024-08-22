@@ -9,7 +9,6 @@ import org.metavm.object.instance.ChangeLogManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.log.InstanceLogServiceImpl;
-import org.metavm.object.instance.log.TaskHandler;
 import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.type.*;
 import org.metavm.system.IdGenerator;
@@ -19,6 +18,7 @@ import org.metavm.system.RegionManager;
 import org.metavm.system.persistence.MemBlockMapper;
 import org.metavm.system.persistence.MemRegionMapper;
 import org.metavm.task.SchedulerRegistry;
+import org.metavm.task.TaskManager;
 import org.metavm.user.PlatformUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +41,9 @@ public class BootstrapUtils {
         var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
         entityContextFactory.setInstanceLogService(
                 new InstanceLogServiceImpl(entityContextFactory, instanceSearchService, instanceStore, new MockTransactionOperations(), List.of(
-                        new TaskHandler(entityContextFactory, new MockTransactionOperations())
 //                        new VersionHandler(new MockEventQueue())
                 ), new MockEventQueue())
         );
-        entityContextFactory.setDefaultAsyncLogProcess(false);
         return entityContextFactory;
     }
 
@@ -67,10 +65,13 @@ public class BootstrapUtils {
             );
             var idProvider = new IdService(new IdGenerator(state.blockRepository()));
             var instanceSearchService = state.instanceSearchService();
+            Hooks.SEARCH_BULK = instanceSearchService::bulk;
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             entityContextFactory.setDefContext(defContext);
             var metaContextCache = new MetaContextCache(entityContextFactory);
             var changeLogManager = new ChangeLogManager(entityContextFactory);
+            var taskManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
+            new MockEventQueue();
             TestUtils.doInTransactionWithoutResult(() -> {
                 try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                     SchedulerRegistry.initialize(platformContext);
@@ -102,7 +103,8 @@ public class BootstrapUtils {
                     state.stdIdStore(),
                     state.typeTagStore(),
                     metaContextCache,
-                    changeLogManager
+                    changeLogManager,
+                    taskManager
             );
         } else {
             return create(true, true, new MemAllocatorStore(), new MemColumnStore(), new MemTypeTagStore(), Set.of(), Set.of());
@@ -139,6 +141,8 @@ public class BootstrapUtils {
         bootstrap.boot();
         var metaContextCache = new MetaContextCache(entityContextFactory);
         var changeLogManager = new ChangeLogManager(entityContextFactory);
+        var taskManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
+        new MockEventQueue();
         TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(saveIds));
         var defContext = copyDefContext(entityContextFactory, idProvider, (SystemDefContext) ModelDefRegistry.getDefContext());
         if(saveState) {
@@ -175,6 +179,7 @@ public class BootstrapUtils {
                 platformContext.finish();
             }
         });
+        Hooks.SEARCH_BULK = instanceSearchService::bulk;
         return new BootstrapResult(
                 ModelDefRegistry.getDefContext(),
                 entityContextFactory,
@@ -188,7 +193,8 @@ public class BootstrapUtils {
                 stdIdStore,
                 typeTagStore,
                 metaContextCache,
-                changeLogManager
+                changeLogManager,
+                taskManager
         );
     }
 

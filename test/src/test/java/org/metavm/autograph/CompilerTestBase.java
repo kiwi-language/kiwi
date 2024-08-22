@@ -149,7 +149,7 @@ public abstract class CompilerTestBase extends TestCase  {
 
 
     protected KlassDTO queryClassType(String name) {
-        return queryClassType(name, List.of(ClassKind.CLASS.code(), ClassKind.ENUM.code(), ClassKind.INTERFACE.code(), ClassKind.VALUE.code()));
+        return typeManager.getTypeByCode(name).type();
     }
 
     protected void assertNoError(KlassDTO klassDTO) {
@@ -191,6 +191,10 @@ public abstract class CompilerTestBase extends TestCase  {
 
     protected void clearHome() {
         NncUtils.clearDirectory(HOME);
+    }
+
+    protected void waitForAllTasksDone() {
+        TestUtils.waitForAllTasksDone(entityContextFactory);
     }
 
 }

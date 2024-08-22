@@ -387,11 +387,13 @@ public class TypeResolverImpl implements TypeResolver {
                 if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
                     klass.clearEnumConstantDefs();
                 klass.setKind(kind);
+                klass.setSearchable(TranspileUtils.isSearchable(psiClass));
             } else {
                 klass = KlassBuilder.newBuilder(name, psiClass.getQualifiedName())
                         .kind(kind)
                         .ephemeral(TranspileUtils.isEphemeral(psiClass))
                         .struct(TranspileUtils.isStruct(psiClass))
+                        .searchable(TranspileUtils.isSearchable(psiClass))
                         .isTemplate(isTemplate)
                         .isAbstract(psiClass.hasModifierProperty(PsiModifier.ABSTRACT))
                         .sourceCodeTag(tag != -1 ? tag : null)

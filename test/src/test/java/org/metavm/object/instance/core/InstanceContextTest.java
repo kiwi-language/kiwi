@@ -46,7 +46,6 @@ public class InstanceContextTest extends TestCase {
                 instanceStore,
                 new DefaultIdInitializer(idProvider),
                 executor,
-                false,
                 List.of(),
                 null,
                 entityRepository,

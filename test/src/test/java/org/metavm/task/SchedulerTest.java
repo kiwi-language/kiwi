@@ -38,6 +38,7 @@ public class SchedulerTest extends TestCase {
     }
 
     public void test() {
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         var ref = new Object() {
             TestTask task;
         };

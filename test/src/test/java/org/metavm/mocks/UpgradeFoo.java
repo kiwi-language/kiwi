@@ -23,4 +23,9 @@ public class UpgradeFoo extends Entity {
     public Object getBar() {
         return bar;
     }
+
+    @Override
+    protected String toString0() {
+        return "name: " + name + ", bar: " + bar;
+    }
 }

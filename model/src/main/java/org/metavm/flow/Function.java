@@ -18,7 +18,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@EntityType(searchable = true)
 public class Function extends Flow implements GlobalKey {
 
     public static final IndexDef<Function> IDX_ALL_FLAG = IndexDef.create(Function.class, "allFlag");

@@ -6,6 +6,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.instance.search.SearchQuery;
+import org.metavm.util.Hooks;
 import org.metavm.util.Instances;
 import org.metavm.util.MultiApplicationMap;
 import org.metavm.util.NncUtils;
@@ -22,6 +23,10 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     public static final Logger logger = LoggerFactory.getLogger(MemInstanceSearchServiceV2.class);
 
     private final MultiApplicationMap<Id, Source> sourceMap = new MultiApplicationMap<>();
+
+    public MemInstanceSearchServiceV2() {
+        Hooks.SEARCH_BULK = this::bulk;
+    }
 
     @Override
     public Page<Id> search(SearchQuery query) {

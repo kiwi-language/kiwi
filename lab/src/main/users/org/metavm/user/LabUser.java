@@ -16,7 +16,7 @@ import java.util.List;
 
 import static org.metavm.api.lang.Indices.*;
 
-@EntityType
+@EntityType(searchable = true)
 public class LabUser {
 
     public static final long MAX_ATTEMPTS_IN_15_MINUTES = 3;

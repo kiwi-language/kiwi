@@ -47,6 +47,10 @@ public abstract class AttributedElement extends Element {
         attributes.add(new Attribute(name, value));
     }
 
+    public void removeAttribute(String name) {
+        attributes.removeIf(a -> a.name().equals(name));
+    }
+
     public List<Attribute> getAttributes() {
         return attributes.toList();
     }

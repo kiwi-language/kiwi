@@ -888,7 +888,7 @@ public class DDLTest extends TestCase {
     }
 
     private IEntityContext newContext() {
-        return entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.asyncPostProcess(false));
+        return entityContextFactory.newContext(TestConstants.APP_ID);
     }
 
 }

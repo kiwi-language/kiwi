@@ -179,7 +179,7 @@ public class MappingTest extends TestCase {
                         )
                 )
         ));
-
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         var productViews = instanceManager.query(new InstanceQueryDTO(
                 TypeExpressions.getClassType(productViewTypeDTO.id()),
                 productDefaultMapping.id(),
@@ -367,11 +367,12 @@ public class MappingTest extends TestCase {
                         )
                 )
         )));
-        var productTypeDTO = typeManager.getType(new GetTypeRequest(shoppingTypeIds.orderTypeId(), false)).type();
-        var mapping = TestUtils.getDefaultMapping(productTypeDTO);
-        var productViewType = TestUtils.getDefaultViewType(productTypeDTO);
+        var orderKlassDTO = typeManager.getType(new GetTypeRequest(shoppingTypeIds.orderTypeId(), false)).type();
+        var mapping = TestUtils.getDefaultMapping(orderKlassDTO);
+        var orderViewKlassDTO = TestUtils.getDefaultViewType(orderKlassDTO);
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         var total = instanceManager.query(new InstanceQueryDTO(
-                productViewType, mapping.id(), null, null, List.of(), 1, 20,
+                orderViewKlassDTO, mapping.id(), null, null, List.of(), 1, 20,
                 true, false, List.of()
         )).page().total();
         Assert.assertEquals(1, total);
@@ -517,6 +518,7 @@ public void testGeneric() {
         var applicationViewTypeDTO = typeManager.getType(new GetTypeRequest(userTypeIds.applicationTypeId(), true)).type();
         var applicationDefaultMapping = TestUtils.getDefaultMapping(applicationViewTypeDTO);
         var applicationViewType = applicationDefaultMapping.targetType();
+        TestUtils.waitForAllTasksDone(entityContextFactory);
         var applicationViews = instanceManager.query(new InstanceQueryDTO(
                 applicationViewType, applicationDefaultMapping.id(), null, null, List.of(), 1, 20,
                 true, false, List.of()
