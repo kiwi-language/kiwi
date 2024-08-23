@@ -25,7 +25,7 @@ public class ApiPerf {
     public static final int THREAD_COUNT = 5;
     public static final int EXECUTIONS = 200;
     private static final String host = "http://localhost:8080/api";
-    public static final long appId = 1000001022L;
+    public static final long appId = 1000000024L;
     public static String defaultProductKindId = "01dab8d6b90700";
     public static String yuanCurrencyId = "01d4b8d6b90700";
 

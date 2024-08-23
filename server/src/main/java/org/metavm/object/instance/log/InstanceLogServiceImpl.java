@@ -68,8 +68,10 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             instanceContext.setDescription("PostProcess");
             List<ClassInstance> changed = NncUtils.filterByType(instanceContext.batchGet(idsToLoad), ClassInstance.class);
             List<ClassInstance> created = NncUtils.filter(changed, c -> newInstanceIds.contains(c.getId()));
+            boolean finishRequired = false;
             for (LogHandler<?> handler : handlers) {
-                invokeHandler(created, handler, clientId, context);
+                if(invokeHandler(created, handler, clientId, context))
+                    finishRequired = true;
             }
             List<Id> removedSearchable = NncUtils.filterAndMap(logs, i -> i.isDelete() && i.isSearchable(), InstanceLog::getId);
             var changedSearchable = NncUtils.filter(changed, ClassInstance::isSearchable);
@@ -82,9 +84,11 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                         NncUtils.map(changedSearchable, i -> Identifier.fromId(i.getId())),
                         NncUtils.map(removedSearchable, Identifier::fromId),
                         wal, defWal));
+                finishRequired = true;
+//                this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
             }
-            this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
-            context.finish();
+            if(finishRequired)
+                context.finish();
         }
     }
 
@@ -182,13 +186,17 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         });
     }
 
-    private <T extends Entity> void invokeHandler(List<ClassInstance> instances, LogHandler<T> handler,
+    private <T extends Entity> boolean invokeHandler(List<ClassInstance> instances, LogHandler<T> handler,
                                                   @Nullable String clientId, IEntityContext context) {
         var type = context.getDefContext().getClassType(handler.getEntityClass());
         var entities = NncUtils.filterAndMap(instances, i -> type.isInstance(i.getReference()),
                 i -> context.getEntity(handler.getEntityClass(), i));
-        if (!entities.isEmpty())
+        if (!entities.isEmpty()) {
             handler.process(entities, clientId, context, entityContextFactory);
+            return true;
+        }
+        else
+            return false;
     }
 
 }
