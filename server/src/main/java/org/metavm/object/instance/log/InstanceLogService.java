@@ -10,4 +10,6 @@ import java.util.List;
 public interface InstanceLogService {
 
     void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, List<Id> migrated, @Nullable String clientId, DefContext defContext);
+
+    void createSearchSyncTask(long appId, List<Id> changedIds, List<Id> removedIds, DefContext defContext);
 }

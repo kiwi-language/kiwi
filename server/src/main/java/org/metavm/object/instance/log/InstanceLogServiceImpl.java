@@ -3,12 +3,10 @@ package org.metavm.object.instance.log;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.DefContextUtils;
 import org.metavm.entity.*;
-import org.metavm.event.EventQueue;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.CachingInstanceStore;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.type.TypeDef;
 import org.metavm.object.version.Version;
 import org.metavm.object.version.VersionRepository;
@@ -20,6 +18,7 @@ import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 
 import javax.annotation.Nullable;
@@ -32,25 +31,16 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceLogServiceImpl.class);
 
-    private final InstanceSearchService instanceSearchService;
-
     private final IInstanceStore instanceStore;
 
     private final TransactionOperations transactionOperations;
 
-    private final List<LogHandler<?>> handlers;
-    private final EventQueue eventQueue;
-
     public InstanceLogServiceImpl(
             EntityContextFactory entityContextFactory,
-            InstanceSearchService instanceSearchService,
-            IInstanceStore instanceStore, TransactionOperations transactionOperations, List<LogHandler<?>> handlers, EventQueue eventQueue) {
+            IInstanceStore instanceStore, TransactionOperations transactionOperations) {
         super(entityContextFactory);
-        this.instanceSearchService = instanceSearchService;
         this.instanceStore = instanceStore;
         this.transactionOperations = transactionOperations;
-        this.handlers = handlers;
-        this.eventQueue = eventQueue;
         WAL.setPostProcessHook((appId, logs) -> process(appId, logs, instanceStore, List.of(), null, ModelDefRegistry.getDefContext()));
     }
 
@@ -58,38 +48,26 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, List<Id> migrated, @Nullable String clientId, DefContext defContext) {
         if (NncUtils.isEmpty(logs) && migrated.isEmpty())
             return;
-        List<Id> idsToLoad = NncUtils.filterAndMap(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getId);
         var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
         handleDDL(appId, newInstanceIds);
         handleMetaChanges(appId, logs, clientId);
-        try (var context = entityContextFactory.newContext(appId, defContext, builder -> builder
-                .instanceStore(instanceStore).skipPostProcessing(true))) {
-            var instanceContext = context.getInstanceContext();
-            instanceContext.setDescription("PostProcess");
-            List<ClassInstance> changed = NncUtils.filterByType(instanceContext.batchGet(idsToLoad), ClassInstance.class);
-            List<ClassInstance> created = NncUtils.filter(changed, c -> newInstanceIds.contains(c.getId()));
-            boolean finishRequired = false;
-            for (LogHandler<?> handler : handlers) {
-                if(invokeHandler(created, handler, clientId, context))
-                    finishRequired = true;
-            }
-            List<Id> removedSearchable = NncUtils.filterAndMap(logs, i -> i.isDelete() && i.isSearchable(), InstanceLog::getId);
-            var changedSearchable = NncUtils.filter(changed, ClassInstance::isSearchable);
-            if (NncUtils.isNotEmpty(changedSearchable) || NncUtils.isNotEmpty(removedSearchable)) {
-                WAL wal = instanceStore instanceof CachingInstanceStore cachingInstanceStore ?
-                        cachingInstanceStore.getWal().copy() : null;
-                WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
-                        DefContextUtils.getWal(reversedDefContext).copy() : null;
-                context.bind(new SynchronizeSearchTask(
-                        NncUtils.map(changedSearchable, i -> Identifier.fromId(i.getId())),
-                        NncUtils.map(removedSearchable, Identifier::fromId),
-                        wal, defWal));
-                finishRequired = true;
+    }
+
+    @Transactional
+    @Override
+    public void createSearchSyncTask(long appId, List<Id> changedIds, List<Id> removedIds, DefContext defContext) {
+        try(var context = newContext(appId)) {
+            WAL wal = instanceStore instanceof CachingInstanceStore cachingInstanceStore ?
+                    cachingInstanceStore.getWal().copy() : null;
+            WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
+                    DefContextUtils.getWal(reversedDefContext).copy() : null;
+            context.bind(new SynchronizeSearchTask(
+                    NncUtils.map(changedIds, Identifier::fromId),
+                    NncUtils.map(removedIds, Identifier::fromId),
+                    wal, defWal));
 //                this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
+            context.finish();
             }
-            if(finishRequired)
-                context.finish();
-        }
     }
 
     private void handleMetaChanges(long appId, List<InstanceLog> logs, @Nullable String clientId) {

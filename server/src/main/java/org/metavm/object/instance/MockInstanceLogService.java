@@ -18,6 +18,11 @@ public class MockInstanceLogService implements InstanceLogService {
         this.logs.addAll(logs);
     }
 
+    @Override
+    public void createSearchSyncTask(long appId, List<Id> changedIds, List<Id> removedIds, DefContext defContext) {
+
+    }
+
     public List<InstanceLog> getLogs() {
         return logs;
     }

@@ -355,6 +355,6 @@ public class InstanceInput implements Closeable {
     }
 
     public InstanceLog readInstanceLog(long appId) {
-        return new InstanceLog(appId, readId(), readBoolean(), ChangeType.values()[readInt()], readLong());
+        return new InstanceLog(appId, readId(), ChangeType.values()[readInt()], readLong());
     }
 }

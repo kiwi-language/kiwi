@@ -844,7 +844,4 @@ public abstract class Instance implements Message {
         this.directlyModified = directlyModified;
     }
 
-    public boolean isSearchable() {
-        return false;
-    }
 }

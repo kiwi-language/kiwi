@@ -129,8 +129,7 @@ public class EntityContextFactory {
 //                        new MetaVersionPlugin(bridge, bridge),
                         new CheckConstraintPlugin(),
                         new IndexConstraintPlugin(currentStore, bridge),
-                        new ChangeLogPlugin(currentStore, instanceLogService, bridge),
-                        new TaskPlugin()
+                        new ChangeLogPlugin(currentStore, instanceLogService, bridge)
                 ));
         return builder.build();
     }

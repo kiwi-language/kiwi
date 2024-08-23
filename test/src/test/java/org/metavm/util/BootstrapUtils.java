@@ -9,7 +9,6 @@ import org.metavm.object.instance.ChangeLogManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.log.InstanceLogServiceImpl;
-import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.type.*;
 import org.metavm.system.IdGenerator;
 import org.metavm.system.IdService;
@@ -34,15 +33,12 @@ public class BootstrapUtils {
     private static volatile BootState state;
 
     private static EntityContextFactory createEntityContextFactory(EntityIdProvider idProvider,
-                                                                   MemInstanceStore instanceStore,
-                                                                   InstanceSearchService instanceSearchService) {
+                                                                   MemInstanceStore instanceStore) {
         var instanceContextFactory =
                 TestUtils.getInstanceContextFactory(idProvider, instanceStore);
         var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
         entityContextFactory.setInstanceLogService(
-                new InstanceLogServiceImpl(entityContextFactory, instanceSearchService, instanceStore, new MockTransactionOperations(), List.of(
-//                        new VersionHandler(new MockEventQueue())
-                ), new MockEventQueue())
+                new InstanceLogServiceImpl(entityContextFactory, instanceStore, new MockTransactionOperations())
         );
         return entityContextFactory;
     }
@@ -66,7 +62,7 @@ public class BootstrapUtils {
             var idProvider = new IdService(new IdGenerator(state.blockRepository()));
             var instanceSearchService = state.instanceSearchService();
             Hooks.SEARCH_BULK = instanceSearchService::bulk;
-            var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
+            var entityContextFactory = createEntityContextFactory(idProvider, instanceStore);
             entityContextFactory.setDefContext(defContext);
             var metaContextCache = new MetaContextCache(entityContextFactory);
             var changeLogManager = new ChangeLogManager(entityContextFactory);
@@ -127,7 +123,7 @@ public class BootstrapUtils {
         var idProvider = new IdService(new IdGenerator(blockRepository));
         var instanceStore = new MemInstanceStore(new LocalCache());
         var instanceSearchService = new MemInstanceSearchServiceV2();
-        var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
+        var entityContextFactory = createEntityContextFactory(idProvider, instanceStore);
         var stdIdStore = new MemoryStdIdStore();
         var bootstrap = new Bootstrap(
                 entityContextFactory,

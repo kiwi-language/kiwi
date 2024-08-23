@@ -7,6 +7,7 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
+import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.ClassInstanceParam;
 import org.metavm.object.instance.rest.InstanceDTO;
@@ -229,7 +230,7 @@ public class TypeManagerTest extends TestCase {
                 var fooKlass = TestUtils.newKlassBuilder("SynchronizeFoo").build();
                 context.bind(fooKlass);
                 context.finish();
-                Assert.assertTrue(context.getInstance(fooKlass).isSearchable());
+                Assert.assertTrue(((ClassInstance)context.getInstance(fooKlass)).isSearchable());
                 return fooKlass.getId();
             }
         });

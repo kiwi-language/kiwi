@@ -7,8 +7,7 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ContextUtil {
 
@@ -23,6 +22,8 @@ public class ContextUtil {
         private Profiler profiler = new Profiler();
         private final Map<String, Value> userData = new HashMap<>();
         private IEntityContext entityContext;
+        private int contextFinishCount;
+        private final List<String> finishedContexts = new ArrayList<>();
 
         long nextTmpId() {
             return nextTmpId++;
@@ -46,6 +47,14 @@ public class ContextUtil {
             this.platformUserId = null;
         }
 
+        int getContextFinishCount() {
+            return contextFinishCount;
+        }
+
+        void incrementContextFinishCount() {
+            contextFinishCount++;
+        }
+
         void setUserData(String key, Value value) {
             userData.put(key, value);
         }
@@ -60,6 +69,14 @@ public class ContextUtil {
 
         public void resetProfiler() {
             profiler = new Profiler();
+        }
+
+        public List<String> getFinishedContexts() {
+            return Collections.unmodifiableList(finishedContexts);
+        }
+
+        public void addFinishedContext(String name) {
+            finishedContexts.add(name);
         }
 
     }
@@ -172,6 +189,22 @@ public class ContextUtil {
 
     public static void setToken(String token) {
         getContextInfo().token = token;
+    }
+
+    public static int getContextFinishCount() {
+        return getContextInfo().getContextFinishCount();
+    }
+
+    public static void incrementContextFinishCount() {
+        getContextInfo().incrementContextFinishCount();
+    }
+
+    public static void addFinishedContext(String name) {
+        getContextInfo().addFinishedContext(name);
+    }
+
+    public static List<String> getFinishedContexts() {
+        return getContextInfo().getFinishedContexts();
     }
 
 }

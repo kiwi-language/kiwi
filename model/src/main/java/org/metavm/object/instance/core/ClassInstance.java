@@ -774,7 +774,6 @@ public class ClassInstance extends Instance {
         }
     }
 
-    @Override
     public boolean isSearchable() {
         return klass.isSearchable();
     }

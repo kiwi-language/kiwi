@@ -23,7 +23,7 @@ public class ApiPerf {
     public static final Logger logger = LoggerFactory.getLogger(ApiPerf.class);
 
     public static final int THREAD_COUNT = 5;
-    public static final int EXECUTIONS = 200;
+    public static final int EXECUTIONS = 1000;
     private static final String host = "http://localhost:8080/api";
     public static final long appId = 1000000024L;
     public static String defaultProductKindId = "01dab8d6b90700";

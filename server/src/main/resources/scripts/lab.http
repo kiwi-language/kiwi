@@ -1157,18 +1157,18 @@ X-App-ID: 1000000014
 
 ###
 PUT http://localhost:8080/api/org/metavm/mlab/Product
-X-App-ID: 1000000014
+X-App-ID: 1000000024
 Content-Type: application/json
 
 {
   "name": "Shoes",
-  "kind": "01d0a8d6b90700",
+  "kind": "01fca8d6b90700",
   "skus": [
     {
       "name": "40",
       "price": {
         "amount": 100,
-        "currency": "01daa8d6b90700"
+        "currency": "01f6a8d6b90700"
       },
       "inventory": {
         "quantity": 100

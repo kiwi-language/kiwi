@@ -185,7 +185,7 @@ public class ApiService extends EntityContextFactoryAware {
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public String saveInstance(String classCode, Map<String, Object> object, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
-            logTxId();
+//            logTxId();
             var klass = getKlass(classCode, context);
             var inst = doIntercepted(() -> {
                 var r = tryResolveValue(object, klass.getType(), true, null, context);

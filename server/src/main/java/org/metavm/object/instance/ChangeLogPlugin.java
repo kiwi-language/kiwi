@@ -2,11 +2,15 @@ package org.metavm.object.instance;
 
 import org.metavm.entity.DefContextProvider;
 import org.metavm.entity.EntityChange;
+import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.VersionRT;
+import org.metavm.task.ShadowTask;
+import org.metavm.task.Task;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +38,13 @@ public class ChangeLogPlugin implements ContextPlugin {
     public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
         List<InstanceLog> logs = new ArrayList<>();
         for (var instance : change.inserts()) {
-            logs.add(InstanceLog.insert(instance, context.internalGet(instance.id()).isSearchable()));
+            logs.add(InstanceLog.insert(instance));
         }
         for (var instance : change.updates()) {
-            logs.add(InstanceLog.update(instance, context.internalGet(instance.id()).isSearchable()));
+            logs.add(InstanceLog.update(instance));
         }
         for (var delete : change.deletes()) {
-            logs.add(InstanceLog.delete(delete, context.internalGet(delete.id()).isSearchable()));
+            logs.add(InstanceLog.delete(delete));
         }
         context.getAttribute(CHANGE_LOGS).addAll(logs);
         return false;
@@ -55,9 +59,30 @@ public class ChangeLogPlugin implements ContextPlugin {
     public void postProcess(IInstanceContext context) {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
         if (NncUtils.isNotEmpty(logs)) {
-//            instanceStore.saveInstanceLogs(logs, context);
             instanceLogService.process(context.getAppId(), logs,
                     instanceStore, NncUtils.map(context.getRelocated(), Instance::getId), context.getClientId(), defContextProvider.getDefContext());
+            var tasks = new ArrayList<Task>();
+            var changedDocIds = new ArrayList<Id>();
+            var removedDocIds = new ArrayList<Id>();
+            for (var log : logs) {
+                var inst = context.internalGet(log.getId());
+                if(log.isInsert()) {
+                    var entity = inst.getMappedEntity();
+                    if (entity instanceof Task task) {
+                        tasks.add(task);
+                    }
+                }
+                if(inst instanceof ClassInstance clsInst && clsInst.isSearchable()) {
+                    if(log.isInsertOrUpdate())
+                        changedDocIds.add(inst.getId());
+                    else
+                        removedDocIds.add(inst.getId());
+                }
+            }
+            if(!tasks.isEmpty())
+                ShadowTask.saveShadowTasksHook.accept(context.getAppId(), tasks);
+            if(!changedDocIds.isEmpty() || !removedDocIds.isEmpty())
+                instanceLogService.createSearchSyncTask(context.getAppId(), changedDocIds, removedDocIds, defContextProvider.getDefContext());
         }
     }
 
