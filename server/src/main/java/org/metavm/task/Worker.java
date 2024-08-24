@@ -2,6 +2,7 @@ package org.metavm.task;
 
 import org.metavm.ddl.DefContextUtils;
 import org.metavm.entity.*;
+import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
 import org.metavm.util.NetworkUtils;
 import org.metavm.util.NncUtils;
@@ -24,11 +25,13 @@ public class Worker extends EntityContextFactoryAware {
 
     private final TransactionOperations transactionOperations;
     private final TaskRunner taskRunner;
+    private final MetaContextCache metaContextCache;
 
-    public Worker(EntityContextFactory entityContextFactory, TransactionOperations transactionOperations, TaskRunner taskRunner) {
+    public Worker(EntityContextFactory entityContextFactory, TransactionOperations transactionOperations, TaskRunner taskRunner, MetaContextCache metaContextCache) {
         super(entityContextFactory);
         this.transactionOperations = transactionOperations;
         this.taskRunner = taskRunner;
+        this.metaContextCache = metaContextCache;
     }
 
     @Scheduled(fixedDelay = 10000)
@@ -122,7 +125,12 @@ public class Worker extends EntityContextFactoryAware {
                 try {
                     var parentContext = appTask.getDefWAL() != null ?
                             DefContextUtils.createReversedDefContext(appTask.getDefWAL(), entityContextFactory, appTask.getExtraStdKlassIds()) :
-                            ModelDefRegistry.getDefContext();
+//                            ModelDefRegistry.getDefContext();
+                            (
+                                    shadowTask.getAppId() != Constants.ROOT_APP_ID ?
+                                metaContextCache.get(shadowTask.getAppId(), appTask.getMetaWAL() != null ? appTask.getMetaWAL().getId() : null) :
+                                            ModelDefRegistry.getDefContext()
+                            );
                     try (var walContext = entityContextFactory.newContext(shadowTask.getAppId(), parentContext,
                             builder -> builder.readWAL(appTask.getWAL())
                                     .relocationEnabled(appTask.isRelocationEnabled())

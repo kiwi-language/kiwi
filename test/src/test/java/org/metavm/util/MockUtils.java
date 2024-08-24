@@ -2,7 +2,6 @@ package org.metavm.util;
 
 import org.metavm.asm.AssemblerFactory;
 import org.metavm.ddl.CommitState;
-import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.MethodDTOBuilder;
@@ -368,8 +367,8 @@ public class MockUtils {
 
     public static final String PROJECT_ROOT = "/Users/leen/workspace/object";
 
-    public static ListTypeIds createListType(TypeManager typeManager, EntityContextFactory entityContextFactory) {
-        saveListTypes(typeManager, entityContextFactory);
+    public static ListTypeIds createListType(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
+        saveListTypes(typeManager, schedulerAndWorker);
         var listType = typeManager.getTypeByCode("MyList").type();
         return new ListTypeIds(
                 listType.id(),
@@ -380,8 +379,8 @@ public class MockUtils {
         );
     }
 
-    private static void saveListTypes(TypeManager typeManager, EntityContextFactory entityContextFactory) {
-        assemble(PROJECT_ROOT + "/test/src/test/resources/asm/List.masm", typeManager, entityContextFactory);
+    private static void saveListTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
+        assemble(PROJECT_ROOT + "/test/src/test/resources/asm/List.masm", typeManager, schedulerAndWorker);
     }
 
     private static NodeTypeIds getNodeTypeIds(TypeManager typeManager) {
@@ -404,8 +403,8 @@ public class MockUtils {
                 .build();
     }
 
-    public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, EntityContextFactory entityContextFactory) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm", typeManager, entityContextFactory);
+    public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
+        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm", typeManager, schedulerAndWorker);
         var productType = typeManager.getTypeByCode("Product").type();
         var skuType = typeManager.getTypeByCode("SKU").type();
         var couponType = typeManager.getTypeByCode("Coupon").type();
@@ -442,8 +441,8 @@ public class MockUtils {
         );
     }
 
-    public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager, EntityContextFactory entityContextFactory) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm", typeManager, entityContextFactory);
+    public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
+        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm", typeManager, schedulerAndWorker);
         var livingBeingType = typeManager.getTypeByCode("LivingBeing").type();
         var animalType = typeManager.getTypeByCode("Animal").type();
         var humanType = typeManager.getTypeByCode("Human").type();
@@ -468,19 +467,20 @@ public class MockUtils {
         );
     }
 
-    public static void assemble(String source, TypeManager typeManager, EntityContextFactory entityContextFactory) {
-        assemble(source, typeManager, true, entityContextFactory);
+    public static void assemble(String source, TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
+        assemble(source, typeManager, true, schedulerAndWorker);
     }
 
-    public static String assemble(String source, TypeManager typeManager, boolean waitForDDLDone, EntityContextFactory entityContextFactory) {
+    public static String assemble(String source, TypeManager typeManager, boolean waitForDDLDone, SchedulerAndWorker schedulerAndWorker) {
         ContextUtil.setAppId(TestConstants.APP_ID);
+        var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             assembler.assemble(List.of(source));
             FlowSavingContext.initConfig();
             var commitId = TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true)));
             if (waitForDDLDone)
-                TestUtils.waitForDDLState(CommitState.COMPLETED, entityContextFactory);
+                TestUtils.waitForDDLState(CommitState.COMPLETED, schedulerAndWorker);
             return commitId;
         }
     }
@@ -671,7 +671,7 @@ public class MockUtils {
         return foo;
     }
 
-    public static UserTypeIds createUserTypes(TypeManager typeManager, EntityContextFactory entityContextFactory) {
+    public static UserTypeIds createUserTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
         var platformUserTypeDTO = ClassTypeDTOBuilder.newBuilder("PlatformUser")
                 .code("PlatformUser")
                 .tmpId(NncUtils.randomNonNegative())
@@ -726,7 +726,7 @@ public class MockUtils {
         TestUtils.doInTransaction(() -> typeManager.batchSave(
                 new BatchSaveRequest(List.of(platformUserTypeDTO, applicationTypeDTO), List.of(), false)
         ));
-        TestUtils.waitForDDLPrepared(entityContextFactory);
+        TestUtils.waitForDDLPrepared(schedulerAndWorker);
         var applicationType = typeManager.getTypeByCode(applicationTypeDTO.code()).type();
         var applicationNameFieldId = TestUtils.getFieldIdByCode(applicationType, "name");
         var applicationOwnerFieldId = TestUtils.getFieldIdByCode(applicationType, "owner");

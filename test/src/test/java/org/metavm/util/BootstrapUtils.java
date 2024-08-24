@@ -16,8 +16,7 @@ import org.metavm.system.MemoryBlockRepository;
 import org.metavm.system.RegionManager;
 import org.metavm.system.persistence.MemBlockMapper;
 import org.metavm.system.persistence.MemRegionMapper;
-import org.metavm.task.SchedulerRegistry;
-import org.metavm.task.TaskManager;
+import org.metavm.task.*;
 import org.metavm.user.PlatformUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,17 +30,6 @@ public class BootstrapUtils {
     private static final Logger logger = LoggerFactory.getLogger(BootstrapUtils.class);
 
     private static volatile BootState state;
-
-    private static EntityContextFactory createEntityContextFactory(EntityIdProvider idProvider,
-                                                                   MemInstanceStore instanceStore) {
-        var instanceContextFactory =
-                TestUtils.getInstanceContextFactory(idProvider, instanceStore);
-        var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
-        entityContextFactory.setInstanceLogService(
-                new InstanceLogServiceImpl(entityContextFactory, instanceStore, new MockTransactionOperations())
-        );
-        return entityContextFactory;
-    }
 
     public static BootstrapResult bootstrap() {
         if (state != null) {
@@ -62,9 +50,14 @@ public class BootstrapUtils {
             var idProvider = new IdService(new IdGenerator(state.blockRepository()));
             var instanceSearchService = state.instanceSearchService();
             Hooks.SEARCH_BULK = instanceSearchService::bulk;
-            var entityContextFactory = createEntityContextFactory(idProvider, instanceStore);
-            entityContextFactory.setDefContext(defContext);
+            var instanceContextFactory =
+                    TestUtils.getInstanceContextFactory(idProvider, instanceStore);
+            var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
             var metaContextCache = new MetaContextCache(entityContextFactory);
+            entityContextFactory.setInstanceLogService(
+                    new InstanceLogServiceImpl(entityContextFactory, instanceStore, new MockTransactionOperations(), metaContextCache)
+            );
+            entityContextFactory.setDefContext(defContext);
             var changeLogManager = new ChangeLogManager(entityContextFactory);
             var taskManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
             new MockEventQueue();
@@ -86,6 +79,7 @@ public class BootstrapUtils {
                     platformContext.finish();
                 }
             });
+            var transactionOps = new MockTransactionOperations();
             return new BootstrapResult(
                     defContext,
                     entityContextFactory,
@@ -100,7 +94,9 @@ public class BootstrapUtils {
                     state.typeTagStore(),
                     metaContextCache,
                     changeLogManager,
-                    taskManager
+                    taskManager,
+                    new SchedulerAndWorker(new Scheduler(entityContextFactory, transactionOps),
+                            new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), metaContextCache), metaContextCache, entityContextFactory)
             );
         } else {
             return create(true, true, new MemAllocatorStore(), new MemColumnStore(), new MemTypeTagStore(), Set.of(), Set.of());
@@ -123,7 +119,13 @@ public class BootstrapUtils {
         var idProvider = new IdService(new IdGenerator(blockRepository));
         var instanceStore = new MemInstanceStore(new LocalCache());
         var instanceSearchService = new MemInstanceSearchServiceV2();
-        var entityContextFactory = createEntityContextFactory(idProvider, instanceStore);
+        var instanceContextFactory =
+                TestUtils.getInstanceContextFactory(idProvider, instanceStore);
+        var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
+        var metaContextCache = new MetaContextCache(entityContextFactory);
+        entityContextFactory.setInstanceLogService(
+                new InstanceLogServiceImpl(entityContextFactory, instanceStore, new MockTransactionOperations(), metaContextCache)
+        );
         var stdIdStore = new MemoryStdIdStore();
         var bootstrap = new Bootstrap(
                 entityContextFactory,
@@ -135,7 +137,6 @@ public class BootstrapUtils {
         bootstrap.setClassBlacklist(classBlacklist);
         bootstrap.setFieldBlacklist(fieldBlacklist);
         bootstrap.boot();
-        var metaContextCache = new MetaContextCache(entityContextFactory);
         var changeLogManager = new ChangeLogManager(entityContextFactory);
         var taskManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
         new MockEventQueue();
@@ -176,6 +177,7 @@ public class BootstrapUtils {
             }
         });
         Hooks.SEARCH_BULK = instanceSearchService::bulk;
+        var transactionOps = new MockTransactionOperations();
         return new BootstrapResult(
                 ModelDefRegistry.getDefContext(),
                 entityContextFactory,
@@ -190,7 +192,9 @@ public class BootstrapUtils {
                 typeTagStore,
                 metaContextCache,
                 changeLogManager,
-                taskManager
+                taskManager,
+                new SchedulerAndWorker(new Scheduler(entityContextFactory, transactionOps),
+                        new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), metaContextCache), metaContextCache, entityContextFactory)
         );
     }
 

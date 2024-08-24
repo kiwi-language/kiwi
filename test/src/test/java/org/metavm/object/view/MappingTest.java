@@ -3,7 +3,6 @@ package org.metavm.object.view;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
-import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityQueryService;
 import org.metavm.flow.FlowExecutionService;
 import org.metavm.flow.FlowManager;
@@ -37,9 +36,9 @@ public class MappingTest extends TestCase {
     public static final Logger logger = LoggerFactory.getLogger(MappingTest.class);
 
     private TypeManager typeManager;
+    private SchedulerAndWorker schedulerAndWorker;
     private FlowManager flowManager;
     private InstanceManager instanceManager;
-    private EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws Exception {
@@ -51,6 +50,7 @@ public class MappingTest extends TestCase {
                 bootResult.entityContextFactory(), entityQueryService,
                 new TaskManager(bootResult.entityContextFactory(), transactionOperations),
                 new BeanManager());
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         instanceManager = new InstanceManager(
                 bootResult.entityContextFactory(), bootResult.instanceStore(), instanceQueryService,
                 bootResult.metaContextCache());
@@ -60,7 +60,6 @@ public class MappingTest extends TestCase {
         typeManager.setFlowManager(flowManager);
         var flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());
         typeManager.setFlowExecutionService(flowExecutionService);
-        entityContextFactory = bootResult.entityContextFactory();
         FlowSavingContext.initConfig();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
@@ -71,7 +70,7 @@ public class MappingTest extends TestCase {
         typeManager = null;
         flowManager = null;
         instanceManager = null;
-        entityContextFactory = null;
+        schedulerAndWorker = null;
     }
 
     private KlassDTO getType(String id) {
@@ -85,7 +84,7 @@ public class MappingTest extends TestCase {
 
     public void test() {
 //        DebugEnv.printMapping = true;
-        var typeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
+        var typeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var productTypeDTO = getType(typeIds.productTypeId());
         var skuTypeDTO = getType(typeIds.skuTypeId());
         var productDefaultMapping = NncUtils.findRequired(productTypeDTO.mappings(),
@@ -179,7 +178,7 @@ public class MappingTest extends TestCase {
                         )
                 )
         ));
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         var productViews = instanceManager.query(new InstanceQueryDTO(
                 TypeExpressions.getClassType(productViewTypeDTO.id()),
                 productDefaultMapping.id(),
@@ -300,7 +299,7 @@ public class MappingTest extends TestCase {
     }
 
     public void testOrderQuery() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var skuId = TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
                 null, TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()), null, null, null,
                 new ClassInstanceParam(
@@ -370,7 +369,7 @@ public class MappingTest extends TestCase {
         var orderKlassDTO = typeManager.getType(new GetTypeRequest(shoppingTypeIds.orderTypeId(), false)).type();
         var mapping = TestUtils.getDefaultMapping(orderKlassDTO);
         var orderViewKlassDTO = TestUtils.getDefaultViewType(orderKlassDTO);
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         var total = instanceManager.query(new InstanceQueryDTO(
                 orderViewKlassDTO, mapping.id(), null, null, List.of(), 1, 20,
                 true, false, List.of()
@@ -379,7 +378,7 @@ public class MappingTest extends TestCase {
     }
 
     public void testNewRootView() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var skuTypeDTO = getType(shoppingTypeIds.skuTypeId());
         var skuDefaultMapping = NncUtils.findRequired(
                 skuTypeDTO.mappings(),
@@ -414,7 +413,7 @@ public class MappingTest extends TestCase {
     }
 
 public void testGeneric() {
-        var listTypeIds = MockUtils.createListType(typeManager, entityContextFactory);
+        var listTypeIds = MockUtils.createListType(typeManager, schedulerAndWorker);
         var nodeTypeIds = listTypeIds.nodeTypeIds();
         var listKlass = typeManager.getType(new GetTypeRequest(listTypeIds.listTypeId(), false)).type();
         var nodeKlass = typeManager.getType(new GetTypeRequest(nodeTypeIds.nodeTypeId(), false)).type();
@@ -493,7 +492,7 @@ public void testGeneric() {
     }
 
     public void testUser() {
-        var userTypeIds = MockUtils.createUserTypes(typeManager, entityContextFactory);
+        var userTypeIds = MockUtils.createUserTypes(typeManager, schedulerAndWorker);
         // save user instance
         var userId = TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
                 null, TypeExpressions.getClassType(userTypeIds.platformUserTypeId()), null, null, null,
@@ -518,7 +517,7 @@ public void testGeneric() {
         var applicationViewTypeDTO = typeManager.getType(new GetTypeRequest(userTypeIds.applicationTypeId(), true)).type();
         var applicationDefaultMapping = TestUtils.getDefaultMapping(applicationViewTypeDTO);
         var applicationViewType = applicationDefaultMapping.targetType();
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         var applicationViews = instanceManager.query(new InstanceQueryDTO(
                 applicationViewType, applicationDefaultMapping.id(), null, null, List.of(), 1, 20,
                 true, false, List.of()

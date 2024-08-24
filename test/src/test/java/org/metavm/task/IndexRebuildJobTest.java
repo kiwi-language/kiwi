@@ -7,20 +7,19 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.mocks.Bar;
 import org.metavm.mocks.Foo;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
-import org.metavm.util.BootstrapUtils;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.TestConstants;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
 
 public class IndexRebuildJobTest extends TestCase {
 
     private EntityContextFactory entityContextFactory;
+    private SchedulerAndWorker schedulerAndWorker;
     private MemInstanceSearchServiceV2 instanceSearchService;
 
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
         instanceSearchService = bootResult.instanceSearchService();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         entityContextFactory = bootResult.entityContextFactory();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
@@ -29,6 +28,7 @@ public class IndexRebuildJobTest extends TestCase {
     protected void tearDown() throws Exception {
         entityContextFactory = null;
         instanceSearchService = null;
+        schedulerAndWorker = null;
     }
 
     public void test() {
@@ -53,7 +53,7 @@ public class IndexRebuildJobTest extends TestCase {
                 context.finish();
             }
         });
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = newContext()) {
             var instances = context.selectByKey(Foo.IDX_ALL_FLAG, true);
             for (var instance : instances) {

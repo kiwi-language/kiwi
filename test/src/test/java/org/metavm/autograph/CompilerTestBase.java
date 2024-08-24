@@ -58,6 +58,7 @@ public abstract class CompilerTestBase extends TestCase  {
     protected PlatformUserManager platformUserManager;
     protected ApiClient apiClient;
     protected EntityContextFactory entityContextFactory;
+    protected SchedulerAndWorker schedulerAndWorker;
 
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
@@ -74,6 +75,7 @@ public abstract class CompilerTestBase extends TestCase  {
         columnStore = bootResult.columnStore();
         typeTagStore = bootResult.typeTagStore();
         entityContextFactory = bootResult.entityContextFactory();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         typeManager = new TypeManager(
                 bootResult.entityContextFactory(),
@@ -112,6 +114,7 @@ public abstract class CompilerTestBase extends TestCase  {
         typeClient = null;
         executor = null;
         typeManager = null;
+        schedulerAndWorker = null;
         instanceManager = null;
         allocatorStore = null;
         columnStore = null;
@@ -186,7 +189,7 @@ public abstract class CompilerTestBase extends TestCase  {
     protected void compile(String sourceRoot) {
         ContextUtil.resetProfiler();
         new Main(HOME, sourceRoot, APP_ID, "__fake_token__", typeClient, allocatorStore, columnStore, typeTagStore).run();
-        submit(() -> TestUtils.waitForDDLPrepared(entityContextFactory));
+        submit(() -> TestUtils.waitForDDLPrepared(schedulerAndWorker));
     }
 
     protected void clearHome() {
@@ -194,7 +197,7 @@ public abstract class CompilerTestBase extends TestCase  {
     }
 
     protected void waitForAllTasksDone() {
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
     }
 
 }

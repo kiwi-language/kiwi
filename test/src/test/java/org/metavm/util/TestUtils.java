@@ -468,7 +468,7 @@ public class TestUtils {
         var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
         var flowManager = new FlowManager(entityContextFactory, transactionOps);
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
-        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
+        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), bootResult.metaContextCache());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowExecutionService(flowExecutionService);
         typeManager.setVersionManager(new VersionManager(entityContextFactory));
@@ -488,42 +488,42 @@ public class TestUtils {
         return ((DefaultViewId) Id.parse(viewId)).getSourceId().toString();
     }
 
-    public static void waitForDDLState(CommitState commitState, EntityContextFactory entityContextFactory) {
-        waitForDDLState(s -> s.ordinal() >= commitState.ordinal(), entityContextFactory);
+    public static void waitForDDLState(CommitState commitState, SchedulerAndWorker schedulerAndWorker) {
+        waitForDDLState(s -> s.ordinal() >= commitState.ordinal(), schedulerAndWorker);
     }
 
-    public static void waitForDDLState(Predicate<CommitState> filter, EntityContextFactory entityContextFactory) {
-        waitForDDLState(filter, ScanTask.DEFAULT_BATCH_SIZE, entityContextFactory);
+    public static void waitForDDLState(Predicate<CommitState> filter, SchedulerAndWorker schedulerAndWorker) {
+        waitForDDLState(filter, ScanTask.DEFAULT_BATCH_SIZE, schedulerAndWorker);
     }
 
-    public static void waitForDDLState(Predicate<CommitState> filter, int batchSize, EntityContextFactory entityContextFactory) {
+    public static void waitForDDLState(Predicate<CommitState> filter, int batchSize, SchedulerAndWorker schedulerAndWorker) {
         waitForTaskDone(t -> t instanceof IDDLTask d && filter.test(d.getCommit().getState()),
                 0,
                 batchSize,
-                entityContextFactory);
+                schedulerAndWorker);
     }
 
-    public static void waitForDDLCompleted(EntityContextFactory entityContextFactory) {
-        waitForDDLState(s -> s == CommitState.COMPLETED, entityContextFactory);
+    public static void waitForDDLCompleted(SchedulerAndWorker schedulerAndWorker) {
+        waitForDDLState(s -> s == CommitState.COMPLETED, schedulerAndWorker);
     }
 
-    public static void waitForDDLPrepared(EntityContextFactory entityContextFactory) {
+    public static void waitForDDLPrepared(SchedulerAndWorker schedulerAndWorker) {
 //        waitForTaskGroupDone(t -> t instanceof DDLPreparationTaskGroup, entityContextFactory);
-        waitForDDLState(CommitState.RELOCATING, entityContextFactory);
+        waitForDDLState(CommitState.RELOCATING, schedulerAndWorker);
     }
 
-    public static void waitForDDLAborted(EntityContextFactory entityContextFactory) {
-        waitForDDLState(CommitState.ABORTED, entityContextFactory);
+    public static void waitForDDLAborted(SchedulerAndWorker schedulerAndWorker) {
+        waitForDDLState(CommitState.ABORTED, schedulerAndWorker);
     }
 
-    public static void waitForTaskDone(Predicate<Task> predicate, EntityContextFactory entityContextFactory) {
-        waitForTaskDone(predicate, 0L, ScanTask.DEFAULT_BATCH_SIZE, entityContextFactory);
+    public static void waitForTaskDone(Predicate<Task> predicate, SchedulerAndWorker schedulerAndWorker) {
+        waitForTaskDone(predicate, 0L, ScanTask.DEFAULT_BATCH_SIZE, schedulerAndWorker);
     }
 
-    public static void waitForTaskDone(Predicate<Task> predicate, long delay, int batchSize, EntityContextFactory entityContextFactory) {
+    public static void waitForTaskDone(Predicate<Task> predicate, long delay, int batchSize, SchedulerAndWorker schedulerAndWorker) {
         var transactionOps = new MockTransactionOperations();
-        var scheduler = new Scheduler(entityContextFactory, transactionOps);
-        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
+        var scheduler = schedulerAndWorker.scheduler();
+        var worker = schedulerAndWorker.worker();
         waitForTaskDone(scheduler, worker, predicate, delay, batchSize);
     }
 
@@ -550,20 +550,18 @@ public class TestUtils {
         }
     }
 
-    public static void waitForAllTasksDone(EntityContextFactory entityContextFactory) {
-        var transactionOps = new MockTransactionOperations();
-        var scheduler = new Scheduler(entityContextFactory, transactionOps);
-        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
+    public static void waitForAllTasksDone(SchedulerAndWorker schedulerAndWorker) {
+        var scheduler = schedulerAndWorker.scheduler();
+        var worker = schedulerAndWorker.worker();
         scheduler.sendHeartbeat();
         worker.sendHeartbeat();
         scheduler.schedule();
         worker.waitForAllDone();
     }
 
-    public static void waitForTaskGroupDone(Predicate<TaskGroup> predicate, EntityContextFactory entityContextFactory) {
-        var transactionOps = new MockTransactionOperations();
-        var scheduler = new Scheduler(entityContextFactory, transactionOps);
-        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
+    public static void waitForTaskGroupDone(Predicate<TaskGroup> predicate, SchedulerAndWorker schedulerAndWorker) {
+        var scheduler = schedulerAndWorker.scheduler();
+        var worker = schedulerAndWorker.worker();
         scheduler.sendHeartbeat();
         worker.sendHeartbeat();
         for (int i = 0; i < 3; i++) {
@@ -574,10 +572,9 @@ public class TestUtils {
         throw new IllegalStateException("Condition not met after " + 15 + " runs");
     }
 
-    public static void runTasks(int numRuns, int scanBatchSize, EntityContextFactory entityContextFactory) {
-        var transactionOps = new MockTransactionOperations();
-        var scheduler = new Scheduler(entityContextFactory, transactionOps);
-        var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner());
+    public static void runTasks(int numRuns, int scanBatchSize, SchedulerAndWorker schedulerAndWorker) {
+        var scheduler = schedulerAndWorker.scheduler();
+        var worker = schedulerAndWorker.worker();
         scheduler.sendHeartbeat();
         worker.sendHeartbeat();
         scheduler.schedule();

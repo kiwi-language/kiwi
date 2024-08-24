@@ -6,6 +6,8 @@ import com.google.common.cache.LoadingCache;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.ddl.Commit;
 import org.metavm.flow.CallableRef;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Klass;
@@ -14,6 +16,7 @@ import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.InternalException;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,12 +26,12 @@ public class MetaContextCache extends EntityContextFactoryAware {
 
     public static final int MAX_SIZE = 16;
 
-    private final LoadingCache<Long, IEntityContext> cache = CacheBuilder.newBuilder()
+    private final LoadingCache<CacheKey, IEntityContext> cache = CacheBuilder.newBuilder()
             .maximumSize(MAX_SIZE)
             .build(new CacheLoader<>() {
 
                 @Override
-                public @NotNull IEntityContext load(@NotNull Long key) {
+                public @NotNull IEntityContext load(@NotNull CacheKey key) {
                     return createMetaContext(key);
                 }
             });
@@ -41,19 +44,31 @@ public class MetaContextCache extends EntityContextFactoryAware {
     }
 
     public IEntityContext get(long appId) {
+        return get(appId, null);
+    }
+
+    public IEntityContext get(long appId, @Nullable Id walId) {
         try {
-            return cache.get(appId);
+            return cache.get(new CacheKey(appId, walId));
         } catch (ExecutionException e) {
             throw new InternalException(e);
         }
     }
 
-    public void invalidate(long appId) {
-        cache.invalidate(appId);
+    public void invalidate(long appId, @Nullable Id walId) {
+        cache.invalidate(new CacheKey(appId, walId));
     }
 
-    private IEntityContext createMetaContext(long appId) {
-        var context = newContext(appId);
+    private IEntityContext createMetaContext(CacheKey key) {
+        IEntityContext context;
+        if(key.walId != null) {
+            try(var outerContext = newContext(key.appId)) {
+                var wal = outerContext.getEntity(WAL.class, key.walId);
+                context = newContext(key.appId, builder -> builder.readWAL(wal));
+            }
+        }
+        else
+            context = newContext(key.appId);
         loadAllTypeDefs(context);
         return context;
     }
@@ -84,6 +99,9 @@ public class MetaContextCache extends EntityContextFactoryAware {
 //        } catch (InterruptedException | ExecutionException e) {
 //            throw new RuntimeException(e);
 //        }
+    }
+
+    private record CacheKey(long appId, @Nullable Id walId) {
     }
 
 }

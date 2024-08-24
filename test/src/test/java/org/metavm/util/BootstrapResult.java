@@ -24,6 +24,7 @@ public record BootstrapResult(
         MemTypeTagStore typeTagStore,
         MetaContextCache metaContextCache,
         ChangeLogManager changeLogManager,
-        TaskManager taskManager
+        TaskManager taskManager,
+        SchedulerAndWorker schedulerAndWorker
 ) {
 }

@@ -32,6 +32,7 @@ public class WALTest extends TestCase {
     private static final Logger logger = LoggerFactory.getLogger(WALTest.class);
 
     private EntityContextFactory entityContextFactory;
+    private SchedulerAndWorker schedulerAndWorker;
     private IInstanceStore instanceStore;
 
     @Override
@@ -39,12 +40,14 @@ public class WALTest extends TestCase {
         var bootResult = BootstrapUtils.bootstrap();
         entityContextFactory = bootResult.entityContextFactory();
         instanceStore = bootResult.instanceStore();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
     }
 
     @Override
     protected void tearDown() throws Exception {
         entityContextFactory = null;
         instanceStore = null;
+        schedulerAndWorker = null;
     }
 
     public void testModel() {
@@ -179,7 +182,7 @@ public class WALTest extends TestCase {
             }
         }
         // check the old instance
-        TestUtils.waitForDDLPrepared(entityContextFactory);
+        TestUtils.waitForDDLPrepared(schedulerAndWorker);
         try (var context = newContext()) {
             var inst = (ClassInstance) context.getInstanceContext().get(instId);
             Assert.assertEquals(Instances.longInstance(0L), inst.getField("version"));

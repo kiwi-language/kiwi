@@ -22,6 +22,7 @@ public class ShoppingTest extends TestCase {
     private InstanceManager instanceManager;
     private FlowExecutionService flowExecutionService;
     private EntityContextFactory entityContextFactory;
+    private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
 
     @Override
@@ -31,6 +32,7 @@ public class ShoppingTest extends TestCase {
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
         instanceManager = managers.instanceManager();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         flowExecutionService = managers.flowExecutionService();
         entityContextFactory = bootResult.entityContextFactory();
         apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache()));
@@ -40,13 +42,14 @@ public class ShoppingTest extends TestCase {
     protected void tearDown() {
         typeManager = null;
         instanceManager = null;
+        schedulerAndWorker = null;
         flowExecutionService = null;
         entityContextFactory = null;
         apiClient = null;
     }
 
     public void testCreateProduct() {
-        MockUtils.createShoppingTypes(typeManager,entityContextFactory);
+        MockUtils.createShoppingTypes(typeManager,schedulerAndWorker);
         DebugEnv.flag = true;
         TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
            "name", "shoes",
@@ -61,7 +64,7 @@ public class ShoppingTest extends TestCase {
     }
 
     public void testDecAmount() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var productDTO = MockUtils.createProductDTO(shoppingTypeIds);
         var productId = TestUtils.doInTransaction(() -> instanceManager.create(productDTO));
         var loadedProductDTO = instanceManager.get(productId, 1).instance();
@@ -93,7 +96,7 @@ public class ShoppingTest extends TestCase {
     }
 
     public void testBuy() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var productDTO = MockUtils.createProductDTO(instanceManager, shoppingTypeIds);
         var couponsDTOs = MockUtils.createCouponDTOs(instanceManager, shoppingTypeIds);
         var firstSkuDTO = productDTO.getFieldValue(shoppingTypeIds.productSkuListFieldId()).underlyingInstance()

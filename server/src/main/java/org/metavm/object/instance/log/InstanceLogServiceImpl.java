@@ -35,12 +35,15 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
 
     private final TransactionOperations transactionOperations;
 
+    private final MetaContextCache metaContextCache;
+
     public InstanceLogServiceImpl(
             EntityContextFactory entityContextFactory,
-            IInstanceStore instanceStore, TransactionOperations transactionOperations) {
+            IInstanceStore instanceStore, TransactionOperations transactionOperations, MetaContextCache metaContextCache) {
         super(entityContextFactory);
         this.instanceStore = instanceStore;
         this.transactionOperations = transactionOperations;
+        this.metaContextCache = metaContextCache;
         WAL.setPostProcessHook((appId, logs) -> process(appId, logs, instanceStore, List.of(), null, ModelDefRegistry.getDefContext()));
     }
 
@@ -147,8 +150,11 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                 var commit = context.selectFirstByKey(Commit.IDX_RUNNING, true);
                 if (commit != null) {
                     var commitState = commit.getState();
-                    try (var loadedContext = newContext(appId, builder -> builder
-                            .readWAL(commitState.isPreparing() ? commit.getWal() : null)
+                    var wal = commitState.isPreparing() ? commit.getWal() : null;
+                    try (var loadedContext = newContext(appId,
+                            metaContextCache.get(appId, wal != null? wal.getId() : null),
+                            builder -> builder
+                            .readWAL(wal)
                             .relocationEnabled(commitState.isRelocationEnabled())
                             .timeout(0)
                     )

@@ -20,6 +20,7 @@ public class EntityQueryServiceTest extends TestCase {
 
     private EntityQueryService entityQueryService;
     private EntityContextFactory entityContextFactory;
+    private SchedulerAndWorker schedulerAndWorker;
 
     @Override
     protected void setUp() throws Exception {
@@ -27,6 +28,7 @@ public class EntityQueryServiceTest extends TestCase {
         var instanceSearchService = bootResult.instanceSearchService();
         entityContextFactory = bootResult.entityContextFactory();
         var instanceQueryService = new InstanceQueryService(instanceSearchService);
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         entityQueryService = new EntityQueryService(instanceQueryService);
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
@@ -35,6 +37,7 @@ public class EntityQueryServiceTest extends TestCase {
     protected void tearDown() {
         entityContextFactory = null;
         entityQueryService = null;
+        schedulerAndWorker = null;
     }
 
     public <T extends Entity> T addEntity(T entity) {
@@ -58,7 +61,7 @@ public class EntityQueryServiceTest extends TestCase {
 
     public void test() {
         Foo foo = addEntity(MockUtils.getFoo());
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = newContext()) {
             foo = context.getEntity(Foo.class, foo.getId());
             var qux = context.getEntity(Qux.class, Objects.requireNonNull(foo.getQux()).getId());
@@ -76,7 +79,7 @@ public class EntityQueryServiceTest extends TestCase {
 
     public void testSearchText() {
         Foo foo = addEntity(MockUtils.getFoo());
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = newContext()) {
             foo = context.getEntity(Foo.class, foo.getId());
             Page<Foo> page = entityQueryService.query(
@@ -93,7 +96,7 @@ public class EntityQueryServiceTest extends TestCase {
 
     public void testSearchTypes() {
         Klass fooType = ModelDefRegistry.getClassType(Foo.class).resolve();
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = entityContextFactory.newContext(Constants.ROOT_APP_ID)) {
             Page<Klass> page = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Klass.class)

@@ -63,6 +63,12 @@ public class DDLTask extends ScanTask implements IDDLTask {
         return commitState.isPreparing() ? commit.getWal() : null;
     }
 
+    @Nullable
+    @Override
+    public WAL getMetaWAL() {
+        return getWAL();
+    }
+
     @Override
     public boolean isRelocationEnabled() {
         return commitState.isRelocationEnabled();

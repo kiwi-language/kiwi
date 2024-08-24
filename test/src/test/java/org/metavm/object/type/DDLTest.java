@@ -33,6 +33,7 @@ public class DDLTest extends TestCase {
 
     private TypeManager typeManager;
     private EntityContextFactory entityContextFactory;
+    private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
     private MemInstanceStore instanceStore;
 
@@ -44,6 +45,7 @@ public class DDLTest extends TestCase {
         entityContextFactory = bootResult.entityContextFactory();
         apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache()));
         instanceStore = bootResult.instanceStore();
+        schedulerAndWorker  = bootResult.schedulerAndWorker();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -53,6 +55,7 @@ public class DDLTest extends TestCase {
         entityContextFactory = null;
         apiClient = null;
         instanceStore = null;
+        schedulerAndWorker = null;
     }
 
     public void testDDL() {
@@ -93,7 +96,7 @@ public class DDLTest extends TestCase {
                 Assert.assertEquals(Instances.longInstance(0L), ver.getField("majorVersion"));
             }
         }
-        TestUtils.waitForDDLPrepared(entityContextFactory);
+        TestUtils.waitForDDLPrepared(schedulerAndWorker);
         var productType = typeManager.getTypeByCode("Product").type();
         Assert.assertTrue(productType.getFieldByName("inventory").isChild());
         var shoes1 = apiClient.getObject(shoesId);
@@ -113,12 +116,12 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(1L, box.get("count"));
         var commitState = apiClient.getObject(apiClient.getObject(commitId).getString("state"));
         Assert.assertEquals(CommitState.RELOCATING.name(), commitState.get("name"));
-        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, schedulerAndWorker);
         try (var context = newContext()) {
             var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
             Assert.assertFalse(invInst.isRoot());
         }
-        TestUtils.waitForDDLState(CommitState.UPDATING_REFERENCE, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.UPDATING_REFERENCE, schedulerAndWorker);
         var newInventorId = TestUtils.doInTransaction(() -> {
            try(var context = newContext()) {
                var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
@@ -132,7 +135,7 @@ public class DDLTest extends TestCase {
                return invInst.getId();
            }
         });
-        TestUtils.waitForDDLCompleted(entityContextFactory);
+        TestUtils.waitForDDLCompleted(schedulerAndWorker);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var boxInst = (ClassInstance) instCtx.get(Id.parse(boxId));
@@ -151,14 +154,14 @@ public class DDLTest extends TestCase {
         }
         logger.debug("Deploying rollback metadata");
         assemble("ddl_rollback.masm", false);
-        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, schedulerAndWorker);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var invInst = instCtx.get(newInventorId);
             Assert.assertNotEquals(newInventorId, invInst.tryGetCurrentId());
             Assert.assertEquals(newInventorId, invInst.getId());
         }
-        TestUtils.waitForDDLState(CommitState.UPDATING_REFERENCE, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.UPDATING_REFERENCE, schedulerAndWorker);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var instCtx = context.getInstanceContext();
@@ -174,7 +177,7 @@ public class DDLTest extends TestCase {
                 }
             }
         });
-        TestUtils.waitForDDLCompleted(entityContextFactory);
+        TestUtils.waitForDDLCompleted(schedulerAndWorker);
         try(var context = newContext()) {
             try {
                 context.getInstanceContext().get(newInventorId);
@@ -260,7 +263,7 @@ public class DDLTest extends TestCase {
                 availableField = productKlass.getFieldByCode("available");
             }
         }
-        TestUtils.waitForDDLState(s -> s == CommitState.ABORTED, 16, entityContextFactory);
+        TestUtils.waitForDDLState(s -> s == CommitState.ABORTED, 16, schedulerAndWorker);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
@@ -332,7 +335,7 @@ public class DDLTest extends TestCase {
                 products.forEach(p -> productIds.add(p.getStringId()));
             }
         });
-        TestUtils.waitForDDLPrepared(entityContextFactory);
+        TestUtils.waitForDDLPrepared(schedulerAndWorker);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 for (String productId : productIds) {
@@ -342,7 +345,7 @@ public class DDLTest extends TestCase {
             }
         });
         var priceKlass2 = typeManager.getTypeByCode("Price").type();
-        TestUtils.waitForDDLCompleted(entityContextFactory);
+        TestUtils.waitForDDLCompleted(schedulerAndWorker);
         Assert.assertEquals(ClassKind.VALUE.code(), priceKlass2.kind());
         for (String productId : productIds) {
             var product = apiClient.getObject(productId);
@@ -351,11 +354,11 @@ public class DDLTest extends TestCase {
             Assert.assertNull(price.get("$id"));
         }
         var commitId = assemble("value_ddl_before.masm", false);
-        TestUtils.runTasks(1, 16, entityContextFactory);
+        TestUtils.runTasks(1, 16, schedulerAndWorker);
         var shoes1 = apiClient.getObject(shoesId);
         var price1 = shoes1.get("price");
         MatcherAssert.assertThat(price1, CoreMatchers.instanceOf(ClassInstanceWrap.class));
-        TestUtils.waitForDDLPrepared(entityContextFactory);
+        TestUtils.waitForDDLPrepared(schedulerAndWorker);
         try(var context = newContext()) {
             var commit = context.getEntity(Commit.class, commitId);
             Assert.assertEquals(CommitState.RELOCATING, commit.getState());
@@ -366,7 +369,7 @@ public class DDLTest extends TestCase {
             var product = apiClient.getObject(productId);
             MatcherAssert.assertThat(product.get("price"), CoreMatchers.instanceOf(String.class));
         }
-        TestUtils.waitForDDLCompleted(entityContextFactory);
+        TestUtils.waitForDDLCompleted(schedulerAndWorker);
         try (var context = newContext()){
             var commit = context.getEntity(Commit.class, commitId);
             Assert.assertEquals(CommitState.COMPLETED, commit.getState());
@@ -402,14 +405,14 @@ public class DDLTest extends TestCase {
                 context.finish();
             }
         });
-        TestUtils.waitForDDLState(CommitState.ABORTING, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.ABORTING, schedulerAndWorker);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
             var priceRef = (Reference) shoesInst.getField("price");
             Assert.assertTrue(priceRef.isEager());
         }
-        TestUtils.waitForDDLAborted(entityContextFactory);
+        TestUtils.waitForDDLAborted(schedulerAndWorker);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
@@ -437,7 +440,7 @@ public class DDLTest extends TestCase {
                 context.finish();
             }
         });
-        TestUtils.waitForDDLState(CommitState.ABORTING, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.ABORTING, schedulerAndWorker);
         Id priceId;
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
@@ -446,7 +449,7 @@ public class DDLTest extends TestCase {
             Assert.assertTrue(priceRef.isValueReference());
             priceId = priceRef.getId();
         }
-        TestUtils.waitForDDLAborted(entityContextFactory);
+        TestUtils.waitForDDLAborted(schedulerAndWorker);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
@@ -476,7 +479,7 @@ public class DDLTest extends TestCase {
         ));
         var kindId0 = apiClient.getObject(shoesId).getString("kind");
         assemble("enum_ddl_after.masm", false);
-        TestUtils.waitForDDLCompleted(entityContextFactory);
+        TestUtils.waitForDDLCompleted(schedulerAndWorker);
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
         var nameField = NncUtils.find(productKindKlass.fields(), f -> f.name().equals("name") && f.state() == MetadataState.REMOVED.code());
         Assert.assertNotNull(nameField);
@@ -530,7 +533,7 @@ public class DDLTest extends TestCase {
                 context.finish();
             }
         });
-        TestUtils.waitForDDLAborted(entityContextFactory);
+        TestUtils.waitForDDLAborted(schedulerAndWorker);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
@@ -621,7 +624,7 @@ public class DDLTest extends TestCase {
                 context.finish();
             }
         });
-        TestUtils.waitForDDLAborted(entityContextFactory);
+        TestUtils.waitForDDLAborted(schedulerAndWorker);
         var shoes = apiClient.getObject(shoesId);
         MatcherAssert.assertThat(shoes.get("kind"), CoreMatchers.instanceOf(ClassInstanceWrap.class));
     }
@@ -642,7 +645,7 @@ public class DDLTest extends TestCase {
                 context.finish();
             }
         });
-        TestUtils.waitForDDLAborted(entityContextFactory);
+        TestUtils.waitForDDLAborted(schedulerAndWorker);
         var kindId = apiClient.getObject(shoesId).getString("kind");
         Assert.assertEquals(defaultKindId, kindId);
     }
@@ -685,7 +688,7 @@ public class DDLTest extends TestCase {
            var commit = context.getCommit(commitId);
            commit.cancel();
         });
-        TestUtils.waitForDDLAborted(entityContextFactory);
+        TestUtils.waitForDDLAborted(schedulerAndWorker);
         var kind = apiClient.getObject(shoesId).get("kind");
         MatcherAssert.assertThat(kind, CoreMatchers.instanceOf(ClassInstanceWrap.class));
         var kindObj = (ClassInstanceWrap) kind;
@@ -706,7 +709,7 @@ public class DDLTest extends TestCase {
             var commit = context.getCommit(commitId);
             commit.cancel();
         });
-        TestUtils.waitForDDLAborted(entityContextFactory);
+        TestUtils.waitForDDLAborted(schedulerAndWorker);
         var kind = apiClient.getObject(shoesId).get("kind");
         MatcherAssert.assertThat(kind, CoreMatchers.instanceOf(String.class));
         Assert.assertEquals(defaultKindId, kind);
@@ -737,11 +740,11 @@ public class DDLTest extends TestCase {
         ));
         var inventoryId = apiClient.getObject(shoesId).getObject("inventory").getString("$id");
         assemble("remove_child_field_ddl_after.masm", false);
-        TestUtils.waitForDDLState(CommitState.SUBMITTING, entityContextFactory);
+        TestUtils.waitForDDLState(CommitState.SUBMITTING, schedulerAndWorker);
         saveInstance("Box<Inventory>", Map.of(
                 "item", inventoryId
         ));
-        TestUtils.waitForDDLAborted(entityContextFactory);
+        TestUtils.waitForDDLAborted(schedulerAndWorker);
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = instCtx.get(Id.parse(inventoryId));
@@ -770,7 +773,7 @@ public class DDLTest extends TestCase {
                 boxIds.add(boxId);
             }
             assemble("ddl_after.masm", false);
-            TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, entityContextFactory);
+            TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, schedulerAndWorker);
             var newInventoryId = TestUtils.doInTransaction(() -> {
                 try (var context = newContext()) {
                     var instCtx = context.getInstanceContext();
@@ -819,7 +822,7 @@ public class DDLTest extends TestCase {
                     t -> t instanceof IDDLTask ddlTask && ddlTask.getCommit().getState() == CommitState.COMPLETED,
                     20L,
                     ScanTask.DEFAULT_BATCH_SIZE,
-                    entityContextFactory
+                    schedulerAndWorker
             );
             synchronized (monitor) {
                 monitor.notify();
@@ -871,7 +874,7 @@ public class DDLTest extends TestCase {
     }
 
     private String assemble(String fileName, boolean waitForDDLCompleted) {
-        return MockUtils.assemble(SRC_DIR + fileName, typeManager, waitForDDLCompleted, entityContextFactory);
+        return MockUtils.assemble(SRC_DIR + fileName, typeManager, waitForDDLCompleted, schedulerAndWorker);
     }
 
     private String saveInstance(String className, Map<String, Object> value) {

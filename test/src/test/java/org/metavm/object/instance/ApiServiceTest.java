@@ -2,12 +2,8 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.type.TypeManager;
-import org.metavm.util.ApiClient;
-import org.metavm.util.BootstrapUtils;
-import org.metavm.util.MockUtils;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
 
 import java.util.List;
 import java.util.Map;
@@ -16,7 +12,7 @@ public class ApiServiceTest extends TestCase {
 
     private TypeManager typeManager;
     private InstanceManager instanceManager;
-    private EntityContextFactory entityContextFactory;
+    private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
 
     @Override
@@ -25,20 +21,20 @@ public class ApiServiceTest extends TestCase {
         apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache()));
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         instanceManager = managers.instanceManager();
-        entityContextFactory = bootResult.entityContextFactory();
     }
 
     @Override
     protected void tearDown() throws Exception {
         apiClient = null;
         instanceManager = null;
+        schedulerAndWorker = null;
         typeManager = null;
-        entityContextFactory = null;
     }
 
     public void testNewInstance() {
-        MockUtils.createShoppingTypes(typeManager, entityContextFactory);
+        MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var title = "Shoes-40";
         var price = 100.0;
         var quantity = 100L;
@@ -52,7 +48,7 @@ public class ApiServiceTest extends TestCase {
     }
 
     public void testHandleInstanceMethodCall() {
-        MockUtils.createShoppingTypes(typeManager, entityContextFactory);
+        MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
 //        var skuId = (String) TestUtils.doInTransaction(() -> apiService.handleNewInstance(
 //                "SKU", List.of("Shoes-40", 100.0, 100L)
 //        ));

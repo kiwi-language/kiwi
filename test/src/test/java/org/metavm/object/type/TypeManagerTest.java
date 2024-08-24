@@ -31,6 +31,7 @@ public class TypeManagerTest extends TestCase {
     private TypeManager typeManager;
     private InstanceManager instanceManager;
     private EntityContextFactory entityContextFactory;
+    private SchedulerAndWorker schedulerAndWorker;
     private Scheduler scheduler;
     private Worker worker;
 
@@ -38,6 +39,7 @@ public class TypeManagerTest extends TestCase {
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
         instanceSearchService = bootResult.instanceSearchService();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
         instanceManager = managers.instanceManager();
@@ -55,6 +57,7 @@ public class TypeManagerTest extends TestCase {
         entityContextFactory = null;
         scheduler = null;
         worker = null;
+        schedulerAndWorker = null;
     }
 
     public void test() {
@@ -91,15 +94,15 @@ public class TypeManagerTest extends TestCase {
                 )
                 .build();
         KlassDTO savedKlassDTO = TestUtils.doInTransaction(() -> typeManager.saveType(klassDTO));
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         Assert.assertTrue(instanceSearchService.contains(TestUtils.getTypeId(savedKlassDTO)));
         TestUtils.doInTransactionWithoutResult(() -> typeManager.remove(savedKlassDTO.id()));
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         Assert.assertFalse(instanceSearchService.contains(TestUtils.getTypeId(savedKlassDTO)));
     }
 
     public void testShopping() {
-        var typeIds = MockUtils.createShoppingTypes(typeManager, entityContextFactory);
+        var typeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var productTypeDTO = typeManager.getType(new GetTypeRequest(typeIds.productTypeId(), false)).type();
         Assert.assertEquals(2, productTypeDTO.fields().size());
         var couponStateType = typeManager.getType(new GetTypeRequest(typeIds.couponStateTypeId(), false)).type();
@@ -116,7 +119,7 @@ public class TypeManagerTest extends TestCase {
 
     public void testAddFieldWithDefaultValueToTemplate() {
 //        var nodeTypeIds = MockUtils.createNodeTypes(typeManager);
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Node.masm", typeManager, entityContextFactory);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Node.masm", typeManager, schedulerAndWorker);
         var nodeType = typeManager.getTypeByCode("Node").type();
 //        var nodeType = typeManager.getType(new GetTypeRequest(nodeTypeIds.nodeTypeId(), false)).type();
         var pNodeType = TypeExpressions.getParameterizedType(nodeType.id(), "string");
@@ -237,7 +240,7 @@ public class TypeManagerTest extends TestCase {
         DebugEnv.id = fooKlassId;
 //        TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, entityContextFactory);
         DebugEnv.flag = true;
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
         var queryResult = typeManager.query(new TypeQuery(
                 "SynchronizeFoo",
                 List.of(ClassKind.CLASS.code()),

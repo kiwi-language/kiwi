@@ -45,7 +45,7 @@ public class SynchronizeSearchTask extends Task {
 
     @Nullable
     @Override
-    public WAL getWAL() {
+    public WAL getMetaWAL() {
         return wal;
     }
 

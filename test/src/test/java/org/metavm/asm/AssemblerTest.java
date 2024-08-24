@@ -70,7 +70,7 @@ public class AssemblerTest extends TestCase {
             TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
             ContextUtil.setAppId(TestConstants.APP_ID);
             TestUtils.doInTransaction(() -> typeManager.batchSave(request));
-            TestUtils.waitForDDLPrepared(bootResult.entityContextFactory());
+            TestUtils.waitForDDLPrepared(bootResult.schedulerAndWorker());
         }
     }
 

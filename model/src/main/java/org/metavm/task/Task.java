@@ -132,6 +132,10 @@ public abstract class Task extends Entity {
         return null;
     }
 
+    public @Nullable WAL getMetaWAL() {
+        return null;
+    }
+
     public @Nullable WAL getDefWAL() {
         return null;
     }

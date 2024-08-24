@@ -41,11 +41,13 @@ public class DDLManagerTest extends TestCase {
 
     private DDLManager ddlManager;
     private EntityContextFactory entityContextFactory;
+    private SchedulerAndWorker schedulerAndWorker;
     private BootstrapResult bootResult;
 
     @Override
     protected void setUp() throws Exception {
         bootResult = BootstrapUtils.bootstrap();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         var managers = TestUtils.createCommonManagers(bootResult);
         var typeManager = managers.typeManager();
         entityContextFactory = bootResult.entityContextFactory();
@@ -58,6 +60,7 @@ public class DDLManagerTest extends TestCase {
         bootResult = null;
         entityContextFactory = null;
         ddlManager = null;
+        schedulerAndWorker = null;
     }
 
     public void testPreUpgrade() {
@@ -77,6 +80,7 @@ public class DDLManagerTest extends TestCase {
         bootResult = BootstrapUtils.create(false, false, bootResult.allocatorStore(), bootResult.columnStore(), bootResult.typeTagStore(),
                 blacklist.classBlacklist, blacklist.fieldBlacklist);
         entityContextFactory = bootResult.entityContextFactory();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         var typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
         ddlManager = new DDLManager(entityContextFactory, typeManager);
 
@@ -90,14 +94,14 @@ public class DDLManagerTest extends TestCase {
         });
 
         TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
-        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, entityContextFactory);
-        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, schedulerAndWorker);
+        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, schedulerAndWorker);
 
         TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
-        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, entityContextFactory);
-        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, schedulerAndWorker);
+        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, schedulerAndWorker);
 
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
 
         var bootstrap1 = new Bootstrap(entityContextFactory, new StdAllocators(bootResult.allocatorStore()),
                 bootResult.columnStore(), bootResult.typeTagStore(), bootResult.stdIdStore());
@@ -127,6 +131,7 @@ public class DDLManagerTest extends TestCase {
         bootResult = BootstrapUtils.create(false, false, bootResult.allocatorStore(), bootResult.columnStore(), bootResult.typeTagStore(),
                 blacklist.classBlacklist, blacklist.fieldBlacklist);
         entityContextFactory = bootResult.entityContextFactory();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         var typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
         ddlManager = new DDLManager(entityContextFactory, typeManager);
 
@@ -140,8 +145,8 @@ public class DDLManagerTest extends TestCase {
         });
 
         TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
-        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, entityContextFactory);
-        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, schedulerAndWorker);
+        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, schedulerAndWorker);
 
         var bootstrap1 = new Bootstrap(entityContextFactory, new StdAllocators(bootResult.allocatorStore()),
                 bootResult.columnStore(), bootResult.typeTagStore(), bootResult.stdIdStore());
@@ -231,12 +236,13 @@ public class DDLManagerTest extends TestCase {
         bootResult = BootstrapUtils.create(false, false, bootResult.allocatorStore(), bootResult.columnStore(), bootResult.typeTagStore(),
                 blacklist.classBlacklist, blacklist.fieldBlacklist);
         entityContextFactory = bootResult.entityContextFactory();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
         var typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
         ddlManager = new DDLManager(entityContextFactory, typeManager);
 
         TestUtils.doInTransactionWithoutResult(() -> ddlManager.preUpgrade(request));
-        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, entityContextFactory);
-        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, entityContextFactory);
+        TestUtils.waitForTaskDone(t -> t instanceof GlobalPreUpgradeTask, schedulerAndWorker);
+        TestUtils.waitForTaskDone(t -> t instanceof PreUpgradeTask, schedulerAndWorker);
 
         var bootstrap1 = new Bootstrap(entityContextFactory, new StdAllocators(bootResult.allocatorStore()),
                 bootResult.columnStore(), bootResult.typeTagStore(), bootResult.stdIdStore());

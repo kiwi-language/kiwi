@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.MemInstanceStore;
+import org.metavm.entity.MetaContextCache;
 import org.metavm.mocks.TestTask;
 import org.metavm.util.*;
 import org.springframework.transaction.support.TransactionOperations;
@@ -16,6 +17,7 @@ public class SchedulerTest extends TestCase {
     private EntityContextFactory entityContextFactory;
     private Scheduler scheduler;
     private Worker worker;
+    private MetaContextCache metaContextCache;
     private MemInstanceStore instanceStore;
 
     @Override
@@ -23,9 +25,10 @@ public class SchedulerTest extends TestCase {
         var bootResult = BootstrapUtils.bootstrap();
         instanceStore = bootResult.instanceStore();
         entityContextFactory = bootResult.entityContextFactory();
+        metaContextCache = bootResult.metaContextCache();
         TransactionOperations transactionOperations = new MockTransactionOperations();
         scheduler = new Scheduler(entityContextFactory, transactionOperations);
-        worker = new Worker(entityContextFactory, transactionOperations, new DirectTaskRunner());
+        worker = new Worker(entityContextFactory, transactionOperations, new DirectTaskRunner(), metaContextCache);
         ContextUtil.setAppId(APP_ID);
     }
 
@@ -34,11 +37,12 @@ public class SchedulerTest extends TestCase {
         entityContextFactory = null;
         scheduler = null;
         worker = null;
+        metaContextCache = null;
         instanceStore = null;
     }
 
     public void test() {
-        TestUtils.waitForAllTasksDone(entityContextFactory);
+        TestUtils.waitForAllTasksDone(new SchedulerAndWorker(scheduler, worker, metaContextCache, entityContextFactory));
         var ref = new Object() {
             TestTask task;
         };
