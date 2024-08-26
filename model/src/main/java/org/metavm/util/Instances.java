@@ -685,7 +685,7 @@ public class Instances {
         }
     }
 
-    private static void initializeField(ClassInstance instance, Field field, IEntityContext context) {
+    public static void initializeField(ClassInstance instance, Field field, IEntityContext context) {
         var initialValue = computeFieldInitialValue(instance, field, context);
         instance.setField(field, initialValue);
     }
@@ -738,7 +738,7 @@ public class Instances {
             return Objects.requireNonNull(getDefaultValue(field, context), "Can not find a default value for field " + field.getQualifiedName());
     }
 
-    private static void convertField(ClassInstance instance, Field field, IEntityContext context) {
+    public static void convertField(ClassInstance instance, Field field, IEntityContext context) {
         var convertedValue = computeConvertedFieldValue(instance, field, context.getInstanceContext());
         instance.setField(field, convertedValue);
     }

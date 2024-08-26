@@ -149,9 +149,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private transient ClassType type;
 
-    @CopyIgnore
-    private transient ParameterizedElementMap<List<? extends Type>, Klass> parameterizedClasses = new ParameterizedElementMap<>();
-
     private transient Class<? extends NativeBase> nativeClass;
 
     private transient boolean frozen;
@@ -643,7 +640,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     @Override
     public void onLoadPrepare() {
-        parameterizedClasses = new ParameterizedElementMap<>();
         extensions = new ArrayList<>();
         implementations = new ArrayList<>();
     }
@@ -689,8 +685,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             throw new IllegalStateException("Already frozen");
         this.frozen = true;
         if (isTemplate()) {
-            for (Klass p : parameterizedClasses.values())
-                p.freeze();
+            ParameterizedStore.forEach(this, (k,v) -> ((Klass) v).freeze());
         }
     }
 
@@ -1058,19 +1053,19 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void addParameterized(Klass parameterized) {
         NncUtils.requireTrue(parameterized.getTemplate() == this);
-        var existing = parameterizedClasses.get(parameterized.typeArguments.secretlyGetTable());
+        var existing = ParameterizedStore.get(this, parameterized.typeArguments.secretlyGetTable());
         if(existing != null)
             throw new IllegalStateException("Parameterized klass " + parameterized.getTypeDesc() + " already exists. "
                     + "existing: " + System.identityHashCode(existing) + ", new: "+ System.identityHashCode(parameterized)
             );
-        NncUtils.requireNull(parameterizedClasses.put(parameterized.typeArguments.secretlyGetTable(), parameterized),
+        NncUtils.requireNull(ParameterizedStore.put(this, parameterized.typeArguments.secretlyGetTable(), parameterized),
                 () -> "Parameterized klass " + parameterized.getTypeDesc() + " already exists");
     }
 
     public Klass getExistingParameterized(List<? extends Type> typeArguments) {
         if (NncUtils.map(typeParameters, TypeVariable::getType).equals(typeArguments))
             return this;
-        return parameterizedClasses.get(typeArguments);
+        return (Klass) ParameterizedStore.get(this, typeArguments);
     }
 
     public Klass getParameterized(List<? extends Type> typeArguments) {
@@ -1394,12 +1389,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return template;
     }
 
-    public Collection<Klass> getParameterized() {
-        return parameterizedClasses.values();
-    }
-
     public void updateParameterized() {
-        parameterizedClasses.forEach((typeArgs, k) -> {
+        ParameterizedStore.forEach(this, (typeArgs, k) -> {
             var subst = new SubstitutorV2(
                     this, typeParameters.toList(), typeArgs, null, stage);
             subst.copy(this);
@@ -1410,6 +1401,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         NncUtils.requireNull(this.template);
         isParameterized = template != null;
         this.template = copySource = (Klass) template;
+    }
+
+    public void forEachParameterized(Consumer<Klass> action) {
+        ParameterizedStore.forEach(this, (k,v) -> action.accept((Klass) v));
     }
 
     public Klass getEffectiveTemplate() {

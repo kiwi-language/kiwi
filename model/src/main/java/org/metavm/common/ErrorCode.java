@@ -101,7 +101,7 @@ public enum ErrorCode {
     VIEW_NODE_SOURCE_TYPE_MISMATCH(437, "Source type mismatch for view node"),
     INSTANCE_METHOD_MISSING_STATIC_TYPE(438, "Instance method lacks static type"),
     MODIFYING_SYNTHETIC_FLOW(439, "{} is a synthetic flow and cannot be modified"),
-    METHOD_RESOLUTION_FAILED(440, "Unable to resolve method {}"),
+    METHOD_RESOLUTION_FAILED(440, "Unable to resolve method {} with arguments {}"),
 
     // expression
     EXPRESSION_INVALID(501, "Invalid expression: {}"),

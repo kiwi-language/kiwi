@@ -814,6 +814,10 @@ GET http://localhost:8080/api/org/metavm/mlab/Currency/YUAN
 X-App-ID: 1000001021
 
 ###
+GET http://localhost:8080/api/org/metavm/mlab/Currency/DOLLAR
+X-App-ID: 1000000024
+
+###
 GET http://localhost:8080/api/org/metavm/mlab/ProductKind/DEFAULT
 X-App-ID: 1000001021
 
@@ -1149,11 +1153,15 @@ X-App-ID: 1850817017
 
 ###
 GET http://localhost:8080/api/org/metavm/mlab/ProductKind/DEFAULT
-X-App-ID: 1000000014
+X-App-ID: 1000000024
 
 ###
 GET http://localhost:8080/api/org/metavm/mlab/Currency/YUAN
-X-App-ID: 1000000014
+X-App-ID: 1000000024
+
+###
+GET http://localhost:8080/api/org/metavm/mlab/CouponState/ACTIVE
+X-App-ID: 1000000024
 
 ###
 PUT http://localhost:8080/api/org/metavm/mlab/Product
@@ -1199,3 +1207,76 @@ Content-Type: application/json
 <> 2024-08-17T160804.200.txt
 <> 2024-08-17T160803.200.txt
 <> 2024-08-16T160035.200.txt
+###
+POST http://localhost:8080/api/01f6a8d6b90700/get-rate
+X-App-ID: 1000000024
+Content-Type: application/json
+
+[]
+###
+GET http://localhost:8080/api/01aa87e1b90704
+X-App-ID: 1000000024
+
+###
+POST http://localhost:8080/api/order-service/create-order
+X-App-ID: 1000000024
+Content-Type: application/json
+
+[
+  "01aa87e1b90704",
+  1,
+  ["01e4c2e2b90700", "01e2c2e2b90700"]
+]
+
+###
+GET http://localhost:8080/api/01e6c2e2b90700
+X-App-ID: 1000000024
+
+###
+PUT http://localhost:8080/api/org/metavm/mlab/Coupon
+X-App-ID: 1000000024
+Content-Type: application/json
+
+{
+  "code": "c0001",
+  "state": "01f0a8d6b90700",
+  "discount": {
+    "amount": 10,
+    "currency": "01f6a8d6b90700"
+  }
+}
+
+###
+PUT http://localhost:8080/api/org/metavm/mlab/Coupon
+X-App-ID: 1000000024
+Content-Type: application/json
+
+{
+  "code": "d0001",
+  "state": "01f0a8d6b90700",
+  "discount": {
+    "amount": 1,
+    "currency": "01f4a8d6b90700"
+  }
+}
+
+
+###
+PUT http://localhost:8080/api/org/metavm/mlab/Product
+X-App-ID: 1000000024
+Content-Type: application/json
+
+{
+  "$id": "02f6e7e0b907007a",
+  "running": false
+}
+
+###
+PUT http://localhost:8080/api/org/metavm/mlab/Product
+X-App-ID: 1000000024
+Content-Type: application/json
+
+{
+  "$id": "0282a9d6b90700bc03",
+  "data": "AAAAAAAAAAA"
+}

@@ -32,6 +32,7 @@ public class BootstrapUtils {
     private static volatile BootState state;
 
     public static BootstrapResult bootstrap() {
+        ContextUtil.resetProfiler();
         if (state != null) {
             var defContext = state.defContext();
             ModelDefRegistry.setDefContext(defContext);

@@ -62,8 +62,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient List<NodeRT> nodes = new ArrayList<>();
-    @CopyIgnore
-    private transient ParameterizedElementMap<List<? extends Type>, Flow> parameterizedFlows = new ParameterizedElementMap<>();
     private transient Set<String> nodeNames = new HashSet<>();
 
     public Flow(Long tmpId,
@@ -119,7 +117,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     @Override
     public void onLoad() {
         stage = ResolutionStage.INIT;
-        parameterizedFlows = new ParameterizedElementMap<>();
         nodeNames = new HashSet<>();
         accept(new VoidStructuralVisitor() {
             @Override
@@ -575,7 +572,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public void addParameterized(Flow parameterized) {
         NncUtils.requireTrue(parameterized.getTemplate() == this);
-        NncUtils.requireNull(parameterizedFlows.put(parameterized.typeArguments.secretlyGetTable(), parameterized),
+        NncUtils.requireNull(ParameterizedStore.put(this, parameterized.typeArguments.secretlyGetTable(), parameterized),
                 () -> "Parameterized flow " + parameterized.getTypeDesc() + " already exists");
     }
 
@@ -584,7 +581,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     public @Nullable Flow getExistingParameterized(List<? extends Type> typeArguments) {
         if (typeArguments.equals(NncUtils.map(typeParameters, TypeVariable::getType)))
             return this;
-        return parameterizedFlows.get(typeArguments);
+        return (Flow) ParameterizedStore.get(this,typeArguments);
     }
 
     private ResolutionStage stage() {

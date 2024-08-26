@@ -869,6 +869,17 @@ public class DDLTest extends TestCase {
         }
     }
 
+    public void testEnumAddField() {
+        assemble("enum_add_field_before.masm");
+        assemble("enum_add_field_after.masm");
+        try(var context = newContext()) {
+            var currencyKlass = context.selectFirstByKey(Klass.UNIQUE_CODE, "Currency");
+            Assert.assertNotNull(currencyKlass);
+            var yuan = currencyKlass.getEnumConstants().get(0);
+            Assert.assertEquals(Instances.doubleInstance(0.14), yuan.getField("rate"));
+        }
+    }
+
     private void assemble(String fileName) {
         assemble(fileName, true);
     }

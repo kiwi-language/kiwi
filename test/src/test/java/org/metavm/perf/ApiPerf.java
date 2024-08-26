@@ -1,5 +1,6 @@
 package org.metavm.perf;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.metavm.util.Headers;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -22,12 +23,16 @@ public class ApiPerf {
 
     public static final Logger logger = LoggerFactory.getLogger(ApiPerf.class);
 
-    public static final int THREAD_COUNT = 10;
+    public static final int THREAD_COUNT = 1;
     public static final int EXECUTIONS = 1000;
     private static final String host = "http://localhost:8080/api";
     public static final long appId = 1000000024L;
     public static String defaultProductKindId = "01dab8d6b90700";
     public static String yuanCurrencyId = "01d4b8d6b90700";
+    public static String dollarCurrencyId;
+    public static String couponActiveStateId;
+    private static String productId;
+    private static String skuId;
 
 //    private static final String host = "https://metavm.tech/api";
 //    public static final long appId = 1000000019;
@@ -53,6 +58,12 @@ public class ApiPerf {
     private static void prepare() {
         defaultProductKindId = get("/org/metavm/mlab/ProductKind/DEFAULT");
         yuanCurrencyId = get("/org/metavm/mlab/Currency/YUAN");
+        dollarCurrencyId = get("/org/metavm/mlab/Currency/DOLLAR");
+        couponActiveStateId = get("/org/metavm/mlab/CouponState/ACTIVE");
+        productId = createProduct();
+        var product = getObject(productId);
+        //noinspection unchecked,rawtypes
+        skuId = (String) ((Map<String, Object>)((List)product.get("skus")).get(0)).get("$id");
     }
 
     private static void run() {
@@ -75,23 +86,63 @@ public class ApiPerf {
 
     private static void run0() {
         for (int i = 0; i < EXECUTIONS; i++) {
-            put("/org/metavm/mlab/Product", Map.of(
-                    "name", "Shoes",
-                    "kind", defaultProductKindId,
-                    "skus", List.of(
-                            Map.of(
-                                    "name", "40",
-                                    "price", Map.of(
-                                            "amount", 100,
-                                            "currency", yuanCurrencyId
-                                    ),
-                                    "inventory", Map.of(
-                                            "quantity", 100
-                                    )
-                            )
-                    )
-            ));
+            run1();
         }
+    }
+
+    private static void run1() {
+//        createProduct();
+//        getProductName(productId);
+        createOrder();
+    }
+
+    private static String createOrder() {
+        var c1 = createCoupon("c0001", 10, yuanCurrencyId);
+        var c2 = createCoupon("d0001", 1, dollarCurrencyId);
+        return createOrder(skuId, 1, List.of(c1, c2));
+    }
+
+    private static void getProductName(String productId) {
+        post("/" + productId + "'/get-name", List.of());
+    }
+
+    private static String createOrder(String skuId, int quantity, List<String> coupons) {
+        return post("/order-service/create-order", List.of(skuId, quantity, coupons));
+    }
+
+    private static String createProduct() {
+        return put("/org/metavm/mlab/Product", Map.of(
+                "name", "Shoes",
+                "kind", defaultProductKindId,
+                "skus", List.of(
+                        Map.of(
+                                "name", "40",
+                                "price", Map.of(
+                                        "amount", 100,
+                                        "currency", yuanCurrencyId
+                                ),
+                                "inventory", Map.of(
+                                        "quantity", 1000000000
+                                )
+                        )
+                )
+        ));
+    }
+
+    private static Map<String, Object> getObject(String id) {
+        return NncUtils.readJSONString(get("/" + id), new TypeReference<>() {
+        });
+    }
+
+    private static String createCoupon(String code, double amount, String currency) {
+        return put("/org/metavm/mlab/Coupon", Map.of(
+                "code", code,
+                "state", couponActiveStateId,
+                "discount", Map.of(
+                        "amount", amount,
+                        "currency", currency
+                )
+        ));
     }
 
     private static String get(String path) {
@@ -107,6 +158,34 @@ public class ApiPerf {
                 .header("Content-Type", "application/json")
                 .header(Headers.APP_ID, Long.toString(appId))
                 .GET()
+                .build();
+        try {
+            var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            if(resp.statusCode() != 200)
+                failureCounter.incrementAndGet();
+            return resp.body();
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String post(String path, Object request) {
+        URI uri;
+        try {
+            uri = new URI(host + path);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .header(Headers.APP_ID, Long.toString(appId))
+                .POST(
+                        request != null ?
+                                HttpRequest.BodyPublishers.ofString(NncUtils.toJSONString(request)) :
+                                HttpRequest.BodyPublishers.noBody()
+                )
                 .build();
         try {
             var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());

@@ -41,6 +41,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private final IEntityContext parent;
     private final ObjectInstanceMap objectInstanceMap = new DefaultObjectInstanceMap(this, this::addBinding);
     private final Set<ContextFlag> flags = new HashSet<>();
+    private boolean entityCreationDisabled;
+    private ParameterizedMap parameterizedMap;
 
     public BaseEntityContext(IInstanceContext instanceContext, @Nullable IEntityContext parent) {
         this.instanceContext = instanceContext;
@@ -104,7 +106,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     public void onInstanceInitialized(Instance instance) {
-        if(!TypeTags.isSystemTypeTag(instance.getType().getTypeTag()))
+        if(!TypeTags.isSystemTypeTag(instance.getType().getTypeTag()) || entityCreationDisabled)
             return;
         var loadAware = new ArrayList<LoadAware>();
         instance.accept(new StructuralInstanceVisitor() {
@@ -883,4 +885,23 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         flags.remove(flag);
     }
 
+    @Override
+    public boolean isEntityCreationDisabled() {
+        return entityCreationDisabled;
+    }
+
+    @Override
+    public void setEntityCreationDisabled(boolean entityCreationDisabled) {
+        this.entityCreationDisabled = entityCreationDisabled;
+    }
+
+    @Override
+    public ParameterizedMap getParameterizedMap() {
+        return parameterizedMap;
+    }
+
+    @Override
+    public void setParameterizedMap(ParameterizedMap parameterizedMap) {
+        this.parameterizedMap = parameterizedMap;
+    }
 }

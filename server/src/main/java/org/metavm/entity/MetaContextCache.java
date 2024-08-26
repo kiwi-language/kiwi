@@ -14,6 +14,9 @@ import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeDef;
 import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.InternalException;
+import org.metavm.util.ParameterizedStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
@@ -23,6 +26,8 @@ import java.util.concurrent.Executors;
 
 @Component
 public class MetaContextCache extends EntityContextFactoryAware {
+
+    private static final Logger logger = LoggerFactory.getLogger(MetaContextCache.class);
 
     public static final int MAX_SIZE = 16;
 
@@ -49,7 +54,9 @@ public class MetaContextCache extends EntityContextFactoryAware {
 
     public IEntityContext get(long appId, @Nullable Id walId) {
         try {
-            return cache.get(new CacheKey(appId, walId));
+            var context = cache.get(new CacheKey(appId, walId));
+            ParameterizedStore.setMap(context.getParameterizedMap());
+            return context;
         } catch (ExecutionException e) {
             throw new InternalException(e);
         }
@@ -70,6 +77,7 @@ public class MetaContextCache extends EntityContextFactoryAware {
         else
             context = newContext(key.appId);
         loadAllTypeDefs(context);
+        context.setParameterizedMap(ParameterizedStore.getMap());
         return context;
     }
 
@@ -92,6 +100,12 @@ public class MetaContextCache extends EntityContextFactoryAware {
                     default -> {}
                 }
             });
+        }
+        for (TypeDef typeDef : typeDefs) {
+            if(typeDef instanceof Klass klass) {
+                klass.rebuildMethodTable();
+                klass.forEachParameterized(Klass::rebuildMethodTable);
+            }
         }
 //        });
 //        try {

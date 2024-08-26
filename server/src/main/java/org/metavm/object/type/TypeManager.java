@@ -287,6 +287,7 @@ public class TypeManager extends EntityContextFactoryAware {
                 if (runningCommit != null)
                     throw new BusinessException(ErrorCode.COMMIT_RUNNING);
                 batch = batchSave(typeDefDTOs, request.functions(), bufferingContext);
+                batch.performEnumConstantDDL();
                 bufferingContext.finish();
             }
             var commit = context.bind(batch.buildCommit(wal));

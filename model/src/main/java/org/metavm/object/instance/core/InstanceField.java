@@ -3,6 +3,7 @@ package org.metavm.object.instance.core;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.common.ErrorCode;
+import org.metavm.entity.SerializeContext;
 import org.metavm.object.instance.rest.InstanceFieldDTO;
 import org.metavm.object.type.Field;
 import org.metavm.util.BusinessException;
@@ -122,13 +123,15 @@ public class InstanceField implements IInstanceField {
     }
 
     public InstanceFieldDTO toDTO() {
-        return new InstanceFieldDTO(
-                field.getTagId().toString(),
-                field.getName(),
-                field.getType().getConcreteType().getCategory().code(),
-                field.getType().isArray(),
-                getValue().toFieldValueDTO()
-        );
+        try(var serContext = SerializeContext.enter()) {
+            return new InstanceFieldDTO(
+                    serContext.getStringId(field.getEffectiveTemplate()),
+                    field.getName(),
+                    field.getType().getConcreteType().getCategory().code(),
+                    field.getType().isArray(),
+                    getValue().toFieldValueDTO()
+            );
+        }
     }
 
     @Override

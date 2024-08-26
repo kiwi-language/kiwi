@@ -13,6 +13,7 @@ import org.metavm.object.view.Mapping;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.object.view.ObjectMapping;
 import org.metavm.util.NncUtils;
+import org.metavm.util.ParameterizedMap;
 import org.metavm.util.TypeReference;
 import org.metavm.util.profile.Profiler;
 
@@ -291,4 +292,12 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     boolean isFlagSet(ContextFlag flag);
 
     void clearFlag(ContextFlag flag);
+
+    boolean isEntityCreationDisabled();
+
+    void setEntityCreationDisabled(boolean entityCreationDisabled);
+
+    ParameterizedMap getParameterizedMap();
+
+    void setParameterizedMap(ParameterizedMap parameterizedMap);
 }

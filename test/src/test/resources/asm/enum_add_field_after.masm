@@ -1,0 +1,32 @@
+enum Currency {
+
+    YUAN(0.14),
+    DOLLAR(1),
+    POUND(1.32)
+
+    ;
+
+    private readonly double rate;
+
+    Currency(double rate) {
+        this.rate = rate;
+    }
+
+    public double getRate() {
+        return this.rate;
+    }
+
+    private double __rate__() {
+        if(this == Currency.YUAN) {
+            return 0.14;
+        }
+        if(this == Currency.DOLLAR) {
+            return 1;
+        }
+        if(this == Currency.POUND) {
+            return 1.32;
+        }
+        return 0;
+    }
+
+}

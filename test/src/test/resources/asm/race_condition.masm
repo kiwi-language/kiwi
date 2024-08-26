@@ -1,0 +1,10 @@
+import java.util.List;
+
+class Utils {
+
+    public static int size(List<string> strings) {
+        size: strings.size();
+        return size;
+    }
+
+}

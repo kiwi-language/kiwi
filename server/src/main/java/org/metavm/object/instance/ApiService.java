@@ -186,7 +186,13 @@ public class ApiService extends EntityContextFactoryAware {
     public String saveInstance(String classCode, Map<String, Object> object, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
 //            logTxId();
-            var klass = getKlass(classCode, context);
+            Klass klass;
+            if(object.containsKey(KEY_ID)) {
+                var inst0 = (ClassInstance) context.getInstanceContext().get(Id.parse((String) object.get(KEY_ID)));
+                klass = inst0.getKlass();
+            }
+            else
+                klass = getKlass(classCode, context);
             var inst = doIntercepted(() -> {
                 var r = tryResolveValue(object, klass.getType(), true, null, context);
                 if (r.successful()) {
@@ -280,7 +286,8 @@ public class ApiService extends EntityContextFactoryAware {
             }
             k = NncUtils.get(k.getSuperType(), ClassType::resolve);
         } while (k != null);
-        throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getCode() + "." + methodCode);
+        throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getCode() + "." + methodCode,
+                rawArguments);
     }
 
     private List<Value> tryResolveArguments(Method method, List<Object> rawArguments, IEntityContext context) {
@@ -500,6 +507,7 @@ public class ApiService extends EntityContextFactoryAware {
         //noinspection unchecked
         var map = (Map<String, Object>) json;
         var klass = instance.getKlass();
+        instance.setDirectlyModified(true);
         map.forEach((k, v) -> {
             var field = klass.findFieldByCode(k);
             if (field != null) {

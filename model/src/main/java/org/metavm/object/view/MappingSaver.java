@@ -94,10 +94,10 @@ public class MappingSaver {
             debugLogger.info("MappingSaver.retransformClassType sourceClass: {}", sourceKlass.getTypeDesc());
         }
         if (sourceKlass.isTemplate()) {
-            for (Klass templateInstance : sourceKlass.getParameterized()) {
+            sourceKlass.forEachParameterized(templateInstance -> {
                 templateInstance.setStage(ResolutionStage.INIT);
                 sourceKlass.getParameterized(templateInstance.getTypeArguments());
-            }
+            });
         }
     }
 
