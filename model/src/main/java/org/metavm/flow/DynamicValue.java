@@ -15,7 +15,7 @@ public class DynamicValue extends Value {
 
     @Override
     protected FieldValue toFieldValue() {
-        return new ExpressionFieldValue(expression.build(VarType.NAME));
+        return new ExpressionFieldValue(expression.build(VarType.ID));
     }
 
 }

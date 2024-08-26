@@ -3,6 +3,7 @@ package org.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.SerializeContext;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Property;
 import org.metavm.object.type.PropertyRef;
@@ -47,7 +48,11 @@ public class PropertyExpression extends Expression {
     @Override
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         String fieldsExpr = switch (symbolType) {
-            case ID -> idVarName(requireNonNull(getProperty().tryGetId()));
+            case ID -> {
+                try (var serContext = SerializeContext.enter()) {
+                    yield idVarName(requireNonNull(serContext.getId(getProperty().getUltimateTemplate())));
+                }
+            }
             case NAME -> getProperty().getName();
         };
         if((instance instanceof CursorExpression cursorExpression) && cursorExpression.getAlias() == null) {

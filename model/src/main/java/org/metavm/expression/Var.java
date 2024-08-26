@@ -3,7 +3,6 @@ package org.metavm.expression;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
-import org.metavm.util.ValueUtils;
 
 import java.util.List;
 
@@ -14,27 +13,18 @@ public class Var {
     public static Var parse(String str) {
         if(str.startsWith(ID_PREFIX)) {
             String idString = str.substring(ID_PREFIX.length());
-            if(ValueUtils.isIntegerStr(idString)) {
-                return idVar(Long.parseLong(idString));
-            }
-            else {
-                throw new InternalException("Malformed var '" + str + "'");
-            }
+            return idVar(idString);
         }
         else {
             return nameVar(str);
         }
     }
 
-    public static List<Var> idVars(Long...ids) {
-        return NncUtils.map(ids, Var::idVar);
-    }
-
     public static List<Var> nameVars(String...names) {
         return NncUtils.map(names, Var::nameVar);
     }
 
-    public static Var idVar(long id) {
+    public static Var idVar(String id) {
         return new Var(VarType.ID, id);
     }
 
@@ -65,7 +55,7 @@ public class Var {
 
     public Id getId() {
         if(isId()) {
-            return (Id) symbol;
+            return Id.parse((String) symbol);
         }
         else {
             throw new InternalException(this + " is not an id var");

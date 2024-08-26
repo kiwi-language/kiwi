@@ -898,7 +898,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public Property getPropertyByVar(Var var) {
         return switch (var.getType()) {
             case NAME -> getPropertyByName(var.getName());
-            case ID -> getProperty(var.getId());
+            case ID -> findProperty(p -> p.getUltimateTemplate().idEquals(var.getId()));
         };
     }
 
@@ -909,6 +909,18 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Property getPropertyByName(String name) {
         return getProperty(Property::getName, name);
+    }
+
+    public Property findProperty(Predicate<Property> filter) {
+        var field = NncUtils.find(fields, filter);
+        if(field != null)
+            return field;
+        var method = NncUtils.find(methods, m -> !m.isStatic() && filter.test(m));
+        if(method != null)
+            return method;
+        if(superType != null)
+            return superType.resolve().findProperty(filter);
+        return null;
     }
 
     private <T> Property getProperty(IndexMapper<Property, T> property, T value) {

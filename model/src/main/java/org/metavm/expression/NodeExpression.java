@@ -3,6 +3,7 @@ package org.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.SerializeContext;
 import org.metavm.flow.NodeRT;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
@@ -26,7 +27,11 @@ public class NodeExpression extends Expression {
     @Override
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         return switch (symbolType) {
-            case ID -> idVarName(node.getId());
+            case ID -> {
+                try(var serContext = SerializeContext.enter()) {
+                    yield idVarName(serContext.getId(node));
+                }
+            }
             case NAME -> node.getName();
         };
     }

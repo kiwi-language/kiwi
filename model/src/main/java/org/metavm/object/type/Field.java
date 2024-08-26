@@ -483,6 +483,11 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return getEffectiveTemplate().getId();
     }
 
+    @Override
+    public Field getUltimateTemplate() {
+        return getEffectiveTemplate();
+    }
+
     public String getStringTag() {
         return getTagId().toString();
     }

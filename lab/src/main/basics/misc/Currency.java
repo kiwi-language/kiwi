@@ -1,6 +1,6 @@
 package misc;
 
-public enum Currency2 {
+public enum Currency {
 
     YUAN(0.14),
     DOLLAR(1)
@@ -9,7 +9,7 @@ public enum Currency2 {
 
     private final double rate;
 
-    Currency2(double rate) {
+    Currency(double rate) {
         this.rate = rate;
     }
 

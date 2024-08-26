@@ -74,4 +74,5 @@ public interface Property extends ClassMember, LocalKey {
         return selfId != null && selfId.equals(id);
     }
 
+    Property getUltimateTemplate();
 }
