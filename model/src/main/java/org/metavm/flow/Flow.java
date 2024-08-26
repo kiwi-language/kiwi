@@ -133,7 +133,9 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         if (this.code != null && this.code.equals(code)) {
             if (parameters.size() == argumentTypes.size()) {
                 for (int i = 0; i < parameters.size(); i++) {
-                    if (!parameters.get(i).getType().isAssignableFrom(argumentTypes.get(i)))
+                    var paramType = parameters.get(i).getType();
+                    var argType = argumentTypes.get(i);
+                    if (!(paramType.isAssignableFrom(argType) || paramType.isConvertibleFrom(argType)))
                         return false;
                 }
                 return true;

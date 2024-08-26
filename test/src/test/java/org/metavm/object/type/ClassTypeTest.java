@@ -108,12 +108,12 @@ public class ClassTypeTest extends TestCase {
                 .parameters(new Parameter(null, "p1", "p1", Types.getStringType()))
                 .build();
 
-        MethodBuilder.newBuilder(fooType, "test", "test")
+        var m4 = MethodBuilder.newBuilder(fooType, "test", "test")
                 .parameters(new Parameter(null, "p1", "p1", Types.getDoubleType()))
                 .build();
 
         Assert.assertSame(m1, fooType.resolveMethod("test", List.of(Types.getBooleanType()), List.of(), false));
-        Assert.assertSame(m2, fooType.resolveMethod("test", List.of(Types.getLongType()), List.of(), false));
+        Assert.assertSame(m4, fooType.resolveMethod("test", List.of(Types.getLongType()), List.of(), false));
         Assert.assertSame(m3, fooType.resolveMethod("test", List.of(Types.getStringType()), List.of(), false));
     }
 

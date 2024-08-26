@@ -30,7 +30,7 @@ import static java.util.Objects.requireNonNull;
 @EntityType
 public abstract class CallNode extends NodeRT {
 
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
+    public static final Logger logger = LoggerFactory.getLogger(CallNode.class);
 
     private FlowRef flowRef;
     @ChildEntity
@@ -108,7 +108,7 @@ public abstract class CallNode extends NodeRT {
             var actualTypeArgs = NncUtils.map(declaringType.getTypeArguments(), t -> t.accept(typeSubst));
             var actualDeclaringType = declaringType.getEffectiveTemplate().getParameterized(actualTypeArgs);
             if(DebugEnv.debugging)
-                debugLogger.info("uncapture flow declaring type from {} to {}",
+                logger.info("uncapture flow declaring type from {} to {}",
                         declaringType.getTypeDesc(),
                         actualDeclaringType.getTypeDesc());
             flow = NncUtils.requireNonNull(actualDeclaringType.findSelfMethod(
@@ -118,7 +118,7 @@ public abstract class CallNode extends NodeRT {
             var actualTypeArgs = NncUtils.map(flow.getTypeArguments(), t -> t.accept(typeSubst));
             var uncapturedFlow = Objects.requireNonNull(flow.getHorizontalTemplate()).getParameterized(actualTypeArgs);
             if(DebugEnv.debugging) {
-                debugLogger.info("uncapture flow from {} to {}, captured expressions: {}, captured expression types: {}, " +
+                logger.info("uncapture flow from {} to {}, captured expressions: {}, captured expression types: {}, " +
                                 "actual expression types: {}, captured types: {}, actual types: {}",
                         flow.getTypeDesc(), uncapturedFlow.getTypeDesc(),
                         NncUtils.join(capturedExpressions, e -> e.build(VarType.NAME), ", "),

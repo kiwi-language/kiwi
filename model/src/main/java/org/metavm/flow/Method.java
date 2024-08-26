@@ -295,7 +295,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     protected String toString0() {
-        return declaringType.getName() + "." + getName();
+        return getQualifiedSignature();
     }
 
     private void checkTypes(List<MethodRef> overridden, List<Parameter> parameters, Type returnType) {
@@ -465,7 +465,9 @@ public class Method extends Flow implements Property, GenericElement {
             return declaringType.isAssignableFrom(that.getDeclaringType());
         }
         for (int i = 0; i < paramTypes.size(); i++) {
-            if (!paramTypes.get(i).isAssignableFrom(thatParamTypes.get(i)))
+            var paramType = paramTypes.get(i);
+            var thatParamType = thatParamTypes.get(i);
+            if (!(paramType.isAssignableFrom(thatParamType) && !paramType.isConvertibleFrom(thatParamType)))
                 return false;
         }
         return true;
