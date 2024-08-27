@@ -14,6 +14,7 @@ public class LabCompilingTest extends CompilerTestBase {
     public static final String LAB_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab";
     public static final String LAB2_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab2";
     public static final String LAB3_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab3";
+    public static final String LAB4_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab4";
 
     public void test() {
         compile(LAB_SOURCE_ROOT);
@@ -46,7 +47,10 @@ public class LabCompilingTest extends CompilerTestBase {
             var yuanId = TestUtils.getEnumConstantIdByName(currencyKlass, "YUAN");
             var rate = TestUtils.doInTransaction(() -> apiClient.callMethod(yuanId, "__rate__", List.of()));
             Assert.assertEquals(0.14, rate);
+            var errors = productKlass.errors();
+            Assert.assertEquals(0, errors.size());
         });
+        compile(LAB4_SOURCE_ROOT);
 //        compile(LAB3_SOURCE_ROOT);
 //        submit(() -> {
 ////            DebugEnv.debugLogger_ON = true;

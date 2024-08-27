@@ -1,16 +1,16 @@
 package org.metavm.flow;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.Element;
 import org.metavm.entity.StructuralVisitor;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.MetadataState;
 import org.metavm.util.DebugEnv;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FlowChecker extends StructuralVisitor<Boolean> {
 
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
+    public static final Logger logger = LoggerFactory.getLogger(FlowChecker.class);
 
     private Flow flow;
 
@@ -52,7 +52,7 @@ public class FlowChecker extends StructuralVisitor<Boolean> {
         if (node.getError() != null) {
             flow.setState(MetadataState.ERROR);
             if(DebugEnv.debugging)
-                debugLogger.error("Error in node {}: {}",
+                logger.debug("Error in node {}: {}",
                         node.getFlow().getQualifiedName() + "." + node.getName(),
                         node.getError());
         }

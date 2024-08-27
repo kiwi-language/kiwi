@@ -70,10 +70,12 @@ public class ReturnNode extends NodeRT {
     @Override
     protected String check0() {
         var callable = getEnclosingCallable();
-        if (!callable.getReturnType().isVoid()) {
+        var returnType = callable.getReturnType();
+        if (!returnType.isVoid()) {
             if (value == null)
                 return "Return value is not set";
-            else if (!callable.getReturnType().isAssignableFrom(getExpressionTypes().getType(value.getExpression())))
+            var exprType = getExpressionTypes().getType(value.getExpression());
+            if (!returnType.isConvertibleFrom(exprType))
                 return "Invalid return value";
         }
         return null;

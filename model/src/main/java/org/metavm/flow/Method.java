@@ -467,7 +467,7 @@ public class Method extends Flow implements Property, GenericElement {
         for (int i = 0; i < paramTypes.size(); i++) {
             var paramType = paramTypes.get(i);
             var thatParamType = thatParamTypes.get(i);
-            if (!(paramType.isAssignableFrom(thatParamType) && !paramType.isConvertibleFrom(thatParamType)))
+            if (!paramType.isConvertibleFrom(thatParamType))
                 return false;
         }
         return true;

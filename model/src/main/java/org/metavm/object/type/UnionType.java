@@ -83,6 +83,11 @@ public class UnionType extends CompositeType {
     }
 
     @Override
+    protected boolean isConvertibleFrom0(Type that) {
+        return NncUtils.anyMatch(members, m -> m.isConvertibleFrom(that));
+    }
+
+    @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitUnionType(this, s);
     }

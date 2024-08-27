@@ -81,7 +81,7 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public boolean isConvertibleFrom(Type that) {
+    protected boolean isConvertibleFrom0(Type that) {
         return that instanceof PrimitiveType pt && kind.isConvertibleFrom(pt.kind);
     }
 
