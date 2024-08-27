@@ -32,6 +32,15 @@ public enum CommitState {
         }
 
         @Override
+        public boolean shouldSkip(Commit commit) {
+            return commit.getNewFieldIds().isEmpty() && commit.getConvertingFieldIds().isEmpty()
+                    && commit.getFromEnumKlassIds().isEmpty() && commit.getToEnumKlassIds().isEmpty()
+                    && commit.getEntityToValueKlassIds().isEmpty() && commit.getValueToEntityKlassIds().isEmpty()
+                    && commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty() && commit.getRemovedChildFieldIds().isEmpty()
+                    && commit.getChangingSuperKlassIds().isEmpty();
+        }
+
+        @Override
         public long getSessionTimeout() {
             return Constants.DDL_SESSION_TIMEOUT;
         }

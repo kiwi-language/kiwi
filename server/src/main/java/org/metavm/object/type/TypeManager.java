@@ -291,7 +291,10 @@ public class TypeManager extends EntityContextFactoryAware {
                 bufferingContext.finish();
             }
             var commit = context.bind(batch.buildCommit(wal));
-            context.bind(new DDLTask(commit, CommitState.PREPARING0));
+            if(CommitState.PREPARING0.shouldSkip(commit))
+                context.bind(CommitState.SUBMITTING.createTask(commit));
+            else
+                context.bind(CommitState.PREPARING0.createTask(commit));
             context.finish();
             return commit.getStringId();
         }
