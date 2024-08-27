@@ -42,7 +42,7 @@ public class Constants {
 
     public final static long DEFAULT_SESSION_TIMEOUT = 2000L;
     public static long SESSION_TIMEOUT = DEFAULT_SESSION_TIMEOUT;
-    public static long DDL_SESSION_TIMEOUT = 6000L;
+    public static long DDL_SESSION_TIMEOUT = 16000;
 
     private Constants() {}
 
