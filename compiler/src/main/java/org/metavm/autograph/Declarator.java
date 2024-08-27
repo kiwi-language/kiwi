@@ -165,11 +165,12 @@ public class Declarator extends CodeGenVisitor {
         if (method.isConstructor() && klass.isEnum())
             resolvedParams.addAll(getEnumConstructorParams());
         resolvedParams.addAll(processParameters(method.getParameterList()));
+        var access = resolveAccess(method.getModifierList());
         if (flow == null) {
             flow = MethodBuilder.newBuilder(klass, getFlowName(method), getFlowCode(method))
                     .isConstructor(method.isConstructor())
                     .isStatic(method.getModifierList().hasModifierProperty(PsiModifier.STATIC))
-                    .access(resolveAccess(method.getModifierList()))
+                    .access(access)
                     .isAbstract(method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT))
                     .parameters(resolvedParams)
                     .returnType(getReturnType(method))
@@ -177,6 +178,7 @@ public class Declarator extends CodeGenVisitor {
             method.putUserData(Keys.Method, flow);
         } else {
             flow.setName(getFlowName(method));
+            flow.setAccess(access);
             NncUtils.biForEach(
                     flow.getParameters(), resolvedParams,
                     (param, resolvedParam) -> {

@@ -232,10 +232,11 @@ public abstract class TypeFactory {
         var context = batch.getContext();
         var method = context.getMethod(flowDTO.id());
         var param = (MethodParam) flowDTO.param();
+        var access= Access.findByCode(param.access());
         if (method == null) {
             var declaringType = batch.getKlass(param.declaringTypeId());
             method = MethodBuilder.newBuilder(declaringType, flowDTO.name(), flowDTO.code())
-                    .access(Access.findByCode(param.access()))
+                    .access(access)
                     .isStatic(param.isStatic())
                     .tmpId(flowDTO.tmpId())
                     .build();
@@ -245,6 +246,7 @@ public abstract class TypeFactory {
                 throw new BusinessException(ErrorCode.MODIFYING_SYNTHETIC_FLOW, method.getQualifiedName());
             method.setName(flowDTO.name());
             method.setCode(flowDTO.code());
+            method.setAccess(access);
         }
         if (flowDTO.attributes() != null)
             method.setAttributes(Attribute.fromMap(flowDTO.attributes()));

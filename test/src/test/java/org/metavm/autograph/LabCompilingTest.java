@@ -1,8 +1,13 @@
 package org.metavm.autograph;
 
 import org.junit.Assert;
+import org.metavm.flow.rest.MethodParam;
+import org.metavm.object.type.Access;
 import org.metavm.object.type.MetadataState;
+import org.metavm.util.NncUtils;
 import org.metavm.util.TestUtils;
+
+import java.util.List;
 
 public class LabCompilingTest extends CompilerTestBase {
 
@@ -35,6 +40,12 @@ public class LabCompilingTest extends CompilerTestBase {
             Assert.assertEquals(ref.stateFieldId, statusFieldId);
             var productStatusKlass = getClassTypeByCode("ProductStatus");
             Assert.assertEquals(ref.stateKlassId, productStatusKlass.id());
+            var currencyKlass = getClassTypeByCode("Currency");
+            var rateMethod = NncUtils.findRequired(currencyKlass.flows(), m -> m.name().equals("__rate__"));
+            Assert.assertEquals(Access.PUBLIC.code(), ((MethodParam)rateMethod.param()).access());
+            var yuanId = TestUtils.getEnumConstantIdByName(currencyKlass, "YUAN");
+            var rate = TestUtils.doInTransaction(() -> apiClient.callMethod(yuanId, "__rate__", List.of()));
+            Assert.assertEquals(0.14, rate);
         });
 //        compile(LAB3_SOURCE_ROOT);
 //        submit(() -> {
