@@ -28,6 +28,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processInterceptor();
             processEnums();
             processRemovedField();
+            processTypeNarrowing();
         });
     }
 
@@ -156,6 +157,11 @@ public class BasicCompilingTest extends CompilerTestBase {
         var klass = getClassTypeByCode("removal.RemovedFieldFoo");
         var field = TestUtils.getFieldByName(klass, "name");
         Assert.assertEquals(MetadataState.REMOVED.code(), field.state());
+    }
+
+    private void processTypeNarrowing() {
+        var fooKlass = getClassTypeByCode("typenarrowing.TypeNarrowingFoo");
+        Assert.assertEquals(0, fooKlass.errors().size());
     }
 
 }

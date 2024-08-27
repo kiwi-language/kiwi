@@ -35,6 +35,11 @@ public class TypeTest extends TestCase {
         Assert.assertTrue(unionType1.isConvertibleFrom(doubleType));
         Assert.assertTrue(unionType1.isConvertibleFrom(longType));
         Assert.assertTrue(unionType1.isConvertibleFrom(unionType1));
+
+        var anyType = Types.getAnyType();
+        var nullableAnyType = Types.getUnionType(List.of(anyType, Types.getNullType()));
+        Assert.assertFalse(anyType.isAssignableFrom(nullableAnyType));
+        Assert.assertFalse(anyType.isConvertibleFrom(nullableAnyType));
     }
 
 }

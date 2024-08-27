@@ -419,7 +419,7 @@ public class MethodGenerator {
     }
 
     NodeRT createTypeCast(Expression operand, Type targetType) {
-        if (operand.getType().isNullable() && !targetType.isNullable())
+        if (getExpressionType(operand).isNullable() && !targetType.isNullable())
             targetType = new UnionType(Set.of(targetType, Types.getNullType()));
         return createFunctionCall(
                 StdFunction.typeCast.get().getParameterized(List.of(targetType)),

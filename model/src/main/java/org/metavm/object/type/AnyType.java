@@ -55,7 +55,7 @@ public class AnyType extends Type {
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
-        return true;
+        return !that.isNull();
     }
 
     @Override

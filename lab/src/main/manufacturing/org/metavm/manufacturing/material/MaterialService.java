@@ -14,8 +14,9 @@ public class MaterialService {
 
     public Object save(MaterialDTO materialDTO) {
         var user = currentUserProvider.get();
-        if(materialDTO.id() != null) {
-            var material = (Material) materialDTO.id();
+        var id = materialDTO.id();
+        if(id != null) {
+            var material = (Material) id;
             if(material.getOwner() != user)
                 throw new IllegalStateException("Illegal access");
             material.setName(materialDTO.name());

@@ -260,4 +260,16 @@ public class Nodes {
         );
     }
 
+    public static CheckNode check(String name, Value condition, BranchNode exit, ScopeRT scope) {
+        return new CheckNode(
+                null,
+                name,
+                null,
+                scope.getLastNode(),
+                scope,
+                condition,
+                exit
+        );
+    }
+
 }

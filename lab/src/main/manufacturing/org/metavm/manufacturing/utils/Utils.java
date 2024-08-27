@@ -47,9 +47,9 @@ public class Utils {
     }
 
     public static <T> T requireNonNull(@Nullable T object) {
-        if(object != null)
-            return object;
-        throw new NullPointerException();
+        if(object == null)
+            throw new NullPointerException();
+        return object;
     }
 
 }

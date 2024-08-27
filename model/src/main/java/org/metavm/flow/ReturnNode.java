@@ -76,7 +76,7 @@ public class ReturnNode extends NodeRT {
                 return "Return value is not set";
             var exprType = getExpressionTypes().getType(value.getExpression());
             if (!returnType.isConvertibleFrom(exprType))
-                return "Invalid return value";
+                return "Invalid return value. " + returnType + " is not convertible from " + exprType;
         }
         return null;
     }
