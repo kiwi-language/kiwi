@@ -163,7 +163,8 @@ public class MethodGenerator {
             mergeNode.mergeExpressionTypes(exprTypes);
         }
         var result = variableTable.exitCondSection(branchNode, outputVars);
-        if (result.values().iterator().next().yield() != null) {
+        var hasYield = result.values().stream().anyMatch(b -> b.yield() != null);
+        if (hasYield) {
             var yields = result.values().stream().map(BranchInfo::yield)
                     .filter(Objects::nonNull)
                     .toList();
@@ -180,7 +181,8 @@ public class MethodGenerator {
                                     java.util.function.Function.identity(),
                                     b -> Values.expression(
                                             requireNonNull(result.get(b).yield(),
-                                                    "Yield must be present in all non-terminating branches")
+                                                    "Yield must be present in all non-terminating branches " +
+                                                            "but absent in branch " + b.getIndex())
                                     )
                             ))
             );

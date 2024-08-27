@@ -14,6 +14,8 @@ import org.metavm.object.type.*;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -24,6 +26,8 @@ import static org.metavm.autograph.TranspileUtils.matchMethod;
 import static org.metavm.util.ReflectionUtils.getMethod;
 
 public class ExpressionResolver {
+
+    public static final Logger logger = LoggerFactory.getLogger(ExpressionResolver.class);
 
     public static final Map<IElementType, UnaryOperator> UNARY_OPERATOR_MAP = Map.ofEntries(
             Map.entry(JavaTokenType.PLUS, UnaryOperator.POS),

@@ -26,6 +26,7 @@ public class CodeGenerator {
                 psiClass.accept(new DefaultConstructorCreator());
                 resolveQnAndActivity(psiClass);
                 psiClass.accept(new SwitchLabelStatementTransformer());
+                psiClass.accept(new NullSwitchCaseAppender());
                 psiClass.accept(new DefaultSwitchCaseAppender());
                 psiClass.accept(new ForeachTransformer());
                 resolveQnAndActivity(psiClass);

@@ -16,4 +16,12 @@ public enum Currency {
     public double getRate() {
         return rate;
     }
+
+    public double __rate__() {
+        return switch (this) {
+            case YUAN -> 0.14;
+            case DOLLAR -> 1;
+        };
+    }
+
 }

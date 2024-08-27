@@ -1095,4 +1095,9 @@ public class TranspileUtils {
     public static List<NativeFunctionCallResolver> getNativeFunctionCallResolvers() {
         return Collections.unmodifiableList(nativeFunctionCallResolvers);
     }
+
+    public static boolean isEnum(PsiType psiType) {
+        return psiType instanceof PsiClassType psiClassType && Objects.requireNonNull(psiClassType.resolve()).isEnum();
+    }
+
 }
