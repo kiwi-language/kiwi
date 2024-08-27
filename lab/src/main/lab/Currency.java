@@ -7,8 +7,8 @@ public enum Currency {
 
     private double rate;
 
-    Currency(double rate) {
-        this.rate = rate;
+    Currency(double ratio) {
+        this.rate = ratio;
     }
 
     private double __rate__() {

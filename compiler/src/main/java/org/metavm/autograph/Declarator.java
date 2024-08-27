@@ -183,6 +183,7 @@ public class Declarator extends CodeGenVisitor {
                     flow.getParameters(), resolvedParams,
                     (param, resolvedParam) -> {
                         param.setName(resolvedParam.getName());
+                        param.setCode(resolvedParam.getCode());
                         param.setAttributes(resolvedParam.getAttributes());
                     }
             );

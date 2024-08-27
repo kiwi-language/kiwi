@@ -12,6 +12,8 @@ import org.metavm.object.type.generic.CompositeTypeListener;
 import org.metavm.util.CompilerConfig;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -21,6 +23,8 @@ import static java.util.Objects.requireNonNull;
 import static org.metavm.expression.Expressions.trueExpression;
 
 public class Generator extends CodeGenVisitor {
+
+    public static final Logger logger = LoggerFactory.getLogger(Generator.class);
 
     private final LinkedList<MethodGenerator> builders = new LinkedList<>();
     private final Map<String, Klass> classes = new HashMap<>();
@@ -524,7 +528,8 @@ public class Generator extends CodeGenVisitor {
     }
 
     private void processParameter(PsiParameter parameter, InputNode inputNode) {
-        var field = Objects.requireNonNull(inputNode.getKlass().findFieldByCode(parameter.getName()));
+        var field = Objects.requireNonNull(inputNode.getKlass().findFieldByCode(parameter.getName()),
+                () -> "Field for parameter " + parameter.getName() + " is not found in the input class");
         builder().setVariable(
                 parameter.getName(),
                 new PropertyExpression(new NodeExpression(inputNode), field.getRef())
