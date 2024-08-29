@@ -1,2 +1,1 @@
 1 Changes made to static fields by application sessions are not persisted
-2 Improve the performance of retrieving the `hashCode` and `equals` methods from a Klass
