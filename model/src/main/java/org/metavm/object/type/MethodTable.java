@@ -4,7 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.flow.Method;
 import org.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MethodTable {
@@ -12,6 +14,8 @@ public class MethodTable {
     private final Klass classType;
     private final Map<Method, Method> overriddenIndex = new IdentityHashMap<>();
     private final Map<Method, Method> verticalTemplateIndex = new IdentityHashMap<>();
+    private @Nullable Method hashCodeMethod;
+    private @Nullable Method equalsMethod;
 
     public MethodTable(Klass classType) {
         this.classType = classType;
@@ -19,6 +23,8 @@ public class MethodTable {
     }
 
     public void rebuild() {
+        hashCodeMethod = classType.findMethod(m -> "hashCode".equals(m.getCode()) && m.getParameters().isEmpty());
+        equalsMethod = classType.findMethod(m -> "equals".equals(m.getCode()) && m.getParameterTypes().equals(List.of(Types.getAnyType())));
         verticalTemplateIndex.clear();
         overriddenIndex.clear();
         classType.foreachAncestor(t -> {
@@ -49,4 +55,11 @@ public class MethodTable {
                 findByOverridden(methodRef), "Can not resolve method " + methodRef + " in class " + classType);
     }
 
+    public @Nullable Method getHashCodeMethod() {
+        return hashCodeMethod;
+    }
+
+    public @Nullable Method getEqualsMethod() {
+        return equalsMethod;
+    }
 }

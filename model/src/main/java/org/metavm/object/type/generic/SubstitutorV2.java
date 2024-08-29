@@ -424,6 +424,7 @@ public class SubstitutorV2 extends CopyVisitor {
             }
             exitElement();
             check();
+            copy.rebuildMethodTable();
             return copy;
         } else {
             return super.visitKlass(klass);

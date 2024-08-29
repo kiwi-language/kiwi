@@ -1900,11 +1900,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public @Nullable Method getHashCodeMethod() {
-        return findMethod(m -> m.getCodeNotNull().equals("hashCode") && m.getParameters().isEmpty());
+        return methodTable.getHashCodeMethod();
     }
 
     public @Nullable Method getEqualsMethod() {
-        return findMethod(m -> m.getName().equals("equals") && m.getParameterTypes().equals(List.of(Types.getAnyType())));
+        return methodTable.getEqualsMethod();
     }
 }
 

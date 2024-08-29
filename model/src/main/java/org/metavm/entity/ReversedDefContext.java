@@ -126,6 +126,10 @@ public class ReversedDefContext extends DefContext {
         StdKlass.initialize(this, true);
         StdMethod.initialize(this, true);
         StdField.initialize(this, true);
+        for (TypeDef typeDef : typeDef2Def.keySet()) {
+            if(typeDef instanceof Klass klass)
+                klass.rebuildMethodTable();
+        }
     }
 
     private void loadStdFunctions() {

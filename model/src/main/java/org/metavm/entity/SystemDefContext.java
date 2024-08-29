@@ -736,6 +736,10 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
         StdMethod.initialize(this, false);
         StdField.initialize(this, false);
         standardDefBuilder.initUserFunctions();
+        for (TypeDef typeDef : typeDef2Def.keySet()) {
+            if(typeDef instanceof Klass klass)
+                klass.rebuildMethodTable();
+        }
     }
 
     @Override
