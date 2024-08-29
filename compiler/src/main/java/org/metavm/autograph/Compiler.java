@@ -126,12 +126,8 @@ public class Compiler {
             deploy(generatedTypes, typeResolver);
             logger.info("Deploy done");
             return true;
-        } catch (
-                CompilerException e) {
-            logger.error("Compilation failed: {}", e.getMessage());
-            return false;
         } finally {
-            logger.info(profiler.finish(false, true).output());
+//            logger.info(profiler.finish(false, true).output());
         }
 
     }

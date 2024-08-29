@@ -35,6 +35,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     set(Set.class, false, SetNative.class),
     hashSet(HashSet.class, false, SetNative.class),
     map(Map.class, false, MapNative.class),
+    hashMap(HashMap.class, false, MapNative.class),
     interceptor(Interceptor.class),
     httpRequest(HttpRequest.class),
     httpResponse(HttpResponse.class),

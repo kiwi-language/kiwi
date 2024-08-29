@@ -29,6 +29,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processEnums();
             processRemovedField();
             processTypeNarrowing();
+            processHash();
         });
     }
 
@@ -162,6 +163,83 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processTypeNarrowing() {
         var fooKlass = getClassTypeByCode("typenarrowing.TypeNarrowingFoo");
         Assert.assertEquals(0, fooKlass.errors().size());
+    }
+
+    private void processHash() {
+        processHashMap();
+        processHashSet();
+    }
+
+    private void processHashMap() {
+        var fooId = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
+                "name", "Foo"
+        )));
+        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "put", List.of(fooId, "Foo")));
+        var foo2Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
+                "name", "Foo"
+        )));
+        var result = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "get", List.of(foo2Id)));
+        Assert.assertEquals("Foo", result);
+
+        // Test entity without a defined hashCode method
+        var barId = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeBar", Map.of(
+                "name", "Bar"
+        )));
+        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "put", List.of(barId, "Bar")));
+        var result2 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "get", List.of(barId)));
+        Assert.assertEquals("Bar", result2);
+
+        var bazKlass = getClassTypeByCode("hashcode.HashCodeBaz");
+        Assert.assertEquals(ClassKind.VALUE.code(), bazKlass.kind());
+
+        // Test value object
+        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "bazPut", List.of("Baz", fooId, "Baz")));
+        var result3 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "bazGet", List.of("Baz", fooId)));
+        Assert.assertEquals("Baz", result3);
+        var result4 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "bazGet", List.of("Baz1", fooId)));
+        Assert.assertNull(result4);
+
+        // Test list
+        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "listPut", List.of(List.of(fooId, barId), "List")));
+        var result5 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "listGet", List.of(List.of(fooId, barId))));
+        Assert.assertEquals("List", result5);
+
+        // Test set
+        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "setPut", List.of(List.of("Hello", "World"), "Set")));
+        var result6 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "setGet", List.of(List.of("World", "Hello"))));
+        Assert.assertEquals("Set", result6);
+        var result7 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "setGet", List.of(List.of("World"))));
+        Assert.assertNull(result7);
+
+        // Test map
+        var entries = List.of(Map.of("key", "name", "value", "leen"), Map.of("key", "age", "value", 30));
+        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "mapPut", List.of(entries, "Map")));
+        var result8 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "mapGet", List.of(entries)));
+        Assert.assertEquals("Map", result8);
+        var result9 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "setGet", List.of(List.of("World"))));
+        Assert.assertNull(result9);
+    }
+
+    private void processHashSet() {
+        TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "add", List.of("Hello")));
+        var contains = TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "contains", List.of("Hello")));
+        Assert.assertEquals(true, contains);
+
+        var foo1Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
+                "name", "Foo"
+        )));
+        TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "add", List.of(foo1Id)));
+
+        var foo2Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
+                "name", "Foo"
+        )));
+        var contains1 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "contains", List.of(foo2Id)));
+        Assert.assertEquals(true, contains1);
+        var foo3Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
+                "name", "Foo1"
+        )));
+        var contains2 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "contains", List.of(foo3Id)));
+        Assert.assertEquals(false, contains2);
     }
 
 }

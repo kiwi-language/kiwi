@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
+import org.metavm.entity.ModelDefRegistry;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
@@ -21,6 +22,8 @@ import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class TypeManagerTest extends TestCase {
@@ -253,6 +256,13 @@ public class TypeManagerTest extends TestCase {
                 20
         ));
         Assert.assertEquals(1, queryResult.data().size());
+    }
+
+    public void testHashMap() {
+        var defContext = ModelDefRegistry.getDefContext();
+        var klass = defContext.getKlass(HashMap.class);
+        Assert.assertEquals(HashMap.class.getName(), klass.getCode());
+        Assert.assertEquals(HashSet.class.getName(), defContext.getKlass(HashSet.class).getCode());
     }
 
 }

@@ -166,6 +166,32 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             ),
             (func, args, callContext) -> FlowExecResult.of(Instances.stringInstance(args.get(0).getTitle()))
     ),
+    hashCode(
+            "long hashCode(any instance)",
+            true,
+            List.of(ReflectionUtils.getMethod(Object.class, "hashCode"),
+                    ReflectionUtils.getMethod(Byte.class, "hashCode"),
+                    ReflectionUtils.getMethod(Short.class, "hashCode"),
+                    ReflectionUtils.getMethod(Integer.class, "hashCode"),
+                    ReflectionUtils.getMethod(Long.class, "hashCode"),
+                    ReflectionUtils.getMethod(Float.class, "hashCode"),
+                    ReflectionUtils.getMethod(Double.class, "hashCode"),
+                    ReflectionUtils.getMethod(Boolean.class, "hashCode"),
+                    ReflectionUtils.getMethod(String.class, "hashCode"),
+                    ReflectionUtils.getMethod(Character.class, "hashCode")
+            ),
+            (func, args, callContext) -> {
+                var value = args.get(0);
+                if(value instanceof PrimitiveValue primitiveValue)
+                    return FlowExecResult.of(Instances.longInstance(primitiveValue.getValue().hashCode()));
+                else {
+                    var exception = ClassInstance.allocate(StdKlass.illegalArgumentException.get().getType());
+                    var nat = new IllegalArgumentExceptionNative(exception);
+                    nat.IllegalArgumentException(Instances.stringInstance("Non-primitive value is not yet supported: " + value), callContext);
+                    return FlowExecResult.ofException(exception);
+                }
+            }
+    ),
     requireNonNull(
             "T requireNonNull<T>(T|null value)",
             true,

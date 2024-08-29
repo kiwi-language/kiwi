@@ -161,6 +161,33 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
+    public LongValue hashCode(CallContext callContext) {
+        int h = 0;
+        for (Value value : array) {
+            h = 31 * h + Instances.hashCode(value, callContext);
+        }
+        return Instances.longInstance(h);
+    }
+
+    public BooleanValue equals(Value o, CallContext callContext) {
+        if(o instanceof Reference ref) {
+            if(ref.resolve() instanceof ClassInstance that
+                    && that.getKlass().findAncestorKlassByTemplate(StdKlass.list.get()) == instance.getKlass().findAncestorKlassByTemplate(StdKlass.list.get())) {
+                var thatNat = new ListNative(that);
+                var thatArray = thatNat.toArray();
+                if(array.size() == thatArray.size()) {
+                    var i = 0;
+                    for (Value value : array) {
+                        if(!Instances.equals(value, thatArray.get(i++), callContext))
+                            return Instances.falseInstance();
+                    }
+                    return Instances.trueInstance();
+                }
+            }
+        }
+        return Instances.falseInstance();
+    }
+
     public ArrayInstance toArray() {
         return array;
     }

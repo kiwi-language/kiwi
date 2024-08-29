@@ -5,6 +5,7 @@ import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.FieldChange;
 import org.metavm.entity.*;
+import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
@@ -863,4 +864,79 @@ public class Instances {
         }
     }
 
+    public static int hashCode(Value value, CallContext callContext) {
+        if(value instanceof PrimitiveValue primitiveValue)
+            return primitiveValue.hashCode();
+        else if(value instanceof Reference reference)
+            return hashCode(reference.resolve(), callContext);
+        else
+            throw new IllegalArgumentException("Cannot get hash code for value: " + value);
+    }
+
+    public static int hashCode(Instance instance, CallContext callContext) {
+        if(instance instanceof ClassInstance clsInst) {
+            var method = clsInst.getKlass().getHashCodeMethod();
+            if(method != null) {
+                var ret = Flows.invoke(method, clsInst, List.of(), callContext);
+                return ((LongValue) Objects.requireNonNull(ret)).getValue().intValue();
+            }
+            if(clsInst.isValue()) {
+                var ref = new Object() {
+                    int hash;
+                };
+                clsInst.forEachField((f, v) -> ref.hash = ref.hash * 31 + hashCode(v, callContext));
+                return ref.hash;
+            }
+        }
+        else if(instance instanceof ArrayInstance array && array.isValue()) {
+            int h = 0;
+            for (Value element : array.getElements())
+                h = h * 31 + hashCode(element, callContext);
+            return h;
+        }
+        return instance.hashCode();
+    }
+
+    public static boolean equals(Value value1, Value value2, CallContext callContext) {
+        if(value1.equals(value2))
+            return true;
+        else if(value1 instanceof Reference ref1 && value2 instanceof Reference ref2)
+            return equals(ref1.resolve(), ref2.resolve(), callContext);
+        else
+            return false;
+    }
+
+    public static boolean equals(Instance instance1, Instance instance2, CallContext callContext) {
+        if(instance1 == instance2)
+            return true;
+        if(instance1 instanceof ClassInstance clsInst) {
+            var method = clsInst.getKlass().getEqualsMethod();
+            if(method != null) {
+                var ret = Flows.invoke(method, clsInst, List.of(instance2.getReference()), callContext);
+                return ((BooleanValue) Objects.requireNonNull(ret)).getValue();
+            }
+            if(clsInst.isValue() && instance2 instanceof ClassInstance clsInst2 && clsInst2.isValue()
+                    && clsInst.getType().equals(clsInst2.getType())) {
+                var ref = new Object() {
+                    boolean equals = true;
+                };
+                clsInst.forEachField((f, v) -> {
+                    if(ref.equals && !equals(v, clsInst2.getField(f), callContext)) {
+                        ref.equals = false;
+                    }
+                });
+                return ref.equals;
+            }
+        }
+        else if(instance1 instanceof ArrayInstance array1 && array1.isValue() && instance2 instanceof ArrayInstance array2 && array2.isValue()
+                && array1.getType().equals(array2.getType()) && array1.size() == array2.size()) {
+            int i = 0;
+            for (Value element : array1) {
+                if(!equals(element, array2.get(i++), callContext))
+                    return false;
+            }
+            return true;
+        }
+        return false;
+    }
 }

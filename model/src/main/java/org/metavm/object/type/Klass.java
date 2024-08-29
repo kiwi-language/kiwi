@@ -534,7 +534,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return Objects.requireNonNull(
                 findMethodByCodeAndParamTypes(code, parameterTypes),
                 () -> String.format("Can not find method %s(%s) in klass %s",
-                        code, NncUtils.join(parameterTypes, Type::getName, ","), getName())
+                        code, NncUtils.join(parameterTypes, Type::getTypeDesc, ","), getName())
         );
     }
 
@@ -1899,5 +1899,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return getAttribute(AttributeNames.BEAN_KIND) != null;
     }
 
+    public @Nullable Method getHashCodeMethod() {
+        return findMethod(m -> m.getCodeNotNull().equals("hashCode") && m.getParameters().isEmpty());
+    }
+
+    public @Nullable Method getEqualsMethod() {
+        return findMethod(m -> m.getName().equals("equals") && m.getParameterTypes().equals(List.of(Types.getAnyType())));
+    }
 }
 

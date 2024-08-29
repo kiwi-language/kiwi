@@ -11,6 +11,7 @@ import org.metavm.object.instance.core.DoubleValue;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
+import org.metavm.util.CompilerException;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -77,7 +78,12 @@ public class ExpressionResolver {
 
     public Expression resolve(PsiExpression psiExpression) {
         ResolutionContext context = new ResolutionContext();
-        return resolve(psiExpression, context);
+        try {
+            return resolve(psiExpression, context);
+        }
+        catch (Exception e) {
+            throw new InternalException("Failed to resolve expression: " + psiExpression.getText(), e);
+        }
     }
 
     private Expression resolve(PsiExpression psiExpression, ResolutionContext context) {
@@ -395,28 +401,7 @@ public class ExpressionResolver {
         var methodCallResolver = getMethodCallResolver(expression);
         if (methodCallResolver != null)
             return methodCallResolver.resolve(expression, this, methodGenerator);
-        var ref = expression.getMethodExpression();
-        var method = requireNonNull(expression.resolveMethod());
-        var klass = requireNonNull(method.getContainingClass());
-        var argumentList = expression.getArgumentList();
-        if (matchClass(klass, Map.class)) {
-            var map = resolveQualifier(ref.getQualifierExpression(), context);
-            if (matchMethod(method, getMethod(Map.class, "get", Object.class))) {
-                return invokeFlow(map, "get", argumentList, context);
-            } else if (matchMethod(method, getMethod(Map.class, "put", Object.class, Object.class))) {
-                return invokeFlow(map, "put", argumentList, context);
-            } else if (matchMethod(method, getMethod(Map.class, "remove", Object.class))) {
-                return invokeFlow(map, "remove", argumentList, context);
-            } else if (matchMethod(method, getMethod(Map.class, "size"))) {
-                return invokeFlow(map, "size", argumentList, context);
-            } else if (matchMethod(method, getMethod(Map.class, "clear"))) {
-                return invokeFlow(map, "clear", argumentList, context);
-            } else {
-                throw new InternalException("Unsupported Map method: " + method);
-            }
-        } else {
-            return resolveFlowCall(expression, context);
-        }
+        return resolveFlowCall(expression, context);
     }
 
     @Nullable
@@ -609,16 +594,6 @@ public class ExpressionResolver {
         var resolver = getNewResolver(expression);
         if (resolver != null)
             return resolver.resolve(expression, this, methodGenerator);
-        var type = NncUtils.requireNonNull(expression.getType());
-        var psiMapType = TranspileUtils.createClassType(Map.class);
-        if (psiMapType.isAssignableFrom(type)) {
-            var mapType = Types.resolveKlass(typeResolver.resolve(type));
-            var subFlow = Objects.requireNonNull(mapType.findMethodByCode("Map"));
-            var newNode = methodGenerator.createNew(subFlow,
-                    resolveExpressionList(requireNonNull(expression.getArgumentList()), context),
-                    true, false);
-            return createNodeExpression(newNode);
-        }
         if (expression.getType() instanceof PsiClassType psiClassType) {
             var klass = Types.resolveKlass(typeResolver.resolve(psiClassType));
             List<Expression> args = NncUtils.map(

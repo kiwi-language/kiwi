@@ -7,10 +7,7 @@ import org.metavm.object.type.rest.dto.GetTypeByCodeRequest;
 import org.metavm.object.type.rest.dto.GetTypeResponse;
 import org.metavm.user.rest.dto.LoginInfo;
 import org.metavm.user.rest.dto.LoginRequest;
-import org.metavm.util.CompilerHttpUtils;
-import org.metavm.util.Constants;
-import org.metavm.util.NncUtils;
-import org.metavm.util.TypeReference;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -287,104 +284,109 @@ public class Main {
         initSelectedEnv();
         initializeHttpClient();
         String command = args[0];
-        switch (command) {
-            case "clear" -> clear();
-            case "host" -> {
-                if (args.length < 2) {
-                    System.out.println(getHost());
-                    return;
+        try {
+            switch (command) {
+                case "clear" -> clear();
+                case "host" -> {
+                    if (args.length < 2) {
+                        System.out.println(getHost());
+                        return;
+                    }
+                    changeHost(args[1].trim());
                 }
-                changeHost(args[1].trim());
-            }
-            case "login" -> login();
-            case "logout" -> logout();
-            case "app" -> System.out.println(CompilerHttpUtils.getAppId());
-            case "create-app" -> {
-                if(args.length < 2) {
-                    usage();
-                    return;
+                case "login" -> login();
+                case "logout" -> logout();
+                case "app" -> System.out.println(CompilerHttpUtils.getAppId());
+                case "create-app" -> {
+                    if (args.length < 2) {
+                        usage();
+                        return;
+                    }
+                    createApp(args[1]);
                 }
-                createApp(args[1]);
-            }
-            case "class-tag" -> {
-                if(args.length < 2) {
-                    usage();
-                    return;
+                case "class-tag" -> {
+                    if (args.length < 2) {
+                        usage();
+                        return;
+                    }
+                    printClassTag(args[1]);
                 }
-                printClassTag(args[1]);
-            }
-            case "field-tag" -> {
-                if(args.length < 2) {
-                    usage();
-                    return;
+                case "field-tag" -> {
+                    if (args.length < 2) {
+                        usage();
+                        return;
+                    }
+                    printFieldTag(args[1]);
                 }
-                printFieldTag(args[1]);
-            }
-            case "env" -> {
-                var selected = NncUtils.readLine(ENV_FILE);
-                var home = new File(HOME);
-                for (File file : Objects.requireNonNull(home.listFiles())) {
-                    if (file.isDirectory())
-                        System.out.println(file.getName() + (file.getName().equals(selected) ? " *" : ""));
+                case "env" -> {
+                    var selected = NncUtils.readLine(ENV_FILE);
+                    var home = new File(HOME);
+                    for (File file : Objects.requireNonNull(home.listFiles())) {
+                        if (file.isDirectory())
+                            System.out.println(file.getName() + (file.getName().equals(selected) ? " *" : ""));
+                    }
                 }
-            }
-            case "create-env" -> {
-                if (args.length < 2) {
-                    usage();
-                    return;
+                case "create-env" -> {
+                    if (args.length < 2) {
+                        usage();
+                        return;
+                    }
+                    createEnv(args[1]);
                 }
-                createEnv(args[1]);
-            }
-            case "set-env" -> {
-                if (args.length < 2) {
-                    usage();
-                    return;
+                case "set-env" -> {
+                    if (args.length < 2) {
+                        usage();
+                        return;
+                    }
+                    setEnv(args[1]);
                 }
-                setEnv(args[1]);
-            }
-            case "delete-env" -> {
-                if (args.length < 2) {
-                    usage();
-                    return;
+                case "delete-env" -> {
+                    if (args.length < 2) {
+                        usage();
+                        return;
+                    }
+                    deleteEnv(args[1]);
                 }
-                deleteEnv(args[1]);
-            }
-            case "deploy" -> {
-                var sourceRoot = args.length > 1 ? args[1] : (isMavenProject() ? "src/main/java" : "src");
-                var f = new File(sourceRoot);
-                if (!f.exists() || !f.isDirectory()) {
-                    System.err.println("Source directory '" + sourceRoot + "' does not exist.");
-                    return;
+                case "deploy" -> {
+                    var sourceRoot = args.length > 1 ? args[1] : (isMavenProject() ? "src/main/java" : "src");
+                    var f = new File(sourceRoot);
+                    if (!f.exists() || !f.isDirectory()) {
+                        System.err.println("Source directory '" + sourceRoot + "' does not exist.");
+                        return;
+                    }
+                    var typeClient = new HttpTypeClient();
+                    ensureLoggedIn();
+                    logger.info("Host: " + CompilerHttpUtils.getHost());
+                    logger.info("Application ID: {}", NncUtils.readLong(getAppFile()));
+                    var main = new Main(selectedEnv,
+                            sourceRoot,
+                            NncUtils.readLong(getAppFile()),
+                            NncUtils.readLine(getTokenFile()),
+                            typeClient,
+                            new DirectoryAllocatorStore("/not_exist"),
+                            new FileColumnStore("/not_exist"),
+                            new FileTypeTagStore("/not_exist"));
+                    main.run();
                 }
-                var typeClient = new HttpTypeClient();
-                ensureLoggedIn();
-                logger.info("Host: " + CompilerHttpUtils.getHost());
-                logger.info("Application ID: {}", NncUtils.readLong(getAppFile()));
-                var main = new Main(selectedEnv,
-                        sourceRoot,
-                        NncUtils.readLong(getAppFile()),
-                        NncUtils.readLine(getTokenFile()),
-                        typeClient,
-                        new DirectoryAllocatorStore("/not_exist"),
-                        new FileColumnStore("/not_exist"),
-                        new FileTypeTagStore("/not_exist"));
-                main.run();
+                case "deploy_direct" -> {
+                    CompilerHttpUtils.setHost(Constants.DEFAULT_HOST);
+                    var main = new Main(
+                            args[1],
+                            args[2],
+                            Long.parseLong(args[3]),
+                            args[4],
+                            new HttpTypeClient(),
+                            new DirectoryAllocatorStore("/not_exist"),
+                            new FileColumnStore("/not_exist"),
+                            new FileTypeTagStore("/not_exist")
+                    );
+                    main.run();
+                }
+                default -> usage();
             }
-            case "deploy_direct" -> {
-                CompilerHttpUtils.setHost(Constants.DEFAULT_HOST);
-                var main = new Main(
-                        args[1],
-                        args[2],
-                        Long.parseLong(args[3]),
-                        args[4],
-                        new HttpTypeClient(),
-                        new DirectoryAllocatorStore("/not_exist"),
-                        new FileColumnStore("/not_exist"),
-                        new FileTypeTagStore("/not_exist")
-                );
-                main.run();
-            }
-            default -> usage();
+        }
+        catch (CompilerException e) {
+            System.err.println("Error: " + e.getMessage());
         }
     }
 

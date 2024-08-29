@@ -52,6 +52,10 @@ public class TypeResolverImpl implements TypeResolver {
             VOID, void.class
     );
 
+    public static final Set<Class<?>> FORBIDDEN_CLASSES = Set.of(
+            System.class
+    );
+
     private PsiClassType parameterizedEnumType;
 
     private final CodeGenerator codeGenerator;
@@ -113,6 +117,7 @@ public class TypeResolverImpl implements TypeResolver {
             LinkedList.class,
             org.metavm.util.LinkedList.class,
             List.class,
+            HashSet.class,
             Set.class,
             Collection.class
     );
@@ -166,7 +171,12 @@ public class TypeResolverImpl implements TypeResolver {
                 return UncertainType.createLowerBounded(resolve(wildcardType.getSuperBound(), stage));
             }
         } else {
-            return UncertainType.asterisk;
+            /*
+            The asterisk should ideally resolve to [never, any|null]. However, due to limitations in the current implementation,
+            we use [never, any] until the compiler is refactored.
+            */
+//            return UncertainType.asterisk;
+            return new UncertainType(Types.getNeverType(), Types.getAnyType());
         }
     }
 
@@ -201,9 +211,6 @@ public class TypeResolverImpl implements TypeResolver {
                     classType = TranspileUtils.getSuperType(classType, collClass);
                     break;
                 }
-            }
-            if (TranspileUtils.createClassType(Map.class).isAssignableFrom(classType)) {
-                classType = TranspileUtils.getSuperType(classType, Map.class);
             }
             var classTypeText = classType.getCanonicalText();
             var psiClass = requireNonNull(classType.resolve(),
@@ -291,6 +298,8 @@ public class TypeResolverImpl implements TypeResolver {
             if (qualifiedName.startsWith(LANG_PKG_PREFIX))
                 throw new IllegalArgumentException("Can not resolve class in lang package: " + qualifiedName);
             var javaClass = ReflectionUtils.classForName(qualifiedName);
+            if(FORBIDDEN_CLASSES.contains(javaClass))
+                throw new CompilerException("class '" + javaClass.getName() + "' is not available in MetaVM");
             return ModelDefRegistry.getDefContext().getKlass(javaClass);
         } else
             return null;
@@ -335,32 +344,14 @@ public class TypeResolverImpl implements TypeResolver {
     @Nullable
     private TypeVariable tryResolveBuiltinTypeVar(PsiTypeParameter typeParameter) {
         if (typeParameter.getOwner() instanceof PsiClass psiClass) {
-            var ownerType = TranspileUtils.createType(psiClass);
-            var childListType = TranspileUtils.createClassType(ChildList.class);
-            if (childListType.isAssignableFrom(ownerType))
-                return StdKlass.childList.get().getTypeParameters().get(0);
-            var valueListType = TranspileUtils.createClassType(ValueList.class);
-            if (valueListType.isAssignableFrom(ownerType))
-                return StdKlass.valueList.get().getTypeParameters().get(0);
-            var arrayListType = TranspileUtils.createClassType(ArrayList.class);
-            var linkedListType = TranspileUtils.createClassType(LinkedList.class);
-            if (arrayListType.isAssignableFrom(ownerType) || linkedListType.isAssignableFrom(ownerType))
-                return StdKlass.arrayList.get().getTypeParameters().get(0);
-            var listType = TranspileUtils.createClassType(List.class);
-            if (listType.isAssignableFrom(ownerType))
-                return StdKlass.list.get().getTypeParameters().get(0);
-            var setType = TranspileUtils.createClassType(Set.class);
-            if (setType.isAssignableFrom(ownerType))
-                return StdKlass.set.get().getTypeParameters().get(0);
-            var mapType = TranspileUtils.createClassType(Map.class);
-            if (mapType.isAssignableFrom(ownerType)) {
+            var className = Objects.requireNonNull(psiClass.getQualifiedName());
+            if(className.startsWith(JAVA_PKG_PREFIX) || className.startsWith(API_PKG_PREFIX)) {
+                var javaClass = ReflectionUtils.classForName(className);
+                var klass = ModelDefRegistry.getDefContext().getKlass(javaClass);
                 int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
                         .getTypeParameterIndex(typeParameter);
-                return StdKlass.map.get().getTypeParameters().get(index);
+                return klass.getTypeParameters().get(index);
             }
-            var enumType = TranspileUtils.createClassType(Enum.class);
-            if (ownerType.equals(enumType))
-                return StdKlass.enum_.get().getTypeParameters().get(0);
         }
         return null;
     }

@@ -614,6 +614,9 @@ public class StandardDefBuilder {
                 )
                 .returnType(listImplType.getType())
                 .build();
+
+        createHashCodeAndEqualsMethod(listImplType);
+
         return listImplType;
     }
 
@@ -666,7 +669,23 @@ public class StandardDefBuilder {
                 )
                 .returnType(setImplKlass.getType())
                 .build();
+
+        createHashCodeAndEqualsMethod(setImplKlass);
+
         return setImplKlass;
+    }
+
+    private void createHashCodeAndEqualsMethod(Klass klass) {
+        MethodBuilder.newBuilder(klass, "equals", "equals")
+                .returnType(Types.getBooleanType())
+                .isNative(true)
+                .parameters(new Parameter(null, "o", "o", Types.getAnyType()))
+                .build();
+
+        MethodBuilder.newBuilder(klass, "hashCode", "hashCode")
+                .returnType(Types.getLongType())
+                .isNative(true)
+                .build();
     }
 
     public Klass createIteratorImplKlass() {
@@ -767,6 +786,8 @@ public class StandardDefBuilder {
                 .returnType(mapImplKlass.getType())
                 .build();
 
+        createHashCodeAndEqualsMethod(mapImplKlass);
+
         return mapImplKlass;
     }
 
@@ -781,12 +802,12 @@ public class StandardDefBuilder {
 
         MethodBuilder.newBuilder(mapType, "get", "get")
                 .returnType(nullableValueType)
-                .parameters(new Parameter(null, "key", "key", keyType))
+                .parameters(new Parameter(null, "key", "key", Types.getAnyType()))
                 .build();
 
         MethodBuilder.newBuilder(mapType, "remove", "remove")
                 .returnType(nullableValueType)
-                .parameters(new Parameter(null, "key", "key", keyType))
+                .parameters(new Parameter(null, "key", "key", Types.getAnyType()))
                 .build();
 
         MethodBuilder.newBuilder(mapType, "size", "size")

@@ -29,6 +29,10 @@ public class ApiClient {
         return InstanceWrap.from(apiService.getInstance(id));
     }
 
+    public Object getStatic(String className, String fieldName) {
+        return apiService.getStatic(className, fieldName);
+    }
+
     public ClassInstanceWrap getObject(String id) {
         return (ClassInstanceWrap) getInstance(id);
     }

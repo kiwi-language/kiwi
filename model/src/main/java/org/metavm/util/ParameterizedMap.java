@@ -7,6 +7,7 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.WeakHashMap;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class ParameterizedMap {
 
@@ -35,6 +36,10 @@ public class ParameterizedMap {
                 if(pKlass != null)
                     action.accept(typeArgs, pKlass);
             });
+    }
+
+    public void forEach(Consumer<Object> action) {
+        map.values().forEach(subMap -> subMap.values().forEach(action));
     }
 
 }

@@ -9,6 +9,8 @@ import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +20,9 @@ import java.util.Objects;
 @SuppressWarnings("unused")
 public class MapNative extends NativeBase {
 
-    private final Map<Value, Entry> map = new HashMap<>();
+    public static final Logger logger = LoggerFactory.getLogger(MapNative.class);
+
+    private final Map<HashKeyWrap, Entry> map = new HashMap<>();
     private final ClassInstance instance;
     private final Type keyType;
     private final Type valueType;
@@ -40,9 +44,10 @@ public class MapNative extends NativeBase {
             if (valueArray == null || keyArray.length() != valueArray.length()) {
                 throw new InternalException("Map data corrupted");
             }
-            NncUtils.biForEachWithIndex(keyArray, valueArray, (key, value, index) ->
-                    map.put(key, new Entry(value, index))
-            );
+            var instCtx = Objects.requireNonNull(instance.getContext(), () -> "Context is missing from instance " + instance);
+            NncUtils.biForEachWithIndex(keyArray, valueArray, (key, value, index) -> {
+                map.put(new HashKeyWrap(key, instCtx), new Entry(value, index));
+            });
         }
     }
 
@@ -67,30 +72,31 @@ public class MapNative extends NativeBase {
 
     public Value get(Value key, CallContext callContext) {
         checkKey(key, callContext);
-        var entry = map.get(key);
+        var entry = map.get(new HashKeyWrap(key, callContext));
         return entry != null ? entry.value : Instances.nullInstance();
     }
 
     public Value getOrDefault(Value key, Value value, CallContext callContext) {
         checkKey(key, callContext);
         checkValue(value, callContext);
-        var entry = map.get(key);
+        var entry = map.get(new HashKeyWrap(key, callContext));
         return entry != null ? entry.getValue() : value;
     }
 
     public Value put(Value key, Value value, CallContext callContext) {
         checkKey(key, callContext);
         checkValue(value, callContext);
-        var existingEntry = map.get(key);
+        var keyWrap = new HashKeyWrap(key, callContext);
+        var existingEntry = map.get(keyWrap);
         if (existingEntry != null) {
             var removed = existingEntry.value;
             int index = existingEntry.index;
-            map.put(key, new Entry(value, index));
+            map.put(keyWrap, new Entry(value, index));
             keyArray.setElement(index, key);
             valueArray.setElement(index, value);
             return removed;
         } else {
-            map.put(key, new Entry(value, map.size()));
+            map.put(keyWrap, new Entry(value, map.size()));
             keyArray.addElement(key);
             valueArray.addElement(value);
             return Instances.nullInstance();
@@ -99,12 +105,12 @@ public class MapNative extends NativeBase {
 
     public BooleanValue containsKey(Value key, CallContext callContext) {
         checkKey(key, callContext);
-        return Instances.booleanInstance(map.containsKey(key));
+        return Instances.booleanInstance(map.containsKey(new HashKeyWrap(key, callContext)));
     }
 
     public Value remove(Value key, CallContext callContext) {
         checkKey(key, callContext);
-        var entry = map.remove(key);
+        var entry = map.remove(new HashKeyWrap(key, callContext));
         if (entry != null) {
             int lastIndex = keyArray.size() - 1;
             Value lastKey = keyArray.get(lastIndex);
@@ -114,7 +120,7 @@ public class MapNative extends NativeBase {
             if (!key.equals(lastKey)) {
                 keyArray.setElement(entry.index, lastKey);
                 valueArray.setElement(entry.index, lastValue);
-                map.get(lastKey).index = entry.index;
+                map.get(new HashKeyWrap(lastKey, callContext)).index = entry.index;
             }
             return entry.getValue();
         } else {
@@ -122,14 +128,48 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public Value size(CallContext callContext) {
-        return Instances.longInstance(keyArray.size());
+    public LongValue size(CallContext callContext) {
+        return Instances.longInstance(size());
+    }
+
+    private int size() {
+        return keyArray.size();
     }
 
     public void clear(CallContext callContext) {
         map.clear();
         keyArray.clear();
         valueArray.clear();
+    }
+
+    public LongValue hashCode(CallContext callContext) {
+        int h = 0;
+        int i = 0;
+        for (Value key : keyArray) {
+            var value = valueArray.get(i++);
+            h = h + (Instances.hashCode(key, callContext) ^ Instances.hashCode(value, callContext));
+        }
+        return Instances.longInstance(h);
+    }
+
+    public BooleanValue equals(Value o, CallContext callContext) {
+        if(o instanceof Reference ref) {
+            if(ref.resolve() instanceof ClassInstance that
+                    && that.getKlass().findAncestorKlassByTemplate(StdKlass.map.get()) == instance.getKlass().findAncestorKlassByTemplate(StdKlass.map.get())) {
+                var thatNat = new MapNative(that);
+                if(keyArray.size() == thatNat.size()) {
+                    int i = 0;
+                    for (Value key : keyArray) {
+                        if(!thatNat.containsKey(key, callContext).getValue())
+                            return Instances.falseInstance();
+                        if(!Instances.equals(valueArray.get(i++), thatNat.get(key, callContext), callContext))
+                            return Instances.falseInstance();
+                    }
+                    return Instances.trueInstance();
+                }
+            }
+        }
+        return Instances.falseInstance();
     }
 
     private boolean getBoolean(Value instance, CallContext callContext) {
