@@ -3,7 +3,6 @@ package org.metavm.object.type.rest.dto;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.InstanceDTO;
 
 import javax.annotation.Nullable;
 
@@ -20,7 +19,6 @@ public record FieldDTO(
         boolean isStatic,
         boolean readonly,
         boolean lazy,
-        @Nullable InstanceDTO staticValue,
         @Nullable Integer sourceCodeTag,
         int state
 ) implements BaseDTO {

@@ -3,6 +3,8 @@ package org.metavm.object.instance.persistence;
 import com.google.common.primitives.UnsignedBytes;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.BytesUtils;
 import org.metavm.util.NncUtils;
 
@@ -11,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class IndexKeyPO implements Comparable<IndexKeyPO> {
 
@@ -74,6 +77,10 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
         var indexIdStr = Id.fromBytes(indexId);
         var fields = NncUtils.map(getColumns(), BytesUtils::readIndexBytes);
         return "{\"indexId: \"" + indexIdStr + "\", \"fields\": [" + NncUtils.join(fields, Objects::toString) + "]}";
+    }
+
+    public List<Value> getColumnValues(Function<Id, Instance> resolver) {
+        return NncUtils.map(getColumns(), b -> BytesUtils.readIndexValue(b, resolver));
     }
 
     List<byte[]> getColumns() {

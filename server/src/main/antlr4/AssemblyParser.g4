@@ -33,7 +33,10 @@ typeList
 
 classBodyDeclaration
     : modifier* memberDeclaration
+    | staticBlock
     ;
+
+staticBlock: STATIC block;
 
 enumDeclaration
     : annotation* ENUM IDENTIFIER (IMPLEMENTS typeList)? '{' enumConstants? ','? enumBodyDeclarations? '}'

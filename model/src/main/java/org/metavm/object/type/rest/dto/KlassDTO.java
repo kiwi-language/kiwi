@@ -34,7 +34,6 @@ public record KlassDTO(
         @Nullable String defaultMappingId,
         String desc,
         Object extra,
-        List<InstanceDTO> enumConstants,
         boolean isAbstract,
         boolean isTemplate,
         List<String> typeParameterIds,

@@ -5,6 +5,8 @@ import org.metavm.object.instance.IndexEntryRT;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.type.Index;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -13,6 +15,8 @@ import static org.metavm.object.instance.IndexKeyRT.MAX_INSTANCE;
 import static org.metavm.object.instance.IndexKeyRT.MIN_INSTANCE;
 
 public class InstanceMemoryIndex {
+
+    public static final Logger logger = LoggerFactory.getLogger(InstanceMemoryIndex.class);
 
     private final Map<Index, SubIndex> indexMap = new IdentityHashMap<>();
     private final Map<ClassInstance, List<IndexKeyRT>> keyMap = new IdentityHashMap<>();

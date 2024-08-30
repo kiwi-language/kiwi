@@ -59,6 +59,12 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitClassBodyDeclaration(AssemblyParser.ClassBodyDeclarationContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#staticBlock}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStaticBlock(AssemblyParser.StaticBlockContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#enumDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

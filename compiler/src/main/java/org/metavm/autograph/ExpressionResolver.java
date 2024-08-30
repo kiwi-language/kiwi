@@ -697,17 +697,24 @@ public class ExpressionResolver {
         var target = assigned.resolve();
         if (target instanceof PsiVariable variable) {
             if (variable instanceof PsiField psiField) {
-                Expression self;
-                if (assigned.getQualifierExpression() != null) {
-                    self = resolve(assigned.getQualifierExpression(), context);
-                } else {
-                    self = variableTable.get("this");
+                if(TranspileUtils.isStatic(psiField)) {
+                    var klass =  ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.createType(psiField.getContainingClass()))).resolve();
+                    var field = klass.getStaticFieldByName(psiField.getName());
+                    methodGenerator.createUpdateStatic(klass, Map.of(field,  assignment));
                 }
-                Klass instanceType = Types.resolveKlass(methodGenerator.getExpressionType(self));
-                typeResolver.ensureDeclared(instanceType);
-                Field field = instanceType.getFieldByCode(psiField.getName());
-                UpdateObjectNode node = methodGenerator.createUpdateObject(self);
-                node.setUpdateField(field, UpdateOp.SET, Values.expression(assignment));
+                else {
+                    Expression self;
+                    if (assigned.getQualifierExpression() != null) {
+                        self = resolve(assigned.getQualifierExpression(), context);
+                    } else {
+                        self = variableTable.get("this");
+                    }
+                    Klass instanceType = Types.resolveKlass(methodGenerator.getExpressionType(self));
+                    typeResolver.ensureDeclared(instanceType);
+                    Field field = instanceType.getFieldByCode(psiField.getName());
+                    UpdateObjectNode node = methodGenerator.createUpdateObject(self);
+                    node.setUpdateField(field, UpdateOp.SET, Values.expression(assignment));
+                }
             } else {
                 variableTable.set(
                         variable.getName(),

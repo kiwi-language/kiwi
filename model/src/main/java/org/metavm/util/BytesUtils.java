@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class BytesUtils {
 
@@ -40,6 +41,11 @@ public class BytesUtils {
         var output = new IndexKeyWriter(bout);
         output.writeValue(instance);
         return bout.toByteArray();
+    }
+
+    public static Value readIndexValue(byte[] bytes, Function<Id, Instance> resolver) {
+        var bin = new ByteArrayInputStream(bytes);
+        return new IndexKeyReader(bin, resolver).readValue();
     }
 
     public static Object readIndexBytes(byte[] bytes) {

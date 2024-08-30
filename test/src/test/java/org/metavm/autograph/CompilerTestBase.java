@@ -6,6 +6,7 @@ import org.metavm.application.ApplicationManager;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityQueryService;
+import org.metavm.entity.MetaContextCache;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowExecutionService;
 import org.metavm.flow.FlowManager;
@@ -59,6 +60,7 @@ public abstract class CompilerTestBase extends TestCase  {
     protected ApiClient apiClient;
     protected EntityContextFactory entityContextFactory;
     protected SchedulerAndWorker schedulerAndWorker;
+    protected MetaContextCache metaContextCache;
 
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
@@ -76,6 +78,7 @@ public abstract class CompilerTestBase extends TestCase  {
         typeTagStore = bootResult.typeTagStore();
         entityContextFactory = bootResult.entityContextFactory();
         schedulerAndWorker = bootResult.schedulerAndWorker();
+        metaContextCache = bootResult.metaContextCache();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         typeManager = new TypeManager(
                 bootResult.entityContextFactory(),
@@ -125,6 +128,7 @@ public abstract class CompilerTestBase extends TestCase  {
         loginService = null;
         platformUserManager = null;
         apiClient = null;
+        metaContextCache = null;
         SystemConfig.setHybridMode();
     }
 

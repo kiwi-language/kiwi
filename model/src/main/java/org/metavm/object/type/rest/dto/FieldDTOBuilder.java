@@ -132,7 +132,6 @@ public class FieldDTOBuilder {
                 isStatic,
                 readonly,
                 lazy,
-                staticValue,
                 sourceCodeTag,
                 state
         );

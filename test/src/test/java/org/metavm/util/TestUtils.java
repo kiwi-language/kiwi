@@ -439,14 +439,6 @@ public class TestUtils {
         return new MethodRefDTO(TypeExpressions.getClassType(klassDTO.id()), getMethodId(klassDTO, code, parameterTypeIds), List.of());
     }
 
-    public static String getEnumConstantIdByName(KlassDTO klassDTO, String name) {
-        return NncUtils.findRequired(klassDTO.enumConstants(), f -> name.equals(f.title())).id();
-    }
-
-    public static InstanceDTO getEnumConstantByName(KlassDTO klassDTO, String name) {
-        return NncUtils.findRequired(klassDTO.enumConstants(), f -> name.equals(f.title()));
-    }
-
     private static final Klass mockKlass = TestUtils.newKlassBuilder("TestUtilsMock", "TestUtilsMock").build();
 
     public static ClassType mockClassType() {

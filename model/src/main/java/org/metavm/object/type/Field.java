@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType
-public class Field extends Element implements ChangeAware, GenericElement, Property {
+public class Field extends Element implements ChangeAware, GenericElement, Property, PostRemovalAware {
 
     @EntityField(asTitle = true)
     private String name;
@@ -30,8 +30,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private boolean lazy;
     private final Column column;
     private boolean isChild;
-    @EntityField(code = "static")
-    private Value staticValue;
     @Nullable
     private Expression initializer;
     @Nullable
@@ -93,8 +91,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             setUnique(unique);
         }
         this.lazy = lazy;
-        this.staticValue = staticValue;
-//        this.template = template;
         declaringType.addField(this);
     }
 
@@ -135,11 +131,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this.defaultValue = defaultValue;
     }
 
-    public Value getStaticValue() {
-        if (isStatic()) return staticValue;
-        else throw new InternalException("Can not get static value from an instance field");
-    }
-
     public boolean isLazy() {
         return lazy;
     }
@@ -169,46 +160,31 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             declaringType.removeConstraint(fieldIndex);
             cascades.add(fieldIndex);
         }
-        if (declaringType.isEnumConstantField(this))
-            cascades.add(staticValue);
         declaringType.resetFieldTransients();
         return cascades;
     }
 
-    public LongValue getLong(@Nullable ClassInstance instance) {
-        if (isStatic()) {
-            return (LongValue) getStaticValue();
-        } else {
+    @Override
+    public void postRemove(IEntityContext context) {
+        if(isStatic()) {
+            StaticFieldTable.getInstance(declaringType, context).remove(this);
+        }
+    }
+
+    public LongValue getLong(@NotNull ClassInstance instance) {
             return NncUtils.requireNonNull(instance).getLongField(this);
-        }
     }
 
-    public DoubleValue getDouble(@Nullable ClassInstance instance) {
-        if (isStatic()) {
-            return (DoubleValue) getStaticValue();
-        } else {
-            return NncUtils.requireNonNull(instance).getDoubleField(this);
-        }
+    public DoubleValue getDouble(@NotNull ClassInstance instance) {
+        return NncUtils.requireNonNull(instance).getDoubleField(this);
     }
 
-    public StringValue getString(@Nullable ClassInstance instance) {
-        if (isStatic()) {
-            return (StringValue) getStaticValue();
-        } else {
-            return NncUtils.requireNonNull((instance)).getStringField(this);
-        }
+    public StringValue getString(@NotNull ClassInstance instance) {
+        return NncUtils.requireNonNull((instance)).getStringField(this);
     }
 
-    public Value get(@Nullable ClassInstance instance) {
-        if (isStatic()) {
-            return getStaticValue();
-        } else {
-            return NncUtils.requireNonNull((instance)).getField(this);
-        }
-    }
-
-    public void setStaticValue(Value staticValue) {
-        this.staticValue = staticValue;
+    public Value get(@NotNull ClassInstance instance) {
+        return NncUtils.requireNonNull((instance)).getField(this);
     }
 
     @Nullable
@@ -325,7 +301,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
                     isStatic(),
                     readonly,
                     lazy,
-                    NncUtils.get(staticValue, Value::toDTO),
                     sourceCodeTag,
                     getState().code()
             );
@@ -357,13 +332,13 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     @Override
     public void onChange(ClassInstance instance, IEntityContext context) {
-        if (_static) {
-            var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
-            var value = instance.getField(staticValueField);
-            if (!getType().isInstance(value)) {
-                throw new BusinessException(ErrorCode.STATIC_FIELD_CAN_NOT_BE_NULL, getQualifiedName());
-            }
-        }
+//        if (_static) {
+//            var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
+//            var value = instance.getField(staticValueField);
+//            if (!getType().isInstance(value)) {
+//                throw new BusinessException(ErrorCode.STATIC_FIELD_CAN_NOT_BE_NULL, getQualifiedName());
+//            }
+//        }
     }
 
     @Override

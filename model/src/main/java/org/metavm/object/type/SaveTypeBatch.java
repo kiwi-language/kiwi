@@ -305,26 +305,6 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
         return Objects.requireNonNull(getTypeDTO(id), () -> "Can not find typeDTO with id '" + id + "'");
     }
 
-    public void performEnumConstantDDL() {
-        for (Field f : newFields) {
-            if(f.getDeclaringType().isEnum()) {
-                var enumKlass = f.getDeclaringType();
-                for (var ec : enumKlass.getEnumConstants()) {
-                    logger.info("Initialize field {} for {}", f, ec);
-                    Instances.initializeField(ec, f, context);
-                }
-            }
-        }
-        for (Field f : typeChangedFields) {
-            if(f.getDeclaringType().isEnum()) {
-                var enumKlass = f.getDeclaringType();
-                for (var ec : enumKlass.getEnumConstants()) {
-                    Instances.convertField(ec, f, context);
-                }
-            }
-        }
-    }
-
     public Commit buildCommit(WAL wal) {
         checkForDDL();
         var fieldChanges = new ArrayList<FieldChange>();

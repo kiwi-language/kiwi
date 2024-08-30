@@ -44,7 +44,7 @@ public class LabCompilingTest extends CompilerTestBase {
             var currencyKlass = getClassTypeByCode("Currency");
             var rateMethod = NncUtils.findRequired(currencyKlass.flows(), m -> m.name().equals("__rate__"));
             Assert.assertEquals(Access.PUBLIC.code(), ((MethodParam)rateMethod.param()).access());
-            var yuanId = TestUtils.getEnumConstantIdByName(currencyKlass, "YUAN");
+            var yuanId = typeManager.getEnumConstant(currencyKlass.id(), "YUAN").id();
             var rate = TestUtils.doInTransaction(() -> apiClient.callMethod(yuanId, "__rate__", List.of()));
             Assert.assertEquals(0.14, rate);
             var errors = productKlass.errors();

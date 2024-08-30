@@ -32,7 +32,7 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException strongReferencesPreventRemoval(Value source, Value target) {
-        return new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, target.getQualifiedTitle(), source.getQualifiedTitle());
+        return new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, target.getText(), source.getText());
     }
 
     public static BusinessException invalidType(KlassDTO klassDTO, String reason) {

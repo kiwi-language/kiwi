@@ -48,7 +48,7 @@ public class ExpressionResolverV2 extends CopyVisitor {
                 var property = klass.getPropertyByVar(Var.parse(expr.getVariable()));
                 return new PropertyExpression(qualifier, property.getRef());
             } catch (InternalException e) {
-                throw new InternalException("Fail to resolve variable: " + expr.getVariable());
+                throw new InternalException("Fail to resolve variable: " + expr.getVariable(), e);
             }
         }
     }

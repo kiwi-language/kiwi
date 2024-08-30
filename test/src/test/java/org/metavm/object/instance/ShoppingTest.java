@@ -50,7 +50,6 @@ public class ShoppingTest extends TestCase {
 
     public void testCreateProduct() {
         MockUtils.createShoppingTypes(typeManager,schedulerAndWorker);
-        DebugEnv.flag = true;
         TestUtils.doInTransaction(() -> apiClient.saveInstance("Product", Map.of(
            "name", "shoes",
            "skuList", List.of(

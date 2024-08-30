@@ -290,7 +290,6 @@ public class ClassTypeDTOBuilder {
                 defaultMappingId,
                 desc,
                 extra,
-                enumConstants,
                 isAbstract,
                 isTemplate,
                 typeParameterIds,

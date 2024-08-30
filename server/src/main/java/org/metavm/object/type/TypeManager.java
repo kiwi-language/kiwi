@@ -287,7 +287,6 @@ public class TypeManager extends EntityContextFactoryAware {
                 if (runningCommit != null)
                     throw new BusinessException(ErrorCode.COMMIT_RUNNING);
                 batch = batchSave(typeDefDTOs, request.functions(), bufferingContext);
-                batch.performEnumConstantDDL();
                 bufferingContext.finish();
             }
             var commit = context.bind(batch.buildCommit(wal));
@@ -335,9 +334,25 @@ public class TypeManager extends EntityContextFactoryAware {
         return batch;
     }
 
+    public InstanceDTO getEnumConstant(String klassId, String enumConstantName) {
+        try(var context = newContext()) {
+            var klass = context.getKlass(klassId);
+            if(klass == null)
+                throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, klassId);
+            if(klass.isEnum()) {
+                var sft = StaticFieldTable.getInstance(klass, context);
+                var ec = sft.getEnumConstantByName(enumConstantName);
+                return ec.toDTO();
+            }
+            else
+                throw new BusinessException(ErrorCode.NOT_AN_ENUM_CLASS, klass.getName());
+        }
+    }
+
     private void createEnumConstant(EnumConstantDef enumConstantDef, IEntityContext context) {
+        var sft = StaticFieldTable.getInstance(enumConstantDef.getKlass(), context);
         var value = enumConstantDef.createEnumConstant(context.getInstanceContext());
-        enumConstantDef.getField().setStaticValue(value.getReference());
+        sft.set(enumConstantDef.getField(), value.getReference());
     }
 
     private void createOverridingFlows(Klass type, IEntityContext context) {
@@ -437,7 +452,7 @@ public class TypeManager extends EntityContextFactoryAware {
             var klass = org.metavm.object.type.TypeParser.parseClassType(instanceDTO.type(), context).resolve();
             ClassInstance instance;
             if (instanceDTO.isNew()) {
-                instanceDTO = setOrdinal(instanceDTO, klass.getEnumConstants().size(), klass);
+                instanceDTO = setOrdinal(instanceDTO, klass.getEnumConstantDefs().size(), klass);
                 instance = (ClassInstance) instanceManager.create(instanceDTO, instanceContext);
                 FieldBuilder.newBuilder(instance.getTitle(), null, klass, klass.getType())
                         .isStatic(true)

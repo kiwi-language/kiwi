@@ -82,7 +82,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(ClassKind.VALUE.code(), currencyKlass.kind());
         var productKlass = getClassTypeByCode("valuetypes.Product");
         var currencyKindKlass = getClassTypeByCode("valuetypes.CurrencyKind");
-        var currencyKindYuan = TestUtils.getEnumConstantByName(currencyKindKlass, "YUAN");
+        var currencyKindYuan = typeManager.getEnumConstant(currencyKindKlass.id(), "YUAN");
         var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                 productKlass.getCodeNotNull(),
                 Map.of(

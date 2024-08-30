@@ -53,8 +53,14 @@ public class InstanceQueryService {
     }
 
     public Page<Reference> query(InstanceQuery query, IEntityContext context) {
-        return query(query, context.getInstanceContext(),
-                new ContextTypeDefRepository(context));
+        try {
+            ContextUtil.setEntityContext(context);
+            return query(query, context.getInstanceContext(),
+                    new ContextTypeDefRepository(context));
+        }
+        finally {
+            ContextUtil.setEntityContext(context);
+        }
     }
 
     public Page<Reference> query(InstanceQuery query,

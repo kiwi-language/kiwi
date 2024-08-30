@@ -653,7 +653,8 @@ public class Instances {
         instance.transformReference((r, isChild, type) -> {
             if(type.isAssignableFrom(enumClass.getType())) {
                 var referent = r.resolve();
-                if(referent instanceof ClassInstance object && object.getKlass() == enumClass && !enumClass.isEnumConstant(object.getReference())) {
+                var sft = StaticFieldTable.getInstance(enumClass, context);
+                if(referent instanceof ClassInstance object && object.getKlass() == enumClass && !sft.isEnumConstant(object.getReference())) {
                     var r1 = object.getReference();
                     object.setField(enumClass.getFieldByTemplate(StdField.enumName.get()), Instances.stringInstance(""));
                     object.setField(enumClass.getFieldByTemplate(StdField.enumOrdinal.get()), Instances.longInstance(-1L));
@@ -720,7 +721,7 @@ public class Instances {
         var initMethod = findFieldInitializer(field, true);
         if (initMethod != null) {
             if(initMethod.getParameters().isEmpty())
-                return Flows.invoke(initMethod, instance, List.of(), callContext);
+                return Flows.invoke(initMethod, instance, List.of(), context);
             else if(initMethod.getParameterTypes().equals(List.of(Types.getStringType(), Types.getLongType()))){
                 return Flows.invoke(
                         initMethod,
@@ -851,16 +852,6 @@ public class Instances {
                     return r;
                 });
             }
-        }
-    }
-
-    public static void saveEnumConstants(Commit commit, IEntityContext context) {
-        for (String newEnumConstantId : commit.getNewEnumConstantIds()) {
-            var ecd = context.getEntity(EnumConstantDef.class, newEnumConstantId);
-            var klass = ecd.getKlass();
-            var field = klass.getStaticFieldByName(ecd.getName());
-            var value = ecd.createEnumConstant(context.getInstanceContext());
-            field.setStaticValue(value.getReference());
         }
     }
 

@@ -436,8 +436,8 @@ public class MockUtils {
                 TestUtils.getFieldIdByCode(orderType, "price"),
                 TestUtils.getFieldIdByCode(orderType, "orderTime"),
                 TestUtils.getFieldIdByCode(orderType, "coupons"),
-                TestUtils.getEnumConstantIdByName(couponStateType, "NORMAL"),
-                TestUtils.getEnumConstantIdByName(couponStateType, "USED")
+                typeManager.getEnumConstant(couponStateType.id(), "NORMAL").id(),
+                typeManager.getEnumConstant(couponStateType.id(), "USED").id()
         );
     }
 

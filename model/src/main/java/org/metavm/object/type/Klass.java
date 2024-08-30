@@ -14,8 +14,6 @@ import org.metavm.flow.Error;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.view.MappingSaver;
@@ -835,7 +833,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public Field getStaticFieldByName(String fieldName) {
-        return NncUtils.requireNonNull(tryGetStaticFieldByName(fieldName));
+        return NncUtils.requireNonNull(tryGetStaticFieldByName(fieldName),
+                () -> "Static field " + fieldName + " not found in class " + getCodeNotNull());
     }
 
     /**
@@ -1189,7 +1188,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.get(defaultMapping, serializeContext::getStringId),
                 desc,
                 getExtra(),
-                isEnum() ? NncUtils.map(getEnumConstants(), Instance::toDTO) : List.of(),
                 isAbstract,
                 isTemplate(),
                 NncUtils.map(typeParameters, serializeContext::getStringId),
@@ -1244,44 +1242,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Index getUniqueConstraint(Id id) {
         return getConstraint(Index.class, id);
-    }
-
-    public List<Reference> getEnumConstantRefs() {
-        assert isEnum();
-        return NncUtils.map(
-                enumConstantDefs,
-                ecd -> (Reference) ecd.getField().getStaticValue()
-        );
-    }
-
-    public List<ClassInstance> getEnumConstants() {
-        if (!isEnum())
-            throw new InternalException("type " + this + " is not a enum type");
-        return NncUtils.filterAndMap(
-                staticFields,
-                this::isEnumConstantField,
-                f -> f.getStaticValue().resolveObject()
-        );
-    }
-
-    public EnumConstantRT getEnumConstant(Id id) {
-        if (!isEnum())
-            throw new InternalException("type " + this + " is not a enum type");
-        for (Field field : staticFields) {
-            if (isEnumConstantField(field) && Objects.equals(field.getStaticValue().tryGetId(), id))
-                return createEnumConstant(field.getStaticValue().resolveObject());
-        }
-        throw new InternalException("Can not find enum constant with id " + id);
-    }
-
-    private EnumConstantRT createEnumConstant(ClassInstance instance) {
-        return new EnumConstantRT(instance);
-    }
-
-    boolean isEnumConstantField(Field field) {
-        // TODO be more precise
-        return isEnum() && field.isStatic() && isType(field.getType())
-                && field.getStaticValue() instanceof Reference r && r.resolve() instanceof ClassInstance;
     }
 
     public boolean isType(Type type) {
@@ -1623,11 +1583,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public boolean isParameterized() {
         return template != null && template != this;
-    }
-
-    public boolean isEnumConstant(Reference reference) {
-        assert isEnum();
-        return getEnumConstantRefs().contains(reference);
     }
 
     @Override

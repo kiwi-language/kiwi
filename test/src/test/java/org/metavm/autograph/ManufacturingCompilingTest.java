@@ -48,17 +48,17 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 signup();
                 login();
                 var roundingRuleType = getClassTypeByCode("org.metavm.manufacturing.material.RoundingRule");
-                var roundHalfUp = TestUtils.getEnumConstantByName(roundingRuleType, "ROUND_HALF_UP");
+                var roundHalfUp = typeManager.getEnumConstant(roundingRuleType.id(), "ROUND_HALF_UP");
                 var unitType = getClassTypeByCode("org.metavm.manufacturing.material.Unit");
                 var unitId = doInTransaction(() -> apiClient.newInstance(
                         unitType.getCodeNotNull(),
                         Arrays.asList("meter", "meter", roundHalfUp.getIdNotNull(), 2, null)
                 ));
                 var materialKindType = getClassTypeByCode("org.metavm.manufacturing.material.MaterialKind");
-                var normal = TestUtils.getEnumConstantByName(materialKindType, "NORMAL");
+                var normal = typeManager.getEnumConstant(materialKindType.id(), "NORMAL");
 
                 var timeUnitType = getClassTypeByCode("org.metavm.manufacturing.material.TimeUnit");
-                var year = TestUtils.getEnumConstantByName(timeUnitType, "YEAR");
+                var year = typeManager.getEnumConstant(timeUnitType.id(), "YEAR");
 
                 // create a material
                 var materialType = getClassTypeByCode("org.metavm.manufacturing.material.Material");
@@ -88,7 +88,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 // get QualityInspectionState type
                 var qualityInspectionStateType = getClassTypeByCode("org.metavm.manufacturing.material.QualityInspectionState");
                 // get QualityInspectionState.QUALIFIED constant
-                var qualified = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
+                var qualified = typeManager.getEnumConstant(qualityInspectionStateType.id(), "QUALIFIED");
                 // invoke material.setFeedQualityInspectionStates with a list containing the QUALIFIED constant
                 doInTransaction(() -> apiClient.callMethod(
                         materialId, "setFeedQualityInspectionStates",
@@ -234,7 +234,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         // get inventoryBizState type
         var inventoryBizStateType = getClassTypeByCode("org.metavm.manufacturing.storage.InventoryBizState");
         // get InventoryBizState.INITIAL constant
-        var initialBizState = TestUtils.getEnumConstantByName(inventoryBizStateType, "INITIAL");
+        var initialBizState = typeManager.getEnumConstant(inventoryBizStateType.id(), "INITIAL");
         // create an inventory object
         var inventoryId = doInTransaction(() -> apiClient.newInstance(
                 inventoryType.getCodeNotNull(),
@@ -277,7 +277,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         Assert.assertEquals(inventoryId, queriedInventory.id());
 
         var inventoryOpType = getClassTypeByCode("org.metavm.manufacturing.storage.InventoryOp");
-        var adjustment = TestUtils.getEnumConstantByName(inventoryOpType, "ADJUSTMENT");
+        var adjustment = typeManager.getEnumConstant(inventoryOpType.id(), "ADJUSTMENT");
 
         // decrease the inventory by 100 and asserts that the inventory is removed
         doInTransaction(() -> apiClient.callMethod(
@@ -313,7 +313,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         // get InboundBizType type
         var inboundBizTypeType = getClassTypeByCode("org.metavm.manufacturing.storage.InboundBizType");
         // get InboundBizType.PURCHASE constant
-        var purchase = TestUtils.getEnumConstantByName(inboundBizTypeType, "PURCHASE");
+        var purchase = typeManager.getEnumConstant(inboundBizTypeType.id(), "PURCHASE");
 
         // get InboundOrder type
         var inboundOrderType = getClassTypeByCode("org.metavm.manufacturing.storage.InboundOrder");
@@ -403,7 +403,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         // get TransferBizType type
         var transferBizTypeType = getClassTypeByCode("org.metavm.manufacturing.storage.TransferBizType");
         // get TransferBizType.STORAGE constant
-        var storage = TestUtils.getEnumConstantByName(transferBizTypeType, "STORAGE");
+        var storage = typeManager.getEnumConstant(transferBizTypeType.id(), "STORAGE");
 
         // get transfer order type
         var qcTransferOrder = "org.metavm.manufacturing.storage.TransferOrder";
@@ -421,9 +421,9 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         // create an inventory
         var inventoryType = getClassTypeByCode("org.metavm.manufacturing.storage.Inventory");
         var qualityInspectionStateType = getClassTypeByCode("org.metavm.manufacturing.material.QualityInspectionState");
-        var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
+        var qualifiedInspectionState = typeManager.getEnumConstant(qualityInspectionStateType.id(), "QUALIFIED");
         var InventoryBizStateType = getClassTypeByCode("org.metavm.manufacturing.storage.InventoryBizState");
-        var initialBizState = TestUtils.getEnumConstantByName(InventoryBizStateType, "INITIAL");
+        var initialBizState = typeManager.getEnumConstant(InventoryBizStateType.id(), "INITIAL");
         var inventoryId = doInTransaction(() -> apiClient.newInstance(
                 inventoryType.getCodeNotNull(),
                 Arrays.asList(
@@ -550,10 +550,10 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                             KlassDTO feedTypeType, KlassDTO pickMethodType, KlassDTO generalStateType, KlassDTO qualityInspectionStateType) {
         var bomKlass = getClassTypeByCode("org.metavm.manufacturing.production.BOM");
 //        var bomViewKlass = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultViewKlassId(bomKlass), false)).type();
-        var directFeedType = TestUtils.getEnumConstantByName(feedTypeType, "DIRECT");
-        var onDemandPickMethod = TestUtils.getEnumConstantByName(pickMethodType, "ON_DEMAND");
-        var enabledGeneralState = TestUtils.getEnumConstantByName(generalStateType, "ENABLED");
-        var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "QUALIFIED");
+        var directFeedType = typeManager.getEnumConstant(feedTypeType.id(), "DIRECT");
+        var onDemandPickMethod = typeManager.getEnumConstant(pickMethodType.id(), "ON_DEMAND");
+        var enabledGeneralState = typeManager.getEnumConstant(generalStateType.id(), "ENABLED");
+        var qualifiedInspectionState = typeManager.getEnumConstant(qualityInspectionStateType.id(), "QUALIFIED");
         var bomId = doInTransaction(() -> apiClient.saveInstance(
                 bomKlass.getCodeNotNull(),
                 Map.of(

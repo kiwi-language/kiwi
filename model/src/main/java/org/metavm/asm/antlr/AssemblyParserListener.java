@@ -88,6 +88,16 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 */
 	void exitClassBodyDeclaration(AssemblyParser.ClassBodyDeclarationContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#staticBlock}.
+	 * @param ctx the parse tree
+	 */
+	void enterStaticBlock(AssemblyParser.StaticBlockContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#staticBlock}.
+	 * @param ctx the parse tree
+	 */
+	void exitStaticBlock(AssemblyParser.StaticBlockContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#enumDeclaration}.
 	 * @param ctx the parse tree
 	 */

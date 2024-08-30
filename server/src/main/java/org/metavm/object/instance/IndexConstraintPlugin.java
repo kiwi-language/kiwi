@@ -1,9 +1,11 @@
 package org.metavm.object.instance;
 
+import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityChange;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.PersistenceUtils;
@@ -15,10 +17,7 @@ import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.function.Function;
 
 import static org.metavm.entity.DifferenceAttributeKey.NEW_INDEX_ITEMS;
@@ -52,8 +51,10 @@ public class IndexConstraintPlugin implements ContextPlugin {
                         currentEntries::add,
                         entry -> {
                             if (!currentUniqueKeys.add(entry.getKey()))
-                                throw BusinessException.constraintCheckFailed(
-                                        instanceMap.get(entry.getId()), indexProvider.getIndex(Id.fromBytes(entry.getIndexId()))
+                                throw new BusinessException(
+                                        ErrorCode.DUPLICATE_KEY2,
+                                        indexProvider.getIndex(Id.fromBytes(entry.getIndexId())).getName(),
+                                        NncUtils.join(entry.getKey().getColumnValues(context::internalGet), Value::getText)
                                 );
                         });
             }

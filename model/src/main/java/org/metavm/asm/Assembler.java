@@ -550,6 +550,7 @@ public class Assembler {
                 field = FieldBuilder.newBuilder(name, name, klass, type)
                         .tmpId(NncUtils.randomNonNegative())
                         .isChild(mods.contains(Modifiers.CHILD))
+                        .isStatic(isStatic)
                         .build();
             } else {
                 field.setType(type);
@@ -970,6 +971,13 @@ public class Assembler {
             }
         }
 
+        @Override
+        public Void visitStaticBlock(AssemblyParser.StaticBlockContext ctx) {
+            var cinit = Objects.requireNonNull(cinits.peek());
+            processMethodBlock(ctx.block(), cinit);
+            return null;
+        }
+
         private void processMethodBlock(AssemblyParser.BlockContext block, Method method) {
             for (var stmt : block.labeledStatement()) {
                 processLabeledStatement(stmt, method.getRootScope());
@@ -1008,25 +1016,42 @@ public class Assembler {
                         scope.getLastNode()
                 );
                 if (statement.bop != null) {
-                    var object = statement.THIS() != null ? parseValue("this", parsingContext)
-                            : parseValue(statement.IDENTIFIER(0).getText(), parsingContext);
-                    var objectType = (ClassType) object.getType();
-                    var field = objectType.resolve().getFieldByCode(statement.IDENTIFIER(statement.IDENTIFIER().size() - 1).getText());
-                    return new UpdateObjectNode(
-                            NncUtils.randomNonNegative(),
-                            name,
-                            null,
-                            scope.getLastNode(),
-                            scope,
-                            object,
-                            List.of(
-                                    new UpdateField(
-                                            field.getRef(),
-                                            parseUpdateOp(statement.bop.getText()),
-                                            parseValue(statement.expression(), parsingContext)
-                                    )
-                            )
-                    );
+                    var qualifier = statement.THIS() != null ? "this" : statement.IDENTIFIER(0).getText();
+                    var fieldName = statement.IDENTIFIER(statement.IDENTIFIER().size() - 1).getText();
+                    var value = parseValue(statement.expression(), parsingContext);
+                    var klass = tryGetKlass(qualifier);
+                    if(klass != null) {
+                        var field = klass.getStaticFieldByName(fieldName);
+                        return new UpdateStaticNode(
+                                null,
+                                name,
+                                null,
+                                scope.getLastNode(),
+                                scope,
+                                klass,
+                                List.of(new UpdateField(field.getRef(), UpdateOp.SET, value))
+                        );
+                    }
+                    else {
+                        var object = parseValue(qualifier, parsingContext);
+                        var objectType = (ClassType) object.getType();
+                        var field = objectType.resolve().getFieldByCode(fieldName);
+                        return new UpdateObjectNode(
+                                NncUtils.randomNonNegative(),
+                                name,
+                                null,
+                                scope.getLastNode(),
+                                scope,
+                                object,
+                                List.of(
+                                        new UpdateField(
+                                                field.getRef(),
+                                                parseUpdateOp(statement.bop.getText()),
+                                                value
+                                        )
+                                )
+                        );
+                    }
                 }
                 if (statement.RETURN() != null) {
                     return new ReturnNode(

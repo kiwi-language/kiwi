@@ -162,7 +162,7 @@ public class Reference extends Value {
 
     @Override
     protected void writeTree(TreeWriter treeWriter) {
-        treeWriter.writeLine(getStringId());
+        treeWriter.writeLine(resolve().toString());
     }
 
     @Override
@@ -250,7 +250,7 @@ public class Reference extends Value {
     }
 
     public boolean isNew() {
-        return isInitialized() && resolve().isNew();
+        return (id == null || isInitialized()) && resolve().isNew();
     }
 
     public boolean isInitialized() {

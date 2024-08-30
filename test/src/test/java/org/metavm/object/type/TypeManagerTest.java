@@ -4,8 +4,10 @@ import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
+import org.metavm.entity.MetaContextCache;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.flow.FlowSavingContext;
+import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
 import org.metavm.object.instance.core.ClassInstance;
@@ -37,6 +39,8 @@ public class TypeManagerTest extends TestCase {
     private SchedulerAndWorker schedulerAndWorker;
     private Scheduler scheduler;
     private Worker worker;
+    private ApiClient apiClient;
+    private MetaContextCache metaContextCache;
 
     @Override
     protected void setUp() throws Exception {
@@ -49,6 +53,8 @@ public class TypeManagerTest extends TestCase {
         entityContextFactory = bootResult.entityContextFactory();
         scheduler = managers.scheduler();
         worker = managers.worker();
+        metaContextCache = bootResult.metaContextCache();
+        apiClient = new ApiClient(new ApiService(entityContextFactory, metaContextCache));
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -61,6 +67,8 @@ public class TypeManagerTest extends TestCase {
         scheduler = null;
         worker = null;
         schedulerAndWorker = null;
+        apiClient = null;
+        metaContextCache = null;
     }
 
     public void test() {
@@ -109,7 +117,7 @@ public class TypeManagerTest extends TestCase {
         var productTypeDTO = typeManager.getType(new GetTypeRequest(typeIds.productTypeId(), false)).type();
         Assert.assertEquals(2, productTypeDTO.fields().size());
         var couponStateType = typeManager.getType(new GetTypeRequest(typeIds.couponStateTypeId(), false)).type();
-        Assert.assertEquals(2, couponStateType.enumConstants().size());
+        Assert.assertEquals(2, couponStateType.enumConstantDefs().size());
         FlowSavingContext.initConfig();
         TestUtils.doInTransaction(() -> typeManager.batchSave(
                 new BatchSaveRequest(
@@ -242,7 +250,6 @@ public class TypeManagerTest extends TestCase {
         });
         DebugEnv.id = fooKlassId;
 //        TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, entityContextFactory);
-        DebugEnv.flag = true;
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         var queryResult = typeManager.query(new TypeQuery(
                 "SynchronizeFoo",
@@ -263,6 +270,21 @@ public class TypeManagerTest extends TestCase {
         var klass = defContext.getKlass(HashMap.class);
         Assert.assertEquals(HashMap.class.getName(), klass.getCode());
         Assert.assertEquals(HashSet.class.getName(), defContext.getKlass(HashSet.class).getCode());
+    }
+
+    public void testChangeStaticFields() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/static_fields.masm", typeManager, schedulerAndWorker);
+        TestUtils.doInTransaction(() -> apiClient.callMethod("UpdateStaticFoo", "set", List.of(2)));
+        metaContextCache.invalidate(TestConstants.APP_ID, null);
+        var value = TestUtils.doInTransaction(() -> apiClient.callMethod("UpdateStaticFoo", "get", List.of()));
+        Assert.assertEquals(2L, value);
+
+        var optionKlass = typeManager.getTypeByCode("Option").type();
+        var opt1Id = typeManager.getEnumConstant(optionKlass.id(), "opt1").id();
+        TestUtils.doInTransaction(() -> apiClient.callMethod(opt1Id, "setValue", List.of(1)));
+        metaContextCache.invalidate(TestConstants.APP_ID, null);
+        var optValue = TestUtils.doInTransaction(() -> apiClient.callMethod(opt1Id, "getValue", List.of()));
+        Assert.assertEquals(1L, optValue);
     }
 
 }

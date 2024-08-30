@@ -58,6 +58,7 @@ public class FlowExecutionService extends EntityContextFactoryAware {
 
     public Value executeInternal(Flow flow, @Nullable ClassInstance self, List<Value> arguments, IEntityContext context) {
         try(var ignored = ContextUtil.getProfiler().enter("FlowExecutionService.executeInternal")) {
+            ContextUtil.setEntityContext(context);
             if (flow instanceof Method method && method.isInstanceMethod()) {
                 if (method.isConstructor()) {
                     self = ClassInstanceBuilder.newBuilder(((Method) flow).getDeclaringType().getType()).build();
@@ -79,6 +80,9 @@ public class FlowExecutionService extends EntityContextFactoryAware {
         }
         catch (Exception e) {
            throw new InternalException("Fail to invoke flow: " + flow.getQualifiedName(), e);
+        }
+        finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 

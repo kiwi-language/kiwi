@@ -283,7 +283,7 @@ public class DDLTest extends TestCase {
         var currencyKlass = typeManager.getTypeByCode("Currency").type();
         var priceKlass = typeManager.getTypeByCode("Price").type();
         var productKlass = typeManager.getTypeByCode("Product").type();
-        var yuanId = TestUtils.getEnumConstantByName(currencyKlass, "YUAN").getIdNotNull();
+        var yuanId = typeManager.getEnumConstant(currencyKlass.id(), "YUAN").getIdNotNull();
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
@@ -305,7 +305,8 @@ public class DDLTest extends TestCase {
                 var productKlass1 = context.getKlass(productKlass.id());
                 var priceKlass1 = context.getKlass(priceKlass.id());
                 var currencyKlass1 = context.getKlass(currencyKlass.id());
-                var yuan = currencyKlass1.getEnumConstants().get(0);
+                var sft = StaticFieldTable.getInstance(currencyKlass1, context);
+                var yuan = sft.getEnumConstants().get(0);
                 var instCtx = context.getInstanceContext();
                 var price = ClassInstanceBuilder.newBuilder(priceKlass1.getType())
                         .data(Map.of(
@@ -389,7 +390,7 @@ public class DDLTest extends TestCase {
     public void testRollbackEntityToValueConversion() {
         assemble("value_ddl_before.masm");
         var currencyKlass = typeManager.getTypeByCode("Currency").type();
-        var yuanId = TestUtils.getEnumConstantByName(currencyKlass, "YUAN").getIdNotNull();
+        var yuanId = typeManager.getEnumConstant(currencyKlass.id(), "YUAN").getIdNotNull();
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
@@ -424,7 +425,7 @@ public class DDLTest extends TestCase {
     public void testRollbackValueToEntityConversion() {
         assemble("value_ddl_after.masm");
         var currencyKlass = typeManager.getTypeByCode("Currency").type();
-        var yuanId = TestUtils.getEnumConstantByName(currencyKlass, "YUAN").getIdNotNull();
+        var yuanId = typeManager.getEnumConstant(currencyKlass.id(), "YUAN").getIdNotNull();
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
@@ -486,8 +487,8 @@ public class DDLTest extends TestCase {
         var isDefaultProduct = TestUtils.doInTransaction(() -> apiClient.callMethod(shoesId, "isDefaultKind", List.of()));
         Assert.assertEquals(true, isDefaultProduct);
         var shoes = apiClient.getObject(shoesId);
-        var defaultKind = TestUtils.getEnumConstantByName(productKindKlass, "DEFAULT");
-        var hotelKind = TestUtils.getEnumConstantByName(productKindKlass, "HOTEL");
+        var defaultKind = typeManager.getEnumConstant(productKindKlass.id(), "DEFAULT");
+        var hotelKind = typeManager.getEnumConstant(productKindKlass.id(), "HOTEL");
         var kindId = shoes.getString("kind");
         Assert.assertEquals(defaultKind.id(), kindId);
         try {
@@ -549,7 +550,7 @@ public class DDLTest extends TestCase {
     public void testValueToChildConversion() {
         assemble("value_to_child_ddl_before.masm");
         var currencyKlass = typeManager.getTypeByCode("Currency").type();
-        var yuanId = TestUtils.getEnumConstantIdByName(currencyKlass, "YUAN");
+        var yuanId = typeManager.getEnumConstant(currencyKlass.id(), "YUAN").getIdNotNull();
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "price", Map.of(
@@ -590,7 +591,7 @@ public class DDLTest extends TestCase {
         assemble("child_to_enum_ddl_after.masm");
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
         Assert.assertEquals(ClassKind.ENUM.code(), productKindKlass.kind());
-        var defaultKindId = TestUtils.getEnumConstantIdByName(productKindKlass, "DEFAULT");
+        var defaultKindId = typeManager.getEnumConstant(productKindKlass.id(), "DEFAULT").id();
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var shoesInst = (ClassInstance) instCtx.get(Id.parse(shoesId));
@@ -632,7 +633,7 @@ public class DDLTest extends TestCase {
     public void testEnumToChildConversionAbortion() {
         assemble("enum_to_child_ddl.masm");
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
-        var defaultKindId = TestUtils.getEnumConstantIdByName(productKindKlass, "DEFAULT");
+        var defaultKindId = Objects.requireNonNull(typeManager.getEnumConstant(productKindKlass.id(), "DEFAULT").id());
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "kind", defaultKindId
@@ -661,7 +662,7 @@ public class DDLTest extends TestCase {
         ));
         assemble("value_to_enum_ddl_after.masm");
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
-        var defaultKindId = TestUtils.getEnumConstantIdByName(productKindKlass, "DEFAULT");
+        var defaultKindId = typeManager.getEnumConstant(productKindKlass.id(), "DEFAULT").id();
         var shoes = apiClient.getObject(shoesId);
         var kind = shoes.get("kind");
         MatcherAssert.assertThat(kind, CoreMatchers.instanceOf(String.class));
@@ -698,7 +699,7 @@ public class DDLTest extends TestCase {
     public void testAbortingEnumToValueConversion() {
         assemble("enum_to_value_ddl.masm");
         var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
-        var defaultKindId = TestUtils.getEnumConstantIdByName(productKindKlass, "DEFAULT");
+        var defaultKindId = Objects.requireNonNull(typeManager.getEnumConstant(productKindKlass.id(), "DEFAULT").id());
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "kind", defaultKindId
@@ -875,7 +876,8 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var currencyKlass = context.selectFirstByKey(Klass.UNIQUE_CODE, "Currency");
             Assert.assertNotNull(currencyKlass);
-            var yuan = currencyKlass.getEnumConstants().get(0);
+            var sft = StaticFieldTable.getInstance(currencyKlass, context);
+            var yuan = sft.getEnumConstants().get(0);
             Assert.assertEquals(Instances.doubleInstance(0.14), yuan.getField("rate"));
         }
     }

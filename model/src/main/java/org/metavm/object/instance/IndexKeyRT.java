@@ -10,6 +10,8 @@ import org.metavm.object.type.KlassBuilder;
 import org.metavm.util.BytesUtils;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
@@ -18,6 +20,8 @@ import java.util.Map;
 import java.util.Objects;
 
 public class IndexKeyRT implements Comparable<IndexKeyRT> {
+
+    public static final Logger logger = LoggerFactory.getLogger(IndexKeyRT.class);
 
     private static final Klass DUMMY_TYPE = KlassBuilder.newBuilder("Dummy", "Dummy").build();
 
@@ -95,9 +99,8 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     }
 
     public int compareTo(IndexKeyRT that) {
-        var indexComparison = index.getId().compareTo(that.index.getId());
-        if(indexComparison != 0)
-            return indexComparison;
+        if(index != that.index)
+            return index.getId().compareTo(that.index.getId());
         for (int i = 0; i < index.getFields().size(); i++) {
             var field = index.getFields().get(i);
             var cmp = compare(fields.get(field), that.fields.get(field));
@@ -127,7 +130,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
         if(first instanceof Reference d1 && !d1.isView()
                 && second instanceof Reference d2 && !d2.isView()) {
             if(d1.isNew() && d2.isNew())
-                return Integer.compare(d1.getSeq(), d2.getSeq());
+                return Integer.compare(d1.resolve().getSeq(), d2.resolve().getSeq());
             if(d1.isNew())
                 return 1;
             else if(d2.isNew())
@@ -140,7 +143,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     @Override
     public String toString() {
         var sb = new StringBuilder("{index: ").append(index.getName()).append(", fields: {");
-        sb.append(NncUtils.join(fields.entrySet(), e -> e.getKey().getName() + ": " + e.getValue()));
+        sb.append(NncUtils.join(fields.entrySet(), e -> e.getKey().getName() + ": " + e.getValue().getText()));
         sb.append("}}");
         return sb.toString();
     }

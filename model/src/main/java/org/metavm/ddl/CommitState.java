@@ -6,6 +6,7 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
+import org.metavm.object.type.StaticFieldTable;
 import org.metavm.task.DDLTask;
 import org.metavm.task.SimpleDDLTask;
 import org.metavm.task.Task;
@@ -182,7 +183,8 @@ public enum CommitState {
                 }
                 if(instance instanceof ClassInstance object) {
                     for (Klass k : toEnumKlasses) {
-                        if (object.getKlass() == k && !k.isEnumConstant(object.getReference())) {
+                        var staticFieldTable = StaticFieldTable.getInstance(k, context);
+                        if (object.getKlass() == k && !staticFieldTable.isEnumConstant(object.getReference())) {
                             instCtx.remove(instance);
                         }
                     }

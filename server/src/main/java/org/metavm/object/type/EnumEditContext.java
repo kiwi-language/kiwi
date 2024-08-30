@@ -61,6 +61,7 @@ public class EnumEditContext {
         type.setAnonymous(anonymous);
         if(optionDTOs != null) {
             int ordinal = 0;
+            var sft = StaticFieldTable.getInstance(type, entityContext);
             for (ChoiceOptionDTO optionDTO : optionDTOs) {
                 EnumConstantRT option;
                 if (optionDTO.id() == null) {
@@ -69,7 +70,7 @@ public class EnumEditContext {
 //                    type.addEnumConstant(option.getInstance());
                     addEnumConstant(option.getName(), option.getInstance());
                 } else {
-                    option = type.getEnumConstant(Id.parse(optionDTO.id()));
+                    option = sft.getEnumConstant(Id.parse(optionDTO.id()));
                     option.update(convertToEnumConstant(optionDTO, ordinal++));
                 }
                 if (optionDTO.defaultSelected()) {

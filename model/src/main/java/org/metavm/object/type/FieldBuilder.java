@@ -176,8 +176,6 @@ public class FieldBuilder {
             existing.setReadonly(readonly);
             if(defaultValue != null)
                 existing.setDefaultValue(defaultValue);
-            if(staticValue != null)
-                existing.setStaticValue(staticValue);
             if (state != null)
                 existing.setState(state);
         }

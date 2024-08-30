@@ -1,0 +1,39 @@
+class UpdateStaticFoo {
+
+    private static int value;
+
+    static {
+        UpdateStaticFoo.value = 0;
+    }
+
+    public static void set(int value) {
+        UpdateStaticFoo.value = value;
+    }
+
+    public static int get() {
+        return UpdateStaticFoo.value;
+    }
+
+}
+
+enum Option {
+
+    opt1(0),
+
+    ;
+
+    private int value;
+
+    Option(int value) {
+        this.value = value;
+    }
+
+    public int getValue() {
+        return this.value;
+    }
+
+    public void setValue(int value) {
+        this.value = value;
+    }
+
+}

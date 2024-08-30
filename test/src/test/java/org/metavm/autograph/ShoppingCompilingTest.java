@@ -26,7 +26,7 @@ public class ShoppingCompilingTest extends CompilerTestBase {
             ));
             var directCouponType = getClassTypeByCode("org.metavm.lab.shopping.AstDirectCoupon");
             var couponStateType = getClassTypeByCode("org.metavm.lab.shopping.AstCouponState");
-            var couponNormalState = TestUtils.getEnumConstantByName(couponStateType, "UNUSED");
+            var couponNormalState = typeManager.getEnumConstant(couponStateType.id(), "UNUSED");
             var couponId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                     directCouponType.getCodeNotNull(),
                     Map.of(

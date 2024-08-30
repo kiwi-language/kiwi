@@ -169,7 +169,8 @@ public class ApiService extends EntityContextFactoryAware {
     public Object getStatic(String className, String fieldName) {
         try(var context = newContext()) {
             var klass = getKlass(className, context);
-            return formatInstance(klass.getStaticFieldByName(fieldName).getStaticValue(), false);
+            var sft = StaticFieldTable.getInstance(klass, context);
+            return formatInstance(sft.getByName(fieldName), false);
         }
     }
 
@@ -563,7 +564,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     private void logTxId() {
         if(jdbcTemplate != null) {
-            var txId = jdbcTemplate.queryForObject("SELECT txid_current();", Long.class);
+            var txId = jdbcTemplate.queryForObject("SELECT pg_catalog.txid_current();", Long.class);
             logger.info("Transaction ID: {}", txId);
         }
     }

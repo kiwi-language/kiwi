@@ -35,6 +35,7 @@ public enum ErrorCode {
     CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED(318, "Child object field cannot be a primitive type"),
     ENTITY_STRUCT_LACKS_CANONICAL_CONSTRUCTOR(319, "Entity structure {} lacks a canonical constructor"),
     CLASS_NOT_FOUND(320, "Class '{}' not found"),
+    NOT_AN_ENUM_CLASS(321, "Class `{}' is not an enum class"),
 
     // instance
     INSTANCE_NOT_FOUND(301, "Object '{}' not found"),
@@ -131,6 +132,8 @@ public enum ErrorCode {
     DUPLICATE_KEY(701, "Duplicate unique key '{}'"),
     CONSTRAINT_CHECK_FAILED(702, "Failed to save record '{}': {}"),
     CONSTRAINT_NOT_FOUND(703, "Constraint rule not found (ID: {})"),
+    DUPLICATE_KEY2(704, "Duplicate key for index {}: {}"),
+
 
     // Job
     SCHEDULER_STATUS_ALREADY_EXISTS(801, "Job scheduler status already exists"),

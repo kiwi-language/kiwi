@@ -59,6 +59,11 @@ public class TypeController {
         return Result.success(resp);
     }
 
+    @GetMapping("/{id}/enum-constant/{name}")
+    public Result<InstanceDTO> getEnumConstant(@PathVariable("id") String id, @PathVariable("name") String name) {
+        return Result.success(typeManager.getEnumConstant(id, name));
+    }
+
     @PostMapping("/get-by-code")
     public Result<GetTypeResponse> getByCode(@RequestBody GetTypeByCodeRequest request) {
         return Result.success(typeManager.getTypeByCode(request.getCode()));

@@ -7,10 +7,8 @@ import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.FlowValue;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.Property;
-import org.metavm.object.type.PropertyRef;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.*;
+import org.metavm.util.ContextUtil;
 
 import java.util.List;
 import java.util.Objects;
@@ -61,8 +59,10 @@ public class StaticPropertyExpression extends Expression {
     @Override
     protected Value evaluateSelf(EvaluationContext context) {
         var property = getProperty();
-        if(property instanceof Field field)
-            return field.getStaticValue();
+        if(property instanceof Field field) {
+            var staticFieldTable = StaticFieldTable.getInstance(field.getDeclaringType(), ContextUtil.getEntityContext());
+            return staticFieldTable.get(field);
+        }
         else if (property instanceof Method method)
             return new FlowValue(method, null);
         else

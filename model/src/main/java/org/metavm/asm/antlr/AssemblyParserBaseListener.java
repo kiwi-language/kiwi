@@ -113,6 +113,18 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterStaticBlock(AssemblyParser.StaticBlockContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStaticBlock(AssemblyParser.StaticBlockContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterEnumDeclaration(AssemblyParser.EnumDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}

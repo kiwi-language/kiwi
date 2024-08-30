@@ -13,9 +13,10 @@ import org.metavm.object.instance.core.DoubleValue;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.FieldRef;
+import org.metavm.object.type.StaticFieldTable;
 import org.metavm.object.type.Types;
+import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -36,38 +37,55 @@ public class UpdateField extends Entity implements LocalKey {
         Value evaluatedValue = value.evaluate(context);
         Value updateValue;
         var field = fieldRef.resolve();
-        if(op == UpdateOp.SET)
-            updateValue = evaluatedValue;
-        else if(op == UpdateOp.INC) {
-            if(Types.isDouble(field.getType())) {
-                updateValue = field.getDouble(instance).add((DoubleValue) evaluatedValue);
-            }
-            else if(Types.isLong(field.getType())) {
-                updateValue = field.getLong(instance).add((LongValue) evaluatedValue);
-            }
-            else {
-                throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
-            }
-        }
-        else if(op == UpdateOp.DEC) {
-            if(Types.isDouble(field.getType())) {
-                updateValue = field.getDouble(instance).minus((DoubleValue) evaluatedValue);
-            }
-            else if(Types.isLong(field.getType())) {
-                updateValue = field.getLong(instance).minus((LongValue) evaluatedValue);
-            }
-            else {
-                throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType().toExpression());
-            }
-        }
-        else {
-            throw new InternalException("Unsupported update operation: " + op);
-        }
         if(field.isStatic()) {
-            field.setStaticValue(updateValue);
+            var entityContext = ContextUtil.getEntityContext();
+            var sft = StaticFieldTable.getInstance(field.getDeclaringType(), entityContext);
+            if (op == UpdateOp.SET)
+                updateValue = evaluatedValue;
+            else if (op == UpdateOp.INC) {
+                if (Types.isDouble(field.getType())) {
+                    updateValue = sft.getDouble(field).add((DoubleValue) evaluatedValue);
+                } else if (Types.isLong(field.getType())) {
+                    updateValue = sft.getLong(field).add((LongValue) evaluatedValue);
+                } else {
+                    throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
+                }
+            } else if (op == UpdateOp.DEC) {
+                if (Types.isDouble(field.getType())) {
+                    updateValue = sft.getDouble(field).minus((DoubleValue) evaluatedValue);
+                } else if (Types.isLong(field.getType())) {
+                    updateValue = sft.getLong(field).minus((LongValue) evaluatedValue);
+                } else {
+                    throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType().toExpression());
+                }
+            } else {
+                throw new InternalException("Unsupported update operation: " + op);
+            }
+            sft.set(field, updateValue);
         }
         else {
-            NncUtils.requireNonNull(instance);
+            Objects.requireNonNull(instance);
+            if (op == UpdateOp.SET)
+                updateValue = evaluatedValue;
+            else if (op == UpdateOp.INC) {
+                if (Types.isDouble(field.getType())) {
+                    updateValue = field.getDouble(instance).add((DoubleValue) evaluatedValue);
+                } else if (Types.isLong(field.getType())) {
+                    updateValue = field.getLong(instance).add((LongValue) evaluatedValue);
+                } else {
+                    throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
+                }
+            } else if (op == UpdateOp.DEC) {
+                if (Types.isDouble(field.getType())) {
+                    updateValue = field.getDouble(instance).minus((DoubleValue) evaluatedValue);
+                } else if (Types.isLong(field.getType())) {
+                    updateValue = field.getLong(instance).minus((LongValue) evaluatedValue);
+                } else {
+                    throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType().toExpression());
+                }
+            } else {
+                throw new InternalException("Unsupported update operation: " + op);
+            }
             if (inConstructor && !instance.isFieldInitialized(field)) {
                 instance.initField(field, updateValue);
             } else {
