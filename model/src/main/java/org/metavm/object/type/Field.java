@@ -167,7 +167,9 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     @Override
     public void postRemove(IEntityContext context) {
         if(isStatic()) {
-            StaticFieldTable.getInstance(declaringType, context).remove(this);
+            var sft = context.selectFirstByKey(StaticFieldTable.IDX_KLASS, declaringType);
+            if(sft != null)
+                sft.remove(this);
         }
     }
 

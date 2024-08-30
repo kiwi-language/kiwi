@@ -270,22 +270,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
-    private void initializeModel(Object model, Instance instance, Mapper<?, ?> mapper) {
-//        EntityUtils.ensureProxyInitialized(instance);
-        if (!EntityUtils.isModelInitialized(model)) {
-            initializeModel0(model, instance, mapper);
-        }
-    }
-
-    private void initializeModel0(Object model, Instance instance, Mapper<?, ?> def) {
-        instance.setMappedEntity(model);
-        model2instance.put(model, instance);
-        def.initEntityHelper(model, instance, objectInstanceMap);
-        if (model instanceof LoadAware loadAware)
-            loadAware.onLoad();
-        EntityUtils.setProxyState(model, EntityMethodHandler.State.INITIALIZED);
-    }
-
     public <T> T bind(T entity) {
 //        if(model instanceof Entity entity && entity.isEphemeralEntity())
 //            throw new IllegalArgumentException("Can not bind an ephemeral entity");
@@ -573,6 +557,10 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public boolean containsUniqueKey(IndexDef<?> indexDef, Object... values) {
+        for (Object value : values) {
+            if(!Instances.isPrimitive(value) && !containsEntity(value))
+                return false ;
+        }
         return instanceContext.containsUniqueKey(createIndexKey(indexDef, values));
     }
 
