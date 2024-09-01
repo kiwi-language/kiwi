@@ -1,5 +1,8 @@
 package org.metavm.object.instance.core;
 
+import java.util.List;
+import java.util.function.Predicate;
+
 public interface ContextListener {
 
     default void beforeFinish() {}
@@ -28,6 +31,10 @@ public interface ContextListener {
 
     default boolean onRemove(Instance instance) {
         return false;
+    }
+
+    default List<Instance> beforeRemove(Instance instance, Predicate<Instance> contains) {
+        return List.of();
     }
 
 }

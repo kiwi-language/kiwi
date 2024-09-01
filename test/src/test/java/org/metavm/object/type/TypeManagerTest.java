@@ -287,4 +287,29 @@ public class TypeManagerTest extends TestCase {
         Assert.assertEquals(1L, optValue);
     }
 
+    public void testRemoveField() {
+        var fieldId = TestUtils.doInTransaction(() -> {
+            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                var klass = context.bind(TestUtils.newKlassBuilder("Foo").build());
+                var field = FieldBuilder.newBuilder("name", "name", klass, Types.getStringType()).build();
+                new Index(klass, "nameIndex", null, "Duplicate name", true, List.of(field));
+                context.finish();
+                return field.getId();
+            }
+        });
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                var field = context.getField(fieldId);
+                var klass = field.getDeclaringType();
+                var instCtx = context.getInstanceContext();
+                var fieldInst = context.getInstance(field);
+                instCtx.remove(fieldInst);
+                Assert.assertEquals(0, klass.getFields().size());
+                Assert.assertEquals(0, klass.getConstraints().size());
+                context.finish();
+            }
+        });
+
+    }
+
 }

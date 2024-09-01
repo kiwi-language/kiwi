@@ -618,21 +618,23 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private RemovalSet getRemovalBatch(Collection<Instance> instances) {
-        var visited = new HashSet<Instance>();
         var results = new RemovalSet();
-        for (var instance : instances) {
-            instance.accept(new InstanceVisitor() {
-                @Override
-                public void visitInstance(Instance instance) {
-                    if(visited.add(instance)) {
-                        results.add(instance);
-                        instance.forEachChild(c -> c.accept(this));
-                        forEachView(instance, v -> v.accept(this));
-                    }
-                }
-            });
-        }
+        instances.forEach(i -> beforeRemove(i, results));
         return results;
+    }
+
+    private void beforeRemove(Instance instance, RemovalSet removalSet) {
+        if(!removalSet.add(instance))
+            return;
+        var cascade = new ArrayList<Instance>();
+        for (ContextListener listener : listeners) {
+            cascade.addAll(listener.beforeRemove(instance, removalSet::contains));
+        }
+        instance.forEachChild(cascade::add);
+        forEachView(instance, cascade::add);
+        for (Instance i : cascade) {
+            beforeRemove(i, removalSet);
+        }
     }
 
     private void forEachView(Instance instance, Consumer<Instance> action) {

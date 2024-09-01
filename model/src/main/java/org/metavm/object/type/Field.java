@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType
-public class Field extends Element implements ChangeAware, GenericElement, Property, PostRemovalAware {
+public class Field extends Element implements ChangeAware, GenericElement, Property {
 
     @EntityField(asTitle = true)
     private String name;
@@ -160,17 +160,13 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             declaringType.removeConstraint(fieldIndex);
             cascades.add(fieldIndex);
         }
-        declaringType.resetFieldTransients();
-        return cascades;
-    }
-
-    @Override
-    public void postRemove(IEntityContext context) {
         if(isStatic()) {
             var sft = context.selectFirstByKey(StaticFieldTable.IDX_KLASS, declaringType);
             if(sft != null)
                 sft.remove(this);
         }
+        declaringType.resetFieldTransients();
+        return cascades;
     }
 
     public LongValue getLong(@NotNull ClassInstance instance) {

@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 import static org.metavm.util.NncUtils.*;
 
 @EntityType(searchable = true)
-public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity, GlobalKey, LoadAware, PostRemovalAware {
+public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity, GlobalKey, LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
@@ -1600,10 +1600,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         for (var anInterface : interfaces) {
             anInterface.resolve().removeImplementation(this);
         }
+        var cascade = new ArrayList<>();
+        var sft = context.selectFirstByKey(StaticFieldTable.IDX_KLASS, this);
+        if (sft != null)
+            cascade.add(sft);
         if (isTemplate())
-            return new ArrayList<>(context.selectByKey(Klass.TEMPLATE_IDX, this));
-        else
-            return List.of();
+            cascade.addAll(context.selectByKey(Klass.TEMPLATE_IDX, this));
+        return cascade;
     }
 
     public ResolutionStage setStage(ResolutionStage stage) {
@@ -1862,11 +1865,5 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return methodTable.getEqualsMethod();
     }
 
-    @Override
-    public void postRemove(IEntityContext context) {
-        var sft = context.selectFirstByKey(StaticFieldTable.IDX_KLASS, this);
-        if (sft != null)
-            context.remove(sft);
-    }
 }
 

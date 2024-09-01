@@ -1,3 +1,2 @@
-1 RemovalAware.beforeRemove is not invoked when the removal is initiated by the InstanceContext
-2 The current pre-upgrade DDL does not support static field refactoring. To enable this, we first need to implement a custom DDL function mechanism.
+1 The current pre-upgrade DDL does not support static field refactoring. To enable this, we first need to implement a custom DDL function mechanism.
 

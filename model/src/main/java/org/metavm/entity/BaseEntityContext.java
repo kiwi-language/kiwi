@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.entity.EntityUtils.getRuntimeType;
@@ -246,6 +247,31 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             }
         }
         return false;
+    }
+
+    @Override
+    public List<Instance> beforeRemove(Instance instance, Predicate<Instance> contains) {
+        var object = instance.getMappedEntity();
+        List<Instance> cascade;
+        if (object instanceof RemovalAware removalAware)
+            cascade =  NncUtils.map(removalAware.beforeRemove(this), this::getInstance);
+        else
+            cascade = List.of();
+        if (object instanceof Entity entity && entity.getParentEntity() != null) {
+            var parentInst = getInstance(entity.getParentEntity());
+            if (!contains.test(parentInst)) {
+                if (entity.getParentEntity() instanceof ChildArray<?> array)
+                    array.remove(entity);
+                else {
+                    ReflectionUtils.set(
+                            entity.getParentEntity(),
+                            requireNonNull(entity.getParentEntityField()),
+                            null
+                    );
+                }
+            }
+        }
+        return cascade;
     }
 
     @Override
@@ -661,7 +687,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 entities = NncUtils.exclude(entities, parent::containsEntity);
             }
         }
-        var instances = beforeRemove(entities);
+        var instances = NncUtils.map(entities, this::getInstance);
 //        updateInstances();
         if (NncUtils.isEmpty(instances))
             return;

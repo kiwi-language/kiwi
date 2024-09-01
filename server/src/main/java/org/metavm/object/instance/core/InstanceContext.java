@@ -199,7 +199,7 @@ public class InstanceContext extends BufferingInstanceContext {
                     orphans.add(instance);
             }
             if (!orphans.isEmpty())
-                batchRemove(orphans);
+                unfrozen(() -> batchRemove(orphans));
         }
     }
 
