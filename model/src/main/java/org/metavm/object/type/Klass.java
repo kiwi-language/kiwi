@@ -92,7 +92,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private boolean error;
 
     // For unit test. Do not remove
-    @ChildEntity(since = 1)
+    @ChildEntity
     @Nullable
     private KlassFlags flags;
 

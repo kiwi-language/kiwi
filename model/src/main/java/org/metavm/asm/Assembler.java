@@ -1068,32 +1068,40 @@ public class Assembler {
                 }
                 if (statement.NEW() != null || statement.UNEW() != null || statement.ENEW() != null) {
                     var creator = statement.creator();
-                    var type = (ClassType) parseClassType(creator.classOrInterfaceType(), this.scope, getCompilationUnit());
-                    var targetKlass = type.resolve();
-                    List<AssemblyParser.ExpressionContext> arguments =
-                            NncUtils.getOrElse(
-                                    creator.arguments().expressionList(),
-                                    AssemblyParser.ExpressionListContext::expression,
-                                    List.of()
-                            );
-                    List<Type> typeArgs = creator.typeArguments() != null ?
-                            NncUtils.map(creator.typeArguments().typeType(), t -> parseType(t, this.scope, getCompilationUnit())) : List.of();
-                    var args = NncUtils.map(arguments, arg -> parseValue(arg, parsingContext));
-                    var constructor = targetKlass.resolveMethod(
-                            targetKlass.getEffectiveTemplate().getName(), NncUtils.map(args, Value::getType), typeArgs, false
-                    );
-                    return new NewObjectNode(
-                            NncUtils.randomNonNegative(),
-                            name,
-                            null,
-                            constructor.getRef(),
-                            NncUtils.biMap(constructor.getParameters(), args, (p, a) -> new Argument(NncUtils.randomNonNegative(), p.getRef(), a)),
-                            scope.getLastNode(),
-                            scope,
-                            null,
-                            statement.UNEW() != null,
-                            statement.ENEW() != null
-                    );
+                    if(creator.arrayKind() != null) {
+                        var elementType = parseType(creator.typeType(), this.scope, getCompilationUnit());
+                        var arrayKind = parseArrayKind(creator.arrayKind());
+                        var type = new ArrayType(elementType, arrayKind);
+                        return new NewArrayNode(null, name, null, type, null, null, scope.getLastNode(), scope);
+                    }
+                    else {
+                        var type = (ClassType) parseClassType(creator.classOrInterfaceType(), this.scope, getCompilationUnit());
+                        var targetKlass = type.resolve();
+                        List<AssemblyParser.ExpressionContext> arguments =
+                                NncUtils.getOrElse(
+                                        creator.arguments().expressionList(),
+                                        AssemblyParser.ExpressionListContext::expression,
+                                        List.of()
+                                );
+                        List<Type> typeArgs = creator.typeArguments() != null ?
+                                NncUtils.map(creator.typeArguments().typeType(), t -> parseType(t, this.scope, getCompilationUnit())) : List.of();
+                        var args = NncUtils.map(arguments, arg -> parseValue(arg, parsingContext));
+                        var constructor = targetKlass.resolveMethod(
+                                targetKlass.getEffectiveTemplate().getName(), NncUtils.map(args, Value::getType), typeArgs, false
+                        );
+                        return new NewObjectNode(
+                                NncUtils.randomNonNegative(),
+                                name,
+                                null,
+                                constructor.getRef(),
+                                NncUtils.biMap(constructor.getParameters(), args, (p, a) -> new Argument(NncUtils.randomNonNegative(), p.getRef(), a)),
+                                scope.getLastNode(),
+                                scope,
+                                null,
+                                statement.UNEW() != null,
+                                statement.ENEW() != null
+                        );
+                    }
                 }
                 if (statement.methodCall() != null) {
                     var methodCall = statement.methodCall();

@@ -213,6 +213,7 @@ qualifiedFieldName: qualifiedName '.' IDENTIFIER;
 creator: typeArguments? classOrInterfaceType arguments
 //    : typeArguments createdName classCreatorRest
 //    : createdName (arrayCreatorRest | classCreatorRest)
+      | typeType arrayKind
     ;
 
 arrayCreatorRest

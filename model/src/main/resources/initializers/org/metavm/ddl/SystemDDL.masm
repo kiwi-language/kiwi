@@ -1,0 +1,13 @@
+package org.metavm.ddl;
+
+import org.metavm.ddl.Commit;
+import org.metavm.flow.Method;
+
+class SystemDDLInitializer {
+
+    public static Method[rw] __runMethods__(SystemDDL systemDDL) {
+        m: new Method[rw];
+        return m;
+    }
+
+}

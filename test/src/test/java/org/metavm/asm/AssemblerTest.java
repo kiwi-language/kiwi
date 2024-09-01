@@ -1,25 +1,46 @@
 package org.metavm.asm;
 
 import junit.framework.TestCase;
-import org.metavm.entity.MockStandardTypesInitializer;
+import org.junit.Assert;
+import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.FlowSavingContext;
+import org.metavm.flow.Flows;
+import org.metavm.object.instance.ApiService;
+import org.metavm.object.type.ArrayKind;
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
-import org.metavm.util.BootstrapUtils;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.TestConstants;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Objects;
 
 public class AssemblerTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(AssemblerTest.class);
 
+    private EntityContextFactory entityContextFactory;
+    private TypeManager typeManager;
+    private SchedulerAndWorker schedulerAndWorker;
+    private ApiClient apiClient;
+
     @Override
     protected void setUp() throws Exception {
-        MockStandardTypesInitializer.init();
+        var bootResult = BootstrapUtils.bootstrap();
+        typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
+        entityContextFactory = bootResult.entityContextFactory();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
+        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache()));
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        entityContextFactory = null;
+        typeManager = null;
+        schedulerAndWorker = null;
+        apiClient = null;
     }
 
     public void testParentChild() {
@@ -53,6 +74,18 @@ public class AssemblerTest extends TestCase {
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm");
     }
 
+    public void testCreateArray() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/CreateArray.masm");
+        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "Utils"));
+            var method = klass.getMethod("createArray", List.of());
+            var result = Flows.invoke(method, null, List.of(), context);
+            Assert.assertNotNull(result);
+            var array = result.resolveArray();
+            Assert.assertSame(ArrayKind.CHILD, array.getType().getKind());
+        }
+    }
+
     private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {
         assembler.assemble(sources);
         var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
@@ -61,16 +94,14 @@ public class AssemblerTest extends TestCase {
     }
 
     private void deploy(String source) {
-        var bootResult = BootstrapUtils.bootstrap();
-        var typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
         FlowSavingContext.initConfig();
-        try(var context = bootResult.entityContextFactory().newContext(TestConstants.APP_ID)) {
+        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             var request = assemble(List.of(source), assembler);
             TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
             ContextUtil.setAppId(TestConstants.APP_ID);
             TestUtils.doInTransaction(() -> typeManager.batchSave(request));
-            TestUtils.waitForDDLPrepared(bootResult.schedulerAndWorker());
+            TestUtils.waitForDDLPrepared(schedulerAndWorker);
         }
     }
 
