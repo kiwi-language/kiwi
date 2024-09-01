@@ -1,0 +1,75 @@
+@Component
+class Lab {
+
+    public Lab() {}
+
+    public any|null getFieldValue(Field field) {
+        fieldValue: selectFirst(FieldValue.IdxField, field);
+        if(fieldValue == null) {
+            return null;
+        }
+        else {
+            value: fieldValue.getValue();
+            return value;
+        }
+    }
+
+    public void setFieldValue(Field field, any|null value) {
+        fieldValue: selectFirst(FieldValue.IdxField, field);
+        if(fieldValue == null) {
+            newFieldValue: new FieldValue(field);
+            newFieldValue.setValue(value);
+        }
+        else {
+            fieldValue.setValue(value);
+        }
+    }
+
+}
+
+class Field {
+
+    private string name;
+    private deleted any|null value;
+
+    public Field(string name) {
+        this.name = name;
+    }
+
+    public string getName() {
+        return this.name;
+    }
+
+    public void setName(string name) {
+        this.name = name;
+    }
+
+    public void __run__() {
+        fieldValue: new FieldValue(this);
+        fieldValue.setValue(this.value);
+    }
+
+}
+
+class FieldValue {
+
+    unique index IdxField {
+        field: this.field;
+    }
+
+    private readonly Field field;
+    private any|null value;
+
+    FieldValue(Field field) {
+        this.field = field;
+        this.value = null;
+    }
+
+    public any|null getValue() {
+        return this.value;
+    }
+
+    public void setValue(any|null value) {
+        this.value = value;
+    }
+}

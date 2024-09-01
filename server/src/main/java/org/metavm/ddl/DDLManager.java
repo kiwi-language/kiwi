@@ -130,7 +130,14 @@ public class DDLManager extends EntityContextFactoryAware {
                             )
                     );
                 }
-                var ddl = new SystemDDL(fieldAdds);
+                var runMethods = new ArrayList<Method>();
+                for (KlassDTO k : request.initializerKlasses()) {
+                    var initializer = context.getKlass(k.id());
+                    var runMethod = initializer.findMethod(m -> m.isStatic() && m.getParameters().size() == 1 && m.getName().equals(Constants.RUN_METHOD_NAME));
+                    if(runMethod != null)
+                        runMethods.add(runMethod);
+                }
+                var ddl = new SystemDDL(fieldAdds, runMethods);
                 context.bind(ddl);
                 context.finish();
                 ddlId = ddl.getStringId();

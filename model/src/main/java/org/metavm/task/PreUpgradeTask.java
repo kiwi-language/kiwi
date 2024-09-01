@@ -7,9 +7,11 @@ import org.metavm.ddl.SystemDDL;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.flow.Flows;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.WAL;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 
 import javax.annotation.Nullable;
@@ -38,17 +40,26 @@ public class PreUpgradeTask extends ScanTask {
     @Override
     protected void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
         var instCtx = context.getInstanceContext();
-        var ddl = context.getEntity(SystemDDL.class, ddlId);
-        for (FieldAddition fieldAdd : ddl.getFieldAdditions()) {
-            var field  = fieldAdd.field();
-            var klass = field.getDeclaringType();
-            for (Instance instance : batch) {
-                if(instance instanceof ClassInstance clsInst) {
+        for (Instance instance : batch) {
+            if(instance instanceof ClassInstance clsInst) {
+                var ddl = context.getEntity(SystemDDL.class, ddlId);
+                for (FieldAddition fieldAdd : ddl.getFieldAdditions()) {
+                    var field  = fieldAdd.field();
+                    var klass = field.getDeclaringType();
                     var k = clsInst.getKlass().findAncestorByTemplate(klass);
                     if(k != null) {
                         var value = Flows.invoke(fieldAdd.initializer(), null, List.of(clsInst.getReference()), instCtx);
                         clsInst.setFieldForce(field, value);
                         clsInst.setDirectlyModified(true);
+                    }
+                }
+                for (Method runMethod : ddl.getRunMethods()) {
+                    var paramKlass = ((ClassType) runMethod.getParameterTypes().get(0)).resolve();
+                    var k = clsInst.getKlass().findAncestorByTemplate(paramKlass.getEffectiveTemplate());
+                    if(k != null) {
+                        var pm = runMethod.getTypeParameters().isEmpty() ? runMethod :
+                                runMethod.getParameterized(List.of(clsInst.getType()));
+                        Flows.invoke(pm, null, List.of(clsInst.getReference()), context);
                     }
                 }
             }

@@ -54,7 +54,7 @@ public class Flows {
         return execute(flow, self, arguments, context.getInstanceContext());
     }
 
-    public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
+    public static FlowExecResult execute(@NotNull Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         try {
             return flow.execute(self, arguments, callContext);
         }
@@ -63,12 +63,12 @@ public class Flows {
         }
     }
 
-    public static @Nullable Value invoke(Flow flow, ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
+    public static @Nullable Value invoke(@NotNull Flow flow, ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
         ContextUtil.setEntityContext(context);
         return invoke(flow, self, arguments, context.getInstanceContext());
     }
 
-    public static @Nullable Value invoke(Flow flow, ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
+    public static @Nullable Value invoke(@NotNull Flow flow, ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         var result = execute(flow, self, arguments, callContext);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
@@ -76,7 +76,7 @@ public class Flows {
             return result.ret();
     }
 
-    public static @Nullable Value invokeVirtual(Flow flow, @NotNull ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
+    public static @Nullable Value invokeVirtual(@NotNull Flow flow, @NotNull ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
         if(flow instanceof Method method && method.isInstanceMethod()) {
             flow = self.getKlass().resolveMethod(method);
             return invoke(flow, self, arguments, context);

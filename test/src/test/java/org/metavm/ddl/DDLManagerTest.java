@@ -14,6 +14,7 @@ import org.metavm.flow.Function;
 import org.metavm.mocks.UpgradeBar;
 import org.metavm.mocks.UpgradeFoo;
 import org.metavm.mocks.UpgradeSingleton;
+import org.metavm.mocks.UpgradeValue;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
@@ -87,6 +88,7 @@ public class DDLManagerTest extends TestCase {
         var fooId = TestUtils.doInTransaction(() -> {
             try(var context = newContext()) {
                 var foo = new UpgradeFoo("foo", null);
+                foo.setValue(1L);
                 context.bind(foo);
                 context.finish();
                 return foo.getId();
@@ -115,6 +117,9 @@ public class DDLManagerTest extends TestCase {
         try(var context = newContext()) {
             var foo = context.getEntity(UpgradeFoo.class, fooId);
             Assert.assertEquals(new UpgradeBar("foo-bar"), foo.getBar());
+            var value = context.selectFirstByKey(UpgradeValue.IDX_FOO, foo);
+            Assert.assertNotNull(value);
+            Assert.assertEquals(1L, value.getValue());
         }
     }
 

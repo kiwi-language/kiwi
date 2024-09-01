@@ -4,12 +4,16 @@ import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
 import org.metavm.entity.Entity;
 
+import javax.annotation.Nullable;
+
 @EntityType
 public class UpgradeFoo extends Entity {
 
     private final String name;
     @EntityField(since = 1)
     private final Object bar;
+    @EntityField
+    private @Nullable Object value;
 
     public UpgradeFoo(String name, Object bar) {
         this.name = name;
@@ -22,6 +26,15 @@ public class UpgradeFoo extends Entity {
 
     public Object getBar() {
         return bar;
+    }
+
+    @Nullable
+    public Object getValue() {
+        return value;
+    }
+
+    public void setValue(@Nullable Object value) {
+        this.value = value;
     }
 
     @Override

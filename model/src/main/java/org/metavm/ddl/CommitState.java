@@ -38,7 +38,7 @@ public enum CommitState {
                     && commit.getFromEnumKlassIds().isEmpty() && commit.getToEnumKlassIds().isEmpty()
                     && commit.getEntityToValueKlassIds().isEmpty() && commit.getValueToEntityKlassIds().isEmpty()
                     && commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty() && commit.getRemovedChildFieldIds().isEmpty()
-                    && commit.getChangingSuperKlassIds().isEmpty();
+                    && commit.getChangingSuperKlassIds().isEmpty() && commit.getRunMethodIds().isEmpty();
         }
 
         @Override

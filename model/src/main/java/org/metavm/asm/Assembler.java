@@ -72,7 +72,9 @@ public class Assembler {
         visit(units, new IndexDefiner());
         visit(units, new Preprocessor());
         visit(units, new AsmGenerator());
-        visit(units, new KlassInitializer());
+        try (var ignored = SerializeContext.enter()) {
+            visit(units, new KlassInitializer());
+        }
         return getAllTypeDefs();
     }
 
@@ -1281,7 +1283,7 @@ public class Assembler {
                 }
                 if (statement.select() != null) {
                     var select = statement.select();
-                    var klass = getKlass(select.qualifiedName().getText());
+                    var klass = getKlass(getCompilationUnit().getDefinitionName(select.qualifiedName().getText()));
                     var indexName = select.IDENTIFIER().getText();
                     var index = Objects.requireNonNull(klass.findIndex(i -> i.getName().equals(indexName)),
                             () -> "Cannot find index with name " + indexName + " class " + klass.getTypeDesc());

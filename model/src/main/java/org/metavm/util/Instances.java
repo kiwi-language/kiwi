@@ -555,6 +555,7 @@ public class Instances {
         var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
         var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
         var removingChildFields = NncUtils.map(commit.getRemovedChildFieldIds(), context::getField);
+        var runMethods = NncUtils.map(commit.getRunMethodIds(), context::getMethod);
         for (Instance instance : instances) {
             if (instance instanceof ClassInstance clsInst) {
                 for (Field field : newFields) {
@@ -619,6 +620,13 @@ public class Instances {
                                         + " because the child object " + child + " is still referenced by other objects"
                         );
                     child.setRemoving(true);
+                }
+                for (Method runMethod : runMethods) {
+                    var k = clsInst.getKlass().findAncestorByTemplate(runMethod.getDeclaringType());
+                    if(k != null) {
+                        var pm = clsInst.getKlass().getMethod(m -> m.getEffectiveVerticalTemplate() == runMethod);
+                        Flows.invoke(pm, clsInst, List.of(), context);
+                    }
                 }
             }
             for (Klass klass : valueToEntityKlasses) {

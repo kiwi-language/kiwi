@@ -14,10 +14,7 @@ import org.metavm.flow.rest.ParameterDTO;
 import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.*;
-import org.metavm.util.BusinessException;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -259,6 +256,8 @@ public abstract class TypeFactory {
         method.setReturnType(TypeParser.parseType(flowDTO.returnType(), context));
         method.setOverridden(NncUtils.map(param.overriddenRefs(), r -> MethodRef.create(r, context).resolve()));
         method.setAbstract(param.isAbstract());
+        if(method.getParameters().isEmpty() && !method.isStatic() && method.getName().equals(Constants.RUN_METHOD_NAME))
+            batch.addRunMethod(method);
         return method;
     }
 

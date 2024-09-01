@@ -44,6 +44,8 @@ public class Constants {
     public static long SESSION_TIMEOUT = DEFAULT_SESSION_TIMEOUT;
     public static long DDL_SESSION_TIMEOUT = 16000;
 
+    public static final String RUN_METHOD_NAME = "__run__";
+
     private Constants() {}
 
     public static Id getRootAppId() {

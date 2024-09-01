@@ -882,6 +882,19 @@ public class DDLTest extends TestCase {
         }
     }
 
+    public void testCustomRunner() {
+        assemble("custom_runner_before.masm");
+        var fieldId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Field", Map.of(
+                "name", "count"
+        )));
+        TestUtils.doInTransaction(() -> apiClient.callMethod(fieldId, "setValue", List.of(1L)));
+        var value = apiClient.getObject(fieldId).get("value");
+        Assert.assertEquals(1L, value);
+        assemble("custom_runner_after.masm");
+        var value1 = TestUtils.doInTransaction(() -> apiClient.callMethod("lab", "getFieldValue", List.of(fieldId)));
+        Assert.assertEquals(value, value1);
+    }
+
     private void assemble(String fileName) {
         assemble(fileName, true);
     }
