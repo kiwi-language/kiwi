@@ -120,6 +120,8 @@ public class DDLManagerTest extends TestCase {
             var value = context.selectFirstByKey(UpgradeValue.IDX_FOO, foo);
             Assert.assertNotNull(value);
             Assert.assertEquals(1L, value.getValue());
+            var array  = foo.getArray();
+            Assert.assertNotNull(array);
         }
     }
 

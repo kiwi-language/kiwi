@@ -44,7 +44,7 @@ public class ArrayMapper<E, C extends ReadonlyArray<E>> implements Mapper<C, Arr
         );
         model.setParent(
                 NncUtils.get(instance.getParent(), p -> objectInstanceMap.getEntity(Entity.class, p.getReference())),
-                NncUtils.get(instance.getParentField(), defContext::getJavaField));
+                NncUtils.get(instance.getParentField(), defContext::findJavaField));
     }
 
     @Override

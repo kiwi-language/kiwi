@@ -15,6 +15,11 @@ class UpgradeFooInitializer {
         return bar;
     }
 
+    public static UpgradeFoo[rw] __array__(UpgradeFoo foo) {
+        array: new UpgradeFoo[rw];
+        return array;
+    }
+
     public static void __run__(UpgradeFoo foo) {
         value: selectFirst(UpgradeValue.IDX_FOO, foo);
         if (value == null) {

@@ -111,9 +111,14 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
             throw new IllegalArgumentException("Can not get java type for type " + type);
     }
 
-    public java.lang.reflect.Field getJavaField(org.metavm.object.type.Field field) {
-        Class<?> javaClass = getJavaClass(field.getDeclaringType().getType());
-        return ReflectionUtils.getDeclaredFieldByName(javaClass, field.getCode());
+    public java.lang.reflect.Field getJavaField(Field field) {
+        return Objects.requireNonNull(findJavaField(field), () -> "Cannot find Java field for field " + field);
+    }
+
+    public @Nullable java.lang.reflect.Field findJavaField(Field field) {
+        var def = (PojoDef<?>) getDef(field.getDeclaringType());
+        var fieldDef =  def.findFieldDef(fd -> fd.getField() == field.getEffectiveTemplate());
+        return fieldDef != null ? fieldDef.getJavaField() : null;
     }
 
     public org.metavm.object.type.Field getField(java.lang.reflect.Field javaField) {

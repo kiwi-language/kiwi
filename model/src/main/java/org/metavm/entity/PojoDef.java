@@ -11,6 +11,7 @@ import org.metavm.util.*;
 
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.function.Predicate;
 
 public abstract class PojoDef<T> extends ModelDef<T> {
     private final PojoDef<? super T> superDef;
@@ -243,4 +244,9 @@ public abstract class PojoDef<T> extends ModelDef<T> {
     public Klass getKlass() {
         return klass;
     }
+
+    public IFieldDef findFieldDef(Predicate<IFieldDef> filter) {
+        return NncUtils.find(fieldDefList, filter);
+    }
+
 }

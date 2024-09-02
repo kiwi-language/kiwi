@@ -3,7 +3,7 @@ package org.metavm.object.type;
 import org.metavm.api.EntityType;
 import org.metavm.entity.Entity;
 
-@EntityType
+@EntityType(since = 1)
 public class KlassFlags extends Entity {
     private boolean flag1;
 

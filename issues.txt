@@ -1,5 +1,4 @@
-1 ArrayMapper.initEntity failed with NoSuchFieldException during pre-upgrade because the parent field is not present in the running MetaVM version.
-2 PreUpgradeTask runs too slowly
-3 Duplicate entries appear in ID files when changing the type of a built-in field.
+1 PreUpgradeTask runs too slowly
+2 Duplicate entries appear in ID files when changing the type of a built-in field.
 For example, when changing SystemDDL.runMethods to nullable, there will be two entries for `org.metavm.ddl.SystemDDL.mappings.builtin.fieldMappings.runMethods.nestedMapping`,
 one in ArrayNestedMapping.properties and the other in UnionNestedMapping.properties

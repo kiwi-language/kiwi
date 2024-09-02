@@ -263,11 +263,10 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 if (entity.getParentEntity() instanceof ChildArray<?> array)
                     array.remove(entity);
                 else {
-                    ReflectionUtils.set(
-                            entity.getParentEntity(),
-                            requireNonNull(entity.getParentEntityField()),
-                            null
-                    );
+                    var parentField = entity.getParentEntityField();
+                    // Parent field can be null even if the parent is an non-array object during pre-upgrade
+                    if(parentField != null)
+                        ReflectionUtils.set(entity.getParentEntity(), parentField, null);
                 }
             }
         }

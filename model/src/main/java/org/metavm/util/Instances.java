@@ -521,6 +521,12 @@ public class Instances {
             Field parentField = null;
             if (entity.getParentEntityField() != null)
                 parentField = defContext.getField(entity.getParentEntityField());
+            /*
+             entity.getParentField() can be null even if the the parent entity is not an array during pre-upgrade
+             in which case instance.parentField should be preserved.
+             */
+            else if(!(entity.getParentEntity() instanceof ReadonlyArray<?>) && instance.getParentField() != null)
+                parentField = instance.getParentField();
             instance.setParentInternal(parent.resolve(), parentField, true);
         } else {
             instance.setParentInternal(null, null, true);
