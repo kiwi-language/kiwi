@@ -30,7 +30,8 @@ public abstract class EntityScanTask<T> extends ScanTask {
         var r = context.scan(cursor, limit);
         return new ScanResult(
                 r.instances().stream().filter(i -> metaType.isInstance(i.getReference())).collect(Collectors.toList()),
-                r.completed()
+                r.completed(),
+                r.cursor()
         );
     }
 

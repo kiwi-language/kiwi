@@ -11,6 +11,7 @@ import org.metavm.flow.Method;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.log.Identifier;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 
@@ -24,15 +25,14 @@ public class PreUpgradeTask extends ScanTask {
     @ChildEntity
     private final WAL wal;
     private final String ddlId;
-    @ChildEntity
-    private final WAL defWal;
+    private final Identifier defWalId;
     @ChildEntity
     private final ReadWriteArray<String> newKlassIds = addChild(new ReadWriteArray<>(String.class), "newKlassIds");
 
-    public PreUpgradeTask(WAL wal, WAL defWal, List<String> newKlassIds, String ddlId) {
+    public PreUpgradeTask(WAL wal, Identifier defWalId, List<String> newKlassIds, String ddlId) {
         super("PreUpgradeTask-" + ddlId);
         this.wal = wal;
-        this.defWal = defWal;
+        this.defWalId = defWalId;
         this.ddlId = ddlId;
         this.newKlassIds.addAll(newKlassIds);
     }
@@ -94,13 +94,13 @@ public class PreUpgradeTask extends ScanTask {
 
     @Override
     public long getTimeout() {
-        return 1500L;
+        return 10000L;
     }
 
     @Nullable
     @Override
-    public WAL getDefWAL() {
-        return defWal;
+    public Identifier getDefWalId() {
+        return defWalId;
     }
 
     @Override

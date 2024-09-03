@@ -67,7 +67,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             context.bind(new SynchronizeSearchTask(
                     NncUtils.map(changedIds, Identifier::fromId),
                     NncUtils.map(removedIds, Identifier::fromId),
-                    wal, defWal));
+                    wal, defWal != null ? Identifier.fromId(defWal.getId()) : null));
 //                this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
             context.finish();
             }

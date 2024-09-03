@@ -5,6 +5,7 @@ import org.metavm.entity.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.log.Identifier;
 import org.metavm.util.Constants;
 
 import javax.annotation.Nullable;
@@ -136,7 +137,7 @@ public abstract class Task extends Entity {
         return null;
     }
 
-    public @Nullable WAL getDefWAL() {
+    public @Nullable Identifier getDefWalId() {
         return null;
     }
 

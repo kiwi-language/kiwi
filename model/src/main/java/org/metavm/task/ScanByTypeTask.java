@@ -23,7 +23,7 @@ public abstract class ScanByTypeTask extends ScanTask {
     @Override
     protected ScanResult scan(IInstanceContext context, long cursor, long limit) {
         var r = context.scan(cursor, limit);
-        return new ScanResult(NncUtils.filter(r.instances(), this::filer), r.completed());
+        return new ScanResult(NncUtils.filter(r.instances(), this::filer), r.completed(), r.cursor());
     }
 
     private boolean filer(Instance instance) {

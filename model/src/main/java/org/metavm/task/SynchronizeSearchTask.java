@@ -21,16 +21,15 @@ public class SynchronizeSearchTask extends Task {
     @ChildEntity
     @Nullable
     private final WAL wal;
-    @ChildEntity
     @Nullable
-    private final WAL defWal;
+    private final Identifier defWalId;
 
-    public SynchronizeSearchTask(List<Identifier> changedIds, List<Identifier> removedIds, @Nullable WAL wal, @Nullable WAL defWal) {
+    public SynchronizeSearchTask(List<Identifier> changedIds, List<Identifier> removedIds, @Nullable WAL wal, @Nullable Identifier defWalId) {
         super("SynchronizeSearchTask");
         this.changedIds.addAll(changedIds);
         this.removedIds.addAll(removedIds);
         this.wal = wal != null ? addChild(wal, "wal") : null;
-        this.defWal = defWal != null ? addChild(defWal, "defWal") : null;
+        this.defWalId = defWalId;
     }
 
     @Override
@@ -51,7 +50,7 @@ public class SynchronizeSearchTask extends Task {
 
     @Nullable
     @Override
-    public WAL getDefWAL() {
-        return defWal;
+    public Identifier getDefWalId() {
+        return defWalId;
     }
 }

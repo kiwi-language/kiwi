@@ -2,24 +2,26 @@ package org.metavm.task;
 
 import org.metavm.application.Application;
 import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.rest.dto.PreUpgradeRequest;
 import org.metavm.util.NncUtils;
-
-import java.util.function.BiConsumer;
+import org.metavm.util.TriConsumer;
 
 public class GlobalPreUpgradeTask extends GlobalTask {
 
-    public static BiConsumer<PreUpgradeRequest, IEntityContext> preUpgradeAction;
+    public static TriConsumer<PreUpgradeRequest, WAL, IEntityContext> preUpgradeAction;
     private final String requestJSON;
+    private final WAL defWAL;
 
-    public GlobalPreUpgradeTask(PreUpgradeRequest preUpgradeRequest) {
+    public GlobalPreUpgradeTask(PreUpgradeRequest preUpgradeRequest, WAL defWAL) {
         super("GlobalPreUpgradeTask");
         requestJSON = NncUtils.toJSONString(preUpgradeRequest);
+        this.defWAL = defWAL;
     }
 
     @Override
     protected void processApplication(IEntityContext context, Application application) {
-        preUpgradeAction.accept(getRequest(), context);
+        preUpgradeAction.accept(getRequest(), defWAL, context);
     }
 
     private PreUpgradeRequest getRequest() {
@@ -28,6 +30,6 @@ public class GlobalPreUpgradeTask extends GlobalTask {
 
     @Override
     public long getTimeout() {
-        return 1500L;
+        return 3000L;
     }
 }

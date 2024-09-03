@@ -3,6 +3,7 @@ package org.metavm.task;
 import org.metavm.api.EntityType;
 import org.metavm.entity.Entity;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.WAL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,13 +25,15 @@ public class ShadowTask extends Entity {
     private long runAt;
     private final long appId;
     private final String appTaskId;
+    private final @Nullable WAL defWal;
 
     public static BiConsumer<Long, List<Task>> saveShadowTasksHook;
 
-    public ShadowTask(long appId, String appTaskId, long startAt) {
+    public ShadowTask(long appId, String appTaskId, long startAt, @Nullable WAL defWal) {
         this.appId = appId;
         this.appTaskId = appTaskId;
         this.startAt = startAt;
+        this.defWal = defWal;
     }
 
     public long getAppId() {
@@ -64,5 +67,10 @@ public class ShadowTask extends Entity {
 
     public void setExecutorIP(@Nullable String executorIP) {
         this.executorIP = executorIP;
+    }
+
+    @Nullable
+    public WAL getDefWal() {
+        return defWal;
     }
 }

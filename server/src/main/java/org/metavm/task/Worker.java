@@ -2,10 +2,7 @@ package org.metavm.task;
 
 import org.metavm.ddl.DefContextUtils;
 import org.metavm.entity.*;
-import org.metavm.util.Constants;
-import org.metavm.util.InternalException;
-import org.metavm.util.NetworkUtils;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -120,11 +117,11 @@ public class Worker extends EntityContextFactoryAware {
             try (var appContext = newContext(shadowTask.getAppId())) {
                 var appTask = appContext.getEntity(Task.class, shadowTask.getAppTaskId());
                 appContext.getInstanceContext().setTimeout(appTask.getTimeout());
-                logger.info("Running task {}-{}", EntityUtils.getRealType(appTask).getSimpleName(), appTask.getTitle());
+                logger.info("Running task {}-{}", shadowTask.getAppId(), appTask.getTitle());
                 boolean terminated;
                 try {
-                    var parentContext = appTask.getDefWAL() != null ?
-                            DefContextUtils.createReversedDefContext(appTask.getDefWAL(), entityContextFactory, appTask.getExtraStdKlassIds()) :
+                    var parentContext = shadowTask.getDefWal() != null ?
+                            DefContextUtils.createReversedDefContext(shadowTask.getDefWal(), entityContextFactory, appTask.getExtraStdKlassIds()) :
 //                            ModelDefRegistry.getDefContext();
                             (
                                     shadowTask.getAppId() != Constants.ROOT_APP_ID ?
@@ -138,14 +135,16 @@ public class Worker extends EntityContextFactoryAware {
                         terminated = runTask0(appTask, walContext, appContext);
                         if(!appTask.isFailed())
                             walContext.finish();
+                        if(terminated)
+                            logger.info("Task {}-{} completed successfully", shadowTask.getAppId(), appTask.getTitle());
                     }
                     finally {
                         if(parentContext instanceof ReversedDefContext reversedDefContext)
-                            reversedDefContext.close();
+                            SystemConfig.clearLocal();
                     }
                 }
                 catch (Exception e) {
-                    logger.error("Failed to execute task {}", appTask.getTitle(), e);
+                    logger.error("Failed to execute task {}-{}", shadowTask.getAppId(), appTask.getTitle(), e);
                     terminated = true;
                 }
                 if (terminated) {

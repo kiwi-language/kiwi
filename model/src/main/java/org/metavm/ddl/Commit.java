@@ -51,7 +51,7 @@ public class Commit extends Entity implements RedirectStatus {
     private final ReadWriteArray<String> toEnumKlassIds = addChild(new ReadWriteArray<>(String.class), "toEnumKlassIds");
     @ChildEntity
     private final ReadWriteArray<String> fromEnumKlassIds = addChild(new ReadWriteArray<>(String.class), "fromEnumKlassIds");
-    @ChildEntity
+    @ChildEntity(since = 2)
     private final ReadWriteArray<String> runMethodIds = addChild(new ReadWriteArray<>(String.class), "runMethodIds");
 
     private CommitState state = CommitState.PREPARING0;

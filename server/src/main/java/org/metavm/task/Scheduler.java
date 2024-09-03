@@ -1,6 +1,7 @@
 package org.metavm.task;
 
 import org.metavm.entity.*;
+import org.metavm.util.ContextUtil;
 import org.metavm.util.NetworkUtils;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ public class Scheduler extends EntityContextFactoryAware {
     @Scheduled(fixedDelay = 100)
     public void schedule() {
         if (active) {
+            ContextUtil.resetProfiler();
             transactionOperations.executeWithoutResult(s -> schedule0());
         }
     }

@@ -31,7 +31,7 @@ public abstract class ScanTask extends Task {
         var batch = r.instances();
         process(batch, context, taskContext);
         if (!r.completed()) {
-            cursor = batch.get(batch.size() - 1).getTreeId();
+            cursor = r.cursor();
             return false;
         } else {
             onScanOver(context, taskContext);

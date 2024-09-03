@@ -128,8 +128,9 @@
         id
         from instance
         where app_id = #{appId}
-          and deleted_at = 0
-          and id > #{startId}
+        and deleted_at = 0
+        and id > #{startId}
+        order by id
         limit #{limit}
     </select>
 

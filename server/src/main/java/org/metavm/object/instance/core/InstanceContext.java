@@ -600,7 +600,8 @@ public class InstanceContext extends BufferingInstanceContext {
                 });
             }
         }
-        return new ScanResult(batch, treeIds.size() < limit);
+        var cursor = treeIds.isEmpty() ? 0 : treeIds.get(treeIds.size() - 1);
+        return new ScanResult(batch, treeIds.size() < limit, cursor);
     }
 
     public record Relocations(

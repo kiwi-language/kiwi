@@ -5,6 +5,7 @@ import org.metavm.entity.*;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.log.Identifier;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -15,10 +16,7 @@ import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.PreUpgradeRequest;
 import org.metavm.task.GlobalPreUpgradeTask;
 import org.metavm.task.PreUpgradeTask;
-import org.metavm.util.ChangeList;
-import org.metavm.util.Constants;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -102,48 +100,50 @@ public class DDLManager extends EntityContextFactoryAware {
     @Transactional
     public void preUpgrade(PreUpgradeRequest request) {
         try(var platformContext = newPlatformContext()) {
-            platformContext.bind(new GlobalPreUpgradeTask(request));
+            var defWal = new WAL(Constants.ROOT_APP_ID, request.walContent());
+            platformContext.bind(new GlobalPreUpgradeTask(request, defWal));
             platformContext.finish();
         }
     }
 
-    private void preUpgrade(PreUpgradeRequest request, IEntityContext outerContext) {
+    private void preUpgrade(PreUpgradeRequest request, WAL defWAL, IEntityContext outerContext) {
         FlowSavingContext.initConfig();
         FlowSavingContext.skipPreprocessing(true);
-        var defWAL = outerContext.bind(new WAL(Constants.ROOT_APP_ID, request.walContent()));
         var writeWAL = outerContext.bind(new WAL(outerContext.getAppId()));
         String ddlId;
-        try(var defContext = DefContextUtils.createReversedDefContext(defWAL, entityContextFactory, request.newKlassIds())) {
-            try (var context = entityContextFactory.newContext(outerContext.getAppId(), defContext,
-                    builder -> builder
-                            .timeout(DDL_SESSION_TIMEOUT)
-                            .writeWAL(writeWAL)
-            )) {
-                var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), context);
-                var fieldAdds = new ArrayList<FieldAddition>();
-                for (FieldAdditionDTO fieldAddDTO : request.fieldAdditions()) {
-                    var field = context.getField(fieldAddDTO.fieldId());
-                    fieldAdds.add(
-                            new FieldAddition(
-                                    field,
-                                    getSystemFieldInitializer(batch, field.getDeclaringType(), fieldAddDTO.fieldName())
-                            )
-                    );
-                }
-                var runMethods = new ArrayList<Method>();
-                for (KlassDTO k : request.initializerKlasses()) {
-                    var initializer = context.getKlass(k.id());
-                    var runMethod = initializer.findMethod(m -> m.isStatic() && m.getParameters().size() == 1 && m.getName().equals(Constants.RUN_METHOD_NAME));
-                    if(runMethod != null)
-                        runMethods.add(runMethod);
-                }
-                var ddl = new SystemDDL(fieldAdds, runMethods);
-                context.bind(ddl);
-                context.finish();
-                ddlId = ddl.getStringId();
+        var defContext = DefContextUtils.createReversedDefContext(defWAL, entityContextFactory, request.newKlassIds());
+        try (var context = entityContextFactory.newContext(outerContext.getAppId(), defContext,
+                builder -> builder
+                        .timeout(DDL_SESSION_TIMEOUT)
+                        .writeWAL(writeWAL)
+        )) {
+            var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), context);
+            var fieldAdds = new ArrayList<FieldAddition>();
+            for (FieldAdditionDTO fieldAddDTO : request.fieldAdditions()) {
+                var field = context.getField(fieldAddDTO.fieldId());
+                fieldAdds.add(
+                        new FieldAddition(
+                                field,
+                                getSystemFieldInitializer(batch, field.getDeclaringType(), fieldAddDTO.fieldName())
+                        )
+                );
             }
+            var runMethods = new ArrayList<Method>();
+            for (KlassDTO k : request.initializerKlasses()) {
+                var initializer = context.getKlass(k.id());
+                var runMethod = initializer.findMethod(m -> m.isStatic() && m.getParameters().size() == 1 && m.getName().equals(Constants.RUN_METHOD_NAME));
+                if(runMethod != null)
+                    runMethods.add(runMethod);
+            }
+            var ddl = new SystemDDL(fieldAdds, runMethods);
+            context.bind(ddl);
+            context.finish();
+            ddlId = ddl.getStringId();
         }
-        outerContext.bind(new PreUpgradeTask(writeWAL, defWAL, request.newKlassIds(), ddlId));
+        finally {
+            SystemConfig.clearLocal();
+        }
+        outerContext.bind(new PreUpgradeTask(writeWAL, Identifier.fromId(defWAL.getId()), request.newKlassIds(), ddlId));
         FlowSavingContext.clearConfig();
     }
 

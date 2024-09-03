@@ -3,6 +3,7 @@ package org.metavm.task;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.WAL;
 import org.metavm.util.Constants;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
@@ -62,7 +63,8 @@ public class TaskManager extends EntityContextFactoryAware {
         try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID, builder -> builder.skipPostProcessing(true))) {
             platformContext.getInstanceContext().setDescription("ShadowTask");
             for (Task task : created) {
-                platformContext.bind(new ShadowTask(appId, task.getStringId(), task.getStartAt()));
+                var defWal = task.getDefWalId() != null ? platformContext.getEntity(WAL.class, task.getDefWalId().toId()) : null;
+                platformContext.bind(new ShadowTask(appId, task.getStringId(), task.getStartAt(), defWal));
             }
             platformContext.finish();
         }

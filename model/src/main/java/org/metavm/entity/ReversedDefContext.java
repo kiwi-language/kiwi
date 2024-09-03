@@ -121,11 +121,23 @@ public class ReversedDefContext extends DefContext {
         postProcess();
     }
 
-    private void postProcess() {
+    public void initEnv() {
         StdFunction.initializeFromDefContext(this, true);
         StdKlass.initialize(this, true);
         StdMethod.initialize(this, true);
         StdField.initialize(this, true);
+    }
+
+    private void freezeKlasses() {
+        typeDef2Def.keySet().forEach(t -> {
+            if(t instanceof Klass k)
+                k.freeze();
+        });
+    }
+
+    private void postProcess() {
+        freezeKlasses();
+        initEnv();
         for (TypeDef typeDef : typeDef2Def.keySet()) {
             if(typeDef instanceof Klass klass)
                 klass.rebuildMethodTable();

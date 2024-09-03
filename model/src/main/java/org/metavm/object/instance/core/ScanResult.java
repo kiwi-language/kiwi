@@ -4,6 +4,7 @@ import java.util.List;
 
 public record ScanResult(
         List<Instance> instances,
-        boolean completed
+        boolean completed,
+        long cursor
 ) {
 }
