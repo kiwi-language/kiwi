@@ -9,15 +9,15 @@ import org.metavm.util.TestUtils;
 
 import java.util.List;
 
-public class LabCompilingTest extends CompilerTestBase {
+public class DDLCompilingTest extends CompilerTestBase {
 
-    public static final String LAB_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab";
-    public static final String LAB2_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab2";
-    public static final String LAB3_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab3";
-    public static final String LAB4_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab4";
+    public static final String DDL_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl";
+    public static final String DDL2_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl2";
+    public static final String DDL3_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl3";
+    public static final String DDL4_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl4";
 
     public void test() {
-        compile(LAB_SOURCE_ROOT);
+        compile(DDL_SOURCE_ROOT);
         var ref = new Object() {
           String stateFieldId;
           String stateKlassId;
@@ -28,11 +28,11 @@ public class LabCompilingTest extends CompilerTestBase {
             ref.stateFieldId = TestUtils.getFieldIdByCode(productKlass, "state");
         });
         try {
-            compile(LAB2_SOURCE_ROOT);
+            compile(DDL2_SOURCE_ROOT);
             Assert.fail("Should have failed");
         }
         catch (Exception ignored) {}
-        compile(LAB3_SOURCE_ROOT);
+        compile(DDL3_SOURCE_ROOT);
         submit(() -> {
             var productKlass = getClassTypeByCode("Product");
             var descField = TestUtils.getFieldByName(productKlass, "description");
@@ -50,8 +50,8 @@ public class LabCompilingTest extends CompilerTestBase {
             var errors = productKlass.errors();
             Assert.assertEquals(0, errors.size());
         });
-        compile(LAB4_SOURCE_ROOT);
-//        compile(LAB3_SOURCE_ROOT);
+        compile(DDL4_SOURCE_ROOT);
+//        compile(DDL3_SOURCE_ROOT);
 //        submit(() -> {
 ////            DebugEnv.debugLogger_ON = true;
 //            var fooType = getClassTypeByCode("Foo");
