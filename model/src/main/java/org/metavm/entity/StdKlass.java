@@ -50,7 +50,9 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     illegalStateException(IllegalStateException.class, false, IllegalStateExceptionNative.class),
     consumer(Consumer.class),
     predicate(Predicate.class),
-    supplier(Supplier.class, true, null);
+    supplier(Supplier.class, true, null),
+    comparable(Comparable.class),
+    ;
     private final Class<?> javaClass;
     private final boolean autoDefine;
     private final @Nullable Class<? extends NativeBase> nativeClass;

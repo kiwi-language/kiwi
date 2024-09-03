@@ -23,6 +23,7 @@ public enum StdMethod implements ValueHolderOwner<Method> {
     httpRequestGetCookie(HttpRequest.class, "getCookie", List.of(String.class)),
     arrayListAdd(ArrayList.class, "add", List.of(ArrayList.class.getTypeParameters()[0])),
     hashSetAdd(HashSet.class, "add", List.of(HashSet.class.getTypeParameters()[0])),
+    comparableCompareTo(Comparable.class, "compareTo", List.of(Comparable.class.getTypeParameters()[0])),
 
     ;
 

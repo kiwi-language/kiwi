@@ -143,18 +143,19 @@ public class Declarator extends CodeGenVisitor {
         if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null)
             return;
         List<PsiMethod> overriddenMethods = TranspileUtils.getOverriddenMethods(method);
+        var klass = currentClass().klass;
         List<Method> overridden = new ArrayList<>();
         for (PsiMethod overriddenMethod : overriddenMethods) {
             var overriddenMethodCls = NncUtils.requireNonNull(overriddenMethod.getContainingClass());
             if (Object.class.getName().equals(overriddenMethodCls.getQualifiedName()))
                 continue;
             var overriddenMethodType = TranspileUtils.createTemplateType(overriddenMethodCls);
-            overridden.add(TranspileUtils.getMethidByJavaMethod(
-                    Types.resolveKlass(typeResolver.resolveDeclaration(overriddenMethodType)),
-                    overriddenMethod, typeResolver)
-            );
+            var k = Types.resolveKlass(typeResolver.resolveDeclaration(overriddenMethodType));
+            var o = TranspileUtils.getMethidByJavaMethod(k, overriddenMethod, typeResolver);
+            var k1 = Objects.requireNonNull(klass.findAncestorByTemplate(k));
+            var o1 = k1.getMethod(m -> m.getEffectiveVerticalTemplate() == o);
+            overridden.add(o1);
         }
-        var klass = currentClass().klass;
         List<PsiType> implicitTypeArgs = method.isConstructor() && klass.isEnum() ?
                 List.of(TranspileUtils.createType(String.class), TranspileUtils.createPrimitiveType(int.class)) : List.of();
         var internalName = TranspileUtils.getInternalName(method, implicitTypeArgs);

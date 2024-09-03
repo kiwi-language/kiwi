@@ -19,6 +19,8 @@ import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
@@ -31,6 +33,8 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 public class TranspileUtils {
+
+    public static final Logger logger = LoggerFactory.getLogger(TranspileUtils.class);
 
     private static final String DUMMY_FILE_NAME = "_Dummy_." + JavaFileType.INSTANCE.getDefaultExtension();
 
@@ -82,6 +86,10 @@ public class TranspileUtils {
             case PsiClassType psiClassType -> psiClassType.rawType();
             default -> psiType;
         };
+    }
+
+    public static MethodSignature getSignature(PsiMethod method) {
+        return getSignature(method, null);
     }
 
     public static MethodSignature getSignature(PsiMethod method, @Nullable PsiClassType qualifierType) {
@@ -312,13 +320,15 @@ public class TranspileUtils {
                 || method.getTypeParameters().length != overridden.getTypeParameters().length) {
             return false;
         }
+        var pipeline = getSubstitutorPipeline(createType(method.getContainingClass()), overridden.getContainingClass());
         var subst = PsiSubstitutor.createSubstitutor(
                 NncUtils.zip(List.of(overridden.getTypeParameters()),
                         NncUtils.map(List.of(method.getTypeParameters()), TranspileUtils::createType))
         );
+        pipeline.append(new SubstitutorPipeline(subst));
         for (int i = 0; i < paramCount; i++) {
-            var paramType = NncUtils.requireNonNull(method.getParameterList().getParameter(i)).getType();
-            var overriddenParamType = subst.substitute(NncUtils.requireNonNull(overridden.getParameterList().getParameter(i)).getType());
+            var paramType = Objects.requireNonNull(method.getParameterList().getParameter(i)).getType();
+            var overriddenParamType = pipeline.substitute(Objects.requireNonNull(overridden.getParameterList().getParameter(i)).getType());
             if (!paramType.equals(overriddenParamType)) {
                 return false;
             }
@@ -409,10 +419,11 @@ public class TranspileUtils {
     }
 
     public static PsiClassType createType(Class<?> rawClass, PsiType... typeArguments) {
-        return elementFactory.createType(
-                requireNonNull(createClassType(rawClass).resolve()),
-                typeArguments
-        );
+        return createType(requireNonNull(createClassType(rawClass).resolve()), typeArguments);
+    }
+
+    public static PsiClassType createType(PsiClass rawClass, PsiType...typeArguments) {
+        return elementFactory.createType(rawClass, typeArguments);
     }
 
     public static PsiClassType createVariableType(java.lang.reflect.TypeVariable<?> typeVariable) {
@@ -1098,6 +1109,28 @@ public class TranspileUtils {
 
     public static boolean isEnum(PsiType psiType) {
         return psiType instanceof PsiClassType psiClassType && Objects.requireNonNull(psiClassType.resolve()).isEnum();
+    }
+
+    public static SubstitutorPipeline getSubstitutorPipeline(PsiClassType type, PsiClass ancestor) {
+        return Objects.requireNonNull(findSubstitutorPipeline(type, ancestor),
+                () -> "Class " + ancestor.getQualifiedName() + " is not an ancestor of " + type.getCanonicalText());
+    }
+
+    public static @Nullable SubstitutorPipeline findSubstitutorPipeline(PsiClassType type, PsiClass ancestor) {
+        var generics = type.resolveGenerics();
+        var klass = Objects.requireNonNull(generics.getElement());
+        if(klass == ancestor)
+            return new SubstitutorPipeline(generics.getSubstitutor());
+        else {
+            for (PsiClassType implement : klass.getSuperTypes()) {
+                var r = findSubstitutorPipeline(implement, ancestor);
+                if(r != null) {
+                    r.append(new SubstitutorPipeline(generics.getSubstitutor()));
+                    return r;
+                }
+            }
+            return null;
+        }
     }
 
 }

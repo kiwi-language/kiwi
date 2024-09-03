@@ -65,6 +65,7 @@ public class StandardDefBuilder {
         iterableKlass = createIterableKlass();
         collectionKlass = createCollectionKlass();
         iteratorImplKlass = createIteratorImplKlass();
+        createComparableKlass();
         setKlass = createSetKlass();
         listKlass = createListKlass();
         mapKlass = createMapKlass();
@@ -255,6 +256,24 @@ public class StandardDefBuilder {
                 .parameters(new Parameter(null, "element", "element", elementType.getType()))
                 .build();
         return predicateType;
+    }
+
+    private Klass createComparableKlass() {
+        var elementType = new TypeVariable(null, "T", "T",
+                DummyGenericDeclaration.INSTANCE);
+        elementType.setBounds(List.of(AnyType.instance));
+        primTypeFactory.putType(Comparable.class.getTypeParameters()[0], elementType);
+        var comparableKlass = newKlassBuilder(Comparable.class)
+                .typeParameters(elementType)
+                .source(ClassSource.BUILTIN)
+                .kind(ClassKind.INTERFACE)
+                .build();
+        primTypeFactory.putType(Comparable.class, comparableKlass);
+        MethodBuilder.newBuilder(comparableKlass, "compareTo", "compareTo")
+                .returnType(Types.getLongType())
+                .parameters(new Parameter(null, "o", "o", elementType.getType()))
+                .build();
+        return comparableKlass;
     }
 
     private void initSystemFunctions() {

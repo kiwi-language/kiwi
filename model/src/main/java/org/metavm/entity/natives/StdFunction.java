@@ -467,6 +467,39 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var obj = args.get(0).resolveDurable();
                 return FlowExecResult.of(obj.getRoot().getReference());
             }
+    ),
+    compareLong(
+            "long compareLong(long l1, long l2) ",
+            true,
+            List.of(
+                    ReflectionUtils.getMethod(Byte.class, "compareTo", Byte.class),
+                    ReflectionUtils.getMethod(Short.class, "compareTo", Short.class),
+                    ReflectionUtils.getMethod(Integer.class, "compareTo", Integer.class),
+                    ReflectionUtils.getMethod(Long.class, "compareTo", Long.class),
+                    ReflectionUtils.getMethod(Byte.class, "compare", byte.class, byte.class),
+                    ReflectionUtils.getMethod(Short.class, "compare", short.class, short.class),
+                    ReflectionUtils.getMethod(Integer.class, "compare", int.class, int.class),
+                    ReflectionUtils.getMethod(Long.class, "compare", long.class, long.class)
+            ),
+            (func, args, callContext) -> {
+                var v1 = (LongValue) args.get(0);
+                var v2 = (LongValue) args.get(1);
+                return FlowExecResult.of(Instances.longInstance(Long.compare(v1.getValue(), v2.getValue())));
+            }
+    ),
+    sort(
+            "void sort(java.util.List<[never, any]> list)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Collections.class, "sort", List.class)
+            ),
+            (func, args, callContext) -> {
+                var list = args.get(0).resolveObject();
+                var nat = new ListNative(list);
+                nat.sort(callContext);
+                System.out.println("Sorting " + NncUtils.join(nat.toArray(), Objects::toString));
+                return FlowExecResult.of(Instances.nullInstance());
+            }
     )
     ;
 

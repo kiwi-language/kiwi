@@ -63,7 +63,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             WAL wal = instanceStore instanceof CachingInstanceStore cachingInstanceStore ?
                     cachingInstanceStore.getWal().copy() : null;
             WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
-                    DefContextUtils.getWal(reversedDefContext).copy() : null;
+                    DefContextUtils.getWal(reversedDefContext) : null;
             context.bind(new SynchronizeSearchTask(
                     NncUtils.map(changedIds, Identifier::fromId),
                     NncUtils.map(removedIds, Identifier::fromId),

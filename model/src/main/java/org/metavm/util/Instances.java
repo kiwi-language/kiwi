@@ -869,6 +869,39 @@ public class Instances {
         }
     }
 
+    public static int compare(Value value1, Value value2, CallContext callContext) {
+        if(value1 instanceof LongValue l1 && value2 instanceof LongValue l2)
+            return Long.compare(l1.getValue(), l2.getValue());
+        if(value1 instanceof DoubleValue d1 && value2 instanceof DoubleValue d2)
+            return Double.compare(d1.getValue(), d2.getValue());
+        if(value1 instanceof BooleanValue b1 && value2 instanceof BooleanValue v2)
+            return Boolean.compare(b1.getValue(), v2.getValue());
+        if(value1 instanceof StringValue s1 && value2 instanceof StringValue s2)
+            return s1.getValue().compareTo(s2.getValue());
+        if(value1 instanceof NullValue && value2 instanceof NullValue)
+            return 0;
+        if(value1 instanceof TimeValue t1 && value2 instanceof TimeValue t2)
+            return Long.compare(t1.getValue(), t2.getValue());
+        if(value1 instanceof PasswordValue p1 && value2 instanceof PasswordValue p2)
+            return p1.getValue().compareTo(p2.getValue());
+        else if(value1 instanceof Reference r1 && value2 instanceof Reference r2)
+            return compare(r1.resolve(), r2.resolve(), callContext);
+        else
+            throw new IllegalArgumentException("Cannot get hash code for value: " + value1);
+    }
+
+    public static int compare(Instance instance1, Instance instance2, CallContext callContext) {
+        if(instance1 instanceof ClassInstance clsInst1 && instance2 instanceof ClassInstance clsInst2) {
+            var comparableKlass = clsInst1.getKlass().findAncestorByTemplate(StdKlass.comparable.get());
+            if(comparableKlass != null && comparableKlass.getTypeArguments().get(0).isInstance(clsInst2.getReference())) {
+                var compareToMethod = comparableKlass.getMethod(m -> m.getVerticalTemplate() == StdMethod.comparableCompareTo.get());
+                var r = (LongValue) Objects.requireNonNull(Flows.invokeVirtual(compareToMethod, clsInst1, List.of(clsInst2.getReference()), callContext));
+                return r.getValue().intValue();
+            }
+        }
+        throw new InternalException("Cannot compare " + instance1 + " with " + instance2);
+    }
+
     public static int hashCode(Value value, CallContext callContext) {
         if(value instanceof PrimitiveValue primitiveValue)
             return primitiveValue.hashCode();

@@ -10,8 +10,12 @@ public class ClassInstanceWrap extends InstanceWrap {
         this.map = new HashMap<>(map);
     }
 
+    public Object getRaw(String fieldName) {
+        return map.get(fieldName);
+    }
+
     public Object get(String fieldName) {
-        return convertValue(map.get(fieldName));
+        return convertValue(getRaw(fieldName));
     }
 
     public String getString(String fieldName) {

@@ -151,6 +151,10 @@ public class ListNative extends IterableNative {
         return Instances.longInstance(array.size());
     }
 
+    public void sort(CallContext callContext) {
+        array.sort((e1, e2) -> Instances.compare(e1, e2, callContext));
+    }
+
     public BooleanValue removeIf(Value filter, CallContext callContext) {
         if(filter instanceof Reference r) {
             var method = r.resolveObject().getKlass().getMethods().get(0);

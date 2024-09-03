@@ -536,6 +536,10 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
         return true;
     }
 
+    public void sort(Comparator<Value> comparator) {
+        elements.sort(comparator);
+    }
+
     @Override
     public Instance copy() {
         var copy = new ArrayInstance(getType());

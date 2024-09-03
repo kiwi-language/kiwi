@@ -85,6 +85,15 @@ public class Flows {
             throw new InternalException("Can not invoke virtual method: " + flow);
     }
 
+    public static @Nullable Value invokeVirtual(@NotNull Flow flow, @NotNull ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
+        if(flow instanceof Method method && method.isInstanceMethod()) {
+            flow = self.getKlass().resolveMethod(method);
+            return invoke(flow, self, arguments, callContext);
+        }
+        else
+            throw new InternalException("Can not invoke virtual method: " + flow);
+    }
+
     public static Value invokeGetter(Method getter, ClassInstance instance, IEntityContext context) {
         var result = execute(getter, instance, List.of(), context);
         if(result.exception() != null)
