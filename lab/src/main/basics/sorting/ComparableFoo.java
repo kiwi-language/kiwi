@@ -1,3 +1,5 @@
+package sorting;
+
 import org.jetbrains.annotations.NotNull;
 
 public class ComparableFoo implements Comparable<ComparableFoo> {

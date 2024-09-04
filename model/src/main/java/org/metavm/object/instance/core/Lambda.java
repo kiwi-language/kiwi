@@ -22,7 +22,7 @@ public class Lambda extends FunctionValue {
         this.containingFrame = containingFrame;
     }
 
-    private MetaFrame createFrame(List<Value> arguments, InstanceRepository instanceRepository) {
+    private MetaFrame createFrame(List<? extends Value> arguments, InstanceRepository instanceRepository) {
         return new LambdaFrame(
                 Objects.requireNonNull(lambdaNode.getBodyScope().tryGetFirstNode()),
                 Flows.getDeclaringType(lambdaNode.getFlow()),
@@ -46,7 +46,7 @@ public class Lambda extends FunctionValue {
     }
 
     @Override
-    public FlowExecResult execute(List<Value> arguments, CallContext callContext) {
+    public FlowExecResult execute(List<? extends Value> arguments, CallContext callContext) {
         return createFrame(arguments, callContext.instanceRepository()).execute();
     }
 }

@@ -497,7 +497,17 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var list = args.get(0).resolveObject();
                 var nat = new ListNative(list);
                 nat.sort(callContext);
-                System.out.println("Sorting " + NncUtils.join(nat.toArray(), Objects::toString));
+                return FlowExecResult.of(Instances.nullInstance());
+            }
+    ),
+    reverse(
+            "void reverse(java.util.List<[never, any]> list)",
+            false,
+            List.of(ReflectionUtils.getMethod(Collections.class, "reverse", List.class)),
+            (func, args, callContext) -> {
+                var list = args.get(0).resolveObject();
+                var nat = new ListNative(list);
+                nat.reverse();
                 return FlowExecResult.of(Instances.nullInstance());
             }
     )

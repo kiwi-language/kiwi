@@ -977,4 +977,12 @@ public class Instances {
         }
         return false;
     }
+
+    public static int toInt(@Nullable Value value) {
+        return ((LongValue) Objects.requireNonNull(value)).getValue().intValue();
+    }
+
+    public static boolean toBoolean(@Nullable Value value) {
+        return ((BooleanValue) Objects.requireNonNull(value)).getValue();
+    }
 }

@@ -1,3 +1,5 @@
+package sorting;
+
 import org.metavm.api.ChildEntity;
 
 import java.util.ArrayList;
@@ -17,4 +19,17 @@ public class SortLab {
     public List<ComparableFoo> getFoos() {
         return foos;
     }
+
+    public void reverseFoos() {
+        Collections.reverse(this.foos);
+    }
+
+    public void sortFoos() {
+        this.foos.sort(ComparableFoo::compareTo);
+    }
+
+    public void sortFoos1() {
+        this.foos.sort(null);
+    }
+
 }

@@ -13,7 +13,7 @@ public class LambdaFrame extends MetaFrame {
     private final MetaFrame containingFrame;
 
     public LambdaFrame(NodeRT entry, Klass declaringType,
-                       List<Value> arguments, InstanceRepository instanceRepository,
+                       List<? extends Value> arguments, InstanceRepository instanceRepository,
                        MetaFrame containingFrame) {
         super(entry, declaringType, containingFrame.getSelf(), arguments, instanceRepository);
         this.containingFrame = containingFrame;

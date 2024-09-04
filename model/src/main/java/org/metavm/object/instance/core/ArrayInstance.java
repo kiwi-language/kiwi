@@ -555,4 +555,8 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
             copy.elements.addAll(elements);
         return copy;
     }
+
+    public void reverse() {
+        Collections.reverse(elements);
+    }
 }

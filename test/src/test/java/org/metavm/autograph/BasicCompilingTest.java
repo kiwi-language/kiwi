@@ -30,6 +30,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processRemovedField();
             processTypeNarrowing();
             processHash();
+            processSorting();
         });
     }
 
@@ -240,6 +241,28 @@ public class BasicCompilingTest extends CompilerTestBase {
         )));
         var contains2 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "contains", List.of(foo3Id)));
         Assert.assertEquals(false, contains2);
+    }
+
+    private void processSorting() {
+        var foo1Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("sorting.ComparableFoo", Map.of("seq", 1)));
+        var foo2Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("sorting.ComparableFoo", Map.of("seq", 2)));
+        var cmp = TestUtils.doInTransaction(() -> apiClient.callMethod(foo1Id, "compareTo", List.of(foo2Id)));
+        Assert.assertEquals(-1L, cmp);
+        var labId = TestUtils.doInTransaction(() -> apiClient.saveInstance("sorting.SortLab", Map.of(
+                "foos", List.of(foo2Id, foo1Id)
+        )));
+        var foos = apiClient.getObject(labId).getRaw("foos");
+        Assert.assertEquals(List.of(foo1Id, foo2Id), foos);
+        TestUtils.doInTransaction(() -> apiClient.callMethod(labId, "reverseFoos", List.of()));
+        var foos1 = apiClient.getObject(labId).getRaw("foos");
+        Assert.assertEquals(List.of(foo2Id, foo1Id), foos1);
+        TestUtils.doInTransaction(() -> apiClient.callMethod(labId, "sortFoos", List.of()));
+        var foos2 = apiClient.getObject(labId).getRaw("foos");
+        Assert.assertEquals(List.of(foo1Id, foo2Id), foos2);
+        TestUtils.doInTransaction(() -> apiClient.callMethod(labId, "reverseFoos", List.of()));
+        TestUtils.doInTransaction(() -> apiClient.callMethod(labId, "sortFoos1", List.of()));
+        var foos3 = apiClient.getObject(labId).getRaw("foos");
+        Assert.assertEquals(List.of(foo1Id, foo2Id), foos3);
     }
 
 }

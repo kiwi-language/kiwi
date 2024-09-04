@@ -51,6 +51,8 @@ public class StandardDefBuilder {
 
     private Klass predicateKlass;
 
+    private Klass comparatorKlass;
+
     private final PrimTypeFactory primTypeFactory = new PrimTypeFactory();
 
     public StandardDefBuilder(SystemDefContext defContext) {
@@ -63,9 +65,10 @@ public class StandardDefBuilder {
         predicateKlass = createPredicateKlass();
         iteratorKlass = createIteratorKlass();
         iterableKlass = createIterableKlass();
+        comparatorKlass = createComparatorKlass();
+        createComparableKlass();
         collectionKlass = createCollectionKlass();
         iteratorImplKlass = createIteratorImplKlass();
-        createComparableKlass();
         setKlass = createSetKlass();
         listKlass = createListKlass();
         mapKlass = createMapKlass();
@@ -274,6 +277,27 @@ public class StandardDefBuilder {
                 .parameters(new Parameter(null, "o", "o", elementType.getType()))
                 .build();
         return comparableKlass;
+    }
+
+    private Klass createComparatorKlass() {
+        var elementType = new TypeVariable(null, "T", "T",
+                DummyGenericDeclaration.INSTANCE);
+        elementType.setBounds(List.of(AnyType.instance));
+        primTypeFactory.putType(Comparator.class.getTypeParameters()[0], elementType);
+        var comparatorKlass = newKlassBuilder(Comparator.class)
+                .typeParameters(elementType)
+                .source(ClassSource.BUILTIN)
+                .kind(ClassKind.INTERFACE)
+                .build();
+        primTypeFactory.putType(Comparator.class, comparatorKlass);
+        MethodBuilder.newBuilder(comparatorKlass, "compare", "compare")
+                .returnType(Types.getLongType())
+                .parameters(
+                        new Parameter(null, "o1", "o1", elementType.getType()),
+                        new Parameter(null, "o2", "o2", elementType.getType())
+                )
+                .build();
+        return comparatorKlass;
     }
 
     private void initSystemFunctions() {
@@ -561,6 +585,14 @@ public class StandardDefBuilder {
                         new Parameter(null, "value", "value", elementType.getType())
                 )
                 .returnType(nullableElementType)
+                .build();
+
+        MethodBuilder.newBuilder(listType, "sort", "sort")
+                .parameters(new Parameter(null, "c", "c",
+                        Types.getNullableType(
+                        comparatorKlass.getParameterized(List.of(
+                                UncertainType.createLowerBounded(elementType.getType())
+                        )).getType())))
                 .build();
 
         MethodBuilder.newBuilder(listType, "of", "of")

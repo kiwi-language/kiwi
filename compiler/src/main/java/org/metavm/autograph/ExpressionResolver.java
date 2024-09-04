@@ -11,10 +11,10 @@ import org.metavm.object.instance.core.DoubleValue;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
-import org.metavm.util.CompilerException;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,9 +22,6 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
-import static org.metavm.autograph.TranspileUtils.matchClass;
-import static org.metavm.autograph.TranspileUtils.matchMethod;
-import static org.metavm.util.ReflectionUtils.getMethod;
 
 public class ExpressionResolver {
 
@@ -51,6 +48,10 @@ public class ExpressionResolver {
             Map.entry(JavaTokenType.DIV, BinaryOperator.DIVIDE)
     );
 
+    private static final List<java.lang.reflect.Parameter> nullableParameters = List.of(
+            ReflectionUtils.getMethod(List.class, "sort", Comparator.class).getParameters()[0]
+    );
+
     public static final Set<IElementType> BOOL_OPS = Set.of(
             JavaTokenType.ANDAND, JavaTokenType.OROR
     );
@@ -60,6 +61,7 @@ public class ExpressionResolver {
     private final VariableTable variableTable;
     private final VisitorBase visitor;
     private final Map<PsiExpression, Expression> expressionMap = new IdentityHashMap<>();
+    private final Set<PsiParameter> nullablePsiParameters = new HashSet<>();
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
             new ListOfResolver(), new SetOfResolver(), new IndexUtilsCallResolver()
@@ -74,6 +76,9 @@ public class ExpressionResolver {
         this.typeResolver = typeResolver;
         this.variableTable = variableTable;
         this.visitor = visitor;
+        for (java.lang.reflect.Parameter param : nullableParameters) {
+            nullablePsiParameters.add(TranspileUtils.getParameter(param));
+        }
     }
 
     public Expression resolve(PsiExpression psiExpression) {
@@ -546,7 +551,7 @@ public class ExpressionResolver {
                 psiParameters,
                 param -> {
                     var t = typeResolver.resolveDeclaration(param.getType());
-                    if (TranspileUtils.getAnnotation(param, Nullable.class) != null)
+                    if (TranspileUtils.getAnnotation(param, Nullable.class) != null || nullablePsiParameters.contains(param))
                         t = new UnionType(Set.of(t, Types.getNullType()));
                     return t;
                 }

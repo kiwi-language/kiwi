@@ -52,6 +52,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     predicate(Predicate.class),
     supplier(Supplier.class, true, null),
     comparable(Comparable.class),
+    comparator(Comparator.class),
     ;
     private final Class<?> javaClass;
     private final boolean autoDefine;

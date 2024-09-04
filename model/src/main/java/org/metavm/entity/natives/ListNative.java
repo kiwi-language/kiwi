@@ -2,6 +2,8 @@ package org.metavm.entity.natives;
 
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
+import org.metavm.entity.StdMethod;
+import org.metavm.flow.Flows;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Field;
@@ -10,10 +12,14 @@ import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class ListNative extends IterableNative {
+
+    public static final Logger logger = LoggerFactory.getLogger(ListNative.class);
 
     private final ClassInstance instance;
     private final Field arrayField;
@@ -209,4 +215,19 @@ public class ListNative extends IterableNative {
     public ClassInstance getInstance() {
         return instance;
     }
+
+    public void reverse() {
+        array.reverse();
+    }
+
+    public void sort(Value comparator, CallContext callContext) {
+        if(comparator.isNull())
+            sort(callContext);
+        else {
+            var l = comparator.resolveObject();
+            var compareMethod = l.getKlass().getMethod(m -> m.getVerticalTemplate() == StdMethod.comparatorCompare.get());
+            array.sort((e1, e2) -> Instances.toInt(Flows.invokeVirtual(compareMethod, l, List.of(e1, e2), callContext)));
+        }
+    }
+
 }

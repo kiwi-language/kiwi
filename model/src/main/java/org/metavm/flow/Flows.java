@@ -8,6 +8,7 @@ import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.expression.Expression;
 import org.metavm.expression.StaticPropertyExpression;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
@@ -70,6 +71,14 @@ public class Flows {
 
     public static @Nullable Value invoke(@NotNull Flow flow, ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         var result = execute(flow, self, arguments, callContext);
+        if(result.exception() != null)
+            throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
+        else
+            return result.ret();
+    }
+
+    public static @Nullable Value invoke(@NotNull FunctionValue func, List<? extends Value> arguments, CallContext callContext) {
+        var result = func.execute(arguments, callContext);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
         else

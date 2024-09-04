@@ -29,7 +29,7 @@ public abstract class FunctionValue extends Value {
         return null;
     }
 
-    public abstract FlowExecResult execute(List<Value> arguments, CallContext callContext);
+    public abstract FlowExecResult execute(List<? extends Value> arguments, CallContext callContext);
 
     @Override
     public FunctionType getType() {

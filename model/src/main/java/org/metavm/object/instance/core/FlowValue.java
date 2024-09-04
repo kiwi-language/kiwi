@@ -22,7 +22,7 @@ public class FlowValue extends FunctionValue {
     }
 
     @Override
-    public FlowExecResult execute(List<Value> arguments, CallContext callContext) {
+    public FlowExecResult execute(List<? extends Value> arguments, CallContext callContext) {
         if(boundSelf != null)
             return flow.execute(boundSelf, arguments, callContext);
         else

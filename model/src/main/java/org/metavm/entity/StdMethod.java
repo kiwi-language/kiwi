@@ -12,6 +12,7 @@ import org.metavm.util.NncUtils;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
@@ -24,6 +25,7 @@ public enum StdMethod implements ValueHolderOwner<Method> {
     arrayListAdd(ArrayList.class, "add", List.of(ArrayList.class.getTypeParameters()[0])),
     hashSetAdd(HashSet.class, "add", List.of(HashSet.class.getTypeParameters()[0])),
     comparableCompareTo(Comparable.class, "compareTo", List.of(Comparable.class.getTypeParameters()[0])),
+    comparatorCompare(Comparator.class, "compare", List.of(Comparator.class.getTypeParameters()[0], Comparator.class.getTypeParameters()[0])),
 
     ;
 

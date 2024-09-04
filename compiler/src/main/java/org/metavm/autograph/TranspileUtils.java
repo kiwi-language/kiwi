@@ -1133,4 +1133,19 @@ public class TranspileUtils {
         }
     }
 
+    public static PsiClass getClass(Class<?> javaClass) {
+        return Objects.requireNonNull(createClassType(javaClass).resolve());
+    }
+
+    public static PsiMethod getMethod(Method javaMethod) {
+        var psiClass = getClass(javaMethod.getDeclaringClass());
+        return NncUtils.findRequired(psiClass.getMethods(), m -> matchMethod(m, javaMethod));
+    }
+
+    public static PsiParameter getParameter(Parameter parameter) {
+        var psiMethod = getMethod((Method) parameter.getDeclaringExecutable());
+        var index = NncUtils.indexOf(parameter.getDeclaringExecutable().getParameters(), parameter);
+        return psiMethod.getParameterList().getParameters()[index];
+    }
+
 }

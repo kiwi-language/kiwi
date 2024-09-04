@@ -1160,6 +1160,14 @@ public class NncUtils {
         return -1;
     }
 
+    public static <T> int indexOf(T[] array, T o) {
+        for (int i = 0; i < array.length; i++) {
+            if(array[i].equals(o))
+                return i;
+        }
+        return -1;
+    }
+
     public static <T> T findRequired(Iterable<T> iterable, Predicate<T> filter) {
         return findRequired(iterable, filter, "value not found");
     }
