@@ -1,5 +1,6 @@
 package org.metavm.object.type.generic;
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.entity.ElementVisitor;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class TypeSubstitutor extends ElementVisitor<Type> {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");

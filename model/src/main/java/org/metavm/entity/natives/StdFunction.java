@@ -49,7 +49,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     throw new InternalException("Can not set source for a non-durable instance: " + args.get(0));
             }),
     functionToInstance(
-            "T functionToInstance<T>(any func)", true, List.of(),
+            "T functionToInstance<T>(any function)", true, List.of(),
             (func, args, callContext) -> {
                 if (args.get(0) instanceof FunctionValue functionValue) {
                     var samInterface = ((ClassType) func.getTypeArguments().get(0)).resolve();

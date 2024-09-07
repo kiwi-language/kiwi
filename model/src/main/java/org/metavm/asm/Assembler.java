@@ -673,7 +673,9 @@ public class Assembler {
         public Void visitTypeParameter(AssemblyParser.TypeParameterContext ctx) {
             var genericDecl = scope.getGenericDeclaration();
             var name = ctx.IDENTIFIER().getText();
-            var type = new TypeVariable(NncUtils.randomNonNegative(), name, name, genericDecl);
+            var type = NncUtils.find(genericDecl.getTypeParameters(), tv -> tv.getName().equals(name));
+            if(type == null)
+                type = new TypeVariable(NncUtils.randomNonNegative(), name, name, genericDecl);
             setAttribute(ctx, AsmAttributeKey.typeVariable, type);
             return super.visitTypeParameter(ctx);
         }
@@ -1520,7 +1522,7 @@ public class Assembler {
             while (k != null) {
                 var found = k.findTypeParameter(name);
                 if (found != null)
-                    return new VariableType(found);
+                    return found.getType();
                 k = k.parent();
             }
         }

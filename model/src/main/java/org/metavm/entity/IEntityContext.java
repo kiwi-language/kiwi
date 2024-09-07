@@ -118,8 +118,8 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 //        return getEntity(ClassType.class, id);
 //    }
 
-    default TypeDef getTypeDef(Id id) {
-        return getEntity(TypeDef.class, id);
+    default ITypeDef getTypeDef(Id id) {
+        return getEntity(ITypeDef.class, id);
     }
 
     default TypeDef getTypeDef(String id) {

@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import sun.misc.Unsafe;
@@ -12,6 +13,7 @@ import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
+@Slf4j
 public class ReflectionUtils {
 
     public static final Unsafe UNSAFE;
@@ -152,6 +154,10 @@ public class ReflectionUtils {
                         ","
                 ) +
                 ')';
+    }
+
+    public static String getQualifiedMethodSignature(Method method) {
+        return method.getDeclaringClass().getName() + "." + getMethodSignature(method);
     }
 
     public static boolean isMethodOverrideOf(Method method, Method targetMethod) {
@@ -425,12 +431,7 @@ public class ReflectionUtils {
     }
 
     public static <T> T newInstance(Class<T> klass) {
-        try {
-            //noinspection unchecked
-            return (T) UNSAFE.allocateInstance(klass);
-        } catch (InstantiationException e) {
-            throw new RuntimeException("Fail to create instance of " + klass.getName(), e);
-        }
+        return allocateInstance(klass);
     }
 
     public static boolean isCollectionOf(Type type, Class<?> elementType) {

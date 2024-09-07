@@ -37,4 +37,5 @@ public interface GenericDeclaration {
 
     String getInternalName(@Nullable Flow current);
 
+    GenericDeclarationRef getRef();
 }

@@ -4,8 +4,12 @@ import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public interface Mapper<T, I extends Instance> {
+
+    Logger logger = LoggerFactory.getLogger(Mapper.class);
 
     default T createEntityHelper(Instance instance, ObjectInstanceMap objectInstanceMap) {
         return createEntity(getInstanceClass().cast(instance), objectInstanceMap);

@@ -52,4 +52,9 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
     public String getInternalName(@javax.annotation.Nullable Flow current) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public GenericDeclarationRef getRef() {
+        throw new NullPointerException();
+    }
 }

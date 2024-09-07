@@ -1,13 +1,17 @@
 package org.metavm.api;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 
-public class ValueList<T> extends ArrayList<T> {
+public class ValueList<T> extends AbstractList<T> implements ValueObject {
+
+    private final List<T> list;
 
     public ValueList(Collection<? extends T> collection) {
-        super(collection);
+        list = new ArrayList<>(collection);
     }
 
     @Override
@@ -17,12 +21,12 @@ public class ValueList<T> extends ArrayList<T> {
 
     @Override
     public boolean isEmpty() {
-        return super.isEmpty();
+        return list.isEmpty();
     }
 
     @Override
     public T get(int index) {
-        return super.get(index);
+        return list.get(index);
     }
 
     @Override
@@ -42,12 +46,12 @@ public class ValueList<T> extends ArrayList<T> {
 
     @Override
     public boolean contains(Object o) {
-        return super.contains(o);
+        return list.contains(o);
     }
 
     @Override
     public int size() {
-        return super.size();
+        return list.size();
     }
 
     @Override

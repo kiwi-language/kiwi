@@ -1,16 +1,16 @@
 package org.metavm.object.type.rest.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.Constants;
 import org.metavm.util.InstanceOutput;
 
 import java.util.List;
 
-public record TaggedClassTypeKey(Id id, int tag) implements TypeKey {
+public record TaggedClassTypeKey(Id id, int tag) implements TypeKey, GenericDeclarationRefKey {
     @Override
     public void write(InstanceOutput output) {
         output.write(TypeKeyCodes.TAGGED_CLASS);
@@ -24,7 +24,7 @@ public record TaggedClassTypeKey(Id id, int tag) implements TypeKey {
     }
 
     @Override
-    public Type toType(TypeDefProvider typeDefProvider) {
+    public ClassType toType(TypeDefProvider typeDefProvider) {
         return new ClassType(typeDefProvider.getKlass(id), List.of());
     }
 
@@ -42,5 +42,10 @@ public record TaggedClassTypeKey(Id id, int tag) implements TypeKey {
     @JsonIgnore
     public int getTypeTag() {
         return tag;
+    }
+
+    @Override
+    public GenericDeclarationRef resolve(TypeDefProvider typeDefProvider) {
+        return toType(typeDefProvider);
     }
 }

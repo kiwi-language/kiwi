@@ -33,7 +33,7 @@ public class EntityInstanceContextBridge implements MappingProvider,
     }
 
     @Override
-    public TypeDef getTypeDef(Id id) {
+    public ITypeDef getTypeDef(Id id) {
         return entityContext.getTypeDef(id);
     }
 

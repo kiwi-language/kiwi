@@ -66,17 +66,16 @@ public interface TypeKey extends TypeOrTypeKey {
             throw new InternalException("Invalid primitive type: " + primitiveType.getText());
         }
         if (ctx.classType() != null) {
-            var classType = ctx.classType();
-            var id = Id.parse(classType.qualifiedName().getText().substring(Constants.ID_PREFIX.length()));
-            if(classType.typeArguments() != null)
-                return new ParameterizedTypeKey(id, NncUtils.map(classType.typeArguments().typeList().type(), TypeKey::fromTypeContext));
-            else if(classType.DECIMAL_LITERAL() != null)
-                return new TaggedClassTypeKey(id, Integer.parseInt(classType.DECIMAL_LITERAL().getText()));
-            else
-                return new ClassTypeKey(id);
+            return fromClassTypeContext(ctx.classType());
         }
-        if(ctx.variableType() != null)
-            return new VariableTypeKey(Id.parse(ctx.variableType().qualifiedName().getText().substring(Constants.ID_PREFIX.length())));
+        if(ctx.variableType() != null) {
+            var variableType = ctx.variableType();
+            return new VariableTypeKey(
+                    GenericDeclarationRefKey.fromContext(variableType.genericDeclarationRef()),
+                    Id.parse(Constants.removeIdPrefix(variableType.IDENTIFIER().getText()))
+            );
+        }
+//            return new VariableTypeKey(Id.parse(ctx.variableType().qualifiedName().getText().substring(Constants.ID_PREFIX.length())));
         if (ctx.elementType != null) {
             var kind = ctx.arrayKind();
             return new ArrayTypeKey(parseArrayKind(kind).code(), fromTypeContext(ctx.elementType));
@@ -100,8 +99,22 @@ public interface TypeKey extends TypeOrTypeKey {
         throw new InternalException("Invalid type: " + ctx.getText());
     }
 
+    static TypeKey fromClassTypeContext(TypeParser.ClassTypeContext classType) {
+        var id = Id.parse(classType.qualifiedName().getText().substring(Constants.ID_PREFIX.length()));
+        if(classType.typeArguments() != null)
+            return new ParameterizedTypeKey(id, NncUtils.map(classType.typeArguments().typeList().type(), TypeKey::fromTypeContext));
+        else if(classType.DECIMAL_LITERAL() != null)
+            return new TaggedClassTypeKey(id, Integer.parseInt(classType.DECIMAL_LITERAL().getText()));
+        else
+            return new ClassTypeKey(id);
+    }
+
     static TypeKey read(InstanceInput input) {
         int code = input.read();
+        return read(code, input);
+    }
+
+    static TypeKey read(int code, InstanceInput input) {
         return switch (code) {
             case TypeKeyCodes.ANY -> new AnyTypeKey();
             case TypeKeyCodes.NEVER -> new NeverTypeKey();
@@ -125,7 +138,7 @@ public interface TypeKey extends TypeOrTypeKey {
             case TypeKeyCodes.INTERSECTION -> new IntersectionTypeKey(readTypeKeySet(input));
             case TypeKeyCodes.FUNCTION -> new FunctionTypeKey(readTypeKeyList(input), read(input));
             case TypeKeyCodes.UNCERTAIN -> new UncertainTypeKey(read(input), read(input));
-            case TypeKeyCodes.VARIABLE -> new VariableTypeKey(input.readId());
+            case TypeKeyCodes.VARIABLE -> new VariableTypeKey(GenericDeclarationRefKey.read(input), input.readId());
             case TypeKeyCodes.CAPTURED -> new CapturedTypeKey(input.readId());
             default -> throw new InternalException("Invalid type key code: " + code);
         };

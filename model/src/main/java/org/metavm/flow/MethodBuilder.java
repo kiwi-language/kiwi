@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.type.*;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class MethodBuilder {
 
     public static MethodBuilder newBuilder(Klass declaringType, String name, String code) {
@@ -169,8 +171,6 @@ public class MethodBuilder {
             else
                 returnType = NncUtils.orElse(Types.getVoidType(), Types::getVoidType);
         }
-        if (NncUtils.isNotEmpty(typeParameters))
-            typeArguments = new ArrayList<>(NncUtils.map(typeParameters, TypeVariable::getType));
         if(declaringType.isInterface() && !_static)
             isAbstract = true;
         var effectiveTmpId = tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId);

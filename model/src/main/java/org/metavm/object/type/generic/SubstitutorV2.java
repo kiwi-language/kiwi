@@ -226,7 +226,8 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy.setJavaMethod(method.getJavaMethod());
             copy.setConstructor(method.isConstructor());
             addCopy(method, copy);
-            addCopy(method.getRootScope(), copy.getRootScope());
+            if(method.isRootScopePresent())
+                addCopy(method.getRootScope(), copy.getRootScope());
             enterElement(copy);
             for (Method overridden : method.getOverridden())
                 NncUtils.biForEach(NncUtils.map(overridden.getTypeParameters(), TypeVariable::getType), copy.getTypeArguments(), typeSubstitutor::addMapping);
@@ -301,15 +302,13 @@ public class SubstitutorV2 extends CopyVisitor {
 
     @Override
     public Element visitMethodRef(MethodRef methodRef) {
-        var rawMethod = methodRef.getRawFlow();
-        if (rawMethod == root || rawMethod.getDeclaringType() == root) {
-            return new MethodRef(
-                    (ClassType) methodRef.getDeclaringType().accept(this),
-                    rawMethod,
-                    NncUtils.map(methodRef.getTypeArguments(), t -> (Type) t.accept(this))
-            );
-        } else
-            return super.visitMethodRef(methodRef);
+        var isRootRef = root instanceof Method m && m.getRef().equals(methodRef);
+        return new MethodRef(
+                (ClassType) methodRef.getDeclaringType().accept(this),
+                methodRef.getRawFlow(),
+                isRootRef || methodRef.isParameterized() ?
+                        NncUtils.map(methodRef.getTypeArguments(), t -> (Type) t.accept(this)) : List.of()
+        );
     }
 
     @Override
@@ -346,6 +345,17 @@ public class SubstitutorV2 extends CopyVisitor {
             return new ClassType(type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> (Type) t.accept(this)));
         else
             return super.visitClassType(type);
+    }
+
+    @Override
+    public Element visitVariableType(VariableType type) {
+        var mapped = typeSubstitutor.getVariableMap().get(type);
+        if (mapped != null)
+            return mapped;
+        return new VariableType(
+                (GenericDeclarationRef) ((ValueElement)type.getGenericDeclarationRef()).accept(this),
+                type.getRawVariable()
+        );
     }
 
     @Override

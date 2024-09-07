@@ -1,0 +1,223 @@
+package org.metavm.entity;
+
+import org.metavm.api.ValueObject;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Parameter;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeVariable;
+import org.metavm.object.type.*;
+import org.metavm.object.type.generic.TypeSubstitutor;
+import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+
+public class ReflectDefiner {
+
+    public static final Logger logger = LoggerFactory.getLogger(ReflectDefiner.class);
+
+    private final Class<?> javaClass;
+    private Klass klass;
+    private final long tag;
+    private final Function<Class<?>, Klass> getKlass;
+    private final BiConsumer<? super Class<?>, ? super Klass> addKlass;
+    private final Map<java.lang.reflect.TypeVariable<?>, org.metavm.object.type.TypeVariable> typeVariableMap = new HashMap<>();
+    private static final Set<JavaMethodSignature> ignoredFunctionalInterfaceMethods;
+
+    static {
+        var set = new HashSet<JavaMethodSignature>();
+        for (Method method : Object.class.getDeclaredMethods()) {
+            if(!Modifier.isStatic(method.getModifiers()))
+                set.add(JavaMethodSignature.of(method));
+        }
+        ignoredFunctionalInterfaceMethods = Collections.unmodifiableSet(set);
+    }
+
+
+    public ReflectDefiner(Class<?> javaClass, long tag, Function<Class<?>, Klass> getKlass, BiConsumer<? super Class<?>, ? super Klass> addKlass) {
+        this.javaClass = javaClass;
+        this.tag = tag;
+        this.getKlass = getKlass;
+        this.addKlass = addKlass;
+    }
+
+    public Klass defineClass() {
+//        logger.debug("Defining class {}", javaClass.getName());
+        var kind = javaClass.isEnum() ? ClassKind.ENUM : (javaClass.isInterface() ? ClassKind.INTERFACE :
+                (ValueObject.class.isAssignableFrom(javaClass) ? ClassKind.VALUE : ClassKind.CLASS));
+        klass = KlassBuilder.newBuilder(javaClass.getSimpleName(), javaClass.getName())
+                .tag(tag)
+                .source(ClassSource.BUILTIN)
+                .kind(kind)
+                .isAbstract(Modifier.isAbstract(javaClass.getModifiers()))
+                .build();
+        addKlass.accept(javaClass, klass);
+        klass.setTypeParameters(NncUtils.map(javaClass.getTypeParameters(), tv -> defineTypeVariable(tv, klass)));
+        if (javaClass.getGenericSuperclass() != null && javaClass.getGenericSuperclass() != Object.class) {
+            klass.setSuperType((ClassType) resolveType(javaClass.getGenericSuperclass()));
+        }
+        klass.setInterfaces(NncUtils.map(javaClass.getGenericInterfaces(), it -> (ClassType) resolveType(it)));
+        var methodSignatures = new HashSet<MethodSignature>();
+        for (Constructor<?> javaConstructor : javaClass.getDeclaredConstructors()) {
+            if (!Modifier.isPublic(javaConstructor.getModifiers()) || javaConstructor.isSynthetic())
+                continue;
+            var constructor = MethodBuilder.newBuilder(klass, javaClass.getSimpleName(), javaClass.getSimpleName())
+                    .returnType(klass.getType())
+                    .isNative(true)
+                    .isConstructor(true)
+                    .build();
+            constructor.setTypeParameters(NncUtils.map(javaConstructor.getTypeParameters(), tv -> defineTypeVariable(tv, constructor)));
+            constructor.setParameters(NncUtils.map(javaConstructor.getParameters(), this::parseParameter));
+            if(!methodSignatures.add(MethodSignature.of(constructor)))
+                klass.removeMethod(constructor);
+        }
+        var isFunctionalInterface = javaClass.isAnnotationPresent(FunctionalInterface.class);
+        for (Method javaMethod : javaClass.getDeclaredMethods()) {
+            if (javaMethod.isSynthetic()
+                    || Modifier.isStatic(javaMethod.getModifiers()) || !Modifier.isPublic(javaMethod.getModifiers()))
+                continue;
+            if(isFunctionalInterface) {
+                if(javaMethod.isDefault() || ignoredFunctionalInterfaceMethods.contains(JavaMethodSignature.of(javaMethod)))
+                    continue;
+            }
+//            logger.debug("Defining method: {}", ReflectionUtils.getQualifiedMethodSignature(javaMethod));
+            var abs = Modifier.isAbstract(javaMethod.getModifiers());
+            var method = MethodBuilder.newBuilder(klass, javaMethod.getName(), javaMethod.getName())
+                    .isAbstract(abs)
+                    .isNative(!abs && kind != ClassKind.INTERFACE)
+                    .build();
+            method.setTypeParameters(NncUtils.map(javaMethod.getTypeParameters(), tv -> defineTypeVariable(tv, method)));
+            method.setParameters(NncUtils.map(javaMethod.getParameters(), this::parseParameter));
+            method.setReturnType(resolveType(javaMethod.getGenericReturnType()));
+            method.setOverridden(getOverridden(method));
+            if(!methodSignatures.add(MethodSignature.of(method)))
+                klass.removeMethod(method);
+        }
+        return klass;
+    }
+
+    private List<org.metavm.flow.Method> getOverridden(org.metavm.flow.Method method) {
+        var overridden = new ArrayList<org.metavm.flow.Method>();
+        var queue = new LinkedList<Klass>();
+        var visited = new HashSet<Klass>();
+        klass.forEachSuper(s -> {
+            if(visited.add(s))
+                queue.offer(s);
+        });
+        while (!queue.isEmpty()) {
+            var k = queue.poll();
+            var found = k.findSelfMethod(m -> isOverride(method, m));
+            if(found != null)
+                overridden.add(found);
+            else
+                k.forEachSuper(s -> {
+                    if(visited.add(s))
+                        queue.offer(s);
+                });
+        }
+        return overridden;
+    }
+
+    public static boolean isOverride(org.metavm.flow.Method method, org.metavm.flow.Method overridden) {
+        if(method.getName().equals(overridden.getName())
+                && method.getTypeParameters().size() == overridden.getTypeParameters().size()
+                && method.getParameters().size() == overridden.getParameters().size()) {
+            var ancestor = method.getDeclaringType().findAncestorByTemplate(overridden.getDeclaringType());
+            if(ancestor != null) {
+                var subst = new TypeSubstitutor(
+                        NncUtils.map(ancestor.getEffectiveTemplate().getTypeParameters(), TypeVariable::getType),
+                        ancestor.getTypeArguments()
+                );
+                var subst1 = new TypeSubstitutor(
+                        NncUtils.map(overridden.getTypeParameters(), TypeVariable::getType),
+                        NncUtils.map(method.getTypeParameters(), TypeVariable::getType)
+                );
+                return method.getParameterTypes().equals(NncUtils.map(overridden.getParameterTypes(), t -> t.accept(subst).accept(subst1)));
+            }
+        }
+        return false;
+    }
+
+    private TypeVariable defineTypeVariable(java.lang.reflect.TypeVariable<?> typeVariable, GenericDeclaration genericDeclaration) {
+        var tv = new TypeVariable(null, typeVariable.getName(), typeVariable.getName(), genericDeclaration);
+        typeVariableMap.put(typeVariable, tv);
+        tv.setBounds(NncUtils.map(typeVariable.getBounds(), this::resolveType));
+        return tv;
+    }
+
+    private Parameter parseParameter(java.lang.reflect.Parameter parameter) {
+        return Parameter.create(parameter.getName(), resolveType(parameter.getParameterizedType()));
+    }
+
+    private Type resolveType(java.lang.reflect.Type type) {
+        return switch (type) {
+            case Class<?> k -> {
+                if (k == String.class)
+                    yield Types.getStringType();
+                if (k == int.class || k == Integer.class || k == byte.class || k == Byte.class
+                        || k == short.class || k == Short.class || k == long.class || k == Long.class)
+                    yield Types.getLongType();
+                if (k == float.class || k == Float.class || k == double.class || k == Double.class)
+                    yield Types.getDoubleType();
+                if(k == boolean.class || k == Boolean.class)
+                    yield Types.getBooleanType();
+                if (k == void.class)
+                    yield Types.getVoidType();
+                if (k == Date.class)
+                    yield Types.getTimeType();
+                if (k == Object.class)
+                    yield Types.getAnyType();
+                if(k.isArray())
+                    yield new ArrayType(resolveType(k.getComponentType()), ArrayKind.READ_WRITE);
+                if(k == javaClass)
+                    yield this.klass.getType();
+                yield getKlass.apply(k).getType();
+            }
+            case ParameterizedType pType -> {
+                var rawKlass = ((ClassType) resolveType(pType.getRawType())).getKlass();
+                if(rawKlass.isTemplate())
+                    yield rawKlass.getParameterized(NncUtils.map(pType.getActualTypeArguments(), this::resolveType)).getType();
+                else
+                    yield rawKlass.getType();
+            }
+            case WildcardType wildcardType -> new UncertainType(
+                    wildcardType.getLowerBounds().length == 0 ?
+                            Types.getNeverType() :
+                            Types.getUnionType(NncUtils.map(wildcardType.getLowerBounds(), this::resolveType)),
+                    Types.getIntersectionType(NncUtils.map(wildcardType.getUpperBounds(), this::resolveType))
+            );
+            case java.lang.reflect.TypeVariable<?> tv -> Objects.requireNonNull(typeVariableMap.get(tv),
+                    () -> "Cannot find type variable " + tv.getName() + " in class " + javaClass.getName()
+            ).getType();
+            case GenericArrayType genericArrayType -> new ArrayType(resolveType(genericArrayType.getGenericComponentType()), ArrayKind.READ_WRITE);
+            case null, default -> throw new InternalException("Cannot resolve java type: " + type);
+        };
+    }
+
+    private record JavaMethodSignature(
+            String name,
+            List<java.lang.reflect.Type> parameterTypes
+    ) {
+
+        public static JavaMethodSignature of(Method method) {
+            return new JavaMethodSignature(method.getName(), List.of(method.getGenericParameterTypes()));
+        }
+
+    }
+
+    public record MethodSignature(
+            String name, List<Type> types
+    ) {
+
+        public static MethodSignature of(org.metavm.flow.Method method) {
+            return new MethodSignature(method.getName(), method.getParameterTypes());
+        }
+
+    }
+
+}

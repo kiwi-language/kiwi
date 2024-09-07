@@ -15,6 +15,7 @@ NEVER:              'never';
 R:                  'r';
 C:                  'c';
 V:                  'v';
+FUNC:               'func';
 
 
 // Separators
@@ -27,6 +28,7 @@ COMMA:              ',';
 DOT:                '.';
 NUM:                '#';
 COLON:              ':';
+AT:                 '@';
 
 // Operators
 
@@ -39,6 +41,7 @@ QUESTION:           '?';
 // Java 8 tokens
 
 ARROW:              '->';
+COLONCOLON:         '::';
 
 // Additional symbols not defined in the lexical specification
 

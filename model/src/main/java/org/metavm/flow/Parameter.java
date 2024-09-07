@@ -13,6 +13,11 @@ import java.util.Objects;
 
 @EntityType
 public class Parameter extends AttributedElement implements GenericElement, LocalKey {
+
+    public static Parameter create(String name, Type type) {
+        return new Parameter(null, name, name, type);
+    }
+
     @EntityField(asTitle = true)
     private String name;
     @EntityField(asKey = true)

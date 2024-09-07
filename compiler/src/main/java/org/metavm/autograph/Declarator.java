@@ -162,34 +162,42 @@ public class Declarator extends CodeGenVisitor {
         var flow = NncUtils.find(klass.getMethods(), f -> f.getInternalName(null).equals(internalName));
         if (flow != null)
             method.putUserData(Keys.Method, flow);
-        List<Parameter> resolvedParams = new ArrayList<>();
-        if (method.isConstructor() && klass.isEnum())
-            resolvedParams.addAll(getEnumConstructorParams());
-        resolvedParams.addAll(processParameters(method.getParameterList()));
         var access = resolveAccess(method.getModifierList());
+        var isStatic = method.getModifierList().hasModifierProperty(PsiModifier.STATIC);
+        var isAbstract = method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT);
         if (flow == null) {
             flow = MethodBuilder.newBuilder(klass, getFlowName(method), getFlowCode(method))
                     .isConstructor(method.isConstructor())
-                    .isStatic(method.getModifierList().hasModifierProperty(PsiModifier.STATIC))
+                    .isStatic(isStatic)
                     .access(access)
-                    .isAbstract(method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT))
-                    .parameters(resolvedParams)
-                    .returnType(getReturnType(method))
+                    .isAbstract(isAbstract)
                     .build();
             method.putUserData(Keys.Method, flow);
         } else {
             flow.setName(getFlowName(method));
+            flow.setCode(getFlowCode(method));
             flow.setAccess(access);
-            NncUtils.biForEach(
-                    flow.getParameters(), resolvedParams,
-                    (param, resolvedParam) -> {
-                        param.setName(resolvedParam.getName());
-                        param.setCode(resolvedParam.getCode());
-                        param.setAttributes(resolvedParam.getAttributes());
-                    }
-            );
-            flow.setReturnType(getReturnType(method));
+            flow.setStatic(isStatic);
+            flow.setAbstract(isAbstract);
         }
+        var typeVariables = new ArrayList<TypeVariable>();
+        for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
+            var typeVarName = Objects.requireNonNull(typeParameter.getName());
+            var typeVariable = NncUtils.find(flow.getTypeParameters(), tp -> tp.getName().equals(typeVarName));
+            if(typeVariable == null)
+                typeVariable = new TypeVariable(null,  typeVarName, typeParameter.getName(), flow);
+            typeVariables.add(typeVariable);
+            typeParameter.putUserData(Keys.TYPE_VARIABLE, typeVariable);
+            typeResolver.addGeneratedTypeDef(typeVariable);
+        }
+        flow.setTypeParameters(typeVariables);
+        List<Parameter> parameters = new ArrayList<>();
+        if (method.isConstructor() && klass.isEnum())
+            parameters.addAll(getEnumConstructorParams(flow));
+        parameters.addAll(processParameters(method.getParameterList(), flow));
+        flow.setParameters(parameters);
+        flow.setReturnType(getReturnType(method));
+
         flow.clearAttributes();
         var beanAnnotation = TranspileUtils.getAnnotation(method, Bean.class);
         if (beanAnnotation != null) {
@@ -197,11 +205,6 @@ public class Declarator extends CodeGenVisitor {
             flow.setAttribute(AttributeNames.BEAN_NAME, beanName);
         }
         visitedMethods.add(flow);
-        for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
-            var typeVar = typeResolver.resolveTypeVariable(typeParameter).getVariable();
-            if (typeVar.getGenericDeclaration() != flow)
-                typeVar.setGenericDeclaration(flow);
-        }
         flow.setOverridden(overridden);
     }
 
@@ -213,18 +216,29 @@ public class Declarator extends CodeGenVisitor {
         return Access.PACKAGE;
     }
 
-    private List<Parameter> getEnumConstructorParams() {
-        return List.of(
-                new Parameter(null, "name", "__name__", Types.getStringType()),
-                new Parameter(null, "ordinal", "__ordinal__", Types.getLongType())
-        );
+    private List<Parameter> getEnumConstructorParams(Method method) {
+        var nameParam = method.findParameter(p -> "__name__".equals(p.getCode()));
+        if(nameParam == null)
+            nameParam = new Parameter(null, "name", "__name__", Types.getStringType());
+        var ordinalParam = method.findParameter(p -> "__ordinal__".equals(p.getCode()));
+        if(ordinalParam == null)
+            ordinalParam = new Parameter(null, "ordinal", "__ordinal__", Types.getLongType());
+        return List.of(nameParam, ordinalParam);
     }
 
-    private List<Parameter> processParameters(PsiParameterList parameterList) {
+    private List<Parameter> processParameters(PsiParameterList parameterList, Method method) {
         return NncUtils.map(
                 parameterList.getParameters(),
                 param -> {
-                    var p = new Parameter(null, getFlowParamName(param), param.getName(), resolveParameterType(param));
+                    var p = method.findParameter(p1 -> param.getName().equals(p1.getCode()));
+                    var name = getFlowParamName(param);
+                    var type = resolveParameterType(param);
+                    if(p == null)
+                        p = new Parameter(null, name, param.getName(), type);
+                    else {
+                        p.setName(name);
+                        p.setType(type);
+                    }
                     var beanName = (String) TranspileUtils.getAnnotationAttribute(param, Resource.class, "value");
                     if (beanName != null)
                         p.setAttribute(AttributeNames.BEAN_NAME, beanName);

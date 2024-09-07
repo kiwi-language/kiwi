@@ -82,10 +82,13 @@ public class Method extends Flow implements Property, GenericElement {
                   @Nullable CodeSource codeSource,
                   boolean hidden,
                   MetadataState state) {
-        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, horizontalTemplate, codeSource, state, isAbstract);
+        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, List.of(), List.of(), horizontalTemplate, codeSource, state, isAbstract);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
+        setTypeParameters(typeParameters);
+        if(typeParameters.isEmpty())
+            setTypeArguments(typeArguments);
         this._static = isStatic;
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
@@ -120,22 +123,23 @@ public class Method extends Flow implements Property, GenericElement {
             var overriddenFlow = overriddenFlowRef.resolve();
             NncUtils.requireEquals(getParameters().size(), overriddenFlow.getParameters().size());
             NncUtils.requireEquals(getTypeParameters().size(), overriddenFlow.getTypeParameters().size());
+            var subst = getSubstitutor(overriddenFlow);
             for (int i = 0; i < getParameters().size(); i++) {
                 var t1 = getParameter(i).getType();
                 var t2 = overriddenFlow.getParameter(i).getType();
-                if(!t1.equals(t2)) {
-                    if(t1 instanceof VariableType vt1 && t2 instanceof VariableType vt2) {
-                        var v1 = vt1.getVariable();
-                        var v2 = vt2.getVariable();
-                        if(v1.getGenericDeclaration() == this && v2.getGenericDeclaration() == overriddenFlow
-                                && v1.getIndex() == v2.getIndex())
-                            continue;
-                    }
+                if(!t1.equals(t2.accept(subst))) {
                     throw new IllegalStateException("Method " + getQualifiedName() + " has different parameter types with overridden method " + overriddenFlow.getQualifiedName());
                 }
             }
-            NncUtils.requireTrue(overriddenFlow.getReturnType().isAssignableFrom(getReturnType()));
+            NncUtils.requireTrue(overriddenFlow.getReturnType().accept(subst).isAssignableFrom(getReturnType()));
         }
+    }
+
+    private TypeSubstitutor getSubstitutor(Method overridden) {
+        return new TypeSubstitutor(
+                NncUtils.map(overridden.getTypeParameters(), TypeVariable::getType),
+                NncUtils.map(getTypeParameters(), TypeVariable::getType)
+        );
     }
 
     public boolean isConstructor() {
@@ -166,6 +170,10 @@ public class Method extends Flow implements Property, GenericElement {
 
     public List<Method> getOverridden() {
         return NncUtils.map(overridden, MethodRef::resolve);
+    }
+
+    public List<MethodRef> getOverriddenRefs() {
+        return overridden.toList();
     }
 
     @Override
@@ -311,6 +319,7 @@ public class Method extends Flow implements Property, GenericElement {
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
             if (!overriddenFlow.getReturnType().isAssignableFrom(returnType.accept(subst))) {
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT,
+                        getQualifiedSignature(), overriddenFlow.getQualifiedSignature(),
                         returnType.accept(subst).getTypeDesc(), overriddenFlow.getReturnType().getTypeDesc());
             }
         }
@@ -335,7 +344,7 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     public Method getEffectiveVerticalTemplate() {
-        return declaringType.isParameterized() ? Objects.requireNonNull(verticalTemplate) : this;
+        return Objects.requireNonNullElse(verticalTemplate, this);
     }
 
     public FlowSummaryDTO toSummaryDTO() {
@@ -479,7 +488,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public MethodRef getRef() {
-        return new MethodRef(declaringType.getType(), this.getUltimateTemplate(), getTypeArguments());
+        return new MethodRef(declaringType.getType(), this.getUltimateTemplate(), isParameterized() ? getTypeArguments() : List.of());
     }
 
     @Override
@@ -549,5 +558,10 @@ public class Method extends Flow implements Property, GenericElement {
     public void setJavaMethod(@Nullable java.lang.reflect.Method javaMethod) {
         NncUtils.requireTrue(isNative());
         this.javaMethod = javaMethod;
+    }
+
+    @Override
+    public String getTypeDesc() {
+        return getQualifiedSignature();
     }
 }

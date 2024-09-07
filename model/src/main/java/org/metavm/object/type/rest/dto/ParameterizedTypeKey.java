@@ -1,5 +1,6 @@
 package org.metavm.object.type.rest.dto;
 
+import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
@@ -10,7 +11,7 @@ import org.metavm.util.NncUtils;
 
 import java.util.List;
 
-public record ParameterizedTypeKey(Id templateId, List<TypeKey> typeArgumentKeys) implements TypeKey{
+public record ParameterizedTypeKey(Id templateId, List<TypeKey> typeArgumentKeys) implements TypeKey, GenericDeclarationRefKey {
 
     public static ParameterizedTypeKey create(Klass template, List<Type> typeArguments) {
         return new ParameterizedTypeKey(template.getId(), NncUtils.map(typeArguments, Type::toTypeKey));
@@ -44,4 +45,8 @@ public record ParameterizedTypeKey(Id templateId, List<TypeKey> typeArgumentKeys
         return TypeKeyCodes.PARAMETERIZED;
     }
 
+    @Override
+    public GenericDeclarationRef resolve(TypeDefProvider typeDefProvider) {
+        return toType(typeDefProvider);
+    }
 }

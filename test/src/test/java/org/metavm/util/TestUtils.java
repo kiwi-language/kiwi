@@ -579,7 +579,7 @@ public class TestUtils {
         }
     }
 
-    private static long nextKlassTag() {
+    public static long nextKlassTag() {
         return nextKlassTag++;
     }
 

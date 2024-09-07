@@ -8,7 +8,7 @@ import org.metavm.util.InstanceOutput;
 
 import java.util.List;
 
-public record ClassTypeKey(@NotNull Id id) implements TypeKey {
+public record ClassTypeKey(@NotNull Id id) implements TypeKey, GenericDeclarationRefKey {
     @Override
     public void write(InstanceOutput output) {
         output.write(TypeKeyCodes.CLASS);
@@ -35,4 +35,8 @@ public record ClassTypeKey(@NotNull Id id) implements TypeKey {
         return TypeKeyCodes.CLASS;
     }
 
+    @Override
+    public ClassType resolve(TypeDefProvider typeDefProvider) {
+        return toType(typeDefProvider);
+    }
 }

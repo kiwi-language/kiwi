@@ -1,8 +1,9 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
@@ -12,6 +13,7 @@ import org.metavm.object.type.rest.dto.VariableTypeKey;
 import org.metavm.util.Constants;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
+import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -23,16 +25,20 @@ import java.util.function.Function;
 @EntityType
 public class VariableType extends Type implements IVariableType {
 
-    private final TypeVariable variable;
+    private final GenericDeclarationRef genericDeclarationRef;
+    private final TypeVariable rawVariable;
+    private transient TypeVariable resolved;
 
-    public VariableType(@NotNull TypeVariable variable) {
+    public VariableType(@NotNull GenericDeclarationRef genericDeclarationRef, @NotNull TypeVariable rawVariable) {
         super();
-        this.variable = variable;
+        assert rawVariable.getCopySource() == null;
+        this.genericDeclarationRef = genericDeclarationRef;
+        this.rawVariable = rawVariable;
     }
 
     @Override
     public Set<TypeVariable> getVariables() {
-        return Set.of(variable);
+        return Set.of(getVariable());
     }
 
     @Override
@@ -42,7 +48,7 @@ public class VariableType extends Type implements IVariableType {
 
     @Override
     public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
-        return new VariableTypeKey(getTypeDefId.apply(variable));
+        return new VariableTypeKey(genericDeclarationRef.toGenericDeclarationKey(getTypeDefId), getTypeDefId.apply(rawVariable));
     }
 
     @Override
@@ -57,29 +63,30 @@ public class VariableType extends Type implements IVariableType {
 
     @Override
     public Type getUpperBound() {
-        return variable.getUpperBound();
+        return getVariable().getUpperBound();
     }
 
     @Override
     public List<? extends Type> getSuperTypes() {
-        return Collections.unmodifiableList(variable.getBounds());
+        return Collections.unmodifiableList(getVariable().getBounds());
     }
 
     public List<Type> getBounds() {
-        return variable.getBounds();
+        return getVariable().getBounds();
     }
 
     @Override
     public String getInternalName(@Nullable Flow current) {
-        return variable.getInternalName(current);
+        return getVariable().getInternalName(current);
     }
 
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+        var prefix = genericDeclarationRef.toExpression(serializeContext, getTypeDefExpr) + "@";
         if(getTypeDefExpr == null)
-            return "?" + Constants.ID_PREFIX + serializeContext.getStringId(variable);
+            return prefix + Constants.ID_PREFIX + serializeContext.getStringId(rawVariable);
         else
-            return getTypeDefExpr.apply(variable);
+            return prefix + getTypeDefExpr.apply(rawVariable);
     }
 
     @Override
@@ -90,31 +97,37 @@ public class VariableType extends Type implements IVariableType {
     @Override
     public void write(InstanceOutput output) {
         output.write(TypeKeyCodes.VARIABLE);
-        output.writeId(variable.getId());
+        genericDeclarationRef.write(output);
+        output.writeId(rawVariable.getId());
     }
 
     public static VariableType read(InstanceInput input, TypeDefProvider typeDefProvider) {
-        return new VariableType((TypeVariable) typeDefProvider.getTypeDef(input.readId()));
+        var genDeclRef = GenericDeclarationRef.read(input, typeDefProvider);
+        var rawVariable = (TypeVariable) typeDefProvider.getTypeDef(input.readId());
+        return new VariableType(genDeclRef, rawVariable);
     }
 
     public TypeVariable getVariable() {
-        return variable;
+        if(resolved != null)
+            return resolved;
+        return resolved = NncUtils.findRequired(genericDeclarationRef.resolve().getTypeParameters(),
+                tv -> tv.getEffectiveTemplate() == rawVariable);
     }
 
     @Override
     public String getName() {
-        return variable.getName();
+        return getVariable().getName();
     }
 
     @Override
     public String getTypeDesc() {
-        return variable.getTypeDesc();
+        return getVariable().getTypeDesc();
     }
 
     @Nullable
     @Override
     public String getCode() {
-        return variable.getCode();
+        return getVariable().getCode();
     }
 
     @Override
@@ -134,16 +147,26 @@ public class VariableType extends Type implements IVariableType {
 
     @Override
     protected boolean equals0(Object obj) {
-        return obj instanceof VariableType that && variable == that.variable;
+        return obj instanceof VariableType that && rawVariable == that.rawVariable;
     }
 
     @Override
     public int hashCode() {
-        return variable.hashCode();
+        if(getVariable() == null)
+            throw new NullPointerException("Variable is null. VariableType: " + System.identityHashCode(this));
+        return getVariable().hashCode();
+    }
+
+    public TypeVariable getRawVariable() {
+        return rawVariable;
+    }
+
+    public GenericDeclarationRef getGenericDeclarationRef() {
+        return genericDeclarationRef;
     }
 
     @Override
     public void forEachTypeDef(Consumer<TypeDef> action) {
-        action.accept(variable);
+        action.accept(getVariable());
     }
 }

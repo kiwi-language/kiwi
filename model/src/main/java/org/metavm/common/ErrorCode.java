@@ -87,7 +87,7 @@ public enum ErrorCode {
     ILLEGAL_FUNCTION_ARGUMENT(425, "Invalid flow '{}' call argument, expected type: {}, actual type: {}"),
     INCORRECT_FUNCTION_ARGUMENT(426, "Invalid function '{}' call argument"),
     CONFLICTING_FLOW(427, "Flow signature conflict: same name and parameter type, different number of parameters"),
-    OVERRIDE_FLOW_RETURN_TYPE_INCORRECT(428, "Incorrect return type for overridden flow, current return type: {}, overridden return type: {}"),
+    OVERRIDE_FLOW_RETURN_TYPE_INCORRECT(428, "Method {} does not correctly overrides {}, current return type: {}, overridden return type: {}"),
     NOT_A_CHILD_FIELD(429, "Field '{}' is not a child object field"),
     MASTER_FIELD_REQUIRED(430, "Parent object field is required"),
     MASTER_FIELD_SHOULD_BE_NULL(430, "When parent is an array, parent object field should be null"),

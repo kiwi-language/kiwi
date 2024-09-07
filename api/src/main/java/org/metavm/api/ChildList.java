@@ -1,70 +1,75 @@
 package org.metavm.api;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 
-public class ChildList<T> extends ArrayList<T> {
+public class ChildList<T> extends AbstractList<T> {
+
+    private final List<T> list;
 
     public ChildList() {
+        list = new ArrayList<>();
     }
 
     public ChildList(Collection<? extends T> c) {
-        super(c);
+        list = new ArrayList<>(c);
     }
 
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        return super.addAll(c);
+        return list.addAll(c);
     }
 
     @Override
     public boolean isEmpty() {
-        return super.isEmpty();
+        return list.isEmpty();
     }
 
     @Override
     public T get(int index) {
-        return super.get(index);
+        return list.get(index);
     }
 
     @Override
     public T set(int index, T element) {
-        return super.set(index, element);
+        return list.set(index, element);
     }
 
     @Override
     public boolean remove(Object o) {
-        return super.remove(o);
+        return list.remove(o);
     }
 
     @Override
     public T remove(int index) {
-        return super.remove(index);
+        return list.remove(index);
     }
 
     @Override
     public boolean contains(Object o) {
-        return super.contains(o);
+        return list.contains(o);
     }
 
     @Override
     public int size() {
-        return super.size();
+        return list.size();
     }
 
     @Override
     public boolean add(T t) {
-        return super.add(t);
+        return list.add(t);
     }
 
     @Override
     public void clear() {
-        super.clear();
+        list.clear();
     }
 
     public boolean removeIf(Predicate<? super T> filter) {
-        return super.removeIf(filter);
+        return list.removeIf(filter);
     }
 
 }

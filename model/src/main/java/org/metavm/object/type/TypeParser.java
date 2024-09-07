@@ -1,6 +1,7 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.flow.FunctionRef;
 import org.metavm.flow.MethodRef;
 import org.metavm.flow.SimpleMethodRef;
 import org.metavm.util.InternalException;
@@ -44,6 +45,10 @@ public interface TypeParser {
     Type parseType(String expression);
 
     MethodRef parseMethodRef(String expression);
+
+    MethodRef parseMethodRef(org.metavm.object.type.antlr.TypeParser.MethodRefContext ctx);
+
+    FunctionRef parseFunctionRef(String expression);
 
     SimpleMethodRef parseSimpleMethodRef(String expression);
 }

@@ -7,7 +7,7 @@ import org.metavm.entity.IndexDef;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.type.rest.dto.TypeDefDTO;
 
-public abstract class TypeDef extends AttributedElement {
+public abstract class TypeDef extends AttributedElement implements ITypeDef {
 
     public static final IndexDef<TypeDef> IDX_ALL_FLAG = IndexDef.create(TypeDef.class, "allFlag");
 

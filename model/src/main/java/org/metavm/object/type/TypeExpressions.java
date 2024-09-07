@@ -1,7 +1,6 @@
 package org.metavm.object.type;
 
 import org.metavm.entity.StdKlass;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -16,13 +15,13 @@ public class TypeExpressions {
     /**
      *
      * @param type to be substituted
-     * @param variableMap key: variable id, value: substitution type
+     * @param variableMap key: variable type, value: substitution type
      * @return the substituted type
      */
     public static String substitute(String type, Map<String, String> variableMap) {
         var typeKey = TypeKey.fromExpression(type);
         var typeKeyMap = new HashMap<VariableTypeKey, TypeKey>();
-        variableMap.forEach((variableId, substType) -> typeKeyMap.put(new VariableTypeKey(Id.parse(variableId)), TypeKey.fromExpression(substType)));
+        variableMap.forEach((variableType, substType) -> typeKeyMap.put((VariableTypeKey) TypeKey.fromExpression(variableType), TypeKey.fromExpression(substType)));
         return TypeKeys.substitute(typeKey, typeKeyMap).toTypeExpression();
     }
 

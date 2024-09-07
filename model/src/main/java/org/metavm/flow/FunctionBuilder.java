@@ -116,8 +116,6 @@ public class FunctionBuilder {
     }
 
     public Function build() {
-        if (!typeParameters.isEmpty())
-            typeArguments = new ArrayList<>(NncUtils.map(typeParameters, TypeVariable::getType));
         if (existing == null) {
             return new Function(
                     tmpId,

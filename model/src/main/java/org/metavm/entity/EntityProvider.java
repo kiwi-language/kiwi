@@ -32,7 +32,7 @@ public interface EntityProvider extends MappingProvider, TypeDefProvider, Redire
         return getEntity(Type.class, id);
     }
 
-    default TypeDef getTypeDef(Id id) {
+    default ITypeDef getTypeDef(Id id) {
         return getEntity(TypeDef.class, id);
     }
 

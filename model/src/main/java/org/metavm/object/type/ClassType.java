@@ -2,10 +2,7 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.CopyIgnore;
-import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.SerializeContext;
-import org.metavm.entity.ValueArray;
+import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TypeId;
@@ -27,7 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 @EntityType
-public class ClassType extends Type implements ISubstitutor {
+public class ClassType extends Type implements ISubstitutor, GenericDeclarationRef {
 
     public static final Logger logger = LoggerFactory.getLogger(ClassType.class);
 
@@ -60,6 +57,11 @@ public class ClassType extends Type implements ISubstitutor {
                         new ClassTypeKey(getTypeDefId.apply(klass))
                 ) :
                 new ParameterizedTypeKey(klass.getId(), NncUtils.map(typeArguments, type -> type.toTypeKey(getTypeDefId)));
+    }
+
+    @Override
+    public GenericDeclarationRefKey toGenericDeclarationKey(Function<TypeDef, Id> getTypeDefId) {
+        return (GenericDeclarationRefKey) toTypeKey(getTypeDefId);
     }
 
     public Klass getKlass() {
@@ -136,7 +138,8 @@ public class ClassType extends Type implements ISubstitutor {
     }
 
     public @Nullable ClassType findAncestor(Klass template) {
-        return resolve().findAncestorByTemplate(template).getType();
+        var ancestor =  resolve().findAncestorByTemplate(template);
+        return ancestor != null ? ancestor.getType() : null;
     }
 
     @Override

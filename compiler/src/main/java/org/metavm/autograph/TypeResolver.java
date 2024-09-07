@@ -14,6 +14,8 @@ public interface TypeResolver {
 
     Type resolveDeclaration(PsiType psiType);
 
+    void addGeneratedTypeDef(TypeDef typeDef);
+
     void ensureDeclared(Klass classType);
 
     void ensureCodeGenerated(Klass classType);

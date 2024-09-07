@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.DummyGenericDeclaration;
+import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.antlr.TypeLexer;
@@ -58,6 +59,16 @@ public class TypeParserImpl implements TypeParser {
     }
 
     @Override
+    public FunctionRef parseFunctionRef(String expression) {
+        var parser = createAntlrParser(expression);
+        try {
+            return parseFunctionRef(parser.functionRef());
+        } catch (Exception e) {
+            throw new InternalException("Failed to parse function reference: " + expression, e);
+        }
+    }
+
+    @Override
     public SimpleMethodRef parseSimpleMethodRef(String expression) {
         var parser = createAntlrParser(expression);
         try {
@@ -90,17 +101,18 @@ public class TypeParserImpl implements TypeParser {
 
     private Function parseFunction(org.metavm.object.type.antlr.TypeParser.FunctionSignatureContext ctx) {
         var name = ctx.IDENTIFIER().getText();
-        return FunctionBuilder.newBuilder(name, name)
+        var func =  FunctionBuilder.newBuilder(name, name)
                 .typeParameters(
                         ctx.typeParameterList() != null ?
                                 NncUtils.map(ctx.typeParameterList().typeParameter(), this::parseTypeParameter) : List.of()
                 )
-                .parameters(
+                .build();
+        func.setParameters(
                         ctx.parameterList() != null ?
                                 NncUtils.map(ctx.parameterList().parameter(), this::parseParameter) : List.of()
-                )
-                .returnType(parseType(ctx.type()))
-                .build();
+                );
+        func.setReturnType(parseType(ctx.type()));
+        return func;
     }
 
     private Parameter parseParameter(org.metavm.object.type.antlr.TypeParser.ParameterContext ctx) {
@@ -148,11 +160,17 @@ public class TypeParserImpl implements TypeParser {
         throw new IllegalArgumentException("Unknown type: " + ctx.getText());
     }
 
-    private MethodRef parseMethodRef(org.metavm.object.type.antlr.TypeParser.MethodRefContext ctx) {
+    public MethodRef parseMethodRef(org.metavm.object.type.antlr.TypeParser.MethodRefContext ctx) {
         var classType = (ClassType) parseClassType(ctx.classType());
-        var rawMethod = classType.getKlass().getMethod(Id.parse(ctx.IDENTIFIER().getText().substring(Constants.ID_PREFIX.length())));
+        var rawMethod = (Method) typeDefProvider.getTypeDef(ctx.IDENTIFIER().getText());
         List<Type> typeArgs = ctx.typeArguments() != null ? parseTypeList(ctx.typeArguments().typeList()) : List.of();
         return new MethodRef(classType, rawMethod, typeArgs);
+    }
+
+    public FunctionRef parseFunctionRef(org.metavm.object.type.antlr.TypeParser.FunctionRefContext ctx) {
+        var rawFunc = (Function) getTypeDef(ctx.IDENTIFIER().getText());
+        List<Type> typeArgs = ctx.typeArguments() != null ? parseTypeList(ctx.typeArguments().typeList()) : List.of();
+        return new FunctionRef(rawFunc, typeArgs);
     }
 
     private SimpleMethodRef parseSimpleMethodRef(org.metavm.object.type.antlr.TypeParser.SimpleMethodRefContext ctx) {
@@ -163,7 +181,21 @@ public class TypeParserImpl implements TypeParser {
     }
 
     private VariableType parseVariableType(org.metavm.object.type.antlr.TypeParser.VariableTypeContext ctx) {
-        return new VariableType((TypeVariable) getTypeDef(ctx.qualifiedName().getText()));
+//        return new VariableType((TypeVariable) getTypeDef(ctx.qualifiedName().getText()), genericDeclarationRef, rawVariable);
+        var genericDeclRef = parseGenericDeclarationRef(ctx.genericDeclarationRef());
+        var rawTypeVariable = (TypeVariable) getTypeDef(ctx.IDENTIFIER().getText());
+        return new VariableType(genericDeclRef, rawTypeVariable);
+    }
+
+    private GenericDeclarationRef parseGenericDeclarationRef(org.metavm.object.type.antlr.TypeParser.GenericDeclarationRefContext ctx) {
+        if(ctx.classType() != null)
+            return (ClassType) parseClassType(ctx.classType());
+        else if(ctx.methodRef() != null)
+            return parseMethodRef(ctx.methodRef());
+        else if(ctx.functionRef() != null)
+            return parseFunctionRef(ctx.functionRef());
+        else
+            throw new IllegalStateException("Failed to parse generic declaration ref: " + ctx.getText());
     }
 
     private PrimitiveType parsePrimitiveType(org.metavm.object.type.antlr.TypeParser.PrimitiveTypeContext ctx) {
@@ -224,7 +256,7 @@ public class TypeParserImpl implements TypeParser {
         return new CapturedType((CapturedTypeVariable) typeDef);
     }
 
-    private TypeDef getTypeDef(String name) {
+    private ITypeDef getTypeDef(String name) {
         var typeDef = typeDefProvider.getTypeDef(name);
         if(typeDef == null)
             throw new NullPointerException("Failed to find a TypeDef for name: " + name);

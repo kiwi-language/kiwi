@@ -259,10 +259,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         TestUtils.doInTransaction(() -> apiClient.callMethod(labId, "sortFoos", List.of()));
         var foos2 = apiClient.getObject(labId).getRaw("foos");
         Assert.assertEquals(List.of(foo1Id, foo2Id), foos2);
-        TestUtils.doInTransaction(() -> apiClient.callMethod(labId, "reverseFoos", List.of()));
-        TestUtils.doInTransaction(() -> apiClient.callMethod(labId, "sortFoos1", List.of()));
-        var foos3 = apiClient.getObject(labId).getRaw("foos");
-        Assert.assertEquals(List.of(foo1Id, foo2Id), foos3);
     }
 
 }

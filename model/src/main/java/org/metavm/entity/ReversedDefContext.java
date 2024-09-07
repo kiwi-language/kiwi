@@ -247,7 +247,7 @@ public class ReversedDefContext extends DefContext {
     }
 
     private void initDef(ModelDef<?> prototype) {
-        var typeDef = getTypeDef(prototype.getTypeDef().getId());
+        var typeDef = (TypeDef) getTypeDef(prototype.getTypeDef().getId());
         EntityUtils.ensureTreeInitialized(typeDef);
         var def = createDef(prototype);
         javaType2Def.put(prototype.getJavaType(), def);
@@ -301,7 +301,7 @@ public class ReversedDefContext extends DefContext {
     }
 
     private <T> DirectDef<T> createDirectDef(DirectDef<T> prototype) {
-        return new DirectDef<>(prototype.getJavaClass(), getTypeDef(prototype.getTypeDef().getId()));
+        return new DirectDef<>(prototype.getJavaClass(), (TypeDef) getTypeDef(prototype.getTypeDef().getId()));
     }
 
     private <T extends Entity> EntityDef<T> createEntityDef(EntityDef<T> prototype) {

@@ -1,21 +1,27 @@
 package org.metavm.flow;
 
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.MethodRefDTO;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.PropertyRef;
-import org.metavm.object.type.Type;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeParser;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.object.type.*;
+import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
+import org.metavm.object.type.rest.dto.TypeKeyCodes;
+import org.metavm.util.*;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 @EntityType
+@Slf4j
 public class MethodRef extends FlowRef implements PropertyRef {
 
     public static MethodRef create(MethodRefDTO methodRefDTO, IEntityContext context) {
@@ -28,7 +34,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
 
     private final ClassType declaringType;
 
-    public MethodRef(ClassType declaringType, Method rawFlow, List<Type> typeArguments) {
+    public MethodRef(ClassType declaringType, @NotNull Method rawFlow, List<Type> typeArguments) {
         super(rawFlow, typeArguments);
         this.declaringType = declaringType;
     }
@@ -50,8 +56,8 @@ public class MethodRef extends FlowRef implements PropertyRef {
         var klass = declaringType.resolve();
         var partialResolved = klass.findMethod(m -> m.getEffectiveVerticalTemplate() == getRawFlow());
         if (partialResolved == null) {
-            logger.info("all methods in klass");
-            klass.forEachMethod(m -> logger.info(m.getQualifiedSignature()));
+            log.info("all methods in klass");
+            klass.forEachMethod(m -> log.info(m.getQualifiedSignature()));
             throw new InternalException("fail to resolve methodRef: " + this);
         }
         var r =  partialResolved.getParameterized(getTypeArguments());
@@ -78,15 +84,62 @@ public class MethodRef extends FlowRef implements PropertyRef {
     }
 
     public MethodRefDTO toDTO(SerializeContext serializeContext) {
+        return toDTO(serializeContext, null);
+    }
+
+    public MethodRefDTO toDTO(SerializeContext serializeContext, Function<TypeDef, String> getTypeDefId) {
         return new MethodRefDTO(
-                declaringType.toExpression(serializeContext),
+                declaringType.toExpression(serializeContext, getTypeDefId),
                 serializeContext.getStringId(getRawFlow()),
-                NncUtils.map(getTypeArguments(), t -> t.toExpression(serializeContext))
+                NncUtils.map(typeArguments, t -> t.toExpression(serializeContext, getTypeDefId))
         );
     }
 
     @Override
     protected String toString0() {
         return "{\"declaringType\": \"" + declaringType + "\", \"rawMethod\": \"" + getRawFlow().getSignatureString() + "\"}";
+    }
+
+    public static MethodRef read(InstanceInput input, TypeDefProvider typeDefProvider) {
+       var classType = ClassType.read(input, typeDefProvider);
+       var rawMethod = (Method) typeDefProvider.getTypeDef(input.readId());
+       var typeArgsCount = input.readInt();
+       var typeArgs = new ArrayList<Type>(typeArgsCount);
+       for (int i = 0; i < typeArgsCount; i++) {
+           typeArgs.add(Type.readType(input, typeDefProvider));
+       }
+       return new MethodRef(classType, rawMethod, typeArgs);
+    }
+
+    @Override
+    public void write(InstanceOutput output) {
+        output.write(TypeKeyCodes.METHOD_REF);
+        declaringType.write(output);
+        output.writeId(getRawFlow().getId());
+        output.writeInt(getTypeArguments().size());
+        for (Type typeArgument : getTypeArguments()) {
+            typeArgument.write(output);
+        }
+    }
+
+    @Override
+    public GenericDeclarationRefKey toGenericDeclarationKey(Function<TypeDef, Id> getTypeDefId) {
+        try(var serContext = SerializeContext.enter()) {
+            return toDTO(serContext, typeDef -> Constants.addIdPrefix(getTypeDefId.apply(typeDef).toString()));
+        }
+    }
+
+    @Override
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+        return declaringType.toExpression(serializeContext, getTypeDefExpr) + "::"
+                + Constants.addIdPrefix(serializeContext.getStringId(getRawFlow()))
+                + (
+                        typeArguments.isEmpty() ? "" :
+                                "<" + NncUtils.join(
+                                        typeArguments,
+                                        t -> t.toExpression(serializeContext, getTypeDefExpr),
+                                        ","
+                                ) + ">"
+                );
     }
 }

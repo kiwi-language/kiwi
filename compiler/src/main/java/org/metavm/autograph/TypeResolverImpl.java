@@ -168,7 +168,7 @@ public class TypeResolverImpl implements TypeResolver {
             if (wildcardType.isExtends()) {
                 return UncertainType.createUpperBounded(resolve(wildcardType.getExtendsBound(), stage));
             } else {
-                return UncertainType.createLowerBounded(resolve(wildcardType.getSuperBound(), stage));
+                return new UncertainType(resolve(wildcardType.getSuperBound(), stage), Types.getAnyType());
             }
         } else {
             /*
@@ -340,6 +340,10 @@ public class TypeResolverImpl implements TypeResolver {
         return typeVariable.getType();
     }
 
+    @Override
+    public void addGeneratedTypeDef(TypeDef typeDef) {
+        generatedTypeDefs.add(typeDef);
+    }
 
     @Nullable
     private TypeVariable tryResolveBuiltinTypeVar(PsiTypeParameter typeParameter) {

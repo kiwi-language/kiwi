@@ -176,7 +176,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
 
     public @NotNull VariableType getType() {
         if(type == null)
-            type = new VariableType(this);
+            type = new VariableType(genericDeclaration.getRef(), getEffectiveTemplate());
         return type;
     }
 
@@ -186,6 +186,11 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
 
     @Override
     protected String toString0() {
-        return "TypeVariable" + getTypeDesc();
+        return "TypeVariable-" + getTypeDesc();
     }
+
+    public TypeVariable getEffectiveTemplate() {
+        return copySource != null ? copySource : this;
+    }
+
 }

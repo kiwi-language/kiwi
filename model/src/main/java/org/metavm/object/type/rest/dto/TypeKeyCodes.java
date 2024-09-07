@@ -48,4 +48,9 @@ public class TypeKeyCodes {
 
     public static final int VALUE_ARRAY = 25;
 
+    // Method ref is not actually a type, but a type tag code is introduced for it for the sake of generic declaration
+    public static final int METHOD_REF = 70;
+
+    public static final int FUNCTION_REF = 71;
+
 }

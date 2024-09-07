@@ -1,4 +1,4 @@
-// Generated from TypeParser.g4 by ANTLR 4.13.1
+// Generated from TypeParser.g4 by ANTLR 4.13.2
 package org.metavm.object.type.antlr;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -41,6 +41,18 @@ public class TypeParserBaseListener implements TypeParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterGenericDeclarationRef(TypeParser.GenericDeclarationRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGenericDeclarationRef(TypeParser.GenericDeclarationRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterMethodRef(TypeParser.MethodRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -48,6 +60,18 @@ public class TypeParserBaseListener implements TypeParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitMethodRef(TypeParser.MethodRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterFunctionRef(TypeParser.FunctionRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFunctionRef(TypeParser.FunctionRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

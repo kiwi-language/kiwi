@@ -1,10 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.Attribute;
-import org.metavm.entity.DummyGenericDeclaration;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.StdKlass;
+import org.metavm.entity.*;
 import org.metavm.expression.TypeParsingContext;
 import org.metavm.flow.*;
 import org.metavm.flow.rest.FlowDTO;
@@ -30,7 +27,8 @@ public abstract class TypeFactory {
             var context = batch.getContext();
             var type = batch.getContext().getTypeVariable(Id.parse(typeVariableDTO.id()));
             if (type == null) {
-                type = new TypeVariable(typeVariableDTO.tmpId(), typeVariableDTO.name(), typeVariableDTO.code(), DummyGenericDeclaration.INSTANCE);
+                type = new TypeVariable(typeVariableDTO.tmpId(), typeVariableDTO.name(), typeVariableDTO.code(),
+                        context.getEntity(GenericDeclaration.class, typeVariableDTO.genericDeclarationId()));
                 context.bind(type);
                 var retrieved = context.getEntity(TypeVariable.class, type.getId());
                 assert retrieved != null : "Fail to save type variable " + type.getId();
@@ -73,7 +71,6 @@ public abstract class TypeFactory {
                         .kind(kind)
                         .ephemeral(klassDTO.ephemeral())
                         .anonymous(klassDTO.anonymous())
-                        .typeParameters(NncUtils.map(klassDTO.typeParameterIds(), batch::getTypeVariable))
                         .isTemplate(klassDTO.isTemplate())
                         .isAbstract(klassDTO.isAbstract())
                         .struct(klassDTO.struct())
@@ -108,10 +105,21 @@ public abstract class TypeFactory {
                 klass.setAbstract(klassDTO.isAbstract());
                 batch.getContext().update(klass);
             }
+            if(klass.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
+                if (klassDTO.flows() != null) {
+                    var methods = NncUtils.filterAndMap(klassDTO.flows(), f -> !f.synthetic(), f -> saveMethod(f, ResolutionStage.INIT, batch));
+                    klass.getMethods().forEach(m -> {
+                        if(m.isSynthetic())
+                            methods.add(m);
+                    });
+                    klass.setMethods(methods);
+                }
+            }
             if(klassDTO.attributes() != null)
                 klass.setAttributes(Attribute.fromMap(klassDTO.attributes()));
             var curStage = klass.setStage(stage);
             if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {
+                klass.setTypeParameters(NncUtils.map(klassDTO.typeParameterIds(), batch::getTypeVariable));
                 if (klass.isEnum()) {
                     var enumSuperClass = StdKlass.enum_.get().getParameterized(List.of(klass.getType()));
                     klass.setSuperType(enumSuperClass.getType());
@@ -139,12 +147,10 @@ public abstract class TypeFactory {
                 if(klassDTO.enumConstantDefs() != null)
                     klass.setEnumConstantDefs(NncUtils.map(klassDTO.enumConstantDefs(), ec -> saveEnumConstantDef(declaringType, ec, stage, batch)));
                 if (klassDTO.flows() != null) {
-                    var methods = NncUtils.filterAndMap(klassDTO.flows(), f -> !f.synthetic(), f -> saveMethod(f, stage, batch));
-                    klass.getMethods().forEach(m -> {
-                        if(m.isSynthetic())
-                            methods.add(m);
-                    });
-                    klass.setMethods(methods);
+                    for (FlowDTO flowDTO : klassDTO.flows()) {
+                        if(!flowDTO.synthetic())
+                            saveMethod(flowDTO, stage, batch);
+                    }
                 }
                 if (klassDTO.titleFieldId() != null)
                     klass.setTitleField(NncUtils.find(klass.getFields(), f -> f.getStringId().equals(klassDTO.titleFieldId())));
@@ -247,17 +253,20 @@ public abstract class TypeFactory {
         }
         if (flowDTO.attributes() != null)
             method.setAttributes(Attribute.fromMap(flowDTO.attributes()));
-        method.setNative(flowDTO.isNative());
-        method.setAbstract(param.isAbstract());
-        method.setConstructor(param.isConstructor());
-        method.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
-        method.setCapturedTypeVariables(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedTypeVariable));
-        method.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)));
-        method.setReturnType(TypeParser.parseType(flowDTO.returnType(), context));
-        method.setOverridden(NncUtils.map(param.overriddenRefs(), r -> MethodRef.create(r, context).resolve()));
-        method.setAbstract(param.isAbstract());
-        if(method.getParameters().isEmpty() && !method.isStatic() && method.getName().equals(Constants.RUN_METHOD_NAME))
-            batch.addRunMethod(method);
+        var curStage = method.setStage(stage);
+        if(curStage.isBefore(ResolutionStage.DECLARATION) && stage.isAfterOrAt(ResolutionStage.DECLARATION)) {
+            method.setNative(flowDTO.isNative());
+            method.setAbstract(param.isAbstract());
+            method.setConstructor(param.isConstructor());
+            method.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
+            method.setCapturedTypeVariables(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedTypeVariable));
+            method.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)));
+            method.setReturnType(TypeParser.parseType(flowDTO.returnType(), context));
+            method.setOverridden(NncUtils.map(param.overriddenRefs(), r -> MethodRef.create(r, context).resolve()));
+            method.setAbstract(param.isAbstract());
+            if (method.getParameters().isEmpty() && !method.isStatic() && method.getName().equals(Constants.RUN_METHOD_NAME))
+                batch.addRunMethod(method);
+        }
         return method;
     }
 

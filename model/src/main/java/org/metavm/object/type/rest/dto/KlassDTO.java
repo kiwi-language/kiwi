@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.flow.rest.GenericDeclarationDTO;
-import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.view.rest.dto.ObjectMappingDTO;
+import org.metavm.util.Constants;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -61,6 +61,10 @@ public record KlassDTO(
     @JsonIgnore
     public FieldDTO getFieldByName(String name) {
         return NncUtils.findRequired(fields, f -> f.name().equals(name));
+    }
+
+    public List<String> getParameterTypeExpressions() {
+        return NncUtils.map(typeParameterIds, tpId -> Constants.addIdPrefix(id) + "@" + Constants.addIdPrefix(tpId));
     }
 
 }

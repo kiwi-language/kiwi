@@ -15,6 +15,7 @@ import org.metavm.flow.*;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.generic.SubstitutorV2;
+import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.view.MappingSaver;
 import org.metavm.object.view.ObjectMapping;
@@ -196,7 +197,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             superType.resolve().addExtension(this);
         interfaces.forEach(it -> it.resolve().addImplementation(this));
         setTypeParameters(typeParameters);
-        setTypeArguments(typeArguments);
+        if(typeParameters.isEmpty())
+            setTypeArguments(typeArguments);
+        else
+            setTypeArguments(NncUtils.map(typeParameters, TypeVariable::getType));
         getMethodTable().rebuild();
         setTemplateFlag(isTemplate);
         resetSortedClasses();
@@ -263,9 +267,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (template == null) {
             return getCodeNotNull();
         } else {
-            return context.getModelName(template, this) + "<"
-                    + NncUtils.join(typeArguments, object -> context.getModelName(object, this))
-                    + ">";
+            throw new InternalException("Getting global key for parameterized type: " + getTypeDesc() + ", method: " + ((Method) DebugEnv.object).getQualifiedSignature());
         }
     }
 
@@ -1735,6 +1737,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             return getCodeNotNull();
     }
 
+    @Override
+    public GenericDeclarationRef getRef() {
+        return getType();
+    }
+
     public boolean isList() {
         var t = getEffectiveTemplate();
         return t.getNativeClass() == ListNative.class;
@@ -1863,6 +1870,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public @Nullable Method getEqualsMethod() {
         return methodTable.getEqualsMethod();
+    }
+
+    public TypeSubstitutor getSubstitutor() {
+        return new TypeSubstitutor(
+                NncUtils.map(getEffectiveTemplate().getTypeParameters(), TypeVariable::getType),
+                getTypeArguments()
+        );
     }
 
 }

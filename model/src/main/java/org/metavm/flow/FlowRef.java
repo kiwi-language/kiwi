@@ -1,10 +1,7 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.CopyIgnore;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
-import org.metavm.entity.ValueArray;
+import org.metavm.entity.*;
 import org.metavm.flow.rest.FlowRefDTO;
 import org.metavm.flow.rest.FunctionRefDTO;
 import org.metavm.flow.rest.MethodRefDTO;
@@ -14,7 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType
-public abstract class FlowRef extends CallableRef {
+public abstract class FlowRef extends CallableRef implements GenericDeclarationRef {
 
     public static FlowRef create(FlowRefDTO flowRefDTO, IEntityContext context) {
         if(flowRefDTO instanceof MethodRefDTO methodRefDTO)
@@ -26,13 +23,13 @@ public abstract class FlowRef extends CallableRef {
     }
 
     private final Flow rawFlow;
-    private final ValueArray<Type> typeArguments;
+    protected final ValueArray<Type> typeArguments;
     @CopyIgnore
     protected transient Flow resolved;
 
     public FlowRef(Flow rawFlow, List<Type> typeArguments) {
         this.rawFlow = rawFlow;
-        this.typeArguments = new ValueArray<>(Type.class, typeArguments);
+        this.typeArguments =  new ValueArray<>(Type.class, typeArguments);
     }
 
     public Flow getRawFlow() {
@@ -40,7 +37,7 @@ public abstract class FlowRef extends CallableRef {
     }
 
     public List<Type> getTypeArguments() {
-        return typeArguments.toList();
+        return typeArguments.isEmpty() ? rawFlow.getTypeArguments() : typeArguments.toList();
     }
 
     public Flow resolve() {
@@ -62,6 +59,15 @@ public abstract class FlowRef extends CallableRef {
         return Objects.hash(rawFlow, typeArguments);
     }
 
+    public FlowRefDTO toDTO() {
+        try(var serContext = SerializeContext.enter()) {
+            return toDTO(serContext);
+        }
+    }
+
     public abstract FlowRefDTO toDTO(SerializeContext serializeContext);
 
+    public boolean isParameterized() {
+        return !typeArguments.isEmpty();
+    }
 }

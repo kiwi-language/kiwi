@@ -18,7 +18,11 @@ type
     | '(' typeList? ')' '->' type
     ;
 
-methodRef: classType '.' IDENTIFIER typeArguments?;
+genericDeclarationRef: classType | methodRef | functionRef;
+
+methodRef: classType '::' IDENTIFIER typeArguments?;
+
+functionRef: FUNC IDENTIFIER typeArguments?;
 
 simpleMethodRef: IDENTIFIER typeArguments?;
 
@@ -26,7 +30,7 @@ arrayKind: R | C | V;
 
 classType: qualifiedName typeArguments? (':' DECIMAL_LITERAL)?;
 
-variableType: '?' qualifiedName;
+variableType:  genericDeclarationRef '@' IDENTIFIER;
 
 typeArguments: '<' typeList '>';
 

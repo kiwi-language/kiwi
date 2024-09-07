@@ -185,7 +185,6 @@ public class KlassBuilder {
     private Klass create() {
         if (NncUtils.isNotEmpty(typeParameters)) {
             isTemplate = true;
-            this.typeArguments = new ArrayList<>(NncUtils.map(typeParameters, TypeVariable::getType));
         }
         Klass klass;
         String effectiveName = suffix != null ? name + "_" + suffix : name;

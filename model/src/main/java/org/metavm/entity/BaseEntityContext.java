@@ -100,7 +100,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if (model != null && model2instance.containsKey(model)) {
             entityMap.put(instance.getId(), model);
             if (model instanceof IdInitializing idInitializing) {
-                NncUtils.requireNull(idInitializing.tryGetPhysicalId(), () -> "ID is already set for entity " + idInitializing);
+                NncUtils.requireNull(idInitializing.tryGetPhysicalId(), () -> "ID is already set for entity "
+                        + idInitializing.getClass().getName() + "-" + idInitializing);
                 idInitializing.initId(instance.tryGetId());
             }
         }

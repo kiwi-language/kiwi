@@ -382,6 +382,30 @@ public class Types {
         return members.size() == 1 ? members.iterator().next() : new UnionType(members);
     }
 
+    public static Type getIntersectionType(Collection<Type> types) {
+        if (types.isEmpty())
+            return getAnyType();
+        Set<Type> effectiveTypes = new HashSet<>();
+        for (Type type : types) {
+            if (type instanceof IntersectionType it) {
+                effectiveTypes.addAll(it.getTypes());
+            } else {
+                effectiveTypes.add(type);
+            }
+        }
+        Set<Type> members = new HashSet<>();
+        out:
+        for (Type effectiveType : effectiveTypes) {
+            for (Type type : effectiveTypes) {
+                if (type != effectiveType && effectiveType.isAssignableFrom(type))
+                    continue out;
+            }
+            members.add(effectiveType);
+        }
+        return members.size() == 1 ? members.iterator().next() : new IntersectionType(members);
+    }
+
+
     public static Flow saveFlow(FlowDTO flowDTO, SaveTypeBatch batch) {
         return TYPE_FACTORY.saveMethod(flowDTO, ResolutionStage.DEFINITION, batch);
     }

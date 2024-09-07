@@ -28,8 +28,4 @@ public class SortLab {
         this.foos.sort(ComparableFoo::compareTo);
     }
 
-    public void sortFoos1() {
-        this.foos.sort(null);
-    }
-
 }

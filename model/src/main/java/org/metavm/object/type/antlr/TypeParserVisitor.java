@@ -1,4 +1,4 @@
-// Generated from TypeParser.g4 by ANTLR 4.13.1
+// Generated from TypeParser.g4 by ANTLR 4.13.2
 package org.metavm.object.type.antlr;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -23,11 +23,23 @@ public interface TypeParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitType(TypeParser.TypeContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link TypeParser#genericDeclarationRef}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGenericDeclarationRef(TypeParser.GenericDeclarationRefContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link TypeParser#methodRef}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitMethodRef(TypeParser.MethodRefContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link TypeParser#functionRef}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFunctionRef(TypeParser.FunctionRefContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link TypeParser#simpleMethodRef}.
 	 * @param ctx the parse tree

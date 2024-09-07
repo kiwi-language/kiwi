@@ -420,12 +420,12 @@ public void testGeneric() {
         var listOfStringType = TypeExpressions.getParameterizedType(listKlass.id(), "string");
         var listDefaultMapping = TestUtils.getDefaultMapping(listKlass);
         var listViewType = listDefaultMapping.targetType();
-        var listViewOfStrType = TypeExpressions.substitute(listViewType, Map.of(listKlass.typeParameterIds().get(0), "string"));
+        var listViewOfStrType = TypeExpressions.substitute(listViewType, Map.of(listKlass.getParameterTypeExpressions().get(0), "string"));
         var listViewKlass = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(listViewType), false)).type();
         var nodeDefaultMapping = TestUtils.getDefaultMapping(nodeKlass);
         var nodeViewType = nodeDefaultMapping.targetType();
         var nodeViewKlass = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(nodeViewType), false)).type();
-        var nodeViewOfStrType = TypeExpressions.substitute(nodeViewType, Map.of(nodeKlass.typeParameterIds().get(0), "string"));
+        var nodeViewOfStrType = TypeExpressions.substitute(nodeViewType, Map.of(nodeKlass.getParameterTypeExpressions().get(0), "string"));
         var nodeViewOfStrChildListType = TypeExpressions.getChildListType(nodeViewOfStrType);
         var listView = new InstanceDTO(
                 null,

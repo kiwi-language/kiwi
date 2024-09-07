@@ -11,10 +11,7 @@ import org.metavm.object.instance.core.DoubleValue;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
-import org.metavm.util.Instances;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
-import org.metavm.util.ReflectionUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,10 +45,6 @@ public class ExpressionResolver {
             Map.entry(JavaTokenType.DIV, BinaryOperator.DIVIDE)
     );
 
-    private static final List<java.lang.reflect.Parameter> nullableParameters = List.of(
-            ReflectionUtils.getMethod(List.class, "sort", Comparator.class).getParameters()[0]
-    );
-
     public static final Set<IElementType> BOOL_OPS = Set.of(
             JavaTokenType.ANDAND, JavaTokenType.OROR
     );
@@ -61,7 +54,6 @@ public class ExpressionResolver {
     private final VariableTable variableTable;
     private final VisitorBase visitor;
     private final Map<PsiExpression, Expression> expressionMap = new IdentityHashMap<>();
-    private final Set<PsiParameter> nullablePsiParameters = new HashSet<>();
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
             new ListOfResolver(), new SetOfResolver(), new IndexUtilsCallResolver()
@@ -76,9 +68,6 @@ public class ExpressionResolver {
         this.typeResolver = typeResolver;
         this.variableTable = variableTable;
         this.visitor = visitor;
-        for (java.lang.reflect.Parameter param : nullableParameters) {
-            nullablePsiParameters.add(TranspileUtils.getParameter(param));
-        }
     }
 
     public Expression resolve(PsiExpression psiExpression) {
@@ -551,7 +540,7 @@ public class ExpressionResolver {
                 psiParameters,
                 param -> {
                     var t = typeResolver.resolveDeclaration(param.getType());
-                    if (TranspileUtils.getAnnotation(param, Nullable.class) != null || nullablePsiParameters.contains(param))
+                    if (TranspileUtils.getAnnotation(param, Nullable.class) != null)
                         t = new UnionType(Set.of(t, Types.getNullType()));
                     return t;
                 }

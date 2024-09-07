@@ -177,7 +177,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     @Override
     public TypeDef getTypeDef(Id id) {
-        var existing = context.getTypeDef(id);
+        var existing = (TypeDef) context.getTypeDef(id);
         if (existing != null)
             return existing;
         var typeDefDTO = NncUtils.requireNonNull(typeDefMap.get(id.toString()),
@@ -207,9 +207,14 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public Set<String> initDependencies(TypeDefDTO typeDefDTO) {
         var dependencies = new HashSet<String>();
-        if (Objects.requireNonNull(typeDefDTO) instanceof KlassDTO klassDTO) {
-            if (klassDTO.typeParameterIds() != null)
-                dependencies.addAll(klassDTO.typeParameterIds());
+        if(typeDefDTO instanceof TypeVariableDTO typeVariableDTO) {
+            if(typeDefMap.containsKey(typeVariableDTO.genericDeclarationId()))
+                dependencies.add(typeVariableDTO.genericDeclarationId());
+            else {
+                var flow = Objects.requireNonNull(flowMap.get(typeVariableDTO.genericDeclarationId()));
+                var methodParam = (MethodParam) flow.param();
+                dependencies.add(methodParam.declaringTypeId());
+            }
         }
         return dependencies;
     }

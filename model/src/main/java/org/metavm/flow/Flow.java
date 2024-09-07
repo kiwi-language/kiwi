@@ -24,7 +24,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 @EntityType
-public abstract class Flow extends AttributedElement implements GenericDeclaration, Callable, LoadAware, CapturedTypeScope {
+public abstract class Flow extends AttributedElement implements GenericDeclaration, Callable, LoadAware, CapturedTypeScope, ITypeDef {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
@@ -89,7 +89,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.type = new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
         rootScope = !noCode && codeSource == null && !isNative ? addChild(new ScopeRT(this), "rootScope") : null;
         setTypeParameters(typeParameters);
-        setTypeArguments(typeArguments);
+        if(typeParameters.isEmpty())
+            setTypeArguments(typeArguments);
         setParameters(parameters, false);
         this.horizontalTemplate = horizontalTemplate;
         this.codeSource = codeSource;
@@ -538,8 +539,10 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return stage();
     }
 
-    public void setStage(ResolutionStage stage) {
+    public ResolutionStage setStage(ResolutionStage stage) {
+        var curStage = this.stage;
         this.stage = stage;
+        return curStage;
     }
 
     public void writeCode(CodeWriter writer) {

@@ -4,7 +4,7 @@ import org.metavm.object.instance.core.Id;
 
 public interface TypeDefProvider {
 
-    TypeDef getTypeDef(Id id);
+    ITypeDef getTypeDef(Id id);
 
     default Klass getKlass(Id id) {
         return (Klass) getTypeDef(id);

@@ -1,4 +1,4 @@
-// Generated from TypeParser.g4 by ANTLR 4.13.1
+// Generated from TypeParser.g4 by ANTLR 4.13.2
 package org.metavm.object.type.antlr;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -28,6 +28,16 @@ public interface TypeParserListener extends ParseTreeListener {
 	 */
 	void exitType(TypeParser.TypeContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link TypeParser#genericDeclarationRef}.
+	 * @param ctx the parse tree
+	 */
+	void enterGenericDeclarationRef(TypeParser.GenericDeclarationRefContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TypeParser#genericDeclarationRef}.
+	 * @param ctx the parse tree
+	 */
+	void exitGenericDeclarationRef(TypeParser.GenericDeclarationRefContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link TypeParser#methodRef}.
 	 * @param ctx the parse tree
 	 */
@@ -37,6 +47,16 @@ public interface TypeParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitMethodRef(TypeParser.MethodRefContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TypeParser#functionRef}.
+	 * @param ctx the parse tree
+	 */
+	void enterFunctionRef(TypeParser.FunctionRefContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TypeParser#functionRef}.
+	 * @param ctx the parse tree
+	 */
+	void exitFunctionRef(TypeParser.FunctionRefContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link TypeParser#simpleMethodRef}.
 	 * @param ctx the parse tree

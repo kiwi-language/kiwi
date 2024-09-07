@@ -70,13 +70,14 @@ public class TranspileUtilsTest extends TestCase {
 
         var addMethod = MethodBuilder.newBuilder(fooType, "add", "add")
                 .typeParameters(List.of(typeVar))
-                .parameters(
-                        new Parameter(null, "list", "list",
-                                StdKlass.list.get().getParameterized(List.of(UncertainType.createLowerBounded(typeVar.getType()))).getType()
-                        ),
-                        new Parameter(null, "element", "element", typeVar.getType())
-                )
                 .build();
+
+        addMethod.setParameters(List.of(
+                new Parameter(null, "list", "list",
+                        StdKlass.list.get().getParameterized(List.of(UncertainType.createLowerBounded(typeVar.getType()))).getType()
+                ),
+                new Parameter(null, "element", "element", typeVar.getType())
+        ));
         var sig2 = addMethod.getInternalName(null);
         Assert.assertEquals(sig, sig2);
     }
