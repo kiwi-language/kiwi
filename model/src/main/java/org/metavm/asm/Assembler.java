@@ -1,9 +1,6 @@
 package org.metavm.asm;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.*;
 import org.metavm.asm.antlr.AssemblyLexer;
 import org.metavm.asm.antlr.AssemblyParser;
 import org.metavm.asm.antlr.AssemblyParserBaseVisitor;
@@ -44,6 +41,7 @@ public class Assembler {
     private final Map<ParserRuleContext, Map<AsmAttributeKey<?>, Object>> attributes = new HashMap<>();
     private final Function<String, Klass> klassProvider;
     private final Consumer<Entity> binder;
+    private TokenStream tokenStream;
 
     public Assembler(Function<String, Klass> klassProvider, Consumer<Entity> binder) {
         for (StdKlass stdKlass : StdKlass.values()) {
@@ -1015,7 +1013,7 @@ public class Assembler {
                         id -> {
                             throw new UnsupportedOperationException();
                         },
-                        new AsmTypeDefProvider(),
+                        new AsmTypeDefProvider(getCompilationUnit()),
                         scope,
                         scope.getLastNode()
                 );
@@ -1220,7 +1218,7 @@ public class Assembler {
                             id -> {
                                 throw new UnsupportedOperationException();
                             },
-                            new AsmTypeDefProvider(),
+                            new AsmTypeDefProvider(getCompilationUnit()),
                             whileNode.getBodyScope(),
                             whileNode.getBodyScope().getLastNode()
                     );
@@ -1385,7 +1383,7 @@ public class Assembler {
         }
 
         private Value parseValue(AssemblyParser.ExpressionContext expression, ParsingContext parsingContext) {
-            return parseValue(expression.getText(), parsingContext);
+            return parseValue(tokenStream.getText(expression.getSourceInterval()), parsingContext);
         }
 
         private List<Value> parseValueList(@Nullable AssemblyParser.ExpressionListContext expressionList, ParsingContext parsingContext) {
@@ -1417,6 +1415,7 @@ public class Assembler {
     private AssemblyParser.CompilationUnitContext parse(String source) {
         var input = CharStreams.fromString(source);
         var parser = new AssemblyParser(new CommonTokenStream(new AssemblyLexer(input)));
+        tokenStream = parser.getTokenStream();
         return parser.compilationUnit();
     }
 
@@ -1424,6 +1423,7 @@ public class Assembler {
         try {
             var input = CharStreams.fromReader(new InputStreamReader(in));
             var parser = new AssemblyParser(new CommonTokenStream(new AssemblyLexer(input)));
+            tokenStream = parser.getTokenStream();
             return parser.compilationUnit();
         }
         catch (IOException e) {
@@ -1543,7 +1543,7 @@ public class Assembler {
 
     private Klass createKlass(String name, String code, ClassKind kind) {
         var klass = KlassBuilder.newBuilder(name, code).kind(kind).tmpId(NncUtils.randomNonNegative()).build();
-        code2klass.put(name, klass);
+        code2klass.put(code, klass);
 //        binder.accept(klass);
         return klass;
     }
@@ -1592,10 +1592,16 @@ public class Assembler {
 
     private class AsmTypeDefProvider implements IndexedTypeDefProvider {
 
+        private final CompilationUit compilationUit;
+
+        private AsmTypeDefProvider(CompilationUit compilationUit) {
+            this.compilationUit = compilationUit;
+        }
+
         @Nullable
         @Override
         public Klass findKlassByName(String name) {
-            return Assembler.this.getKlass(name);
+            return Assembler.this.getKlass(compilationUit.getReferenceName(name));
         }
 
         @Override

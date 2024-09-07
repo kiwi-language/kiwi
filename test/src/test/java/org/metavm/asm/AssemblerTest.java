@@ -86,6 +86,10 @@ public class AssemblerTest extends TestCase {
         }
     }
 
+    public void testInstanceOf() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/instanceof.masm");
+    }
+
     private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {
         assembler.assemble(sources);
         var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
