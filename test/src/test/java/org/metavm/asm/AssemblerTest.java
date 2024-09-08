@@ -90,6 +90,19 @@ public class AssemblerTest extends TestCase {
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/instanceof.masm");
     }
 
+    public void testTreeSet() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/tree_set.masm");
+        var id = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("TreeSetLab", "create", List.of()));
+        for (int i = 10; i > 0; i--) {
+            int i_ = i;
+            TestUtils.doInTransaction(() -> apiClient.callMethod(id, "add", List.of(i_)));
+        }
+        var removed = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "remove", List.of(1L)));
+        Assert.assertTrue(removed);
+        var first = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "first", List.of()));
+        Assert.assertEquals(2L, first);
+    }
+
     private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {
         assembler.assemble(sources);
         var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);

@@ -34,6 +34,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     iteratorImpl(IteratorImpl.class, false, IteratorImplNative.class),
     set(Set.class, false, SetNative.class),
     hashSet(HashSet.class, false, SetNative.class),
+    treeSet(TreeSet.class, false, TreeSetNative.class),
     map(Map.class, false, MapNative.class),
     hashMap(HashMap.class, false, MapNative.class),
     interceptor(Interceptor.class),
