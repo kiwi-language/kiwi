@@ -39,7 +39,7 @@ public class CapturedType extends Type {
     }
 
     @Override
-    public CapturedTypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
+    public CapturedTypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new CapturedTypeKey(getTypeDefId.apply(variable));
     }
 
@@ -102,7 +102,7 @@ public class CapturedType extends Type {
     }
 
     @Override
-    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
         return getTypeDefExpr == null ? "#" + Constants.ID_PREFIX + serializeContext.getStringId(variable)
                 : getTypeDefExpr.apply(variable);
     }

@@ -1,4 +1,7 @@
 package org.metavm.object.type;
 
-public interface ITypeDef {
+import org.metavm.entity.Identifiable;
+
+public interface ITypeDef extends Identifiable {
+
 }

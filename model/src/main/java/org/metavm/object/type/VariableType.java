@@ -47,7 +47,7 @@ public class VariableType extends Type implements IVariableType {
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
+    public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new VariableTypeKey(genericDeclarationRef.toGenericDeclarationKey(getTypeDefId), getTypeDefId.apply(rawVariable));
     }
 
@@ -81,7 +81,7 @@ public class VariableType extends Type implements IVariableType {
     }
 
     @Override
-    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
         var prefix = genericDeclarationRef.toExpression(serializeContext, getTypeDefExpr) + "@";
         if(getTypeDefExpr == null)
             return prefix + Constants.ID_PREFIX + serializeContext.getStringId(rawVariable);

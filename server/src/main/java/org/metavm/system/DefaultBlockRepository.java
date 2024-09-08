@@ -23,7 +23,7 @@ public class DefaultBlockRepository implements BlockRepository {
     }
 
     @Override
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRES_NEW)
     public Block allocate() {
         var next = idSequenceMapper.selectNextId();
         if(next == null) {

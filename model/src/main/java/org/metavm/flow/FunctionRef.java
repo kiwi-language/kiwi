@@ -53,22 +53,26 @@ public class FunctionRef extends FlowRef {
     }
 
     @Override
-    public GenericDeclarationRefKey toGenericDeclarationKey(java.util.function.Function<TypeDef, Id> getTypeDefId) {
+    public GenericDeclarationRefKey toGenericDeclarationKey(java.util.function.Function<ITypeDef, Id> getTypeDefId) {
         try(var serContext = SerializeContext.enter()) {
             return toDTO(serContext, typeDef -> Constants.addIdPrefix(getTypeDefId.apply(typeDef).toString()));
         }
     }
 
-    public String toExpression(@Nullable java.util.function.Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(@Nullable java.util.function.Function<ITypeDef, String> getTypeDefExpr) {
         try(var serContext = SerializeContext.enter()) {
             return toExpression(serContext, getTypeDefExpr);
         }
     }
 
     @Override
-    public String toExpression(SerializeContext serializeContext, @Nullable java.util.function.Function<TypeDef, String> getTypeDefExpr) {
-        return "func " + Constants.addIdPrefix(serializeContext.getStringId(getRawFlow())) + (
-                isParameterized() ?
+    public String toExpression(SerializeContext serializeContext, @Nullable java.util.function.Function<ITypeDef, String> getTypeDefExpr) {
+        return "func " +
+                (getTypeDefExpr != null ?
+                        getTypeDefExpr.apply(getRawFlow()) :
+                        Constants.addIdPrefix(serializeContext.getStringId(getRawFlow()))
+                )
+                + (isParameterized() ?
                         "<" + NncUtils.join(getTypeArguments(), t -> t.toExpression(serializeContext, getTypeDefExpr)) + ">"
                         : ""
         );
@@ -83,7 +87,7 @@ public class FunctionRef extends FlowRef {
         return toDTO(serializeContext, null);
     }
 
-    public FunctionRefDTO toDTO(SerializeContext serializeContext, java.util.function.Function<TypeDef, String> getTypeDefId) {
+    public FunctionRefDTO toDTO(SerializeContext serializeContext, java.util.function.Function<ITypeDef, String> getTypeDefId) {
         return new FunctionRefDTO(
                 serializeContext.getStringId(getRawFlow()),
                 NncUtils.map(getTypeArguments(), t -> t.toExpression(serializeContext, getTypeDefId))

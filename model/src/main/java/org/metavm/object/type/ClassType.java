@@ -50,7 +50,7 @@ public class ClassType extends Type implements ISubstitutor, GenericDeclarationR
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
+    public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return typeArguments == null ?
                 (getTypeTag() > 0 ?
                         new TaggedClassTypeKey(getTypeDefId.apply(klass), getTypeTag()) :
@@ -60,7 +60,7 @@ public class ClassType extends Type implements ISubstitutor, GenericDeclarationR
     }
 
     @Override
-    public GenericDeclarationRefKey toGenericDeclarationKey(Function<TypeDef, Id> getTypeDefId) {
+    public GenericDeclarationRefKey toGenericDeclarationKey(Function<ITypeDef, Id> getTypeDefId) {
         return (GenericDeclarationRefKey) toTypeKey(getTypeDefId);
     }
 
@@ -222,7 +222,7 @@ public class ClassType extends Type implements ISubstitutor, GenericDeclarationR
     }
 
     @Override
-    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
         var id = getTypeDefExpr == null ? Constants.ID_PREFIX + serializeContext.getStringId(klass) : getTypeDefExpr.apply(klass);
         var tag = getTypeTag();
         return typeArguments == null ? (tag == 0 ? id : id + ":" + tag)

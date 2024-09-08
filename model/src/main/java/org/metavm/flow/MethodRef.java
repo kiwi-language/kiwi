@@ -87,7 +87,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
         return toDTO(serializeContext, null);
     }
 
-    public MethodRefDTO toDTO(SerializeContext serializeContext, Function<TypeDef, String> getTypeDefId) {
+    public MethodRefDTO toDTO(SerializeContext serializeContext, Function<ITypeDef, String> getTypeDefId) {
         return new MethodRefDTO(
                 declaringType.toExpression(serializeContext, getTypeDefId),
                 serializeContext.getStringId(getRawFlow()),
@@ -123,16 +123,19 @@ public class MethodRef extends FlowRef implements PropertyRef {
     }
 
     @Override
-    public GenericDeclarationRefKey toGenericDeclarationKey(Function<TypeDef, Id> getTypeDefId) {
+    public GenericDeclarationRefKey toGenericDeclarationKey(Function<ITypeDef, Id> getTypeDefId) {
         try(var serContext = SerializeContext.enter()) {
             return toDTO(serContext, typeDef -> Constants.addIdPrefix(getTypeDefId.apply(typeDef).toString()));
         }
     }
 
     @Override
-    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
         return declaringType.toExpression(serializeContext, getTypeDefExpr) + "::"
-                + Constants.addIdPrefix(serializeContext.getStringId(getRawFlow()))
+                + (
+                        getTypeDefExpr != null ? getTypeDefExpr.apply(getRawFlow()) :
+                                Constants.addIdPrefix(serializeContext.getStringId(getRawFlow()))
+                )
                 + (
                         typeArguments.isEmpty() ? "" :
                                 "<" + NncUtils.join(

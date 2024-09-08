@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.util.InstanceOutput;
@@ -7,6 +8,7 @@ import org.metavm.util.NncUtils;
 
 import java.util.Objects;
 
+@Slf4j
 public final class TmpId extends Id {
 
     public static TmpId of(long tmpId) {

@@ -48,7 +48,7 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
+    public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new ArrayTypeKey(kind.code(), elementType.toTypeKey(getTypeDefId));
     }
 
@@ -102,7 +102,7 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
         return elementType.toExpression(serializeContext, getTypeDefExpr) + kind.getSuffix().toLowerCase();
     }
 

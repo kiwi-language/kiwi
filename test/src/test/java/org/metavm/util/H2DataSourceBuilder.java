@@ -1,6 +1,6 @@
 package org.metavm.util;
 
-import com.alibaba.druid.pool.DruidDataSource;
+import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -11,9 +11,9 @@ import java.sql.Statement;
 public class H2DataSourceBuilder {
 
     public static DataSource getH2DataSource() {
-        DruidDataSource dataSource = new DruidDataSource();
+        var dataSource = new HikariDataSource();
         dataSource.setDriverClassName(org.h2.Driver.class.getName());
-        dataSource.setUrl("jdbc:h2:mem:myDb;DB_CLOSE_DELAY=-1");
+        dataSource.setJdbcUrl("jdbc:h2:mem:myDb;DB_CLOSE_DELAY=-1");
         return dataSource;
     }
 

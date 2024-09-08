@@ -44,7 +44,7 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
+    public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new IntersectionTypeKey(new HashSet<>(NncUtils.map(types, type -> type.toTypeKey(getTypeDefId))));
     }
 
@@ -117,7 +117,7 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
-    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
         return NncUtils.join(types, type -> type.toExpression(serializeContext, getTypeDefExpr), "&");
     }
 

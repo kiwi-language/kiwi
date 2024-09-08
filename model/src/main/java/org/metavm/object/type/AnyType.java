@@ -49,7 +49,7 @@ public class AnyType extends Type {
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
+    public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new AnyTypeKey();
     }
 
@@ -69,7 +69,7 @@ public class AnyType extends Type {
     }
 
     @Override
-    public String toExpression(SerializeContext serializeContext, @javax.annotation.Nullable Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(SerializeContext serializeContext, @javax.annotation.Nullable Function<ITypeDef, String> getTypeDefExpr) {
         return "any";
     }
 

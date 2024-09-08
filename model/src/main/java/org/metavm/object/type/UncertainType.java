@@ -51,7 +51,7 @@ public class UncertainType extends CompositeType {
     }
 
     @Override
-    public UncertainTypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
+    public UncertainTypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new UncertainTypeKey(lowerBound.toTypeKey(getTypeDefId), upperBound.toTypeKey(getTypeDefId));
     }
 
@@ -152,7 +152,7 @@ public class UncertainType extends CompositeType {
     }
 
     @Override
-    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
         return "[" + lowerBound.toExpression(serializeContext, getTypeDefExpr) + "," + upperBound.toExpression(serializeContext, getTypeDefExpr) + "]";
     }
 

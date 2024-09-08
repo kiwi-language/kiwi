@@ -42,10 +42,10 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
     public abstract boolean isEphemeral();
 
     public TypeKey toTypeKey() {
-        return toTypeKey(TypeDef::getId);
+        return toTypeKey(ITypeDef::getId);
     }
 
-    public abstract TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId);
+    public abstract TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId);
 
     public void forEachTypeDef(Consumer<TypeDef> action) {
     }
@@ -300,13 +300,13 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
         return toExpression(serializeContext, null);
     }
 
-    public String toExpression(@Nullable Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(@Nullable Function<ITypeDef, String> getTypeDefExpr) {
         try (var serCtx = SerializeContext.enter()) {
             return toExpression(serCtx, getTypeDefExpr);
         }
     }
 
-    public abstract String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr);
+    public abstract String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr);
 
     public abstract int getTypeKeyCode();
 

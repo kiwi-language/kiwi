@@ -3,7 +3,7 @@ package org.metavm.util;
 import ch.vorburger.exec.ManagedProcessException;
 import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
-import com.alibaba.druid.pool.DruidDataSource;
+import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -31,9 +31,9 @@ public class MariaDB4jDataSourceBuilder {
     }
 
     public static DataSource getDataSource() {
-        DruidDataSource dataSource = new DruidDataSource();
+        var dataSource = new HikariDataSource();
         dataSource.setDriverClassName(com.mysql.cj.jdbc.Driver.class.getName());
-        dataSource.setUrl("jdbc:mysql://localhost");
+        dataSource.setJdbcUrl("jdbc:mysql://localhost");
         dataSource.setUsername("root");
         dataSource.setPassword("85263670");
         return dataSource;

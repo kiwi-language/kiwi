@@ -1,6 +1,6 @@
 package org.metavm.tools;
 
-import com.alibaba.druid.pool.DruidDataSource;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -90,12 +90,12 @@ public class DiskFormatter {
 
     private static void clearDataBases() {
         if ((boolean) CONFIG.get(CONFIG_CLEAR_DB)) {
-            try (DruidDataSource dataSource = new DruidDataSource()) {
+            try (HikariDataSource dataSource = new HikariDataSource()) {
                 dataSource.setDriverClassName((String) CONFIG.get(CONFIG_DB_DRIVER));
-                dataSource.setUrl((String) CONFIG.get(CONFIG_JDBC_URL));
+                dataSource.setJdbcUrl((String) CONFIG.get(CONFIG_JDBC_URL));
                 dataSource.setUsername((String) CONFIG.get(CONFIG_DB_USER));
                 dataSource.setPassword((String) CONFIG.get(CONFIG_DB_PASSWORD));
-                dataSource.setMaxActive(1);
+                dataSource.setMaximumPoolSize(1);
 
                 try (Connection connection = dataSource.getConnection();
                      Statement statement = connection.createStatement()) {

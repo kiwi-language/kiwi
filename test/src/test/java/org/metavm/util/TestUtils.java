@@ -1,6 +1,5 @@
 package org.metavm.util;
 
-import com.alibaba.druid.pool.DruidDataSource;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -11,6 +10,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import com.zaxxer.hikari.HikariDataSource;
 import org.hamcrest.MatcherAssert;
 import org.metavm.api.ValueObject;
 import org.metavm.ddl.CommitState;
@@ -212,11 +212,11 @@ public class TestUtils {
     }
 
     public static DataSource createDataSource() {
-        DruidDataSource dataSource = new DruidDataSource();
+        var dataSource = new HikariDataSource();
         dataSource.setUsername("root");
         dataSource.setPassword("85263670");
-        dataSource.setMaxActive(1);
-        dataSource.setUrl("jdbc:mysql://localhost:3306/object?allowMultiQueries=true");
+        dataSource.setMaximumPoolSize(1);
+        dataSource.setJdbcUrl("jdbc:mysql://localhost:3306/object?allowMultiQueries=true");
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
         return dataSource;
     }

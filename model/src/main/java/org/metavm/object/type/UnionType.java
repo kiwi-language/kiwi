@@ -61,7 +61,7 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public TypeKey toTypeKey(Function<TypeDef, Id> getTypeDefId) {
+    public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new UnionTypeKey(NncUtils.mapUnique(members, type -> type.toTypeKey(getTypeDefId)));
     }
 
@@ -212,7 +212,7 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public String toExpression(SerializeContext serializeContext, @Nullable Function<TypeDef, String> getTypeDefExpr) {
+    public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
         return NncUtils.join(members, type -> type.toExpression(serializeContext, getTypeDefExpr), "|");
     }
 

@@ -6,6 +6,9 @@ spring:
     username: postgres
     password: 85263670
     url: jdbc:postgresql://127.0.0.1:5432/object
+    hikari:
+      maximum-pool-size: 10
+
   #    driver-class-name: com.mysql.cj.jdbc.Driver
 #    username: root
 #    password: 85263670
