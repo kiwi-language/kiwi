@@ -1,9 +1,10 @@
 package org.metavm.system.persistence;
 
 import org.apache.ibatis.annotations.*;
+import org.metavm.util.SecondaryMapper;
 
 @Mapper
-public interface IdSequenceMapper {
+public interface IdSequenceMapper extends SecondaryMapper {
 
     @Select("SELECT next_id FROM id_sequence")
     Long selectNextId();

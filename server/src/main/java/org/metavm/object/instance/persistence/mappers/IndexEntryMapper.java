@@ -5,12 +5,13 @@ import org.apache.ibatis.annotations.Param;
 import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.IndexQueryPO;
+import org.metavm.util.PrimaryMapper;
 
 import java.util.Collection;
 import java.util.List;
 
 @Mapper
-public interface IndexEntryMapper {
+public interface IndexEntryMapper extends PrimaryMapper {
 
     long count(IndexQueryPO queryPO);
 

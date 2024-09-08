@@ -4,13 +4,14 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.instance.persistence.TargetPO;
+import org.metavm.util.PrimaryMapper;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 
 @Mapper
-public interface ReferenceMapper {
+public interface ReferenceMapper extends PrimaryMapper {
 
     List<ReferencePO> selectByTargetsWithKind(Collection<TargetPO> targets);
 

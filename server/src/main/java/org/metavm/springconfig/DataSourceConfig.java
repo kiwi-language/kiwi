@@ -1,78 +1,127 @@
-//package org.metavm.springconfig;
-//
-//import com.alibaba.druid.pool.DruidDataSource;
-//import com.alibaba.druid.wall.WallConfig;
-//import com.alibaba.druid.wall.WallFilter;
-//import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-//import org.springframework.transaction.PlatformTransactionManager;
-//import org.springframework.transaction.support.TransactionTemplate;
-//
-//import javax.sql.DataSource;
-//
-//@Configuration
-//public class DataSourceConfig {
-//
-//    @Value("${spring.datasource.url}")
-//    private String url;
-//
-//    @Value("${spring.datasource.username}")
-//    private String username;
-//
-//    @Value("${spring.datasource.password}")
-//    private String password;
-//
-//    @Value("${spring.datasource.driver-class-name}")
-//    private String driverClassName;
-//
-//    private static final int MAX_ACTIVE = 10;
-//
-//    private DataSource dataSource;
-//
-//    private PlatformTransactionManager transactionManager;
-//
-//
-//    @Bean
-//    public DataSource getDataSource() {
-//        if(dataSource == null) {
-//            DruidDataSource dataSource = new DruidDataSource();
-//            dataSource.setUsername(username);
-//            dataSource.setPassword(password);
-//            dataSource.setMaxActive(MAX_ACTIVE);
-//            dataSource.setUrl(url);
-//            dataSource.setDriverClassName(driverClassName);
-//            this.dataSource = dataSource;
-//        }
-//        return dataSource;
-//    }
-//
-//    @Bean
-//    public WallFilter wallFilter() {
-//        WallFilter wallFilter = new WallFilter();
-//        wallFilter.setConfig(wallConfig());
-//        return wallFilter;
-//    }
-//
-//    @Bean
-//    public WallConfig wallConfig() {
-//        WallConfig wallConfig = new WallConfig();
-//        wallConfig.setMultiStatementAllow(true);
-//        return wallConfig;
-//    }
-//
-//    @Bean
-//    public PlatformTransactionManager transactionManager() {
-//        if(transactionManager == null) {
-//            transactionManager = new DataSourceTransactionManager(getDataSource());
-//        }
-//        return transactionManager;
-//    }
-//
-//    @Bean
-//    public TransactionTemplate transactionTemplate() {
-//        return new TransactionTemplate(transactionManager());
-//    }
-//
-//}
+package org.metavm.springconfig;
+
+import com.zaxxer.hikari.HikariDataSource;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.metavm.util.PrimaryMapper;
+import org.metavm.util.SecondaryMapper;
+import org.mybatis.spring.SqlSessionFactoryBean;
+import org.mybatis.spring.mapper.MapperScannerConfigurer;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import javax.sql.DataSource;
+
+@Configuration
+@Slf4j
+public class DataSourceConfig {
+
+    @Bean
+    @Primary
+    public DataSource primaryDataSource(
+            @Value("${spring.datasource.primary.driver-class-name}") String driverClassName,
+            @Value("${spring.datasource.primary.username}") String userName,
+            @Value("${spring.datasource.primary.password}") String password,
+            @Value("${spring.datasource.primary.url}") String url,
+            @Value("${spring.datasource.primary.hikari.maximum-pool-size}") int maxPoolSize,
+            @Value("${spring.datasource.primary.hikari.minimum-idle}") int minIdle
+    ) {
+        return createDataSource(driverClassName, userName, password, url, maxPoolSize, minIdle);
+    }
+
+    @Bean
+    public DataSource secondaryDataSource(
+            @Value("${spring.datasource.secondary.driver-class-name}") String driverClassName,
+            @Value("${spring.datasource.secondary.username}") String userName,
+            @Value("${spring.datasource.secondary.password}") String password,
+            @Value("${spring.datasource.secondary.url}") String url,
+            @Value("${spring.datasource.secondary.hikari.maximum-pool-size}") int maxPoolSize,
+            @Value("${spring.datasource.secondary.hikari.minimum-idle}") int minIdle
+    ) {
+        return createDataSource(driverClassName, userName, password, url, maxPoolSize, minIdle);
+    }
+
+    public DataSource createDataSource(String driverClassName, String userName, String password, String url, int maxPoolSize, int minIdle) {
+        var dataSource = new HikariDataSource();
+        dataSource.setDriverClassName(driverClassName);
+        dataSource.setUsername(userName);
+        dataSource.setPassword(password);
+        dataSource.setJdbcUrl(url);
+        dataSource.setMaximumPoolSize(maxPoolSize);
+        dataSource.setMinimumIdle(minIdle);
+        return dataSource;
+    }
+
+    @Bean
+    @Primary
+    public PlatformTransactionManager primaryTransactionManager(@Qualifier("primaryDataSource") DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
+    }
+
+    @Bean
+    public PlatformTransactionManager secondaryTransactionManager(@Qualifier("secondaryDataSource") DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
+    }
+
+    @Bean
+    @Primary
+    public TransactionTemplate primaryTransactionTemplate(@Qualifier("primaryTransactionManager") PlatformTransactionManager transactionManager) {
+        return new TransactionTemplate(transactionManager);
+    }
+
+    @Bean
+    public TransactionTemplate secondaryTransactionTemplate(@Qualifier("secondaryTransactionManager") PlatformTransactionManager transactionManager) {
+        return new TransactionTemplate(transactionManager);
+    }
+
+    @Bean
+    @Primary
+    public SqlSessionFactory primarySqlSessionFactory(@Qualifier("primaryDataSource") DataSource dataSource) throws Exception {
+        SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
+        sessionFactory.setDataSource(dataSource);
+        Resource[] locations = new PathMatchingResourcePatternResolver()
+                .getResources("classpath:/mappers/*.xml");
+        sessionFactory.setMapperLocations(locations);
+        sessionFactory.setTypeAliasesPackage("org.metavm.object.meta.persistence");
+        sessionFactory.setTypeHandlersPackage("org.metavm.util");
+        return sessionFactory.getObject();
+    }
+
+    @Bean
+    public MapperScannerConfigurer primaryMapperScannerConfigurer() {
+        var config = new MapperScannerConfigurer();
+        config.setBasePackage("org.metavm");
+        config.setSqlSessionFactoryBeanName("primarySqlSessionFactory");
+        config.setMarkerInterface(PrimaryMapper.class);
+        return config;
+    }
+
+    @Bean
+    public SqlSessionFactory idSequenceSqlSessionFactory(@Qualifier("secondaryDataSource") DataSource dataSource) throws Exception {
+        SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
+        sessionFactory.setDataSource(dataSource);
+        Resource[] locations = new PathMatchingResourcePatternResolver()
+                .getResources("classpath:/mappers/*.xml");
+        sessionFactory.setMapperLocations(locations);
+        sessionFactory.setTypeAliasesPackage("org.metavm.object.meta.persistence");
+        sessionFactory.setTypeHandlersPackage("org.metavm.util");
+        return sessionFactory.getObject();
+    }
+
+    @Bean
+    public MapperScannerConfigurer secondaryMapperScannerConfigurer() {
+        var config = new MapperScannerConfigurer();
+        config.setBasePackage("org.metavm");
+        config.setSqlSessionFactoryBeanName("idSequenceSqlSessionFactory");
+        config.setMarkerInterface(SecondaryMapper.class);
+        return config;
+    }
+}

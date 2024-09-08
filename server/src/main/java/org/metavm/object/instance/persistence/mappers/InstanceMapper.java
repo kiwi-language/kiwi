@@ -6,13 +6,14 @@ import org.metavm.object.instance.ScanQuery;
 import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.VersionPO;
+import org.metavm.util.PrimaryMapper;
 import org.metavm.util.NncUtils;
 
 import java.util.Collection;
 import java.util.List;
 
 @Mapper
-public interface InstanceMapper {
+public interface InstanceMapper extends PrimaryMapper {
 
     InstancePO selectById(@Param("id") long id);
 
