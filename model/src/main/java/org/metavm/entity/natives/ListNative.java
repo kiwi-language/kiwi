@@ -1,5 +1,6 @@
 package org.metavm.entity.natives;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
@@ -15,7 +16,9 @@ import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ListNative extends IterableNative {
 
@@ -87,6 +90,16 @@ public class ListNative extends IterableNative {
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
         return it.getReference();
+    }
+
+    @Override
+    public void forEach(Consumer<? super Value> action) {
+        array.forEach(action);
+    }
+
+    @Override
+    public @NotNull Iterator<Value> iterator() {
+        return array.iterator();
     }
 
     public Value get(Value index, CallContext callContext) {

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.Tree;
 import org.metavm.entity.TreeTags;
+import org.metavm.entity.natives.NativeBase;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.instance.rest.InstanceParam;
@@ -69,7 +70,7 @@ public abstract class Instance implements Message {
 
     private transient Long tmpId;
 
-    private transient Object nativeObject;
+    private transient NativeBase nativeObject;
 
     private final @Nullable Consumer<Instance> load;
 
@@ -493,11 +494,11 @@ public abstract class Instance implements Message {
         this.syncVersion = syncVersion;
     }
 
-    public Object getNativeObject() {
+    public NativeBase getNativeObject() {
         return nativeObject;
     }
 
-    public void setNativeObject(Object nativeObject) {
+    public void setNativeObject(NativeBase nativeObject) {
         this.nativeObject = nativeObject;
     }
 

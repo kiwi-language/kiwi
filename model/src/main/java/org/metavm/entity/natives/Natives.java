@@ -9,7 +9,7 @@ public class Natives {
     private static final Map<String, Class<?>> nativeClassMap = Map.of(
             "Map", MapNative.class,
             "List", ListNative.class,
-            "Set", SetNative.class,
+            "Set", HashSetNative.class,
             "IteratorImpl", IteratorImplNative.class,
             "Throwable", ThrowableNative.class,
             "Exception", ExceptionNative.class,

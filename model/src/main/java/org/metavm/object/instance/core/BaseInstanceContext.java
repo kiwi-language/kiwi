@@ -540,6 +540,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void onPatchBuild() {
+        for (Instance instance : this) {
+            if(instance instanceof ClassInstance clsInst && clsInst.getNativeObject() != null) {
+                var nat = clsInst.getNativeObject();
+                nat.flush();
+            }
+        }
         try (var ignored = getProfiler().enter("onPatchBuild")) {
             for (ContextListener listener : listeners) {
                 listener.onPatchBuild();

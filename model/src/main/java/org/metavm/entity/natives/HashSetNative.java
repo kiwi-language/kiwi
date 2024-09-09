@@ -1,6 +1,5 @@
 package org.metavm.entity.natives;
 
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
@@ -15,31 +14,30 @@ import org.metavm.util.NncUtils;
 import java.util.*;
 import java.util.function.Consumer;
 
-@Slf4j
-public class TreeSetNative extends SetNative {
+public class HashSetNative extends SetNative {
 
     private final ClassInstance instance;
-    private final TreeSet<ComparableKeyWrap> set = new TreeSet<>();
+    private final Set<HashKeyWrap> set = new HashSet<>();
     private final Field arrayField;
     private ArrayInstance array;
 
-    public TreeSetNative(ClassInstance instance) {
+    public HashSetNative(ClassInstance instance) {
         this.instance = instance;
         arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByCode("array"));
         if (instance.isFieldInitialized(arrayField)) {
             var instCtx = Objects.requireNonNull(instance.getContext(), "InstanceContext is missing in " + instance);
             array = instance.getField(arrayField).resolveArray();
-            initializeSet(instCtx);
+            initializeElementToIndex(instCtx);
         }
     }
 
-    public Value TreeSet(CallContext callContext) {
+    public Value HashSet(CallContext callContext) {
         array = new ArrayInstance((ArrayType) arrayField.getType());
         instance.initField(arrayField, array.getReference());
         return instance.getReference();
     }
 
-    public Value TreeSet(Value c, CallContext callContext) {
+    public Value HashSet(Value c, CallContext callContext) {
         if(c instanceof Reference collection) {
             var thatArrayField = collection.resolveObject().getKlass().getFieldByCode("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
@@ -47,7 +45,7 @@ public class TreeSetNative extends SetNative {
                     new InstanceParentRef(instance.getReference(), arrayField));
             instance.initField(arrayField, array.getReference());
             array.addAll(thatArray);
-            initializeSet(callContext);
+            initializeElementToIndex(callContext);
             return instance.getReference();
         }
         else
@@ -67,25 +65,27 @@ public class TreeSetNative extends SetNative {
         set.forEach(k -> action.accept(k.value()));
     }
 
-    public Value first(CallContext callContext) {
-        if(set.isEmpty()) {
-            throw new NoSuchElementException();
-        }
-        return set.first().value();
+    @Override
+    public @NotNull Iterator<Value> iterator() {
+        return NncUtils.mapIterator(set.iterator(), HashKeyWrap::value);
     }
 
     public Value add(Value value, CallContext callContext) {
-        var keyWrap = new ComparableKeyWrap(value, callContext);
+        var keyWrap = new HashKeyWrap(value, callContext);
         return Instances.booleanInstance(set.add(keyWrap));
     }
 
     public Value remove(Value value, CallContext callContext) {
-        var keyWrap = new ComparableKeyWrap(value, callContext);
+        var keyWrap = new HashKeyWrap(value, callContext);
         return Instances.booleanInstance(set.remove(keyWrap));
     }
 
     public Value isEmpty(CallContext callContext) {
         return Instances.booleanInstance(set.isEmpty());
+    }
+
+    public boolean contains0(Value value, CallContext callContext) {
+        return set.contains(new HashKeyWrap(value, callContext));
     }
 
     @Override
@@ -94,12 +94,12 @@ public class TreeSetNative extends SetNative {
     }
 
     @Override
-    public boolean contains0(Value value, CallContext callContext) {
-        return set.contains(new ComparableKeyWrap(value, callContext));
+    public ClassInstance getInstance() {
+        return instance;
     }
 
     public void clear(CallContext callContext) {
-        set.clear();
+        array.clear();
     }
 
     @Override
@@ -110,23 +110,14 @@ public class TreeSetNative extends SetNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    private void initializeSet(CallContext callContext) {
+    private void initializeElementToIndex(CallContext callContext) {
         for (Value element : array) {
-            set.add(new ComparableKeyWrap(element, callContext));
+            set.add(new HashKeyWrap(element, callContext));
         }
     }
 
     @Override
     public void flush() {
-        array.setElements(NncUtils.map(set, ComparableKeyWrap::value));
-    }
-
-    public @NotNull Iterator<Value> iterator() {
-        return NncUtils.mapIterator(set.iterator(), ComparableKeyWrap::value);
-    }
-
-    @Override
-    public ClassInstance getInstance() {
-        return instance;
+        array.setElements(NncUtils.map(set, HashKeyWrap::value));
     }
 }

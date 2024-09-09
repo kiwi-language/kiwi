@@ -1,12 +1,20 @@
 package org.metavm.entity.natives;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 
-public abstract class IterableNative extends NativeBase {
+import java.util.Iterator;
+import java.util.function.Consumer;
+
+public abstract class IterableNative extends NativeBase implements Iterable<Value> {
 
     public abstract void forEach(Value action, CallContext callContext);
 
     public abstract Reference iterator(CallContext callContext);
+
+    public abstract void forEach(Consumer<? super Value> action);
+
+    public abstract @NotNull Iterator<Value> iterator();
 
 }

@@ -93,14 +93,17 @@ public class AssemblerTest extends TestCase {
     public void testTreeSet() {
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/tree_set.masm");
         var id = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("TreeSetLab", "create", List.of()));
-        for (int i = 10; i > 0; i--) {
-            int i_ = i;
-            TestUtils.doInTransaction(() -> apiClient.callMethod(id, "add", List.of(i_)));
-        }
+        var elements = List.of(5,4,3,2,1);
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "addAll", List.of(elements)));
+        var containsAll = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "containsAll", List.of(elements)));
+        Assert.assertTrue(containsAll);
         var removed = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "remove", List.of(1L)));
         Assert.assertTrue(removed);
         var first = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "first", List.of()));
         Assert.assertEquals(2L, first);
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "retainAll", List.of(List.of(5, 3, 2))));
+        var size = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "size", List.of()));
+        Assert.assertEquals(3, size);
     }
 
     private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {

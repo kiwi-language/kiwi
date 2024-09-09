@@ -76,12 +76,12 @@ public class NativeMethods {
         return nativeObject;
     }
 
-    private static Object createNativeObject(ClassInstance instance) {
+    private static NativeBase createNativeObject(ClassInstance instance) {
         var nativeClass = tryGetNativeClass(instance.getKlass());
         NncUtils.requireNonNull(nativeClass,
                 "Native class not available for type '" + instance.getType().getName() + "'");
         Constructor<?> constructor = ReflectionUtils.getConstructor(nativeClass, ClassInstance.class);
-        return ReflectionUtils.invokeConstructor(constructor, instance);
+        return (NativeBase) ReflectionUtils.invokeConstructor(constructor, instance);
     }
 
     private static Class<?> tryGetNativeClass(Klass klass) {

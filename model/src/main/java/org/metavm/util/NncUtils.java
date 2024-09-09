@@ -1881,4 +1881,23 @@ public class NncUtils {
        return false;
     }
 
+    public static <T, V> Iterator<V> mapIterator(Iterator<T> source, Function<T, V> mapper) {
+        return new Iterator<V>() {
+            @Override
+            public boolean hasNext() {
+                return source.hasNext();
+            }
+
+            @Override
+            public V next() {
+                return mapper.apply(source.next());
+            }
+
+            @Override
+            public void remove() {
+                source.remove();
+            }
+        };
+    }
+
 }

@@ -11,10 +11,7 @@ import org.metavm.util.BiUnion;
 import org.metavm.util.NncUtils;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public enum StdMethod implements ValueHolderOwner<Method> {
 
@@ -26,6 +23,10 @@ public enum StdMethod implements ValueHolderOwner<Method> {
     hashSetAdd(HashSet.class, "add", List.of(HashSet.class.getTypeParameters()[0])),
     comparableCompareTo(Comparable.class, "compareTo", List.of(Comparable.class.getTypeParameters()[0])),
     comparatorCompare(Comparator.class, "compare", List.of(Comparator.class.getTypeParameters()[0], Comparator.class.getTypeParameters()[0])),
+    iterableIterator(Iterable.class, "iterator", List.of()),
+    iteratorHasNext(Iterator.class, "hasNext", List.of()),
+    iteratorNext(Iterator.class, "next", List.of()),
+    collectionContains(Collection.class, "contains", List.of(Object.class)),
 
     ;
 

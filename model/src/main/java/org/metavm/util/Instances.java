@@ -6,13 +6,14 @@ import org.metavm.ddl.Commit;
 import org.metavm.ddl.FieldChange;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
+import org.metavm.entity.natives.IterableNative;
 import org.metavm.entity.natives.ListNative;
+import org.metavm.entity.natives.NativeMethods;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
 import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -985,4 +987,11 @@ public class Instances {
     public static boolean toBoolean(@Nullable Value value) {
         return ((BooleanValue) Objects.requireNonNull(value)).getValue();
     }
+
+    public static void forEach(Value value, Consumer<? super Value> action) {
+        var iterable = value.resolveObject();
+        var nat = (IterableNative) NativeMethods.getNativeObject(iterable);
+        nat.forEach(action);
+    }
+
 }

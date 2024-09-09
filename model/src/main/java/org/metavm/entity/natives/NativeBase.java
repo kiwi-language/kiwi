@@ -25,4 +25,6 @@ public class NativeBase {
         }
     }
 
+    public void flush() {}
+
 }
