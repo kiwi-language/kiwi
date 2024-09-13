@@ -4,7 +4,7 @@ import com.intellij.psi.*;
 
 import java.util.Objects;
 
-public class NullSwitchCaseAppender extends VisitorBase {
+public class NullSwitchCaseAppender extends SkipDiscardedVisitor {
 
     @Override
     public void visitSwitchExpression(PsiSwitchExpression expression) {

@@ -2,7 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 
-public class QnResolver extends JavaRecursiveElementVisitor {
+public class QnResolver extends SkipDiscardedVisitor {
 
     private void processNameElement(PsiElement element) {
         QnFactory.getOrCreateQn(element);

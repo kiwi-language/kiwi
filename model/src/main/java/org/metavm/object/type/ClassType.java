@@ -166,7 +166,8 @@ public class ClassType extends Type implements ISubstitutor, GenericDeclarationR
 
     @Override
     protected boolean equals0(Object obj) {
-        return obj instanceof ClassType that && klass == that.klass && Objects.equals(typeArguments, that.typeArguments);
+        return obj instanceof ClassType that && klass == that.klass &&
+                getTypeArguments().equals(that.getTypeArguments());
     }
 
     @Override
@@ -213,7 +214,11 @@ public class ClassType extends Type implements ISubstitutor, GenericDeclarationR
 
     @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
-        return resolve().getInternalName(current);
+        if (isParameterized())
+            return klass.getCodeNotNull() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
+        else
+            return klass.getCodeNotNull();
+
     }
 
     @Override

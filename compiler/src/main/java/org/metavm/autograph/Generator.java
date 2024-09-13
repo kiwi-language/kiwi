@@ -43,6 +43,10 @@ public class Generator extends CodeGenVisitor {
 
     @Override
     public void visitClass(PsiClass psiClass) {
+        if(TranspileUtils.isDiscarded(psiClass))
+            return;
+        if(psiClass.isInterface())
+            return;
         if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null)
             return;
         var klass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));

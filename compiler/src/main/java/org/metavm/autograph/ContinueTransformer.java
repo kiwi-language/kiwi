@@ -11,7 +11,7 @@ import java.util.Set;
 
 import static org.metavm.util.NncUtils.requireNonNull;
 
-public class ContinueTransformer extends VisitorBase {
+public class ContinueTransformer extends SkipDiscardedVisitor {
 
 //    private final NameTracker nameTracker = new NameTracker();
     private Loop loopInfo;

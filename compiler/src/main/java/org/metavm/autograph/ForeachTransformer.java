@@ -9,7 +9,7 @@ import java.util.Objects;
 
 import static org.metavm.util.NncUtils.requireNonNull;
 
-public class ForeachTransformer extends VisitorBase {
+public class ForeachTransformer extends SkipDiscardedVisitor {
 
     @Override
     public void visitForeachStatement(PsiForeachStatement statement) {

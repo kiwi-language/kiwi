@@ -9,7 +9,6 @@ import org.metavm.flow.*;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.*;
 import org.metavm.util.CompilerConfig;
-import org.metavm.util.IdentitySet;
 import org.metavm.util.NamingUtils;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -33,10 +32,6 @@ public class Declarator extends CodeGenVisitor {
 
     private @Nullable Index currentIndex;
 
-    private final IdentitySet<Field> visitedFields = new IdentitySet<>();
-
-    private final IdentitySet<Method> visitedMethods = new IdentitySet<>();
-
     public Declarator(TypeResolver typeResolver, IEntityContext context) {
         this.typeResolver = typeResolver;
         this.context = context;
@@ -48,6 +43,8 @@ public class Declarator extends CodeGenVisitor {
 
     @Override
     public void visitClass(PsiClass psiClass) {
+        if(TranspileUtils.isDiscarded(psiClass))
+            return;
         if (TranspileUtils.hasAnnotation(psiClass, EntityIndex.class)) {
             var klass = currentClass().klass;
             Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getCode(), psiClass.getName()));
@@ -67,11 +64,9 @@ public class Declarator extends CodeGenVisitor {
             super.visitClass(psiClass);
             return;
         }
-        visitedFields.clear();
-        visitedMethods.clear();
-        var klass = Objects.requireNonNull(psiClass.getUserData(Keys.MV_CLASS),
-                () -> "Meta class not found for '" + psiClass.getQualifiedName() + "'");
+        var klass = typeResolver.getKlass(psiClass);
         klass.setStage(ResolutionStage.DECLARATION);
+        var classInfo = new ClassInfo(klass);
         if (!klass.isInterface()) {
             if (klass.findSelfMethodByCode("<init>") == null) {
                 MethodBuilder.newBuilder(klass, "<init>", "<init>")
@@ -88,8 +83,8 @@ public class Declarator extends CodeGenVisitor {
             var cinitMethod = Objects.requireNonNull(klass.findSelfMethodByCode("<cinit>"));
             initMethod.clearContent();
             cinitMethod.clearContent();
-            visitedMethods.add(initMethod);
-            visitedMethods.add(cinitMethod);
+            classInfo.visitedMethods.add(initMethod);
+            classInfo.visitedMethods.add(cinitMethod);
         }
         klass.clearAttributes();
         var componentAnno = TranspileUtils.getAnnotation(psiClass, Component.class);
@@ -103,15 +98,15 @@ public class Declarator extends CodeGenVisitor {
             klass.setAttribute(AttributeNames.BEAN_NAME,
                     (String) TranspileUtils.getAnnotationAttribute(configurationAnno, "value", getDefaultBeanName(klass)));
         }
-        classStack.push(new ClassInfo(klass));
+        classStack.push(classInfo);
         super.visitClass(psiClass);
         classStack.pop();
         if(klass.isEnum())
-            visitedMethods.add(Flows.saveValuesMethod(klass));
-        var removedFields = NncUtils.exclude(klass.getFields(), visitedFields::contains);
+            classInfo.visitedMethods.add(Flows.saveValuesMethod(klass));
+        var removedFields = NncUtils.exclude(klass.getFields(), classInfo.visitedFields::contains);
         removedFields.forEach(Field::setMetadataRemoved);
         var removedMethods = NncUtils.filter(klass.getMethods(),
-                m -> !visitedMethods.contains(m));
+                m -> !classInfo.visitedMethods.contains(m));
         var fieldIndices = new HashMap<String, Integer>();
         for (int i = 0; i < psiClass.getFields().length; i++) {
             fieldIndices.put(psiClass.getFields()[i].getName(), i);
@@ -204,7 +199,7 @@ public class Declarator extends CodeGenVisitor {
             var beanName = (String) TranspileUtils.getAnnotationAttribute(beanAnnotation, "value", flow.getCodeNotNull());
             flow.setAttribute(AttributeNames.BEAN_NAME, beanName);
         }
-        visitedMethods.add(flow);
+        currentClass().visitedMethods.add(flow);
         flow.setOverridden(overridden);
     }
 
@@ -297,7 +292,7 @@ public class Declarator extends CodeGenVisitor {
             field.setUnique(TranspileUtils.isUnique(psiField));
             field.setChild(TranspileUtils.isChild(psiField));
         }
-        visitedFields.add(field);
+        currentClass().visitedFields.add(field);
         if (TranspileUtils.isTitleField(psiField))
             klass.setTitleField(field);
         else if(klass.getTitleField() == field)
@@ -353,6 +348,8 @@ public class Declarator extends CodeGenVisitor {
     private static class ClassInfo {
         private final Klass klass;
         private int nextEnumConstantOrdinal;
+        private final Set<Field> visitedFields = new HashSet<>();
+        private final Set<Method> visitedMethods = new HashSet<>();
 
         private ClassInfo(Klass klass) {
             this.klass = klass;

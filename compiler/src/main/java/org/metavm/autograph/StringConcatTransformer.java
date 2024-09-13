@@ -6,7 +6,7 @@ import org.metavm.util.NncUtils;
 import java.util.List;
 import java.util.Objects;
 
-public class StringConcatTransformer extends VisitorBase {
+public class StringConcatTransformer extends SkipDiscardedVisitor {
 
     private final PsiClassType stringType = TranspileUtils.createClassType(String.class);
 

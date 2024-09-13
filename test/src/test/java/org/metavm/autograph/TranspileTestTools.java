@@ -21,8 +21,10 @@ public class TranspileTestTools {
     public static final Logger logger = LoggerFactory.getLogger(TranspileTestTools.class);
 
     private static final String BASE_MOD = "/Users/leen/Library/Java/JavaVirtualMachines/openjdk-18.0.2/Contents/Home/jmods/java.base.jmod";
+    public static final String API_SOURCE_ROOT = "/Users/leen/workspace/object/api/src/main/java/";
     private static final String TEST_SOURCE_ROOT = "/Users/leen/workspace/object/test/src/test/java/";
     private static final String SOURCE_ROOT = "/Users/leen/workspace/object/compiler/src/main/java/";
+    private static final String TMP_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/tmp1";
 
     private static final IrCoreApplicationEnvironment APP_ENV;
     private static final IrCoreProjectEnvironment PROJECT_ENV;
@@ -36,8 +38,10 @@ public class TranspileTestTools {
         }, APP_ENV);
         var javaBaseDir = APP_ENV.getJarFileSystem().findFileByPath(BASE_MOD + "!/classes");
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(javaBaseDir));
+        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(API_SOURCE_ROOT)));
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(SOURCE_ROOT)));
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(TEST_SOURCE_ROOT)));
+        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(TMP_SOURCE_ROOT)));
         PROJECT = PROJECT_ENV.getProject();
         initTranspilerUtils();
     }

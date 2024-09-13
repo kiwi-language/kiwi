@@ -5,6 +5,7 @@ import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
 import org.metavm.api.ChildList;
+import org.metavm.api.EntityIndex;
 import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
@@ -17,7 +18,10 @@ import org.metavm.object.type.ValueFormatter;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.object.type.rest.dto.TypeDefDTO;
 import org.metavm.system.RegionConstants;
-import org.metavm.util.*;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.DebugEnv;
+import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +31,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
+import static org.metavm.autograph.TranspileUtils.executeCommand;
 
 public class Compiler {
 
@@ -35,6 +40,28 @@ public class Compiler {
     public static final String REQUEST_DIR = "/Users/leen/workspace/object/compiler/src/test/resources/requests";
 
     private static final LightVirtualFileBase.MyVirtualFileSystem fileSystem = LightVirtualFileBase.ourFileSystem;
+    public static final List<CompileStage> prepareStages = List.of(
+            new CompileStage(
+                    file -> true,
+                    file -> file.accept(new InnerClassCopier())
+            ),
+            new CompileStage(
+                    file -> true,
+                    file -> {
+                        file.accept(new InnerClassQualifier());
+                        file.accept(new InnerClassTransformer());
+                    }
+            ),
+            new CompileStage(
+                    file -> true,
+                    file -> file.accept(new OriginalNameRecorder())
+            ),
+            new CompileStage(
+                    file -> true,
+                    file -> file.accept(new InnerClassTransformFinalizer())
+            )
+    );
+
     private final String baseMod;
     private final String sourceRoot;
 
@@ -95,10 +122,13 @@ public class Compiler {
             long start = System.currentTimeMillis();
             var typeResolver = new TypeResolverImpl(context);
             var files = NncUtils.map(sources, this::getPsiJavaFile);
-            var psiClasses = NncUtils.flatMap(files, file -> List.of(file.getClasses()));
+            prepareStages.forEach(stage -> executeStage(stage, files));
+            var psiClasses = NncUtils.flatMap(files, TranspileUtils::getAllClasses);
             psiClasses.forEach(k -> classNames.add(k.getQualifiedName()));
-            var psiClassTypes = NncUtils.map(
-                    psiClasses, TranspileUtils.getElementFactory()::createType
+            var psiClassTypes = NncUtils.filterAndMap(
+                    psiClasses,
+                    k -> !TranspileUtils.hasAnnotation(k, EntityIndex.class),
+                    TranspileUtils.getElementFactory()::createType
             );
             for (ResolutionStage stage : ResolutionStage.values()) {
                 try (var ignored = profiler.enter("stage: " + stage)) {
@@ -129,7 +159,13 @@ public class Compiler {
         } finally {
 //            logger.info(profiler.finish(false, true).output());
         }
+    }
 
+    private void executeStage(CompileStage stage, List<PsiJavaFile> files) {
+        files.forEach(file -> {
+            if(stage.filter().test(file))
+                executeCommand(() -> stage.action().accept(file));
+        });
     }
 
     private void deploy(Collection<TypeDef> generatedTypeDefs, TypeResolver typeResolver) {

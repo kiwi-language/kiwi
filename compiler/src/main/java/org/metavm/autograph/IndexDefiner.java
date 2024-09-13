@@ -18,7 +18,7 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class IndexDefiner extends VisitorBase {
+public class IndexDefiner extends SkipDiscardedVisitor {
 
     private Index currentIndex;
     private final TypeResolver typeResolver;

@@ -31,6 +31,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processTypeNarrowing();
             processHash();
             processSorting();
+            processInnerClassFoo();
+            processWarehouse();
         });
     }
 
@@ -260,5 +262,40 @@ public class BasicCompilingTest extends CompilerTestBase {
         var foos2 = apiClient.getObject(labId).getRaw("foos");
         Assert.assertEquals(List.of(foo1Id, foo2Id), foos2);
     }
+
+    private void processInnerClassFoo() {
+        var id = (String) TestUtils.doInTransaction(() ->
+                apiClient.saveInstance("innerclass.InnerClassFoo<string, string>", Map.of())
+        );
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "addEntry", List.of(Map.of(
+                "key", "name",
+                "value", "leen"
+        ))));
+        var entryId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "first", List.of()));
+        var entry = apiClient.getObject(entryId);
+        Assert.assertEquals("name", entry.get("key"));
+        Assert.assertEquals("leen", entry.get("value"));
+    }
+
+    private void processWarehouse() {
+        getClassTypeByCode("innerclass.Warehouse.Container");
+        var warehouseId = (String) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("warehouseService", "createWarehouse", List.of("w1"))
+        );
+        var containerId = (String) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("warehouseService", "createContainer", List.of(warehouseId, "c1"))
+        );
+        var itemId = (String) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("warehouseService", "createItem", List.of(containerId, "i1"))
+        );
+        var itemType = TestUtils.doInTransaction(() -> apiClient.callMethod(itemId, "getType", List.of()));
+        var itemContainer = TestUtils.doInTransaction(() -> apiClient.callMethod(itemId, "getContainer", List.of()));
+        var itemWarehouse = TestUtils.doInTransaction(() -> apiClient.callMethod(itemId, "getWarehouse", List.of()));
+        Assert.assertEquals("i1", itemType);
+        Assert.assertEquals(containerId, itemContainer);
+        Assert.assertEquals(warehouseId, itemWarehouse);
+    }
+
+
 
 }

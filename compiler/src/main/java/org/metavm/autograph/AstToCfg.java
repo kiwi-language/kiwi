@@ -8,7 +8,7 @@ import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 
-public class AstToCfg extends JavaRecursiveElementVisitor {
+public class AstToCfg extends SkipDiscardedVisitor {
 
     private final LinkedList<GraphBuilder> builderStack = new LinkedList<>();
     private final Map<PsiParameterListOwner, Graph> graphs = new HashMap<>();

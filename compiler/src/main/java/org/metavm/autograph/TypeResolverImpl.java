@@ -56,6 +56,12 @@ public class TypeResolverImpl implements TypeResolver {
             System.class
     );
 
+    public static final Set<Class<?>> SEED_COMPILING_STD_CLASSES = Set.of(
+            Map.class, AbstractMap.class, NavigableMap.class, SortedMap.class, TreeMap.class
+    );
+
+    public static final Set<Class<?>> COMPILING_STD_CLASSES;
+
     private PsiClassType parameterizedEnumType;
 
     private final CodeGenerator codeGenerator;
@@ -81,6 +87,17 @@ public class TypeResolverImpl implements TypeResolver {
         }
         map.put(TranspileUtils.createClassType(LinkedList.class), StdKlass.arrayList::get);
         STANDARD_CLASSES = Collections.unmodifiableMap(map);
+
+        var queue = new LinkedList<>(SEED_COMPILING_STD_CLASSES);
+        var compilingClasses = new HashSet<Class<?>>();
+        while (!queue.isEmpty()) {
+            var k = queue.poll();
+            compilingClasses.add(k);
+            for (Class<?> k1 : k.getDeclaredClasses()) {
+                queue.offer(k1);
+            }
+        }
+        COMPILING_STD_CLASSES = Collections.unmodifiableSet(compilingClasses);
     }
 
             /*Map.ofEntries(
@@ -206,12 +223,6 @@ public class TypeResolverImpl implements TypeResolver {
 
     private Type resolveClassType(PsiClassType classType, ResolutionStage stage) {
         try (var entry = ContextUtil.getProfiler().enter("resolveClassType: " + stage)) {
-            for (var collClass : COLLECTION_CLASSES) {
-                if (TranspileUtils.createClassType(collClass).isAssignableFrom(classType)) {
-                    classType = TranspileUtils.getSuperType(classType, collClass);
-                    break;
-                }
-            }
             var classTypeText = classType.getCanonicalText();
             var psiClass = requireNonNull(classType.resolve(),
                     () -> "Failed to resolve class type " + classTypeText);
@@ -223,7 +234,7 @@ public class TypeResolverImpl implements TypeResolver {
                 return Types.getPasswordType();
             else if (ReflectionUtils.isPrimitiveBoxClassName(psiClass.getQualifiedName())
                     || PRIM_CLASS_NAMES.contains(psiClass.getQualifiedName()))
-                return context.getType(ReflectionUtils.classForName(psiClass.getQualifiedName()));
+                return context.getType(TranspileUtils.getJavaClass(psiClass));
             else {
                 var klass = tryResolveBuiltinClass(classType.rawType());
                 if (klass == null)
@@ -297,10 +308,13 @@ public class TypeResolverImpl implements TypeResolver {
         if (qualifiedName != null && (qualifiedName.startsWith(API_PKG_PREFIX) || qualifiedName.startsWith(JAVA_PKG_PREFIX))) {
             if (qualifiedName.startsWith(LANG_PKG_PREFIX))
                 throw new IllegalArgumentException("Can not resolve class in lang package: " + qualifiedName);
-            var javaClass = ReflectionUtils.classForName(qualifiedName);
+            var javaClass = TranspileUtils.getJavaClass(psiClass);
             if(FORBIDDEN_CLASSES.contains(javaClass))
                 throw new CompilerException("class '" + javaClass.getName() + "' is not available in MetaVM");
-            return ModelDefRegistry.getDefContext().getKlass(javaClass);
+            if(!COMPILING_STD_CLASSES.contains(javaClass))
+                return ModelDefRegistry.getDefContext().getKlass(javaClass);
+            else
+                return null;
         } else
             return null;
     }
@@ -329,7 +343,7 @@ public class TypeResolverImpl implements TypeResolver {
                     tv -> Objects.equals(tv.getCode(), typeParameter.getName()));
         if (typeVariable == null)
             typeVariable = new TypeVariable(null, Objects.requireNonNull(typeParameter.getName()), typeParameter.getName(),
-                    DummyGenericDeclaration.INSTANCE);
+                    genericDeclaration != null ? genericDeclaration : DummyGenericDeclaration.INSTANCE);
         typeParameter.putUserData(Keys.TYPE_VARIABLE, typeVariable);
         generatedTypeDefs.add(typeVariable);
         typeVariable.setBounds(NncUtils.map(
@@ -350,14 +364,26 @@ public class TypeResolverImpl implements TypeResolver {
         if (typeParameter.getOwner() instanceof PsiClass psiClass) {
             var className = Objects.requireNonNull(psiClass.getQualifiedName());
             if(className.startsWith(JAVA_PKG_PREFIX) || className.startsWith(API_PKG_PREFIX)) {
-                var javaClass = ReflectionUtils.classForName(className);
-                var klass = ModelDefRegistry.getDefContext().getKlass(javaClass);
-                int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
-                        .getTypeParameterIndex(typeParameter);
-                return klass.getTypeParameters().get(index);
+                var javaClass = TranspileUtils.getJavaClass(psiClass);
+                if(!COMPILING_STD_CLASSES.contains(javaClass)) {
+                    var klass = ModelDefRegistry.getDefContext().getKlass(javaClass);
+                    int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
+                            .getTypeParameterIndex(typeParameter);
+                    return klass.getTypeParameters().get(index);
+                }
             }
         }
         return null;
+    }
+
+    @Override
+    public Klass getKlass(PsiClass psiClass) {
+        var klass = psiClass.getUserData(Keys.MV_CLASS);
+        if (klass == null) {
+            klass = createMetaClass(psiClass);
+            psiClass.putUserData(Keys.MV_CLASS, klass);
+        }
+        return klass;
     }
 
     private Klass createMetaClass(PsiClass psiClass) {
@@ -365,18 +391,19 @@ public class TypeResolverImpl implements TypeResolver {
             NncUtils.requireFalse(Objects.requireNonNull(psiClass.getQualifiedName()).startsWith("org.metavm.api."),
                     () -> "Can not create meta class for API class: " + psiClass.getQualifiedName());
             var name = TranspileUtils.getBizClassName(psiClass);
+            var code = psiClass.getQualifiedName();
             var kind = getClassKind(psiClass);
             boolean isTemplate = psiClass.getTypeParameterList() != null
                     && psiClass.getTypeParameterList().getTypeParameters().length > 0;
             var tag = (int) TranspileUtils.getEntityAnnotationAttr(psiClass, "tag", -1);
             Klass klass;
             if(tag == -1)
-                klass = context.selectFirstByKey(Klass.UNIQUE_CODE, psiClass.getQualifiedName());
+                klass = context.selectFirstByKey(Klass.UNIQUE_CODE, code);
             else
                 klass = context.selectFirstByKey(Klass.UNIQUE_SOURCE_CODE_TAG, tag);
             if (klass != null) {
                 klass.setName(name);
-                klass.setCode(psiClass.getQualifiedName());
+                klass.setCode(code);
                 if (klass.isTemplate() != isTemplate)
                     throw new BusinessException(ErrorCode.CHANGING_IS_TEMPLATE);
                 if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
@@ -384,7 +411,7 @@ public class TypeResolverImpl implements TypeResolver {
                 klass.setKind(kind);
                 klass.setSearchable(TranspileUtils.isSearchable(psiClass));
             } else {
-                klass = KlassBuilder.newBuilder(name, psiClass.getQualifiedName())
+                klass = KlassBuilder.newBuilder(name, code)
                         .kind(kind)
                         .ephemeral(TranspileUtils.isEphemeral(psiClass))
                         .struct(TranspileUtils.isStruct(psiClass))

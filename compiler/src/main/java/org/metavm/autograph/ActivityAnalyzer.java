@@ -113,6 +113,8 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitClass(PsiClass aClass) {
+        if(TranspileUtils.isDiscarded(aClass))
+            return;
         try (ClassState clsState = stateStack.create(ClassState.class)) {
             clsState.setNode(aClass);
             classes.push(aClass);

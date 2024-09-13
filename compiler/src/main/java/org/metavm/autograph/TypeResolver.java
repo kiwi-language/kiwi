@@ -1,9 +1,6 @@
 package org.metavm.autograph;
 
-import com.intellij.psi.PsiCapturedWildcardType;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiType;
-import com.intellij.psi.PsiTypeParameter;
+import com.intellij.psi.*;
 import org.metavm.object.type.*;
 
 public interface TypeResolver {
@@ -15,6 +12,8 @@ public interface TypeResolver {
     Type resolveDeclaration(PsiType psiType);
 
     void addGeneratedTypeDef(TypeDef typeDef);
+
+    Klass getKlass(PsiClass psiClass);
 
     void ensureDeclared(Klass classType);
 

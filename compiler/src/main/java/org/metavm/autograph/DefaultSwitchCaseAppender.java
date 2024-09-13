@@ -6,7 +6,7 @@ import java.util.HashSet;
 
 import static org.metavm.util.NncUtils.requireNonNull;
 
-public class DefaultSwitchCaseAppender extends VisitorBase {
+public class DefaultSwitchCaseAppender extends SkipDiscardedVisitor {
 
     @Override
     public void visitSwitchExpression(PsiSwitchExpression expression) {

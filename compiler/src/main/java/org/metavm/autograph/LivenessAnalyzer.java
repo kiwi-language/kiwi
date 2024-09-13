@@ -15,7 +15,7 @@ import java.util.Set;
 import static org.metavm.util.NncUtils.diffSet;
 import static org.metavm.util.NncUtils.unionSet;
 
-public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
+public class LivenessAnalyzer extends SkipDiscardedVisitor {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 

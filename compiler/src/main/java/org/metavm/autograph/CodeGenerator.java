@@ -1,6 +1,5 @@
 package org.metavm.autograph;
 
-import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.psi.PsiClass;
 import org.metavm.entity.IEntityContext;
 import org.metavm.util.ContextUtil;
@@ -20,7 +19,7 @@ public class CodeGenerator {
 
     void transform(PsiClass psiClass) {
         try (var ignored = ContextUtil.getProfiler().enter("CodeGenerator.transform")) {
-            executeCommand(() -> {
+            TranspileUtils.executeCommand(() -> {
                 resolveQnAndActivity(psiClass);
                 psiClass.accept(new VarargsTransformer());
                 psiClass.accept(new DefaultConstructorCreator());
@@ -61,21 +60,6 @@ public class CodeGenerator {
         psiClass.accept(new ReachingDefAnalyzer(astToCfg.getGraphs()));
         psiClass.accept(new LivenessAnalyzer(astToCfg.getGraphs()));
         psiClass.accept(new Declarator(typeResolver, context));
-    }
-
-    private void executeCommand(Runnable command) {
-        CommandProcessor.getInstance().executeCommand(
-                null,
-                () -> {
-                    try {
-                        command.run();
-                    } catch (RuntimeException e) {
-                        logger.error("Fail to run compile command", e);
-                        throw e;
-                    }
-                },
-                null, null
-        );
     }
 
     void generateCode(PsiClass psiClass, TypeResolver typeResolver) {

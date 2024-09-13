@@ -3,6 +3,7 @@ package org.metavm.autograph;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
 import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
+import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.*;
@@ -483,6 +484,47 @@ public class TranspileUtils {
         return requireNonNull(psiClass.getModifierList()).hasModifierProperty(PsiModifier.PROTECTED);
     }
 
+    public static List<PsiClass> getOwnerClasses(PsiClass psiClass) {
+        var list = new org.metavm.util.LinkedList<PsiClass>();
+        var k = psiClass;
+        do {
+            list.addFirst(k);
+            if(isStatic(k))
+                break;
+            k = k.getContainingClass();
+        } while (k != null);
+        return list;
+    }
+
+    public static List<PsiClass> getEnclosingClasses(PsiClass psiClass) {
+        var list = new org.metavm.util.LinkedList<PsiClass>();
+        var k = psiClass;
+        do {
+            list.addFirst(k);
+            k = k.getContainingClass();
+        } while (k != null);
+        return list;
+    }
+
+    public static PsiElement createIdentifier(String text) {
+        return elementFactory.createIdentifier(text);
+    }
+
+    public static void executeCommand(Runnable command) {
+        CommandProcessor.getInstance().executeCommand(
+                null,
+                () -> {
+                    try {
+                        command.run();
+                    } catch (RuntimeException e) {
+                        CodeGenerator.logger.error("Fail to run compile command", e);
+                        throw e;
+                    }
+                },
+                null, null
+        );
+    }
+
     private static class UpwardsClassVisitor extends JavaElementVisitor {
 
         @Override
@@ -696,6 +738,10 @@ public class TranspileUtils {
 
     public static PsiExpression createExpressionFromText(String text) {
         return elementFactory.createExpressionFromText(text, null);
+    }
+
+    public static PsiExpression createExpressionFromText(String text, PsiElement context) {
+        return elementFactory.createExpressionFromText(text, context);
     }
 
     public static PsiElement createElementFromText(String text) {
@@ -1146,6 +1192,72 @@ public class TranspileUtils {
         var psiMethod = getMethod((Method) parameter.getDeclaringExecutable());
         var index = NncUtils.indexOf(parameter.getDeclaringExecutable().getParameters(), parameter);
         return psiMethod.getParameterList().getParameters()[index];
+    }
+
+    public static PsiParameter createParameter(String name, PsiType type, PsiElement context) {
+        return elementFactory.createParameter(name, type, context);
+    }
+
+    public static PsiTypeParameter createTypeParameter(String name, PsiClassType[] superTypes) {
+        return elementFactory.createTypeParameter(name, superTypes);
+    }
+
+    public static PsiTypeElement createTypeElement(String text, PsiElement context) {
+        return elementFactory.createTypeElementFromText(text, context);
+    }
+
+    public static PsiJavaCodeReferenceElement createReferenceElement(String text, PsiElement context) {
+        return elementFactory.createReferenceFromText(text, context);
+    }
+
+    public static boolean isAssignable(PsiClass base, PsiClass descendant) {
+        return base == descendant || descendant.isInheritor(base, true);
+    }
+
+    public static Class<?> getJavaClass(PsiClass psiClass) {
+        return ReflectionUtils.classForName(getJavaClassName(psiClass));
+    }
+
+    /**
+    @return the class name the can be used for Class.forName
+     */
+    public static String getJavaClassName(PsiClass psiClass) {
+        if(psiClass.getContainingClass() != null)
+            return getJavaClassName(psiClass.getContainingClass()) + "$" + psiClass.getName();
+        else
+            return psiClass.getQualifiedName();
+    }
+
+    public static PsiParameter createParameterFromText(String text) {
+        return elementFactory.createParameterFromText(text, null);
+    }
+
+    public static boolean isDiscarded(PsiElement element) {
+        return Boolean.TRUE.equals(element.getUserData(Keys.DISCARDED));
+    }
+
+    public static List<PsiType> getAllTypeArgumentsForInnerClass(PsiClass psiClass, PsiSubstitutor substitutor) {
+        var ownerClasses = getOwnerClasses(psiClass);
+        var typeArgs = new ArrayList<PsiType>();
+        for (PsiClass k : ownerClasses) {
+            for (PsiTypeParameter typeParam : k.getTypeParameters()) {
+                typeArgs.add(Objects.requireNonNull(substitutor.substitute(typeParam)));
+            }
+        }
+        return typeArgs;
+    }
+
+    public static List<PsiClass> getAllClasses(PsiJavaFile file) {
+        var queue = new LinkedList<>(List.of(file.getClasses()));
+        var result = new ArrayList<PsiClass>();
+        while (!queue.isEmpty()) {
+            var k = queue.poll();
+            result.add(k);
+            for (PsiClass innerClass : k.getInnerClasses()) {
+                queue.offer(innerClass);
+            }
+        }
+        return result;
     }
 
 }

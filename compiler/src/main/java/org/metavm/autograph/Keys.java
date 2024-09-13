@@ -2,6 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.util.Key;
+import com.intellij.psi.PsiClass;
 import org.metavm.object.type.*;
 
 import java.util.HashSet;
@@ -69,6 +70,14 @@ public class Keys {
     public static final Key<Index> INDEX = createKey("Index");
 
     public static final Key<EnumConstantDef> ENUM_CONSTANT_DEF = createKey("EnumConstantDef");
+
+    public static final Key<Boolean> ADDED_STATIC_MODIFIER = createKey("AddedStaticModifier");
+
+    public static final Key<Boolean> DISCARDED = Key.create("Discarded");
+
+    public static final Key<PsiClass> SUBSTITUTION = Key.create("Substitution");
+
+    public static final Key<String> ORIGINAL_NAME = Key.create("OriginalName");
 
     public static Set<Key<?>> getKeys() {
         return new HashSet<>(KEYS);

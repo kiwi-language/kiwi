@@ -2,3 +2,5 @@
 For example, when changing SystemDDL.runMethods to nullable, there will be two entries for `org.metavm.ddl.SystemDDL.mappings.builtin.fieldMappings.runMethods.nestedMapping`,
 one in ArrayNestedMapping.properties and the other in UnionNestedMapping.properties
 2 Add support for deleted fields to standard klasses
+3 Saving an instance of a raw type through ApiService is not prevented.
+4 Add support for ephemeral classes in compiler

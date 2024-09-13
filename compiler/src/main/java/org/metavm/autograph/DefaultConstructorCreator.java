@@ -11,6 +11,8 @@ public class DefaultConstructorCreator extends VisitorBase {
 
     @Override
     public void visitClass(PsiClass psiClass) {
+        if(TranspileUtils.isDiscarded(psiClass))
+            return;
         super.visitClass(psiClass);
         if(psiClass instanceof PsiTypeParameter || psiClass.isInterface())
             return;

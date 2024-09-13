@@ -2,13 +2,19 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.ColumnKind;
+import org.metavm.object.type.rest.dto.TypeKey;
+import org.metavm.util.InstanceInput;
+import org.metavm.util.InstanceOutput;
 import org.metavm.util.MockUtils;
 import org.metavm.util.TestUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 
 public class ClassTypeTest extends TestCase {
@@ -115,6 +121,42 @@ public class ClassTypeTest extends TestCase {
         Assert.assertSame(m1, fooType.resolveMethod("test", List.of(Types.getBooleanType()), List.of(), false));
         Assert.assertSame(m4, fooType.resolveMethod("test", List.of(Types.getLongType()), List.of(), false));
         Assert.assertSame(m3, fooType.resolveMethod("test", List.of(Types.getStringType()), List.of(), false));
+    }
+
+    public void testNestedParameterizedType() {
+        var listKlass = TestUtils.newKlassBuilder("List")
+                .typeParameters(new TypeVariable(null, "E", "E", DummyGenericDeclaration.INSTANCE))
+                .build();
+        var fooKlass = TestUtils.newKlassBuilder("Foo")
+                .typeParameters(
+                        new TypeVariable(null, "K", "K", DummyGenericDeclaration.INSTANCE),
+                        new TypeVariable(null, "V", "V", DummyGenericDeclaration.INSTANCE)
+                )
+                .build();
+        var entryKlass = TestUtils.newKlassBuilder("Entry")
+                .typeParameters(
+                        new TypeVariable(null, "K", "K", DummyGenericDeclaration.INSTANCE),
+                        new TypeVariable(null, "V", "V", DummyGenericDeclaration.INSTANCE)
+                )
+                .build();
+        TestUtils.initEntityIds(listKlass);
+        TestUtils.initEntityIds(fooKlass);
+        TestUtils.initEntityIds(entryKlass);
+        var classType = new ClassType(
+                listKlass,
+                List.of(
+                        new ClassType(
+                                entryKlass,
+                                fooKlass.getTypeArguments()
+                        )
+                )
+        );
+        var bout = new ByteArrayOutputStream();
+        var output = new InstanceOutput(bout);
+        classType.write(output);
+        var input = new InstanceInput(new ByteArrayInputStream(bout.toByteArray()));
+        var typeKey = TypeKey.read(input);
+        Assert.assertEquals(classType.toTypeKey(ITypeDef::getId), typeKey);
     }
 
 }

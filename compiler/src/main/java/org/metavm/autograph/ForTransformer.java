@@ -10,7 +10,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
-public class ForTransformer extends VisitorBase {
+public class ForTransformer extends SkipDiscardedVisitor {
 
     private final Map<String, String> variableMap = new HashMap<>();
 

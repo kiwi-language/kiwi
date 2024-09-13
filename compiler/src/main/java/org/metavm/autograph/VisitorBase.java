@@ -246,9 +246,10 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
     protected void visitChain(PsiElement start) {
         PsiElement element = start;
         while (element != null) {
+            var sibling = element.getNextSibling();
             element.accept(this);
             element = replaceMap.getOrDefault(element, element);
-            element = element.getNextSibling();
+            element = element.isValid() ? element.getNextSibling() : sibling;
         }
     }
 

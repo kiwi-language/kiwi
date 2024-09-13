@@ -10,7 +10,7 @@ import java.util.Objects;
 
 import static org.metavm.util.NncUtils.requireNonNull;
 
-public class BreakTransformer extends VisitorBase {
+public class BreakTransformer extends SkipDiscardedVisitor {
 
     private LoopInfo loopInfo;
 

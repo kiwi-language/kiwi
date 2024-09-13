@@ -1,11 +1,13 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class ReachingDefAnalyzer extends JavaRecursiveElementVisitor {
+@Slf4j
+public class ReachingDefAnalyzer extends SkipDiscardedVisitor {
 
     private Analyzer currentAnalyzer;
     private CfgNode currentCfgNode;

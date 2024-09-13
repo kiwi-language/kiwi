@@ -6,7 +6,7 @@ import org.metavm.util.NncUtils;
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.TranspileUtils.createStatementFromText;
 
-public class SwitchLabelStatementTransformer extends VisitorBase {
+public class SwitchLabelStatementTransformer extends SkipDiscardedVisitor {
 
     @Override
     public void visitSwitchLabelStatement(PsiSwitchLabelStatement statement) {

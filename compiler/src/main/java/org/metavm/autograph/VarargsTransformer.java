@@ -10,7 +10,7 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class VarargsTransformer extends VisitorBase {
+public class VarargsTransformer extends SkipDiscardedVisitor {
 
     public static final List<Method> BLACKLIST = List.of(
             ReflectionUtils.getMethod(List.class, "of", Object[].class)
@@ -24,7 +24,6 @@ public class VarargsTransformer extends VisitorBase {
     @Override
     public void visitClass(PsiClass aClass) {
         super.visitClass(aClass);
-
     }
 
     @Override
