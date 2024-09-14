@@ -31,18 +31,24 @@ public class ExpressionResolver {
     );
 
     private static final Map<IElementType, BinaryOperator> OPERATOR_MAP = Map.ofEntries(
+            Map.entry(JavaTokenType.ASTERISK, BinaryOperator.MULTIPLY),
+            Map.entry(JavaTokenType.DIV, BinaryOperator.DIVIDE),
             Map.entry(JavaTokenType.PLUS, BinaryOperator.ADD),
             Map.entry(JavaTokenType.MINUS, BinaryOperator.MINUS),
+            Map.entry(JavaTokenType.GTGT, BinaryOperator.RIGHT_SHIFT),
+            Map.entry(JavaTokenType.GTGTGT, BinaryOperator.UNSIGNED_RIGHT_SHIFT),
+            Map.entry(JavaTokenType.LTLT, BinaryOperator.LEFT_SHIFT),
             Map.entry(JavaTokenType.EQEQ, BinaryOperator.EQ),
             Map.entry(JavaTokenType.NE, BinaryOperator.NE),
             Map.entry(JavaTokenType.GT, BinaryOperator.GT),
             Map.entry(JavaTokenType.GE, BinaryOperator.GE),
             Map.entry(JavaTokenType.LT, BinaryOperator.LT),
             Map.entry(JavaTokenType.LE, BinaryOperator.LE),
+            Map.entry(JavaTokenType.AND, BinaryOperator.BITWISE_AND),
+            Map.entry(JavaTokenType.XOR, BinaryOperator.BITWISE_XOR),
+            Map.entry(JavaTokenType.OR, BinaryOperator.BITWISE_OR),
             Map.entry(JavaTokenType.ANDAND, BinaryOperator.AND),
-            Map.entry(JavaTokenType.OROR, BinaryOperator.OR),
-            Map.entry(JavaTokenType.ASTERISK, BinaryOperator.MULTIPLY),
-            Map.entry(JavaTokenType.DIV, BinaryOperator.DIVIDE)
+            Map.entry(JavaTokenType.OROR, BinaryOperator.OR)
     );
 
     public static final Set<IElementType> BOOL_OPS = Set.of(

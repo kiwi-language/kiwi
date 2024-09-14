@@ -1,4 +1,4 @@
-// Generated from MetaVMParser.g4 by ANTLR 4.13.1
+// Generated from MetaVMParser.g4 by ANTLR 4.13.2
 package org.metavm.expression.antlr;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -215,12 +215,6 @@ public interface MetaVMParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitAnnotation(MetaVMParser.AnnotationContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link MetaVMParser#typeArgument}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitTypeArgument(MetaVMParser.TypeArgumentContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link MetaVMParser#typeArguments}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -238,6 +232,12 @@ public interface MetaVMParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitTypeType(MetaVMParser.TypeTypeContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MetaVMParser#arrayKind}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrayKind(MetaVMParser.ArrayKindContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link MetaVMParser#primitiveType}.
 	 * @param ctx the parse tree

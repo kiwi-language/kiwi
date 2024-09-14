@@ -97,6 +97,8 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
 
     public abstract ModelDef<?> getDef(Type javaType, ResolutionStage stage);
 
+    public abstract @Nullable ModelDef<?> getDefIfPresent(Type javaType);
+
     public Type getJavaType(org.metavm.object.type.Type type) {
         var javaType = Types.getPrimitiveJavaType(type);
         if (javaType != null)
@@ -240,6 +242,11 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
 
     public Klass getKlass(Class<?> javaClass) {
         return (Klass) getDef(javaClass).getTypeDef();
+    }
+
+    public Klass tryGetKlass(Class<?> javaClass) {
+        var def = getDefIfPresent(javaClass);
+        return def != null ? (Klass) def.getTypeDef() : null;
     }
 
     public org.metavm.object.type.Type getType(Class<?> javaClass) {

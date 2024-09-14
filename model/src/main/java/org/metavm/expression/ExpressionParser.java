@@ -206,23 +206,75 @@ public class ExpressionParser {
     }
 
     private Type parseTypeType(MetaVMParser.TypeTypeContext typeType) {
-        if (typeType.classOrInterfaceType() != null) {
-            var classType = typeType.classOrInterfaceType();
-            var identifier = classType.typeIdentifier();
-            if (identifier.IDENTIFIER() != null) {
-                String name = identifier.IDENTIFIER().getText();
-                if (name.startsWith(Constants.ID_PREFIX)) {
-                    return context.getTypeDefProvider().getKlass(
-                            Id.parse(name.substring(Constants.ID_PREFIX.length()))
-                    ).getType();
-                } else {
-                    String className = classType.typeArguments().isEmpty() ? name :
-                            name + classType.typeArguments(0).getText();
-                    return requireNonNull(context.getTypeDefProvider().findKlassByName(className)).getType();
-                }
-            }
+        if(typeType.ANY() != null)
+            return Types.getAnyType();
+        if(typeType.NEVER() != null)
+            return Types.getNeverType();
+        if(typeType.LBRACK() != null)
+            return new UncertainType(parseTypeType(typeType.typeType(0)), parseTypeType(typeType.typeType(1)));
+        if(typeType.primitiveType() != null)
+            return parsePrimitiveType(typeType.primitiveType());
+        if (typeType.classOrInterfaceType() != null)
+            return parseClassType(typeType.classOrInterfaceType());
+        if (typeType.BITOR() != null)
+            return new UnionType(NncUtils.mapUnique(typeType.typeType(), this::parseTypeType));
+        if (typeType.BITAND() != null)
+            return new IntersectionType(NncUtils.mapUnique(typeType.typeType(), this::parseTypeType));
+        if(typeType.ARROW() != null) {
+            List<Type> paramTypes = typeType.typeList() != null ?
+                    NncUtils.map(typeType.typeList().typeType(), this::parseTypeType) : List.of();
+            return new FunctionType(paramTypes, parseTypeType(typeType.typeType(0)));
         }
+        if(typeType.arrayKind() != null)
+            return new ArrayType(parseTypeType(typeType.typeType(0)), parseArrayKind(typeType.arrayKind()));
         throw new ExpressionParsingException();
+    }
+
+    private ClassType parseClassType(MetaVMParser.ClassOrInterfaceTypeContext ctx) {
+        var identifier = ctx.qualifiedName();
+        String name = identifier.getText();
+        Klass klass;
+        if (name.startsWith(Constants.ID_PREFIX))
+            klass = context.getTypeDefProvider().getKlass(Id.parse(Constants.removeIdPrefix(name)));
+        else
+            klass = requireNonNull(context.getTypeDefProvider().findKlassByName(name));
+        if(ctx.typeArguments() != null) {
+            var typeArgs = NncUtils.map(ctx.typeArguments().typeType(), this::parseTypeType);
+            klass = klass.getParameterized(typeArgs);
+        }
+        return klass.getType();
+    }
+
+    private PrimitiveType parsePrimitiveType(MetaVMParser.PrimitiveTypeContext ctx) {
+        if(ctx.BOOLEAN() != null)
+            return PrimitiveType.booleanType;
+        if(ctx.STRING() != null)
+            return PrimitiveType.stringType;
+        if(ctx.LONG() != null)
+            return PrimitiveType.longType;
+        if(ctx.DOUBLE() != null)
+            return PrimitiveType.doubleType;
+        if(ctx.PASSWORD() != null)
+            return PrimitiveType.passwordType;
+        if(ctx.TIME() != null)
+            return PrimitiveType.timeType;
+        if(ctx.VOID() != null)
+            return PrimitiveType.voidType;
+        else
+            throw new IllegalStateException("Unrecognized primitive type: " + ctx.getText());
+
+    }
+
+    private ArrayKind parseArrayKind(MetaVMParser.ArrayKindContext ctx) {
+        if(ctx.R() != null)
+            return ArrayKind.READ_ONLY;
+        if(ctx.RW() != null)
+            return ArrayKind.READ_WRITE;
+        if(ctx.C() != null)
+            return ArrayKind.CHILD;
+        if(ctx.V() != null)
+            return ArrayKind.VALUE;
+        throw new IllegalStateException("Unrecognized array kind: " + ctx.getText());
     }
 
     private Expression preParseLiteral(MetaVMParser.LiteralContext literal) {

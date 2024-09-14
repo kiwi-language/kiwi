@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 import static com.intellij.lang.jvm.types.JvmPrimitiveTypeKind.*;
 import static java.util.Objects.requireNonNull;
 import static org.metavm.object.type.ResolutionStage.*;
+import static org.metavm.object.type.Types.getIntersectionType;
 
 public class TypeResolverImpl implements TypeResolver {
 
@@ -56,12 +57,6 @@ public class TypeResolverImpl implements TypeResolver {
             System.class
     );
 
-    public static final Set<Class<?>> SEED_COMPILING_STD_CLASSES = Set.of(
-            Map.class, AbstractMap.class, NavigableMap.class, SortedMap.class, TreeMap.class
-    );
-
-    public static final Set<Class<?>> COMPILING_STD_CLASSES;
-
     private PsiClassType parameterizedEnumType;
 
     private final CodeGenerator codeGenerator;
@@ -87,43 +82,7 @@ public class TypeResolverImpl implements TypeResolver {
         }
         map.put(TranspileUtils.createClassType(LinkedList.class), StdKlass.arrayList::get);
         STANDARD_CLASSES = Collections.unmodifiableMap(map);
-
-        var queue = new LinkedList<>(SEED_COMPILING_STD_CLASSES);
-        var compilingClasses = new HashSet<Class<?>>();
-        while (!queue.isEmpty()) {
-            var k = queue.poll();
-            compilingClasses.add(k);
-            for (Class<?> k1 : k.getDeclaredClasses()) {
-                queue.offer(k1);
-            }
-        }
-        COMPILING_STD_CLASSES = Collections.unmodifiableSet(compilingClasses);
     }
-
-            /*Map.ofEntries(
-            Map.entry(TranspileUtils.createClassType(Entity.class), StandardTypes::getEntityKlass),
-            Map.entry(TranspileUtils.createClassType(Enum.class), StandardTypes::getEnumKlass),
-            Map.entry(TranspileUtils.createClassType(Record.class), StandardTypes::getRecordKlass),
-            Map.entry(TranspileUtils.createClassType(Throwable.class), StandardTypes::getThrowableKlass),
-            Map.entry(TranspileUtils.createClassType(Exception.class), StandardTypes::getExceptionKlass),
-            Map.entry(TranspileUtils.createClassType(RuntimeException.class), StandardTypes::getRuntimeExceptionKlass),
-            Map.entry(TranspileUtils.createClassType(IllegalArgumentException.class), StandardTypes::getIllegalArgumentExceptionKlass),
-            Map.entry(TranspileUtils.createClassType(IllegalStateException.class), StandardTypes::getIllegalStateExceptionKlass),
-            Map.entry(TranspileUtils.createClassType(NullPointerException.class), StandardTypes::getNullPointerExceptionKlass),
-            Map.entry(TranspileUtils.createClassType(IteratorImpl.class), StandardTypes::getIteratorImplKlass),
-            Map.entry(TranspileUtils.createClassType(Iterator.class), StandardTypes::getIteratorKlass),
-            Map.entry(TranspileUtils.createClassType(Iterable.class), StandardTypes::getIterableKlass),
-            Map.entry(TranspileUtils.createClassType(List.class), StandardTypes::getListKlass),
-            Map.entry(TranspileUtils.createClassType(ArrayList.class), StandardTypes::getReadWriteListKlass),
-            Map.entry(TranspileUtils.createClassType(LinkedList.class), StandardTypes::getReadWriteListKlass),
-            Map.entry(TranspileUtils.createClassType(org.metavm.util.LinkedList.class), StandardTypes::getReadWriteListKlass),
-            Map.entry(TranspileUtils.createClassType(ChildList.class), StandardTypes::getChildListKlass),
-            Map.entry(TranspileUtils.createClassType(ValueList.class), StandardTypes::getValueListKlass),
-            Map.entry(TranspileUtils.createClassType(Set.class), StandardTypes::getSetKlass),
-            Map.entry(TranspileUtils.createClassType(Collection.class), StandardTypes::getCollectionKlass),
-            Map.entry(TranspileUtils.createClassType(Consumer.class), StandardTypes::getConsumerKlass),
-            Map.entry(TranspileUtils.createClassType(Predicate.class), StandardTypes::getPredicateKlass)
-    );*/
 
     private static final List<Class<?>> COLLECTION_CLASSES = List.of(
             IteratorImpl.class,
@@ -221,6 +180,16 @@ public class TypeResolverImpl implements TypeResolver {
                 () -> "Can not find PsiCapturedWildcardType for captured type " + capturedType);
     }
 
+    @Override
+    public boolean isBuiltinClass(PsiClass psiClass) {
+        var qualifiedName = psiClass.getQualifiedName();
+        if (qualifiedName != null && (qualifiedName.startsWith(API_PKG_PREFIX) || qualifiedName.startsWith(JAVA_PKG_PREFIX))) {
+            var javaClass = TranspileUtils.getJavaClass(psiClass);
+            return ModelDefRegistry.getDefContext().tryGetKlass(javaClass) != null;
+        } else
+            return false;
+    }
+
     private Type resolveClassType(PsiClassType classType, ResolutionStage stage) {
         try (var entry = ContextUtil.getProfiler().enter("resolveClassType: " + stage)) {
             var classTypeText = classType.getCanonicalText();
@@ -240,15 +209,33 @@ public class TypeResolverImpl implements TypeResolver {
                 if (klass == null)
                     klass = resolvePojoClass(psiClass, stage);
                 if (classType.getParameters().length > 0) {
-                    List<Type> typeArgs = NncUtils.map(
-                            classType.getParameters(), this::resolveTypeOnly
-                    );
+                    var typeArgs = new ArrayList<Type>();
+                    for (int i = 0; i < classType.getParameterCount(); i++) {
+                        typeArgs.add(
+                                adjustTypeArgument(klass.getTypeParameters().get(i), resolveTypeOnly(classType.getParameters()[i]))
+                        );
+                    }
                     return klass.getParameterized(typeArgs, stage).getType();
                 } else {
                     return klass.getType();
                 }
             }
         }
+    }
+
+    /*
+     * It's possible to have a parameterized type with an uncertain type argument that is not within the bound
+     * of the type argument. This method adjust such type argument to make it fit into the bound of the
+     * type parameter.
+     */
+    private Type adjustTypeArgument(TypeVariable typeParameter, Type typeArgument) {
+        if(typeArgument instanceof UncertainType uncertainType
+                && !typeParameter.getUpperBound().isAssignableFrom(uncertainType.getUpperBound())) {
+            var adjustedBound = getIntersectionType(List.of(typeParameter.getUpperBound(), uncertainType.getUpperBound()));
+            return new UncertainType(uncertainType.getLowerBound(), adjustedBound);
+        }
+        else
+            return typeArgument;
     }
 
     public Set<TypeDef> getGeneratedTypeDefs() {
@@ -311,10 +298,7 @@ public class TypeResolverImpl implements TypeResolver {
             var javaClass = TranspileUtils.getJavaClass(psiClass);
             if(FORBIDDEN_CLASSES.contains(javaClass))
                 throw new CompilerException("class '" + javaClass.getName() + "' is not available in MetaVM");
-            if(!COMPILING_STD_CLASSES.contains(javaClass))
-                return ModelDefRegistry.getDefContext().getKlass(javaClass);
-            else
-                return null;
+            return ModelDefRegistry.getDefContext().tryGetKlass(javaClass);
         } else
             return null;
     }
@@ -365,8 +349,8 @@ public class TypeResolverImpl implements TypeResolver {
             var className = Objects.requireNonNull(psiClass.getQualifiedName());
             if(className.startsWith(JAVA_PKG_PREFIX) || className.startsWith(API_PKG_PREFIX)) {
                 var javaClass = TranspileUtils.getJavaClass(psiClass);
-                if(!COMPILING_STD_CLASSES.contains(javaClass)) {
-                    var klass = ModelDefRegistry.getDefContext().getKlass(javaClass);
+                var klass = ModelDefRegistry.getDefContext().tryGetKlass(javaClass);
+                if(klass != null) {
                     int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
                             .getTypeParameterIndex(typeParameter);
                     return klass.getTypeParameters().get(index);

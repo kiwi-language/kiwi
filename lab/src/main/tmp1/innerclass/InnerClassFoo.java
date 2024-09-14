@@ -51,6 +51,10 @@ public class InnerClassFoo<K,V> {
         throw new IllegalStateException();
     }
 
+    public boolean isFoo(Object o) {
+        return o instanceof InnerClassFoo<?,?>;
+    }
+
     public class MyIterator implements Iterator<Entry<K,V>> {
 
         private final Iterator<Entry<K,V>> it;

@@ -1,6 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
@@ -18,10 +19,7 @@ import org.metavm.object.type.ValueFormatter;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.object.type.rest.dto.TypeDefDTO;
 import org.metavm.system.RegionConstants;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.DebugEnv;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +27,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.TranspileUtils.executeCommand;
@@ -41,6 +40,10 @@ public class Compiler {
 
     private static final LightVirtualFileBase.MyVirtualFileSystem fileSystem = LightVirtualFileBase.ourFileSystem;
     public static final List<CompileStage> prepareStages = List.of(
+            new CompileStage(
+                    file -> true,
+                    file -> file.accept(new RawTypeTransformer())
+            ),
             new CompileStage(
                     file -> true,
                     file -> file.accept(new InnerClassCopier())
@@ -123,29 +126,30 @@ public class Compiler {
             var typeResolver = new TypeResolverImpl(context);
             var files = NncUtils.map(sources, this::getPsiJavaFile);
             prepareStages.forEach(stage -> executeStage(stage, files));
-            var psiClasses = NncUtils.flatMap(files, TranspileUtils::getAllClasses);
+            var psiClasses = NncUtils.flatMapAndFilter(files, TranspileUtils::getAllClasses,
+                    k -> !TranspileUtils.hasAnnotation(k, EntityIndex.class));
             psiClasses.forEach(k -> classNames.add(k.getQualifiedName()));
-            var psiClassTypes = NncUtils.filterAndMap(
-                    psiClasses,
-                    k -> !TranspileUtils.hasAnnotation(k, EntityIndex.class),
-                    TranspileUtils.getElementFactory()::createType
-            );
-            for (ResolutionStage stage : ResolutionStage.values()) {
+            for (var stage : stages) {
                 try (var ignored = profiler.enter("stage: " + stage)) {
-                    psiClassTypes.forEach(t -> typeResolver.resolve(t, stage));
-                    if (stage == ResolutionStage.INIT) {
+                    var sortedKlasses = stage.sort(psiClasses, typeResolver);
+                    var psiClassTypes = NncUtils.map(
+                            sortedKlasses,
+                            TranspileUtils.getElementFactory()::createType
+                    );
+                    psiClassTypes.forEach(t -> {
+                         typeResolver.resolve(t, stage.stage);
+                        if (stage.stage == ResolutionStage.DECLARATION) {
+                            var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS));
+                            if (klass.isTemplate())
+                                klass.updateParameterized();
+                        }
+                    });
+                    if (stage.stage == ResolutionStage.INIT) {
                         psiClassTypes.forEach(t -> {
                             var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS));
                             // The builtin mapping will be regenerated on the server side based on the new metadata.
                             // It must be cleared here because it may contain references to obsolete elements.
                             klass.clearBuiltinMapping();
-                        });
-                    }
-                    if (stage == ResolutionStage.DECLARATION) {
-                        psiClassTypes.forEach(t -> {
-                            var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS));
-                            if (klass.isTemplate())
-                                klass.updateParameterized();
                         });
                     }
                 }
@@ -160,6 +164,76 @@ public class Compiler {
 //            logger.info(profiler.finish(false, true).output());
         }
     }
+
+    private static final List<Stage> stages = List.of(
+            new Stage(ResolutionStage.INIT, Compiler::noDependencies),
+            new Stage(ResolutionStage.SIGNATURE, Compiler::noDependencies),
+            new Stage(ResolutionStage.DECLARATION, Compiler::declarationDependencies),
+            new Stage(ResolutionStage.DEFINITION, Compiler::noDependencies),
+            new Stage(ResolutionStage.MAPPING_DEFINITION, Compiler::noDependencies)
+    );
+
+    private record Stage(ResolutionStage stage, Function<PsiClass, Set<PsiClass>> getDependencies) {
+        List<PsiClass> sort(Collection<PsiClass> classes, TypeResolver typeResolver) {
+            return Sorter.sort(classes, getDependencies, typeResolver);
+        }
+    }
+
+    private static Set<PsiClass> noDependencies(PsiClass klass) {
+        return Set.of();
+    }
+
+    private static Set<PsiClass> declarationDependencies(PsiClass klass) {
+        return Set.of(klass.getSupers());
+    }
+
+    private static class Sorter {
+
+        public static List<PsiClass> sort(Collection<PsiClass> classes,
+                                            Function<PsiClass, Set<PsiClass>> getDependencies,
+                                          TypeResolver typeResolver) {
+            var sorter = new Sorter(classes, getDependencies, typeResolver);
+            return sorter.result;
+        }
+
+        private final IdentitySet<PsiClass> visited = new IdentitySet<>();
+        private final IdentitySet<PsiClass> visiting = new IdentitySet<>();
+        private final List<PsiClass> result = new ArrayList<>();
+        private final Map<String, TypeDefDTO> map = new HashMap<>();
+        private final Function<PsiClass, Set<PsiClass>> getDependencies;
+        private final TypeResolver typeResolver;
+
+        public Sorter(Collection<PsiClass> classes, Function<PsiClass, Set<PsiClass>> getDependencies, TypeResolver typeResolver) {
+            this.getDependencies = getDependencies;
+            this.typeResolver = typeResolver;
+            classes.forEach(this::visit);
+        }
+
+        private void visit(PsiClass klass) {
+            if (visiting.contains(klass)) {
+                throw new InternalException("Circular reference");
+            }
+            if (visited.contains(klass)) {
+                return;
+            }
+            visiting.add(klass);
+            getDependencies(klass).forEach(this::visitDependency);
+            result.add(klass);
+            visiting.remove(klass);
+            visited.add(klass);
+        }
+
+        private void visitDependency(PsiClass klass) {
+            if(!TranspileUtils.isObjectClass(klass) && !typeResolver.isBuiltinClass(klass))
+                visit(klass);
+        }
+
+        private Set<PsiClass> getDependencies(PsiClass klass) {
+            return getDependencies.apply(klass);
+        }
+
+    }
+
 
     private void executeStage(CompileStage stage, List<PsiJavaFile> files) {
         files.forEach(file -> {

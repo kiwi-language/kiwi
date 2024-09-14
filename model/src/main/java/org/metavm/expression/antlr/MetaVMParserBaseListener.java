@@ -1,4 +1,4 @@
-// Generated from MetaVMParser.g4 by ANTLR 4.13.1
+// Generated from MetaVMParser.g4 by ANTLR 4.13.2
 package org.metavm.expression.antlr;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -425,18 +425,6 @@ public class MetaVMParserBaseListener implements MetaVMParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTypeArgument(MetaVMParser.TypeArgumentContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitTypeArgument(MetaVMParser.TypeArgumentContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterTypeArguments(MetaVMParser.TypeArgumentsContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -468,6 +456,18 @@ public class MetaVMParserBaseListener implements MetaVMParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitTypeType(MetaVMParser.TypeTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterArrayKind(MetaVMParser.ArrayKindContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitArrayKind(MetaVMParser.ArrayKindContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

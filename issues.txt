@@ -4,3 +4,8 @@ one in ArrayNestedMapping.properties and the other in UnionNestedMapping.propert
 2 Add support for deleted fields to standard klasses
 3 Saving an instance of a raw type through ApiService is not prevented.
 4 Add support for ephemeral classes in compiler
+5 Recurring problem: A parameterized class is generated with a higher stage than the template class, causing missing elements.
+
+Issues with compiling java.util.Map
+
+1 New array expressions using raw element types must be handled

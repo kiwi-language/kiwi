@@ -2,15 +2,17 @@ package org.metavm.autograph;
 
 import org.junit.Assert;
 import org.metavm.common.rest.dto.ErrorDTO;
+import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.rest.InstanceFieldValue;
-import org.metavm.object.type.ClassKind;
-import org.metavm.object.type.MetadataState;
+import org.metavm.object.type.*;
+import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class BasicCompilingTest extends CompilerTestBase {
 
@@ -33,6 +35,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processSorting();
             processInnerClassFoo();
             processWarehouse();
+            processInstanceOf();
+            processAsterisk();
         });
     }
 
@@ -296,6 +300,25 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(warehouseId, itemWarehouse);
     }
 
+    private void processInstanceOf() {
+        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("instanceof_.InstanceOfFoo<any>", Map.of()));
+        boolean result = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod("instanceof_.InstanceOfFoo<string>",
+                "isInstance", List.of(id)));
+        Assert.assertTrue(result);
+    }
+
+    private void processAsterisk() {
+        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE,
+                    "asterisk.AsteriskTypeFoo"));
+            var method = klass.getMethodByCode("getInstance");
+            var serializableKlass = StdKlass.serializable.get();
+            var expectedType = klass.getParameterized(
+                    List.of(new UncertainType(Types.getNeverType(), serializableKlass.getType()))
+            ).getType();
+            Assert.assertEquals(expectedType, method.getReturnType());
+        }
+    }
 
 
 }

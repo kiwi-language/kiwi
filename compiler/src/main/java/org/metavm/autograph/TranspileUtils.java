@@ -926,6 +926,11 @@ public class TranspileUtils {
         return modifierListOwner.hasModifierProperty(PsiModifier.STATIC);
     }
 
+    public static boolean isNonStaticInnerClass(PsiClass psiClass) {
+        return psiClass.getContainingClass() != null
+                && !isStatic(psiClass) && !psiClass.isInterface() && !psiClass.isEnum() && !psiClass.isRecord();
+    }
+
     public static String getQualifiedName(PsiMethod psiMethod) {
         return requireNonNull(psiMethod.getContainingClass()).getName() + "." + psiMethod.getName();
     }

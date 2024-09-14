@@ -253,4 +253,7 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
         }
     }
 
+    @Override
+    public void visitComment(@NotNull PsiComment comment) {
+    }
 }

@@ -17,10 +17,10 @@ public class InnerClassCopier extends VisitorBase {
     public void visitClass(PsiClass psiClass) {
         if (copies.contains(psiClass))
             return;
-        if (psiClass.getContainingClass() != null && !TranspileUtils.isStatic(psiClass)) {
+        if (TranspileUtils.isNonStaticInnerClass(psiClass)) {
             var copy = (PsiClass) psiClass.copy();
             copy.setName(psiClass.getName() + "$");
-            copy = (PsiClass) psiClass.getContainingClass().addAfter(copy, psiClass);
+            copy = (PsiClass) Objects.requireNonNull(psiClass.getContainingClass()).addAfter(copy, psiClass);
             copies.add(copy);
             copy.putUserData(Keys.ORIGINAL_NAME, psiClass.getName());
             copy.accept(new ClassRefSubstitutor(psiClass, copy));

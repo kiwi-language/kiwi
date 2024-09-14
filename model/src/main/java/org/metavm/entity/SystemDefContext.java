@@ -201,6 +201,12 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
         return (ModelDef<T>) getDef((Type) klass);
     }
 
+    @Nullable
+    @Override
+    public ModelDef<?> getDefIfPresent(Type javaType) {
+        return javaType2Def.get(javaType);
+    }
+
     @Override
     public boolean containsDef(TypeDef typeDef) {
         return typeDef2Def.containsKey(typeDef);

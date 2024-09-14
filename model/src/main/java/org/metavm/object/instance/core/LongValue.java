@@ -54,6 +54,18 @@ public class LongValue extends NumberValue {
         return new LongValue(value + that.value, getType());
     }
 
+    public LongValue bitwiseAnd(LongValue that) {
+        return new LongValue(value & that.value, getType());
+    }
+
+    public LongValue bitwiseXor(LongValue that) {
+        return new LongValue(value ^ that.value, getType());
+    }
+
+    public LongValue bitwiseOr(LongValue that) {
+        return new LongValue(value | that.value, getType());
+    }
+
     public LongValue mul(LongValue that) {
         return new LongValue(value * that.value, getType());
     }

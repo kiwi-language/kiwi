@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.*;
 import java.util.function.Consumer;
@@ -335,6 +336,12 @@ public class ReversedDefContext extends DefContext {
         javaType2Def.put(pojoDef.getJavaType(), pojoDef);
         initFieldDefs(pojoDef, prototype);
         initIndexDefs(pojoDef, prototype);
+    }
+
+    @Nullable
+    @Override
+    public ModelDef<?> getDefIfPresent(Type javaType) {
+        return javaType2Def.get(javaType);
     }
 
     private void initFieldDefs(PojoDef<?> pojoDef, PojoDef<?> prototype) {

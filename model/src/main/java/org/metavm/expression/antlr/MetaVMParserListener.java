@@ -1,4 +1,4 @@
-// Generated from MetaVMParser.g4 by ANTLR 4.13.1
+// Generated from MetaVMParser.g4 by ANTLR 4.13.2
 package org.metavm.expression.antlr;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -348,16 +348,6 @@ public interface MetaVMParserListener extends ParseTreeListener {
 	 */
 	void exitAnnotation(MetaVMParser.AnnotationContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link MetaVMParser#typeArgument}.
-	 * @param ctx the parse tree
-	 */
-	void enterTypeArgument(MetaVMParser.TypeArgumentContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link MetaVMParser#typeArgument}.
-	 * @param ctx the parse tree
-	 */
-	void exitTypeArgument(MetaVMParser.TypeArgumentContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link MetaVMParser#typeArguments}.
 	 * @param ctx the parse tree
 	 */
@@ -387,6 +377,16 @@ public interface MetaVMParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitTypeType(MetaVMParser.TypeTypeContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MetaVMParser#arrayKind}.
+	 * @param ctx the parse tree
+	 */
+	void enterArrayKind(MetaVMParser.ArrayKindContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MetaVMParser#arrayKind}.
+	 * @param ctx the parse tree
+	 */
+	void exitArrayKind(MetaVMParser.ArrayKindContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link MetaVMParser#primitiveType}.
 	 * @param ctx the parse tree

@@ -1365,6 +1365,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void updateParameterized() {
         ParameterizedStore.forEach(this, (typeArgs, k) -> {
+            var p = (Klass) k;
+            p.setStage(ResolutionStage.INIT);
             var subst = new SubstitutorV2(
                     this, typeParameters.toList(), typeArgs, k, stage);
             subst.copy(this);

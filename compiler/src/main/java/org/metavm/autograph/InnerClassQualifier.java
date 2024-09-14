@@ -27,11 +27,10 @@ public class InnerClassQualifier extends VisitorBase {
             var classRef = expression.getClassOrAnonymousClassReference();
             if (classRef != null
                     && classRef.resolve() instanceof PsiClass klass
-                    && klass.getContainingClass() != null
-                    && !TranspileUtils.isStatic(klass)
+                    && TranspileUtils.isNonStaticInnerClass(klass)
             ) {
                 var replacement = TranspileUtils.createExpressionFromText(
-                        klass.getContainingClass().getName() + ".this."
+                        Objects.requireNonNull(klass.getContainingClass()).getName() + ".this."
                                 + expression.getText()
                 );
                 replace(expression, replacement);

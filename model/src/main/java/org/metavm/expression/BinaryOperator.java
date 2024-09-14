@@ -51,7 +51,6 @@ public enum BinaryOperator {
             return ((NumberValue) first).minus((NumberValue) second);
         }
     },
-
     // SHIFT
     LEFT_SHIFT(23, "<<", 4, OperatorTypes.BINARY, null) {
         @Override
@@ -71,7 +70,6 @@ public enum BinaryOperator {
             return ((LongValue) first).unsignedRightShift((LongValue) second);
         }
     },
-
     // relational
     GT(7, ">", 5, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
@@ -159,18 +157,37 @@ public enum BinaryOperator {
             return Instances.booleanInstance((second.resolveArray()).contains(first));
         }
     },
-    AND(20, "and", 7, OperatorTypes.BINARY, Types.getBooleanType()) {
+    BITWISE_AND(16, "&", 7, OperatorTypes.BINARY, Types.getLongType()) {
+        @Override
+        public Value evaluate(Value first, Value second) {
+            return ((LongValue) first).bitwiseAnd((LongValue) second);
+        }
+    },
+    BITWISE_XOR(17, "^", 8, OperatorTypes.BINARY, Types.getLongType()) {
+        @Override
+        public Value evaluate(Value first, Value second) {
+            return ((LongValue) first).bitwiseXor((LongValue) second);
+        }
+    },
+    BITWISE_OR(18, "|", 9, OperatorTypes.BINARY, Types.getLongType()) {
+        @Override
+        public Value evaluate(Value first, Value second) {
+            return ((LongValue) first).bitwiseOr((LongValue) second);
+        }
+    },
+    AND(19, "and", 10, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanValue evaluate(Value first, Value second) {
             return ((BooleanValue) first).and((BooleanValue) second);
         }
     },
-    OR(21, "or", 8, OperatorTypes.BINARY, Types.getBooleanType()) {
+    OR(20, "or", 11, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanValue evaluate(Value first, Value second) {
             return ((BooleanValue) first).or((BooleanValue) second);
         }
     },
+
 
     ;
 

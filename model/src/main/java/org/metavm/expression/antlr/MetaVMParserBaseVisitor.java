@@ -1,4 +1,4 @@
-// Generated from MetaVMParser.g4 by ANTLR 4.13.1
+// Generated from MetaVMParser.g4 by ANTLR 4.13.2
 package org.metavm.expression.antlr;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
@@ -256,13 +256,6 @@ public class MetaVMParserBaseVisitor<T> extends AbstractParseTreeVisitor<T> impl
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTypeArgument(MetaVMParser.TypeArgumentContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitTypeArguments(MetaVMParser.TypeArgumentsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -278,6 +271,13 @@ public class MetaVMParserBaseVisitor<T> extends AbstractParseTreeVisitor<T> impl
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitTypeType(MetaVMParser.TypeTypeContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitArrayKind(MetaVMParser.ArrayKindContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

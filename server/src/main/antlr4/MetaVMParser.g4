@@ -236,35 +236,39 @@ annotation
     : ('@' qualifiedName | altAnnotationQualifiedName) ('(' ( elementValuePairs | elementValue )? ')')?
     ;
 
-typeArgument
-    : typeType
-    | annotation* '?' ((EXTENDS | SUPER) typeType)?
-    ;
-
-
 typeArguments
-    : '<' typeArgument (',' typeArgument)* '>'
+    : '<' typeType (',' typeType)* '>'
     ;
 
 classOrInterfaceType
-    : (identifier typeArguments? '.')* typeIdentifier typeArguments?
+    : qualifiedName typeArguments?
     ;
 
 typeType
-    : annotation* (classOrInterfaceType | primitiveType) (annotation* '[' ']')*
+    : NEVER
+    | ANY
+    | primitiveType
+//    | variableType
+//    | '#' qualifiedName
+    | typeType ('|' typeType)+
+    | typeType ('&' typeType)+
+    | '[' typeType ',' typeType ']'
+    | '(' typeList? ')' '->' typeType
+    | typeType arrayKind
+    | classOrInterfaceType
     ;
+
+arrayKind: R | RW | C | V;
 
 primitiveType
     : BOOLEAN
-    | CHAR
-    | BYTE
-    | SHORT
-    | INT
+    | STRING
     | LONG
-    | FLOAT
     | DOUBLE
+    | TIME
+    | PASSWORD
+    | VOID
     ;
-
 
 nonWildcardTypeArguments
     : '<' typeList '>'

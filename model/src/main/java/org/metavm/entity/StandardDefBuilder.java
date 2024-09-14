@@ -155,41 +155,14 @@ public class StandardDefBuilder {
                 throwableDef
         );
         defContext.afterDefInitialized(throwableDef);
-        var exceptionKlass = newKlassBuilder(Exception.class)
-                .superType(throwableKlass.getType())
-                .source(ClassSource.BUILTIN).build();
-
-        createExceptionFlows(exceptionKlass);
-//        defContext.addDef(createValueDef(Exception.class, Exception.class, exceptionType, defContext));
-        defContext.addDef(new DirectDef<>(Exception.class, exceptionKlass));
-
-        var runtimeExceptionKlass = newKlassBuilder(RuntimeException.class)
-                .superType(exceptionKlass.getType())
-                .source(ClassSource.BUILTIN).build();
-        createRuntimeExceptionFlows(runtimeExceptionKlass);
-        defContext.addDef(new DirectDef<>(
-                RuntimeException.class, runtimeExceptionKlass));
-
-        var illegalArgumentExceptionKlass =  newKlassBuilder(IllegalArgumentException.class)
-                .superType(runtimeExceptionKlass.getType())
-                .source(ClassSource.BUILTIN).build();
-        createIllegalArgumentExceptionFlows(illegalArgumentExceptionKlass);
-        defContext.addDef(new DirectDef<>(
-                IllegalArgumentException.class, illegalArgumentExceptionKlass));
-
-        var illegalStateExceptionKlass = newKlassBuilder(IllegalStateException.class)
-                .superType(runtimeExceptionKlass.getType())
-                .source(ClassSource.BUILTIN).build();
-        createIllegalStateExceptionFlows(illegalStateExceptionKlass);
-        defContext.addDef(new DirectDef<>(
-                IllegalStateException.class, illegalStateExceptionKlass));
-
-        var nullPointerExceptionKlass = newKlassBuilder(NullPointerException.class)
-                .superType(runtimeExceptionKlass.getType())
-                .source(ClassSource.BUILTIN).build();
-        createNullPointerExceptionFlows(nullPointerExceptionKlass);
-        defContext.addDef(new DirectDef<>(
-                NullPointerException.class, nullPointerExceptionKlass));
+        var exceptionKlass = createExceptionKlass(Exception.class, throwableKlass);
+        var runtimeExceptionKlass = createExceptionKlass(RuntimeException.class, exceptionKlass);
+        createExceptionKlass(IllegalArgumentException.class, runtimeExceptionKlass);
+        createExceptionKlass(IllegalStateException.class, runtimeExceptionKlass);
+        createExceptionKlass(NullPointerException.class, runtimeExceptionKlass);
+        createExceptionKlass(UnsupportedOperationException.class, runtimeExceptionKlass);
+        createExceptionKlass(ConcurrentModificationException.class, runtimeExceptionKlass);
+        createExceptionKlass(ClassCastException.class, runtimeExceptionKlass);
 
         consumerKlass = createConsumerKlass();
         predicateKlass = createPredicateKlass();
@@ -214,6 +187,16 @@ public class StandardDefBuilder {
                 defContext.afterDefInitialized(defContext.getDef(javaType))
         );
 
+    }
+
+    private Klass createExceptionKlass(Class<?> javaClass, Klass superKlass) {
+        var klass = newKlassBuilder(javaClass)
+                .superType(superKlass.getType())
+                .source(ClassSource.BUILTIN)
+                .build();
+        createExceptionFlows(klass);
+        defContext.addDef(new DirectDef<>(javaClass, klass));
+        return klass;
     }
 
     private void createEnumMethods(Klass enumKlass) {
@@ -623,23 +606,7 @@ public class StandardDefBuilder {
     }
 
     private void createExceptionFlows(Klass exceptionType) {
-        createExceptionFlows("Exception", "Exception", exceptionType);
-    }
-
-    private void createRuntimeExceptionFlows(Klass exceptionType) {
-        createExceptionFlows("RuntimeException", "RuntimeException", exceptionType);
-    }
-
-    private void createIllegalArgumentExceptionFlows(Klass exceptionType) {
-        createExceptionFlows("IllegalArgumentException", "IllegalArgumentException", exceptionType);
-    }
-
-    private void createIllegalStateExceptionFlows(Klass exceptionType) {
-        createExceptionFlows("IllegalStateException", "IllegalStateException", exceptionType);
-    }
-
-    private void createNullPointerExceptionFlows(Klass exceptionType) {
-        createExceptionFlows("NullPointerException", "NullPointerException", exceptionType);
+        createExceptionFlows(exceptionType.getName(), exceptionType.getName(), exceptionType);
     }
 
     private void createExceptionFlows(String name, String code, Klass runtimeExceptionType) {

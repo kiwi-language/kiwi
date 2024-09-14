@@ -6,7 +6,22 @@ ALL_MATCH: 'allmatch';
 AS: 'as';
 THIS:               'this';
 INSTANCEOF:         'instanceof';
+ANY:                'any';
+NEVER:              'never';
+BOOLEAN:            'boolean';
+LONG:               'long';
+DOUBLE:             'dobule';
+STRING:             'string';
+PASSWORD:           'password';
+TIME:               'time';
+VOID:               'void';
 
+// array kinds
+
+R: '[r]';
+RW: '[rw]';
+C:  '[c]';
+V: '[v]';
 
 // Literals
 

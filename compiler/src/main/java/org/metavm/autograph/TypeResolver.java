@@ -27,4 +27,5 @@ public interface TypeResolver {
 
     PsiCapturedWildcardType getPsiCapturedType(CapturedType capturedType);
 
+    boolean isBuiltinClass(PsiClass klass);
 }

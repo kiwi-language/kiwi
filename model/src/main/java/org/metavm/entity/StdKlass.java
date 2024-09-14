@@ -14,6 +14,7 @@ import org.metavm.object.type.Klass;
 import org.metavm.util.IteratorImpl;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -54,6 +55,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     supplier(Supplier.class, true, null),
     comparable(Comparable.class),
     comparator(Comparator.class),
+    serializable(Serializable.class),
     ;
     private final Class<?> javaClass;
     private final boolean autoDefine;

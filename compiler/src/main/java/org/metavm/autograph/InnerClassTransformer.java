@@ -21,10 +21,10 @@ public class InnerClassTransformer extends VisitorBase {
         if(TranspileUtils.isDiscarded(psiClass))
             return;
         psiClass.accept(new PreResolver());
-        var isNonStaticInner = psiClass.getContainingClass() != null && !TranspileUtils.isStatic(psiClass);
+        var isNonStaticInner = TranspileUtils.isNonStaticInnerClass(psiClass);
         klasses.push(psiClass);
         if(isNonStaticInner) {
-            var outerClass = psiClass.getContainingClass();
+            var outerClass = Objects.requireNonNull(psiClass.getContainingClass());
             var sb = new StringBuilder("private final ");
             /*
             There's a bug with the Psi library.
@@ -75,7 +75,7 @@ public class InnerClassTransformer extends VisitorBase {
         super.visitMethod(method);
         if (method.isConstructor()) {
             var declaringClass = Objects.requireNonNull(method.getContainingClass());
-            if (declaringClass.getContainingClass() != null && !TranspileUtils.isStatic(declaringClass)) {
+            if (TranspileUtils.isNonStaticInnerClass(declaringClass)) {
                 var outerClass = declaringClass.getContainingClass();
                 var paramList = method.getParameterList();
                 var text = getSimpleTypeText(outerClass) + " " + PARENT;
@@ -118,7 +118,7 @@ public class InnerClassTransformer extends VisitorBase {
     public void visitMethodCallExpression(PsiMethodCallExpression expression) {
         super.visitMethodCallExpression(expression);
         if(expression.getMethodExpression().resolve() instanceof PsiMethod method) {
-            if (method.isConstructor() && isNonStaticInner(Objects.requireNonNull(method.getContainingClass()))) {
+            if (method.isConstructor() && TranspileUtils.isNonStaticInnerClass(Objects.requireNonNull(method.getContainingClass()))) {
                 expression.getArgumentList().addAfter(
                         TranspileUtils.createExpressionFromText(PARENT),
                         null
@@ -245,10 +245,6 @@ public class InnerClassTransformer extends VisitorBase {
         }
     }
 
-    private boolean isNonStaticInner(PsiClass psiClass) {
-        return psiClass.getContainingClass() != null && !TranspileUtils.isStatic(psiClass);
-    }
-
     private String getSimpleTypeText(PsiClass psiClass) {
         var ownerKlasses = TranspileUtils.getOwnerClasses(psiClass);
         if(NncUtils.anyMatch(ownerKlasses, k -> k.getTypeParameters().length > 0)) {
@@ -301,8 +297,15 @@ public class InnerClassTransformer extends VisitorBase {
 //                    Objects.requireNonNull(reference.getContext()).getClass().getName()
 //                    );
 //            log.debug("Visiting reference {}", reference.getText());
-            if(shouldTransform(reference))
-                getTypeText(reference);
+            if(shouldTransform(reference)) {
+                try {
+                    getTypeText(reference);
+                }
+                catch (Exception e) {
+                    throw new RuntimeException("Failed to get type context for reference " + reference.getText()
+                    + " in context " + NncUtils.get(reference.getContext(), PsiElement::getText), e);
+                }
+            }
             else
                 super.visitReferenceElement(reference);
         }

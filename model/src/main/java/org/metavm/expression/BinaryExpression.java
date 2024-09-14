@@ -1,5 +1,6 @@
 package org.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Value;
@@ -16,7 +17,7 @@ public class BinaryExpression extends Expression {
     private final Expression left;
     private final Expression right;
 
-    public BinaryExpression(BinaryOperator operator, Expression left, Expression right) {
+    public BinaryExpression(@NotNull BinaryOperator operator, Expression left, Expression right) {
         this.operator = operator;
         this.left = left;
         this.right = right;
