@@ -382,22 +382,6 @@ public class SubstitutorV2 extends CopyVisitor {
     }
 
     @Override
-    public Element visitCapturedTypeVariable(CapturedTypeVariable type) {
-        var copy = (CapturedTypeVariable) getExistingCopy(type);
-        if (copy == null) {
-            copy = new CapturedTypeVariable(
-                    (UncertainType) substituteType(type.getUncertainType()),
-                    (CapturedTypeScope) getCopy(type.getScope())
-            );
-            copy.setStrictEphemeral(true);
-            copy.setCopySource(type);
-        }
-        addCopy(type, copy);
-        typeSubstitutor.addMapping(type.getType(), copy.getType());
-        return copy;
-    }
-
-    @Override
     public Element visitKlass(Klass klass) {
         if (klass == getRoot()) {
             var copy = (Klass) Objects.requireNonNull(getExistingCopy(klass));

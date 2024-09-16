@@ -95,6 +95,7 @@ public abstract class CallNode extends NodeRT {
             var capturedType = capturedExpressionTypes.get(i);
             Types.extractCapturedType(capturedType, actualExprTypes.get(i), capturedTypeMap::put);
         }
+        // TODO Create a constructor in TypeSubstitutor that accepts a Map
         var capturedTypes = new ArrayList<CapturedType>();
         var actualCapturedTypes = new ArrayList<Type>();
         capturedTypeMap.forEach((ct, t) -> {

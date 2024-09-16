@@ -17,6 +17,7 @@ import org.metavm.object.instance.core.*;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
+import org.metavm.util.LinkedList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -274,8 +275,10 @@ public class ApiService extends EntityContextFactoryAware {
     private ResolutionResult resolveMethod(@NotNull Klass klass, String methodCode, List<Object> rawArguments, boolean _static, boolean constructor, IEntityContext context) {
         var methodRef = methodCode != null ?
                 TypeParser.parseSimpleMethodRef(methodCode, name -> getKlass(name, context)) : null;
-        var k = klass;
+        var queue = new LinkedList<Klass>();
+        klass.forEachSuperClass(queue::offer);
         do {
+            var k = Objects.requireNonNull(queue.poll());
             for (Method method : k.getMethods()) {
                 if (method.isPublic() && !method.isAbstract() && (methodRef == null || methodRef.name().equals(method.getCode())) && method.getParameters().size() == rawArguments.size()
                         && _static == method.isStatic() && constructor == method.isConstructor()) {
@@ -285,8 +288,8 @@ public class ApiService extends EntityContextFactoryAware {
                         return new ResolutionResult(method, resolvedArgs);
                 }
             }
-            k = NncUtils.get(k.getSuperType(), ClassType::resolve);
-        } while (k != null);
+            k.getInterfaces().forEach(t -> queue.offer(t.resolve()));
+        } while (!queue.isEmpty());
         throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getCode() + "." + methodCode,
                 rawArguments);
     }

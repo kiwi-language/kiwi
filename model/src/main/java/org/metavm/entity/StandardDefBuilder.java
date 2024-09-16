@@ -211,39 +211,11 @@ public class StandardDefBuilder {
     }
 
     private Klass createConsumerKlass() {
-        var elementType = new TypeVariable(null, "Element", "T",
-                DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(AnyType.instance));
-        primTypeFactory.putType(Consumer.class.getTypeParameters()[0], elementType);
-        var consumerType = newKlassBuilder(Consumer.class)
-                .typeParameters(elementType)
-                .source(ClassSource.BUILTIN)
-                .kind(ClassKind.INTERFACE)
-                .build();
-        primTypeFactory.putType(Consumer.class, consumerType);
-        MethodBuilder.newBuilder(consumerType, "accept", "accept")
-                .returnType(Types.getVoidType())
-                .parameters(new Parameter(null, "element", "element", elementType.getType()))
-                .build();
-        return consumerType;
+        return parseKlass(Consumer.class);
     }
 
     private Klass createPredicateKlass() {
-        var elementType = new TypeVariable(null, "Element", "T",
-                DummyGenericDeclaration.INSTANCE);
-        elementType.setBounds(List.of(AnyType.instance));
-        primTypeFactory.putType(Predicate.class.getTypeParameters()[0], elementType);
-        var predicateType = newKlassBuilder(Predicate.class)
-                .typeParameters(elementType)
-                .source(ClassSource.BUILTIN)
-                .kind(ClassKind.INTERFACE)
-                .build();
-        primTypeFactory.putType(Predicate.class, predicateType);
-        MethodBuilder.newBuilder(predicateType, "test", "test")
-                .returnType(Types.getBooleanType())
-                .parameters(new Parameter(null, "element", "element", elementType.getType()))
-                .build();
-        return predicateType;
+        return parseKlass(Predicate.class);
     }
 
     private Klass createComparableKlass() {

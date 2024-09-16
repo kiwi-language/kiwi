@@ -73,19 +73,19 @@ public class Declarator extends CodeGenVisitor {
                         .access(Access.PRIVATE)
                         .build();
             }
-            if (klass.findSelfMethodByCode("<cinit>") == null) {
-                MethodBuilder.newBuilder(klass, "<cinit>", "<cinit>")
-                        .isStatic(true)
-                        .access(Access.PRIVATE)
-                        .build();
-            }
             var initMethod = Objects.requireNonNull(klass.findSelfMethodByCode("<init>"));
-            var cinitMethod = Objects.requireNonNull(klass.findSelfMethodByCode("<cinit>"));
             initMethod.clearContent();
-            cinitMethod.clearContent();
             classInfo.visitedMethods.add(initMethod);
-            classInfo.visitedMethods.add(cinitMethod);
         }
+        if (klass.findSelfMethodByCode("<cinit>") == null) {
+            MethodBuilder.newBuilder(klass, "<cinit>", "<cinit>")
+                    .isStatic(true)
+                    .access(Access.PRIVATE)
+                    .build();
+        }
+        var cinitMethod = Objects.requireNonNull(klass.findSelfMethodByCode("<cinit>"));
+        cinitMethod.clearContent();
+        classInfo.visitedMethods.add(cinitMethod);
         klass.clearAttributes();
         var componentAnno = TranspileUtils.getAnnotation(psiClass, Component.class);
         PsiAnnotation configurationAnno;
@@ -175,17 +175,10 @@ public class Declarator extends CodeGenVisitor {
             flow.setStatic(isStatic);
             flow.setAbstract(isAbstract);
         }
-        var typeVariables = new ArrayList<TypeVariable>();
-        for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
-            var typeVarName = Objects.requireNonNull(typeParameter.getName());
-            var typeVariable = NncUtils.find(flow.getTypeParameters(), tp -> tp.getName().equals(typeVarName));
-            if(typeVariable == null)
-                typeVariable = new TypeVariable(null,  typeVarName, typeParameter.getName(), flow);
-            typeVariables.add(typeVariable);
-            typeParameter.putUserData(Keys.TYPE_VARIABLE, typeVariable);
-            typeResolver.addGeneratedTypeDef(typeVariable);
-        }
-        flow.setTypeParameters(typeVariables);
+        flow.setTypeParameters(NncUtils.map(
+                method.getTypeParameters(),
+                t -> typeResolver.resolveTypeVariable(t).getVariable()
+        ));
         List<Parameter> parameters = new ArrayList<>();
         if (method.isConstructor() && klass.isEnum())
             parameters.addAll(getEnumConstructorParams(flow));

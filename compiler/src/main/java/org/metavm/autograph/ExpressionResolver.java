@@ -515,7 +515,7 @@ public class ExpressionResolver {
         flow.getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
         var capturedTypes = new ArrayList<>(capturedTypeSet);
         var psiCapturedTypes = NncUtils.map(capturedTypes, typeResolver::getPsiCapturedType);
-        var capturedPsiExpressions = NncUtils.map(psiCapturedTypes, t -> (PsiExpression) t.getContext());
+        var capturedPsiExpressions = NncUtils.mapAndFilterByType(psiCapturedTypes, PsiCapturedWildcardType::getContext, PsiExpression.class);
         var capturedExpressions = NncUtils.map(capturedPsiExpressions, e -> resolve(e, context));
         var captureExpressionTypes = NncUtils.map(
                 capturedPsiExpressions, e -> typeResolver.resolveDeclaration(e.getType()));

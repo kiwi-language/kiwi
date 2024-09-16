@@ -1,10 +1,8 @@
 package org.metavm.object.type;
 
 import org.metavm.api.EntityType;
-import org.metavm.object.type.rest.dto.TypeParam;
 import org.metavm.util.NncUtils;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -12,7 +10,7 @@ import java.util.function.Consumer;
 @EntityType
 public abstract class CompositeType extends Type {
 
-    public CompositeType(String name, @Nullable String code, boolean anonymous, boolean ephemeral, TypeCategory category) {
+    public CompositeType() {
         super();
     }
 
@@ -27,8 +25,6 @@ public abstract class CompositeType extends Type {
     public Set<TypeVariable> getVariables() {
         return NncUtils.flatMapUnique(getComponentTypes(), Type::getVariables);
     }
-
-    protected abstract TypeParam getParamInternal();
 
     @Override
     public boolean isCaptured() {

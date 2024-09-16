@@ -131,12 +131,19 @@ public class TypeResolverImpl implements TypeResolver {
             case PsiWildcardType wildcardType -> resolveWildcardType(wildcardType, stage);
             case PsiArrayType arrayType -> resolveArrayType(arrayType, stage);
             case PsiCapturedWildcardType capturedWildcardType -> resolveCapturedType(capturedWildcardType, stage);
+            case PsiIntersectionType intersectionType -> resolveIntersectionType(intersectionType, stage);
             case null, default -> throw new InternalException("Invalid PsiType: " + psiType);
         };
     }
 
     private ArrayType resolveArrayType(PsiArrayType psiArrayType, ResolutionStage stage) {
         return new ArrayType(resolve(psiArrayType.getComponentType(), stage), ArrayKind.READ_WRITE);
+    }
+
+    private IntersectionType resolveIntersectionType(PsiIntersectionType psiIntersectionType, ResolutionStage stage) {
+        return new IntersectionType(
+                NncUtils.mapUnique(List.of(psiIntersectionType.getConjuncts()), t -> resolve(t, stage))
+        );
     }
 
     private UncertainType resolveWildcardType(PsiWildcardType wildcardType, ResolutionStage stage) {
@@ -493,7 +500,7 @@ public class TypeResolverImpl implements TypeResolver {
             if (stage.isAfterOrAt(DECLARATION) && metaClass.getStage().isBefore(DECLARATION)) {
                 codeGenerator.generateDecl(psiClass, this);
             }
-            if (stage.isAfterOrAt(DEFINITION) && metaClass.getStage().isBefore(DEFINITION) && !metaClass.isInterface()) {
+            if (stage.isAfterOrAt(DEFINITION) && metaClass.getStage().isBefore(DEFINITION)) {
                 codeGenerator.generateCode(psiClass, this);
             }
         }

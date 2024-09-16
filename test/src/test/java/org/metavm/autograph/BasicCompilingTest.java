@@ -37,6 +37,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processWarehouse();
             processInstanceOf();
             processAsterisk();
+            processDefaultMethod();
         });
     }
 
@@ -67,7 +68,12 @@ public class BasicCompilingTest extends CompilerTestBase {
                 "getFooByName",
                 List.of("foo002"))
         );
+        // Process captured types from type variable bounds
         Assert.assertEquals(foo002.id(), foundFooId);
+        var result = TestUtils.doInTransaction(() ->
+                apiClient.callMethod("capturedtypes.BoundCaptureFoo", "test", List.of())
+        );
+        Assert.assertEquals(-1L ,result);
     }
 
     private void processGenericOverride() {
@@ -320,5 +326,15 @@ public class BasicCompilingTest extends CompilerTestBase {
         }
     }
 
+    private void processDefaultMethod() {
+        try(var context = entityContextFactory.newContext(TestConstants.APP_ID))  {
+            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "defaultmethod.IFoo"));
+            var method = klass.getMethodByCode("foo");
+            Assert.assertTrue(method.isRootScopePresent());
+        }
+        var fooId = TestUtils.doInTransaction(() -> apiClient.saveInstance("defaultmethod.Foo", Map.of()));
+        var result = TestUtils.doInTransaction(() -> apiClient.callMethod(fooId, "foo", List.of()));
+        Assert.assertEquals(0L, result);
+    }
 
 }

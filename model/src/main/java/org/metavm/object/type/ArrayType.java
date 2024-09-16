@@ -7,7 +7,6 @@ import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.ArrayTypeKey;
-import org.metavm.object.type.rest.dto.ArrayTypeParam;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
@@ -25,8 +24,7 @@ public class ArrayType extends CompositeType {
     private final ArrayKind kind;
 
     public ArrayType(Type elementType, ArrayKind kind) {
-        super(getArrayTypeName(elementType, kind), getArrayTypeCode(elementType, kind),
-                false, false, kind.category());
+        super();
         this.kind = kind;
         this.elementType = elementType;
     }
@@ -87,13 +85,6 @@ public class ArrayType extends CompositeType {
 
     public Type getElementType() {
         return elementType;
-    }
-
-    @Override
-    protected ArrayTypeParam getParamInternal() {
-        try (var serContext = SerializeContext.enter()) {
-            return new ArrayTypeParam(serContext.getStringId(elementType), kind.code());
-        }
     }
 
     @Override

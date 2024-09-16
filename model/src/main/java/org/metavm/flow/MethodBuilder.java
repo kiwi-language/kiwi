@@ -171,8 +171,6 @@ public class MethodBuilder {
             else
                 returnType = NncUtils.orElse(Types.getVoidType(), Types::getVoidType);
         }
-        if(declaringType.isInterface() && !_static)
-            isAbstract = true;
         var effectiveTmpId = tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId);
         if(!hidden && !typeArguments.isEmpty())
             hidden = NncUtils.anyMatch(typeArguments, Type::isCaptured);

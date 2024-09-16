@@ -45,8 +45,6 @@ public class Generator extends CodeGenVisitor {
     public void visitClass(PsiClass psiClass) {
         if(TranspileUtils.isDiscarded(psiClass))
             return;
-        if(psiClass.isInterface())
-            return;
         if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null)
             return;
         var klass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
@@ -55,20 +53,28 @@ public class Generator extends CodeGenVisitor {
         klass.setStage(ResolutionStage.DEFINITION);
         klass.setCode(psiClass.getQualifiedName());
 
-        var initFlow = klass.getMethodByCodeAndParamTypes("<init>", List.of());
-        var initFlowBuilder = new MethodGenerator(initFlow, typeResolver, this);
-        initFlowBuilder.enterScope(initFlowBuilder.getMethod().getRootScope());
-        initFlowBuilder.setVariable("this", new NodeExpression(initFlowBuilder.createSelf()));
-        initFlowBuilder.createInput();
-        if (klass.getSuperType() != null) {
-            var superInit = klass.getSuperType().resolve().findSelfMethodByCode("<init>");
-            if (superInit != null) {
-                initFlowBuilder.createMethodCall(
-                        initFlowBuilder.getVariable("this"),
-                        superInit,
-                        List.of()
-                );
+        MethodGenerator initFlowBuilder;
+        Method initFlow;
+        if(!psiClass.isInterface()) {
+            initFlow = klass.getMethodByCodeAndParamTypes("<init>", List.of());
+            initFlowBuilder = new MethodGenerator(initFlow, typeResolver, this);
+            initFlowBuilder.enterScope(initFlowBuilder.getMethod().getRootScope());
+            initFlowBuilder.setVariable("this", new NodeExpression(initFlowBuilder.createSelf()));
+            initFlowBuilder.createInput();
+            if (klass.getSuperType() != null) {
+                var superInit = klass.getSuperType().resolve().findSelfMethodByCode("<init>");
+                if (superInit != null) {
+                    initFlowBuilder.createMethodCall(
+                            initFlowBuilder.getVariable("this"),
+                            superInit,
+                            List.of()
+                    );
+                }
             }
+        }
+        else {
+            initFlowBuilder = null;
+            initFlow = null;
         }
         var classInit = klass.getMethodByCodeAndParamTypes("<cinit>", List.of());
         var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, this);
@@ -88,20 +94,24 @@ public class Generator extends CodeGenVisitor {
 
         super.visitClass(psiClass);
 
-        initFlowBuilder.createReturn();
-        initFlowBuilder.exitScope();
+        if(initFlowBuilder != null) {
+            initFlowBuilder.createReturn();
+            initFlowBuilder.exitScope();
+        }
 
         classInitFlowBuilder.createReturn();
         classInitFlowBuilder.exitScope();
 
-        boolean hasConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
-        if (!hasConstructor) {
-            var constructor = klass.getDefaultConstructor();
-            var constructorGen = new MethodGenerator(constructor, typeResolver, this);
-            constructorGen.enterScope(constructor.getRootScope());
-            constructorGen.createMethodCall(new NodeExpression(constructorGen.createSelf()), initFlow, List.of());
-            constructorGen.createReturn(new NodeExpression(constructorGen.createSelf()));
-            constructorGen.exitScope();
+        if(!psiClass.isInterface()) {
+            boolean hasConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
+            if (!hasConstructor) {
+                var constructor = klass.getDefaultConstructor();
+                var constructorGen = new MethodGenerator(constructor, typeResolver, this);
+                constructorGen.enterScope(constructor.getRootScope());
+                constructorGen.createMethodCall(new NodeExpression(constructorGen.createSelf()), initFlow, List.of());
+                constructorGen.createReturn(new NodeExpression(constructorGen.createSelf()));
+                constructorGen.exitScope();
+            }
         }
         if(klass.isEnum())
             Flows.generateValuesMethodBody(klass);
@@ -315,6 +325,8 @@ public class Generator extends CodeGenVisitor {
     @Override
     public void visitMethod(PsiMethod psiMethod) {
         if (CompilerConfig.isMethodBlacklisted(psiMethod))
+            return;
+        if(TranspileUtils.isAbstract(psiMethod))
             return;
         var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
         var capturedTypeListener = new CompositeTypeListener() {

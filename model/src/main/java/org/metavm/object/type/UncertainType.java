@@ -7,7 +7,6 @@ import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.TypeKeyCodes;
 import org.metavm.object.type.rest.dto.UncertainTypeKey;
-import org.metavm.object.type.rest.dto.UncertainTypeParam;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
 
@@ -33,7 +32,7 @@ public class UncertainType extends CompositeType {
     private Type lowerBound;
 
     public UncertainType(Type lowerBound, Type upperBound) {
-        super(getName(lowerBound, upperBound), getCode(lowerBound, upperBound), true, true, TypeCategory.UNCERTAIN);
+        super();
         this.lowerBound = lowerBound;
         this.upperBound = upperBound;
     }
@@ -96,16 +95,6 @@ public class UncertainType extends CompositeType {
 
     public void setLowerBound(Type lowerBound) {
         this.lowerBound = lowerBound;
-    }
-
-    @Override
-    protected UncertainTypeParam getParamInternal() {
-        try (var serContext = SerializeContext.enter()) {
-            return new UncertainTypeParam(
-                    serContext.getStringId(lowerBound),
-                    serContext.getStringId(upperBound)
-            );
-        }
     }
 
     @Override

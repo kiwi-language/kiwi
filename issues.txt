@@ -5,6 +5,21 @@ one in ArrayNestedMapping.properties and the other in UnionNestedMapping.propert
 3 Saving an instance of a raw type through ApiService is not prevented.
 4 Add support for ephemeral classes in compiler
 5 Recurring problem: A parameterized class is generated with a higher stage than the template class, causing missing elements.
+6 Add support for invocations of the compareTo method on string objects. Note that the invocation can happen inside
+a parameterized method with a string type argument, making it impossible to substitute the invocation with
+a std function call at compile time. An example is shown below:
+
+class Lab {
+
+    static <T extends Comparable<? super T>> compare(T t1, T t2) {
+        return t1.compareTo(t2);
+    }
+
+    static int compareStrings(String s1, String s2) {
+        return compare(s1, s2);
+    }
+
+}
 
 Issues with compiling java.util.Map
 

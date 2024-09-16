@@ -720,6 +720,13 @@ public class TranspileUtils {
         return parentClass.cast(getParent(element, Set.of(parentClass)));
     }
 
+    public static @NotNull <T extends PsiElement> T getParentNotNull(PsiElement element, Class<T> parentClass) {
+        return Objects.requireNonNull(
+                parentClass.cast(getParent(element, Set.of(parentClass))),
+                () -> "Cannot find parent of type " + parentClass.getName() + " of element " + element.getText()
+        );
+    }
+
     public static @Nullable PsiElement getParent(PsiElement element, Set<Class<?>> parentClasses) {
         PsiElement current = element;
         while (current != null && !ReflectionUtils.isInstance(parentClasses, current)) {
@@ -924,6 +931,14 @@ public class TranspileUtils {
 
     public static boolean isStatic(PsiModifierListOwner modifierListOwner) {
         return modifierListOwner.hasModifierProperty(PsiModifier.STATIC);
+    }
+
+    public static boolean isAbstract(PsiModifierListOwner modifierListOwner) {
+        return modifierListOwner.hasModifierProperty(PsiModifier.ABSTRACT);
+    }
+
+    public static boolean isDefault(PsiModifierListOwner modifierListOwner) {
+        return modifierListOwner.hasModifierProperty(PsiModifier.DEFAULT);
     }
 
     public static boolean isNonStaticInnerClass(PsiClass psiClass) {

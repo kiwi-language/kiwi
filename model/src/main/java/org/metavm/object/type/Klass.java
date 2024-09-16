@@ -1127,6 +1127,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return superType;
     }
 
+    @Nullable
+    public Klass getSuperKlass() {
+        return superType != null ? superType.resolve() : null;
+    }
+
     public List<ClassType> getInterfaces() {
         return Collections.unmodifiableList(interfaces.toList());
     }
@@ -1145,6 +1150,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Klass findAncestorByTemplate(Klass template) {
         return getClosure().find(t -> t.templateEquals(template));
+    }
+
+    public @NotNull Klass getAncestorByTemplate(Klass template) {
+        return Objects.requireNonNull(findAncestorByTemplate(template),
+                () -> "Cannot find ancestor with template " + template.getName() + " of class "  +getTypeDesc()
+        );
     }
 
     public @Nullable Klass findAncestorKlassByTemplate(Klass template) {
@@ -1338,11 +1349,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 }
             }
         });
-        if (superType != null)
-            superType.resolve().getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates);
-        if (isInterface() || isAbstract || staticOnly) {
-            interfaces.forEach(it -> it.resolve().getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates));
-        }
+        forEachSuper(k -> k.getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates));
     }
 
     @Nullable

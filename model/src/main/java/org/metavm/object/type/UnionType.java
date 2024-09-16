@@ -11,7 +11,6 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.object.type.rest.dto.TypeKeyCodes;
 import org.metavm.object.type.rest.dto.UnionTypeKey;
-import org.metavm.object.type.rest.dto.UnionTypeParam;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.NncUtils;
@@ -34,7 +33,7 @@ public class UnionType extends CompositeType {
     private transient Set<Type> memberSet;
 
     public UnionType(Set<Type> members) {
-        super(getName(members), getCode(members), false, false, TypeCategory.UNION);
+        super();
         if(members.isEmpty())
             throw new IllegalArgumentException("members can not be empty");
         // maintain a relatively deterministic order so that the ModelIdentities of the members are not changed between reboots
@@ -90,15 +89,6 @@ public class UnionType extends CompositeType {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitUnionType(this, s);
-    }
-
-    @Override
-    protected UnionTypeParam getParamInternal() {
-        try (var serContext = SerializeContext.enter()) {
-            return new UnionTypeParam(
-                    NncUtils.map(members, serContext::getStringId)
-            );
-        }
     }
 
     @Override

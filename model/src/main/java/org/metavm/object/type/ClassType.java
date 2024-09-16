@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 @EntityType
-public class ClassType extends Type implements ISubstitutor, GenericDeclarationRef {
+public class ClassType extends CompositeType implements ISubstitutor, GenericDeclarationRef {
 
     public static final Logger logger = LoggerFactory.getLogger(ClassType.class);
 
@@ -222,6 +222,11 @@ public class ClassType extends Type implements ISubstitutor, GenericDeclarationR
     }
 
     @Override
+    public List<Type> getComponentTypes() {
+        return getTypeArguments();
+    }
+
+    @Override
     public boolean isCaptured() {
         return typeArguments != null && NncUtils.anyMatch(typeArguments, Type::isCaptured);
     }
@@ -292,15 +297,13 @@ public class ClassType extends Type implements ISubstitutor, GenericDeclarationR
 
     @Override
     public <S> void acceptComponents(TypeVisitor<?, S> visitor, S s) {
-        if (typeArguments != null)
-            typeArguments.forEach(t -> t.accept(visitor, s));
+        getTypeArguments().forEach(t -> t.accept(visitor, s));
     }
 
     @Override
     public void forEachTypeDef(Consumer<TypeDef> action) {
         action.accept(klass);
-        if (typeArguments != null)
-            typeArguments.forEach(t -> t.forEachTypeDef(action));
+        getTypeArguments().forEach(t -> t.forEachTypeDef(action));
     }
 
     @Override

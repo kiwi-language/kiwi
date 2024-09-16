@@ -145,4 +145,9 @@ public class CapturedType extends Type {
     public void forEachTypeDef(Consumer<TypeDef> action) {
         action.accept(variable);
     }
+
+    @Override
+    public boolean isUncertain() {
+        return true;
+    }
 }

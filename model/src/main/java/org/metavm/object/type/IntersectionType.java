@@ -9,7 +9,6 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.IntersectionTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.object.type.rest.dto.TypeKeyCodes;
-import org.metavm.object.type.rest.dto.TypeParam;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.NncUtils;
@@ -26,7 +25,7 @@ public class IntersectionType extends CompositeType {
     private transient Set<Type> typeSet;
 
     public IntersectionType(Set<Type> types) {
-        super(getName(types), getCode(types), false, false, TypeCategory.INTERSECTION);
+        super();
         if(types.isEmpty())
             throw new IllegalArgumentException("types can not be empty");
         this.types = new ValueArray<>(Type.class, types);
@@ -61,11 +60,6 @@ public class IntersectionType extends CompositeType {
     @Override
     public List<Type> getComponentTypes() {
         return Collections.unmodifiableList(types.toList());
-    }
-
-    @Override
-    protected TypeParam getParamInternal() {
-        return null;
     }
 
     @Override

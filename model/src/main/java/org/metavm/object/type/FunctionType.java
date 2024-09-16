@@ -6,7 +6,6 @@ import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.FunctionTypeKey;
-import org.metavm.object.type.rest.dto.FunctionTypeParam;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.object.type.rest.dto.TypeKeyCodes;
 import org.metavm.util.InstanceInput;
@@ -26,7 +25,7 @@ public class FunctionType extends CompositeType {
     private final ValueArray<Type> parameterTypes;
 
     public FunctionType(List<Type> parameterTypes, @NotNull Type returnType) {
-        super(getName(parameterTypes, returnType), getCode(parameterTypes, returnType), false, true, TypeCategory.FUNCTION);
+        super();
         this.parameterTypes = new ValueArray<>(Type.class, parameterTypes);
         this.returnType = returnType;
     }
@@ -78,16 +77,6 @@ public class FunctionType extends CompositeType {
 
     public List<Type> getParameterTypes() {
         return parameterTypes.toList();
-    }
-
-    @Override
-    protected FunctionTypeParam getParamInternal() {
-        try (var serContext = SerializeContext.enter()) {
-            return new FunctionTypeParam(
-                    NncUtils.map(parameterTypes, serContext::getStringId),
-                    serContext.getStringId(returnType)
-            );
-        }
     }
 
     @Override
