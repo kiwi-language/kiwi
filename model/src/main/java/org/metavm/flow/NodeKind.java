@@ -43,7 +43,8 @@ public enum NodeKind {
     INDEX_COUNT(NodeKindCodes.INDEX_COUNT, IndexCountNode.class, IndexCountNodeParam.class),
     INDEX_SELECT(NodeKindCodes.INDEX_SELECT, IndexSelectNode.class, IndexSelectNodeParam.class),
     INDEX_SELECT_FIRST(NodeKindCodes.INDEX_SELECT_FIRST, IndexSelectFirstNode.class, IndexSelectFirstNodeParam.class),
-
+    GOTO(NodeKindCodes.GOTO, GotoNode.class, GotoNodeParam.class),
+    TARGET(NodeKindCodes.TARGET, TargetNode.class, TargetNodeParam.class),
     ;
 
     private final int code;

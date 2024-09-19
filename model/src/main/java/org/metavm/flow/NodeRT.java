@@ -216,6 +216,10 @@ public abstract class NodeRT extends Element implements LocalKey {
         return false;
     }
 
+    public boolean isUnconditionalJump() {
+        return false;
+    }
+
     protected abstract Object getParam(SerializeContext serializeContext);
 
     public final void check() {

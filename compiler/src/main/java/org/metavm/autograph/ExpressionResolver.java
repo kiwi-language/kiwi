@@ -177,29 +177,25 @@ public class ExpressionResolver {
     }
 
     private Expression resolveConditional(PsiConditionalExpression psiExpression, ResolutionContext context) {
-        var condition = resolve(psiExpression.getCondition(), context);
-        var branchNode = methodGenerator.createBranchNode(false);
-        var thenBranch = branchNode.addBranch(Values.expression(condition));
-        var elseBranch = branchNode.addDefaultBranch();
-        methodGenerator.enterCondSection(branchNode);
-        methodGenerator.enterBranch(thenBranch);
-        var thenExpr = resolve(psiExpression.getThenExpression(), context);
-        methodGenerator.exitBranch();
-
-        methodGenerator.enterBranch(elseBranch);
-        var elseExpr = resolve(psiExpression.getElseExpression(), context);
-        methodGenerator.exitBranch();
-
-        var mergeNode = methodGenerator.createMerge();
-        methodGenerator.exitCondSection(mergeNode, List.of());
-
+        var ref = new Object() {
+            Expression thenExpr;
+            Expression elseExpr;
+        };
+        var branchNode = constructBool(psiExpression.getCondition(), false,
+                () -> ref.thenExpr = resolve(psiExpression.getThenExpression(), context),
+                () -> ref.elseExpr = resolve(psiExpression.getElseExpression(), context),
+                context
+        );
+        var mergeNode = branchNode.getMergeNode();
+        var thenBranch = branchNode.getBranchByIndex(0);
+        var elseBranch = branchNode.getBranchByIndex(1);
         var valueField = FieldBuilder
                 .newBuilder("value", "value", mergeNode.getKlass(),
-                        Types.getUnionType(List.of(thenExpr.getType(), elseExpr.getType())))
+                        Types.getUnionType(List.of(ref.thenExpr.getType(), ref.elseExpr.getType())))
                 .build();
         new MergeNodeField(valueField, mergeNode, Map.of(
-                thenBranch, Values.expression(thenExpr),
-                elseBranch, Values.expression(elseExpr))
+                thenBranch, Values.expression(ref.thenExpr),
+                elseBranch, Values.expression(ref.elseExpr))
         );
         return new PropertyExpression(new NodeExpression(mergeNode), valueField.getRef());
     }
@@ -753,22 +749,20 @@ public class ExpressionResolver {
         return OPERATOR_MAP.get(elementType);
     }
 
-    public void constructBool(PsiExpression expression, BranchNode parent) {
-        constructBool(expression, false, parent, new ResolutionContext());
+    public BranchNode constructBool(PsiExpression expression, Runnable thenAction, Runnable elseAction) {
+        try {
+            return constructBool(expression, false, thenAction, elseAction, new ResolutionContext());
+        }
+        catch (Exception e) {
+            throw new InternalException("Failed to construct bool structure for expression: " + expression.getText(), e);
+        }
     }
 
     public Expression resolveBoolExpr(PsiExpression expression, ResolutionContext context) {
-        BranchNode branchNode = methodGenerator.createBranchNode(false);
-        var thenBranch = branchNode.addBranch(Values.expression(Expressions.trueExpression()));
-        var elseBranch = branchNode.addDefaultBranch();
-
-        methodGenerator.enterCondSection(branchNode);
-        methodGenerator.enterBranch(thenBranch);
-        constructBool(expression, false, branchNode, new ResolutionContext());
-        methodGenerator.exitBranch();
-        var mergeNode = methodGenerator.createMerge();
-        methodGenerator.exitCondSection(mergeNode, List.of());
-
+        var branchNode = constructBool(expression, false, () -> {}, () -> {}, new ResolutionContext());
+        var mergeNode = (MergeNode) Objects.requireNonNull(branchNode.getSuccessor());
+        var thenBranch = branchNode.getBranchByIndex(0);
+        var elseBranch = branchNode.getBranchByIndex(1);
         var valueField = FieldBuilder
                 .newBuilder("value", "value", mergeNode.getKlass(), Types.getBooleanType())
                 .build();
@@ -779,21 +773,29 @@ public class ExpressionResolver {
         return new PropertyExpression(new NodeExpression(mergeNode), valueField.getRef());
     }
 
-    public void constructBool(PsiExpression expression, boolean negated, BranchNode parent, ResolutionContext context) {
-        switch (expression) {
+    public BranchNode constructBool(PsiExpression expression,
+                                    boolean negated,
+                                    Runnable thenAction,
+                                    Runnable elseAction,
+                                    ResolutionContext context) {
+        return switch (expression) {
             case PsiBinaryExpression binaryExpression ->
-                    constructBinaryBool(binaryExpression, negated, parent, context);
-            case PsiUnaryExpression unaryExpression -> constructUnaryBool(unaryExpression, negated, parent, context);
+                    constructBinaryBool(binaryExpression, negated, thenAction, elseAction, context);
+            case PsiUnaryExpression unaryExpression -> constructUnaryBool(unaryExpression, negated, thenAction, elseAction, context);
             case PsiPolyadicExpression polyadicExpression ->
-                    constructPolyadicBool(polyadicExpression, negated, parent, context);
-            default -> constructAtomicBool(expression, negated, parent, context);
-        }
+                    constructPolyadicBool(polyadicExpression, negated, thenAction, elseAction, context);
+            default -> constructAtomicBool(expression, negated, thenAction, elseAction, context);
+        };
     }
 
-    private void constructUnaryBool(PsiUnaryExpression unaryExpression, boolean negated, BranchNode parent, ResolutionContext context) {
+    private BranchNode constructUnaryBool(PsiUnaryExpression unaryExpression,
+                                          boolean negated,
+                                          Runnable thenAction,
+                                    Runnable elseAction,
+                                          ResolutionContext context) {
         var op = unaryExpression.getOperationSign().getTokenType();
         if (op == JavaTokenType.EXCL) {
-            constructBool(requireNonNull(unaryExpression.getOperand()), !negated, parent, context);
+            return constructBool(requireNonNull(unaryExpression.getOperand()), !negated, thenAction, elseAction, context);
         } else {
             throw new InternalException("Invalid unary operator for bool expression: " + op);
         }
@@ -809,6 +811,7 @@ public class ExpressionResolver {
         for (Parameter parameter : parameters) {
             var field = FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getKlass(), parameter.getType())
                     .build();
+            methodGenerator.defineVariable(parameter.getCode());
             methodGenerator.setVariable(parameter.getCode(),
                     new PropertyExpression(new NodeExpression(inputNode), field.getRef()));
         }
@@ -849,7 +852,7 @@ public class ExpressionResolver {
             }
         }
         var mergeNode = methodGenerator.createMerge();
-        methodGenerator.exitCondSection(mergeNode, List.of(), true);
+        methodGenerator.exitCondSection(mergeNode, true);
         return Expressions.nodeProperty(mergeNode, mergeNode.getKlass().getFieldByCode("yield"));
     }
 
@@ -879,46 +882,16 @@ public class ExpressionResolver {
         );
     }
 
-    public void constructBinaryBool(PsiBinaryExpression psiBinaryExpression, boolean negated, BranchNode parent, ResolutionContext context) {
+    public BranchNode constructBinaryBool(PsiBinaryExpression psiBinaryExpression,
+                                          boolean negated,
+                                          Runnable thenAction,
+                                          Runnable elseAction,
+                                          ResolutionContext context) {
         var op = resolveOperator(psiBinaryExpression.getOperationSign());
-        var first = NncUtils.requireNonNull(psiBinaryExpression.getLOperand());
-        var second = NncUtils.requireNonNull(psiBinaryExpression.getROperand());
-        if (negated) {
-            op = op.complement();
-        }
-        if (op == BinaryOperator.AND) {
-            constructBool(first, negated, parent, context);
-            constructBool(second, negated, parent, context);
-        } else if (op == BinaryOperator.OR) {
-            var branchNode = methodGenerator.createBranchNode(false);
-//            var branch1 = branchNode.addBranch(Value.expression(ExpressionUtil.trueExpression()));
-//            branchNode.addDefaultBranch();
-
-            methodGenerator.enterCondSection(branchNode);
-
-            methodGenerator.enterBranch(branchNode.addBranch(trueValue()));
-            constructBool(first, negated, branchNode, context);
-            methodGenerator.exitBranch();
-
-            methodGenerator.enterBranch(branchNode.addBranch(trueValue()));
-            constructBool(second, negated, branchNode, context);
-            methodGenerator.exitBranch();
-
-            methodGenerator.enterBranch(branchNode.addDefaultBranch());
-            methodGenerator.createCheck(Expressions.falseExpression(), parent);
-            methodGenerator.exitBranch();
-
-//            flowBuilder.enterScope(branch1.getScope());
-//            constructBool(first, !negated, branchNode, context);
-//            constructBool(second, !negated, branchNode, context);
-//            flowBuilder.createCheck(ExpressionUtil.falseExpression(), parent);
-//            flowBuilder.exitScope();
-//            flowBuilder.exitBranch();
-            methodGenerator.exitCondSection(methodGenerator.createMerge(), List.of());
-        } else {
-            var expr = resolveBinary(psiBinaryExpression, context);
-            methodGenerator.createCheck(expr, parent);
-        }
+        if(op == BinaryOperator.AND || op == BinaryOperator.OR)
+            return constructPolyadicBool(psiBinaryExpression, negated, thenAction, elseAction, context);
+        else
+            return constructAtomicBool(psiBinaryExpression, negated, thenAction, elseAction, context);
     }
 
     private org.metavm.flow.Value trueValue() {
@@ -929,39 +902,94 @@ public class ExpressionResolver {
         return Values.constant(Expressions.falseExpression());
     }
 
-    public void constructPolyadicBool(PsiPolyadicExpression expression, boolean negated, BranchNode parent, ResolutionContext context) {
+    public BranchNode constructPolyadicBool(PsiPolyadicExpression expression,
+                                            boolean negated,
+                                            Runnable thenAction, Runnable elseAction,
+                                            ResolutionContext context) {
         var op = resolveOperator(expression.getOperationTokenType());
-        if (negated) {
+        if(negated)
             op = op.complement();
-        }
         if (op == BinaryOperator.AND) {
-            for (PsiExpression operand : expression.getOperands()) {
-                constructBool(operand, negated, parent, context);
-            }
+            return constructAndPolyadicBool(expression.getOperands(),  0, negated, thenAction, elseAction, context);
         } else if (op == BinaryOperator.OR) {
-            var branchNode = methodGenerator.createBranchNode(false);
-            var thenBranch = branchNode.addBranch(Values.expression(Expressions.trueExpression()));
-            branchNode.addDefaultBranch();
-            methodGenerator.enterScope(thenBranch.getScope());
-            var operands = expression.getOperands();
-            for (PsiExpression operand : operands) {
-                constructBool(operand, !negated, branchNode, context);
-            }
-            methodGenerator.createCheck(Expressions.falseExpression(), parent);
-            methodGenerator.exitScope();
-            methodGenerator.createMerge();
+            return constructOrPolyadicBool(expression.getOperands(),  0, negated, thenAction, elseAction, context);
         } else {
             throw new InternalException("Invalid operator for polyadic boolean expression: " + op);
         }
     }
 
-    private Expression constructAtomicBool(PsiExpression expression, boolean negated, BranchNode parent, ResolutionContext context) {
-        var expr = resolveNormal(expression, context);
-        if (negated) {
-            expr = Expressions.not(expr);
+    private BranchNode constructAndPolyadicBool(PsiExpression[] items,
+                                                int index,
+                                                boolean negated,
+                                                Runnable thenAction,
+                                                Runnable elseAction,
+                                                ResolutionContext context
+                                                ) {
+        if(index == items.length - 1)
+            return constructBool(items[index], negated, thenAction, elseAction, context);
+        else {
+            var ref = new Object() {GotoNode gotoNode;};
+            return constructBool(items[index],
+                    negated,
+                    () -> constructAndPolyadicBool(items,
+                            index + 1,
+                            negated,
+                            thenAction,
+                            () -> ref.gotoNode = methodGenerator.createIncompleteGoto(),
+                            context),
+                    () -> {
+                        var mergeNode = methodGenerator.createTarget();
+                        ref.gotoNode.setTarget(mergeNode);
+                        elseAction.run();
+                        logger.debug("Merge node successor: {}", mergeNode.getSuccessor());
+                    }, context);
         }
-        methodGenerator.createCheck(expr, parent);
-        return expr;
+    }
+
+    private BranchNode constructOrPolyadicBool(PsiExpression[] items,
+                                               int index,
+                                               boolean negated,
+                                               Runnable thenAction, Runnable elseAction,
+                                               ResolutionContext context
+    ) {
+        if(index == items.length - 1)
+            return constructBool(items[index], negated, thenAction, elseAction, context);
+        else {
+            var ref = new Object() {
+                NodeRT target;
+            };
+            return constructBool(items[index],
+                    negated,
+                    () -> {
+                        ref.target = methodGenerator.createTarget();
+                        thenAction.run();
+                    },
+                    () -> constructOrPolyadicBool(
+                            items, index+1,
+                            negated,
+                            () -> methodGenerator.createGoto(ref.target),
+                            elseAction,
+                            context
+                    ),
+                    context);
+        }
+    }
+
+    private BranchNode constructAtomicBool(PsiExpression expression, boolean negated, Runnable thenAction,
+                                           Runnable elseAction, ResolutionContext context) {
+        var expr = resolveNormal(expression, context);
+        if(negated)
+            expr = Expressions.not(expr);
+        var branchNode = methodGenerator.createBranchNode(false);
+        methodGenerator.enterCondSection(branchNode);
+        methodGenerator.enterBranch(branchNode.addBranch(Values.expression(expr)));
+        thenAction.run();
+        methodGenerator.exitBranch();
+        methodGenerator.enterBranch(branchNode.addDefaultBranch());
+        elseAction.run();
+        methodGenerator.exitBranch();
+        methodGenerator.exitCondSection1(methodGenerator.createMerge());
+        return branchNode;
     }
 
     public static class ResolutionContext {

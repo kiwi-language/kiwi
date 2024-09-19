@@ -64,7 +64,7 @@ public class MergeNode extends ChildTypeNode {
         ExpressionTypeMap expressionTypes = null;
         for (Branch branch : branchNode.getBranches()) {
             var lastNode = branch.getScope().getLastNode();
-            if (lastNode == null || !lastNode.isExit()) {
+            if (!branch.isDisconnected()) {
                 var newExprTypes = lastNode == null ?
                         branch.getScope().getExpressionTypes() : lastNode.getExpressionTypes();
                 if (expressionTypes == null) {

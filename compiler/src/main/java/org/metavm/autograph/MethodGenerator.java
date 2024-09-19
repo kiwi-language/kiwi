@@ -1,13 +1,11 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiMethod;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.expression.Expression;
-import org.metavm.expression.ExpressionTypeMap;
-import org.metavm.expression.Expressions;
-import org.metavm.expression.TypeNarrower;
+import org.metavm.expression.*;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
@@ -19,6 +17,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 public class MethodGenerator {
 
     private final Method method;
@@ -64,6 +63,27 @@ public class MethodGenerator {
         }
     }
 
+    GotoNode createGoto(NodeRT target) {
+        return new GotoNode(
+                null,
+                 nextName("Goto"),
+                null,
+                scope().getLastNode(),
+                scope(),
+                target
+        );
+    }
+
+    GotoNode createIncompleteGoto() {
+        return new GotoNode(
+                null,
+                nextName("Goto"),
+                null,
+                scope().getLastNode(),
+                scope()
+        );
+    }
+
     TryNode createTry() {
         return new TryNode(null, nextName("Try"), null, scope().getLastNode(), scope());
     }
@@ -100,6 +120,10 @@ public class MethodGenerator {
                         Values.expression(expression)
                 )
         );
+    }
+
+    TargetNode createTarget() {
+        return new TargetNode(null, nextName("target"), null, scope().getLastNode(), scope());
     }
 
     NewArrayNode createNewArray(ArrayType type, @Nullable Expression initialValue) {
@@ -141,11 +165,38 @@ public class MethodGenerator {
         variableTable.setYield(yield);
     }
 
-    Map<Branch, Map<String, Expression>> exitCondSection(MergeNode mergeNode, List<String> outputVars) {
-        return exitCondSection(mergeNode, outputVars, false);
+    void exitCondSection1(MergeNode mergeNode) {
+        var condOutputs = exitCondSection(mergeNode);
+        var vars = condOutputs.values().iterator().next().keySet();
+        for (var var : vars) {
+            var branch2value = new HashMap<Branch, org.metavm.flow.Value>();
+            for (var entry2 : condOutputs.entrySet()) {
+                var branch = entry2.getKey();
+                if(branch.isDisconnected())
+                    continue;
+                var branchOutputs = entry2.getValue();
+                var v = Objects.requireNonNull(branchOutputs.get(var),
+                        () -> "Variable " + var + " is missing from branch " + branch.getIndex());
+                branch2value.put(branch, Values.expression(v));
+            }
+            var memberTypes = new HashSet<Type>();
+            for (var value : branch2value.values()) {
+                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
+                    memberTypes.add(value.getType());
+            }
+            var fieldType =
+                    memberTypes.size() == 1 ? memberTypes.iterator().next() : Types.getUnionType(memberTypes);
+            var field = FieldBuilder.newBuilder(var, var, mergeNode.getKlass(), fieldType).build();
+            var mergeField = new MergeNodeField(field, mergeNode, branch2value);
+            setVariable(var, new PropertyExpression(new NodeExpression(mergeNode), mergeField.getField().getRef()));
+        }
     }
 
-    Map<Branch, Map<String, Expression>> exitCondSection(MergeNode mergeNode, List<String> outputVars, boolean isSwitchExpression) {
+    Map<Branch, Map<String, Expression>> exitCondSection(MergeNode mergeNode) {
+        return exitCondSection(mergeNode, false);
+    }
+
+    Map<Branch, Map<String, Expression>> exitCondSection(MergeNode mergeNode, boolean isSwitchExpression) {
         var branchNode = mergeNode.getBranchNode();
         ExpressionTypeMap exprTypes = null;
         for (ScopeInfo scope : condScopes.remove(branchNode)) {
@@ -162,7 +213,7 @@ public class MethodGenerator {
         if (exprTypes != null) {
             mergeNode.mergeExpressionTypes(exprTypes);
         }
-        var result = variableTable.exitCondSection(branchNode, outputVars);
+        var result = variableTable.exitCondSection(branchNode);
         var hasYield = result.values().stream().anyMatch(b -> b.yield() != null);
         if (hasYield) {
             var yields = result.values().stream().map(BranchInfo::yield)
@@ -176,7 +227,7 @@ public class MethodGenerator {
                     yieldField, mergeNode,
                     branchNode.getBranches()
                             .stream()
-                            .filter(b -> !b.isTerminating())
+                            .filter(b -> !b.isDisconnected())
                             .collect(Collectors.toMap(
                                     java.util.function.Function.identity(),
                                     b -> Values.expression(
@@ -206,6 +257,10 @@ public class MethodGenerator {
 
     void setVariable(String name, Expression value) {
         variableTable.set(name, value);
+    }
+
+    void defineVariable(String name) {
+        variableTable.define(name);
     }
 
     Expression getVariable(String name) {

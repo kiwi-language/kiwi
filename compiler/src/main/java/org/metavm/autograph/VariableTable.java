@@ -1,17 +1,17 @@
 package org.metavm.autograph;
 
-import org.metavm.expression.Expression;
-import org.metavm.expression.ExpressionTypeMap;
-import org.metavm.expression.Expressions;
-import org.metavm.expression.TypeNarrower;
+import lombok.extern.slf4j.Slf4j;
+import org.metavm.expression.*;
 import org.metavm.flow.*;
 import org.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 public class VariableTable {
 
     private final LinkedList<BranchNode> branchNodes = new LinkedList<>();
@@ -26,6 +26,10 @@ public class VariableTable {
 
     void set(String name, Expression value) {
         variableMap.setVariable(name, value);
+    }
+
+    void logVariables() {
+        variableMap.logVariables();
     }
 
     void enterCondSection(BranchNode branchNode) {
@@ -51,9 +55,11 @@ public class VariableTable {
         condSections.get(branchNode).setYield(yield);
     }
 
-    Map<Branch, BranchInfo> exitCondSection(BranchNode sectionId, List<String> outputVars) {
+    Map<Branch, BranchInfo> exitCondSection(BranchNode sectionId) {
         var section = condSections.remove(sectionId);
         Map<Branch, BranchInfo> result = new HashMap<>();
+        var outputVars = new HashSet<String>();
+        section.branchMaps.values().forEach(varMap -> outputVars.addAll(varMap.getVisibleModified()));
         for (var entry : section.branchMaps.entrySet()) {
             var branch = entry.getKey();
             var varMap = entry.getValue();
@@ -97,10 +103,16 @@ public class VariableTable {
         trySection.raiseVariables.put(raiseNode, variableMap.copy());
     }
 
+    public void define(String name) {
+        variableMap.define(name);
+    }
+
 
     private static class VariableMap {
 
         private final Map<String, Expression> variables = new HashMap<>();
+        private final Set<String> modified = new HashSet<>();
+        private final Set<String> defined = new HashSet<>();
 
         public VariableMap() {}
 
@@ -117,9 +129,35 @@ public class VariableTable {
         }
 
         void setVariable(String name, Expression value) {
+            modified.add(name);
             variables.put(name, value);
         }
 
+        Set<String> getModified() {
+            return Collections.unmodifiableSet(modified);
+        }
+
+        Set<String> getDefined() {
+            return Collections.unmodifiableSet(defined);
+        }
+
+        Set<String> getVisibleModified() {
+            return NncUtils.diffSet(modified, defined);
+        }
+
+        Map<String, Expression> toMap() {
+            return Collections.unmodifiableMap(variables);
+        }
+
+        public void logVariables() {
+            var map = variables;
+            log.debug("VariableMap@{} contains {} variables", System.identityHashCode(this), map.size());
+            map.forEach((name, expr) -> log.debug("{}: {}", name, expr.build(VarType.NAME)));
+        }
+
+        public void define(String name) {
+            defined.add(name);
+        }
     }
 
     private static class CondSection {

@@ -212,6 +212,10 @@ public class BranchNode extends NodeRT {
                 "Default branch is missing in branch node " + getName() + "(" + tryGetId() + ")");
     }
 
+    public MergeNode getMergeNode() {
+        return (MergeNode) Objects.requireNonNull(getSuccessor(), () -> "Successor is missing for branch node " + getName());
+    }
+
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitBranchNode(this);

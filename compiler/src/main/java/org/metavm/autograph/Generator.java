@@ -20,7 +20,6 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 import static java.util.Objects.requireNonNull;
-import static org.metavm.expression.Expressions.trueExpression;
 
 public class Generator extends CodeGenVisitor {
 
@@ -501,7 +500,7 @@ public class Generator extends CodeGenVisitor {
             builder().exitBranch();
         }
         var mergeNode = builder().createMerge();
-        var condOutputs = builder().exitCondSection(mergeNode, NncUtils.map(outputVars, Objects::toString));
+        var condOutputs = builder().exitCondSection(mergeNode);
         for (QualifiedName outputVar : outputVars) {
             var field = FieldBuilder.newBuilder(outputVar.toString(), outputVar.toString(), mergeNode.getKlass(),
                             typeResolver.resolveDeclaration(outputVar.type()))
@@ -546,6 +545,7 @@ public class Generator extends CodeGenVisitor {
     private void processParameter(PsiParameter parameter, InputNode inputNode) {
         var field = Objects.requireNonNull(inputNode.getKlass().findFieldByCode(parameter.getName()),
                 () -> "Field for parameter " + parameter.getName() + " is not found in the input class");
+        builder().defineVariable(parameter.getName());
         builder().setVariable(
                 parameter.getName(),
                 new PropertyExpression(new NodeExpression(inputNode), field.getRef())
@@ -558,33 +558,24 @@ public class Generator extends CodeGenVisitor {
 
     @Override
     public void visitIfStatement(PsiIfStatement statement) {
-        BranchNode branchNode = builder().createBranchNode(false);
-
-        var thenBranch = branchNode.addBranch(Values.expression(trueExpression()));
-        var elseBranch = branchNode.addDefaultBranch(true);
-
-        enterCondSection(branchNode);
-
-        builder().enterBranch(thenBranch);
-        builder().getExpressionResolver().constructBool(requireNonNull(statement.getCondition()), branchNode);
-        if (statement.getThenBranch() != null) {
-            statement.getThenBranch().accept(this);
-        }
-        builder().exitBranch();
-
-        builder().enterBranch(elseBranch);
-        if (statement.getElseBranch() != null) {
-            statement.getElseBranch().accept(this);
-        }
-        builder().exitBranch();
-
-        var mergeNode = builder().createMerge();
         Scope bodyScope = requireNonNull(statement.getUserData(Keys.BODY_SCOPE)),
                 elseScope = requireNonNull(statement.getUserData(Keys.ELSE_SCOPE));
         Set<QualifiedName> modified = NncUtils.union(bodyScope.getModified(), elseScope.getModified());
         Set<QualifiedName> outputVars = getBlockOutputVariables(statement, modified);
-        List<QualifiedName> outputVariables = new ArrayList<>(outputVars);
-        exitCondSection(mergeNode, outputVariables);
+        List<String> outputVariables = NncUtils.map(outputVars, Object::toString);
+        builder().getExpressionResolver().constructBool(
+                requireNonNull(statement.getCondition()),
+                () -> {
+                    if (statement.getThenBranch() != null) {
+                        statement.getThenBranch().accept(this);
+                    }
+                },
+                () -> {
+                    if (statement.getElseBranch() != null) {
+                        statement.getElseBranch().accept(this);
+                    }
+                }
+        );
     }
 
     private void enterCondSection(BranchNode branchNode) {
@@ -599,7 +590,7 @@ public class Generator extends CodeGenVisitor {
 
     private void exitCondSection(MergeNode mergeNode, List<QualifiedName> outputVariables) {
         var outputVars = NncUtils.map(outputVariables, Objects::toString);
-        var condOutputs = builder().exitCondSection(mergeNode, outputVars);
+        var condOutputs = builder().exitCondSection(mergeNode);
         for (var qn : outputVariables) {
             var branch2value = new HashMap<Branch, Value>();
             for (var entry2 : condOutputs.entrySet()) {
@@ -622,6 +613,7 @@ public class Generator extends CodeGenVisitor {
 
     @Override
     public void visitLocalVariable(PsiLocalVariable variable) {
+        builder().defineVariable(variable.getName());
         if (variable.getInitializer() != null) {
             var valueNode = builder().createValue(variable.getName(), resolveExpression(variable.getInitializer()));
             builder().setVariable(variable.getName(), new NodeExpression(valueNode));

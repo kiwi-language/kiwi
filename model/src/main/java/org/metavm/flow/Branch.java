@@ -140,9 +140,13 @@ public class Branch extends Element implements LocalKey {
         scope.writeCode(writer);
     }
 
-    public boolean isTerminating() {
+    public boolean isDisconnected() {
         var lastNode = scope.getLastNode();
-        return lastNode != null && lastNode.isExit();
+        return lastNode != null && (lastNode.isExit() || lastNode.isUnconditionalJump());
     }
 
+    @Override
+    protected String toString0() {
+        return index + "";
+    }
 }

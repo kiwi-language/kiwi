@@ -392,6 +392,10 @@ public abstract class ElementVisitor<R> {
         return visitNode(unmapNode);
     }
 
+    public R visitGotoNode(GotoNode gotoNode) {
+        return visitNode(gotoNode);
+    }
+
     public R visitFieldRef(FieldRef fieldRef) {
         return visitElement(fieldRef);
     }
@@ -422,5 +426,9 @@ public abstract class ElementVisitor<R> {
 
     public R visitEnumConstantDef(EnumConstantDef enumConstantDef) {
         return visitElement(enumConstantDef);
+    }
+
+    public R visitTargetNode(TargetNode targetNode) {
+        return visitNode(targetNode);
     }
 }

@@ -10,6 +10,7 @@ import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,6 +39,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processInstanceOf();
             processAsterisk();
             processDefaultMethod();
+            processBranching();
         });
     }
 
@@ -335,6 +337,17 @@ public class BasicCompilingTest extends CompilerTestBase {
         var fooId = TestUtils.doInTransaction(() -> apiClient.saveInstance("defaultmethod.Foo", Map.of()));
         var result = TestUtils.doInTransaction(() -> apiClient.callMethod(fooId, "foo", List.of()));
         Assert.assertEquals(0L, result);
+    }
+
+    private void processBranching() {
+        var result = TestUtils.doInTransaction(
+                () -> apiClient.callMethod("branching.BranchingFoo", "getOrDefault", List.of(1, 2))
+        );
+        Assert.assertEquals(1L, result);
+        var result1 = TestUtils.doInTransaction(
+                () -> apiClient.callMethod("branching.BranchingFoo", "getOrDefault2", Arrays.asList(0, 2))
+        );
+        Assert.assertEquals(2L, result1);
     }
 
 }

@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.expression.Expression;
 import org.metavm.expression.VarType;
@@ -9,7 +10,7 @@ import org.metavm.object.instance.rest.FieldValue;
 @EntityType
 public class DynamicValue extends Value {
 
-    public DynamicValue(ValueKind kind, Expression expression) {
+    public DynamicValue(ValueKind kind, @NotNull Expression expression) {
         super(kind, expression);
     }
 
