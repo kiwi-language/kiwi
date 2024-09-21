@@ -248,8 +248,9 @@ public class Types {
             typeArgument.accept(new StructuralTypeVisitor() {
                 @Override
                 public Void visitVariableType(VariableType type, Void unused) {
-                    typeVars.add(type.getVariable());
-                    type.getVariable().getBounds().forEach(t -> t.accept(this, null));
+                    var typeVar = type.getVariable();
+                    if(typeVars.add(typeVar))
+                        typeVar.getBounds().forEach(t -> t.accept(this, null));
                     return null;
                 }
             }, null);
