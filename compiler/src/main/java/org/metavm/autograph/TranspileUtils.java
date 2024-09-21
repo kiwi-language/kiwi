@@ -818,8 +818,7 @@ public class TranspileUtils {
     }
 
     public static PsiElement getCatchSectionEntry(PsiCatchSection catchSection) {
-        var body = requireNonNull(catchSection.getCatchBlock()).getStatements();
-        return body.length > 0 ? body[0] : null;
+        return Objects.requireNonNull(catchSection.getParameter());
     }
 
     public static @Nullable PsiElement getForStatementEntry(PsiForStatement statement) {

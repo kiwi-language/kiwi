@@ -56,7 +56,7 @@ public class TryNode extends ScopeNode {
 
     @Override
     protected List<Object> nodeBeforeRemove() {
-        if(getSuccessor() instanceof TryEndNode tryEndNode)
+        if(super.getSuccessor() instanceof TryEndNode tryEndNode)
             return List.of(tryEndNode);
         else
             return List.of();

@@ -21,6 +21,8 @@ class Lab {
 
 }
 
+7 Add compiler support catching exceptions raised by methods called inside the try block, including unchecked exceptions.
+
 Issues with compiling java.util.Map
 
 1 New array expressions using raw element types must be handled

@@ -224,7 +224,12 @@ public class AstToCfg extends SkipDiscardedVisitor {
             builder.enterCondSection(representative);
             for (var catchSection : statement.getCatchSections()) {
                 builder.newCondBranch(representative);
-                catchSection.accept(this);
+                builder.beginBlockStatement(catchSection);
+                enterLexicalScope(catchSection);
+                processBasicElement(Objects.requireNonNull(catchSection.getParameter()));
+                Objects.requireNonNull(catchSection.getCatchBlock()).accept(this);
+                exitLexicalScope();
+                builder.endBlockStatement(catchSection);
             }
             builder.newCondBranch(representative);
             builder.exitCondSection(representative);

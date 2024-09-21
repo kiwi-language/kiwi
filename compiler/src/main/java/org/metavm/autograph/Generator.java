@@ -229,6 +229,7 @@ public class Generator extends CodeGenVisitor {
                     Values.expression(builder().getVariable(outputVar.toString())),
                     tryEndNode
             );
+            builder().setVariable(outputVar.toString(), Expressions.nodeProperty(tryEndNode, field));
         }
 
         var exceptionExpr = new PropertyExpression(
@@ -249,10 +250,12 @@ public class Generator extends CodeGenVisitor {
                 }
                 var branch = branchNode.addBranch(
                         Values.expression(
-                                createExceptionCheck(exceptionExpr, catchSection.getPreciseCatchTypes())
+                                createExceptionCheck(exceptionExpr, catchSection.getCatchType())
                         )
                 );
-                builder().setVariable(requireNonNull(catchSection.getParameter()).getName(), exceptionExpr);
+                var param = requireNonNull(catchSection.getParameter());
+                builder().defineVariable(param.getName());
+                builder().setVariable(param.getName(), exceptionExpr);
                 builder().enterBranch(branch);
                 catchBlock.accept(this);
                 builder().exitBranch();
@@ -318,6 +321,11 @@ public class Generator extends CodeGenVisitor {
                 expression = new BinaryExpression(BinaryOperator.OR, expression, checkExpr);
             }
         }
+        return NncUtils.requireNonNull(expression);
+    }
+
+    private Expression createExceptionCheck(Expression exceptionExpr, PsiType catchType) {
+        var expression = new InstanceOfExpression(exceptionExpr, resolveType(catchType));
         return NncUtils.requireNonNull(expression);
     }
 

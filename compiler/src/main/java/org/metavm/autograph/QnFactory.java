@@ -1,10 +1,12 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
+import lombok.extern.slf4j.Slf4j;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.AccessMode.*;
 
+@Slf4j
 public class QnFactory {
 
     public static QnAndMode getQnAndMode(PsiElement element) {
@@ -78,7 +80,7 @@ public class QnFactory {
             return READ_WRITE;
         }
         if (context instanceof PsiPrefixExpression prefixExpr) {
-            var op = prefixExpr.getOperationSign();
+            var op = prefixExpr.getOperationSign().getTokenType();
             if (op == JavaTokenType.MINUSMINUS || op == JavaTokenType.PLUSPLUS) return READ_WRITE;
             else return READ;
         } else return READ;
@@ -86,7 +88,7 @@ public class QnFactory {
 
     public static AccessMode getAssignmentAccMode(PsiAssignmentExpression assignment, PsiElement element) {
         if (assignment.getLExpression() == element) {
-            return assignment.getOperationSign() == JavaTokenType.EQ ? WRITE : READ_WRITE;
+            return assignment.getOperationSign().getTokenType() == JavaTokenType.EQ ? WRITE : READ_WRITE;
         } else return READ;
     }
 

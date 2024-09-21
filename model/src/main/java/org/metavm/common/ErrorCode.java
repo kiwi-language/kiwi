@@ -83,7 +83,7 @@ public enum ErrorCode {
     ILLEGAL_TARGET_BRANCH(423, "Invalid jump target branch"),
     NODE_FIELD_DEF_AND_FIELD_VALUE_MISMATCH(423, "Field value for node '{}' does not match field definition"),
     NOT_A_FUNCTION(424, "Expression '{}' is not a function"),
-    ILLEGAL_ARGUMENT(425, "Invalid function call argument"),
+    ILLEGAL_ARGUMENT(425, "Invalid function call argument: {}"),
     ILLEGAL_FUNCTION_ARGUMENT(425, "Invalid flow '{}' call argument, expected type: {}, actual type: {}"),
     INCORRECT_FUNCTION_ARGUMENT(426, "Invalid function '{}' call argument"),
     CONFLICTING_FLOW(427, "Flow signature conflict: same name and parameter type, different number of parameters"),
@@ -103,6 +103,7 @@ public enum ErrorCode {
     INSTANCE_METHOD_MISSING_STATIC_TYPE(438, "Instance method lacks static type"),
     MODIFYING_SYNTHETIC_FLOW(439, "{} is a synthetic flow and cannot be modified"),
     METHOD_RESOLUTION_FAILED(440, "Unable to resolve method {} with arguments {}"),
+    ILLEGAL_ARGUMENT1(441, "Invalid function call argument: {}"),
 
     // expression
     EXPRESSION_INVALID(501, "Invalid expression: {}"),

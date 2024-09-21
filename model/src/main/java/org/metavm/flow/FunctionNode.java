@@ -64,11 +64,15 @@ public class FunctionNode extends NodeRT {
         var funcType = ((FunctionType) Flows.getExpressionType(func.getExpression(), getPredecessor(), getScope()));
         if (funcType instanceof FunctionType functionType) {
             if (arguments.size() != functionType.getParameterTypes().size()) {
-                throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+                throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT1,
+                        "expecting " + functionType.getParameterTypes().size() + " arguments but got " + arguments.size());
             }
             for (int i = 0; i < arguments.size(); i++) {
                 if (!functionType.getParameterTypes().get(i).isAssignableFrom(arguments.get(i).getType())) {
-                    throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+                    throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT1,
+                            "expecting " + functionType.getParameterTypes().get(i).getTypeDesc() + " for argument " + i + " but "
+                                    + "got " + arguments.get(i).getType().getTypeDesc()
+                     );
                 }
             }
         } else {

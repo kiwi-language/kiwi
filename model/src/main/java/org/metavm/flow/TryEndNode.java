@@ -26,10 +26,7 @@ import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @EntityType
 public class TryEndNode extends ChildTypeNode {
@@ -44,7 +41,9 @@ public class TryEndNode extends ChildTypeNode {
         if (param.fields().size() != node.getKlass().getReadyFields().size() - 1)
             throw new BusinessException(ErrorCode.NODE_FIELD_DEF_AND_FIELD_VALUE_MISMATCH, node.getName());
         var mergeFieldDTOs = param.fields();
-        var parsingContext = FlowParsingContext.create(scope, prev, context);
+        var tryNode = (TryNode) Objects.requireNonNull(prev);
+        var defaultParsingContext = FlowParsingContext.create(tryNode.getBodyScope(), tryNode.getBodyScope().getLastNode(),
+                context);
         var fields = new ArrayList<TryEndField>();
         Map<NodeRT, ParsingContext> raiseParsingContexts = new HashMap<>();
         for (TryEndFieldDTO fieldDTO : mergeFieldDTOs) {
@@ -60,7 +59,7 @@ public class TryEndNode extends ChildTypeNode {
             fields.add(new TryEndField(
                     context.getField(Id.parse(fieldDTO.fieldId())),
                     values,
-                    ValueFactory.create(fieldDTO.defaultValue(), parsingContext),
+                    ValueFactory.create(fieldDTO.defaultValue(), defaultParsingContext),
                     node
             ));
         }

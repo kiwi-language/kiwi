@@ -8,6 +8,7 @@ import org.metavm.util.NncUtils;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.Keys.*;
@@ -175,14 +176,25 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
         exitAndRecordScope(statement, BODY_SCOPE);
         for (PsiCatchSection catchSection : statement.getCatchSections()) {
             enterScope();
-            catchSection.accept(this);
+            enterScope();
+            processCatchParameter(Objects.requireNonNull(catchSection.getParameter()));
+            exitAndRecordScope(catchSection, ARGS_SCOPE);
+            enterScope();
+            Objects.requireNonNull(catchSection.getCatchBlock()).accept(this);
             exitAndRecordScope(catchSection, BODY_SCOPE);
+            exitAndRecordScope(catchSection, ARGS_BODY_SCOPE);
         }
         if (statement.getFinallyBlock() != null) {
             enterScope();
             statement.getFinallyBlock().accept(this);
             exitAndRecordScope(statement, FINALLY_SCOPE);
         }
+    }
+
+    private void processCatchParameter(PsiParameter parameter) {
+        enterScope();
+        parameter.accept(this);
+        exitAndRecordScope(parameter);
     }
 
     @Override

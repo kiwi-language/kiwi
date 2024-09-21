@@ -10,6 +10,7 @@ import org.metavm.flow.*;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.instance.core.TypeTag;
+import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -242,12 +243,30 @@ public class Types {
     }
 
     public static ClassType createFunctionalClass(ClassType functionalInterface) {
-        var klass = KlassBuilder.newBuilder(functionalInterface.getName() + "Impl", null)
-                .interfaces(functionalInterface)
+        var typeVars = new LinkedHashSet<TypeVariable>();
+        for (Type typeArgument : functionalInterface.getTypeArguments()) {
+            typeArgument.accept(new StructuralTypeVisitor() {
+                @Override
+                public Void visitVariableType(VariableType type, Void unused) {
+                    typeVars.add(type.getVariable());
+                    type.getVariable().getBounds().forEach(t -> t.accept(this, null));
+                    return null;
+                }
+            }, null);
+        }
+        var typeParams = NncUtils.map(typeVars, tv -> new TypeVariable(null, tv.getName(), tv.getCode(), DummyGenericDeclaration.INSTANCE));
+        var klass = KlassBuilder.newBuilder(functionalInterface.getKlass().getName() + "Impl", null)
+                .typeParameters(typeParams)
                 .ephemeral(true)
                 .build();
+        var subst = new TypeSubstitutor(NncUtils.map(typeVars, TypeVariable::getType), klass.getTypeArguments());
+        NncUtils.biForEach(typeParams, typeVars, (typeParam, typeVar) ->
+                typeParam.setBounds(NncUtils.map(typeVar.getBounds(), t -> t.accept(subst)))
+        );
+        var substInterface = (ClassType) functionalInterface.accept(subst);
+        klass.setInterfaces(List.of(substInterface));
         klass.setEphemeralEntity(true);
-        var sam = getSAM(functionalInterface.resolve());
+        var sam = getSAM(substInterface.resolve());
         var funcType = new FunctionType(sam.getParameterTypes(), sam.getReturnType());
         var funcField = FieldBuilder.newBuilder("func", "func", klass, funcType).build();
 
@@ -274,7 +293,7 @@ public class Types {
         );
         var returnValue = flow.getReturnType().isVoid() ? null : Values.expression(new NodeExpression(funcNode));
         new ReturnNode(null, "return", null, funcNode, flow.getRootScope(), returnValue);
-        return klass.getType();
+        return klass.getParameterized(NncUtils.map(typeVars, TypeVariable::getType)).getType();
     }
 
     public static Method getSAM(Klass functionalInterface) {

@@ -40,6 +40,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processAsterisk();
             processDefaultMethod();
             processBranching();
+            processTryCatch();
         });
     }
 
@@ -348,6 +349,23 @@ public class BasicCompilingTest extends CompilerTestBase {
                 () -> apiClient.callMethod("branching.BranchingFoo", "getOrDefault2", Arrays.asList(0, 2))
         );
         Assert.assertEquals(2L, result1);
+    }
+
+    private void processTryCatch() {
+        var id = (String) TestUtils.doInTransaction(() -> apiClient.saveInstance(
+                "trycatch.TryCatchFoo<string, string>",
+                Map.of())
+        );
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "put", List.of(
+                "name", "leen"
+        )));
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "put", List.of(
+                "age", "33"
+        )));
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "put", List.of(
+                "intelligence", "180"
+        )));
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "print", List.of()));
     }
 
 }

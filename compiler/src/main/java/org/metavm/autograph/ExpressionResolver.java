@@ -478,10 +478,10 @@ public class ExpressionResolver {
             }
         }
         var substitutor = expression.resolveMethodGenerics().getSubstitutor();
-
+        var method = resolveMethod(expression);
         var psiArgs = expression.getArgumentList().getExpressions();
         var args = new ArrayList<Expression>();
-        for (PsiExpression psiArg : psiArgs) {
+        for (var psiArg : psiArgs) {
             var arg = resolve(psiArg, context);
             var paramType = typeResolver.resolveDeclaration(substitutor.substitute(psiArg.getType()));
             if (paramType instanceof ClassType classType) {
@@ -493,7 +493,6 @@ public class ExpressionResolver {
             }
             args.add(arg);
         }
-        var method = resolveMethod(expression);
         var node = methodGenerator.createMethodCall(qualifier, method, args);
         setCapturedExpressions(node, context);
         if (method.getReturnType().isVoid()) {

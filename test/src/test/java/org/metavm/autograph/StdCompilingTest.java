@@ -1,6 +1,7 @@
 package org.metavm.autograph;
 
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Assert;
 import org.metavm.util.TestConstants;
 
 @Slf4j
@@ -15,7 +16,7 @@ public class StdCompilingTest extends CompilerTestBase {
 //            try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
 //                var mapKlass = context.getKlass(mapKlassId);
 //                var method = mapKlass.getMethodByCode("getOrDefault");
-////                Assert.assertTrue(method.isRootScopePresent());
+//                Assert.assertTrue(method.isRootScopePresent());
 //                log.debug("{}", method.getText());
 //            }
 //        });

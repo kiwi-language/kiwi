@@ -132,7 +132,10 @@ public class TypeResolverImpl implements TypeResolver {
             case PsiArrayType arrayType -> resolveArrayType(arrayType, stage);
             case PsiCapturedWildcardType capturedWildcardType -> resolveCapturedType(capturedWildcardType, stage);
             case PsiIntersectionType intersectionType -> resolveIntersectionType(intersectionType, stage);
-            case null, default -> throw new InternalException("Invalid PsiType: " + psiType);
+            case PsiDisjunctionType disjunctionType -> resolveDisjunctionType(disjunctionType, stage);
+            case PsiLambdaExpressionType lambdaExpressionType ->
+                    resolve(Objects.requireNonNull(lambdaExpressionType.getExpression().getFunctionalInterfaceType()), stage);
+            default -> throw new InternalException("Invalid PsiType: " + Objects.requireNonNull(psiType).getClass().getName());
         };
     }
 
@@ -143,6 +146,12 @@ public class TypeResolverImpl implements TypeResolver {
     private IntersectionType resolveIntersectionType(PsiIntersectionType psiIntersectionType, ResolutionStage stage) {
         return new IntersectionType(
                 NncUtils.mapUnique(List.of(psiIntersectionType.getConjuncts()), t -> resolve(t, stage))
+        );
+    }
+
+    private UnionType resolveDisjunctionType(PsiDisjunctionType psiDisjunctionType, ResolutionStage stage) {
+        return new UnionType(
+                NncUtils.mapUnique(psiDisjunctionType.getDisjunctions(), t -> resolve(t, stage))
         );
     }
 

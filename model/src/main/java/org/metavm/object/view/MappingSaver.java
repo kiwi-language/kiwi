@@ -396,7 +396,7 @@ public class MappingSaver {
             return null;
         if (mappingCode.endsWith("View") && mappingCode.length() > 4)
             mappingCode = mappingCode.substring(0, mappingCode.length() - 4);
-        return NamingUtils.escapeTypeName(sourceType.getCode()) + mappingCode + "View";
+        return sourceType.getCode() + mappingCode + "View";
     }
 
     private Field createTargetField(Klass targetKlass, String name, String code, Type type,

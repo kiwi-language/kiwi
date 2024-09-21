@@ -1,20 +1,19 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.metavm.util.NncUtils.diffSet;
 import static org.metavm.util.NncUtils.unionSet;
 
+@Slf4j
 public class LivenessAnalyzer extends SkipDiscardedVisitor {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
@@ -179,7 +178,7 @@ public class LivenessAnalyzer extends SkipDiscardedVisitor {
             setIn(node, liveIn);
             setOut(node, liveOut);
             if(DebugEnv.debugging) {
-                debugLogger.info("{}, live in: {}, live out: {}",
+                log.info("{}, live in: {}, live out: {}",
                         node.getElement().getText(), liveIn, liveOut);
             }
             return !prevLiveIn.equals(liveIn);

@@ -4,6 +4,7 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.expression.ExpressionTypeMap;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.util.DebugEnv;
+import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
@@ -37,10 +38,10 @@ public class NodeFactory {
                 if (isCreate)
                     context.bind(node);
                 return node;
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
                 if (DebugEnv.debugging)
                     DebugEnv.logger.info("fail to save node {}", NncUtils.toJSONString(nodeDTO));
-                throw e;
+                throw new InternalException("Failed to save node " + nodeDTO.name() + " with ID " + nodeDTO.id(), e);
             }
         }
     }
