@@ -22,6 +22,17 @@ class Lab {
 }
 
 7 Add compiler support catching exceptions raised by methods called inside the try block, including unchecked exceptions.
+8 Accessors in a record class should not be treated as entity struct components. If they are, it will lead to a mismatch
+between the signature of the canonical record constructor and that of the canonical EntityStruct constructor.
+This discrepancy will cause a NullPointerException in MappingSaver.getCanonicalConstructor.
+Below is an example that illustrates this problem:
+record Foo(String value) {
+
+    public Supplier<String> getSupplier() {
+        return () -> value;
+    }
+
+}
 
 Issues with compiling java.util.Map
 

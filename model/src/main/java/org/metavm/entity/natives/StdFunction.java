@@ -499,6 +499,17 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.longInstance(s1.getValue().compareTo(s2.getValue())));
             }
     ),
+    isEmptyString(
+            "boolean isEmptyString(string s)",
+            true,
+            List.of(
+                    ReflectionUtils.getMethod(String.class, "isEmpty")
+            ),
+            (func, args, callContext) -> {
+                var s = (StringValue) args.get(0);
+                return FlowExecResult.of(Instances.booleanInstance(s.getValue().isEmpty()));
+            }
+    ),
     sort(
             "void sort(java.util.List<[never, any]> list)",
             false,

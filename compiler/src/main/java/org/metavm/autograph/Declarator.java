@@ -147,7 +147,8 @@ public class Declarator extends CodeGenVisitor {
             var overriddenMethodType = TranspileUtils.createTemplateType(overriddenMethodCls);
             var k = Types.resolveKlass(typeResolver.resolveDeclaration(overriddenMethodType));
             var o = TranspileUtils.getMethidByJavaMethod(k, overriddenMethod, typeResolver);
-            var k1 = Objects.requireNonNull(klass.findAncestorByTemplate(k));
+            var k1 = Objects.requireNonNull(klass.findAncestorByTemplate(k),
+                    () -> "Cannot find ancestor with template " + k.getTypeDesc() + " in class " + klass.getTypeDesc());
             var o1 = k1.getMethod(m -> m.getEffectiveVerticalTemplate() == o);
             overridden.add(o1);
         }

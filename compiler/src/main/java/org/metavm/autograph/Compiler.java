@@ -46,6 +46,18 @@ public class Compiler {
             ),
             new CompileStage(
                     file -> true,
+                    file -> {
+                        file.accept(new QnResolver());
+                        file.accept(new ActivityAnalyzer());
+                        file.accept(new AnonymousClassTransformer());
+                    }
+            ),
+            new CompileStage(
+                    file -> true,
+                    file -> file.accept(new DefaultConstructorCreator())
+            ),
+            new CompileStage(
+                    file -> true,
                     file -> file.accept(new InnerClassCopier())
             ),
             new CompileStage(

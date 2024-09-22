@@ -940,7 +940,6 @@ public class ExpressionResolver {
                         var mergeNode = methodGenerator.createTarget();
                         ref.gotoNode.setTarget(mergeNode);
                         elseAction.run();
-                        logger.debug("Merge node successor: {}", mergeNode.getSuccessor());
                     }, context);
         }
     }

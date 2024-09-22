@@ -43,6 +43,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processTryCatch();
             processLambda();
             processTemplateMethod();
+            processAnonymousClass();
         });
     }
 
@@ -384,6 +385,30 @@ public class BasicCompilingTest extends CompilerTestBase {
         );
         Assert.assertNotNull(r);
         Assert.assertEquals(-1L, r.longValue());
+    }
+
+    private void processAnonymousClass() {
+        var id = TestUtils.doInTransaction(() ->
+                apiClient.saveInstance("anonymousclass.AnonymousClassFoo",
+                        Map.of(
+                                "entries", List.of(
+                                        Map.of(
+                                                "key", "name",
+                                                "value", "leen"
+                                        ),
+                                        Map.of(
+                                                "key", "age",
+                                                "value", 32
+                                        ),
+                                        Map.of(
+                                                "key", "height",
+                                                "value", 172.0
+                                        )
+                                )
+                        ))
+        );
+        var r = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "concatKeys", List.of()));
+        Assert.assertEquals("name,age,height", r);
     }
 
 }

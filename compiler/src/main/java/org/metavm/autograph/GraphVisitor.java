@@ -2,6 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.psi.PsiBreakStatement;
 import com.intellij.psi.PsiContinueStatement;
+import com.intellij.psi.PsiEmptyStatement;
 
 import java.util.*;
 
@@ -22,7 +23,8 @@ public abstract class GraphVisitor<S> {
 
     public final boolean canIgnore(CfgNode node) {
         var astNode = node.getElement();
-        return astNode instanceof PsiBreakStatement || astNode instanceof PsiContinueStatement;
+        return astNode instanceof PsiBreakStatement || astNode instanceof PsiContinueStatement
+                || astNode instanceof PsiEmptyStatement;
     }
 
     public final void visitForward() {

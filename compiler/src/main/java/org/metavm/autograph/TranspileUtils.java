@@ -789,11 +789,11 @@ public class TranspileUtils {
     }
 
     public static PsiClassType createTemplateType(PsiClass klass) {
-        var paramList = requireNonNull(klass.getTypeParameterList());
-        List<PsiType> paramTypes = NncUtils.map(
+        var paramList = klass.getTypeParameterList();
+        List<PsiType> paramTypes = paramList != null ? NncUtils.map(
                 paramList.getTypeParameters(),
                 elementFactory::createType
-        );
+        ) : List.of();
         PsiType[] paramTypeArray = new PsiType[paramTypes.size()];
         paramTypes.toArray(paramTypeArray);
         return elementFactory.createType(klass, paramTypeArray);
@@ -849,6 +849,7 @@ public class TranspileUtils {
             if (current == ancestor) {
                 return true;
             }
+            current = current.getParent();
         }
         return false;
     }

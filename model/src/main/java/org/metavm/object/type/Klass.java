@@ -480,7 +480,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public Method getMethodByInternalName(String internalName) {
-        return NncUtils.findRequired(methods, m -> m.getInternalName(null).equals(internalName));
+        return NncUtils.findRequired(methods, m -> m.getInternalName(null).equals(internalName),
+                () -> "Failed to find method with internal name '" + internalName + "' in class " + getTypeDesc());
     }
 
     public ReadonlyArray<Method> getDeclaredMethods() {

@@ -22,7 +22,6 @@ public class CodeGenerator {
             TranspileUtils.executeCommand(() -> {
                 resolveQnAndActivity(psiClass);
                 psiClass.accept(new VarargsTransformer());
-                psiClass.accept(new DefaultConstructorCreator());
                 resolveQnAndActivity(psiClass);
                 psiClass.accept(new SwitchLabelStatementTransformer());
                 psiClass.accept(new NullSwitchCaseAppender());

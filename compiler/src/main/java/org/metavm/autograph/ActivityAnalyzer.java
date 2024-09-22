@@ -127,7 +127,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
             enterScope(aClass.getName());
             super.visitClass(aClass);
-            exitScope();
+            exitAndRecordScope(aClass, BODY_SCOPE);
             classes.pop();
         }
     }

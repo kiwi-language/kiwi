@@ -154,7 +154,8 @@ public class LivenessAnalyzer extends SkipDiscardedVisitor {
         private boolean canIgnore(PsiElement element) {
             return element instanceof PsiBreakStatement
                     || element instanceof PsiContinueStatement
-                    || element instanceof PsiThisExpression;
+                    || element instanceof PsiThisExpression
+                    || element instanceof PsiEmptyStatement;
         }
 
         @Override
