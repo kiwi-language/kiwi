@@ -20,8 +20,8 @@ public class ContextTypeDefRepository implements TypeDefRepository {
     }
 
     @Override
-    public TypeDef getTypeDef(Id id) {
-        return context.getEntity(TypeDef.class, id);
+    public ITypeDef getTypeDef(Id id) {
+        return context.getEntity(ITypeDef.class, id);
     }
 
     @Override

@@ -487,6 +487,18 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.longInstance(Long.compare(v1.getValue(), v2.getValue())));
             }
     ),
+    compareString(
+            "long compareString(string s1, string s2) ",
+            true,
+            List.of(
+                    ReflectionUtils.getMethod(String.class, "compareTo", String.class)
+            ),
+            (func, args, callContext) -> {
+                var s1 = (StringValue) args.get(0);
+                var s2 = (StringValue) args.get(1);
+                return FlowExecResult.of(Instances.longInstance(s1.getValue().compareTo(s2.getValue())));
+            }
+    ),
     sort(
             "void sort(java.util.List<[never, any]> list)",
             false,

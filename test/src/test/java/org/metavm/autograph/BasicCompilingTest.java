@@ -42,6 +42,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processBranching();
             processTryCatch();
             processLambda();
+            processTemplateMethod();
         });
     }
 
@@ -372,6 +373,14 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processLambda() {
         var r = (Long) TestUtils.doInTransaction(
                 () -> apiClient.callMethod("lambda.LambdaFoo", "compare", List.of(1, 2))
+        );
+        Assert.assertNotNull(r);
+        Assert.assertEquals(-1L, r.longValue());
+    }
+
+    private void processTemplateMethod() {
+        var r = (Long) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("templatemethod.TemplateMethodFoo", "compare", List.of("s1", "s2"))
         );
         Assert.assertNotNull(r);
         Assert.assertEquals(-1L, r.longValue());
