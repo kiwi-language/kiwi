@@ -63,6 +63,11 @@ public record KlassDTO(
         return NncUtils.findRequired(fields, f -> f.name().equals(name));
     }
 
+    @JsonIgnore
+    public FlowDTO findMethodByName(String name) {
+        return NncUtils.find(flows, f -> f.name().equals(name));
+    }
+
     public List<String> getParameterTypeExpressions() {
         return NncUtils.map(typeParameterIds, tpId -> Constants.addIdPrefix(id) + "@" + Constants.addIdPrefix(tpId));
     }

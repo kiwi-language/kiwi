@@ -1289,4 +1289,27 @@ public class TranspileUtils {
         return result;
     }
 
+    public static void printContexts(PsiElement element) {
+        PsiElement e = element;
+        do {
+            printElement(e);
+            e = e.getParent();
+        } while (e != null);
+    }
+
+    public static void printElement(PsiElement element) {
+        var s = switch (element) {
+            case PsiJavaFile file -> "file: "+ file.getName();
+            case PsiClass psiClass -> "class: " + psiClass.getQualifiedName();
+            case PsiMethod method -> "method: " + method.getName();
+            case PsiForeachStatement foreachStatement -> "<foreach statement>";
+            case PsiForStatement forStatement -> "<for statement>";
+            case PsiWhileStatement whileStatement -> "<while statement>";
+            case PsiDoWhileStatement doWhileStatement -> "<do-while statement>";
+            case PsiCodeBlock codeBlock -> "<code block>";
+            default -> element.getText();
+        };
+        logger.debug("{}", s);
+    }
+
 }

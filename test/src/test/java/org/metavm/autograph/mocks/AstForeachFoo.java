@@ -50,4 +50,11 @@ public class AstForeachFoo {
         return totalPrice / prices.size();
     }
 
+    public int totalLength(List<String> list) {
+        int l = 0;
+        for (String s : list)
+            l += s.length();
+        return l;
+    }
+
 }

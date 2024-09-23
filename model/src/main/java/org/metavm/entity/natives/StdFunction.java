@@ -543,6 +543,15 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var entityContext = ContextUtil.getEntityContext();
                 return FlowExecResult.of(entityContext.getInstance(o.getKlass().getEffectiveTemplate()).getReference());
             }
+    ),
+    stringLength(
+            "long stringLength(string s)",
+            false,
+            List.of(ReflectionUtils.getMethod(String.class, "length")),
+            (func, args, callContext) -> {
+                var s = (StringValue) args.get(0);
+                return FlowExecResult.of(Instances.longInstance(s.getValue().length()));
+            }
     )
     ;
 

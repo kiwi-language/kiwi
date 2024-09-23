@@ -1,8 +1,6 @@
 package org.metavm.autograph;
 
-import com.intellij.psi.PsiBlockStatement;
-import com.intellij.psi.PsiForeachStatement;
-import com.intellij.psi.PsiWhileStatement;
+import com.intellij.psi.*;
 
 import java.util.List;
 import java.util.Objects;
@@ -32,8 +30,12 @@ public class ForeachTransformer extends SkipDiscardedVisitor {
             var whileStmt = (PsiWhileStatement) TranspileUtils.createStatementFromText(
                     String.format("while (%s < %s.size()) {}", indexVar, listVar)
             );
-            if (statement.getBody() != null)
-                Objects.requireNonNull(whileStmt.getBody()).replace(statement.getBody());
+            if (statement.getBody() instanceof PsiBlockStatement block)
+                Objects.requireNonNull(whileStmt.getBody()).replace(block);
+            else if(statement.getBody() != null) {
+                var block = ((PsiBlockStatement) Objects.requireNonNull(whileStmt.getBody())).getCodeBlock();
+                block.addAfter(statement.getBody(), null);
+            }
             var codeBlock = Objects.requireNonNull((PsiBlockStatement) whileStmt.getBody()).getCodeBlock();
 
             codeBlock.addAfter(
