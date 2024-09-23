@@ -45,6 +45,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processTemplateMethod();
             processAnonymousClass();
             processClassObject();
+            processMyCollection();
         });
     }
 
@@ -418,6 +419,12 @@ public class BasicCompilingTest extends CompilerTestBase {
                 apiClient.callMethod("classobject.ClassObjectFoo<string>", "isInstance", List.of(id))
         );
         Assert.assertTrue(r);
+    }
+
+    private void processMyCollection() {
+        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("mycollection.MyCollection<string>", Map.of()));
+        var size = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "size", List.of()));
+        Assert.assertEquals(0L, size);
     }
 
 }

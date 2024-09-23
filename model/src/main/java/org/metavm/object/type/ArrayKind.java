@@ -11,6 +11,7 @@ import org.metavm.flow.Flow;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 public enum ArrayKind {
@@ -23,7 +24,7 @@ public enum ArrayKind {
 
         @Override
         public String getInternalName(String elementInternalName) {
-            return List.class.getName() + "<" + elementInternalName + ">";
+            return  elementInternalName + "[]";
         }
 
     },
@@ -35,7 +36,7 @@ public enum ArrayKind {
 
         @Override
         public String getInternalName(String elementInternalName) {
-            return ReadonlyList.class.getName() + "<" + elementInternalName + ">";
+            return elementInternalName + "[R]";
         }
     },
     CHILD(3, TypeCategory.CHILD_ARRAY, TypeTags.CHILD_ARRAY, ChildArray.class, "[C]") {
@@ -46,7 +47,7 @@ public enum ArrayKind {
 
         @Override
         public String getInternalName(String elementInternalName) {
-            return ChildList.class.getName() + "<" + elementInternalName + ">";
+            return elementInternalName + "[C]";
         }
     },
     VALUE(4, TypeCategory.VALUE_ARRAY, TypeTags.VALUE_ARRAY, ValueArray.class, "[V]") {
@@ -57,7 +58,7 @@ public enum ArrayKind {
 
         @Override
         public String getInternalName(String elementInternalName) {
-            return ValueList.class.getName() + "<" + elementInternalName + ">";
+            return elementInternalName + "[V]";
         }
     },
     ;

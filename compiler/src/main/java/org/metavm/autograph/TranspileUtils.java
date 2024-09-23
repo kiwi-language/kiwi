@@ -1152,8 +1152,13 @@ public class TranspileUtils {
         if (type instanceof PsiWildcardType wildcardType) {
             if (wildcardType.isSuper())
                 return "[" + getInternalName(wildcardType.getBound(), current) + ",Any|Null]";
-            else
+            else if(wildcardType.getBound() != null)
                 return "[Never," + getInternalName(wildcardType.getBound(), current) + "]";
+            else
+                return "[Never, Any]";
+        }
+        if(type instanceof PsiArrayType arrayType) {
+            return getInternalName(arrayType.getComponentType(), current)  +"[]";
         }
         return type.getCanonicalText();
     }
