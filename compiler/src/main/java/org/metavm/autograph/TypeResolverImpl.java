@@ -217,6 +217,8 @@ public class TypeResolverImpl implements TypeResolver {
                 return Types.getAnyType();
             else if (TranspileUtils.matchType(classType, Password.class))
                 return Types.getPasswordType();
+            else if(TranspileUtils.matchType(classType, Class.class))
+                return StdKlass.valueList.type();
             else if (ReflectionUtils.isPrimitiveBoxClassName(psiClass.getQualifiedName())
                     || PRIM_CLASS_NAMES.contains(psiClass.getQualifiedName()))
                 return context.getType(TranspileUtils.getJavaClass(psiClass));

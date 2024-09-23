@@ -15,6 +15,7 @@ STRING:             'string';
 PASSWORD:           'password';
 TIME:               'time';
 VOID:               'void';
+CLASS:              'class';
 
 // array kinds
 

@@ -397,7 +397,8 @@ public class Generator extends CodeGenVisitor {
                 }
             }
         }
-        requireNonNull(psiMethod.getBody()).accept(this);
+        requireNonNull(psiMethod.getBody(), "body is missing from method " +
+                TranspileUtils.getMethodQualifiedName(psiMethod)).accept(this);
         if (psiMethod.isConstructor()) {
             builder.createReturn(new NodeExpression(method.getRootNode()));
         } else if (method.getReturnType().isVoid() && !requireNonNull(method.getRootScope().getLastNode()).isExit()) {

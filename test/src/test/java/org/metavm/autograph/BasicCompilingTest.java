@@ -44,6 +44,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processLambda();
             processTemplateMethod();
             processAnonymousClass();
+            processClassObject();
         });
     }
 
@@ -409,6 +410,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         );
         var r = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "concatKeys", List.of()));
         Assert.assertEquals("name,age,height", r);
+    }
+
+    private void processClassObject() {
+        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("classobject.ClassObjectFoo<string>", Map.of()));
+        var r = (boolean) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("classobject.ClassObjectFoo<string>", "isInstance", List.of(id))
+        );
+        Assert.assertTrue(r);
     }
 
 }

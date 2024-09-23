@@ -151,7 +151,7 @@ public class InnerClassTransformer extends VisitorBase {
 
     private boolean shouldTransform(PsiJavaCodeReferenceElement reference) {
         var context = reference.getContext();
-        return context instanceof PsiTypeElement ||
+        return context instanceof PsiTypeElement && !(context.getParent() instanceof PsiClassObjectAccessExpression) ||
                 (context instanceof PsiNewExpression newExpr && newExpr.getClassOrAnonymousClassReference() == reference);
     }
 

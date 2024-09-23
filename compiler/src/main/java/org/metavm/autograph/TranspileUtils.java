@@ -110,6 +110,10 @@ public class TranspileUtils {
         );
     }
 
+    public static String getMethodQualifiedName(PsiMethod method) {
+        return Objects.requireNonNull(method.getContainingClass()).getName() + "." + method.getName();
+    }
+
     public static PsiType createType(java.lang.reflect.Type javaType) {
         return createType(javaType, false);
     }

@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.ChildList;
 import org.metavm.api.Interceptor;
 import org.metavm.api.ValueList;
@@ -11,6 +12,7 @@ import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
+import org.metavm.object.type.Type;
 import org.metavm.util.IteratorImpl;
 
 import javax.annotation.Nullable;
@@ -20,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+@Slf4j
 public enum StdKlass implements ValueHolderOwner<Klass> {
 
     entity(Entity.class),
@@ -56,7 +59,10 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     comparable(Comparable.class),
     comparator(Comparator.class),
     serializable(Serializable.class),
+    type(Type.class),
+    klass(Klass.class),
     ;
+
     private final Class<?> javaClass;
     private final boolean autoDefine;
     private final @Nullable Class<? extends NativeBase> nativeClass;

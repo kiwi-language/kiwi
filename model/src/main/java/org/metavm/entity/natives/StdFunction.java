@@ -533,6 +533,16 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 nat.reverse();
                 return FlowExecResult.of(Instances.nullInstance());
             }
+    ),
+    getClass(
+            "org.metavm.object.type.Klass getClass(any o)",
+            false,
+            List.of(ReflectionUtils.getMethod(Object.class, "getClass")),
+            (func, args, callContext) -> {
+                var o = args.get(0).resolveObject();
+                var entityContext = ContextUtil.getEntityContext();
+                return FlowExecResult.of(entityContext.getInstance(o.getKlass().getEffectiveTemplate()).getReference());
+            }
     )
     ;
 

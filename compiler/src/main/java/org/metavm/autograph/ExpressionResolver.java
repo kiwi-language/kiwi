@@ -120,8 +120,14 @@ public class ExpressionResolver {
             case PsiLambdaExpression lambdaExpression -> resolveLambdaExpression(lambdaExpression, context);
             case PsiTypeCastExpression typeCastExpression -> resolveTypeCast(typeCastExpression, context);
             case PsiSwitchExpression switchExpression -> resolveSwitchExpression(switchExpression, context);
+            case PsiClassObjectAccessExpression classObjectAccessExpression -> resolveClassObjectAccess(classObjectAccessExpression, context);
             default -> throw new IllegalStateException("Unexpected value: " + psiExpression);
         };
+    }
+
+    private Expression resolveClassObjectAccess(PsiClassObjectAccessExpression classObjectAccessExpression, ResolutionContext context) {
+        var type = typeResolver.resolveTypeOnly(classObjectAccessExpression.getOperand().getType());
+        return new TypeLiteralExpression(type);
     }
 
     private Expression resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {

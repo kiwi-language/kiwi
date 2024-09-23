@@ -45,7 +45,6 @@ public class SystemDefContextTest extends TestCase {
                 new StdIdProvider(new EmptyStdIdStore()), instanceContext, new MemColumnStore(), new MemTypeTagStore(), new IdentityContext());
         bridge.setEntityContext(defContext);
         objectInstanceMap = defContext.getObjectInstanceMap();
-        defContext.postProcess();
     }
 
     public void testGetDef() {
@@ -86,6 +85,7 @@ public class SystemDefContextTest extends TestCase {
     }
 
     public void testInheritance() {
+        defContext.postProcess();
         EntityDef<NodeRT> superDef = defContext.getEntityDef(new TypeReference<>() {
         });
         Assert.assertEquals(Objects.requireNonNull(superDef.getKlass().getSuperType()).getSuperType(), StdKlass.entity.get().getType());
@@ -118,6 +118,7 @@ public class SystemDefContextTest extends TestCase {
 
     public void testGetIdentityMap() {
         PojoDef<Type> def = defContext.getPojoDef(Type.class);
+//        PojoDef<Type> def = defContext.getPojoDef(Type.class);
         Klass type = def.getKlass();
         Map<Object, ModelIdentity> identityMap = defContext.getIdentityMap();
         Set<ModelAndPath> models = EntityUtils.getReachableObjects(

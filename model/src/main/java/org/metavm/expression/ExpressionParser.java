@@ -1,5 +1,6 @@
 package org.metavm.expression;
 
+import lombok.extern.slf4j.Slf4j;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -23,6 +24,7 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 public class ExpressionParser {
 
     public static Expression parse(@NotNull Klass type, @NotNull String expression, @NotNull IEntityContext entityContext) {
@@ -170,6 +172,8 @@ public class ExpressionParser {
             return preParseLiteral(primary.literal());
         } else if (primary.identifier() != null) {
             return parseIdentifier(primary.identifier());
+        } else if(primary.CLASS() != null) {
+            return new TypeLiteralExpression(parseTypeType(primary.typeTypeOrVoid()));
         } else {
             throw new ExpressionParsingException();
         }
@@ -203,6 +207,13 @@ public class ExpressionParser {
                     parse(expression.expression(1))
             );
         };
+    }
+
+    private Type parseTypeType(MetaVMParser.TypeTypeOrVoidContext typeType) {
+        if(typeType.VOID() != null)
+            return PrimitiveType.voidType;
+        else
+            return parseTypeType(typeType.typeType());
     }
 
     private Type parseTypeType(MetaVMParser.TypeTypeContext typeType) {
