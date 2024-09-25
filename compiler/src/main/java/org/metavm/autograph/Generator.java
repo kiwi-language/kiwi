@@ -25,13 +25,15 @@ public class Generator extends CodeGenVisitor {
 
     public static final Logger logger = LoggerFactory.getLogger(Generator.class);
 
+    private final PsiClass psiClass;
     private final LinkedList<MethodGenerator> builders = new LinkedList<>();
     private final Map<String, Klass> classes = new HashMap<>();
     private final LinkedList<ClassInfo> classInfoStack = new LinkedList<>();
     private final TypeResolver typeResolver;
     private final IEntityContext entityContext;
 
-    public Generator(TypeResolver typeResolver, IEntityContext entityContext) {
+    public Generator(PsiClass psiClass, TypeResolver typeResolver, IEntityContext entityContext) {
+        this.psiClass = psiClass;
         this.typeResolver = typeResolver;
         this.entityContext = entityContext;
     }
@@ -45,6 +47,8 @@ public class Generator extends CodeGenVisitor {
         if(TranspileUtils.isDiscarded(psiClass))
             return;
         if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null)
+            return;
+        if(psiClass != this.psiClass)
             return;
         var klass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
         if (klass.getStage().isAfterOrAt(ResolutionStage.DEFINITION))

@@ -24,9 +24,9 @@ public class ContinueTransformerTest extends TestCase {
                 }
         );
         System.out.println(file.getText());
-        var dest = "/Users/leen/workspace/object/lab/src/main/tmp/continue2/ContinueFoo.java";
-        NncUtils.writeFile(dest,
-                file.getText().replace("package org.metavm.autograph.mocks;", "package continue2;"));
+//        var dest = "/Users/leen/workspace/object/lab/src/main/tmp/continue2/ContinueFoo.java";
+//        NncUtils.writeFile(dest,
+//                file.getText().replace("package org.metavm.autograph.mocks;", "package continue2;"));
     }
 
 

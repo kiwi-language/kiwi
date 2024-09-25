@@ -24,6 +24,8 @@ public class Declarator extends CodeGenVisitor {
 
     public static final Logger logger = LoggerFactory.getLogger(Declarator.class);
 
+    private final PsiClass psiClass;
+
     private final TypeResolver typeResolver;
 
     private final IEntityContext context;
@@ -32,7 +34,8 @@ public class Declarator extends CodeGenVisitor {
 
     private @Nullable Index currentIndex;
 
-    public Declarator(TypeResolver typeResolver, IEntityContext context) {
+    public Declarator(PsiClass psiClass, TypeResolver typeResolver, IEntityContext context) {
+        this.psiClass = psiClass;
         this.typeResolver = typeResolver;
         this.context = context;
     }
@@ -64,6 +67,8 @@ public class Declarator extends CodeGenVisitor {
             super.visitClass(psiClass);
             return;
         }
+        if (psiClass != this.psiClass)
+            return;
         var klass = typeResolver.getKlass(psiClass);
         klass.setStage(ResolutionStage.DECLARATION);
         var classInfo = new ClassInfo(klass);
@@ -149,7 +154,8 @@ public class Declarator extends CodeGenVisitor {
             var o = TranspileUtils.getMethidByJavaMethod(k, overriddenMethod, typeResolver);
             var k1 = Objects.requireNonNull(klass.findAncestorByTemplate(k),
                     () -> "Cannot find ancestor with template " + k.getTypeDesc() + " in class " + klass.getTypeDesc());
-            var o1 = k1.getMethod(m -> m.getEffectiveVerticalTemplate() == o);
+            var o1 = k1.getMethod(m -> m.getEffectiveVerticalTemplate() == o,
+                    () -> "Cannot find method with vertical template " + o.getQualifiedSignature() + " in klass " + k1.getTypeDesc());
             overridden.add(o1);
         }
         List<PsiType> implicitTypeArgs = method.isConstructor() && klass.isEnum() ?

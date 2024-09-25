@@ -1,9 +1,6 @@
 package org.metavm.autograph;
 
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiMethodCallExpression;
-import com.intellij.psi.PsiRecordComponent;
+import com.intellij.psi.*;
 import org.metavm.api.EntityIndex;
 import org.metavm.entity.IEntityContext;
 import org.metavm.expression.ThisExpression;
@@ -20,12 +17,14 @@ import static java.util.Objects.requireNonNull;
 
 public class IndexDefiner extends SkipDiscardedVisitor {
 
+    private final PsiClass psiClass;
     private Index currentIndex;
     private final TypeResolver typeResolver;
     private final IEntityContext context;
     private MethodGenerator builder;
 
-    public IndexDefiner(TypeResolver typeResolver, IEntityContext context) {
+    public IndexDefiner(PsiClass psiClass, TypeResolver typeResolver, IEntityContext context) {
+        this.psiClass = psiClass;
         this.typeResolver = typeResolver;
         this.context = context;
     }
@@ -36,6 +35,12 @@ public class IndexDefiner extends SkipDiscardedVisitor {
 
     @Override
     public void visitRecordComponent(PsiRecordComponent recordComponent) {
+    }
+
+    @Override
+    public void visitClass(PsiClass aClass) {
+        if(TranspileUtils.getAnnotation(aClass, EntityIndex.class) != null || aClass == this.psiClass)
+            super.visitClass(aClass);
     }
 
     @Override

@@ -59,12 +59,12 @@ public class CodeGenerator {
         }
         psiClass.accept(new ReachingDefAnalyzer(astToCfg.getGraphs()));
         psiClass.accept(new LivenessAnalyzer(astToCfg.getGraphs()));
-        psiClass.accept(new Declarator(typeResolver, context));
+        psiClass.accept(new Declarator(psiClass, typeResolver, context));
     }
 
     void generateCode(PsiClass psiClass, TypeResolver typeResolver) {
-        psiClass.accept(new Generator(typeResolver, context));
-        psiClass.accept(new IndexDefiner(typeResolver, context));
+        psiClass.accept(new Generator(psiClass, typeResolver, context));
+        psiClass.accept(new IndexDefiner(psiClass, typeResolver, context));
     }
 
 }

@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static org.metavm.util.NncUtils.*;
 
@@ -560,6 +561,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public Method getMethod(Predicate<Method> predicate) {
+        return getMethod(predicate, () -> "Can not find method with predicate in klass " + this);
+    }
+
+    public Method getMethod(Predicate<Method> predicate, Supplier<String> messageSupplier) {
         var found = findMethod(predicate);
         if (found != null)
             return found;
@@ -567,7 +572,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             logger.info("Fail to resolve method with predicate in klass " + getTypeDesc());
             forEachMethod(m -> logger.info(m.getQualifiedName()));
         }
-        throw new NullPointerException("Can not find method with predicate in klass " + this);
+        throw new NullPointerException(messageSupplier.get());
     }
 
     public @Nullable Method findMethod(Predicate<Method> predicate) {

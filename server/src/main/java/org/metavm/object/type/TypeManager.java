@@ -320,6 +320,7 @@ public class TypeManager extends EntityContextFactoryAware {
             var klass = context.getKlass(Id.parse(klassDTO.id()));
             klasses.add(klass);
             createOverridingFlows(klass, context);
+            klass.updateParameterized();
         }
         beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
         List<Klass> newClasses = NncUtils.filterAndMap(

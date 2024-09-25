@@ -49,6 +49,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processBreak();
             processContinue();
             processDoWhile();
+            processInnerExtendsOwner();
         });
     }
 
@@ -463,6 +464,14 @@ public class BasicCompilingTest extends CompilerTestBase {
                 apiClient.callMethod("dowhile.DoWhileFoo", "sum", List.of(1, 1))
         );
         Assert.assertEquals(1L, sum1);
+    }
+
+    private void processInnerExtendsOwner() {
+        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance(
+                "innerclass.InnerExtendsEnclosing.Inner<string>", Map.of()
+        ));
+        var r = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "foo", List.of()));
+        Assert.assertTrue(r);
     }
 
 }
