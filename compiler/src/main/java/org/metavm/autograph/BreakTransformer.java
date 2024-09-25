@@ -119,15 +119,12 @@ public class BreakTransformer extends SkipDiscardedVisitor {
 
     @Override
     public void visitIfStatement(PsiIfStatement statement) {
-        if(statement.getThenBranch() != null)
-            visitNonLoopBody(statement, statement.getThenBranch());
-        if(statement.getElseBranch() != null)
-            visitNonLoopBody(statement, statement.getElseBranch());
-    }
-
-    private void visitNonLoopBody(PsiStatement statement, PsiStatement body) {
-        enterLoop(statement);
-        replace(body, visitBlock(body));
+        var blockInfo = enterLoop(statement);
+        super.visitIfStatement(statement);
+        if(blockInfo.isBreakable() && blockInfo.breakUsed) {
+            var breakVarDecl = defineBreakVar();
+            replace(statement, TranspileUtils.createBlockStatement(breakVarDecl, statement));
+        }
         exitLoop();
     }
 

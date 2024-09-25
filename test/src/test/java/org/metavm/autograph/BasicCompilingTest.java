@@ -436,6 +436,12 @@ public class BasicCompilingTest extends CompilerTestBase {
                 )
         );
         Assert.assertTrue(found);
+
+        var inRange = (boolean) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("break_.BreakFoo", "isWithinRange",
+                        List.of(3, 1, 5))
+        );
+        Assert.assertTrue(inRange);
     }
 
     private void processContinue() {

@@ -1345,11 +1345,11 @@ public class TranspileUtils {
     }
 
     public static boolean isBreakable(PsiElement element) {
-        return isLabeledBlock(element) || isLoop(element);
+        return isLabeledStatement(element) || isLoop(element);
     }
 
-    public static boolean isLabeledBlock(PsiElement element) {
-        return element instanceof PsiBlockStatement && element.getParent() instanceof PsiLabeledStatement;
+    public static boolean isLabeledStatement(PsiElement element) {
+        return element.getParent() instanceof PsiLabeledStatement;
     }
 
     public static boolean isBlockStatement(PsiElement element) {

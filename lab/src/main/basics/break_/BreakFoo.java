@@ -25,4 +25,13 @@ public class BreakFoo {
         return true;
     }
 
+    public static boolean isWithinRange(int v, int min, int max) {
+        out: if(v >= min) {
+            if(v >= max)
+                break out;
+            return true;
+        }
+        return false;
+    }
+
 }
