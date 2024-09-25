@@ -48,6 +48,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processMyCollection();
             processBreak();
             processContinue();
+            processDoWhile();
         });
     }
 
@@ -450,6 +451,18 @@ public class BasicCompilingTest extends CompilerTestBase {
                 List.of(List.of(1,1,2,2,3,3), 2)
         ));
         Assert.assertEquals(3L, index);
+    }
+
+    private void processDoWhile() {
+        var sum = (long) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("dowhile.DoWhileFoo", "sum", List.of(1, 5))
+        );
+        Assert.assertEquals(15L, sum);
+
+        var sum1 = (long) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("dowhile.DoWhileFoo", "sum", List.of(1, 1))
+        );
+        Assert.assertEquals(1L, sum1);
     }
 
 }

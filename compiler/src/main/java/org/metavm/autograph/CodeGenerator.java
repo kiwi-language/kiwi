@@ -29,6 +29,7 @@ public class CodeGenerator {
                 psiClass.accept(new ForeachTransformer());
                 resolveQnAndActivity(psiClass);
                 psiClass.accept(new ForTransformer());
+                psiClass.accept(new DoWhileTransformer());
                 resolveQnAndActivity(psiClass);
                 psiClass.accept(new BreakTransformer());
                 resolveQnAndActivity(psiClass);
