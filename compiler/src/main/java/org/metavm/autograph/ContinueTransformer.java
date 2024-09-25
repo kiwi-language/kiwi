@@ -1,6 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -11,6 +12,7 @@ import java.util.Set;
 
 import static org.metavm.util.NncUtils.requireNonNull;
 
+@Slf4j
 public class ContinueTransformer extends SkipDiscardedVisitor {
 
 //    private final NameTracker nameTracker = new NameTracker();
@@ -121,17 +123,6 @@ public class ContinueTransformer extends SkipDiscardedVisitor {
         }
     }
 
-    private List<PsiStatement> extractBody(@Nullable PsiStatement body) {
-        if (body == null) {
-            return List.of();
-        }
-        if (body instanceof PsiBlockStatement block) {
-            return List.of(block.getCodeBlock().getStatements());
-        } else {
-            return List.of(body);
-        }
-    }
-
     private void visitLoopBody(PsiStatement body, @Nullable String label) {
 //        if(body instanceof PsiCodeBlock) {
 //            nameTracker.enterBlock();
@@ -159,8 +150,8 @@ public class ContinueTransformer extends SkipDiscardedVisitor {
     }
 
     private PsiElement visitBlock(PsiStatement body) {
-        List<PsiStatement> statements = extractBody(body);
-        PsiBlockStatement result = (PsiBlockStatement) TranspileUtils.createStatementFromText("{}");
+        List<PsiStatement> statements = TranspileUtils.extractBody(body);
+        final PsiBlockStatement result = (PsiBlockStatement) TranspileUtils.createStatementFromText("{}");
         PsiCodeBlock dest = result.getCodeBlock();
         for (PsiStatement stmt : statements) {
             var block = currentBlockInfo();

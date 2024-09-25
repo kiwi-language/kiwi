@@ -48,7 +48,8 @@ public class ExpressionResolver {
             Map.entry(JavaTokenType.XOR, BinaryOperator.BITWISE_XOR),
             Map.entry(JavaTokenType.OR, BinaryOperator.BITWISE_OR),
             Map.entry(JavaTokenType.ANDAND, BinaryOperator.AND),
-            Map.entry(JavaTokenType.OROR, BinaryOperator.OR)
+            Map.entry(JavaTokenType.OROR, BinaryOperator.OR),
+            Map.entry(JavaTokenType.PERC, BinaryOperator.MOD)
     );
 
     public static final Set<IElementType> BOOL_OPS = Set.of(

@@ -46,6 +46,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processAnonymousClass();
             processClassObject();
             processMyCollection();
+            processBreak();
+            processContinue();
         });
     }
 
@@ -425,6 +427,23 @@ public class BasicCompilingTest extends CompilerTestBase {
         var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("mycollection.MyCollection<string>", Map.of()));
         var size = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "size", List.of()));
         Assert.assertEquals(0L, size);
+    }
+
+    private void processBreak() {
+        var found = (boolean) TestUtils.doInTransaction(
+                () -> apiClient.callMethod("break_.BreakFoo", "contains",
+                        List.of(List.of(List.of(1,2,3), List.of(4,5,6), List.of(7,8,9)), 5)
+                )
+        );
+        Assert.assertTrue(found);
+    }
+
+    private void processContinue() {
+        var index = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(
+                "continue_.ContinueFoo", "oddIndexOf",
+                List.of(List.of(1,1,2,2,3,3), 2)
+        ));
+        Assert.assertEquals(3L, index);
     }
 
 }

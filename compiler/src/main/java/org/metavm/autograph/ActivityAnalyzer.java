@@ -344,6 +344,13 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
         processStatement(statement);
     }
 
+    @Override
+    public void visitBlockStatement(PsiBlockStatement statement) {
+        enterScope();
+        super.visitBlockStatement(statement);
+        exitAndRecordScope(statement, BODY_SCOPE);
+    }
+
     private void trackSymbol(QnAndMode qnAndMode) {
         var qn = qnAndMode.qualifiedName();
         var mode = qnAndMode.accessMode();

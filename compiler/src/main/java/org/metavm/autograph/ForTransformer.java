@@ -1,18 +1,19 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.util.NncUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import javax.annotation.Nullable;
+import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 public class ForTransformer extends SkipDiscardedVisitor {
 
     private final Map<String, String> variableMap = new HashMap<>();
+    private LoopInfo currentLoop;
 
     @Override
     public void visitForStatement(PsiForStatement statement) {
@@ -36,21 +37,27 @@ public class ForTransformer extends SkipDiscardedVisitor {
             } else {
                 List<PsiStatement> initStmts = tryBreakupStatements(init);
                 for (PsiStatement initStmt : initStmts) {
-                    insertBefore(initStmt, statement);
+                    if(!(initStmt instanceof PsiEmptyStatement))
+                        insertBefore(initStmt, statement);
                 }
             }
         }
+        var loopInfo = enterLoop(statement);
+        variableMap.putAll(curVariableMap);
+        statement.accept(new RenameVisitor());
+        variableMap.keySet().removeAll(curVariableMap.keySet());
+        List<PsiStatement> updateStmts = statement.getUpdate() != null ?
+                tryBreakupStatements(statement.getUpdate()) : List.of();
+        loopInfo.updateStatements.addAll(updateStmts);
         variableMap.putAll(curVariableMap);
         super.visitForStatement(statement);
         variableMap.keySet().removeAll(curVariableMap.keySet());
+        exitLoop();
         PsiBlockStatement body = statement.getBody() != null ?
                 convertToBlockStatement((PsiStatement) statement.getBody().copy())
                 : (PsiBlockStatement) TranspileUtils.createStatementFromText("{}");
-        if (statement.getUpdate() != null) {
-            List<PsiStatement> updateStmts = tryBreakupStatements(statement.getUpdate());
-            for (PsiStatement updateStmt : updateStmts) {
-                body.getCodeBlock().add(updateStmt);
-            }
+        for (PsiStatement updateStmt : updateStmts) {
+            body.getCodeBlock().add(updateStmt);
         }
         String condText = statement.getCondition() != null ? statement.getCondition().getText() : "true";
         PsiWhileStatement whileStmt =
@@ -71,20 +78,100 @@ public class ForTransformer extends SkipDiscardedVisitor {
             if (!statement.getText().trim().endsWith(";")) {
                 return List.of(TranspileUtils.createStatementFromText(statement.getText() + ";"));
             } else {
-                return List.of(statement);
+                return List.of((PsiStatement) statement.copy());
             }
         }
     }
 
     @Override
-    public void visitReferenceExpression(PsiReferenceExpression expression) {
-        super.visitReferenceExpression(expression);
-        var target = expression.resolve();
-        if (target instanceof PsiLocalVariable variable) {
-            var newName = variableMap.get(variable.getName());
-            if (newName != null) {
-                expression.handleElementRename(newName);
-            }
+    public void visitDoWhileStatement(PsiDoWhileStatement statement) {
+        enterLoop(statement);
+        super.visitDoWhileStatement(statement);
+        exitLoop();
+    }
+
+    @Override
+    public void visitForeachStatement(PsiForeachStatement statement) {
+        enterLoop(statement);
+        super.visitForeachStatement(statement);
+        exitLoop();
+    }
+
+    @Override
+    public void visitWhileStatement(PsiWhileStatement statement) {
+        enterLoop(statement);
+        super.visitWhileStatement(statement);
+        exitLoop();
+    }
+
+    @Override
+    public void visitContinueStatement(PsiContinueStatement statement) {
+        super.visitContinueStatement(statement);
+        var label = NncUtils.get(statement.getLabelIdentifier(), PsiElement::getText);
+        var loopInfo = currentLoop();
+        while (loopInfo != null && !loopInfo.matchLabel(label)) {
+            loopInfo = loopInfo.parent;
+        }
+        Objects.requireNonNull(loopInfo, "Cannot find continued loop");
+        for (PsiStatement updateStatement : loopInfo.updateStatements) {
+            insertBefore(updateStatement, statement);
         }
     }
+
+    private LoopInfo enterLoop(PsiStatement statement) {
+        return currentLoop = new LoopInfo(statement, currentLoop);
+    }
+
+    private void exitLoop() {
+        currentLoop = requireNonNull(currentLoop).parent;
+    }
+
+    private LoopInfo currentLoop() {
+        return Objects.requireNonNull(currentLoop);
+    }
+
+    private static class LoopInfo {
+        final @Nullable LoopInfo parent;
+        final PsiStatement statement;
+        final @Nullable String label;
+        private final List<PsiStatement> updateStatements = new ArrayList<>();
+
+        private LoopInfo(PsiStatement statement, @Nullable LoopInfo parent) {
+            this.statement = statement;
+            this.parent = parent;
+            this.label = TranspileUtils.getLabel(statement);
+        }
+
+        boolean matchLabel(@Nullable String label) {
+            return label == null || Objects.equals(this.label, label);
+        }
+
+        boolean hasEnclosingForLoop() {
+            var p = parent;
+            while (p != null) {
+                if(p.statement instanceof PsiForStatement)
+                    return true;
+                p = p.parent;
+            }
+            return false;
+        }
+
+    }
+
+    private class RenameVisitor extends VisitorBase {
+
+        @Override
+        public void visitReferenceExpression(PsiReferenceExpression expression) {
+            super.visitReferenceExpression(expression);
+            var target = expression.resolve();
+            if (target instanceof PsiLocalVariable variable) {
+                var newName = variableMap.get(variable.getName());
+                if (newName != null) {
+                    expression.handleElementRename(newName);
+                }
+            }
+        }
+
+    }
+
 }

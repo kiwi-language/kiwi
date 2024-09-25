@@ -18,7 +18,6 @@ public class TypeLiteralExpression extends Expression {
 
     public TypeLiteralExpression(Type type) {
         this.type = type;
-        log.debug("Creating type literal expression for type: {}", type.getTypeDesc());
     }
 
     @Override

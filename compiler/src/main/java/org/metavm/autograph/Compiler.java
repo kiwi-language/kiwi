@@ -42,7 +42,10 @@ public class Compiler {
     public static final List<CompileStage> prepareStages = List.of(
             new CompileStage(
                     file -> true,
-                    file -> file.accept(new RawTypeTransformer())
+                    file -> {
+                        file.accept(new BodyNormalizer());
+                        file.accept(new RawTypeTransformer());
+                    }
             ),
             new CompileStage(
                     file -> true,

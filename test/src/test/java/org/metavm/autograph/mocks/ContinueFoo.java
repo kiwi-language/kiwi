@@ -25,4 +25,16 @@ public class ContinueFoo {
         return numAllMatchProducts > 1 ? discount + 10 : discount;
     }
 
+    public int testFor(int[] a, int b) {
+        for (int i = 0; i < a.length; i++) {
+            if(i % 2 == 0)
+                continue;
+            if(a[i] == b)
+                return i;
+            if(i > 100)
+                break;
+        }
+        return -1;
+    }
+
 }

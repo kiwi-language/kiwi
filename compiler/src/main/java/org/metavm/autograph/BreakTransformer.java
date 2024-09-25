@@ -1,25 +1,21 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static org.metavm.util.NncUtils.requireNonNull;
 
+@Slf4j
 public class BreakTransformer extends SkipDiscardedVisitor {
 
-    private LoopInfo loopInfo;
+    private BlockInfo blockInfo;
 
-//    private final NameTracker nameTracker = new NameTracker();
-
-    private void defineBreakVar(PsiStatement statement) {
-        var loop = currentLoopInfo();
-        var breakVarDecl = TranspileUtils.createStatementFromText("boolean " + loop.breakVar + " = false;");
-        insertBefore(breakVarDecl, statement);
+    private PsiStatement defineBreakVar() {
+        return TranspileUtils.createStatementFromText("boolean " + currentLoopInfo().getBreakVar() + " = false;");
     }
 
     @Override
@@ -29,10 +25,11 @@ public class BreakTransformer extends SkipDiscardedVisitor {
         if (body != null) {
             body.accept(this);
             if (loop.breakUsed) {
-                defineBreakVar(statement);
+                var breakVarDecl = defineBreakVar();
                 String text = EXTRA_LOOP_TEST + "(" + loop.getConditionText() + ");";
                 var noop = TranspileUtils.createStatementFromText(text);
                 prependBody(body, noop);
+                replace(statement, TranspileUtils.createBlockStatement(breakVarDecl, statement));
             }
         }
         exitLoop();
@@ -44,10 +41,11 @@ public class BreakTransformer extends SkipDiscardedVisitor {
         if(statement.getBody() != null) {
             statement.getBody().accept(this);
             if(loop.breakUsed) {
-                defineBreakVar(statement);
+                var breakVarDecl = defineBreakVar();
                 var cond = TranspileUtils.createExpressionFromText(loop.getConditionText());
                 var currentCond = requireNonNull(statement.getCondition());
                 currentCond.replace(TranspileUtils.and(currentCond, cond));
+                replace(statement, TranspileUtils.createBlockStatement(breakVarDecl, statement));
             }
         }
         exitLoop();
@@ -59,46 +57,43 @@ public class BreakTransformer extends SkipDiscardedVisitor {
         if(statement.getBody() != null) {
             statement.getBody().accept(this);
             if(loop.breakUsed) {
-                defineBreakVar(statement);
+                var breakVarDecl = defineBreakVar();
                 var cond = TranspileUtils.createExpressionFromText(loop.getConditionText());
                 TranspileUtils.replaceForCondition(statement, cond);
+                replace(statement, TranspileUtils.createBlockStatement(breakVarDecl, statement));
             }
         }
         exitLoop();
     }
 
-    private LoopInfo currentLoopInfo() {
-        return requireNonNull(loopInfo);
+    private BlockInfo currentLoopInfo() {
+        return requireNonNull(blockInfo);
     }
 
-    private LoopInfo enterLoop(PsiStatement element) {
+    private BlockInfo enterLoop(PsiStatement element) {
         var scope = requireNonNull(element.getUserData(Keys.BODY_SCOPE));
-        return loopInfo = new LoopInfo(element, loopInfo, namer.newName("break_", scope.getAllDefined()));
+        var breakVar = TranspileUtils.isBreakable(element) ?
+                namer.newName("break_", scope.getAllDefined()) : null;
+        return blockInfo = new BlockInfo(element, blockInfo, breakVar);
     }
 
     private void exitLoop() {
-        loopInfo = currentLoopInfo().parent;
+        blockInfo = currentLoopInfo().parent;
     }
 
     @Override
     public void visitBreakStatement(PsiBreakStatement statement) {
         String label = NncUtils.get(statement.getLabelIdentifier(), PsiElement::getText);
         var loop = currentLoopInfo();
+        do {
+            loop.breakUsed = true;
+            loop = loop.parent;
+        } while (loop != null && !loop.matchLabel(label));
+        requireNonNull(loop, "Can not find an enclosing loop with label '" + label + "'");
         loop.breakUsed = true;
-        if (label != null) {
-            while (loop != null && !Objects.equals(loop.label, label)) {
-                loop = loop.parent;
-                if (loop != null) {
-                    loop.breakUsed = true;
-                }
-            }
-            requireNonNull(loop, "Can not find an enclosing loop with label '" + label + "'");
-        }
-        String text = loop.breakVar + " = true;";
-        var replacement = replace(statement, TranspileUtils.createStatementFromText(text));
-        String continueText = "continue" + (label != null ? " " + label : "") + ";";
-        var continueStmt = TranspileUtils.createStatementFromText(continueText);
-        insertAfter(continueStmt, (PsiStatement) replacement);
+        currentLoopInfo().useBreak(loop.getBreakVar(), label);
+        String text = loop.getBreakVar() + " = true;";
+        replace(statement, TranspileUtils.createStatementFromText(text));
     }
 
     @SuppressWarnings("unused")
@@ -112,15 +107,74 @@ public class BreakTransformer extends SkipDiscardedVisitor {
         return -1;
     }
 
-    private static class LoopInfo {
+    @Override
+    public void visitBlockStatement(PsiBlockStatement statement) {
+        var loop = enterLoop(statement);
+        statement = (PsiBlockStatement) replace(statement, visitBlock(statement));
+        if (loop.isBreakable() && loop.breakUsed) {
+            statement.getCodeBlock().addAfter(defineBreakVar(), null);
+        }
+        exitLoop();
+    }
+
+    @Override
+    public void visitIfStatement(PsiIfStatement statement) {
+        if(statement.getThenBranch() != null)
+            visitNonLoopBody(statement, statement.getThenBranch());
+        if(statement.getElseBranch() != null)
+            visitNonLoopBody(statement, statement.getElseBranch());
+    }
+
+    private void visitNonLoopBody(PsiStatement statement, PsiStatement body) {
+        enterLoop(statement);
+        replace(body, visitBlock(body));
+        exitLoop();
+    }
+
+    private PsiElement visitBlock(PsiStatement body) {
+        List<PsiStatement> statements = TranspileUtils.extractBody(body);
+        PsiBlockStatement result = (PsiBlockStatement) TranspileUtils.createStatementFromText("{}");
+        PsiCodeBlock dest = result.getCodeBlock();
+        for (PsiStatement stmt : statements) {
+            var block = currentLoopInfo();
+            boolean breakUsed = block.isBreakUsed();
+            String cond = block.getConditionTextForUsedBreaks();
+            block.clearUsedBreaks();
+            stmt.accept(this);
+            stmt = (PsiStatement) getReplacement(stmt);
+            if (breakUsed) {
+                String text = "if (" + cond + ") {}";
+                PsiIfStatement ifStmt = (PsiIfStatement) TranspileUtils.createStatementFromText(text);
+                ifStmt = (PsiIfStatement) replace(stmt, ifStmt);
+                ifStmt = (PsiIfStatement) dest.add(ifStmt);
+                dest = ((PsiBlockStatement) requireNonNull(ifStmt.getThenBranch())).getCodeBlock();
+                dest.add(stmt.copy());
+            } else {
+                try {
+                    dest.add(stmt);
+                }
+                catch (Exception e) {
+                    log.debug("Target element: {}, parent: {}", stmt.getText(), stmt.getParent());
+                    throw e;
+                }
+            }
+        }
+        return result;
+    }
+
+    private static class BlockInfo {
 
         @Nullable
-        final LoopInfo parent;
+        final BlockInfo parent;
         final String label;
         boolean breakUsed;
-        final String breakVar;
+        final @Nullable String breakVar;
+        final PsiElement element;
+        final Set<String> usedBreaks = new HashSet<>();
+        final boolean breakable;
 
-        private LoopInfo(PsiElement element, @Nullable LoopInfo parent, String breakVar) {
+        private BlockInfo(PsiElement element, @Nullable BlockInfo parent, @Nullable String breakVar) {
+            this.element = element;
             this.parent = parent;
             if (element.getParent() instanceof PsiLabeledStatement labeledStatement) {
                 label = labeledStatement.getLabelIdentifier().getText();
@@ -128,21 +182,62 @@ public class BreakTransformer extends SkipDiscardedVisitor {
                 label = null;
             }
             this.breakVar = breakVar;
+            breakable = TranspileUtils.isBreakable(element);
         }
 
-        List<LoopInfo> allEnclosingLoops() {
-            List<LoopInfo> loops = new ArrayList<>();
-            LoopInfo loop = this;
+        List<BlockInfo> allEnclosingLoops() {
+            List<BlockInfo> loops = new ArrayList<>();
+            BlockInfo loop = this;
             while (loop != null) {
-                loops.add(loop);
+                if(loop.isBreakable())
+                    loops.add(loop);
                 loop = loop.parent;
             }
             return loops;
         }
 
+        void useBreak(String variable, @Nullable String label) {
+            var block = this;
+            while (block != null) {
+                block.usedBreaks.add(variable);
+                if (block.isBreakable() && block.matchLabel(label)) {
+                    break;
+                }
+                block = block.parent;
+            }
+        }
+
+        private boolean matchLabel(String label) {
+            return label == null ? isLoop() : Objects.equals(this.label, label);
+        }
+
+        String getBreakVar() {
+            return Objects.requireNonNull(breakVar, () -> "Element " + element.getText() + " is not breakable");
+        }
+
+        boolean isBreakUsed() {
+            return !usedBreaks.isEmpty();
+        }
+
+        void clearUsedBreaks() {
+            usedBreaks.clear();
+        }
+
+        String getConditionTextForUsedBreaks() {
+            return NncUtils.join(usedBreaks, v -> "!" + v, " && ");
+        }
+
         String getConditionText() {
             var loops = allEnclosingLoops();
-            return NncUtils.join(loops, l -> "!" + l.breakVar, " && ");
+            return NncUtils.join(loops, l -> "!" + l.getBreakVar(), " && ");
+        }
+
+        boolean isBreakable() {
+            return breakable;
+        }
+
+        boolean isLoop() {
+            return TranspileUtils.isLoop(element);
         }
 
     }

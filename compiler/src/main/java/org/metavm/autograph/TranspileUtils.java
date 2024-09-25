@@ -529,6 +529,22 @@ public class TranspileUtils {
         );
     }
 
+    public static List<PsiStatement> extractBody(@Nullable PsiStatement body) {
+        if (body == null) {
+            return List.of();
+        }
+        if (body instanceof PsiBlockStatement block) {
+            return List.of(block.getCodeBlock().getStatements());
+        } else {
+            return List.of(body);
+        }
+    }
+
+    public static PsiStatement getLastBodyStatement(PsiLoopStatement loopStatement) {
+        var body = extractBody(loopStatement.getBody());
+        return body.get(body.size() - 1);
+    }
+
     private static class UpwardsClassVisitor extends JavaElementVisitor {
 
         @Override
@@ -1292,13 +1308,13 @@ public class TranspileUtils {
     public static void printContexts(PsiElement element) {
         PsiElement e = element;
         do {
-            printElement(e);
+            logger.debug("{}", getElementDesc(e));
             e = e.getParent();
         } while (e != null);
     }
 
-    public static void printElement(PsiElement element) {
-        var s = switch (element) {
+    public static String getElementDesc(PsiElement element) {
+        return switch (element) {
             case PsiJavaFile file -> "file: "+ file.getName();
             case PsiClass psiClass -> "class: " + psiClass.getQualifiedName();
             case PsiMethod method -> "method: " + method.getName();
@@ -1306,10 +1322,48 @@ public class TranspileUtils {
             case PsiForStatement forStatement -> "<for statement>";
             case PsiWhileStatement whileStatement -> "<while statement>";
             case PsiDoWhileStatement doWhileStatement -> "<do-while statement>";
+            case PsiIfStatement ifStatement -> "<if statement>";
             case PsiCodeBlock codeBlock -> "<code block>";
             default -> element.getText();
         };
-        logger.debug("{}", s);
+    }
+
+    public static PsiBlockStatement createBlockStatement(PsiStatement...statements) {
+        var blockStmt = (PsiBlockStatement) createStatementFromText("{}");
+        var block = blockStmt.getCodeBlock();
+        for (PsiStatement statement : statements) {
+            block.add(statement);
+        }
+        return blockStmt;
+    }
+
+    public static boolean isLoop(PsiElement element) {
+        return element instanceof PsiForStatement
+                || element instanceof PsiForeachStatement
+                || element instanceof PsiWhileStatement
+                || element instanceof PsiDoWhileStatement;
+    }
+
+    public static boolean isBreakable(PsiElement element) {
+        return isLabeledBlock(element) || isLoop(element);
+    }
+
+    public static boolean isLabeledBlock(PsiElement element) {
+        return element instanceof PsiBlockStatement && element.getParent() instanceof PsiLabeledStatement;
+    }
+
+    public static boolean isBlockStatement(PsiElement element) {
+        return element instanceof PsiSwitchStatement || element instanceof PsiSwitchExpression
+                || element instanceof PsiIfStatement || isLoop(element);
+    }
+
+    public static boolean isBlockStatementBody(PsiElement element) {
+        return element instanceof PsiBlockStatement && isBlockStatement(element.getParent());
+    }
+
+    public static @Nullable String getLabel(PsiStatement statement) {
+        return statement.getParent() instanceof PsiLabeledStatement labeledStatement ?
+                labeledStatement.getLabelIdentifier().getText() : null;
     }
 
 }
