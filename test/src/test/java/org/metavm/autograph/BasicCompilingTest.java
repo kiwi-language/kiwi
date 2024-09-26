@@ -44,6 +44,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processLambda();
             processTemplateMethod();
             processAnonymousClass();
+            processInnerWithinStatic();
             processClassObject();
             processMyCollection();
             processBreak();
@@ -395,7 +396,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processAnonymousClass() {
         var id = TestUtils.doInTransaction(() ->
-                apiClient.saveInstance("anonymousclass.AnonymousClassFoo",
+                apiClient.saveInstance("anonymousclass.AnonymousClassFoo<string, any>",
                         Map.of(
                                 "entries", List.of(
                                         Map.of(
@@ -415,6 +416,13 @@ public class BasicCompilingTest extends CompilerTestBase {
         );
         var r = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "concatKeys", List.of()));
         Assert.assertEquals("name,age,height", r);
+    }
+
+    private void processInnerWithinStatic() {
+        var r = (boolean) TestUtils.doInTransaction(
+                () -> apiClient.callMethod("innerclass.InnerWithinStatic<any>", "test", List.of())
+        );
+        Assert.assertFalse(r);
     }
 
     private void processClassObject() {

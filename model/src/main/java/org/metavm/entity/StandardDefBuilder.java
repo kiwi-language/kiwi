@@ -163,6 +163,7 @@ public class StandardDefBuilder {
         createExceptionKlass(UnsupportedOperationException.class, runtimeExceptionKlass);
         createExceptionKlass(ConcurrentModificationException.class, runtimeExceptionKlass);
         createExceptionKlass(ClassCastException.class, runtimeExceptionKlass);
+        createExceptionKlass(NoSuchElementException.class, runtimeExceptionKlass);
 
         consumerKlass = createConsumerKlass();
         predicateKlass = createPredicateKlass();

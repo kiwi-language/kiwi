@@ -7,18 +7,18 @@ import org.metavm.api.ChildList;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public record AnonymousClassFoo(@ChildEntity ChildList<Entry> entries) {
+public record AnonymousClassFoo<K,V>(@ChildEntity ChildList<Entry<K,V>> entries) {
 
-    public Iterable<String> keysSnapshot() {
+    public Iterable<K> keysSnapshot() {
         var a0 = new ArrayList<>(entries);
-        return new Iterable<>() {
+        return new Iterable<K>() {
 
             @NotNull
             @Override
-            public Iterator<String> iterator() {
+            public Iterator<K> iterator() {
                 return new Iterator<>() {
 
-                    private final Iterator<Entry> i = a0.iterator();
+                    private final Iterator<Entry<K,V>> i = a0.iterator();
 
                     @Override
                     public boolean hasNext() {
@@ -26,7 +26,7 @@ public record AnonymousClassFoo(@ChildEntity ChildList<Entry> entries) {
                     }
 
                     @Override
-                    public String next() {
+                    public K next() {
                         return i.next().key();
                     }
                 };
@@ -46,7 +46,7 @@ public record AnonymousClassFoo(@ChildEntity ChildList<Entry> entries) {
         return r;
     }
 
-    public record Entry(String key, Object value) {
+    public record Entry<K,V>(K key, V value) {
     }
 
 }

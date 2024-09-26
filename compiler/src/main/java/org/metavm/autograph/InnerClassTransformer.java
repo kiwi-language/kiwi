@@ -58,6 +58,8 @@ public class InnerClassTransformer extends VisitorBase {
                             null
                     );
                 }
+                if(TranspileUtils.isStatic(outerClass))
+                    break;
                 outerClass = outerClass.getContainingClass();
             }
             Objects.requireNonNull(psiClass.getModifierList()).setModifierProperty(PsiModifier.STATIC, true);

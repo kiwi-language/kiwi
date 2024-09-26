@@ -426,7 +426,9 @@ public class Generator extends CodeGenVisitor {
     }
 
     private static boolean isSuperCallPresent(PsiMethod method) {
-        var stmts = requireNonNull(method.getBody()).getStatements();
+        var stmts = requireNonNull(method.getBody(),
+                () -> "Failed to get body of method " + TranspileUtils.getMethodQualifiedName(method))
+                .getStatements();
         boolean requireSuperCall = false;
         if (stmts.length > 0) {
             if (stmts[0] instanceof PsiExpressionStatement exprStmt &&
