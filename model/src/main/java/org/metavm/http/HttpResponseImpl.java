@@ -8,6 +8,7 @@ import org.metavm.api.entity.HttpResponse;
 import org.metavm.entity.Entity;
 import org.metavm.entity.ReadWriteArray;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 @EntityType(ephemeral = true, isNative = true)
@@ -32,11 +33,13 @@ public class HttpResponseImpl extends Entity implements HttpResponse {
     }
 
     @Override
+    @Nonnull
     public List<HttpCookie> getCookies() {
         return cookies.toList();
     }
 
     @Override
+    @Nonnull
     public List<HttpHeader> getHeaders() {
         return headers.toList();
     }

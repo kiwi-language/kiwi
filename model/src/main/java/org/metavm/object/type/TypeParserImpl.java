@@ -135,6 +135,8 @@ public class TypeParserImpl implements TypeParser {
     }
 
     private Type parseType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
+        if(ctx.parType() != null)
+            return parseType(ctx.parType().type());
         if (ctx.primitiveType() != null)
             return parsePrimitiveType(ctx.primitiveType());
         if (ctx.ANY() != null)

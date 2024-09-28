@@ -23,7 +23,7 @@ public enum ErrorCode {
     INVALID_TYPE_PATH(307, "Invalid path: {}"),
     STATIC_FIELD_CAN_NOT_BE_NULL(308, "Static field '{}' cannot be null"),
     TOO_MANY_FIELDS(309, "Field limit exceeded"),
-    OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES(209, "Cannot change parameter count or types in overriding flow"),
+    OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES(209, "Cannot change parameter count or types in overriding flow {}"),
     ORDINAL_OUT_OF_BOUND(310, "Attribute sequence number out of range"),
     CAN_NOT_ASSIGN_CHILD_FIELD(311, "Cannot update child object field"),
     INVALID_CODE(312, "Invalid code '{}', please follow the naming convention"),

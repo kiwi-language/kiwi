@@ -25,6 +25,8 @@ public interface TypeResolver {
 
     Field resolveField(PsiField field);
 
+    Type resolveNullable(PsiType psiType, ResolutionStage stage);
+
     PsiCapturedWildcardType getPsiCapturedType(CapturedType capturedType);
 
     boolean isBuiltinClass(PsiClass klass);

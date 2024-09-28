@@ -3,6 +3,7 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
+import org.metavm.entity.CopyIgnore;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
@@ -33,6 +34,9 @@ public class MethodRef extends FlowRef implements PropertyRef {
     }
 
     private final ClassType declaringType;
+    @CopyIgnore
+    protected transient Method partialResolved;
+
 
     public MethodRef(ClassType declaringType, @NotNull Method rawFlow, List<Type> typeArguments) {
         super(rawFlow, typeArguments);
@@ -48,21 +52,32 @@ public class MethodRef extends FlowRef implements PropertyRef {
         return (Method) super.getRawFlow();
     }
 
+    private Method partialResolve() {
+        if(partialResolved != null)
+            return partialResolved;
+        var klass = declaringType.resolve();
+        partialResolved = klass.findMethod(m -> m.getEffectiveVerticalTemplate() == getRawFlow());
+        if (partialResolved == null) {
+            log.debug("All methods in klass {}", klass.getTypeDesc());
+            klass.forEachMethod(m -> log.info(m.getQualifiedSignature()));
+            throw new InternalException("fail to resolve methodRef: " + this);
+        }
+        return partialResolved;
+    }
+
     @Override
     public Method resolve() {
         if(resolved != null) {
             return (Method) resolved;
         }
-        var klass = declaringType.resolve();
-        var partialResolved = klass.findMethod(m -> m.getEffectiveVerticalTemplate() == getRawFlow());
-        if (partialResolved == null) {
-            log.info("all methods in klass");
-            klass.forEachMethod(m -> log.info(m.getQualifiedSignature()));
-            throw new InternalException("fail to resolve methodRef: " + this);
-        }
-        var r =  partialResolved.getParameterized(getTypeArguments());
+        var r =  partialResolve().getParameterized(getTypeArguments());
         resolved = r;
         return r;
+    }
+
+    @Override
+    public List<Type> getTypeArguments() {
+        return typeArguments.isEmpty() ? partialResolve().getTypeArguments() : typeArguments.toList();
     }
 
     @Override

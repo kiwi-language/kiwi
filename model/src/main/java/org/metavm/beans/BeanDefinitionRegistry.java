@@ -98,7 +98,7 @@ public class BeanDefinitionRegistry extends Entity {
                     throw new InternalException("Bean " + beanName + " is not of type " + parameter.getType());
                 continue;
             }
-            if (parameter.getType() instanceof ClassType paramType) {
+            if (parameter.getType().getUnderlyingType() instanceof ClassType paramType) {
                 if (paramType.isList()) {
                     if(paramType.getFirstTypeArgument() instanceof ClassType beanType)
                         arguments.add(Instances.createList(paramType, NncUtils.map(getBeansOfType(beanType), Instance::getReference)).getReference());
@@ -128,7 +128,7 @@ public class BeanDefinitionRegistry extends Entity {
             var beanName = parameter.getAttribute(AttributeNames.BEAN_NAME);
             if (beanName != null)
                 return List.of(getBeanDefinition(beanName));
-            var type = parameter.getType();
+            var type = parameter.getType().getUnderlyingType();
             if(type instanceof ClassType classType) {
                 if (classType.isList()) {
                     if(classType.getFirstTypeArgument() instanceof ClassType elementType)

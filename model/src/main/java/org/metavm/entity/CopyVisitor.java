@@ -2,15 +2,13 @@ package org.metavm.entity;
 
 import org.metavm.api.ValueObject;
 import org.metavm.object.type.Klass;
-import org.metavm.util.IdentitySet;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
-import org.metavm.util.ReflectionUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.LinkedList;
 import java.util.function.Consumer;
 
 public class CopyVisitor extends ElementVisitor<Element> {

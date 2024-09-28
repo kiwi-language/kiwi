@@ -122,6 +122,19 @@ public class MethodGenerator {
         );
     }
 
+    NonNullNode createNonNull(String name, Expression expression) {
+        return setNodeExprTypes(new NonNullNode(
+                        null,
+                        nextName(name),
+                        null,
+                        Types.getNonNullType(getExpressionType(expression)),
+                        scope().getLastNode(),
+                        scope(),
+                        Values.expression(expression)
+                )
+        );
+    }
+
     TargetNode createTarget() {
         return new TargetNode(null, nextName("target"), null, scope().getLastNode(), scope());
     }

@@ -10,6 +10,7 @@ import org.metavm.api.builtin.Password;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
+import org.metavm.flow.Method;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -118,7 +119,15 @@ public class TypeResolverImpl implements TypeResolver {
         return resolve(psiType, DEFINITION);
     }
 
-    @SuppressWarnings("UnstableApiUsage")
+    @Override
+    public Type resolveNullable(PsiType psiType, ResolutionStage stage) {
+        var type = resolve(psiType, stage);
+        if(!(psiType instanceof PsiPrimitiveType))
+            type = Types.getNullableType(type);
+        return type;
+    }
+
+        @SuppressWarnings("UnstableApiUsage")
     public Type resolve(PsiType psiType, ResolutionStage stage) {
         return switch (psiType) {
             case PsiPrimitiveType primitiveType -> {
@@ -140,7 +149,10 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private ArrayType resolveArrayType(PsiArrayType psiArrayType, ResolutionStage stage) {
-        return new ArrayType(resolve(psiArrayType.getComponentType(), stage), ArrayKind.READ_WRITE);
+        return new ArrayType(
+                resolveNullable(psiArrayType.getComponentType(), stage),
+                ArrayKind.READ_WRITE
+        );
     }
 
     private IntersectionType resolveIntersectionType(PsiIntersectionType psiIntersectionType, ResolutionStage stage) {
@@ -230,7 +242,10 @@ public class TypeResolverImpl implements TypeResolver {
                     var typeArgs = new ArrayList<Type>();
                     for (int i = 0; i < classType.getParameterCount(); i++) {
                         typeArgs.add(
-                                adjustTypeArgument(klass.getTypeParameters().get(i), resolveTypeOnly(classType.getParameters()[i]))
+                                adjustTypeArgument(
+                                        klass.getTypeParameters().get(i),
+                                        resolveTypeOnly(classType.getParameters()[i])
+                                )
                         );
                     }
                     return klass.getParameterized(typeArgs, stage).getType();
@@ -295,9 +310,16 @@ public class TypeResolverImpl implements TypeResolver {
             var builtinKlass = tryResolveBuiltinClass(TranspileUtils.createType(psiClass));
             if (builtinKlass != null) {
                 var internalName = TranspileUtils.getInternalName(method);
-                return NncUtils.findRequired(builtinKlass.getMethods(), m ->
-                                m.getInternalName(null).equals(internalName),
-                        () -> "Can not find method " + internalName + " in class " + builtinKlass.getTypeDesc());
+                var found =  NncUtils.find(builtinKlass.getMethods(), m ->
+                                m.getInternalName(null).equals(internalName));
+//                        () -> "Can not find method " + internalName + " in class " + builtinKlass.getTypeDesc());
+                if(found == null) {
+                    for (Method m : builtinKlass.getMethods()) {
+                        logger.debug("Method: {}", m.getInternalName(null));
+                    }
+                    throw new NullPointerException("Can not find method " + internalName + " in class " + builtinKlass.getTypeDesc());
+                }
+                return found;
             }
             return method.getUserData(Keys.Method);
         }

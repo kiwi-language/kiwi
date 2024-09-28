@@ -23,6 +23,12 @@ public interface TypeParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitType(TypeParser.TypeContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link TypeParser#parType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitParType(TypeParser.ParTypeContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link TypeParser#genericDeclarationRef}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

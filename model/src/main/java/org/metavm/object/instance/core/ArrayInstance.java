@@ -95,18 +95,18 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
         var elements = this.elements;
         int size = 0;
         for (Value element : elements) {
-            if (!element.shouldSkipWrite())
+            if (element.isNull() || !element.shouldSkipWrite())
                 size++;
         }
         output.writeInt(size);
         if (isChildArray()) {
             for (Value element : elements) {
-                if (!element.shouldSkipWrite())
+                if (element.isNull() || !element.shouldSkipWrite())
                     output.writeInstance(element);
             }
         } else {
             for (Value element : elements) {
-                if (!element.shouldSkipWrite()) {
+                if (element.isNull() || !element.shouldSkipWrite()) {
                     output.writeValue(element);
                 }
             }

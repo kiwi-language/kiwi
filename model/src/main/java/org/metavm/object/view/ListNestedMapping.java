@@ -6,10 +6,7 @@ import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.FieldBuilder;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -61,7 +58,7 @@ public class ListNestedMapping extends NestedMapping {
                     var getTargetElement = elementNestedMapping.generateMappingCode(getElement,
                             bodyScope);
                     var addMethod = targetKlass.getMethodByCodeAndParamTypes("add", List.of(
-                            targetType.getFirstTypeArgument()
+                            Types.getNullableType(targetType.getFirstTypeArgument())
                     ));
                     Nodes.methodCall(
                             scope.nextNodeName("add"),
@@ -135,7 +132,8 @@ public class ListNestedMapping extends NestedMapping {
                 scope.nextNodeName("iterate"), getView,
                 (bodyScope, getElement, getIndex) -> {
                     var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
-                    var addMethod = sourceKlass.getMethodByCodeAndParamTypes("add", List.of(sourceType.getFirstTypeArgument()));
+                    var addMethod = sourceKlass.getMethodByCodeAndParamTypes("add",
+                            List.of(Types.getNullableType(sourceType.getFirstTypeArgument())));
                     Nodes.methodCall(
                             scope.nextNodeName("addElement"),
                             bodyScope,

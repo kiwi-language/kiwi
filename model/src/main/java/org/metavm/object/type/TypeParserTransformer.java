@@ -22,6 +22,13 @@ public class TypeParserTransformer extends AbstractParseTreeTransformer implemen
     }
 
     @Override
+    public ParseTree visitParType(TypeParser.ParTypeContext ctx) {
+        var transformed = new TypeParser.ParTypeContext(getCurrent(), ctx.invokingState);
+        transformChildren(ctx, transformed);
+        return transformed;
+    }
+
+    @Override
     public TypeParser.GenericDeclarationRefContext visitGenericDeclarationRef(TypeParser.GenericDeclarationRefContext ctx) {
         var transformed = new TypeParser.GenericDeclarationRefContext(getCurrent(), ctx.invokingState);
         transformChildren(ctx, transformed);

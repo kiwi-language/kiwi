@@ -37,7 +37,47 @@ public class Types {
     }
 
     public static Type getViewType(Type sourceType, UnionType viewUnionType) {
-        return NncUtils.findRequired(viewUnionType.getMembers(), sourceType::isViewType);
+        return NncUtils.findRequired(viewUnionType.getMembers(), sourceType::isViewType,
+                () -> "Cannot find view type of " + sourceType + " from union type " + viewUnionType);
+    }
+
+    public static boolean isViewType(Type sourceType, Type targetType) {
+        return switch (sourceType) {
+            case UnionType unionType ->
+                targetType instanceof UnionType that && isViewTypes(unionType.getMembers(), that.getMembers());
+            case IntersectionType intersectionType ->
+                    targetType instanceof IntersectionType that && isViewTypes(intersectionType.getTypes(), that.getTypes());
+            case ArrayType arrayType ->
+                    targetType instanceof ArrayType that && isViewType(arrayType.getElementType(), that.getElementType());
+            case ClassType classType -> {
+                if(targetType instanceof ClassType that) {
+                    var sourceListType = classType.resolve().findAncestorByTemplate(StdKlass.list.get());
+                    var targetListType = that.resolve().findAncestorByTemplate(StdKlass.list.get());
+                    if(sourceListType != null && targetListType != null)
+                        yield isViewType(sourceListType.getFirstTypeArgument(), targetListType.getFirstTypeArgument());
+                    else
+                        yield classType.resolve().isViewType(that);
+                }
+                else
+                    yield false;
+            }
+            default -> sourceType.equals(targetType);
+        };
+    }
+
+    public static boolean isViewTypes(Collection<Type> sourceTypes, Collection<Type> targetTypes) {
+        var thatMembers = new ArrayList<>(targetTypes);
+        out: for (Type member : sourceTypes) {
+            var it = thatMembers.iterator();
+            while (it.hasNext()) {
+                if (isViewType(member, it.next())) {
+                    it.remove();
+                    continue out;
+                }
+            }
+            return false;
+        }
+        return true;
     }
 
     public static String getCanonicalName(Type type, Function<Type, java.lang.reflect.Type> getJavType) {
@@ -331,13 +371,23 @@ public class Types {
                 .build();
         var scope = method.getRootScope();
         var input = Nodes.input(method);
+        var args = new ArrayList<Value>();
+        var paramTypeIt = function.getType().getParameterTypes().iterator();
+        for (Field field : input.getType().resolve().getFields()) {
+            var paramType = paramTypeIt.next();
+            if(field.getType().isNullable() && paramType.isNotNull()) {
+                args.add(Values.node(
+                        Nodes.nonNull(field.getName() + "_nonNull", Values.nodeProperty(input, field), scope))
+                );
+            }
+            else
+                args.add(Values.nodeProperty(input, field));
+        }
         var func = Nodes.function(
                 "function",
                 scope,
                 Values.constant(Expressions.constant(function)),
-                function.getType().getParameterTypes().isEmpty() ?
-                        List.of() :
-                        NncUtils.map(input.getType().resolve().getFields(), f -> Values.nodeProperty(input, f))
+                args
         );
         if (sam.getReturnType().isVoid())
             Nodes.ret("ret", scope, null);
@@ -425,6 +475,13 @@ public class Types {
         return members.size() == 1 ? members.iterator().next() : new IntersectionType(members);
     }
 
+    public static Type getUncertainType(Type lowerBound, Type upperBound) {
+        if(lowerBound.equals(upperBound))
+            return lowerBound;
+        if(lowerBound.isAssignableFrom(upperBound))
+            return getNeverType();
+        return new UncertainType(lowerBound, upperBound);
+    }
 
     public static Flow saveFlow(FlowDTO flowDTO, SaveTypeBatch batch) {
         return TYPE_FACTORY.saveMethod(flowDTO, ResolutionStage.DEFINITION, batch);
@@ -767,12 +824,34 @@ public class Types {
         return NeverType.instance;
     }
 
-    public static UnionType getNullableType(Type type) {
-        return new UnionType(Set.of(type, getNullType()));
+    public static Type getNullableType(Type type) {
+        return type.isNullable() ? type : new UnionType(Set.of(type, getNullType()));
     }
 
     public static Type getNullableThrowableType() {
         return getNullableType(StdKlass.throwable.get().getType());
+    }
+
+    public static Type getNonNullType(Type type) {
+        if(type.isNull())
+            return Types.getNeverType();
+        else if(type instanceof UnionType unionType) {
+            var members = NncUtils.filter(unionType.getMembers(), t -> !t.isNull());
+            return getUnionType(members);
+        }
+        else if(type instanceof IntersectionType intersectionType) {
+            return getIntersectionType(
+                    NncUtils.map(intersectionType.getTypes(), Types::getNonNullType)
+            );
+        }
+        else if(type instanceof UncertainType uncertainType)
+            return getUncertainType(uncertainType.getLowerBound(), getNonNullType(uncertainType.getUpperBound()));
+        else if (type instanceof VariableType variableType)
+            return getIntersectionType(List.of(variableType, getAnyType()));
+        else if(type instanceof CapturedType capturedType)
+            return getIntersectionType(List.of(capturedType, getAnyType()));
+        else
+            return type;
     }
 
 }

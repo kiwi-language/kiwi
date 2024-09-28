@@ -35,7 +35,7 @@ public class GetUniqueNode extends NodeRT {
             node.setIndex(index);
             node.setValues(values);
         } else
-            node = new GetUniqueNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), type, index, prev, scope, values);
+            node = new GetUniqueNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), (UnionType) type, index, prev, scope, values);
         return node;
     }
 

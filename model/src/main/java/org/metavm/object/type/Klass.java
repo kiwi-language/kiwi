@@ -290,7 +290,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public void setTitleField(@Nullable Field titleField) {
-        if (titleField != null && !titleField.getType().isString())
+        if (titleField != null && !titleField.getType().getUnderlyingType().isString())
             throw new BusinessException(ErrorCode.TITLE_FIELD_MUST_BE_STRING);
         this.titleField = titleField;
     }
@@ -533,11 +533,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public Method getMethodByCodeAndParamTypes(String code, List<Type> parameterTypes) {
-        return Objects.requireNonNull(
-                findMethodByCodeAndParamTypes(code, parameterTypes),
-                () -> String.format("Can not find method %s(%s) in klass %s",
-                        code, NncUtils.join(parameterTypes, Type::getTypeDesc, ","), getName())
-        );
+        var found = findMethodByCodeAndParamTypes(code, parameterTypes);
+        if(found == null) {
+            throw new NullPointerException(String.format("Can not find method %s(%s) in klass %s",
+                    code, NncUtils.join(parameterTypes, Type::getTypeDesc, ","), getTypeDesc()));
+        }
+        return found;
     }
 
     public Method getMethodByCode(String code) {

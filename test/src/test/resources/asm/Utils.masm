@@ -15,14 +15,14 @@ class Utils {
     }
 
     public static <T> boolean containsAny(Iterable<[never, T]> iterable, Iterable<[never, T]> values) {
-        it: iterable.iterator();
+        it: iterable.iterator()!;
         hasNext: it.hasNext();
         loop: for(boolean hasNext = hasNext; loop.hasNext; hasNext = hasNext3) {
-            next: it.next();
-            it1: values.iterator();
+            next: it.next()!;
+            it1: values.iterator()!;
             hasNext1: it1.hasNext();
             loop1: for(boolean hasNext = hasNext1; loop1.hasNext; hasNext = hasNext2) {
-                next1: it1.next();
+                next1: it1.next()!;
                 if(next == next1) {
                     return true;
                 }

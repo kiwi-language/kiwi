@@ -23,7 +23,7 @@ public class LongValue extends NumberValue {
 
     @Override
     public Value convert(Type type) {
-        if (type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.DOUBLE)
+        if (type.isAssignableFrom(PrimitiveType.doubleType))
             return toDouble();
         else
             return super.convert(type);

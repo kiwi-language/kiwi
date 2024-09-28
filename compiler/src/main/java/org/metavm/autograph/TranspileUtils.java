@@ -798,10 +798,7 @@ public class TranspileUtils {
     }
 
     public static Type resolveParameterType(PsiParameter parameter, TypeResolver typeResolver) {
-        var type = typeResolver.resolveTypeOnly(parameter.getType());
-        if (isAnnotatedWithNullable(parameter))
-            type = Types.getNullableType(type);
-        return type;
+        return typeResolver.resolveNullable(parameter.getType(), ResolutionStage.INIT);
     }
 
     public static boolean isAnnotatedWithNullable(PsiModifierListOwner element) {
@@ -1121,7 +1118,7 @@ public class TranspileUtils {
         );
         paramTypeNames.addAll(
                 NncUtils.map(method.getParameterList().getParameters(),
-                        p -> getInternalName(p.getType(), isAnnotatedWithNullable(p), method))
+                        p -> getInternalName(p.getType(), true, method))
         );
         return getInternalName(createType(method.getContainingClass()), null) + "." +
                 method.getName() + "(" + NncUtils.join(paramTypeNames, ",") + ")";
@@ -1137,7 +1134,7 @@ public class TranspileUtils {
     }
 
     private static String getInternalName(PsiType type, boolean nullable, PsiMethod current) {
-        if (nullable) {
+        if (nullable && !(type instanceof PsiPrimitiveType)) {
             var names = List.of("Null", getInternalName(type, current));
             return names.stream().sorted().collect(Collectors.joining("|"));
         } else {
@@ -1174,7 +1171,7 @@ public class TranspileUtils {
                 return "[Never, Any]";
         }
         if(type instanceof PsiArrayType arrayType) {
-            return getInternalName(arrayType.getComponentType(), current)  +"[]";
+            return getInternalName(arrayType.getComponentType(), true, current)  +"[]";
         }
         return type.getCanonicalText();
     }

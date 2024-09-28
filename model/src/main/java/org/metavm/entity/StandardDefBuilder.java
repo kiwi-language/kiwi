@@ -438,7 +438,7 @@ public class StandardDefBuilder {
         var listImplType = parseKlass(javaClass);
         var elementType = listImplType.getTypeParameters().get(0);
         FieldBuilder.newBuilder("array", "array", listImplType,
-                        new ArrayType(elementType.getType(), arrayKind))
+                        new ArrayType(Types.getNullableType(elementType.getType()), arrayKind))
                 .access(Access.PRIVATE)
                 .isChild(kind != ClassKind.VALUE)
                 .build();
@@ -449,7 +449,7 @@ public class StandardDefBuilder {
         var klass = parseKlass(HashSet.class);
         var elementType = klass.getTypeParameters().get(0);
         FieldBuilder.newBuilder("array", "array", klass,
-                        new ArrayType(elementType.getType(), ArrayKind.READ_WRITE))
+                        new ArrayType(Types.getNullableType(elementType.getType()), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
                 .isChild(true)
                 .build();
@@ -472,22 +472,7 @@ public class StandardDefBuilder {
     }
 
     public Klass createMapKlass() {
-        var keyType = new TypeVariable(null, "K", "K",
-                DummyGenericDeclaration.INSTANCE);
-        keyType.setBounds(List.of(AnyType.instance));
-        primTypeFactory.putType(Map.class.getTypeParameters()[0], keyType);
-        var valueType = new TypeVariable(null, "V", "V",
-                DummyGenericDeclaration.INSTANCE);
-        valueType.setBounds(List.of(AnyType.instance));
-        primTypeFactory.putType(Map.class.getTypeParameters()[1], valueType);
-        Klass mapType = newKlassBuilder(Map.class)
-                .source(ClassSource.BUILTIN)
-                .kind(ClassKind.INTERFACE)
-                .typeParameters(keyType, valueType)
-                .build();
-        primTypeFactory.putType(Map.class, mapType);
-        createMapFlows(mapType, keyType.getType(), valueType.getType());
-        return mapType;
+        return parseKlass(Map.class);
     }
 
     private Klass createHashMapKlass() {
@@ -500,12 +485,12 @@ public class StandardDefBuilder {
         var valueTypeVar = mapImplKlass.getTypeParameters().get(1);
 
         FieldBuilder.newBuilder("keyArray", "keyArray", mapImplKlass,
-                        new ArrayType(keyTypeVar.getType(), ArrayKind.READ_WRITE))
+                        new ArrayType(Types.getNullableType(keyTypeVar.getType()), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
                 .isChild(kind != ClassKind.VALUE)
                 .build();
         FieldBuilder.newBuilder("valueArray", "valueArray", mapImplKlass,
-                        new ArrayType(valueTypeVar.getType(), valueArrayKind))
+                        new ArrayType(Types.getNullableType(valueTypeVar.getType()), valueArrayKind))
                 .access(Access.PRIVATE)
                 .isChild(kind != ClassKind.VALUE)
                 .build();
@@ -593,14 +578,14 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
-                .parameters(new Parameter(null, "message", "message", Types.getStringType()))
+                .parameters(new Parameter(null, "message", "message", Types.getNullableStringType()))
                 .build();
 
         MethodBuilder.newBuilder(runtimeExceptionType, name, code)
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
-                .parameters(new Parameter(null, "cause", "cause", throwableKlass.getType()))
+                .parameters(new Parameter(null, "cause", "cause", Types.getNullableType(throwableKlass.getType())))
                 .build();
 
         MethodBuilder.newBuilder(runtimeExceptionType, name, code)
@@ -608,8 +593,8 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
                 .parameters(
-                        new Parameter(null, "message", "message", Types.getStringType()),
-                        new Parameter(null, "cause", "cause", throwableKlass.getType())
+                        new Parameter(null, "message", "message", Types.getNullableStringType()),
+                        new Parameter(null, "cause", "cause", Types.getNullableType(throwableKlass.getType()))
                 )
                 .build();
     }

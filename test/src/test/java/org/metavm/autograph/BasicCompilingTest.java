@@ -1,19 +1,18 @@
 package org.metavm.autograph;
 
 import org.junit.Assert;
+import org.metavm.common.ErrorCode;
 import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.type.*;
+import org.metavm.util.BusinessException;
 import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class BasicCompilingTest extends CompilerTestBase {
 
@@ -51,6 +50,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processContinue();
             processDoWhile();
             processInnerExtendsOwner();
+            processNullable();
         });
     }
 
@@ -332,9 +332,9 @@ public class BasicCompilingTest extends CompilerTestBase {
                     "asterisk.AsteriskTypeFoo"));
             var method = klass.getMethodByCode("getInstance");
             var serializableKlass = StdKlass.serializable.get();
-            var expectedType = klass.getParameterized(
+            var expectedType = Types.getNullableType(klass.getParameterized(
                     List.of(new UncertainType(Types.getNeverType(), serializableKlass.getType()))
-            ).getType();
+            ).getType());
             Assert.assertEquals(expectedType, method.getReturnType());
         }
     }
@@ -480,6 +480,24 @@ public class BasicCompilingTest extends CompilerTestBase {
         ));
         var r = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "foo", List.of()));
         Assert.assertTrue(r);
+    }
+
+    private void processNullable() {
+        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("nullable.NullableFoo", Map.of()));
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "add", List.of("a")));
+        var r = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        Assert.assertEquals("a", r);
+
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "add", Collections.singletonList(null)));
+        var r1 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(1)));
+        Assert.assertNull(r1);
+        try {
+            TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getHash", List.of(1)));
+            Assert.fail();
+        }
+        catch (BusinessException e) {
+            Assert.assertSame(ErrorCode.FLOW_EXECUTION_FAILURE, e.getErrorCode());
+        }
     }
 
 }

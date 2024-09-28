@@ -9,6 +9,7 @@ import org.metavm.entity.Entity;
 import org.metavm.entity.ValueArray;
 import org.metavm.util.NncUtils;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
@@ -28,11 +29,13 @@ public class HttpRequestImpl extends Entity implements HttpRequest, ValueObject 
     }
 
     @Override
+    @Nonnull
     public String getMethod() {
         return method;
     }
 
     @Override
+    @Nonnull
     public String getRequestURI() {
         return requestURI;
     }

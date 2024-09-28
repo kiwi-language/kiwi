@@ -102,6 +102,10 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
         return Objects.requireNonNull(klassHolder.get(), () -> "Builtin klass not initialized: " + javaClass.getName());
     }
 
+    public boolean isInitialized() {
+        return klassHolder.get() != null;
+    }
+
     public ClassType type() {
         return get().getType();
     }

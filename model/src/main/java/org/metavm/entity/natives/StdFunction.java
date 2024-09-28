@@ -369,7 +369,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.stringInstance(new DecimalFormat(format.getValue()).format(number.getValue())));
             }),
     format(
-            "string format(string format, any[] values)",
+            "string format(string format, (any|null)[] values)",
             true,
             List.of(ReflectionUtils.getMethod(String.class, "format", String.class, Object[].class)),
             (func, args, ctx) -> {

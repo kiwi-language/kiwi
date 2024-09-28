@@ -465,16 +465,13 @@ public class MappingSaver {
                 yield new IdentityNestedMapping(type);
             }
             case UnionType unionType -> {
-                List<NestedMapping> memberNestedMappings = new ArrayList<>();
-                Set<Type> targetMemberTypes = new HashSet<>();
+                var memberMappings = new ArrayList<MemberTypeNestedMapping>();
                 for (Type member : unionType.getMembers()) {
                     var codeGenerator = getNestedMapping(member, NncUtils.get(underlyingType,
                             t -> Types.getViewType(member, (UnionType) t)));
-                    targetMemberTypes.add(codeGenerator.getTargetType());
-                    memberNestedMappings.add(codeGenerator);
+                    memberMappings.add(new MemberTypeNestedMapping(member, codeGenerator.getTargetType(), codeGenerator));
                 }
-                var targetType = new UnionType(targetMemberTypes);
-                yield new UnionNestedMapping(unionType, targetType, memberNestedMappings);
+                yield new UnionNestedMapping(memberMappings);
             }
             default -> new IdentityNestedMapping(type);
         };

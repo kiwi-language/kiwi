@@ -112,7 +112,12 @@ public class IntersectionType extends CompositeType {
 
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
-        return NncUtils.join(types, type -> type.toExpression(serializeContext, getTypeDefExpr), "&");
+        return NncUtils.join(types, type -> {
+            var memberExpr = type.toExpression(serializeContext, getTypeDefExpr);
+            if(type.getPrecedence() >= getPrecedence())
+                memberExpr = "("+ memberExpr + ")";
+            return memberExpr;
+        }, "&");
     }
 
     @Override
@@ -125,6 +130,11 @@ public class IntersectionType extends CompositeType {
         output.write(TypeKeyCodes.INTERSECTION);
         output.writeInt(types.size());
         types.forEach(t -> t.write(output));
+    }
+
+    @Override
+    public int getPrecedence() {
+        return 2;
     }
 
     public static IntersectionType read(InstanceInput input, TypeDefProvider typeDefProvider) {

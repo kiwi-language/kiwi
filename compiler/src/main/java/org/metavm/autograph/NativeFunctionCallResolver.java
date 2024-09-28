@@ -45,7 +45,14 @@ public class NativeFunctionCallResolver implements MethodCallResolver {
         for (PsiExpression expression : methodCallExpression.getArgumentList().getExpressions()) {
             arguments.add(expressionResolver.resolve(expression));
         }
-        var node = methodGenerator.createFunctionCall(function, arguments);
+        var convertedArgs = new ArrayList<Expression>();
+        NncUtils.biForEach(function.getParameters(), arguments, (param, arg) -> {
+            if(param.getType().isNotNull() && methodGenerator.getExpressionType(arg).isNullable())
+                convertedArgs.add(Expressions.node(methodGenerator.createNonNull("nonNull", arg)));
+            else
+                convertedArgs.add(arg);
+        });
+        var node = methodGenerator.createFunctionCall(function, convertedArgs);
         return function.getReturnType().isVoid() ? null : Expressions.node(node);
     }
 

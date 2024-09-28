@@ -343,8 +343,11 @@ public class SubstitutorV2 extends CopyVisitor {
         var klass = type.getKlass();
         if (klass == root)
             return new ClassType(type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> (Type) t.accept(this)));
-        else
-            return super.visitClassType(type);
+        else {
+            var copy = (ClassType) super.visitClassType(type);
+            copy = copy.trySimplify();
+            return copy;
+        }
     }
 
     @Override

@@ -28,6 +28,16 @@ public interface TypeParserListener extends ParseTreeListener {
 	 */
 	void exitType(TypeParser.TypeContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link TypeParser#parType}.
+	 * @param ctx the parse tree
+	 */
+	void enterParType(TypeParser.ParTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TypeParser#parType}.
+	 * @param ctx the parse tree
+	 */
+	void exitParType(TypeParser.ParTypeContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link TypeParser#genericDeclarationRef}.
 	 * @param ctx the parse tree
 	 */

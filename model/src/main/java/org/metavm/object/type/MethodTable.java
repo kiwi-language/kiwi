@@ -24,7 +24,7 @@ public class MethodTable {
 
     public void rebuild() {
         hashCodeMethod = classType.findMethod(m -> "hashCode".equals(m.getCode()) && m.getParameters().isEmpty());
-        equalsMethod = classType.findMethod(m -> "equals".equals(m.getCode()) && m.getParameterTypes().equals(List.of(Types.getAnyType())));
+        equalsMethod = classType.findMethod(m -> "equals".equals(m.getCode()) && m.getParameterTypes().equals(List.of(Types.getNullableAnyType())));
         verticalTemplateIndex.clear();
         overriddenIndex.clear();
         classType.foreachAncestor(t -> {

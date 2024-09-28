@@ -1,49 +1,53 @@
 package org.metavm.object.view;
 
-import org.metavm.entity.ChildArray;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ChildArray;
+import org.metavm.entity.LoadAware;
 import org.metavm.expression.InstanceOfExpression;
 import org.metavm.flow.*;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.FieldBuilder;
-import org.metavm.object.type.Type;
-import org.metavm.object.type.UnionType;
+import org.metavm.object.type.*;
 import org.metavm.util.NncUtils;
 
 import java.util.*;
 import java.util.function.Supplier;
 
 @EntityType
-public class UnionNestedMapping extends NestedMapping {
+public class UnionNestedMapping extends NestedMapping implements LoadAware {
 
-    private final UnionType sourceType;
-    private final UnionType targetType;
     @ChildEntity
-    private final ChildArray<NestedMapping> memberNestedMappings =
-            addChild(new ChildArray<>(NestedMapping.class), "memberNestedMappings");
+    private final ChildArray<MemberTypeNestedMapping> memberMappings =
+            addChild(new ChildArray<>(MemberTypeNestedMapping.class), "memberMappings");
+    private transient Set<MemberTypeNestedMapping> memberMappingSet;
+    private transient UnionType sourceType;
+    private transient UnionType targetType;
 
-    public UnionNestedMapping(UnionType sourceType, UnionType targetType, List<NestedMapping> nestedMappings) {
-        this.sourceType = sourceType;
-        this.targetType = targetType;
-        this.memberNestedMappings.resetChildren(nestedMappings);
+    public UnionNestedMapping(List<MemberTypeNestedMapping> memberMappings) {
+        this.memberMappings.addChildren(memberMappings);
+        this.memberMappings.sort(Comparator.comparingInt(m -> m.sourceType().getTypeKeyCode()));
+        sourceType = new UnionType(NncUtils.mapUnique(memberMappings, MemberTypeNestedMapping::sourceType));
+        targetType = new UnionType(NncUtils.mapUnique(memberMappings, MemberTypeNestedMapping::targetType));
+        memberMappingSet = new HashSet<>(memberMappings);
+    }
+
+    @Override
+    public void onLoadPrepare() {
+        sourceType = new UnionType(NncUtils.mapUnique(memberMappings, MemberTypeNestedMapping::sourceType));
+        targetType = new UnionType(NncUtils.mapUnique(memberMappings, MemberTypeNestedMapping::targetType));
+        memberMappingSet = new HashSet<>(memberMappings.toList());
+    }
+
+    @Override
+    public void onLoad() {
     }
 
     private static Type getViewType(Type sourceType, UnionType targetUnionType) {
-        return NncUtils.findRequired(targetUnionType.getMembers(), sourceType::isViewType);
+        return NncUtils.findRequired(targetUnionType.getMembers(), sourceType::isViewType,
+                () -> "Cannot find view type of " + sourceType + " in union type " + targetUnionType);
     }
 
     @Override
     public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
-        Map<Type, Type> viewType2sourceType = new HashMap<>();
-        for (Type member : sourceType.getMembers()) {
-            viewType2sourceType.put(getViewType(member, targetType), member);
-        }
-        Map<Type, NestedMapping> sourceType2codeGenerator = new HashMap<>();
-        for (var codeGenerator : memberNestedMappings) {
-            var viewType = codeGenerator.getTargetType();
-            sourceType2codeGenerator.put(viewType2sourceType.get(viewType), codeGenerator);
-        }
         var values = new HashMap<Branch, Value>();
         var valueFieldRef = new Object() {
             Field valueField;
@@ -54,19 +58,19 @@ public class UnionNestedMapping extends NestedMapping {
                 null,
                 scope,
                 NncUtils.map(
-                        sourceType.getMembers(),
+                        memberMappings,
                         t -> Values.expression(
-                                new InstanceOfExpression(getSource.get().getExpression(), t)
+                                new InstanceOfExpression(getSource.get().getExpression(), t.sourceType())
                         )
                 ),
                 NncUtils.map(
-                        sourceType.getMembers(),
+                        memberMappings,
                         t -> branch -> {
                             var castSource = Nodes.castNode(scope.nextNodeName("castSource"),
-                                    t, branch.getScope(), Values.node(source));
+                                    t.sourceType(), branch.getScope(), Values.node(source));
                             values.put(
                                     branch,
-                                    sourceType2codeGenerator.get(t).generateMappingCode(() -> Values.node(castSource), branch.getScope()).get()
+                                    t.nestedMapping().generateMappingCode(() -> Values.node(castSource), branch.getScope()).get()
                             );
                         }
                 ),
@@ -81,10 +85,6 @@ public class UnionNestedMapping extends NestedMapping {
 
     @Override
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
-        var targetType2codeGenerator = new HashMap<Type, NestedMapping>();
-        for (var memberCodeGenerator : memberNestedMappings) {
-            targetType2codeGenerator.put(memberCodeGenerator.getTargetType(), memberCodeGenerator);
-        }
         var values = new HashMap<Branch, Value>();
         var valueFieldRef = new Object() {
             Field valueField;
@@ -95,18 +95,18 @@ public class UnionNestedMapping extends NestedMapping {
                 null,
                 scope,
                 NncUtils.map(
-                        targetType.getMembers(),
+                        memberMappings,
                         t -> Values.expression(
-                                new InstanceOfExpression(getView.get().getExpression(), t)
+                                new InstanceOfExpression(getView.get().getExpression(), t.targetType())
                         )
                 ),
                 NncUtils.map(
-                        targetType.getMembers(),
+                        memberMappings,
                         t -> branch -> {
-                            var castView =  Nodes.cast(scope.nextNodeName("castView"), t, Values.node(view), branch.getScope());
+                            var castView =  Nodes.cast(scope.nextNodeName("castView"), t.targetType(), Values.node(view), branch.getScope());
                             values.put(
                                     branch,
-                                    targetType2codeGenerator.get(t).generateUnmappingCode(() -> Values.node(castView), branch.getScope()).get()
+                                    t.nestedMapping().generateUnmappingCode(() -> Values.node(castView), branch.getScope()).get()
                             );
                         }
                 ),
@@ -128,19 +128,18 @@ public class UnionNestedMapping extends NestedMapping {
     @Override
     public String getText() {
         return "{\"kind\": \"Union\", \"sourceType\": \"" + sourceType.getTypeDesc() + "\", \"targetType\": \"" + targetType.getTypeDesc()
-                + "\", \"memberMappings\": [" + NncUtils.join(memberNestedMappings, NestedMapping::getText) + "]}";
+                + "\", \"memberMappings\": [" + NncUtils.join(memberMappings, t -> t.nestedMapping().getText()) + "]}";
     }
 
     @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof UnionNestedMapping that)) return false;
-        return Objects.equals(sourceType, that.sourceType) && Objects.equals(targetType, that.targetType) &&
-                Objects.equals(Set.of(memberNestedMappings), Set.of(that.memberNestedMappings));
+        return memberMappingSet.equals(new HashSet<>(that.memberMappingSet));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sourceType, targetType, Set.of(memberNestedMappings));
+        return memberMappingSet.hashCode();
     }
 }

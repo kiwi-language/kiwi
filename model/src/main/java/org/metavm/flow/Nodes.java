@@ -272,4 +272,10 @@ public class Nodes {
         );
     }
 
+    public static NonNullNode nonNull(String name, Value value, ScopeRT scope) {
+        return new NonNullNode(
+                null, name, null, Types.getNonNullType(value.getType()), scope.getLastNode(), scope, value
+        );
+    }
+
 }

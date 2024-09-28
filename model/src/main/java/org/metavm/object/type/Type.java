@@ -346,4 +346,6 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
         };
     }
 
+    public abstract int getPrecedence();
+
 }

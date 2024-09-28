@@ -54,7 +54,6 @@ public class UserCompilingTest extends CompilerTestBase {
             var profiler = ContextUtil.getProfiler();
             try (var ignored = profiler.enter("submit")) {
                 var roleType = queryClassType("org.metavm.user.LabRole");
-                var roleReadWriteListType = TypeExpressionBuilder.fromKlassId(roleType.id()).readWriteList().build();
                 var roleNameFieldId = getFieldIdByCode(roleType, "name");
                 var roleId = doInTransaction(() -> apiClient.newInstance(
                         roleType.getCodeNotNull(),
@@ -159,9 +158,6 @@ public class UserCompilingTest extends CompilerTestBase {
                 // login
                 var token = login(userType, platformApplication, email, "123456");
 
-                var enterAppMethodRef = TestUtils.getStaticMethodRef(platformUserType, "enterApp",
-                        TypeExpressions.getClassType(platformUserType.id()), TypeExpressions.getClassType(userApplicationType.id()));
-
                 // enter application
                 // noinspection unchecked
                 var loginResult = (Map<String, Object>) doInTransaction(() -> apiClient.callMethod(
@@ -172,11 +168,6 @@ public class UserCompilingTest extends CompilerTestBase {
                 Assert.assertNotNull(token);
 
                 // test leave application
-                var platformUserListType = TypeExpressions.getListType(TypeExpressions.getClassType(platformUserType.id()));
-                var platformUserReadWriteListType = TypeExpressionBuilder.fromKlassId(platformUserType.id()).readWriteList().build();
-                var leaveAppMethodRef = TestUtils.getStaticMethodRef(platformUserType, "leaveApp",
-                        platformUserListType, TypeExpressions.getClassType(userApplicationType.id()));
-
                 try {
                     doInTransaction(() -> apiClient.callMethod(
                             platformUserType.getCodeNotNull(),

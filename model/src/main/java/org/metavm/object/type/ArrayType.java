@@ -94,7 +94,10 @@ public class ArrayType extends CompositeType {
 
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
-        return elementType.toExpression(serializeContext, getTypeDefExpr) + kind.getSuffix().toLowerCase();
+        var elementExpr = elementType.toExpression(serializeContext, getTypeDefExpr);
+        if(elementType.getPrecedence() > getPrecedence())
+            elementExpr = "(" + elementExpr + ")";
+        return elementExpr + kind.getSuffix().toLowerCase();
     }
 
     @Override
@@ -168,6 +171,11 @@ public class ArrayType extends CompositeType {
     @Override
     public int getTypeTag() {
         return kind.typeTag();
+    }
+
+    @Override
+    public int getPrecedence() {
+        return 1;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.expression.EvaluationContext;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 
+@Slf4j
 public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");

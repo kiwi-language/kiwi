@@ -1034,4 +1034,8 @@ public class ReflectionUtils {
         return NncUtils.toPrettyJsonString(values);
     }
 
+    public static boolean isPrimitiveType(Type type) {
+        return type instanceof Class<?> klass && klass.isPrimitive();
+    }
+
 }

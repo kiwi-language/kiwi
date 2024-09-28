@@ -455,7 +455,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     public String getSignatureString() {
-        return getCode() + "(" + NncUtils.join(getParameterTypes(), Type::getCode) + ")";
+        return getCode() + "(" + NncUtils.join(getParameterTypes(), Type::getTypeDesc) + ")";
     }
 
     public void setState(@NotNull MetadataState state) {

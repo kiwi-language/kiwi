@@ -30,7 +30,7 @@ public abstract class BeanDefinition extends Entity {
     }
 
     public ClassInstance getBean() {
-        return Objects.requireNonNull(bean).resolveObject();
+        return Objects.requireNonNull(bean, () -> "Bean '" + name + "' is not yet initialized").resolveObject();
     }
 
     public abstract ClassType getBeanType();

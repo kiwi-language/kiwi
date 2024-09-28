@@ -141,6 +141,11 @@ public class FunctionType extends CompositeType {
         returnType.write(output);
     }
 
+    @Override
+    public int getPrecedence() {
+        return 4;
+    }
+
     public static FunctionType read(InstanceInput input, TypeDefProvider typeDefProvider) {
         var numParamTypes = input.readInt();
         var paramTypes = new ArrayList<Type>(numParamTypes);

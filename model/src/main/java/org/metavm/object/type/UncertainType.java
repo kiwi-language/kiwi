@@ -157,6 +157,11 @@ public class UncertainType extends CompositeType {
         upperBound.write(output);
     }
 
+    @Override
+    public int getPrecedence() {
+        return 1;
+    }
+
     public static UncertainType read(InstanceInput input, TypeDefProvider typeDefProvider) {
         return new UncertainType(Type.readType(input, typeDefProvider), Type.readType(input, typeDefProvider));
     }

@@ -165,10 +165,13 @@ public class ExpressionResolver {
     }
 
     private Expression resolveArrayAccess(PsiArrayAccessExpression arrayAccessExpression, ResolutionContext context) {
-        return new ArrayAccessExpression(
-                resolve(arrayAccessExpression.getArrayExpression(), context),
-                resolve(arrayAccessExpression.getIndexExpression(), context)
-        );
+        var array = resolve(arrayAccessExpression.getArrayExpression(), context);
+        var index = resolve(arrayAccessExpression.getIndexExpression(), context);
+        if (methodGenerator.getExpressionType(array).isNullable())
+            array = Expressions.node(methodGenerator.createNonNull("nonNull", array));
+        if (methodGenerator.getExpressionType(index).isNullable())
+            index = Expressions.node(methodGenerator.createNonNull("nonNull", index));
+        return new ArrayAccessExpression(array, index);
     }
 
     public TypeResolver getTypeResolver() {
@@ -253,6 +256,8 @@ public class ExpressionResolver {
                     return new StaticPropertyExpression(field.getRef());
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
+                    if(methodGenerator.getExpressionType(qualifierExpr).isNullable())
+                        qualifierExpr = Expressions.node(methodGenerator.createNonNull("nonNull", qualifierExpr));
                     Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr));
                     typeResolver.ensureDeclared(klass);
                     field = klass.getFieldByCode(psiField.getName());
@@ -475,7 +480,14 @@ public class ExpressionResolver {
         }
         var isStatic = TranspileUtils.isStatic(rawMethod);
         PsiExpression psiSelf = (PsiExpression) ref.getQualifier();
-        var qualifier = isStatic ? null : getQualifier(psiSelf, context);
+        Expression qualifier;
+        if(isStatic)
+            qualifier = null;
+        else {
+            qualifier = getQualifier(psiSelf, context);
+            if(methodGenerator.getExpressionType(qualifier).isNullable())
+                qualifier = Expressions.node(methodGenerator.createNonNull("nonNull", qualifier));
+        }
         if (psiSelf != null) {
             if (isStatic) {
                 var psiClass = (PsiClass) ((PsiReferenceExpression) psiSelf).resolve();
@@ -546,12 +558,7 @@ public class ExpressionResolver {
         var template = declaringType.getEffectiveTemplate();
         List<Type> rawParamTypes = NncUtils.map(
                 psiParameters,
-                param -> {
-                    var t = typeResolver.resolveDeclaration(param.getType());
-                    if (TranspileUtils.getAnnotation(param, Nullable.class) != null)
-                        t = new UnionType(Set.of(t, Types.getNullType()));
-                    return t;
-                }
+                param -> typeResolver.resolveNullable(param.getType(), ResolutionStage.DECLARATION)
         );
         var templateMethod = template.getMethodByCodeAndParamTypes(method.getName(), rawParamTypes).getEffectiveVerticalTemplate();
         Method piFlow = Objects.requireNonNull(template != declaringType ? declaringType.findMethodByVerticalTemplate(templateMethod) : templateMethod);
@@ -660,10 +667,7 @@ public class ExpressionResolver {
     }
 
     private Type resolveParameterType(PsiParameter param, PsiSubstitutor substitutor) {
-        var t = typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()));
-        if (TranspileUtils.getAnnotation(param, Nullable.class) != null)
-            t = new UnionType(Set.of(t, Types.getNullType()));
-        return t;
+        return typeResolver.resolveNullable(substitutor.substitute(param.getType()), ResolutionStage.INIT);
     }
 
     private Expression createNodeExpression(NodeRT node) {
@@ -808,7 +812,7 @@ public class ExpressionResolver {
     }
 
     public Expression resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
-        var returnType = typeResolver.resolveDeclaration(TranspileUtils.getLambdaReturnType(expression));
+        var returnType = typeResolver.resolveNullable(TranspileUtils.getLambdaReturnType(expression), ResolutionStage.DECLARATION);
         var parameters = resolveParameterList(expression.getParameterList());
         var funcInterface = Types.resolveKlass(typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType()));
         var lambdaNode = methodGenerator.createLambda(parameters, returnType, funcInterface);
@@ -884,7 +888,7 @@ public class ExpressionResolver {
     private Parameter resolveParameter(PsiParameter psiParameter) {
         return new Parameter(
                 null, TranspileUtils.getFlowParamName(psiParameter), psiParameter.getName(),
-                typeResolver.resolveDeclaration(psiParameter.getType())
+                typeResolver.resolveNullable(psiParameter.getType(), ResolutionStage.DECLARATION)
         );
     }
 

@@ -87,12 +87,12 @@ public class InstanceField implements IInstanceField {
         else if(field.isMetadataRemoved() && value.isNull())
             return value;
         else {
-            try {
+//            try {
                 return value.convert(field.getType());
-            } catch (BusinessException e) {
-                throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
-                        field.getQualifiedName(), e.getMessage());
-            }
+//            } catch (Exception e) {
+//                throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
+//                        field.getQualifiedName(), e.getMessage());
+//            }
         }
     }
 

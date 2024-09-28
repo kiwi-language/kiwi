@@ -44,6 +44,14 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
         this.typeArguments = typeArguments.isEmpty() ? null : new ValueArray<>(Type.class, typeArguments);
     }
 
+    public ClassType trySimplify() {
+        if(!EntityProxyFactory.isDummy(klass)
+                && typeArguments != null && klass.getTypeArguments().equals(typeArguments.toList()))
+            return klass.getType();
+        else
+            return this;
+    }
+
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitClassType(this);
@@ -167,7 +175,7 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
     @Override
     protected boolean equals0(Object obj) {
         return obj instanceof ClassType that && klass == that.klass &&
-                getTypeArguments().equals(that.getTypeArguments());
+                Objects.equals(typeArguments, that.typeArguments);
     }
 
     @Override
@@ -182,6 +190,13 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
 
     @Override
     public boolean isViewType(Type type) {
+        if(StdKlass.list.isInitialized() && type instanceof ClassType that) {
+            var listType = resolve().findAncestorByTemplate(StdKlass.list.get());
+            var thatListType = that.resolve().findAncestorByTemplate(StdKlass.list.get());
+            if(listType != null && thatListType != null
+                    && listType.getFirstTypeArgument().isViewType(thatListType.getFirstTypeArgument()))
+                return true;
+        }
         return resolve().isViewType(type);
     }
 
@@ -331,5 +346,10 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
 
     public boolean isKlassNull() {
         return klass == null;
+    }
+
+    @Override
+    public int getPrecedence() {
+        return 0;
     }
 }

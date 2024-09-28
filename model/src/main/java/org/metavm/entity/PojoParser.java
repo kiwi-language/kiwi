@@ -18,6 +18,7 @@ import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -333,9 +334,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
     protected abstract TypeCategory getTypeCategory();
 
     protected Parameter createParameter(java.lang.reflect.Parameter javaParameter) {
-        var type = defContext.getType(javaParameter.getParameterizedType());
-        if (ReflectionUtils.isAnnotatedWithNullable(javaParameter))
-            type = Types.getNullableType(type);
+        var type = defContext.getNullableType(javaParameter.getParameterizedType());
         return new Parameter(
                 null,
                 javaParameter.getName(),
@@ -345,9 +344,9 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
     }
 
     protected org.metavm.flow.Method createMethod(Method javaMethod, boolean isNative) {
-        var returnType = defContext.getType(javaMethod.getGenericReturnType());
-        if(ReflectionUtils.isAnnotatedWithNullable(javaMethod))
-            returnType = Types.getNullableType(returnType);
+        var returnType = javaMethod.isAnnotationPresent(Nonnull.class) ?
+                defContext.getType(javaMethod.getGenericReturnType())
+                : defContext.getNullableType(javaMethod.getGenericReturnType());
         var klass = get().klass;
         var method = MethodBuilder.newBuilder(klass, javaMethod.getName(), javaMethod.getName())
                 .parameters(NncUtils.map(javaMethod.getParameters(), this::createParameter))

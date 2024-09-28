@@ -316,7 +316,7 @@ public class Method extends Flow implements Property, GenericElement {
             }
             var subst = new TypeSubstitutor(NncUtils.map(getTypeParameters(), TypeVariable::getType), NncUtils.map(overriddenFlow.getTypeParameters(), TypeVariable::getType));
             if (!NncUtils.biAllMatch(paramTypes, overriddenFlow.getParameterTypes(), (t1, t2) -> t1.accept(subst).equals(t2)))
-                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
+                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES, getQualifiedSignature());
             if (!overriddenFlow.getReturnType().isAssignableFrom(returnType.accept(subst))) {
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT,
                         getQualifiedSignature(), overriddenFlow.getQualifiedSignature(),
@@ -562,6 +562,6 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public String getTypeDesc() {
-        return getQualifiedSignature();
+        return getQualifiedName();
     }
 }

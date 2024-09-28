@@ -2,6 +2,7 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.util.TestUtils;
 
@@ -68,6 +69,23 @@ public class TypesTest extends TestCase {
         var nullable_c3 = new UnionType(Set.of(Types.getNullType(), c3.getType()));
         var cst = Types.getLeastUpperBound(List.of(c2.getType(), nullable_c3));
         Assert.assertEquals(UnionType.nullableAnyType, cst);
+    }
+
+    public void testGetNonNullType() {
+        var nullableStringType = Types.getNullableStringType();
+        Assert.assertEquals(Types.getStringType(), Types.getNonNullType(nullableStringType));
+
+        var typeVar1 = new TypeVariable(null, "T1", null, DummyGenericDeclaration.INSTANCE);
+        var typeVar2 = new TypeVariable(null, "T1", null, DummyGenericDeclaration.INSTANCE);
+        typeVar2.setBounds(List.of(Types.getNullableAnyType()));
+        TestUtils.newKlassBuilder("Foo")
+                        .typeParameters(typeVar1, typeVar2)
+                        .build();
+        Assert.assertEquals(typeVar1.getType(), Types.getNonNullType(typeVar1.getType()));
+        Assert.assertEquals(
+                Types.getIntersectionType(List.of(typeVar2.getType(), Types.getAnyType())),
+                Types.getNonNullType(typeVar2.getType())
+        );
     }
 
 }

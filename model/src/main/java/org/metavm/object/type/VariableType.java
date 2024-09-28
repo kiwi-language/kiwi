@@ -18,6 +18,7 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -147,14 +148,14 @@ public class VariableType extends Type implements IVariableType {
 
     @Override
     protected boolean equals0(Object obj) {
-        return obj instanceof VariableType that && rawVariable == that.rawVariable;
+        return obj instanceof VariableType that
+                && genericDeclarationRef.equals(that.genericDeclarationRef)
+                && rawVariable == that.rawVariable;
     }
 
     @Override
     public int hashCode() {
-        if(getVariable() == null)
-            throw new NullPointerException("Variable is null. VariableType: " + System.identityHashCode(this));
-        return getVariable().hashCode();
+        return Objects.hash(genericDeclarationRef, rawVariable);
     }
 
     public TypeVariable getRawVariable() {
@@ -168,5 +169,10 @@ public class VariableType extends Type implements IVariableType {
     @Override
     public void forEachTypeDef(Consumer<TypeDef> action) {
         action.accept(getVariable());
+    }
+
+    @Override
+    public int getPrecedence() {
+        return 0;
     }
 }

@@ -716,8 +716,14 @@ public class Generator extends CodeGenVisitor {
 
     @Override
     public void visitForeachStatement(PsiForeachStatement statement) {
-        var iteratedExpr = resolveExpression(statement.getIteratedValue());
-        if (iteratedExpr.getType() instanceof ArrayType) {
+        var iteratedExpr0 = resolveExpression(statement.getIteratedValue());
+        Expression iteratedExpr;
+        if(builder().getExpressionType(iteratedExpr0).isNullable())
+            iteratedExpr = Expressions.node(builder().createNonNull("nonNull", iteratedExpr0));
+        else
+            iteratedExpr = iteratedExpr0;
+        var type = builder().getExpressionType(iteratedExpr);
+        if (type instanceof ArrayType) {
             processLoop(statement, getExtraLoopTest(statement),
                     (whileNode, loopVar2Field) -> {
                         var indexField = FieldBuilder
@@ -746,11 +752,12 @@ public class Generator extends CodeGenVisitor {
                         );
                     });
         } else {
-            var collType = Types.resolveKlass(iteratedExpr.getType());
+            var collType = Types.resolveKlass(type);
             typeResolver.ensureDeclared(collType);
-            var itNode = builder().createMethodCall(
-                    iteratedExpr, Objects.requireNonNull(collType.findMethodByCode("iterator")),
-                    List.of()
+            var itNode = builder().createNonNull("nonNull",
+                    Expressions.node(builder().createMethodCall(
+                        iteratedExpr, Objects.requireNonNull(collType.findMethodByCode("iterator")),
+                        List.of()))
             );
             var itType = Types.resolveKlass(NncUtils.requireNonNull(itNode.getType()));
             processLoop(statement, getExtraLoopTest(statement), (node, loopVar2Field) -> {

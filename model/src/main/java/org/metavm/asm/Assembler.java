@@ -1133,9 +1133,9 @@ public class Assembler {
                     List<Type> typeArgs = methodCall.typeArguments() != null ?
                             NncUtils.map(methodCall.typeArguments().typeType(), t -> parseType(t, this.scope, getCompilationUnit())) : List.of();
                     Method method = type.resolve().resolveMethod(methodName, NncUtils.map(arguments, Value::getType), typeArgs, false);
-                    return new MethodCallNode(
+                    var node = new MethodCallNode(
                             NncUtils.randomNonNegative(),
-                            name,
+                            statement.BANG() != null ? nextNodeName(name + "_nullable") : name,
                             null,
                             prevNode,
                             scope,
@@ -1143,6 +1143,19 @@ public class Assembler {
                             method.getRef(),
                             NncUtils.biMap(method.getParameters(), arguments, (p, v) -> new Argument(NncUtils.randomNonNegative(), p.getRef(), v))
                     );
+                    if(statement.BANG() != null) {
+                        return new NonNullNode(
+                                null,
+                                name,
+                                null,
+                                Types.getNonNullType(node.getType()),
+                                scope.getLastNode(),
+                                scope,
+                                Values.node(node)
+                        );
+                    }
+                    else
+                        return node;
                 }
                 if (statement.functionCall() != null) {
                     var funcCall = statement.functionCall();

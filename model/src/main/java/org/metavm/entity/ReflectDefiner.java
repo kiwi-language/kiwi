@@ -9,6 +9,7 @@ import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +94,7 @@ public class ReflectDefiner {
                     .build();
             method.setTypeParameters(NncUtils.map(javaMethod.getTypeParameters(), tv -> defineTypeVariable(tv, method)));
             method.setParameters(NncUtils.map(javaMethod.getParameters(), this::parseParameter));
-            method.setReturnType(resolveType(javaMethod.getGenericReturnType()));
+            method.setReturnType(resolveNullableType(javaMethod.getGenericReturnType()));
             method.setOverridden(getOverridden(method));
             if(!methodSignatures.add(MethodSignature.of(method)))
                 klass.removeMethod(method);
@@ -151,7 +152,14 @@ public class ReflectDefiner {
     }
 
     private Parameter parseParameter(java.lang.reflect.Parameter parameter) {
-        return Parameter.create(parameter.getName(), resolveType(parameter.getParameterizedType()));
+        return Parameter.create(parameter.getName(), resolveNullableType(parameter.getParameterizedType()));
+    }
+
+    private Type resolveNullableType(java.lang.reflect.Type type) {
+        var mType = resolveType(type);
+        if(!ReflectionUtils.isPrimitiveType(type))
+            mType = Types.getNullableType(mType);
+        return mType;
     }
 
     private Type resolveType(java.lang.reflect.Type type) {
@@ -173,7 +181,7 @@ public class ReflectDefiner {
                 if (k == Object.class)
                     yield Types.getAnyType();
                 if(k.isArray())
-                    yield new ArrayType(resolveType(k.getComponentType()), ArrayKind.READ_WRITE);
+                    yield new ArrayType(resolveNullableType(k.getComponentType()), ArrayKind.READ_WRITE);
                 if(k == javaClass)
                     yield this.klass.getType();
                 yield getKlass.apply(k).getType();
@@ -194,7 +202,9 @@ public class ReflectDefiner {
             case java.lang.reflect.TypeVariable<?> tv -> Objects.requireNonNull(typeVariableMap.get(tv),
                     () -> "Cannot find type variable " + tv.getName() + " in class " + javaClass.getName()
             ).getType();
-            case GenericArrayType genericArrayType -> new ArrayType(resolveType(genericArrayType.getGenericComponentType()), ArrayKind.READ_WRITE);
+            case GenericArrayType genericArrayType -> new ArrayType(
+                    resolveNullableType(genericArrayType.getGenericComponentType()), ArrayKind.READ_WRITE
+            );
             case null, default -> throw new InternalException("Cannot resolve java type: " + type);
         };
     }

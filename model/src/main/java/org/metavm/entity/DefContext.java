@@ -147,6 +147,13 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
         return getDef(javaType, DEFINITION);
     }
 
+    public org.metavm.object.type.Type getNullableType(Type javaType) {
+        var type = getType(javaType);
+        if(!ReflectionUtils.isPrimitiveType(javaType))
+            type = Types.getNullableType(type);
+        return type;
+    }
+
     public org.metavm.object.type.Type getType(Type javaType) {
         var type = Types.getPrimitiveType(javaType);
         if (type != null)

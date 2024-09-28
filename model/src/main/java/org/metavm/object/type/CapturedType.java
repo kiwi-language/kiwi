@@ -118,6 +118,11 @@ public class CapturedType extends Type {
         output.writeId(variable.getId());
     }
 
+    @Override
+    public int getPrecedence() {
+        return 0;
+    }
+
     public static CapturedType read(InstanceInput input, TypeDefProvider typeDefProvider) {
         return new CapturedType((CapturedTypeVariable) typeDefProvider.getTypeDef(input.readId()));
     }

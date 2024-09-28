@@ -16,6 +16,7 @@ import org.metavm.entity.StdKlass;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.type.TypeVariable;
+import org.metavm.object.type.Types;
 import org.metavm.object.type.UncertainType;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
@@ -74,9 +75,11 @@ public class TranspileUtilsTest extends TestCase {
 
         addMethod.setParameters(List.of(
                 new Parameter(null, "list", "list",
-                        StdKlass.list.get().getParameterized(List.of(UncertainType.createLowerBounded(typeVar.getType()))).getType()
+                        Types.getNullableType(
+                                StdKlass.list.get().getParameterized(List.of(UncertainType.createLowerBounded(typeVar.getType()))).getType()
+                        )
                 ),
-                new Parameter(null, "element", "element", typeVar.getType())
+                new Parameter(null, "element", "element", Types.getNullableType(typeVar.getType()))
         ));
         var sig2 = addMethod.getInternalName(null);
         Assert.assertEquals(sig, sig2);
@@ -89,7 +92,7 @@ public class TranspileUtilsTest extends TestCase {
                 TranspileUtils.createType(String.class),
                 TranspileUtils.createPrimitiveType(int.class)
         ));
-        Assert.assertEquals("org.metavm.autograph.mocks.SignatureFoo.test(String,Long,Any)", internalName);
+        Assert.assertEquals("org.metavm.autograph.mocks.SignatureFoo.test(String,Long,Any|Null)", internalName);
     }
 
     public void testIsStruct() {

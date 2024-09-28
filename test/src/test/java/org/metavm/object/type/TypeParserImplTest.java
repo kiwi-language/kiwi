@@ -171,4 +171,13 @@ public class TypeParserImplTest extends TestCase {
         return map;
     }
 
+    public void testParType() {
+        var type = new ArrayType(new UnionType(Set.of(Types.getNullType(), Types.getStringType())), ArrayKind.READ_WRITE);
+        var expr = type.toExpression();
+        TypeDefProvider typeDefProvider = (Id id) -> {throw new UnsupportedOperationException();};
+        var parser = new TypeParserImpl(typeDefProvider);
+        var parsedType = parser.parseType(expr);
+        Assert.assertEquals(type, parsedType);
+    }
+
 }

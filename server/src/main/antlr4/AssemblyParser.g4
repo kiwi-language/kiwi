@@ -172,7 +172,7 @@ statement
     | THROW expression ';'
     | SEMI
 //    | statementExpression=expression ';'
-    | methodCall ';'
+    | methodCall '!'? ';'
     | functionCall ';'
     | (NEW | UNEW | ENEW) creator ';'
     | ALLOCATE allocator ';'

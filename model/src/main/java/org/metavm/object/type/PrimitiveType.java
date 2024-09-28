@@ -176,6 +176,11 @@ public class PrimitiveType extends Type {
         output.write(PrimitiveTypeKey.getTypeKeyCode(kind.code()));
     }
 
+    @Override
+    public int getPrecedence() {
+        return 0;
+    }
+
     public @Nullable Value getDefaultValue() {
         return kind.getDefaultValue();
     }

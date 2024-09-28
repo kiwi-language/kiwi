@@ -243,10 +243,7 @@ public class Declarator extends CodeGenVisitor {
     }
 
     private Type resolveParameterType(PsiParameter parameter) {
-        var type = resolveType(parameter.getType());
-        if (TranspileUtils.getAnnotation(parameter, Nullable.class) != null)
-            type = Types.getNullableType(type);
-        return type;
+        return resolveNullableType(parameter.getType());
     }
 
 
@@ -260,9 +257,7 @@ public class Declarator extends CodeGenVisitor {
                 new IndexField(index, getBizFieldName(psiField), psiField.getName(), Values.nullValue());
             return;
         }
-        var type = resolveType(psiField.getType());
-        if (TranspileUtils.getAnnotation(psiField, Nullable.class) != null)
-            type = Types.getNullableType(type);
+        var type = resolveNullableType(psiField.getType());
         var klass = currentClass().klass;
         var isStatic = TranspileUtils.isStatic(psiField);
         var fieldTag = (int) TranspileUtils.getFieldAnnotationAttribute(psiField, "tag", -1);
@@ -331,18 +326,18 @@ public class Declarator extends CodeGenVisitor {
     }
 
     private Type getReturnType(PsiMethod method) {
-        var type = method.isConstructor() ?
-                TranspileUtils.createTemplateType(requireNonNull(method.getContainingClass())) :
-                method.getReturnType();
-        var metaType = resolveType(type);
-        if (TranspileUtils.getAnnotation(method, Nullable.class) != null ||
-                method.getReturnType() != null && TranspileUtils.getAnnotation(method.getReturnType(), Nullable.class) != null)
-            metaType = Types.getNullableType(metaType);
-        return metaType;
+        if(method.isConstructor())
+            return resolveType(TranspileUtils.createTemplateType(requireNonNull(method.getContainingClass())));
+        else
+            return resolveNullableType(method.getReturnType());
     }
 
     private Type resolveType(PsiType psiType) {
         return typeResolver.resolveTypeOnly(psiType);
+    }
+
+    private Type resolveNullableType(PsiType psiType) {
+        return typeResolver.resolveNullable(psiType, ResolutionStage.INIT);
     }
 
     private static class ClassInfo {

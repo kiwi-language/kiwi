@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.flow.Flow;
 import org.metavm.flow.FlowExecResult;
@@ -9,6 +10,7 @@ import org.metavm.util.InstanceOutput;
 import javax.annotation.Nullable;
 import java.util.List;
 
+@Slf4j
 public class FlowValue extends FunctionValue {
 
     private final Flow flow;

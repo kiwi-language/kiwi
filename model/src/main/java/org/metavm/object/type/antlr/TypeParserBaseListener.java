@@ -41,6 +41,18 @@ public class TypeParserBaseListener implements TypeParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterParType(TypeParser.ParTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitParType(TypeParser.ParTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterGenericDeclarationRef(TypeParser.GenericDeclarationRefContext ctx) { }
 	/**
 	 * {@inheritDoc}

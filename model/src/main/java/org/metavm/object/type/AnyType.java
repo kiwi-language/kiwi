@@ -84,6 +84,11 @@ public class AnyType extends Type {
     }
 
     @Override
+    public int getPrecedence() {
+        return 0;
+    }
+
+    @Override
     protected boolean equals0(Object obj) {
         return obj instanceof AnyType;
     }

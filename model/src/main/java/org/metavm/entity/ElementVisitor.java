@@ -435,4 +435,8 @@ public abstract class ElementVisitor<R> {
     public R visitTypeLiteralExpression(TypeLiteralExpression typeLiteralExpression) {
         return visitExpression(typeLiteralExpression);
     }
+
+    public R visitNonNullNode(NonNullNode nonNullNode) {
+        return visitNode(nonNullNode);
+    }
 }

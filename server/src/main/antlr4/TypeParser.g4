@@ -11,12 +11,15 @@ type
     | variableType
     | '#' qualifiedName
     | classType
+    | parType
     | elementType=type '[' arrayKind? ']'
     | type ('|' type)+
     | type ('&' type)+
     | '[' type ',' type ']'
     | '(' typeList? ')' '->' type
     ;
+
+parType: '(' type ')';
 
 genericDeclarationRef: classType | methodRef | functionRef;
 

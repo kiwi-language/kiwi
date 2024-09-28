@@ -203,7 +203,12 @@ public class UnionType extends CompositeType {
 
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
-        return NncUtils.join(members, type -> type.toExpression(serializeContext, getTypeDefExpr), "|");
+        return NncUtils.join(members, type -> {
+            var memberExpr = type.toExpression(serializeContext, getTypeDefExpr);
+            if(type.getPrecedence() >= getPrecedence())
+                memberExpr = "("+ memberExpr + ")";
+            return memberExpr;
+        }, "|");
     }
 
     @Override
@@ -226,10 +231,14 @@ public class UnionType extends CompositeType {
         return new UnionType(members);
     }
 
-    private Set<Type> memberSet() {
+    public Set<Type> memberSet() {
         if(memberSet == null)
             memberSet = new HashSet<>(members.toList());
         return memberSet;
     }
 
+    @Override
+    public int getPrecedence() {
+        return 3;
+    }
 }

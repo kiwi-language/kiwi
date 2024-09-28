@@ -58,7 +58,7 @@ struct SKU {
         this.decQuantity(quantity);
         size: coupons.size();
         loop: for(int i = 0, double totalDiscount = 0; loop.i < size; i = loop.i + 1, totalDiscount = loop.totalDiscount + discount) {
-            coupon: coupons.get(loop.i);
+            coupon: coupons.get(loop.i)!;
             discount: coupon.use();
         }
         order: new Order(this.name, quantity, this.price * quantity - loop.totalDiscount, this, coupons);

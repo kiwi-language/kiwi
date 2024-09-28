@@ -45,6 +45,7 @@ public enum NodeKind {
     INDEX_SELECT_FIRST(NodeKindCodes.INDEX_SELECT_FIRST, IndexSelectFirstNode.class, IndexSelectFirstNodeParam.class),
     GOTO(NodeKindCodes.GOTO, GotoNode.class, GotoNodeParam.class),
     TARGET(NodeKindCodes.TARGET, TargetNode.class, TargetNodeParam.class),
+    NON_NULL(NodeKindCodes.NON_NULL, NonNullNode.class, NonNullNodeParam.class),
     ;
 
     private final int code;
