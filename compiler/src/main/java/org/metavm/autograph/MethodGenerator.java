@@ -145,6 +145,18 @@ public class MethodGenerator {
                 type,
                 NncUtils.get(initialValue, Values::expression),
                 null,
+                null,
+                scope().getLastNode(), scope()
+        ));
+    }
+
+    NewArrayNode createNewArrayWithDimensions(ArrayType type, List<Expression> dimensions) {
+        return setNodeExprTypes(new NewArrayNode(
+                null, nextName("NewArray"), null,
+                type,
+                null,
+                NncUtils.map(dimensions, Values::expression),
+                null,
                 scope().getLastNode(), scope()
         ));
     }
@@ -612,6 +624,12 @@ public class MethodGenerator {
                 null, nextName("ClearArray"), null,
                 scope().getLastNode(), scope(), Values.expression(array)
         ));
+    }
+
+    public SetElementNode createSetElement(Expression array, Expression index, Expression value) {
+        return new SetElementNode(null, nextName("SetElement"), null,
+                scope().getLastNode(), scope(), Values.expression(array),
+                Values.expression(index), Values.expression(value));
     }
 
     private static final class ScopeInfo {

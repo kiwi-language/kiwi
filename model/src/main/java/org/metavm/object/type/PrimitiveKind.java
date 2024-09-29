@@ -54,7 +54,12 @@ public enum PrimitiveKind {
     },
     TIME(5, "time", Date.class, TimeValue.class, TypeCategory.TIME),
     PASSWORD(6, "password", Password.class, PasswordValue.class, TypeCategory.PASSWORD),
-    NULL(7, "null", Null.class, NullValue.class, TypeCategory.NULL),
+    NULL(7, "null", Null.class, NullValue.class, TypeCategory.NULL) {
+        @Override
+        public Value getDefaultValue() {
+            return Instances.nullInstance();
+        }
+    },
     VOID(8, "void", Void.class, null, TypeCategory.VOID);
 
     private final int code;

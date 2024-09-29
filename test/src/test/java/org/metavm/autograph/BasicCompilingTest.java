@@ -51,6 +51,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processDoWhile();
             processInnerExtendsOwner();
             processNullable();
+            processArray();
         });
     }
 
@@ -498,6 +499,32 @@ public class BasicCompilingTest extends CompilerTestBase {
         catch (BusinessException e) {
             Assert.assertSame(ErrorCode.FLOW_EXECUTION_FAILURE, e.getErrorCode());
         }
+    }
+
+    private void processArray() {
+        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("array.ArrayFoo", Map.of()));
+        var v = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        Assert.assertNull(v);
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "set", List.of(0, "metavm")));
+        var v1 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        Assert.assertEquals("metavm", v1);
+
+        var v2 = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getInt", List.of(0)));
+        Assert.assertEquals(0L, v2);
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "setInt", List.of(0, 1)));
+        var v3 = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getInt", List.of(0)));
+        Assert.assertEquals(1L, v3);
+
+        var v4 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getMulti", List.of(0, 0)));
+        Assert.assertNull(v4);
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "setMulti", List.of(0, 0, "metavm")));
+        var v5 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getMulti", List.of(0, 0)));
+        Assert.assertEquals("metavm", v5);
+
+        var v6 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getInitialized", List.of(0, 0)));
+        Assert.assertEquals("metavm", v6);
+        var v7 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getInitialized", List.of(2, 2)));
+        Assert.assertEquals(6L, v7);
     }
 
 }

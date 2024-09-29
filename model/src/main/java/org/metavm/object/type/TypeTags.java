@@ -18,4 +18,8 @@ public class TypeTags {
         return typeTag > 0 && typeTag < SYSTEM_TYPE_TAG_LIMIT;
     }
 
+    public static boolean isNonArraySystemTypeTag(int typeTag) {
+        return typeTag > 4 && typeTag < SYSTEM_TYPE_TAG_LIMIT;
+    }
+
 }

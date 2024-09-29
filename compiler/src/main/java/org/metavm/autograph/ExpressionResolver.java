@@ -83,7 +83,7 @@ public class ExpressionResolver {
             return resolve(psiExpression, context);
         }
         catch (Exception e) {
-            throw new InternalException("Failed to resolve expression: " + psiExpression.getText(), e);
+            throw new InternalException("Failed to resolve expression: " + psiExpression.getClass().getSimpleName() + " " + psiExpression.getText(), e);
         }
     }
 
@@ -122,6 +122,7 @@ public class ExpressionResolver {
             case PsiTypeCastExpression typeCastExpression -> resolveTypeCast(typeCastExpression, context);
             case PsiSwitchExpression switchExpression -> resolveSwitchExpression(switchExpression, context);
             case PsiClassObjectAccessExpression classObjectAccessExpression -> resolveClassObjectAccess(classObjectAccessExpression, context);
+            case PsiArrayInitializerExpression arrayInitializerExpression -> resolveArrayInitialization(arrayInitializerExpression, context);
             default -> throw new IllegalStateException("Unexpected value: " + psiExpression);
         };
     }
@@ -582,21 +583,40 @@ public class ExpressionResolver {
     }
 
     private Expression resolveNewArray(PsiNewExpression expression, ResolutionContext context) {
-        if (expression.getArrayInitializer() == null) {
-            throw new InternalException("Dimension new array expression not supported yet");
-        }
         var type = (ArrayType) typeResolver.resolveDeclaration(expression.getType());
-        var node = methodGenerator.createNewArray(
+        NewArrayNode node;
+        if (expression.getArrayInitializer() == null) {
+            node = methodGenerator.createNewArrayWithDimensions(
+                    type,
+                    NncUtils.map(expression.getArrayDimensions(), d -> resolve(d, context))
+            );
+        } else {
+            node = methodGenerator.createNewArray(
+                    type,
+                    new ArrayExpression(
+                            NncUtils.map(
+                                    expression.getArrayInitializer().getInitializers(),
+                                    e -> resolve(e, context)
+                            ),
+                            type
+                    )
+            );
+        }
+        return new NodeExpression(node);
+    }
+
+    private Expression resolveArrayInitialization(PsiArrayInitializerExpression arrayInitializerExpression, ResolutionContext context) {
+        var type = (ArrayType) typeResolver.resolveTypeOnly(arrayInitializerExpression.getType());
+        return Expressions.node(methodGenerator.createNewArray(
                 type,
                 new ArrayExpression(
                         NncUtils.map(
-                                expression.getArrayInitializer().getInitializers(),
-                                this::resolve
+                                arrayInitializerExpression.getInitializers(),
+                                e -> resolve(e, context)
                         ),
                         type
                 )
-        );
-        return new NodeExpression(node);
+        ));
     }
 
     private Expression resolveNewPojo(PsiNewExpression expression, ResolutionContext context) {
@@ -695,42 +715,55 @@ public class ExpressionResolver {
             }
         }
         return processAssignment(
-                (PsiReferenceExpression) expression.getLExpression(), assignment, context
+                expression.getLExpression(), assignment, context
         );
     }
 
-    private Expression processAssignment(PsiReferenceExpression assigned, Expression assignment, ResolutionContext context) {
-        var target = assigned.resolve();
-        if (target instanceof PsiVariable variable) {
-            if (variable instanceof PsiField psiField) {
-                if(TranspileUtils.isStatic(psiField)) {
-                    var klass =  ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.createType(psiField.getContainingClass()))).resolve();
-                    var field = klass.getStaticFieldByName(psiField.getName());
-                    methodGenerator.createUpdateStatic(klass, Map.of(field,  assignment));
-                }
-                else {
-                    Expression self;
-                    if (assigned.getQualifierExpression() != null) {
-                        self = resolve(assigned.getQualifierExpression(), context);
+    private Expression processAssignment(PsiExpression assigned, Expression assignment, ResolutionContext context) {
+        if(assigned instanceof PsiReferenceExpression refExpr) {
+            var target = refExpr.resolve();
+            if (target instanceof PsiVariable variable) {
+                if (variable instanceof PsiField psiField) {
+                    if (TranspileUtils.isStatic(psiField)) {
+                        var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.createType(psiField.getContainingClass()))).resolve();
+                        var field = klass.getStaticFieldByName(psiField.getName());
+                        methodGenerator.createUpdateStatic(klass, Map.of(field, assignment));
                     } else {
-                        self = variableTable.get("this");
+                        Expression self;
+                        if (refExpr.getQualifierExpression() != null) {
+                            self = resolve(refExpr.getQualifierExpression(), context);
+                        } else {
+                            self = variableTable.get("this");
+                        }
+                        Klass instanceType = Types.resolveKlass(methodGenerator.getExpressionType(self));
+                        typeResolver.ensureDeclared(instanceType);
+                        Field field = instanceType.getFieldByCode(psiField.getName());
+                        UpdateObjectNode node = methodGenerator.createUpdateObject(self);
+                        node.setUpdateField(field, UpdateOp.SET, Values.expression(assignment));
                     }
-                    Klass instanceType = Types.resolveKlass(methodGenerator.getExpressionType(self));
-                    typeResolver.ensureDeclared(instanceType);
-                    Field field = instanceType.getFieldByCode(psiField.getName());
-                    UpdateObjectNode node = methodGenerator.createUpdateObject(self);
-                    node.setUpdateField(field, UpdateOp.SET, Values.expression(assignment));
+                } else {
+                    variableTable.set(
+                            variable.getName(),
+                            new NodeExpression(methodGenerator.createValue(variable.getName(), assignment))
+                    );
                 }
             } else {
-                variableTable.set(
-                        variable.getName(),
-                        new NodeExpression(methodGenerator.createValue(variable.getName(), assignment))
-                );
+                throw new InternalException("Invalid assignment target " + target);
             }
-        } else {
-            throw new InternalException("Invalid assignment target " + target);
+            return assignment;
         }
-        return assignment;
+        else if(assigned instanceof PsiArrayAccessExpression arrayAccess) {
+            var array = resolve(arrayAccess.getArrayExpression(), context);
+            if(array.getType().isNullable())
+                array = Expressions.node(methodGenerator.createNonNull("nonNull", array));
+            var index = resolve(arrayAccess.getIndexExpression(), context);
+            if(index.getType().isNullable())
+                index = Expressions.node(methodGenerator.createNonNull("nonNull", index));
+            methodGenerator.createSetElement(array, index, assignment);
+            return assignment;
+        }
+        else
+            throw new IllegalStateException("Unsupported assignment target: " + assigned);
     }
 
     void processChildAssignment(Expression self, @Nullable Field field, Expression assignment) {

@@ -112,6 +112,10 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
+    public R visitSetElementNode(SetElementNode node) {
+        return visitNode(node);
+    }
+
     public R visitFunctionNode(FunctionNode node) {
         return visitNode(node);
     }

@@ -28,7 +28,7 @@ public class Nodes {
 
     public static NewArrayNode newArray(String name, @Nullable String code, ArrayType type,
                                         @Nullable Value value, @Nullable ParentRef parentRef, ScopeRT scope) {
-        return new NewArrayNode(null, name, code, type, value, parentRef, scope.getLastNode(), scope);
+        return new NewArrayNode(null, name, code, type, value, null, parentRef, scope.getLastNode(), scope);
     }
 
     public static NewObjectNode newObject(String name, ScopeRT scope, Method constructor,

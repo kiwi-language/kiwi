@@ -1072,7 +1072,7 @@ public class Assembler {
                         var elementType = parseType(creator.typeType(), this.scope, getCompilationUnit());
                         var arrayKind = parseArrayKind(creator.arrayKind());
                         var type = new ArrayType(elementType, arrayKind);
-                        return new NewArrayNode(null, name, null, type, null, null, scope.getLastNode(), scope);
+                        return new NewArrayNode(null, name, null, type, null, null, null, scope.getLastNode(), scope);
                     }
                     else {
                         var type = (ClassType) parseClassType(creator.classOrInterfaceType(), this.scope, getCompilationUnit());

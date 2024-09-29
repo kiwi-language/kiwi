@@ -108,7 +108,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     public void onInstanceInitialized(Instance instance) {
-        if(!TypeTags.isSystemTypeTag(instance.getType().getTypeTag()) || entityCreationDisabled)
+        if(!TypeTags.isNonArraySystemTypeTag(instance.getType().getTypeTag()) || entityCreationDisabled)
             return;
         var loadAware = new ArrayList<LoadAware>();
         instance.accept(new StructuralInstanceVisitor() {

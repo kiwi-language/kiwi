@@ -24,7 +24,7 @@ public class NodeDTOFactory {
                 NodeKind.NEW_ARRAY.code(),
                 null,
                 typeId,
-                new NewArrayNodeParam(value, null),
+                new NewArrayNodeParam(value, null, null),
                 null,
                 null,
                 null

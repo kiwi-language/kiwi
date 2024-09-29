@@ -994,4 +994,15 @@ public class Instances {
         nat.forEach(action);
     }
 
+    public static Value getDefaultValue(Type type) {
+        Value defaultValue = null;
+        if(type.isNullable())
+            defaultValue = nullInstance();
+        else if(type instanceof PrimitiveType primitiveType)
+            defaultValue = primitiveType.getKind().getDefaultValue();
+        if(defaultValue == null)
+            throw new InternalException("Cannot get default value for type " + type);
+        return defaultValue;
+    }
+
 }

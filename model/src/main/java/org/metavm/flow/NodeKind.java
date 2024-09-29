@@ -46,6 +46,7 @@ public enum NodeKind {
     GOTO(NodeKindCodes.GOTO, GotoNode.class, GotoNodeParam.class),
     TARGET(NodeKindCodes.TARGET, TargetNode.class, TargetNodeParam.class),
     NON_NULL(NodeKindCodes.NON_NULL, NonNullNode.class, NonNullNodeParam.class),
+    SET_ELEMENT(NodeKindCodes.SET_ELEMENT, SetElementNode.class, SetElementNodeParam.class)
     ;
 
     private final int code;
