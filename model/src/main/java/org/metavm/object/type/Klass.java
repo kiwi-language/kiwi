@@ -554,7 +554,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public @Nullable Method findMethodByVerticalTemplate(Method template) {
-        return findMethod(Method::getVerticalTemplate, template);
+        return findMethod(m -> m.getVerticalTemplate() == template);
     }
 
     public Method findSelfMethod(Predicate<Method> predicate) {

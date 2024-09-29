@@ -1,17 +1,18 @@
 package org.metavm.entity.natives;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.lang.EmailUtils;
 import org.metavm.api.lang.*;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.DefContext;
 import org.metavm.entity.StdKlass;
+import org.metavm.entity.StdMethod;
 import org.metavm.flow.FlowExecResult;
+import org.metavm.flow.Flows;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.TypeParserImpl;
-import org.metavm.object.type.Types;
+import org.metavm.object.type.*;
 import org.metavm.user.Session;
 import org.metavm.util.*;
 
@@ -21,6 +22,9 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
+import static java.util.Objects.requireNonNull;
+
+@Slf4j
 public enum StdFunction implements ValueHolderOwner<Function> {
 
     isSourcePresent(
@@ -510,8 +514,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.booleanInstance(s.getValue().isEmpty()));
             }
     ),
-    sort(
-            "void sort(java.util.List<[never, any]> list)",
+    sortList(
+            "void sortList(java.util.List<[never, any]> list)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Collections.class, "sort", List.class)
@@ -521,6 +525,81 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var nat = new ListNative(list);
                 nat.sort(callContext);
                 return FlowExecResult.of(Instances.nullInstance());
+            }
+    ),
+    sortArray(
+            "void sortArray([never, any|null][] array, long from, long to, java.util.Comparator<[never,any]>|null comparator)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Arrays.class, "sort", Object[].class, int.class, int.class, Comparator.class)
+            ),
+            (func, args, callContext) -> {
+                var array = args.get(0).resolveArray();
+                var from = ((LongValue) args.get(1)).getValue().intValue();
+                var to = ((LongValue) args.get(2)).getValue().intValue();
+                var c = args.get(3);
+                if(c.isNull())
+                    array.sort(from, to, (e1,e2) -> Instances.compare(e1, e2, callContext));
+                else {
+                    var comparator = c.resolveObject();
+                    var cmpMethod = requireNonNull(comparator.getKlass().findMethodByVerticalTemplate(StdMethod.comparatorCompare.get()));
+                    array.sort(from, to, (e1, e2) -> Instances.toInt(
+                            Flows.invokeVirtual(cmpMethod, comparator, List.of(e1,e2), callContext
+                    )));
+                }
+                return FlowExecResult.of(Instances.nullInstance());
+            }
+    ),
+    copyArray(
+            "(T|null)[] copyArray<T>((T|null)[] array, long newLength)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Arrays.class, "copyOf", Object[].class, int.class)
+            ),
+            (func, args, callContext) -> {
+                var array = args.get(0).resolveArray();
+                var newLength = ((LongValue) args.get(1)).getValue().intValue();
+                return FlowExecResult.of(array.copyOf(0, newLength).getReference());
+            }
+    ),
+    copyArray2(
+            "(T|null)[] copyArray2<T, U>((U|null)[] array, long newLength, org.metavm.object.type.Klass newType)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Arrays.class, "copyOf", Object[].class, int.class, Class.class)
+            ),
+            (func, args, callContext) -> {
+                var array = args.get(0).resolveArray();
+                var newLength = ((LongValue) args.get(1)).getValue().intValue();
+                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().get(0)), ArrayKind.READ_WRITE);
+                return FlowExecResult.of(array.copyOf(0, newLength, newType).getReference());
+            }
+    ),
+    copyArrayRange(
+            "(T|null)[] copyArrayRange<T>((T|null)[] array, long from, long to)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Arrays.class, "copyOfRange", Object[].class, int.class, int.class)
+            ),
+            (func, args, callContext) -> {
+                var array = args.get(0).resolveArray();
+                var from = ((LongValue) args.get(1)).getValue().intValue();
+                var to = ((LongValue) args.get(2)).getValue().intValue();
+                return FlowExecResult.of(array.copyOf(from, to).getReference());
+            }
+    ),
+    copyArrayRange2(
+            "(T|null)[] copyArrayRange2<T, U>((U|null)[] array, long from, long to, org.metavm.object.type.Klass newType)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Arrays.class, "copyOfRange", Object[].class, int.class, int.class, Class.class)
+            ),
+            (func, args, callContext) -> {
+                var array = args.get(0).resolveArray();
+                var from = ((LongValue) args.get(1)).getValue().intValue();
+                var to = ((LongValue) args.get(2)).getValue().intValue();
+                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().get(0)), ArrayKind.READ_WRITE);
+                return FlowExecResult.of(array.copyOf(from, to, newType).getReference());
             }
     ),
     reverse(
@@ -594,7 +673,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
 
     public static void initializeFromDefContext(DefContext defContext, boolean local) {
         for (StdFunction def : values()) {
-            var func = Objects.requireNonNull(
+            var func = requireNonNull(
                     defContext.selectFirstByKey(Function.UNIQUE_IDX_CODE, def.getName()),
                     "Function not found: " + def.getName());
             if(local)

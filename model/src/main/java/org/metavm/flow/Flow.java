@@ -477,11 +477,11 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                     try {
                         convertedArgs.add(arg.convert(param.getType()));
                     } catch (BusinessException e) {
-                        if (DebugEnv.debugging) {
-                            debugLogger.info("Argument type mismatch: {} is not assignable from {}",
+//                        if (DebugEnv.debugging) {
+                            logger.info("Argument type mismatch: {} is not assignable from {}",
                                     param.getType().getTypeDesc(),
                                     arg.getType().getTypeDesc());
-                        }
+//                        }
                         break out;
                     }
                 }
@@ -491,7 +491,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         logger.info("class: {}, number type parameters: {}", EntityUtils.getRealType(this).getSimpleName(), getTypeParameters().size());
         throw new BusinessException(ErrorCode.ILLEGAL_FUNCTION_ARGUMENT, getQualifiedName(),
                 NncUtils.join(getParameterTypes(), Type::getTypeDesc),
-                NncUtils.join(arguments, arg -> EntityUtils.getEntityDesc(arg.getType())));
+                NncUtils.join(arguments, arg -> arg.getType().getTypeDesc()));
     }
 
     @Override

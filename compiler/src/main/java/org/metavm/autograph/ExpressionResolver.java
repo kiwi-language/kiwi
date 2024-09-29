@@ -3,6 +3,7 @@ package org.metavm.autograph;
 import com.google.common.collect.Streams;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
+import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.*;
 import org.metavm.flow.*;
@@ -129,7 +130,10 @@ public class ExpressionResolver {
 
     private Expression resolveClassObjectAccess(PsiClassObjectAccessExpression classObjectAccessExpression, ResolutionContext context) {
         var type = typeResolver.resolveTypeOnly(classObjectAccessExpression.getOperand().getType());
-        return new TypeLiteralExpression(type);
+        if(type instanceof ArrayType)
+            return new TypeLiteralExpression(ModelDefRegistry.getType(Array.class));
+        else
+            return new TypeLiteralExpression(type);
     }
 
     private Expression resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {

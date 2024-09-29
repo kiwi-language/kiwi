@@ -52,6 +52,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processInnerExtendsOwner();
             processNullable();
             processArray();
+            processArrayUtils();
         });
     }
 
@@ -525,6 +526,31 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals("metavm", v6);
         var v7 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getInitialized", List.of(2, 2)));
         Assert.assertEquals(6L, v7);
+    }
+
+    private void processArrayUtils() {
+        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("array.ArrayUtilsFoo", Map.of()));
+        var v1 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        Assert.assertEquals("c", v1);
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "sort", List.of()));
+        var v2 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        Assert.assertEquals("a", v2);
+
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "copy", List.of()));
+        var v3 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy", List.of(0)));
+        Assert.assertEquals("a", v3);
+
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "copy2", List.of()));
+        var v4 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy2", List.of(0)));
+        Assert.assertEquals("a", v4);
+
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "copyRange", List.of(1, 3)));
+        var v5 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy", List.of(0)));
+        Assert.assertEquals("b", v5);
+
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "copyRange2", List.of(1, 3)));
+        var v6 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy2", List.of(0)));
+        Assert.assertEquals("b", v6);
     }
 
 }

@@ -448,6 +448,9 @@ public class TranspileUtils {
     public static PsiClassType createVariableType(Method method, int typeParameterIndex) {
         var psiClass = requireNonNull(createClassType(method.getDeclaringClass()).resolve());
         var psiMethod = NncUtils.find(psiClass.getMethods(), m -> matchMethod(m, method));
+        if(psiMethod == null)
+            throw new NullPointerException("Failed to find method " + ReflectionUtils.getMethodSignature(method)
+                    + " in class " + psiClass.getQualifiedName());
         return createType(Objects.requireNonNull(psiMethod).getTypeParameters()[typeParameterIndex]);
     }
 
@@ -578,9 +581,10 @@ public class TranspileUtils {
             }
             return matchClass(resolved, klass);
         }
-        if (type instanceof PsiPrimitiveType primitiveType) {
+        if (type instanceof PsiPrimitiveType primitiveType)
             return klass.isPrimitive() && primitiveType.getName().equals(klass.getName());
-        }
+        if(type instanceof PsiArrayType arrayType)
+            return klass.isArray() && matchType(arrayType.getComponentType(), klass.getComponentType(), true);
         return false;
     }
 

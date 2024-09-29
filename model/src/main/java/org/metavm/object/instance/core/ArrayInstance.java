@@ -540,6 +540,10 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
         elements.sort(comparator);
     }
 
+    public void sort(int from, int to, Comparator<Value> comparator) {
+        elements.subList(from, to).sort(comparator);
+    }
+
     @Override
     public Instance copy() {
         var copy = new ArrayInstance(getType());
@@ -559,4 +563,13 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     public void reverse() {
         Collections.reverse(elements);
     }
+
+    public ArrayInstance copyOf(int from, int to) {
+        return copyOf(from, to, getType());
+    }
+
+    public ArrayInstance copyOf(int from, int to, ArrayType type) {
+        return new ArrayInstance(type, elements.subList(from, to));
+    }
+
 }

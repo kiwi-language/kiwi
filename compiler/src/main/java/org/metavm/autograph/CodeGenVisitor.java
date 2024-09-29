@@ -1,9 +1,11 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiClass;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
 
+@Slf4j
 public class CodeGenVisitor extends VisitorBase {
 
     @Override

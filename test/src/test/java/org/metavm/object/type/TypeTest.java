@@ -42,4 +42,10 @@ public class TypeTest extends TestCase {
         Assert.assertFalse(anyType.isConvertibleFrom(nullableAnyType));
     }
 
+    public void testArrayTypeAssignability() {
+        var t1 = new ArrayType(Types.getUncertainType(Types.getNeverType(), Types.getNullableAnyType()), ArrayKind.READ_WRITE);
+        var t2 = new ArrayType(Types.getNullableStringType(), ArrayKind.READ_WRITE);
+        Assert.assertTrue(t1.isAssignableFrom(t2));
+    }
+
 }
