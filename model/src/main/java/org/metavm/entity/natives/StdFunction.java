@@ -551,8 +551,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.nullInstance());
             }
     ),
-    copyArray(
-            "(T|null)[] copyArray<T>((T|null)[] array, long newLength)",
+    copyOfArray(
+            "(T|null)[] copyOfArray<T>((T|null)[] array, long newLength)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Arrays.class, "copyOf", Object[].class, int.class)
@@ -563,8 +563,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(array.copyOf(0, newLength).getReference());
             }
     ),
-    copyArray2(
-            "(T|null)[] copyArray2<T, U>((U|null)[] array, long newLength, org.metavm.object.type.Klass newType)",
+    copyOfArray2(
+            "(T|null)[] copyOfArray2<T, U>((U|null)[] array, long newLength, org.metavm.object.type.Klass newType)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Arrays.class, "copyOf", Object[].class, int.class, Class.class)
@@ -576,8 +576,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(array.copyOf(0, newLength, newType).getReference());
             }
     ),
-    copyArrayRange(
-            "(T|null)[] copyArrayRange<T>((T|null)[] array, long from, long to)",
+    copyOfArrayRange(
+            "(T|null)[] copyOfArrayRange<T>((T|null)[] array, long from, long to)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Arrays.class, "copyOfRange", Object[].class, int.class, int.class)
@@ -589,8 +589,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(array.copyOf(from, to).getReference());
             }
     ),
-    copyArrayRange2(
-            "(T|null)[] copyArrayRange2<T, U>((U|null)[] array, long from, long to, org.metavm.object.type.Klass newType)",
+    copyOfArrayRange2(
+            "(T|null)[] copyOfArrayRange2<T, U>((U|null)[] array, long from, long to, org.metavm.object.type.Klass newType)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Arrays.class, "copyOfRange", Object[].class, int.class, int.class, Class.class)
@@ -601,6 +601,23 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var to = ((LongValue) args.get(2)).getValue().intValue();
                 var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().get(0)), ArrayKind.READ_WRITE);
                 return FlowExecResult.of(array.copyOf(from, to, newType).getReference());
+            }
+    ),
+    arraycopy(
+            "void arraycopy(any source, long srcPos, any dest, long destPos, long length)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(System.class, "arraycopy", Object.class, int.class, Object.class, int.class, int.class)
+            ),
+            (func, args, callContext) -> {
+                var src = args.get(0).resolveArray();
+                var srcPos = ((LongValue) args.get(1)).getValue().intValue();
+                var dest = args.get(2).resolveArray();
+                var destPos = ((LongValue) args.get(3)).getValue().intValue();
+                var length = ((LongValue) args.get(4)).getValue().intValue();
+                for(int i = srcPos, j = destPos, k = 0; k < length; i++, j++, k++)
+                    dest.setElement(j, src.getElement(i));
+                return FlowExecResult.of(Instances.nullInstance());
             }
     ),
     reverse(

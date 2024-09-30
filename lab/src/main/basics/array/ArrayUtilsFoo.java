@@ -25,6 +25,11 @@ public class ArrayUtilsFoo {
         copy2 = Arrays.copyOf(array, array.length, Object[].class);
     }
 
+    public void systemCopy() {
+        copy = new String[array.length];
+        System.arraycopy(array, 0, copy, 1, 2);
+    }
+
     public void copyRange(int from, int to) {
         copy = Arrays.copyOfRange(array, from, to);
     }

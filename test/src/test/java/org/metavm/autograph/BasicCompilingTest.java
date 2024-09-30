@@ -552,6 +552,10 @@ public class BasicCompilingTest extends CompilerTestBase {
         TestUtils.doInTransaction(() -> apiClient.callMethod(id, "copyRange2", List.of(1, 3)));
         var v6 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy2", List.of(0)));
         Assert.assertEquals("b", v6);
+
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "systemCopy", List.of()));
+        var v7 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy", List.of(1)));
+        Assert.assertEquals("a", v7);
     }
 
     private void processReflectNewArray() {
