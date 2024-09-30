@@ -130,10 +130,7 @@ public class ExpressionResolver {
 
     private Expression resolveClassObjectAccess(PsiClassObjectAccessExpression classObjectAccessExpression, ResolutionContext context) {
         var type = typeResolver.resolveTypeOnly(classObjectAccessExpression.getOperand().getType());
-        if(type instanceof ArrayType)
-            return new TypeLiteralExpression(ModelDefRegistry.getType(Array.class));
-        else
-            return new TypeLiteralExpression(type);
+        return new TypeLiteralExpression(type);
     }
 
     private Expression resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {
@@ -422,7 +419,9 @@ public class ExpressionResolver {
         var methodExpr = methodCallExpression.getMethodExpression();
         var qualifier = methodExpr.getQualifierExpression();
         var method = (PsiMethod) Objects.requireNonNull(methodExpr.resolve());
-        var signature = TranspileUtils.getSignature(method, NncUtils.get(qualifier, q -> (PsiClassType) q.getType()));
+        var declaringType = qualifier != null && qualifier.getType() instanceof PsiClassType classType ?
+                classType : null;
+        var signature = TranspileUtils.getSignature(method, declaringType);
         return Streams.concat(
                         TranspileUtils.getNativeFunctionCallResolvers().stream(),
                         methodCallResolvers.stream()

@@ -378,6 +378,16 @@ public interface MetaVMParserListener extends ParseTreeListener {
 	 */
 	void exitTypeType(MetaVMParser.TypeTypeContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link MetaVMParser#parType}.
+	 * @param ctx the parse tree
+	 */
+	void enterParType(MetaVMParser.ParTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MetaVMParser#parType}.
+	 * @param ctx the parse tree
+	 */
+	void exitParType(MetaVMParser.ParTypeContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link MetaVMParser#arrayKind}.
 	 * @param ctx the parse tree
 	 */

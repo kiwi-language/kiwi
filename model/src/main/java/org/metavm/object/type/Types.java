@@ -854,4 +854,21 @@ public class Types {
             return type;
     }
 
+    public static Type getGeneralType(Klass klass) {
+        if(klass == StdKlass.any.get())
+            return getAnyType();
+        else
+            return klass.getType();
+    }
+
+    public static Klass getGeneralKlass(Type type) {
+        return switch (type) {
+            case ClassType classType -> classType.resolve();
+            case ArrayType arrayType -> getGeneralKlass(arrayType.getElementType()).getArrayKlass();
+            case UnionType unionType -> getGeneralKlass(unionType.getUnderlyingType());
+            case AnyType anyType -> StdKlass.any.get();
+            default -> throw new IllegalStateException("Cannot get general klass for type: " + type);
+        };
+    }
+
 }

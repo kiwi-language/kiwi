@@ -1005,4 +1005,29 @@ public class Instances {
         return defaultValue;
     }
 
+    public static void initArray(ArrayInstance array, int[] dims, int dimOffset) {
+        var len = dims[dimOffset];
+        if(dimOffset == dims.length - 1) {
+            var v = getDefaultValue(array.getType().getElementType());
+            for (int i = 0; i < len; i++) {
+                array.addElement(v);
+            }
+        } else {
+            for (int i = 0; i < len; i++) {
+                var subArray = ArrayInstance.allocate((ArrayType) array.getType().getElementType().getUnderlyingType());
+                array.addElement(subArray.getReference());
+                initArray(subArray, dims, dimOffset + 1);
+            }
+        }
+    }
+
+    public static Klass getGeneralClass(Instance instance) {
+        if(instance instanceof ClassInstance clsInst)
+            return clsInst.getKlass();
+        else if(instance instanceof ArrayInstance array)
+            return Types.getGeneralKlass(array.getType().getElementType()).getArrayKlass();
+        else
+            throw new IllegalArgumentException("Cannot get general klass for instance: " + instance);
+    }
+
 }

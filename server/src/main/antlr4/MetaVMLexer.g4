@@ -20,7 +20,7 @@ CLASS:              'class';
 // array kinds
 
 R: '[r]';
-RW: '[rw]';
+//RW: '[]';
 C:  '[c]';
 V: '[v]';
 

@@ -233,6 +233,12 @@ public interface MetaVMParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitTypeType(MetaVMParser.TypeTypeContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link MetaVMParser#parType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitParType(MetaVMParser.ParTypeContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link MetaVMParser#arrayKind}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

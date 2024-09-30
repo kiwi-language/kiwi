@@ -217,6 +217,8 @@ public class ExpressionParser {
     }
 
     private Type parseTypeType(MetaVMParser.TypeTypeContext typeType) {
+        if(typeType.parType() != null)
+            return parseTypeType(typeType.parType().typeType());
         if(typeType.ANY() != null)
             return Types.getAnyType();
         if(typeType.NEVER() != null)
@@ -227,9 +229,9 @@ public class ExpressionParser {
             return parsePrimitiveType(typeType.primitiveType());
         if (typeType.classOrInterfaceType() != null)
             return parseClassType(typeType.classOrInterfaceType());
-        if (typeType.BITOR() != null)
+        if (!typeType.BITOR().isEmpty())
             return new UnionType(NncUtils.mapUnique(typeType.typeType(), this::parseTypeType));
-        if (typeType.BITAND() != null)
+        if (!typeType.BITAND().isEmpty())
             return new IntersectionType(NncUtils.mapUnique(typeType.typeType(), this::parseTypeType));
         if(typeType.ARROW() != null) {
             List<Type> paramTypes = typeType.typeList() != null ?
@@ -271,6 +273,8 @@ public class ExpressionParser {
             return PrimitiveType.timeType;
         if(ctx.VOID() != null)
             return PrimitiveType.voidType;
+        if(ctx.NULL_LITERAL() != null)
+            return PrimitiveType.nullType;
         else
             throw new IllegalStateException("Unrecognized primitive type: " + ctx.getText());
 
@@ -279,7 +283,7 @@ public class ExpressionParser {
     private ArrayKind parseArrayKind(MetaVMParser.ArrayKindContext ctx) {
         if(ctx.R() != null)
             return ArrayKind.READ_ONLY;
-        if(ctx.RW() != null)
+        if(ctx.LBRACK() != null)
             return ArrayKind.READ_WRITE;
         if(ctx.C() != null)
             return ArrayKind.CHILD;

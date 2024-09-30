@@ -267,6 +267,13 @@ public class ExpressionParserTransformer extends AbstractParseTreeTransformer im
     }
 
     @Override
+    public ParseTree visitParType(MetaVMParser.ParTypeContext ctx) {
+        var transformed = new MetaVMParser.ParTypeContext(getCurrent(), ctx.invokingState);
+        transformChildren(ctx, transformed);
+        return transformed;
+    }
+
+    @Override
     public ParseTree visitArrayKind(MetaVMParser.ArrayKindContext ctx) {
         var transformed = new MetaVMParser.ArrayKindContext(getCurrent(), ctx.invokingState);
         transformChildren(ctx, transformed);

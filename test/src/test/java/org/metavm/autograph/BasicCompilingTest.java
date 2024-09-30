@@ -53,6 +53,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processNullable();
             processArray();
             processArrayUtils();
+            processReflectNewArray();
         });
     }
 
@@ -551,6 +552,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         TestUtils.doInTransaction(() -> apiClient.callMethod(id, "copyRange2", List.of(1, 3)));
         var v6 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy2", List.of(0)));
         Assert.assertEquals("b", v6);
+    }
+
+    private void processReflectNewArray() {
+        var id = TestUtils.doInTransaction(() ->
+                apiClient.saveInstance("array.ReflectNewArrayFoo", Map.of("a", List.of(1,2,3)))
+        );
+        var v = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        Assert.assertNull(v);
     }
 
 }

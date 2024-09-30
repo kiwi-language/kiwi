@@ -461,6 +461,18 @@ public class MetaVMParserBaseListener implements MetaVMParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterParType(MetaVMParser.ParTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitParType(MetaVMParser.ParTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterArrayKind(MetaVMParser.ArrayKindContext ctx) { }
 	/**
 	 * {@inheritDoc}

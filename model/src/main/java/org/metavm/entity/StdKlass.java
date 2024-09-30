@@ -13,6 +13,7 @@ import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
+import org.metavm.util.DummyAny;
 import org.metavm.util.IteratorImpl;
 
 import javax.annotation.Nullable;
@@ -61,6 +62,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     serializable(Serializable.class),
     type(Type.class),
     klass(Klass.class),
+    any(DummyAny.class)
     ;
 
     private final Class<?> javaClass;

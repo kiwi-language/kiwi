@@ -16,6 +16,7 @@ import org.metavm.object.type.*;
 import org.metavm.user.Session;
 import org.metavm.util.*;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -618,9 +619,11 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(Object.class, "getClass")),
             (func, args, callContext) -> {
-                var o = args.get(0).resolveObject();
+                var o = args.get(0).resolveDurable();
                 var entityContext = ContextUtil.getEntityContext();
-                return FlowExecResult.of(entityContext.getInstance(o.getKlass().getEffectiveTemplate()).getReference());
+                return FlowExecResult.of(entityContext.getInstance(
+                        Instances.getGeneralClass(o).getEffectiveTemplate()).getReference()
+                );
             }
     ),
     stringLength(
@@ -630,6 +633,29 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             (func, args, callContext) -> {
                 var s = (StringValue) args.get(0);
                 return FlowExecResult.of(Instances.longInstance(s.getValue().length()));
+            }
+    ),
+    newArray(
+            "any newArray(org.metavm.object.type.Klass klass, long length)",
+            false,
+            List.of(ReflectionUtils.getMethod(Array.class, "newInstance", Class.class, int.class)),
+            (func, args, callContext) -> {
+                var k = ContextUtil.getEntityContext().getEntity(Klass.class, args.get(0).resolveObject());
+                var len = ((LongValue) args.get(1)).getValue().intValue();
+                var type = new ArrayType(Types.getNullableType(Types.getGeneralType(k)), ArrayKind.READ_WRITE);
+                var array = new ArrayInstance(type);
+                Instances.initArray(array, new int[] {len}, 0);
+                return FlowExecResult.of(array.getReference());
+            }
+    ),
+    getComponentClass(
+            "org.metavm.object.type.Klass getComponentClass(org.metavm.object.type.Klass klass)",
+            false,
+            List.of(ReflectionUtils.getMethod(Class.class, "getComponentType")),
+            (func, args, callContext) -> {
+                var k = ContextUtil.getEntityContext().getEntity(Klass.class, args.get(0).resolveObject());
+                var c = ContextUtil.getEntityContext().getInstance(Objects.requireNonNull(k.getComponentKlass()));
+                return FlowExecResult.of(c.getReference());
             }
     )
     ;

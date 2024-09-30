@@ -112,25 +112,9 @@ public class NewArrayNode extends NodeRT implements NewNode {
             array.addAll( value.evaluate(frame).resolveArray());
         else if(dimensions != null) {
             var dims = dimensions.stream().mapToInt(d -> ((LongValue)  d.evaluate(frame)).getValue().intValue()).toArray();
-            initArray(array, dims, 0);
+            Instances.initArray(array, dims, 0);
         }
         return next(array.getReference());
-    }
-
-    private void initArray(ArrayInstance array, int[] dims, int dimOffset) {
-        var len = dims[dimOffset];
-        if(dimOffset == dims.length - 1) {
-            var v = Instances.getDefaultValue(getType().getElementType());
-            for (int i = 0; i < len; i++) {
-                array.addElement(v);
-            }
-        } else {
-            for (int i = 0; i < len; i++) {
-                var subArray = ArrayInstance.allocate((ArrayType) array.getType().getElementType().getUnderlyingType());
-                array.addElement(subArray.getReference());
-                initArray(subArray, dims, dimOffset + 1);
-            }
-        }
     }
 
     @Override

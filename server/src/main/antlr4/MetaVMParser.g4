@@ -248,6 +248,7 @@ typeType
     : NEVER
     | ANY
     | primitiveType
+    | parType
 //    | variableType
 //    | '#' qualifiedName
     | typeType ('|' typeType)+
@@ -258,7 +259,9 @@ typeType
     | classOrInterfaceType
     ;
 
-arrayKind: R | RW | C | V;
+parType: '(' typeType ')';
+
+arrayKind: R | '[' ']' | C | V;
 
 primitiveType
     : BOOLEAN
@@ -268,6 +271,7 @@ primitiveType
     | TIME
     | PASSWORD
     | VOID
+    | NULL_LITERAL
     ;
 
 nonWildcardTypeArguments

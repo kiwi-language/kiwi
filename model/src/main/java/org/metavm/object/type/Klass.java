@@ -153,6 +153,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private transient boolean frozen;
 
+    private transient Klass arrayKlass;
+
+    private transient Klass componentKlass;
+
     public Klass(
             Long tmpId,
             String name,
@@ -1895,5 +1899,17 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         );
     }
 
+    public Klass getArrayKlass() {
+       if(arrayKlass == null) {
+           arrayKlass = KlassBuilder.newBuilder(name + "[]", NncUtils.get(code, c -> c + "[]")).build();
+           arrayKlass.setEphemeralEntity(true);
+           arrayKlass.componentKlass = this;
+       }
+       return arrayKlass;
+    }
+
+    public Klass getComponentKlass() {
+        return componentKlass;
+    }
 }
 
