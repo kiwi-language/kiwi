@@ -169,7 +169,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(Boolean.class, "toString", boolean.class),
                     ReflectionUtils.getMethod(Character.class, "toString", char.class)
             ),
-            (func, args, callContext) -> FlowExecResult.of(Instances.stringInstance(args.get(0).getTitle()))
+            (func, args, callContext) -> FlowExecResult.of(
+                    Instances.stringInstance(Instances.toString(args.get(0), callContext)))
     ),
     hashCode(
             "long hashCode(any instance)",

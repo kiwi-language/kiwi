@@ -36,6 +36,8 @@ public class TypeKeyCodes {
 
     public static final int STRING = 17;
 
+    public static final int CHAR = 18;
+
     public static final int READ_ONLY_ARRAY = 20;
 
     public static final int READ_WRITE_ARRAY = 21;

@@ -108,6 +108,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
             case BOOLEAN -> Instances.booleanInstance((Boolean) primitiveValue.getValue());
             case STRING -> Instances.stringInstance((String) primitiveValue.getValue());
             case LONG -> Instances.longInstance((Long) primitiveValue.getValue());
+            case CHAR -> Instances.charInstance((Character) primitiveValue.getValue());
             case DOUBLE -> Instances.doubleInstance((Double) primitiveValue.getValue());
             case TIME -> Instances.timeInstance((Long) primitiveValue.getValue());
             case VOID -> throw new InternalException("Can not create a void instance");

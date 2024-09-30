@@ -93,6 +93,19 @@ public class InstanceOutput extends OutputStream {
         write(b);
     }
 
+    public void writeChar(char c) {
+        if (c <= 0x7F) {
+            write(c);
+        } else if (c <= 0x7FF) {
+            write(0xC0 | (c >> 6));
+            write(0x80 | (c & 0x3F));
+        } else {
+            write(0xE0 | (c >> 12));
+            write(0x80 | ((c >> 6) & 0x3F));
+            write(0x80 | (c & 0x3F));
+        }
+    }
+
     public void write(byte @NotNull [] bytes) {
         try {
             outputStream.write(bytes);

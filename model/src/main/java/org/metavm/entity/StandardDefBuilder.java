@@ -182,6 +182,7 @@ public class StandardDefBuilder {
         createHashSetKlass();
         createTreeSetKlass();
         createHashMapKlass();
+        createStringBuilderKlass();
 
         primTypeFactory.saveDefs(defContext);
         primTypeFactory.getMap().keySet().forEach(javaType ->
@@ -432,6 +433,21 @@ public class StandardDefBuilder {
 
     public Klass createValueListKlass() {
         return createListImplKlass(ValueList.class, ClassKind.VALUE, ArrayKind.VALUE);
+    }
+
+    public Klass createStringBuilderKlass() {
+        var klass = parseKlass(StringBuilder.class);
+        klass.setEphemeral(true);
+        FieldBuilder.newBuilder("array", "array", klass,
+                new ArrayType(Types.getNullableAnyType(), ArrayKind.READ_WRITE))
+                .isChild(true)
+                .build();
+        MethodBuilder.newBuilder(klass, "isEmpty", "isEmpty")
+                .overridden(List.of(klass.getMethod(m -> m.getName().equals("isEmpty"))))
+                .returnType(Types.getBooleanType())
+                .isNative(true)
+                .build();
+        return klass;
     }
 
     public Klass createListImplKlass(Class<?> javaClass, ClassKind kind, ArrayKind arrayKind) {

@@ -32,6 +32,7 @@ public class Instances {
     public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.of(
             Integer.class, PrimitiveType.longType,
             Long.class, PrimitiveType.longType,
+            Character.class, PrimitiveType.charType,
             Double.class, PrimitiveType.doubleType,
             Boolean.class, PrimitiveType.booleanType,
             String.class, PrimitiveType.stringType,
@@ -285,6 +286,10 @@ public class Instances {
         return new LongValue(value, Types.getLongType());
     }
 
+    public static CharValue charInstance(char value) {
+        return new CharValue(value, Types.getCharType());
+    }
+
     public static LongValue longInstance(long value, Function<Class<?>, Type> getTypeFunc) {
         return new LongValue(value, Types.getLongType());
     }
@@ -436,6 +441,8 @@ public class Instances {
             return Types.getLongType();
         if (javaClass == Double.class || javaClass == Float.class)
             return Types.getDoubleType();
+        if(javaClass == char.class || javaClass == Character.class)
+            return Types.getCharType();
         if (javaClass == Boolean.class)
             return Types.getBooleanType();
         if (javaClass == String.class)
@@ -978,6 +985,26 @@ public class Instances {
             return true;
         }
         return false;
+    }
+
+    public static String toString(Value value, CallContext callContext) {
+        if(value instanceof PrimitiveValue primitiveValue)
+            return primitiveValue.toString();
+        else if(value instanceof Reference reference)
+            return toString(reference.resolve(), callContext);
+        else
+            throw new IllegalArgumentException("Cannot get hash code for value: " + value);
+    }
+
+    public static String toString(Instance instance, CallContext callContext) {
+        if(instance instanceof ClassInstance clsInst) {
+            var method = clsInst.getKlass().getToStringMethod();
+            if(method != null) {
+                var ret = Flows.invoke(method, clsInst, List.of(), callContext);
+                return ((StringValue) Objects.requireNonNull(ret)).getValue();
+            }
+        }
+        return instance.getType().getTypeDesc() + "@" + instance.getStringId();
     }
 
     public static int toInt(@Nullable Value value) {

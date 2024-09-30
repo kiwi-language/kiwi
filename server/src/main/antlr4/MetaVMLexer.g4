@@ -10,6 +10,7 @@ ANY:                'any';
 NEVER:              'never';
 BOOLEAN:            'boolean';
 LONG:               'long';
+CHAR:               'char';
 DOUBLE:             'dobule';
 STRING:             'string';
 PASSWORD:           'password';
@@ -41,9 +42,9 @@ BOOL_LITERAL:       'true'
             |       'false'
             ;
 
-//CHAR_LITERAL:       '\'' (~['\\\r\n] | EscapeSequence) '\'';
+CHAR_LITERAL:       '\'' (~['\\\r\n] | EscapeSequence) '\'';
 
-SINGLE_QUOTED_STRING_LITERAL:     '\'' (~['\\\r\n] | EscapeSequence)* '\'';
+//SINGLE_QUOTED_STRING_LITERAL:     '\'' (~['\\\r\n] | EscapeSequence)* '\'';
 
 STRING_LITERAL:     '"' (~["\\\r\n] | EscapeSequence)* '"';
 

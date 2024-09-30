@@ -235,6 +235,7 @@ public class InstanceFactory {
             case STRING -> Instances.stringInstance((String) value);
             case TIME -> Instances.timeInstance(((Number) value).longValue());
             case NULL -> Instances.nullInstance();
+            case CHAR -> Instances.charInstance((Character) value);
             case VOID -> throw new InternalException("Invalid primitive kind 'void'");
         };
     }

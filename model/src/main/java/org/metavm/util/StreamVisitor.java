@@ -31,6 +31,7 @@ public class StreamVisitor {
             case WireTypes.STRING -> visitString();
             case WireTypes.LONG -> visitLong();
             case WireTypes.BOOLEAN -> visitBoolean();
+            case WireTypes.CHAR -> visitChar();
             case WireTypes.TIME -> visitTime();
             case WireTypes.PASSWORD -> visitPassword();
             case WireTypes.REFERENCE -> visitReference();
@@ -149,6 +150,10 @@ public class StreamVisitor {
         return input.readLong();
     }
 
+    public char readChar() {
+        return input.readChar();
+    }
+
     public Type readType(TypeDefProvider typeDefProvider) {
         return Type.readType(input, typeDefProvider);
     }
@@ -207,6 +212,10 @@ public class StreamVisitor {
 
     public void visitBoolean() {
         input.readBoolean();
+    }
+
+    public void visitChar() {
+        input.readChar();
     }
 
     public void visitPassword() {

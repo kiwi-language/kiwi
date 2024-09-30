@@ -54,6 +54,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processArray();
             processArrayUtils();
             processReflectNewArray();
+            processStringBuilder();
         });
     }
 
@@ -564,6 +565,13 @@ public class BasicCompilingTest extends CompilerTestBase {
         );
         var v = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
         Assert.assertNull(v);
+    }
+
+    private void processStringBuilder() {
+        var s = (String) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("stringbuilder.StringBuilderFoo", "build",
+                        List.of(List.of("MetaVM", "is", 'a', "masterpiece"))));
+        Assert.assertEquals("MetaVM is a masterpiece", s);
     }
 
 }

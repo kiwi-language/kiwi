@@ -10,13 +10,15 @@ public enum PrimitiveKind {
     LONG(1, "long", Long.class, LongValue.class, TypeCategory.LONG) {
         @Override
         public boolean isConvertibleFrom(PrimitiveKind kind) {
-            return kind == DOUBLE;
+            return kind == DOUBLE || kind == CHAR;
         }
 
         @Override
         public Value convert(Value instance) {
             if (instance instanceof DoubleValue d)
                 return Instances.longInstance(d.getValue().longValue());
+            if(instance instanceof CharValue c)
+                return Instances.longInstance(c.getValue());
             else
                 throw new IllegalArgumentException();
         }
@@ -29,13 +31,16 @@ public enum PrimitiveKind {
     DOUBLE(2, "double", Double.class, DoubleValue.class, TypeCategory.DOUBLE) {
         @Override
         public boolean isConvertibleFrom(PrimitiveKind kind) {
-            return kind == LONG;
+            return kind == LONG || kind == CHAR;
         }
 
         @Override
         public Value convert(Value instance) {
             if (instance instanceof LongValue l)
                 return Instances.doubleInstance(l.getValue().doubleValue());
+            if(instance instanceof CharValue c) {
+                return Instances.doubleInstance(c.getValue());
+            }
             else
                 throw new IllegalArgumentException();
         }
@@ -60,7 +65,8 @@ public enum PrimitiveKind {
             return Instances.nullInstance();
         }
     },
-    VOID(8, "void", Void.class, null, TypeCategory.VOID);
+    VOID(8, "void", Void.class, null, TypeCategory.VOID),
+    CHAR(9, "char", Character.class, null, TypeCategory.CHAR);
 
     private final int code;
     private final String name;

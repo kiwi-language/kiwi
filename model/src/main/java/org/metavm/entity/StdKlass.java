@@ -62,7 +62,8 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     serializable(Serializable.class),
     type(Type.class),
     klass(Klass.class),
-    any(DummyAny.class)
+    any(DummyAny.class),
+    stringBuilder(StringBuilder.class, false, StringBuilderNative.class),
     ;
 
     private final Class<?> javaClass;

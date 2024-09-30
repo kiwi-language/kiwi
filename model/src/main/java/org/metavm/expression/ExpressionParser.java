@@ -265,6 +265,8 @@ public class ExpressionParser {
             return PrimitiveType.stringType;
         if(ctx.LONG() != null)
             return PrimitiveType.longType;
+        if(ctx.CHAR() != null)
+            return PrimitiveType.charType;
         if(ctx.DOUBLE() != null)
             return PrimitiveType.doubleType;
         if(ctx.PASSWORD() != null)
@@ -295,8 +297,8 @@ public class ExpressionParser {
     private Expression preParseLiteral(MetaVMParser.LiteralContext literal) {
         if (literal.STRING_LITERAL() != null) {
             return parseStringLiteral(literal.STRING_LITERAL());
-        } else if (literal.SINGLE_QUOTED_STRING_LITERAL() != null) {
-            return parseSingleQuoteLiteral(literal.SINGLE_QUOTED_STRING_LITERAL());
+        } else if (literal.CHAR_LITERAL() != null) {
+            return parseCharLiteral(literal.CHAR_LITERAL());
         } else if (literal.integerLiteral() != null) {
             String intText = literal.integerLiteral().getText();
             return new ConstantExpression(
@@ -326,6 +328,12 @@ public class ExpressionParser {
     private Expression parseSingleQuoteLiteral(TerminalNode singleQuoteStringLiteral) {
         return new ConstantExpression(
                 Instances.stringInstance(Expressions.deEscapeSingleQuoted(singleQuoteStringLiteral.getText()))
+        );
+    }
+
+    private Expression parseCharLiteral(TerminalNode charLiteral) {
+        return new ConstantExpression(
+                Instances.charInstance(Expressions.deEscapeChar(charLiteral.getText()))
         );
     }
 

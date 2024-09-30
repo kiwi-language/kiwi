@@ -394,6 +394,7 @@ primitiveType
     | TIME
     | NULL
     | VOID
+    | CHAR
     ;
 
 modifier

@@ -417,4 +417,12 @@ public class Expressions {
         return builder.toString();
     }
 
+    public static char deEscapeChar(String escaped) {
+        if(escaped.length() == 3)
+            return escaped.charAt(1);
+        else if(escaped.length() == 4)
+            return escaped.charAt(2);
+        else
+            throw new IllegalArgumentException("Invalid char literal: " + escaped);
+    }
 }

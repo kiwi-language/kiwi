@@ -34,6 +34,7 @@ public enum TypeCategory {
     ANY(TypeCategoryCodes.OBJECT, ColumnKind.UNSPECIFIED, 5),
     PASSWORD(TypeCategoryCodes.PASSWORD, ColumnKind.STRING, PrimitiveTypeParam.class, 5),
     VOID(TypeCategoryCodes.VOID, ColumnKind.UNSPECIFIED, PrimitiveTypeParam.class, 5),
+    CHAR(TypeCategoryCodes.CHAR, ColumnKind.STRING, PrimitiveTypeParam.class, 5),
     VARIABLE(TypeCategoryCodes.VARIABLE, ColumnKind.UNSPECIFIED, TypeVariable.class, 1),
     INTERSECTION(TypeCategoryCodes.INTERSECTION, ColumnKind.UNSPECIFIED, 4),
     FUNCTION(TypeCategoryCodes.FUNCTION, ColumnKind.UNSPECIFIED, FunctionTypeParam.class, 5),

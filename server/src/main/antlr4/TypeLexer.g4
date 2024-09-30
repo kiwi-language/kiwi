@@ -5,6 +5,7 @@ lexer grammar TypeLexer;
 BOOLEAN:            'boolean';
 DOUBLE:             'double';
 LONG:               'long';
+CHAR:               'char';
 VOID:               'void';
 NULL:               'null';
 TIME:               'time';

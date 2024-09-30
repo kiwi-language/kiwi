@@ -6,6 +6,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
+import org.metavm.object.instance.core.CharValue;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceProvider;
 import org.metavm.object.instance.core.Value;
@@ -38,6 +39,14 @@ public class ExpressionParserTest extends TestCase {
         var parser = new ExpressionParser("[]", new MyParsingContext());
         var expr = parser.parse(Types.getAnyType());
         MatcherAssert.assertThat(expr, CoreMatchers.instanceOf(ArrayExpression.class));
+    }
+
+    public void testCharLiteral() {
+        var parser = new ExpressionParser("'\\\\'", new MyParsingContext());
+        var value = ((ConstantExpression) parser.parse(Types.getAnyType())).getValue();
+        MatcherAssert.assertThat(value, CoreMatchers.instanceOf(CharValue.class));
+        var c = ((CharValue)value).getValue();
+        Assert.assertEquals('\\', c.charValue());
     }
 
     private static class MyParsingContext implements ParsingContext {

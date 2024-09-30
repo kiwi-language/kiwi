@@ -8,6 +8,7 @@ public class WireTypes {
     public static final int BOOLEAN = 4;
     public static final int TIME = 5;
     public static final int PASSWORD = 6;
+    public static final int CHAR = 7;
 
     public static final int REFERENCE = 10;
     public static final int INSTANCE = 11;

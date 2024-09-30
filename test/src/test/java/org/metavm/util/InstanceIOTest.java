@@ -218,4 +218,15 @@ public class InstanceIOTest extends TestCase {
         }.visitGrove();
     }
 
+    public void testChar() {
+        char c1 = 'a', c2 = '码';
+        var bout = new ByteArrayOutputStream();
+        var out = new InstanceOutput(bout);
+        out.writeChar(c1);
+        out.writeChar(c2);
+        var in = new InstanceInput(new ByteArrayInputStream(bout.toByteArray()));
+        Assert.assertEquals(c1, in.readChar());
+        Assert.assertEquals(c2, in.readChar());
+    }
+
 }

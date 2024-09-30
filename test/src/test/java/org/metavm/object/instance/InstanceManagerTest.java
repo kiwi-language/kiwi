@@ -133,7 +133,7 @@ public class InstanceManagerTest extends TestCase {
                         "bar.code",
                         "qux"
                 ),
-                "name = 'Big Foo'",
+                "name = \"Big Foo\"",
                 1,
                 20
         ));

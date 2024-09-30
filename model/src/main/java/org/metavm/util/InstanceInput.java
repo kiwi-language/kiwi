@@ -127,6 +127,7 @@ public class InstanceInput implements Closeable {
             case WireTypes.DOUBLE -> new DoubleValue(readDouble(), Types.getDoubleType());
             case WireTypes.STRING -> new StringValue(readString(), Types.getStringType());
             case WireTypes.LONG -> new LongValue(readLong(), Types.getLongType());
+            case WireTypes.CHAR -> new CharValue(readChar(), Types.getCharType());
             case WireTypes.BOOLEAN -> new BooleanValue(readBoolean(), Types.getBooleanType());
             case WireTypes.TIME -> new TimeValue(readLong(), Types.getTimeType());
             case WireTypes.PASSWORD -> new PasswordValue(readString(), Types.getPasswordType());
@@ -256,6 +257,23 @@ public class InstanceInput implements Closeable {
             v |= (long) (b & 0x7f) << shifts;
         }
         return negative ? -v : v;
+    }
+
+    public char readChar() {
+        int firstByte = read();
+        if (firstByte == -1)
+            throw new InternalException("End of stream reached");
+        if ((firstByte & 0x80) == 0) {
+            return (char) firstByte;
+        } else if ((firstByte & 0xE0) == 0xC0) {
+            int secondByte = read();
+            return (char) (((firstByte & 0x1F) << 6) | (secondByte & 0x3F));
+        } else if ((firstByte & 0xF0) == 0xE0) {
+            int secondByte = read();
+            int thirdByte = read();
+            return (char) (((firstByte & 0x0F) << 12) | ((secondByte & 0x3F) << 6) | (thirdByte & 0x3F));
+        } else
+            throw new InternalException("Invalid UTF-8 byte sequence");
     }
 
     public int readInt() {

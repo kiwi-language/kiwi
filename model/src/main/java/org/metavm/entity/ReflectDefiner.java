@@ -86,7 +86,6 @@ public class ReflectDefiner {
                 if(javaMethod.isDefault() || ignoredFunctionalInterfaceMethods.contains(JavaMethodSignature.of(javaMethod)))
                     continue;
             }
-//            logger.debug("Defining method: {}", ReflectionUtils.getQualifiedMethodSignature(javaMethod));
             var abs = Modifier.isAbstract(javaMethod.getModifiers());
             var method = MethodBuilder.newBuilder(klass, javaMethod.getName(), javaMethod.getName())
                     .isAbstract(abs)
@@ -172,6 +171,8 @@ public class ReflectDefiner {
                     yield Types.getLongType();
                 if (k == float.class || k == Float.class || k == double.class || k == Double.class)
                     yield Types.getDoubleType();
+                if (k == char.class || k == Character.class)
+                    yield Types.getCharType();
                 if(k == boolean.class || k == Boolean.class)
                     yield Types.getBooleanType();
                 if (k == void.class)

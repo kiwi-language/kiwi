@@ -207,6 +207,8 @@ public class TypeParserImpl implements TypeParser {
             return PrimitiveType.stringType;
         if (ctx.LONG() != null)
             return PrimitiveType.longType;
+        if (ctx.CHAR() != null)
+            return PrimitiveType.charType;
         if (ctx.DOUBLE() != null)
             return PrimitiveType.doubleType;
         if (ctx.VOID() != null)

@@ -16,6 +16,7 @@ public class MethodTable {
     private final Map<Method, Method> verticalTemplateIndex = new IdentityHashMap<>();
     private @Nullable Method hashCodeMethod;
     private @Nullable Method equalsMethod;
+    private @Nullable Method toStringMethod;
 
     public MethodTable(Klass classType) {
         this.classType = classType;
@@ -25,6 +26,7 @@ public class MethodTable {
     public void rebuild() {
         hashCodeMethod = classType.findMethod(m -> "hashCode".equals(m.getCode()) && m.getParameters().isEmpty());
         equalsMethod = classType.findMethod(m -> "equals".equals(m.getCode()) && m.getParameterTypes().equals(List.of(Types.getNullableAnyType())));
+        toStringMethod = classType.findMethod(m -> "toString".equals(m.getCode()) && m.getParameters().isEmpty());
         verticalTemplateIndex.clear();
         overriddenIndex.clear();
         classType.foreachAncestor(t -> {
@@ -61,5 +63,9 @@ public class MethodTable {
 
     public @Nullable Method getEqualsMethod() {
         return equalsMethod;
+    }
+
+    public @Nullable Method getToStringMethod() {
+        return toStringMethod;
     }
 }

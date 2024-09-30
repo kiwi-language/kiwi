@@ -21,6 +21,7 @@ public class PrimitiveType extends Type {
     public static final PrimitiveType nullType = new PrimitiveType(PrimitiveKind.NULL);
     public static final PrimitiveType doubleType = new PrimitiveType(PrimitiveKind.DOUBLE);
     public static final PrimitiveType longType = new PrimitiveType(PrimitiveKind.LONG);
+    public static final PrimitiveType charType = new PrimitiveType(PrimitiveKind.CHAR);
     public static final PrimitiveType booleanType = new PrimitiveType(PrimitiveKind.BOOLEAN);
     public static final PrimitiveType stringType = new PrimitiveType(PrimitiveKind.STRING);
     public static final PrimitiveType timeType = new PrimitiveType(PrimitiveKind.TIME);
@@ -105,6 +106,10 @@ public class PrimitiveType extends Type {
     @Override
     public boolean isLong() {
         return kind == PrimitiveKind.LONG;
+    }
+
+    public boolean isChar() {
+        return kind == PrimitiveKind.CHAR;
     }
 
     @Override

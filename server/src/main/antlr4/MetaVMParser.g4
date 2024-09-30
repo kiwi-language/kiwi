@@ -149,7 +149,7 @@ elementValueArrayInitializer
 literal
     : integerLiteral
     | floatLiteral
-    | SINGLE_QUOTED_STRING_LITERAL
+    | CHAR_LITERAL
     | STRING_LITERAL
     | BOOL_LITERAL
     | NULL_LITERAL
@@ -267,6 +267,7 @@ primitiveType
     : BOOLEAN
     | STRING
     | LONG
+    | CHAR
     | DOUBLE
     | TIME
     | PASSWORD

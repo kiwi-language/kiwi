@@ -1888,6 +1888,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return methodTable.getHashCodeMethod();
     }
 
+    public @Nullable Method getToStringMethod() {
+        return methodTable.getToStringMethod();
+    }
+
     public @Nullable Method getEqualsMethod() {
         return methodTable.getEqualsMethod();
     }

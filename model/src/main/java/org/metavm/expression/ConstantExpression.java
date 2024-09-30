@@ -3,10 +3,7 @@ package org.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.PrimitiveValue;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.StringValue;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Type;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
@@ -30,20 +27,18 @@ public class ConstantExpression extends Expression {
 
     @Override
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
-        if(value instanceof StringValue stringInstance) {
-            return "\"" + NncUtils.escape(stringInstance.getValue()) + "\"";
-        }
-        else if(value instanceof PrimitiveValue primitiveValue) {
-            return primitiveValue.getValue() + "";
-        }
-        else if(value instanceof Reference d){
-            if(relaxedCheck)
-                return Constants.ID_PREFIX + NncUtils.orElse(d.getStringId(), "<uninitializedId>");
-            else
-                return Constants.ID_PREFIX + NncUtils.requireNonNull(d.getStringId());
-        }
-        else
-            throw new InternalException("Invalid instance " + value);
+        return switch (value) {
+            case StringValue stringInstance -> "\"" + NncUtils.escape(stringInstance.getValue()) + "\"";
+            case CharValue charValue -> "'" + NncUtils.escape(charValue.getValue()) + "'";
+            case PrimitiveValue primitiveValue -> primitiveValue.getValue() + "";
+            case Reference d -> {
+                if (relaxedCheck)
+                    yield  Constants.ID_PREFIX + NncUtils.orElse(d.getStringId(), "<uninitializedId>");
+                else
+                    yield  Constants.ID_PREFIX + NncUtils.requireNonNull(d.getStringId());
+            }
+            case null, default -> throw new InternalException("Invalid instance " + value);
+        };
     }
 
     @Override

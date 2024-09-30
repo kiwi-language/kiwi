@@ -1,6 +1,6 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.object.type.PrimitiveKind;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
@@ -8,6 +8,7 @@ import org.metavm.util.InstanceOutput;
 import org.metavm.util.Instances;
 import org.metavm.util.WireTypes;
 
+@Slf4j
 public class LongValue extends NumberValue {
 
     private final long value;

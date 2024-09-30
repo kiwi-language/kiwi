@@ -52,4 +52,6 @@ public class TypeCategoryCodes {
 
     public static final int CAPTURED = 30;
 
+    public static final int CHAR = 31;
+
 }

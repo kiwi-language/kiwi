@@ -26,6 +26,8 @@ public class ValueUtils {
         if (value instanceof Long || value instanceof Integer) {
             return Types.getLongType();
         }
+        if(value instanceof Character)
+            return Types.getCharType();
         if (isBoolean(value)) {
             return Types.getBooleanType();
         }
@@ -114,6 +116,10 @@ public class ValueUtils {
         return klass == long.class || klass == Long.class;
     }
 
+    public static boolean isChar(Class<?> klass) {
+        return klass == char.class || klass == Character.class;
+    }
+
     public static boolean isDouble(Class<?> klass) {
         return klass == double.class || klass == Double.class || klass == float.class || klass == Float.class;
     }
@@ -180,6 +186,8 @@ public class ValueUtils {
         if (isLong(klass) || isInteger(klass)) {
             return Types.getLongType();
         }
+        if(isChar(klass))
+            return Types.getCharType();
         if (isTime(klass)) {
             return Types.getTimeType();
         }

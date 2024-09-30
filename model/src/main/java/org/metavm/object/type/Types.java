@@ -534,6 +534,10 @@ public class Types {
         return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.LONG;
     }
 
+    public static boolean isChar(Type type) {
+        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.CHAR;
+    }
+
     public static boolean isTime(Type type) {
         return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.TIME;
     }
@@ -706,6 +710,7 @@ public class Types {
                 case VOID -> Void.class;
                 case PASSWORD -> Password.class;
                 case DOUBLE -> Double.class;
+                case CHAR -> Character.class;
             };
         }
         if (type instanceof AnyType)
@@ -728,6 +733,8 @@ public class Types {
                     || javaClass == Short.class || javaClass == short.class
                     || javaClass == Byte.class || javaClass == byte.class)
                 return getLongType();
+            if (javaClass == char.class || javaClass == Character.class)
+                return getCharType();
             if (javaClass == Boolean.class || javaClass == boolean.class)
                 return getBooleanType();
             if (javaClass == Double.class || javaClass == double.class)
@@ -766,6 +773,10 @@ public class Types {
 
     public static PrimitiveType getLongType() {
         return PrimitiveType.longType;
+    }
+
+    public static PrimitiveType getCharType() {
+        return PrimitiveType.charType;
     }
 
     public static PrimitiveType getStringType() {

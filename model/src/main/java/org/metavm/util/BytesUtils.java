@@ -232,6 +232,7 @@ public class BytesUtils {
                 case WireTypes.BOOLEAN -> readBoolean();
                 case WireTypes.REFERENCE -> readId().toString();
                 case WireTypes.LONG, WireTypes.TIME -> readLong();
+                case WireTypes.CHAR -> readChar();
                 case WireTypes.DOUBLE -> readDouble();
                 case WireTypes.PASSWORD, WireTypes.STRING -> readString();
                 default -> throw new IllegalStateException("Invalid wire type");

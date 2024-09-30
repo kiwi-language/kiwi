@@ -325,6 +325,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
             case TypeKeyCodes.VARIABLE -> VariableType.read(input, typeDefProvider);
             case TypeKeyCodes.CAPTURED -> CapturedType.read(input, typeDefProvider);
             case TypeKeyCodes.LONG -> PrimitiveType.longType;
+            case TypeKeyCodes.CHAR -> PrimitiveType.charType;
             case TypeKeyCodes.DOUBLE -> PrimitiveType.doubleType;
             case TypeKeyCodes.NULL -> PrimitiveType.nullType;
             case TypeKeyCodes.VOID -> PrimitiveType.voidType;

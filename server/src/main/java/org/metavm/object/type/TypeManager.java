@@ -70,6 +70,7 @@ public class TypeManager extends EntityContextFactoryAware {
     public Map<Integer, String> getPrimitiveMap() {
         Map<Integer, String> primitiveTypes = new HashMap<>();
         primitiveTypes.put(PrimitiveKind.LONG.code(), "long");
+        primitiveTypes.put(PrimitiveKind.CHAR.code(), "char");
         primitiveTypes.put(PrimitiveKind.DOUBLE.code(), "double");
         primitiveTypes.put(PrimitiveKind.STRING.code(), "string");
         primitiveTypes.put(PrimitiveKind.BOOLEAN.code(), "boolean");

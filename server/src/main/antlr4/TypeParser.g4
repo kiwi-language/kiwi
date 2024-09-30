@@ -40,6 +40,7 @@ typeArguments: '<' typeList '>';
 primitiveType
     : LONG
     | DOUBLE
+    | CHAR
     | TIME
     | STRING
     | PASSWORD

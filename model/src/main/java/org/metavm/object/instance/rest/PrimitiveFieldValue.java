@@ -40,6 +40,10 @@ public class PrimitiveFieldValue extends FieldValue {
         return new PrimitiveFieldValue(Long.toString(value), PrimitiveKind.LONG.code(), value);
     }
 
+    public static PrimitiveFieldValue createChar(char value) {
+        return new PrimitiveFieldValue(Character.toString(value), PrimitiveKind.CHAR.code(), value);
+    }
+
     public static PrimitiveFieldValue createDouble(double value) {
         return new PrimitiveFieldValue(Double.toString(value), PrimitiveKind.DOUBLE.code(), value);
     }

@@ -1694,15 +1694,18 @@ public class NncUtils {
     public static String escape(String str) {
         StringBuilder buf = new StringBuilder();
         for (int i = 0; i < str.length(); i++) {
-            if (str.charAt(i) == '\\') {
-                buf.append("\\\\");
-            } else if (str.charAt(i) == '\"') {
-                buf.append("\"");
-            } else {
-                buf.append(str.charAt(i));
-            }
+            buf.append(escape(str.charAt(i)));
         }
         return buf.toString();
+    }
+
+    public static String escape(char c) {
+        if (c == '\\')
+            return "\\\\";
+        else if (c == '\"')
+            return "\"";
+        else
+            return Character.toString(c);
     }
 
     public static <T> void addRepeatedly(List<T> list, T element, int times) {

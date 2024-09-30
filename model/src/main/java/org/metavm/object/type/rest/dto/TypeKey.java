@@ -49,6 +49,8 @@ public interface TypeKey extends TypeOrTypeKey {
             var primitiveType = ctx.primitiveType();
             if (primitiveType.LONG() != null)
                 return new PrimitiveTypeKey(PrimitiveKind.LONG.code());
+            if(primitiveType.CHAR() != null)
+                return new PrimitiveTypeKey(PrimitiveKind.CHAR.code());
             if (primitiveType.DOUBLE() != null)
                 return new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
             if (primitiveType.STRING() != null)
@@ -120,6 +122,7 @@ public interface TypeKey extends TypeOrTypeKey {
             case TypeKeyCodes.NEVER -> new NeverTypeKey();
             case TypeKeyCodes.BOOLEAN -> new PrimitiveTypeKey(PrimitiveKind.BOOLEAN.code());
             case TypeKeyCodes.LONG -> new PrimitiveTypeKey(PrimitiveKind.LONG.code());
+            case TypeKeyCodes.CHAR -> new PrimitiveTypeKey(PrimitiveKind.CHAR.code());
             case TypeKeyCodes.DOUBLE -> new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
             case TypeKeyCodes.STRING -> new PrimitiveTypeKey(PrimitiveKind.STRING.code());
             case TypeKeyCodes.VOID -> new PrimitiveTypeKey(PrimitiveKind.VOID.code());

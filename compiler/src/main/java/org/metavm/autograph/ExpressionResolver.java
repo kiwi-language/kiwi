@@ -230,6 +230,7 @@ public class ExpressionResolver {
             case Double doubleValue -> new DoubleValue(doubleValue, valueType);
             case Long longValue -> new LongValue(longValue, valueType);
             case String string -> Instances.stringInstance(string);
+            case Character c -> Instances.charInstance(c);
             case null, default -> throw new InternalException("Unrecognized literal value: " + value);
         };
         return new ConstantExpression(instance);

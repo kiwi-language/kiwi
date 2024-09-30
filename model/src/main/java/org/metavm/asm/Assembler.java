@@ -1510,6 +1510,8 @@ public class Assembler {
     private static PrimitiveType parsePrimitiveType(AssemblyParser.PrimitiveTypeContext primitiveType) {
         if (primitiveType.INT() != null)
             return PrimitiveType.longType;
+        else if(primitiveType.CHAR() != null)
+            return PrimitiveType.charType;
         else if (primitiveType.DOUBLE() != null)
             return PrimitiveType.doubleType;
         else if (primitiveType.BOOLEAN() != null)
